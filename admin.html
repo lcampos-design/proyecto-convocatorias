@@ -966,7 +966,7 @@ async function loadAll() {
     puestos: (pData || []).filter(p => p.conv_id === c.id).map(p => ({ id: p.id, nombre: p.nombre, cupos: p.cupos, area: p.area || '', desc: p.descripcion || '' }))
   }));
   posts = (postData || []).map(p => {
-    const persona = (persData || []).find(x => x.id === p.persona_id);
+    const persona = (people || []).find(x => x.id === p.persona_id);
     return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, cuit: persona?.cuit || p.cuit || null };
   });
   feedbacks = fbData || [];
@@ -1404,7 +1404,7 @@ function renderGestList() {
       : x.asistencia === 'ausente'
       ? `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✗ A</span>`
       : `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px">—</span>`;
-    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td><button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
+    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación">✉</button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
   }).join('');
 }
 
@@ -1693,6 +1693,28 @@ async function checkCupoLleno(convId, puestoId) {
 }
 
 // ── EMAIL CONFIRMACIONES ──
+function getPersonaEmail(post) {
+  if (!post.personaId) return null;
+  const p = people.find(x => x.id === post.personaId);
+  return p?.email || null;
+}
+
+function openMailModalFromPost(postId) {
+  const post = posts.find(x => x.id === postId); if (!post) return;
+  const persona = people.find(x => x.id === post.personaId);
+  if (!persona?.email) { toast('Esta persona no tiene email cargado'); return; }
+  const sol = solicitudes.find(s => s.nombre?.toLowerCase() === post.nombre?.toLowerCase() && s.conv_id === post.convId);
+  if (sol) {
+    openMailModal(sol.id);
+  } else {
+    mailSolId = '__post__' + postId;
+    window._tempMailData = { email: persona.email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '' };
+    document.getElementById('mMailStep1').style.display = 'block';
+    document.getElementById('mMailStep2').style.display = 'none';
+    showM('mMailConf');
+  }
+}
+
 const RESEND_KEY = 're_jLa2QX2v_2QsSZNpnwBJYBgJ1Ezcphe58';
 let mailSolId = null, mailFromArea = null;
 
@@ -1705,16 +1727,20 @@ function openMailModal(solId) {
 
 function prepMailTemplate(area) {
   mailFromArea = area;
-  const s = solicitudes.find(x => x.id === mailSolId); if (!s) return;
-  const conv = s.conv_id ? convs.find(c => c.id === s.conv_id) : null;
-  const nombre = s.nombre || '';
-  const puesto = s.puesto_nombre || s.puesto_interes || '';
-  const fechas = conv?.fecha ? conv.fecha.split(',').map(f => fmtFecha(f.trim())).join(' y ') : '[FECHA]';
-  const horario = conv?.horario || '[HORARIO]';
-  const venue = conv?.venue || '[VENUE]';
-  const remun = conv?.remuneracion || '[REMUNERACIÓN]';
-  const limite = conv?.fecha_limite || '[FECHA LÍMITE]';
-  const wapp = conv?.link_whatsapp || '[LINK WHATSAPP]';
+  let solEmail, solNombre, solConvId, solPuesto;
+  if (mailSolId && mailSolId.startsWith('__post__') && window._tempMailData) {
+    solEmail = window._tempMailData.email;
+    solNombre = window._tempMailData.nombre;
+    solConvId = window._tempMailData.conv_id;
+    solPuesto = window._tempMailData.puesto_nombre || '';
+  } else {
+    const s = solicitudes.find(x => x.id === mailSolId); if (!s) return;
+    solEmail = s.email; solNombre = s.nombre; solConvId = s.conv_id; solPuesto = s.puesto_nombre || s.puesto_interes || '';
+  }
+  const conv = solConvId ? convs.find(c => c.id === solConvId) : null;
+  const nombre = solNombre || '';
+  const puesto = solPuesto || '';
+  const fechas = conv?.fecha ? conv.fecha.split(',').map(f => fmtFecha(f.trim())).join(' y ') : '[COMPLETAR FECHA]';
   const convNombre = conv?.nombre || '[EVENTO]';
 
   let subject, body;
@@ -1728,9 +1754,9 @@ Queremos confirmarte que fuiste seleccionado/a para los eventos de las fechas ${
 Detallamos propuesta laboral:
 
 Fecha: ${fechas}
-Horario: ${horario}
-Venue: ${venue || 'MOVISTAR ARENA - HUMBOLDT 450/VILLA CRESPO'}
-Remuneración: ${remun} por jornada efectivamente realizada.
+Horario: 13:00 HS a 22hs.
+Venue: MOVISTAR ARENA - HUMBOLDT 450/VILLA CRESPO
+Remuneración: $47.682 por jornada efectivamente realizada.
 
 IMPORTANTE:
 • Recuerden que van a estar rotando TODOS.
@@ -1738,7 +1764,7 @@ IMPORTANTE:
 • Tener en cuenta que el pago se realiza de manera quincenal, el 5to día hábil cerrada la quincena.
 • Se les dará prioridad a aquellos que tengan disponibilidad ambas fechas.
 
-POR FAVOR, ESPERAMOS RESPUESTA COMO ASÍ TAMBIÉN CUALQUIER ACTUALIZACIÓN DE SU CONFIRMACIÓN ANTES DEL ${limite}.
+POR FAVOR, ESPERAMOS RESPUESTA COMO ASÍ TAMBIÉN CUALQUIER ACTUALIZACIÓN DE SU CONFIRMACIÓN ANTES DEL [COMPLETAR FECHA LÍMITE] 11HS.
 
 IMPORTANTE: En caso de llegada tarde, se descontará un 10% sobre la remuneración total correspondiente al servicio.
 
@@ -1747,15 +1773,15 @@ Saludos att!`;
     subject = `Confirmación - ${convNombre}`;
     body = `Estimado/a,
 
-Le escribimos desde SHOW BUSINESS SOLUTIONS para confirmarle que fue seleccionado/a para el evento del día ${fechas}, formando parte del equipo de ${puesto || '[PUESTO]'}.
+Le escribimos desde SHOW BUSINESS SOLUTIONS para confirmarle que fue seleccionado/a para el evento del día ${fechas}, formando parte del equipo de ${puesto || '[COMPLETAR PUESTO]'}.
 
 A continuación, detallamos la propuesta laboral:
 
 Fecha: ${fechas}
-Horario: ${horario}
-Venue: ${venue}
+Horario: [COMPLETAR HORARIO]
+Venue: [COMPLETAR VENUE]
 
-Remuneración: ${remun} por jornada
+Remuneración: [COMPLETAR REMUNERACIÓN] por jornada
 Forma de pago: Transferencia bancaria, aproximadamente a los 15 días hábiles de finalizado el evento.
 
 Sin vianda, pero pueden traer un snack y algo para hidratarse durante la jornada.
@@ -1767,7 +1793,7 @@ Vestimenta obligatoria:
 IMPORTANTE:
 Por favor, esperamos tu confirmación uniéndote al grupo a través del siguiente link y también confirmando por este medio (mail).
 
-🔗 Link de WhatsApp: ${wapp}
+🔗 Link de WhatsApp: [COMPLETAR LINK WHATSAPP]
 
 En caso de que no puedas asistir, te pedimos que nos lo informes a la brevedad.
 
@@ -1775,7 +1801,7 @@ Saludos cordiales,
 Show Business Solutions`;
   }
 
-  document.getElementById('mailTo').value = s.email || '';
+  document.getElementById('mailTo').value = solEmail || '';
   document.getElementById('mailSubject').value = subject;
   document.getElementById('mailBody').value = body;
   document.getElementById('mMailStep1').style.display = 'none';
