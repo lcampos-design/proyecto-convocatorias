@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Postulación — Recital</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a1a;font-size:15px;min-height:100vh;position:relative;background:#1a1a1a}
+.sbs-bg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden}
+.sbs-bg span{font-size:clamp(400px,75vw,1100px);font-weight:900;font-family:'Arial Black','Arial',sans-serif;letter-spacing:-.02em;line-height:1;color:#f0eeea;opacity:.9;user-select:none}
+.page-header{background:#0f1117;padding:28px 24px;text-align:center;position:relative;z-index:1}
+.page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.page-sub{font-size:13px;color:#6b7280;margin-top:4px}
+.container{max-width:640px;margin:32px auto;padding:0 16px 60px;position:relative;z-index:1}
+.card{background:rgba(255,255,255,.92);backdrop-filter:blur(4px);border-radius:12px;padding:28px;margin-bottom:16px;border:1px solid #e5e7eb}
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:#f3f4f6}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px}
+.fg .req{color:#ef4444;margin-left:2px}
+.fi{width:100%;padding:10px 13px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+.fi:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.1)}
+textarea.fi{height:90px;resize:vertical}
+.frow{display:flex;gap:12px}
+.frow .fg{flex:1}
+.area-btns{display:flex;gap:10px}
+.area-btn{flex:1;padding:10px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:center;transition:all .15s;background:#fff}
+.area-btn:hover{border-color:#a5b4fc;background:#f5f3ff}
+.area-btn.active{border-color:#534AB7;background:#f0eeff}
+.area-btn-title{font-size:14px;font-weight:600;color:#111827;margin-bottom:2px}
+.area-btn-sub{font-size:11px;color:#9ca3af}
+.file-area{border:2px dashed #d1d5db;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.file-area:hover,.file-area.dragover{border-color:#534AB7;background:#f5f3ff}
+.file-area input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.file-icon{font-size:28px;margin-bottom:6px}
+.file-text{font-size:13px;color:#6b7280}
+.file-text strong{color:#534AB7}
+.file-name{font-size:12px;color:#534AB7;font-weight:500;margin-top:6px}
+.submit-btn{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .15s;font-family:inherit}
+.submit-btn:hover{opacity:.9}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.success-screen{display:none;text-align:center;padding:48px 24px}
+.success-icon{font-size:56px;margin-bottom:16px}
+.success-title{font-size:22px;font-weight:700;color:#111827;margin-bottom:8px}
+.success-sub{font-size:14px;color:#6b7280;line-height:1.6;max-width:400px;margin:0 auto 24px}
+.success-back{color:#534AB7;font-size:14px;cursor:pointer;text-decoration:underline}
+.err-msg{background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.progress-bar{height:3px;background:#ede9fe;border-radius:999px;overflow:hidden;margin-top:8px;display:none}
+.progress-fill{height:100%;background:#534AB7;border-radius:999px;transition:width .3s;width:0%}
+.required-note{font-size:12px;color:#9ca3af;margin-bottom:20px}
+.radio-group{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.radio-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all .15s}
+.radio-opt:hover{border-color:#a5b4fc;background:#f5f3ff}
+.radio-opt.selected{border-color:#534AB7;background:#f0eeff}
+.radio-opt input{accent-color:#534AB7;width:16px;height:16px;flex-shrink:0}
+.radio-label{font-size:14px;color:#374151;font-weight:500}
+.cbu-warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12px;color:#9a3412;margin-top:8px;display:none}
+.cbu-ok{background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#065f46;margin-top:8px;display:none}
+.cbu-counter{font-size:11px;color:#9ca3af;text-align:right;margin-top:4px}
+.cbu-counter.full{color:#065f46;font-weight:600}
+.cbu-counter.over{color:#991b1b;font-weight:600}
+.dj-note{font-size:11px;color:#6b7280;font-style:italic;margin-top:4px}
+.bank-info{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px}
+@media(max-width:500px){.frow{flex-direction:column}.area-btns{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="sbs-bg">
+  <div style="position:relative;display:inline-block">
+    <span>SBS</span>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+      <div style="font-size:clamp(10px,1.8vw,22px);font-weight:700;color:#1a1a1a;letter-spacing:.15em;line-height:1.3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap">HANDS ON<br>EVERYTHING</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-header">
+  <div class="page-title">Sure, you can work with us</div>
+  <div class="page-sub">Completá el formulario y nos ponemos en contacto</div>
+</div>
+
+<div class="container">
+
+  <!-- Éxito -->
+  <div class="success-screen" id="successScreen">
+    <div class="card">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">¡Solicitud enviada!</div>
+      <div class="success-sub">Recibimos tus datos. El equipo de coordinación va a revisarlos y se va a comunicar con vos a la brevedad.</div>
+      <span class="success-back" onclick="resetForm()">Enviar otra solicitud</span>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div id="formScreen">
+    <div class="required-note">Los campos marcados con <span style="color:#ef4444">*</span> son obligatorios</div>
+    <div class="err-msg" id="errMsg"></div>
+
+    <!-- Datos personales -->
+    <div class="card">
+      <div class="section-title">Datos personales</div>
+      <div class="fg">
+        <label>Nombre completo <span class="req">*</span></label>
+        <input type="text" class="fi" id="fNombre" placeholder="Tu nombre y apellido">
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Email</label>
+          <input type="email" class="fi" id="fEmail" placeholder="tu@email.com">
+        </div>
+        <div class="fg">
+          <label>Teléfono</label>
+          <input type="tel" class="fi" id="fTel" placeholder="+54 11...">
+        </div>
+      </div>
+      <div class="fg">
+        <label>CUIT / CUIL</label>
+        <input type="text" class="fi" id="fCuit" placeholder="Ingresá los 11 números del CUIL/CUIT" maxlength="11" oninput="validarCuil(this)" inputmode="numeric">
+        <div class="cbu-counter" id="cuilCounter">0 / 11 dígitos</div>
+        <div class="cbu-warn" id="cuilWarn">⚠ El CUIL/CUIT debe tener exactamente 11 dígitos.</div>
+        <div class="cbu-ok" id="cuilOk">✓ CUIL/CUIT válido</div>
+      </div>
+    </div>
+
+    <!-- Área de interés -->
+    <div class="card">
+      <div class="section-title">Área de interés</div>
+      <div class="area-btns">
+        <div class="area-btn active" id="btnMv" onclick="setArea('movistar_arena')">
+          <div class="area-btn-title">Movistar Arena</div>
+          <div class="area-btn-sub">Piso, seguridad, producción</div>
+        </div>
+        <div class="area-btn" id="btnEx" onclick="setArea('externos')">
+          <div class="area-btn-title">Externos</div>
+          <div class="area-btn-sub">Eventos externos y giras</div>
+        </div>
+      </div>
+      <div class="fg" style="margin-top:14px">
+        <label>Puesto de interés</label>
+        <input type="text" class="fi" id="fPuesto" placeholder="Ej: Personal de piso, Seguridad, Producción...">
+      </div>
+    </div>
+
+    <!-- Perfil profesional -->
+    <div class="card">
+      <div class="section-title">Perfil profesional</div>
+      <div class="fg">
+        <label>Experiencia laboral <span class="req">*</span></label>
+        <textarea class="fi" id="fExp" placeholder="Contanos tu experiencia en eventos, producción, seguridad u otras áreas relacionadas..."></textarea>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Formación</label>
+          <textarea class="fi" style="height:70px" id="fForm" placeholder="Estudios, cursos, certificaciones..."></textarea>
+        </div>
+        <div class="fg">
+          <label>Habilidades</label>
+          <textarea class="fi" style="height:70px" id="fSkills" placeholder="Trabajo en equipo, idiomas, herramientas..."></textarea>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Disponibilidad</label>
+        <input type="text" class="fi" id="fDisp" placeholder="Full time, fines de semana, turno noche...">
+      </div>
+    </div>
+
+    <!-- CV -->
+    <div class="card">
+      <div class="section-title">CV / Archivo adjunto</div>
+      <div class="file-area" id="fileArea" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropFile(event)">
+        <input type="file" id="fFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleFile()">
+        <div class="file-icon">📎</div>
+        <div class="file-text">Arrastrá tu CV acá o <strong>hacé click para elegir</strong></div>
+        <div class="file-text" style="margin-top:4px">PDF, Word o imagen · Máx. 1 MB</div>
+        <div class="file-name" id="fileName"></div>
+      </div>
+      <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <!-- Datos bancarios -->
+    <div class="card">
+      <div class="section-title">Datos bancarios</div>
+      <div class="bank-info">
+        Solo se aceptan <strong>cuentas bancarias</strong>. No se aceptan alias ni billeteras virtuales (Mercado Pago, Ualá, Personal Pay, etc.). La cuenta debe estar a tu nombre.
+      </div>
+      <div class="fg">
+        <label>CBU <span class="req">*</span></label>
+        <input type="text" class="fi" id="fCbu" placeholder="Ingresá los 22 números del CBU" maxlength="22" oninput="validarCbu(this)" inputmode="numeric">
+        <div class="cbu-counter" id="cbuCounter">0 / 22 dígitos</div>
+        <div class="cbu-warn" id="cbuWarn">
+          ⚠ Este CBU pertenece a una <strong>billetera virtual</strong>. No se aceptan billeteras virtuales (Mercado Pago, Ualá, Personal Pay, Naranja X, etc.). Ingresá el CBU de tu cuenta bancaria.
+        </div>
+        <div class="cbu-ok" id="cbuOk">✓ CBU válido</div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Número de cuenta <span class="req">*</span></label>
+          <input type="text" class="fi" id="fNroCuenta" placeholder="Ej: 0000123456789">
+        </div>
+        <div class="fg">
+          <label>Banco <span class="req">*</span></label>
+          <input type="text" class="fi" id="fBanco" placeholder="Ej: Banco Nación, Galicia...">
+        </div>
+      </div>
+    </div>
+
+    <!-- Declaración Jurada -->
+    <div class="card">
+      <div class="section-title">Declaración jurada</div>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:16px">
+        Las siguientes preguntas tienen carácter de <strong>Declaración Jurada</strong>. La información incorrecta puede resultar en la desvinculación inmediata.
+      </div>
+
+      <div class="fg">
+        <label>¿Tenés antecedentes penales? <span class="req">*</span></label>
+        <div class="radio-group">
+          <label class="radio-opt" id="antSi" onclick="selectRadio('ant','si')">
+            <input type="radio" name="antecedentes" value="si"> <span class="radio-label">Sí</span>
+          </label>
+          <label class="radio-opt" id="antNo" onclick="selectRadio('ant','no')">
+            <input type="radio" name="antecedentes" value="no"> <span class="radio-label">No</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="fg" style="margin-top:8px">
+        <label>¿Cobrás algún beneficio social, plan de gobierno o asignación universal? <span class="req">*</span></label>
+        <div class="dj-note">Este formulario tiene carácter de Declaración Jurada</div>
+        <div class="radio-group" style="margin-top:10px">
+          <label class="radio-opt" id="benSi" onclick="selectRadio('ben','si')">
+            <input type="radio" name="beneficio" value="si"> <span class="radio-label">Sí</span>
+          </label>
+          <label class="radio-opt" id="benNo" onclick="selectRadio('ben','no')">
+            <input type="radio" name="beneficio" value="no"> <span class="radio-label">No</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">Enviar solicitud →</button>
+  </div>
+
+  <!-- Footer -->
+  <footer style="margin-top:48px;border-top:1px solid #e5e7eb;padding:32px 16px;text-align:center;background:rgba(255,255,255,.95);position:relative;z-index:1">
+    <div style="max-width:640px;margin:0 auto">
+      <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:16px">¿Tenés alguna consulta?</div>
+      <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap;align-items:center">
+        <a href="mailto:convocatorias@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
+          <span style="font-size:18px">✉</span> convocatorias@show-bs.com
+        </a>
+        <a href="https://www.instagram.com/showbs/" target="_blank" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
+          @showbs
+        </a>
+        <a href="https://www.instagram.com/showbspain/" target="_blank" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
+          @showbspain
+        </a>
+        <a href="postulaciones.html" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
+          <span style="font-size:18px">📋</span> Ver postulaciones abiertas
+        </a>
+      </div>
+      <div style="margin-top:20px;font-size:11px;color:#9ca3af">Show Business Solution © 2024</div>
+    </div>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ════════════════════════════════════════
+// CONFIGURACIÓN — mismas credenciales del admin
+// ════════════════════════════════════════
+const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+// ════════════════════════════════════════
+
+const sb = supabase.createClient(SB_URL, SB_KEY);
+let selectedArea = 'movistar_arena';
+let fileData = null;
+
+function setArea(a) {
+  selectedArea = a;
+  document.getElementById('btnMv').classList.toggle('active', a === 'movistar_arena');
+  document.getElementById('btnEx').classList.toggle('active', a === 'externos');
+}
+
+function dragOver(e) { e.preventDefault(); document.getElementById('fileArea').classList.add('dragover'); }
+function dragLeave() { document.getElementById('fileArea').classList.remove('dragover'); }
+function dropFile(e) { e.preventDefault(); dragLeave(); const f = e.dataTransfer.files[0]; if (f) processFile(f); }
+function handleFile() { const f = document.getElementById('fFile').files[0]; if (f) processFile(f); }
+
+function processFile(f) {
+  if (f.size > 1048576) { showErr('El archivo supera 1 MB. Elegí uno más liviano.'); document.getElementById('fFile').value = ''; return; }
+  const r = new FileReader();
+  r.onload = ev => { fileData = { nombre: f.name, tipo: f.type, datos: ev.target.result }; document.getElementById('fileName').textContent = `✓ ${f.name} (${(f.size/1024).toFixed(0)} KB)`; };
+  r.readAsDataURL(f);
+}
+
+function showErr(msg) { const el = document.getElementById('errMsg'); el.textContent = msg; el.style.display = 'block'; window.scrollTo({top:0,behavior:'smooth'}); }
+function hideErr() { document.getElementById('errMsg').style.display = 'none'; }
+
+// ── Billeteras virtuales conocidas (prefijos de CBU) ──
+const WALLETS = [
+  { prefix: '0000003', nombre: 'Mercado Pago' },
+  { prefix: '0000086', nombre: 'Ualá' },
+  { prefix: '0000005', nombre: 'Personal Pay' },
+  { prefix: '3220001', nombre: 'Naranja X' },
+  { prefix: '0000007', nombre: 'Lemon Cash' },
+  { prefix: '0000004', nombre: 'Brubank (billetera)' },
+];
+
+function validarCbu(input) {
+  // Solo números
+  input.value = input.value.replace(/\D/g, '');
+  const val = input.value;
+  const counter = document.getElementById('cbuCounter');
+  const warn = document.getElementById('cbuWarn');
+  const ok = document.getElementById('cbuOk');
+
+  counter.textContent = `${val.length} / 22 dígitos`;
+  counter.className = 'cbu-counter' + (val.length === 22 ? ' full' : val.length > 22 ? ' over' : '');
+
+  warn.style.display = 'none';
+  ok.style.display = 'none';
+  input.style.borderColor = '';
+
+  if (val.length === 0) return;
+
+  // Detectar billetera virtual
+  const wallet = WALLETS.find(w => val.startsWith(w.prefix));
+  if (wallet) {
+    warn.innerHTML = `⚠ Este CBU pertenece a <strong>${wallet.nombre}</strong>, una billetera virtual. No se aceptan billeteras virtuales. Ingresá el CBU de tu cuenta bancaria.`;
+    warn.style.display = 'block';
+    input.style.borderColor = '#f97316';
+    return;
+  }
+
+  if (val.length === 22) {
+    ok.style.display = 'block';
+    input.style.borderColor = '#10b981';
+  }
+}
+
+function validarCuil(input) {
+  input.value = input.value.replace(/\D/g, '');
+  const val = input.value;
+  const counter = document.getElementById('cuilCounter');
+  const warn = document.getElementById('cuilWarn');
+  const ok = document.getElementById('cuilOk');
+  counter.textContent = `${val.length} / 11 dígitos`;
+  counter.className = 'cbu-counter' + (val.length === 11 ? ' full' : '');
+  warn.style.display = val.length > 0 && val.length !== 11 ? 'block' : 'none';
+  ok.style.display = val.length === 11 ? 'block' : 'none';
+  input.style.borderColor = val.length === 0 ? '' : val.length === 11 ? '#10b981' : '#f97316';
+}
+let antecedentes = null, beneficioSocial = null;
+
+function selectRadio(grupo, valor) {
+  if (grupo === 'ant') {
+    antecedentes = valor;
+    document.getElementById('antSi').classList.toggle('selected', valor === 'si');
+    document.getElementById('antNo').classList.toggle('selected', valor === 'no');
+    document.querySelector('input[name="antecedentes"][value="' + valor + '"]').checked = true;
+  } else {
+    beneficioSocial = valor;
+    document.getElementById('benSi').classList.toggle('selected', valor === 'si');
+    document.getElementById('benNo').classList.toggle('selected', valor === 'no');
+    document.querySelector('input[name="beneficio"][value="' + valor + '"]').checked = true;
+  }
+}
+
+async function submitForm() {
+  hideErr();
+  const nombre   = document.getElementById('fNombre').value.trim();
+  const exp      = document.getElementById('fExp').value.trim();
+  const cbu      = document.getElementById('fCbu').value.trim();
+  const nroCuenta= document.getElementById('fNroCuenta').value.trim();
+  const banco    = document.getElementById('fBanco').value.trim();
+
+  if (!nombre)      { showErr('El nombre es obligatorio.'); return; }
+  if (!exp)         { showErr('Contanos algo de tu experiencia.'); return; }
+  if (!cbu)         { showErr('El CBU es obligatorio.'); return; }
+  if (cbu.length !== 22) { showErr('El CBU debe tener exactamente 22 dígitos.'); return; }
+  const wallet = WALLETS.find(w => cbu.startsWith(w.prefix));
+  if (wallet)       { showErr(`No se aceptan billeteras virtuales (${wallet.nombre}). Ingresá el CBU de tu cuenta bancaria.`); return; }
+  if (!nroCuenta)   { showErr('El número de cuenta es obligatorio.'); return; }
+  if (!banco)       { showErr('El banco es obligatorio.'); return; }
+  const cuitVal = document.getElementById('fCuit').value.trim();
+  if (cuitVal && cuitVal.length !== 11) { showErr('El CUIL/CUIT debe tener exactamente 11 dígitos.'); return; }
+  if (antecedentes === null) { showErr('Respondé la pregunta sobre antecedentes penales.'); return; }
+  if (beneficioSocial === null) { showErr('Respondé la pregunta sobre beneficios sociales.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Verificando...';
+
+  // Verificar duplicados por CUIL/CUIT
+  const cuit = document.getElementById('fCuit').value.trim();
+  if (cuit) {
+    try {
+      const { data: dupCheck } = await sb.rpc('check_solicitud_existe', { p_cuit: cuit });
+      if (dupCheck?.existe) {
+        const areaLabel = dupCheck.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos';
+        showErr(`Ya tenés una solicitud enviada para ${areaLabel}. Solo podés postularte a un área a la vez. Si querés hacer algún cambio, contactanos directamente.`);
+        btn.disabled = false; btn.textContent = 'Enviar solicitud →';
+        return;
+      }
+    } catch(_) { /* si falla la verificación, continúa igual */ }
+  }
+
+  document.getElementById('progressBar').style.display = 'block';
+  document.getElementById('progressFill').style.width = '40%';
+
+  const payload = {
+    nombre,
+    area: selectedArea,
+    email:          document.getElementById('fEmail').value.trim() || null,
+    tel:            document.getElementById('fTel').value.trim() || null,
+    cuit:           document.getElementById('fCuit').value.trim() || null,
+    puesto_interes: document.getElementById('fPuesto').value.trim() || null,
+    experiencia:    exp,
+    formacion:      document.getElementById('fForm').value.trim() || null,
+    habilidades:    document.getElementById('fSkills').value.trim() || null,
+    disponibilidad: document.getElementById('fDisp').value.trim() || null,
+    archivo_cv:     fileData ? fileData : null,
+    cbu,
+    numero_cuenta:  nroCuenta,
+    banco,
+    antecedentes:   antecedentes === 'si',
+    beneficio_social: beneficioSocial === 'si',
+    estado: 'pendiente'
+  };
+
+  document.getElementById('progressFill').style.width = '70%';
+
+  const { error } = await sb.from('solicitudes').insert([payload]);
+
+  document.getElementById('progressFill').style.width = '100%';
+
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Enviar solicitud →';
+    document.getElementById('progressBar').style.display = 'none';
+    showErr('Hubo un error al enviar. Intentá de nuevo en unos minutos.');
+    return;
+  }
+
+  setTimeout(() => {
+    document.getElementById('formScreen').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }, 400);
+}
+
+function resetForm() {
+  document.getElementById('successScreen').style.display = 'none';
+  document.getElementById('formScreen').style.display = 'block';
+  ['fNombre','fEmail','fTel','fCuit','fPuesto','fExp','fForm','fSkills','fDisp','fCbu','fNroCuenta','fBanco'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fFile').value = '';
+  document.getElementById('fileName').textContent = '';
+  document.getElementById('progressBar').style.display = 'none';
+  document.getElementById('cuilCounter').textContent = '0 / 11 dígitos';
+  document.getElementById('cuilWarn').style.display = 'none';
+  document.getElementById('cuilOk').style.display = 'none';
+  document.getElementById('cbuCounter').textContent = '0 / 22 dígitos';
+  document.getElementById('cbuWarn').style.display = 'none';
+  document.getElementById('cbuOk').style.display = 'none';
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('submitBtn').textContent = 'Enviar solicitud →';
+  antecedentes = null; beneficioSocial = null;
+  ['antSi','antNo','benSi','benNo'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  fileData = null; setArea('movistar_arena');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

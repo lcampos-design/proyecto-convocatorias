@@ -1,0 +1,2332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión — Recital</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f2;color:#1a1a1a;font-size:14px;min-height:100vh}
+.login-wrap{position:fixed;inset:0;background:#0f1117;display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.login-card{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:36px;width:100%;max-width:380px}
+.login-title{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.5px;text-align:center}
+.login-sub{font-size:13px;color:#6b7280;text-align:center;margin-top:4px;margin-bottom:28px}
+.lbl{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:5px}
+.l-in{width:100%;padding:10px 12px;background:#0f1117;border:1px solid #374151;border-radius:6px;color:#fff;font-size:14px;outline:none;transition:border-color .15s;margin-bottom:14px}
+.l-in:focus{border-color:#534AB7}
+.l-err{display:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:14px}
+.l-btn{width:100%;padding:11px;background:#534AB7;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.l-btn:hover{opacity:.9}.l-btn:disabled{opacity:.5;cursor:not-allowed}
+.load-wrap{position:fixed;inset:0;background:rgba(255,255,255,.93);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:500}
+.load-wrap.on{display:flex}
+.load-msg{font-size:14px;color:#534AB7;font-weight:500}
+.load-track{width:220px;height:4px;background:#ede9fe;border-radius:999px;overflow:hidden}
+.load-fill{height:100%;background:#534AB7;border-radius:999px;transition:width .4s}
+.app-hdr{background:#0f1117;display:flex;align-items:stretch;padding:0 24px;gap:0}
+.brand{display:flex;flex-direction:column;justify-content:center;padding:10px 20px 10px 0;border-right:1px solid #1f2937;margin-right:4px}
+.brand-name{font-size:15px;font-weight:600;color:#fff;letter-spacing:-.3px}
+.brand-sub{font-size:10px;color:#6b7280;margin-top:1px}
+.main-nav{display:flex}
+.mnav-btn{padding:0 18px;font-size:13px;font-weight:500;color:#9ca3af;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:color .15s}
+.mnav-btn:hover{color:#d1d5db}.mnav-btn.active{color:#fff;border-bottom-color:#818cf8}
+.hdr-actions{margin-left:auto;display:flex;align-items:center;gap:8px;padding:10px 0}
+.btn{padding:7px 14px;border-radius:6px;font-size:13px;cursor:pointer;border:none;font-weight:500;transition:opacity .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{opacity:.85}
+.btn-primary{background:#534AB7;color:#fff}.btn-sec{background:#f3f4f6;color:#374151;border:1px solid #d1d5db}
+.btn-danger{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}.btn-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.btn-sm{padding:4px 10px;font-size:12px}.btn-xs{padding:3px 8px;font-size:11px}
+.sec{display:none}.sec.active{display:block}
+.stats-bar{background:#fff;border-bottom:1px solid #e5e7eb;padding:10px 24px;display:flex;gap:28px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column}
+.stat-num{font-size:21px;font-weight:600;line-height:1}
+.stat-label{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px;margin-top:3px}
+.s-total .stat-num{color:#0f1117}.s-conf .stat-num{color:#0f6e56}.s-cont .stat-num{color:#534AB7}.s-pend .stat-num{color:#854F0B}.s-no .stat-num{color:#a32d2d}
+.atabs{background:#fff;border-bottom:1px solid #e5e7eb;display:flex;padding:0 24px;overflow-x:auto}
+.atab{padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#6b7280;white-space:nowrap;transition:color .15s}
+.atab:hover{color:#374151}.atab.active{color:#534AB7;border-bottom-color:#534AB7}
+.tc{background:#f3f4f6;color:#6b7280;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px}
+.atab.active .tc{background:#ede9fe;color:#534AB7}
+.ctrlbar{background:#fff;padding:10px 24px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.srch{flex:1;min-width:160px;padding:7px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none}
+.srch:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.1)}
+select.filt{padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none;background:#fff;cursor:pointer}
+select.filt:focus{border-color:#534AB7}
+.bulk-bar{background:#ede9fe;border-bottom:1px solid #c4b5fd;padding:8px 24px;display:none;align-items:center;gap:12px;font-size:13px;color:#5b21b6}
+.bulk-bar.on{display:flex}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:#fff}
+th{padding:8px 14px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb;white-space:nowrap;position:sticky;top:0;z-index:5}
+td{padding:9px 14px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+tr:hover td{background:#fafaf8}
+.cn{font-weight:500;color:#111827}.cm{color:#9ca3af;font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.a-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.a-mv{background:#e0f2fe;color:#0369a1}.a-ex{background:#f0fdf4;color:#166534}.a-ambas{background:#f3e8ff;color:#7e22ce}
+.st-sel{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;border:1px solid transparent;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none}
+.st-sel.pendiente{background:#fef3c7;color:#92400e}.st-sel.contactado{background:#ede9fe;color:#5b21b6}
+.st-sel.confirmado{background:#d1fae5;color:#065f46}.st-sel.no_asiste{background:#fee2e2;color:#991b1b}
+.ssp{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;border:none;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none}
+.ssp.pendiente{background:#fef3c7;color:#92400e}.ssp.en_revision{background:#e0f2fe;color:#0369a1}
+.ssp.aprobado{background:#d1fae5;color:#065f46}.ssp.rechazado{background:#fee2e2;color:#991b1b}
+.pagbar{background:#fff;border-top:1px solid #e5e7eb;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;font-size:13px;gap:12px}
+.pagi{color:#9ca3af}.pagbtns{display:flex;gap:4px;align-items:center}
+.pb{padding:5px 10px;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;background:#fff;font-size:12px;min-width:30px;text-align:center}
+.pb:hover:not(:disabled):not(.dots){background:#f3f4f6}.pb.active{background:#534AB7;color:#fff;border-color:#534AB7}
+.pb:disabled{opacity:.35;cursor:not-allowed}.pb.dots{border:none;background:none;cursor:default;color:#9ca3af;padding:5px 2px}
+.empty{text-align:center;padding:48px;color:#9ca3af;font-size:13px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal{background:#fff;border-radius:10px;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal-xl{max-width:760px}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.mclose{background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0 4px;line-height:1}
+.mclose:hover{color:#374151}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.fi{width:100%;padding:8px 11px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none;background:#fff}
+.fi:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.1)}
+textarea.fi{height:64px;resize:vertical}
+.frow{display:flex;gap:12px}.frow .fg{flex:1}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.divider{height:1px;background:#f3f4f6;margin:14px 0}
+.csv-ta{width:100%;height:110px;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;font-family:monospace;outline:none;resize:vertical}
+.csv-ta:focus{border-color:#534AB7}
+.csv-help{font-size:11px;color:#9ca3af;margin-top:5px;line-height:1.5}
+.imp-prev{font-size:12px;color:#534AB7;margin:5px 0;font-weight:500}
+.cb{cursor:pointer;accent-color:#534AB7;width:14px;height:14px}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:1000;opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none}
+.toast.on{opacity:1;transform:translateY(0)}
+.prog-wrap{flex:1;min-width:60px;height:6px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+.prog-fill{height:100%;border-radius:999px;transition:width .3s}
+.cv-grid{padding:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.cv-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px;transition:border-color .15s,box-shadow .15s}
+.cv-card:hover{border-color:#a5b4fc;box-shadow:0 2px 8px rgba(83,74,183,.08)}
+.cv-card-title{font-size:15px;font-weight:600;color:#111827;margin-bottom:3px}
+.cv-card-meta{font-size:12px;color:#9ca3af;margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap}
+.cv-puestos{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.cv-prow{display:flex;align-items:center;gap:8px;font-size:12px}
+.cv-pname{flex:1;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cv-cupo{font-size:11px;color:#9ca3af;white-space:nowrap}
+.cv-foot{display:flex;gap:8px;justify-content:flex-end;border-top:1px solid #f3f4f6;padding-top:12px}
+.det-hdr{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 24px;display:flex;align-items:flex-start;gap:14px}
+.back-btn{background:none;border:1px solid #d1d5db;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;color:#6b7280;display:flex;align-items:center;gap:4px;white-space:nowrap;flex-shrink:0}
+.back-btn:hover{background:#f3f4f6}
+.det-title{font-size:16px;font-weight:600;color:#111827}
+.det-meta{font-size:12px;color:#9ca3af;margin-top:3px}
+.det-stats{display:flex;gap:20px;margin-top:8px;flex-wrap:wrap}
+.dstat{font-size:12px;color:#6b7280}.dstat strong{font-weight:600;color:#111827}
+.puestos-sec{padding:20px 24px}
+.puestos-sec-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.puesto-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:10px;overflow:hidden}
+.puesto-card-head{padding:12px 16px;display:flex;align-items:center;gap:12px}
+.puesto-info{flex:1}.puesto-name{font-size:14px;font-weight:600;color:#111827}
+.puesto-desc{font-size:12px;color:#9ca3af;margin-top:1px}
+.puesto-cupo{text-align:right;white-space:nowrap}
+.cupo-num{font-size:18px;font-weight:600;color:#111827;line-height:1}
+.cupo-label{font-size:11px;color:#9ca3af}
+.puesto-prog{padding:0 16px 12px;display:flex;align-items:center;gap:10px;font-size:12px}
+.puesto-acts{padding:0 16px 12px;display:flex;gap:8px}
+.picker-srch{padding:7px 11px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none;width:100%;margin-bottom:8px}
+.picker-srch:focus{border-color:#534AB7}
+.picker-list{max-height:220px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px}
+.picker-item{display:flex;align-items:center;gap:10px;padding:8px 12px;font-size:13px;border-bottom:1px solid #f9fafb;cursor:pointer}
+.picker-item:last-child{border-bottom:none}.picker-item:hover{background:#fafaf8}.picker-item.sel{background:#f0eeff}
+.picker-empty{text-align:center;padding:20px;color:#9ca3af;font-size:12px}
+.post-table-wrap{max-height:320px;overflow-y:auto}
+.badge-fromnom{background:#ede9fe;color:#5b21b6;font-size:10px;padding:1px 5px;border-radius:3px;font-weight:500}
+.cupo-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#fafafa;border-top:1px solid #f3f4f6}
+.no-convs{padding:60px 24px;text-align:center;color:#9ca3af}
+.no-convs-title{font-size:15px;font-weight:500;color:#6b7280;margin-bottom:6px}
+.no-convs-sub{font-size:13px;margin-bottom:18px}
+.cv-tag{display:inline-flex;align-items:center;gap:3px;background:#e0f2fe;color:#0369a1;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600;cursor:pointer;margin-left:6px;vertical-align:middle;border:none;transition:background .15s}
+.cv-tag:hover{background:#bae6fd}
+.cv-viewer-field{margin-bottom:14px}
+.cv-viewer-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:4px}
+.cv-viewer-value{font-size:13px;color:#111827;line-height:1.6;white-space:pre-wrap}
+.cv-file-box{background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-top:4px}
+.cv-section-divider{height:1px;background:#f3f4f6;margin:14px 0}
+.cand-grid{padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.cand-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;transition:border-color .15s,box-shadow .15s;position:relative}
+.cand-card:hover{border-color:#a5b4fc;box-shadow:0 2px 8px rgba(83,74,183,.08)}
+.cand-card.selected{border-color:#534AB7;box-shadow:0 0 0 2px rgba(83,74,183,.2)}
+.cand-card-top{padding:14px 14px 10px;display:flex;align-items:flex-start;gap:10px}
+.cand-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0}
+.cand-info{flex:1;min-width:0}
+.cand-name{font-size:14px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cand-puesto{font-size:12px;color:#6b7280;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cand-meta{font-size:11px;color:#9ca3af;margin-top:2px}
+.cand-fields{padding:0 14px 10px;display:flex;flex-direction:column;gap:4px}
+.cand-field-row{display:flex;gap:6px;font-size:12px;align-items:flex-start}
+.cand-field-label{color:#9ca3af;white-space:nowrap;min-width:72px;flex-shrink:0}
+.cand-field-val{color:#374151;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.cand-footer{padding:10px 14px;border-top:1px solid #f3f4f6;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.cand-st-sel{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;border:none;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none}
+.cand-st-sel.pendiente{background:#fef3c7;color:#92400e}.cand-st-sel.contactado{background:#e0f2fe;color:#0369a1}
+.cand-st-sel.confirmado{background:#d1fae5;color:#065f46}.cand-st-sel.no_asiste{background:#fee2e2;color:#991b1b}
+.sem{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;cursor:pointer;margin-left:3px;vertical-align:middle;border:none;flex-shrink:0}
+.sem-1{background:#d1fae5;color:#065f46}.sem-2{background:#fef3c7;color:#92400e}.sem-3{background:#fee2e2;color:#991b1b}
+.out-badge{display:inline-flex;align-items:center;gap:2px;background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 5px;font-weight:600;cursor:pointer;margin-left:3px;vertical-align:middle;border:none}
+.out-badge:hover{background:#fecaca}
+.fb-item{padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
+.fb-item:last-child{border-bottom:none}
+.fb-meta{font-size:11px;color:#9ca3af;margin-top:3px}
+.sup-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.sup-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sup-name{font-size:14px;font-weight:600;color:#111827}
+.sup-email{font-size:12px;color:#9ca3af;margin-top:2px}
+.sup-convs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.sup-conv-tag{background:#f0eeff;color:#534AB7;border-radius:4px;font-size:11px;padding:2px 8px;display:flex;align-items:center;gap:4px}
+.sup-conv-tag button{background:none;border:none;cursor:pointer;color:#a78bfa;font-size:12px;line-height:1;padding:0}
+.sec-sup{padding:20px 24px}
+.sec-sup-title{font-size:17px;font-weight:600;color:#111827;margin-bottom:4px}
+.sec-sup-sub{font-size:13px;color:#9ca3af;margin-bottom:20px}
+.sup-conv-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:12px;overflow:hidden}
+.sup-conv-head{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.sup-conv-head:hover{background:#fafaf8}
+.sup-conv-title{font-size:14px;font-weight:600;color:#111827}
+.sup-conv-meta{font-size:12px;color:#9ca3af;margin-top:2px}
+.sup-persona-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid #f3f4f6;font-size:13px}
+.sup-persona-row:hover{background:#fafaf8}
+.conflict-warn{background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:12px}
+.rot-badge{display:inline-flex;align-items:center;gap:2px;background:#fff7ed;color:#c2410c;border-radius:4px;font-size:10px;padding:2px 5px;font-weight:600;margin-left:3px;vertical-align:middle;border:1px solid #fed7aa}
+.hist-item{padding:12px 0;border-bottom:1px solid #f3f4f6;display:flex;gap:12px;align-items:flex-start}
+.hist-item:last-child{border-bottom:none}
+.hist-dot{width:10px;height:10px;border-radius:50%;background:#534AB7;flex-shrink:0;margin-top:4px}
+.hist-dot.aprobado{background:#10b981}.hist-dot.rechazado{background:#ef4444}.hist-dot.pendiente{background:#f59e0b}
+.hist-info{flex:1}
+.hist-title{font-size:13px;font-weight:600;color:#111827}
+.hist-meta{font-size:11px;color:#9ca3af;margin-top:2px}
+.hist-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.dedup-group{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px;overflow:hidden}
+.dedup-group-head{background:#fafafa;padding:10px 14px;font-size:12px;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between}
+.dedup-person{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #f9fafb;font-size:13px}
+.dedup-person:last-child{border-bottom:none}
+.rot-config-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.rot-config-label{font-size:13px;color:#374151;flex:1}
+.rot-num{width:64px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;text-align:center;outline:none}
+.rot-num:focus{border-color:#534AB7}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="login-title">Gestión Recital</div>
+    <div class="login-sub">Panel de administración</div>
+    <label class="lbl">Email</label>
+    <input type="email" id="loginEmail" class="l-in" placeholder="admin@empresa.com" onkeydown="if(event.key==='Enter')doLogin()">
+    <label class="lbl">Contraseña</label>
+    <input type="password" id="loginPass" class="l-in" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="l-err" id="loginErr"></div>
+    <button class="l-btn" id="loginBtn" onclick="doLogin()">Ingresar</button>
+    <div style="text-align:center;font-size:12px;color:#4b5563;margin-top:16px">Contactá al admin si no tenés acceso</div>
+  </div>
+</div>
+
+<!-- ══ LOADING ══ -->
+<div class="load-wrap" id="loadWrap">
+  <div class="load-msg" id="loadMsg">Cargando datos...</div>
+  <div class="load-track"><div class="load-fill" id="loadFill" style="width:0%"></div></div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app" style="display:none">
+
+<header class="app-hdr">
+  <div class="brand"><div class="brand-name">Gestión Recital</div><div class="brand-sub">Panel de administración</div></div>
+  <nav class="main-nav">
+    <button class="mnav-btn active" data-s="nomina" onclick="goSec('nomina')">Nómina</button>
+    <button class="mnav-btn" data-s="convs" onclick="goSec('convs')">Convocatorias</button>
+    <button class="mnav-btn" data-s="candidatos" onclick="goSec('candidatos')">Candidatos <span id="candNavBadge" style="background:#1d4ed8;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
+    <button class="mnav-btn" data-s="solicitudes" onclick="goSec('solicitudes')">Solicitudes <span id="solNavBadge" style="background:#dc2626;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
+    <button class="mnav-btn" data-s="supervisores" id="navSupervisores" onclick="goSec('supervisores')" style="display:none">Supervisores</button>
+  </nav>
+  <div class="hdr-actions">
+    <span id="saveStatus" style="font-size:11px;padding:3px 8px;border-radius:4px;display:none;margin-right:4px"></span>
+    <span id="userEmail" style="font-size:12px;color:#6b7280;margin-right:4px"></span>
+    <button class="btn btn-sec btn-sm" onclick="loadAll()" title="Recargar datos desde Supabase">↺</button>
+    <button class="btn btn-sec btn-sm" onclick="openNotifs()" style="position:relative;padding:7px 10px" title="Notificaciones">
+      🔔 <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:999px;font-size:9px;padding:1px 5px;font-weight:700;line-height:1.4"></span>
+    </button>
+    <button class="btn btn-sec btn-sm" onclick="doLogout()">Salir</button>
+  </div>
+</header>
+
+<!-- NÓMINA -->
+<div id="sec-nomina" class="sec active">
+  <div class="stats-bar">
+    <div class="stat s-total"><div class="stat-num" id="sTotal">0</div><div class="stat-label">Total</div></div>
+    <div class="stat s-conf"><div class="stat-num" id="sConf">0</div><div class="stat-label">Confirmados</div></div>
+    <div class="stat s-cont"><div class="stat-num" id="sCont">0</div><div class="stat-label">Contactados</div></div>
+    <div class="stat s-pend"><div class="stat-num" id="sPend">0</div><div class="stat-label">Pendientes</div></div>
+    <div class="stat s-no"><div class="stat-num" id="sNo">0</div><div class="stat-label">No asiste</div></div>
+  </div>
+  <div class="atabs">
+    <div class="atab active" data-area="all" onclick="setNomTab('all')">Todos <span class="tc" id="tcAll">0</span></div>
+    <div class="atab" data-area="movistar_arena" onclick="setNomTab('movistar_arena')">Movistar Arena <span class="tc" id="tcMv">0</span></div>
+    <div class="atab" data-area="externos" onclick="setNomTab('externos')">Externos <span class="tc" id="tcEx">0</span></div>
+  </div>
+  <div class="ctrlbar">
+    <input type="text" class="srch" id="nomSrch" placeholder="Buscar por nombre..." oninput="nomSearch()">
+    <select class="filt" id="nomStFilter" onchange="nomFilter()">
+      <option value="">Todos los estados</option>
+      <option value="pendiente">Pendiente</option><option value="contactado">Contactado</option>
+      <option value="confirmado">Confirmado</option><option value="no_asiste">No asiste</option>
+    </select>
+    <select class="filt" id="nomOutFilter" onchange="nomFilter()" title="Filtrar por OUT">
+      <option value="">Todos</option>
+      <option value="out">Solo OUTS</option>
+      <option value="no_out">Sin OUTS</option>
+    </select>
+    <select class="filt" id="nomSemFilter" onchange="nomFilter()" title="Filtrar por semáforo">
+      <option value="">Todos los semáforos</option>
+      <option value="1">🟢 1 — OK</option>
+      <option value="2">🟡 2 — Revisar</option>
+      <option value="3">🔴 3 — No llamar</option>
+    </select>
+    <select class="filt" id="nomRotFilter" onchange="nomFilter()" title="Filtrar por rotación">
+      <option value="">Toda la nómina</option>
+      <option value="rot">⚠ En rotación</option>
+      <option value="libre">✓ Disponibles</option>
+    </select>
+    <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT">🔍 Deduplicar</button>
+    <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación">⚙ Rotación</button>
+    <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
+    <button class="btn btn-sec" onclick="exportNom()">↓ Exportar</button>
+    <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter()">📄 Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
+    <button class="btn btn-primary" onclick="openCvForm()">📄 Subir CV</button>
+    <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
+  </div>
+  <div class="bulk-bar" id="nomBulk">
+    <span id="nomBulkCnt">0 seleccionados</span><span style="color:#c4b5fd">|</span>
+    Cambiar estado:
+    <select class="filt" id="bulkSt" style="font-size:12px;padding:4px 8px">
+      <option value="">— elegir —</option><option value="pendiente">Pendiente</option>
+      <option value="contactado">Contactado</option><option value="confirmado">Confirmado</option><option value="no_asiste">No asiste</option>
+    </select>
+    <button class="btn btn-sm btn-primary" onclick="applyBulkSt()">Aplicar</button>
+    <button class="btn btn-sm btn-danger" onclick="delBulk()">Eliminar</button>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr>
+      <th style="width:36px"><input type="checkbox" id="selAll" class="cb" onchange="toggleAll()"></th>
+      <th>Nombre</th><th>Área</th><th>Estado</th><th>CUIL/CUIT</th><th>Email</th><th>Teléfono</th><th>Notas</th><th style="width:96px">Acc.</th>
+    </tr></thead>
+    <tbody id="nomTbody"></tbody>
+  </table></div>
+  <div class="pagbar" id="nomPag" style="display:none">
+    <span class="pagi" id="nomPagI"></span><div class="pagbtns" id="nomPagB"></div>
+  </div>
+</div>
+
+<!-- CONVOCATORIAS -->
+<div id="sec-convs" class="sec">
+  <div id="cv-list">
+    <div class="ctrlbar">
+      <input type="text" class="srch" id="cvSrch" placeholder="Buscar convocatoria..." oninput="renderCvList()">
+      <select class="filt" id="cvAreaF" onchange="renderCvList()">
+        <option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option>
+        <option value="externos">Externos</option><option value="ambas">Ambas</option>
+      </select>
+      <button class="btn btn-primary" onclick="openAddConv()">+ Nueva convocatoria</button>
+    </div>
+    <div id="cvCards"></div>
+  </div>
+  <div id="cv-detail" style="display:none">
+    <div class="det-hdr">
+      <button class="back-btn" onclick="closeDetail()">← Volver</button>
+      <div><div class="det-title" id="detTitle"></div><div class="det-meta" id="detMeta"></div><div class="det-stats" id="detStats"></div></div>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0">
+        <button class="btn btn-sm" id="btnPublicada" onclick="togglePublicada(currentConvId)">○ Publicar</button>
+        <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()">📋 Asistencia</button>
+        <button class="btn btn-success btn-sm" onclick="exportPostuladosExcel()">↓ Excel</button>
+        <button class="btn btn-sec btn-sm" onclick="openReporte()">📊 Reporte</button>
+        <button class="btn btn-sec btn-sm" onclick="editCurrentConv()">✎ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCurrentConv()">Eliminar</button>
+      </div>
+    </div>
+    <div class="puestos-sec">
+      <div class="puestos-sec-title"><span>Puestos y cupos</span><button class="btn btn-primary btn-sm" onclick="openAddPuesto()">+ Agregar puesto</button></div>
+      <div id="puestosContainer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CANDIDATOS -->
+<div id="sec-candidatos" class="sec">
+  <div class="stats-bar">
+    <div class="stat s-total"><div class="stat-num" id="candTotal">0</div><div class="stat-label">Recibidos</div></div>
+    <div class="stat s-pend"><div class="stat-num" id="candPend">0</div><div class="stat-label">Sin revisar</div></div>
+    <div class="stat s-cont"><div class="stat-num" id="candRev">0</div><div class="stat-label">En revisión</div></div>
+    <div class="stat s-conf"><div class="stat-num" id="candAprov">0</div><div class="stat-label">Aprobados</div></div>
+    <div class="stat s-no"><div class="stat-num" id="candRech">0</div><div class="stat-label">Rechazados</div></div>
+  </div>
+  <div class="ctrlbar">
+    <input type="text" class="srch" id="candSrch" placeholder="Buscar por nombre o puesto..." oninput="renderCandidatos()">
+    <select class="filt" id="candAreaF" onchange="renderCandidatos()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
+    <select class="filt" id="candStF" onchange="renderCandidatos()"><option value="">Todos los estados</option><option value="pendiente">Sin revisar</option><option value="contactado">En revisión</option><option value="confirmado">Aprobado</option><option value="no_asiste">Rechazado</option></select>
+    <select class="filt" id="candSortF" onchange="renderCandidatos()"><option value="fecha_desc">Más recientes</option><option value="fecha_asc">Más antiguos</option><option value="nombre">Nombre A–Z</option></select>
+    <button class="btn btn-sec btn-sm" id="candViewToggle" onclick="toggleCandView()">☰ Lista</button>
+  </div>
+  <div class="bulk-bar" id="candBulk">
+    <span id="candBulkCnt">0 seleccionados</span><span style="color:#c4b5fd">|</span>
+    <button class="btn btn-sm btn-success" onclick="bulkCandSt('confirmado')">✓ Aprobar</button>
+    <button class="btn btn-sm btn-sec" onclick="bulkCandSt('contactado')">👁 En revisión</button>
+    <button class="btn btn-sm btn-danger" onclick="bulkCandSt('no_asiste')">✕ Rechazar</button>
+    <button class="btn btn-sm btn-danger" onclick="bulkCandDel()">🗑 Eliminar</button>
+  </div>
+  <div id="candContent"></div>
+</div>
+
+<!-- SOLICITUDES PÚBLICAS -->
+<div id="sec-solicitudes" class="sec">
+  <div class="stats-bar">
+    <div class="stat s-pend"><div class="stat-num" id="solPend">0</div><div class="stat-label">Pendientes</div></div>
+    <div class="stat s-conf"><div class="stat-num" id="solAprov">0</div><div class="stat-label">Aprobadas</div></div>
+    <div class="stat s-no"><div class="stat-num" id="solRech">0</div><div class="stat-label">Rechazadas</div></div>
+    <div class="stat s-total"><div class="stat-num" id="solTotal">0</div><div class="stat-label">Total</div></div>
+  </div>
+  <div class="ctrlbar">
+    <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, email o puesto..." oninput="renderSolicitudes()">
+    <select class="filt" id="solAreaF" onchange="renderSolicitudes()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
+    <select class="filt" id="solStF" onchange="renderSolicitudes()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
+  </div>
+  <div class="bulk-bar" id="solBulk">
+    <span id="solBulkCnt">0 seleccionadas</span><span style="color:#c4b5fd">|</span>
+    <button class="btn btn-sm btn-success" onclick="bulkSolSt('aprobado')">✓ Aprobar y pasar a nómina</button>
+    <button class="btn btn-sm btn-danger" onclick="bulkSolSt('rechazado')">✕ Rechazar</button>
+  </div>
+  <div id="solContent"></div>
+</div>
+
+<!-- SUPERVISORES -->
+<div id="sec-supervisores" class="sec">
+  <div class="ctrlbar">
+    <span style="font-size:13px;color:#6b7280;flex:1">Usuarios con acceso de supervisor y sus convocatorias asignadas</span>
+    <button class="btn btn-primary" onclick="openAddSup()">+ Agregar supervisor</button>
+  </div>
+  <div style="padding:20px 24px" id="supList"><div class="empty">Cargando...</div></div>
+</div>
+
+<!-- VISTA SUPERVISOR (cuando el usuario logueado es supervisor) -->
+<div id="sec-supview" class="sec">
+  <div class="sec-sup">
+    <div class="sec-sup-title" id="supViewNombre">Mis convocatorias</div>
+    <div class="sec-sup-sub">Podés ver los integrantes asignados y dejar feedback de cada uno</div>
+    <div id="supViewContent"></div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- MODALES -->
+<div class="modal-bg" id="mPerson" style="display:none" onclick="bgClose('mPerson',event)">
+  <div class="modal">
+    <div class="modal-title"><span id="mPersonTitle">Agregar persona</span><button class="mclose" onclick="closeM('mPerson')">✕</button></div>
+    <div class="fg"><label>Nombre completo *</label><input type="text" class="fi" id="pNombre" placeholder="Ej: Juan Pérez"></div>
+    <div class="frow">
+      <div class="fg"><label>Área *</label><select class="fi" id="pArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+      <div class="fg"><label>Estado</label><select class="fi" id="pEstado"><option value="pendiente">Pendiente</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option><option value="no_asiste">No asiste</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Email</label><input type="email" class="fi" id="pEmail" placeholder="correo@ejemplo.com"></div>
+      <div class="fg"><label>Teléfono</label><input type="text" class="fi" id="pTel" placeholder="+54 11..."></div>
+    </div>
+    <div class="fg"><label>CUIT / CUIL</label><input type="text" class="fi" id="pCuit" placeholder="20-12345678-9"></div>
+    <div class="fg"><label>Notas</label><input type="text" class="fi" id="pNotas" placeholder="Info adicional..."></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mPerson')">Cancelar</button><button class="btn btn-primary" onclick="savePerson()">Guardar</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="mImport" style="display:none" onclick="bgClose('mImport',event)">
+  <div class="modal">
+    <div class="modal-title"><span>Importar desde CSV</span><button class="mclose" onclick="closeM('mImport')">✕</button></div>
+    <div class="fg"><label>Área por defecto</label><select class="fi" id="iArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+    <div class="fg">
+      <label>Pegá el CSV aquí</label>
+      <textarea class="csv-ta" id="csvTxt" placeholder="nombre,email,telefono,notas&#10;Juan Pérez,juan@mail.com,,VIP&#10;&#10;O solo nombres:&#10;Carlos López&#10;Ana Martínez" oninput="prevCsv()"></textarea>
+      <div class="imp-prev" id="csvPrev"></div>
+      <div class="csv-help">Columnas: <strong>nombre</strong> (obligatorio), email, telefono, notas, estado, area.</div>
+    </div>
+    <div class="fg"><label>O cargá un archivo .csv</label><input type="file" id="csvFile" accept=".csv,.txt" style="font-size:12px" onchange="loadCsvFile()"></div>
+    <div style="font-size:11px;color:#9ca3af;background:#f9fafb;border-radius:6px;padding:8px 12px">Personas con nombre idéntico serán omitidas (no se duplican).</div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mImport')">Cancelar</button><button class="btn btn-primary" onclick="doImport()">Importar</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="mCvForm" style="display:none" onclick="bgClose('mCvForm',event)">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title"><span>Registro de CV — Nuevo integrante</span><button class="mclose" onclick="closeM('mCvForm')">✕</button></div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">Completá los datos. La persona quedará en la nómina con estado <strong>Pendiente</strong>.</div>
+    <div class="frow">
+      <div class="fg"><label>Nombre completo *</label><input type="text" class="fi" id="cvNombre" placeholder="Laura García"></div>
+      <div class="fg"><label>Área *</label><select class="fi" id="cvArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Email</label><input type="email" class="fi" id="cvEmail" placeholder="correo@ejemplo.com"></div>
+      <div class="fg"><label>Teléfono</label><input type="text" class="fi" id="cvTel" placeholder="+54 11..."></div>
+    </div>
+    <div class="fg"><label>Puesto de interés</label><input type="text" class="fi" id="cvPuesto" placeholder="Ej: Personal de piso, Producción..."></div>
+    <div class="cv-section-divider"></div>
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:10px">Perfil profesional</div>
+    <div class="fg"><label>Experiencia laboral</label><textarea class="fi" style="height:80px" id="cvExp" placeholder="Experiencia previa en eventos, producción, seguridad..."></textarea></div>
+    <div class="frow">
+      <div class="fg"><label>Formación</label><textarea class="fi" style="height:64px" id="cvForm" placeholder="Estudios, cursos..."></textarea></div>
+      <div class="fg"><label>Habilidades</label><textarea class="fi" style="height:64px" id="cvSkills" placeholder="Idiomas, herramientas..."></textarea></div>
+    </div>
+    <div class="fg"><label>Disponibilidad</label><input type="text" class="fi" id="cvDisp" placeholder="Full time, fines de semana, turno noche..."></div>
+    <div class="cv-section-divider"></div>
+    <div class="fg">
+      <label>Adjuntar CV (PDF, Word, imagen — máx. 1 MB)</label>
+      <input type="file" id="cvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="font-size:12px;margin-top:4px" onchange="handleCvFile()">
+      <div id="cvFileStatus" style="font-size:12px;color:#9ca3af;margin-top:5px"></div>
+    </div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mCvForm')">Cancelar</button><button class="btn btn-primary" onclick="saveCvEntry()">Registrar en nómina</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="mCvView" style="display:none" onclick="bgClose('mCvView',event)">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-title"><span id="cvViewTitle">CV</span><button class="mclose" onclick="closeM('mCvView')">✕</button></div>
+    <div id="cvViewBody"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mCvView')">Cerrar</button><button class="btn btn-primary" id="cvDownloadBtn" style="display:none" onclick="downloadCvFile()">↓ Descargar archivo</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="mConv" style="display:none" onclick="bgClose('mConv',event)">
+  <div class="modal">
+    <div class="modal-title"><span id="mConvTitle">Nueva convocatoria</span><button class="mclose" onclick="closeM('mConv')">✕</button></div>
+    <div class="fg"><label>Nombre del recital / evento *</label><input type="text" class="fi" id="cNombre" placeholder="Ej: Recital Soda Stereo — Oct 2024"></div>
+    <div class="frow">
+      <div class="fg" style="flex:2">
+        <label>Fechas</label>
+        <div id="fechasList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="date" class="fi" id="cFechaInput" style="flex:1">
+          <button type="button" class="btn btn-sec btn-sm" onclick="addFecha()" style="white-space:nowrap;flex-shrink:0">+ Agregar</button>
+        </div>
+      </div>
+      <div class="fg"><label>Área</label><select class="fi" id="cArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="ambas">Ambas áreas</option></select></div>
+    </div>
+    <div class="fg"><label>Descripción</label><textarea class="fi" id="cDesc" placeholder="Detalles..."></textarea></div>
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:8px 0 12px">Datos para email de confirmación</div>
+    <div class="frow">
+      <div class="fg"><label>Horario</label><input type="text" class="fi" id="cHorario" placeholder="Ej: 13:00 a 22:00 hs"></div>
+      <div class="fg"><label>Venue</label><input type="text" class="fi" id="cVenue" placeholder="Ej: Movistar Arena - Humboldt 450"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Remuneración</label><input type="text" class="fi" id="cRemuneracion" placeholder="Ej: $47.682 por jornada"></div>
+      <div class="fg"><label>Fecha límite confirmación</label><input type="text" class="fi" id="cFechaLimite" placeholder="Ej: 26 de Julio 11hs"></div>
+    </div>
+    <div class="fg"><label>Link de WhatsApp</label><input type="text" class="fi" id="cWhatsapp" placeholder="https://chat.whatsapp.com/..."></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mConv')">Cancelar</button><button class="btn btn-primary" onclick="saveConv()">Guardar</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="mPuesto" style="display:none" onclick="bgClose('mPuesto',event)">
+  <div class="modal">
+    <div class="modal-title"><span id="mPuestoTitle">Agregar puesto</span><button class="mclose" onclick="closeM('mPuesto')">✕</button></div>
+    <div class="fg"><label>Nombre del puesto *</label><input type="text" class="fi" id="puNombre" placeholder="Personal de piso, Seguridad, Producción..."></div>
+    <div class="frow">
+      <div class="fg"><label>Cupos *</label><input type="number" class="fi" id="puCupos" min="1" placeholder="0"></div>
+      <div class="fg"><label>Área</label><select class="fi" id="puArea"><option value="">Sin especificar</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+    </div>
+    <div class="fg"><label>Descripción</label><textarea class="fi" id="puDesc" placeholder="Requisitos, horarios..."></textarea></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mPuesto')">Cancelar</button><button class="btn btn-primary" onclick="savePuesto()">Guardar</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="mGestionar" style="display:none" onclick="bgClose('mGestionar',event)">
+  <div class="modal modal-xl">
+    <div class="modal-title">
+      <span id="mGestTitle">Postulaciones</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn btn-sec btn-sm" onclick="openMasiva()">⊕ Asignación masiva</button>
+        <button class="mclose" onclick="closeM('mGestionar')">✕</button>
+      </div>
+    </div>
+    <div class="cupo-bar">
+      <span style="font-size:12px;color:#6b7280">Cupos: <strong id="gCupoUsados">0</strong> de <strong id="gCupoTotal">0</strong></span>
+      <div class="prog-wrap" style="max-width:180px;margin:0 12px"><div class="prog-fill" id="gProgFill" style="background:#534AB7;width:0%"></div></div>
+      <span style="font-size:12px;font-weight:600" id="gProgPct">0%</span>
+    </div>
+    <div class="divider" style="margin:0"></div>
+    <div style="padding:12px 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" class="srch" id="gSrch" placeholder="Buscar..." oninput="renderGestList()" style="flex:1;min-width:140px">
+      <select class="filt" id="gStFilter" onchange="renderGestList()" style="font-size:12px;padding:5px 8px">
+        <option value="">Todos</option><option value="pendiente">Pendiente</option><option value="en_revision">En revisión</option>
+        <option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="openPickerModal()">+ Agregar desde nómina</button>
+    </div>
+    <div class="post-table-wrap"><table>
+      <thead><tr>
+        <th><input type="checkbox" class="cb" id="gSelAll" onchange="toggleGestAll()"></th>
+        <th>Nombre</th><th>Estado</th><th>Origen</th><th>Notas</th><th style="width:70px">Acc.</th>
+      </tr></thead>
+      <tbody id="gTbody"></tbody>
+    </table></div>
+    <div style="padding:10px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap" id="gBulkBar" style="display:none">
+      <span id="gBulkCnt" style="font-size:13px;color:#5b21b6"></span>
+      <select class="filt" id="gBulkSt" style="font-size:12px;padding:4px 8px">
+        <option value="">Cambiar estado...</option><option value="pendiente">Pendiente</option>
+        <option value="en_revision">En revisión</option><option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option>
+      </select>
+      <button class="btn btn-sm btn-primary" onclick="applyGestBulk()">Aplicar</button>
+      <button class="btn btn-sm btn-danger" onclick="delGestBulk()">Quitar seleccionados</button>
+    </div>
+    <div class="ma" style="border-top:1px solid #f3f4f6;padding-top:14px;margin-top:8px"><button class="btn btn-sec" onclick="closeM('mGestionar')">Cerrar</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="mPicker" style="display:none" onclick="bgClose('mPicker',event)">
+  <div class="modal">
+    <div class="modal-title"><span>Agregar desde nómina</span><button class="mclose" onclick="closeM('mPicker')">✕</button></div>
+    <input type="text" class="picker-srch" id="pickerSrch" placeholder="Buscar por nombre..." oninput="renderPicker()">
+    <div style="margin-bottom:8px">
+      <select class="filt" id="pickerAreaF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
+      <select class="filt" id="pickerStF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px;margin-left:6px"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option></select>
+    </div>
+    <div class="picker-list" id="pickerList"></div>
+    <div style="font-size:12px;color:#9ca3af;margin-top:8px" id="pickerSelCount">0 seleccionados</div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mPicker')">Cancelar</button><button class="btn btn-primary" onclick="confirmPicker()">Agregar seleccionados</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="mMasiva" style="display:none" onclick="bgClose('mMasiva',event)">
+  <div class="modal">
+    <div class="modal-title"><span>Asignación masiva desde nómina</span><button class="mclose" onclick="closeM('mMasiva')">✕</button></div>
+    <div style="background:#f0eeff;border-radius:8px;padding:12px;font-size:13px;color:#5b21b6;margin-bottom:14px">Filtrá la nómina y asignás todos los resultados al puesto, hasta el límite de cupos disponibles.</div>
+    <div class="frow">
+      <div class="fg"><label>Filtrar por área</label><select class="fi" id="masAreaF"><option value="">Todas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+      <div class="fg"><label>Filtrar por estado</label><select class="fi" id="masStF"><option value="">Todos</option><option value="pendiente">Pendiente</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option></select></div>
+    </div>
+    <div class="fg"><label>Buscar nombre</label><input type="text" class="fi" id="masNomF" placeholder="Filtrar por nombre..."></div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:8px">Cupos libres: <strong id="masLibres">0</strong></div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px 14px;font-size:13px;margin-bottom:14px">
+      <div style="color:#9ca3af;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Resultado del filtro</div>
+      <span id="masResumen" style="font-weight:500;color:#111827">0 personas coinciden</span><br>
+      <span id="masAviso" style="font-size:12px;color:#854F0B"></span>
+    </div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mMasiva')">Cancelar</button><button class="btn btn-primary" onclick="doMasiva()">Asignar al puesto</button></div>
+  </div>
+</div>
+
+<!-- Modal: Notificaciones -->
+<div class="modal-bg" id="mNotifs" style="display:none" onclick="bgClose('mNotifs',event)">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title">
+      <span>🔔 Notificaciones</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sec btn-xs" onclick="discardAllNotifs()">Descartar todas</button>
+        <button class="mclose" onclick="closeM('mNotifs')">✕</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn btn-xs" id="nfiltAll" style="background:#534AB7;color:#fff;border:none" onclick="setNotifFilter('')">Todas</button>
+      <button class="btn btn-sec btn-xs" id="nfiltPend" onclick="setNotifFilter('pendiente')">Pendientes</button>
+      <button class="btn btn-sec btn-xs" id="nfiltApro" onclick="setNotifFilter('aprobacion')">Aprobaciones</button>
+      <button class="btn btn-sec btn-xs" id="nfiltCupo" onclick="setNotifFilter('cupo_lleno')">Cupos llenos</button>
+    </div>
+    <div id="notifsBody" style="max-height:460px;overflow-y:auto"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mNotifs')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Modal: Ver solicitud pública -->
+<div class="modal-bg" id="mSolView" style="display:none" onclick="bgClose('mSolView',event)">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-title"><span id="mSolTitle">Solicitud</span><button class="mclose" onclick="closeM('mSolView')">✕</button></div>
+    <div id="mSolBody"></div>
+    <div class="ma">
+      <button class="btn btn-danger btn-sm" onclick="solAction('rechazado')">✕ Rechazar</button>
+      <button class="btn btn-sec" onclick="closeM('mSolView')">Cerrar</button>
+      <button class="btn btn-success" onclick="solAction('aprobado')">✓ Aprobar — pasar a nómina</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Reporte de convocatoria -->
+<div class="modal-bg" id="mReporte" style="display:none" onclick="bgClose('mReporte',event)">
+  <div class="modal" style="max-width:800px">
+    <div class="modal-title"><span id="mRepTitle">Reporte</span><button class="mclose" onclick="closeM('mReporte')">✕</button></div>
+    <div id="mRepBody" style="max-height:70vh;overflow-y:auto"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mReporte')">Cerrar</button>
+      <button class="btn btn-primary" onclick="exportReporte()">↓ Exportar CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Historial de recitales -->
+<div class="modal-bg" id="mHistorial" style="display:none" onclick="bgClose('mHistorial',event)">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title"><span id="mHistTitle">Historial</span><button class="mclose" onclick="closeM('mHistorial')">✕</button></div>
+    <div id="mHistStats" style="display:flex;gap:20px;background:#f9fafb;border-radius:8px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap"></div>
+    <div id="mHistBody" style="max-height:420px;overflow-y:auto"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mHistorial')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Modal: Deduplicar por CUIT -->
+<div class="modal-bg" id="mDedup" style="display:none" onclick="bgClose('mDedup',event)">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title"><span>Deduplicar por CUIT</span><button class="mclose" onclick="closeM('mDedup')">✕</button></div>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">Al fusionar, todas las postulaciones y feedbacks del duplicado pasan al registro principal. El duplicado se elimina.</div>
+    <div id="mDedupBody" style="max-height:460px;overflow-y:auto"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mDedup')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Modal: Config rotación -->
+<div class="modal-bg" id="mRotConfig" style="display:none" onclick="bgClose('mRotConfig',event)">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title"><span>Configuración de rotación</span><button class="mclose" onclick="closeM('mRotConfig')">✕</button></div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:16px">El sistema advierte o bloquea cuando una persona supera el límite de eventos en el período configurado.</div>
+    <div class="rot-config-row">
+      <span class="rot-config-label">Máximo de eventos por período</span>
+      <input type="number" class="rot-num" id="rotMaxEv" min="1" max="20" value="3">
+    </div>
+    <div class="rot-config-row">
+      <span class="rot-config-label">Período en días</span>
+      <input type="number" class="rot-num" id="rotDias" min="7" max="365" value="30">
+    </div>
+    <div class="fg">
+      <label>Modo</label>
+      <select class="fi" id="rotModo">
+        <option value="advertencia">Advertencia — avisa pero permite asignar</option>
+        <option value="bloqueo">Bloqueo — impide asignar si excede el límite</option>
+      </select>
+    </div>
+    <div style="background:#f9fafb;border-radius:6px;padding:10px 14px;font-size:12px;color:#6b7280;margin-bottom:4px">
+      Con la configuración actual: una persona no puede estar en más de <strong id="rotPreview1">3</strong> eventos en <strong id="rotPreview2">30</strong> días.
+    </div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mRotConfig')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRotConfig()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Gestionar OUT -->
+<div class="modal-bg" id="mOut" style="display:none" onclick="bgClose('mOut',event)">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title"><span id="mOutTitle">Marcar como OUT</span><button class="mclose" onclick="closeM('mOut')">✕</button></div>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">Las personas marcadas como OUT aparecen resaltadas y no pueden ser asignadas a convocatorias.</div>
+    <div class="fg"><label>Categoría *</label>
+      <select class="fi" id="outCat">
+        <option value="comportamiento">Comportamiento</option>
+        <option value="situacion">Situación personal</option>
+        <option value="legal">Caso legal</option>
+      </select>
+    </div>
+    <div class="fg"><label>Nota interna</label><textarea class="fi" style="height:80px" id="outNota" placeholder="Detalle del motivo (solo visible para admins)..."></textarea></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mOut')">Cancelar</button>
+      <button class="btn btn-danger" onclick="saveOut()">Confirmar OUT</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Dar feedback -->
+<div class="modal-bg" id="mFeedback" style="display:none" onclick="bgClose('mFeedback',event)">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title"><span id="mFbTitle">Dar feedback</span><button class="mclose" onclick="closeM('mFeedback')">✕</button></div>
+    <div class="fg"><label>Semáforo *</label>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <label style="flex:1;cursor:pointer"><input type="radio" name="fbPuntaje" value="1" style="margin-right:6px"><span class="sem sem-1" style="cursor:default">1</span> Verde — Sin problemas</label>
+        <label style="flex:1;cursor:pointer"><input type="radio" name="fbPuntaje" value="2" style="margin-right:6px"><span class="sem sem-2" style="cursor:default">2</span> Amarillo — Revisar</label>
+        <label style="flex:1;cursor:pointer"><input type="radio" name="fbPuntaje" value="3" style="margin-right:6px"><span class="sem sem-3" style="cursor:default">3</span> Rojo — No llamar</label>
+      </div>
+    </div>
+    <div class="fg"><label>Comentario</label><textarea class="fi" style="height:90px" id="fbComentario" placeholder="Describí el comportamiento, situación o motivo..."></textarea></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mFeedback')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveFeedback()">Guardar feedback</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Historial de feedbacks -->
+<div class="modal-bg" id="mFbHistory" style="display:none" onclick="bgClose('mFbHistory',event)">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title"><span id="mFbHistTitle">Historial de feedbacks</span><button class="mclose" onclick="closeM('mFbHistory')">✕</button></div>
+    <div id="fbHistBody" style="max-height:400px;overflow-y:auto"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mFbHistory')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Modal: Agregar supervisor -->
+<div class="modal-bg" id="mAddSup" style="display:none" onclick="bgClose('mAddSup',event)">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title"><span>Agregar supervisor</span><button class="mclose" onclick="closeM('mAddSup')">✕</button></div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">El supervisor debe existir como usuario en Supabase Auth. Podés crearlo en Dashboard → Authentication → Users.</div>
+    <div class="fg"><label>Email del supervisor *</label><input type="email" class="fi" id="supEmail" placeholder="supervisor@empresa.com"></div>
+    <div class="fg"><label>Nombre para mostrar *</label><input type="text" class="fi" id="supNombre" placeholder="Ej: Carlos Díaz"></div>
+    <div class="fg"><label>Asignar convocatoria</label>
+      <select class="fi" id="supConvAsign">
+        <option value="">— sin asignar todavía —</option>
+      </select>
+    </div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mAddSup')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSupProfile()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Importar asistencia -->
+<div class="modal-bg" id="mAsistencia" style="display:none" onclick="bgClose('mAsistencia',event)">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title"><span>📋 Importar asistencia</span><button class="mclose" onclick="closeM('mAsistencia')">✕</button></div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">
+      Subí una planilla con los CUIL y una columna de asistencia marcada con <strong>P</strong> para los que fueron. Los que no aparezcan o no tengan P quedan como ausentes.
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px 14px;font-size:12px;color:#374151;margin-bottom:14px">
+      <div style="font-weight:600;margin-bottom:4px">Formato del CSV:</div>
+      <code style="font-size:11px;color:#534AB7">cuil,asistencia<br>27445130368,P<br>20123456789,P<br>30987654321,</code>
+    </div>
+    <div class="fg">
+      <label>Pegá el contenido o cargá el archivo</label>
+      <textarea class="csv-ta" id="asistenciaCsv" placeholder="cuil,asistencia&#10;27445130368,P&#10;20123456789,P" oninput="prevAsistencia()"></textarea>
+      <div id="asistenciaPrev" style="font-size:12px;color:#534AB7;margin-top:5px;font-weight:500"></div>
+    </div>
+    <div class="fg"><input type="file" id="asistenciaFile" accept=".csv,.txt" style="font-size:12px" onchange="loadAsistenciaFile()"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mAsistencia')">Cancelar</button>
+      <button class="btn btn-primary" onclick="doImportAsistencia()">Importar asistencia</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Enviar confirmación por mail -->
+<div class="modal-bg" id="mMailConf" style="display:none" onclick="bgClose('mMailConf',event)">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-title"><span>✉ Enviar confirmación</span><button class="mclose" onclick="closeM('mMailConf')">✕</button></div>
+    <div id="mMailStep1">
+      <div style="font-size:13px;color:#374151;margin-bottom:16px">¿Desde qué correo querés enviar la confirmación?</div>
+      <div style="display:flex;gap:12px;margin-bottom:8px">
+        <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepMailTemplate('movistar')">
+          <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Movistar Arena</div>
+          <div style="font-size:11px;color:#9ca3af">orientadores.arena@show-bs.com</div>
+        </button>
+        <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepMailTemplate('externos')">
+          <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Externos</div>
+          <div style="font-size:11px;color:#9ca3af">convocatorias@show-bs.com</div>
+        </button>
+      </div>
+      <button class="btn btn-sec" style="width:100%;margin-top:8px" onclick="closeM('mMailConf')">Cancelar</button>
+    </div>
+    <div id="mMailStep2" style="display:none">
+      <div class="fg"><label>Para</label><input type="email" class="fi" id="mailTo" readonly style="background:#f9fafb"></div>
+      <div class="fg"><label>Asunto</label><input type="text" class="fi" id="mailSubject"></div>
+      <div class="fg"><label>Mensaje</label><textarea class="fi" id="mailBody" style="height:260px;font-size:12px;font-family:monospace"></textarea></div>
+      <div class="ma">
+        <button class="btn btn-sec" onclick="document.getElementById('mMailStep2').style.display='none';document.getElementById('mMailStep1').style.display='block'">← Atrás</button>
+        <button class="btn btn-primary" id="btnSendMail" onclick="sendConfirmationMail()">Enviar mail →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+// ════════════════════════════════════════════════
+//  CONFIGURACIÓN — completar con tus credenciales
+//  Dashboard > Settings > API
+// ════════════════════════════════════════════════
+const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+// ════════════════════════════════════════════════
+
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+// ── Estado global ──
+const PS = 50;
+let people = [], convs = [], posts = [], feedbacks = [], userProfiles = [], supConvLinks = [], solicitudes = [], notificaciones = [];
+let nomPage = 1, nomAreaTab = 'all', nomFiltered = [];
+let editPersonId = null, editConvId = null, editPuestoId = null;
+let currentConvId = null, currentPuestoId = null;
+let pickerSel = new Set(), candSelIds = new Set();
+let cvFilterOn = false, candViewMode = 'cards';
+let cvFileData = null;
+let currentUserRole = 'admin', currentUserId = null, currentUserName = '';
+let outTargetId = null, fbTargetId = null, fbTargetConvId = null;
+let rotacionConfig = { max_eventos: 3, dias_periodo: 30, modo: 'advertencia' };
+
+// ── AUTH ──
+async function initAuth() {
+  if (SB_URL.includes('TU-PROYECTO')) {
+    document.getElementById('loginErr').textContent = 'Completá SB_URL y SB_KEY en el código antes de usar la app.';
+    document.getElementById('loginErr').style.display = 'block';
+    return;
+  }
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) showApp(session.user);
+  else showLogin();
+}
+
+function showLogin() {
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+async function doLogin() {
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginErr');
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Ingresando...';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Ingresar';
+  if (error) { err.textContent = error.message === 'Invalid login credentials' ? 'Email o contraseña incorrectos' : error.message; err.style.display = 'block'; return; }
+  showApp(data.user);
+}
+
+async function showApp(user) {
+  currentUserId = user.id;
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('userEmail').textContent = user?.email || '';
+  await loadAll();
+}
+
+async function loadUserRole() {
+  try {
+    const { data } = await sb.from('user_profiles').select('*').eq('id', currentUserId).single();
+    if (data) { currentUserRole = data.rol; currentUserName = data.nombre || ''; }
+    else currentUserRole = 'admin';
+  } catch (_) { currentUserRole = 'admin'; }
+  const isAdmin = currentUserRole === 'admin';
+  const isAreaAdmin = currentUserRole === 'admin_movistar' || currentUserRole === 'admin_externos';
+  if (isAdmin) {
+    document.getElementById('navSupervisores').style.display = 'inline';
+  } else if (isAreaAdmin) {
+    document.getElementById('navSupervisores').style.display = 'none';
+    const areaLabel = currentUserRole === 'admin_movistar' ? 'Movistar Arena' : 'Externos';
+    document.querySelector('.brand-sub').textContent = `Admin — ${areaLabel}`;
+  } else {
+    ['nomina','convs','candidatos','solicitudes'].forEach(s => { const b = document.querySelector(`[data-s="${s}"]`); if(b) b.style.display='none'; });
+    document.getElementById('navSupervisores').style.display = 'none';
+  }
+  // Filter data by area for area admins
+  if (currentUserRole === 'admin_movistar') {
+    people = people.filter(p => p.area === 'movistar_arena');
+    convs = convs.filter(c => c.area !== 'externos');
+    solicitudes = solicitudes.filter(s => s.area === 'movistar_arena');
+  }
+  if (currentUserRole === 'admin_externos') {
+    people = people.filter(p => p.area === 'externos');
+    convs = convs.filter(c => c.area !== 'movistar_arena');
+    solicitudes = solicitudes.filter(s => s.area === 'externos');
+  }
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+// ── CARGA DE DATOS ──
+function setLoad(on, msg = '', pct = 0) {
+  const w = document.getElementById('loadWrap');
+  w.classList.toggle('on', on);
+  if (on) { document.getElementById('loadMsg').textContent = msg; document.getElementById('loadFill').style.width = pct + '%'; }
+}
+
+async function loadAll() {
+  setLoad(true, 'Cargando nómina...', 15);
+  people = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await sb.from('personas').select('*').range(from, from + 999).order('created_at');
+    if (error || !data?.length) break;
+    people = people.concat(data);
+    if (data.length < 1000) break;
+    from += 1000;
+    setLoad(true, `Cargando nómina... (${people.length})`, Math.min(60, 15 + people.length / 100));
+  }
+  setLoad(true, 'Cargando convocatorias...', 70);
+  const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }] = await Promise.all([
+    sb.from('convocatorias').select('*').order('created_at'),
+    sb.from('puestos').select('*').order('created_at'),
+    sb.from('postulaciones').select('*').order('created_at'),
+    sb.from('feedbacks').select('*').order('created_at'),
+    sb.from('user_profiles').select('*'),
+    sb.from('supervisor_convocatorias').select('*'),
+    sb.from('solicitudes').select('*').order('created_at', { ascending: false }),
+    sb.from('config').select('*'),
+    sb.from('notificaciones').select('*').order('created_at', { ascending: false })
+  ]);
+  convs = (cData || []).map(c => ({
+    ...c,
+    puestos: (pData || []).filter(p => p.conv_id === c.id).map(p => ({ id: p.id, nombre: p.nombre, cupos: p.cupos, area: p.area || '', desc: p.descripcion || '' }))
+  }));
+  posts = (postData || []).map(p => {
+    const persona = (persData || []).find(x => x.id === p.persona_id);
+    return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, cuit: persona?.cuit || p.cuit || null };
+  });
+  feedbacks = fbData || [];
+  userProfiles = upData || [];
+  supConvLinks = scData || [];
+  solicitudes = solData || [];
+  notificaciones = notifData || [];
+  const rotCfg = (cfgData || []).find(c => c.key === 'rotacion');
+  if (rotCfg) rotacionConfig = rotCfg.value;
+  await loadUserRole();
+  setLoad(false);
+  if (currentUserRole === 'supervisor') {
+    renderSupView();
+    document.querySelectorAll('.sec').forEach(d => d.classList.remove('active'));
+    document.getElementById('sec-supview').classList.add('active');
+  } else {
+    nomRefresh();
+    renderCvList();
+    refreshCandBadge();
+    refreshSolBadge();
+    refreshNotifBadge();
+  }
+}
+
+// ── HELPERS SUPABASE ──
+let saveTimer = null;
+function setSaveStatus(state) {
+  const el = document.getElementById('saveStatus'); if (!el) return;
+  clearTimeout(saveTimer);
+  if (state === 'saving') {
+    el.style.display = 'inline'; el.style.background = '#ede9fe'; el.style.color = '#5b21b6'; el.textContent = '⬆ Guardando...';
+  } else if (state === 'ok') {
+    el.style.display = 'inline'; el.style.background = '#d1fae5'; el.style.color = '#065f46'; el.textContent = '✓ Guardado';
+    saveTimer = setTimeout(() => { el.style.display = 'none'; }, 2500);
+  } else if (state === 'error') {
+    el.style.display = 'inline'; el.style.background = '#fee2e2'; el.style.color = '#991b1b'; el.textContent = '⚠ Error al guardar';
+    saveTimer = setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+}
+
+async function sbUpsert(table, data) {
+  setSaveStatus('saving');
+  const { error } = await sb.from(table).upsert(data);
+  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + error.message); console.error(table, error); throw error; }
+  setSaveStatus('ok');
+}
+async function sbInsert(table, data) {
+  setSaveStatus('saving');
+  const { error } = await sb.from(table).insert(data);
+  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + error.message); console.error(table, error); throw error; }
+  setSaveStatus('ok');
+}
+async function sbUpdate(table, id, data) {
+  setSaveStatus('saving');
+  const { error } = await sb.from(table).update(data).eq('id', id);
+  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + error.message); console.error(table, error); throw error; }
+  setSaveStatus('ok');
+}
+async function sbDelete(table, id) {
+  setSaveStatus('saving');
+  const { error } = await sb.from(table).delete().eq('id', id);
+  if (error) { setSaveStatus('error'); toast('Error al eliminar: ' + error.message); console.error(table, error); throw error; }
+  setSaveStatus('ok');
+}
+async function sbUpdateIn(table, ids, data) {
+  if (!ids.length) return;
+  setSaveStatus('saving');
+  const { error } = await sb.from(table).update(data).in('id', ids);
+  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + error.message); console.error(table, error); throw error; }
+  setSaveStatus('ok');
+}
+async function sbDeleteIn(table, ids) {
+  if (!ids.length) return;
+  setSaveStatus('saving');
+  const { error } = await sb.from(table).delete().in('id', ids);
+  if (error) { setSaveStatus('error'); toast('Error al eliminar: ' + error.message); console.error(table, error); throw error; }
+  setSaveStatus('ok');
+}
+
+function uid() { return crypto.randomUUID(); }
+
+// ── NÓMINA ──
+function goSec(s) {
+  document.querySelectorAll('.mnav-btn').forEach(b => b.classList.toggle('active', b.dataset.s === s));
+  document.querySelectorAll('.sec').forEach(d => d.classList.toggle('active', d.id === 'sec-' + s));
+  if (s === 'candidatos') renderCandidatos();
+  if (s === 'supervisores') renderSupList();
+  if (s === 'solicitudes') renderSolicitudes();
+}
+function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('.atab').forEach(t => t.classList.toggle('active', t.dataset.area === a)); nomPage = 1; nomRefresh(); }
+function nomSearch() { nomPage = 1; nomApply(); }
+function nomFilter() { nomPage = 1; nomApply(); }
+function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge(); }
+function nomApply() {
+  const q = document.getElementById('nomSrch').value.toLowerCase().trim();
+  const st = document.getElementById('nomStFilter').value;
+  const outF = document.getElementById('nomOutFilter').value;
+  const semF = document.getElementById('nomSemFilter').value;
+  const rotF = document.getElementById('nomRotFilter').value;
+  nomFiltered = people.filter(p => {
+    if (nomAreaTab !== 'all' && p.area !== nomAreaTab) return false;
+    if (st && p.estado !== st) return false;
+    if (q && !p.nombre.toLowerCase().includes(q)) return false;
+    if (cvFilterOn && !p.cv) return false;
+    if (outF === 'out' && !p.out_flag) return false;
+    if (outF === 'no_out' && p.out_flag) return false;
+    if (semF && String(p.semaforo || 1) !== semF) return false;
+    if (rotF) { const r = checkRotacion(p.id); if (rotF === 'rot' && !r.excede) return false; if (rotF === 'libre' && r.excede) return false; }
+    return true;
+  });
+  const cvCount = people.filter(p => !!p.cv).length;
+  document.getElementById('cvFilterCount').textContent = cvCount;
+  renderNomTable(); renderNomPag();
+}
+function toggleCvFilter() { cvFilterOn = !cvFilterOn; const btn = document.getElementById('cvFilterBtn'); btn.style.background = cvFilterOn ? '#0369a1' : ''; btn.style.color = cvFilterOn ? '#fff' : ''; nomPage = 1; nomApply(); }
+function nomStats() {
+  const src = nomAreaTab === 'all' ? people : people.filter(p => p.area === nomAreaTab);
+  n('sTotal', src.length); n('sConf', src.filter(p => p.estado === 'confirmado').length);
+  n('sCont', src.filter(p => p.estado === 'contactado').length); n('sPend', src.filter(p => p.estado === 'pendiente').length);
+  n('sNo', src.filter(p => p.estado === 'no_asiste').length);
+}
+function nomTabCounts() { n('tcAll', people.length); n('tcMv', people.filter(p => p.area === 'movistar_arena').length); n('tcEx', people.filter(p => p.area === 'externos').length); }
+function n(id, v) { const el = document.getElementById(id); if (el) el.textContent = v.toLocaleString('es-AR'); }
+function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado === 'pendiente').length; const b = document.getElementById('candNavBadge'); if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; } }
+
+function renderNomTable() {
+  const tbody = document.getElementById('nomTbody');
+  const sl = nomFiltered.slice((nomPage - 1) * PS, nomPage * PS);
+  if (!sl.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty">${people.length === 0 ? 'Todavía no hay personas.' : 'Sin resultados para este filtro.'}</div></td></tr>`; return; }
+  tbody.innerHTML = sl.map(p => {
+    const sem = p.semaforo || 1;
+    const rot = checkRotacion(p.id);
+    const rowBg = p.out_flag ? 'background:#fff7f7' : rot.excede ? 'background:#fffbeb' : '';
+    return `<tr style="${rowBg}">
+<td><input type="checkbox" class="cb rcb" data-id="${p.id}" onchange="checkNomBulk()"></td>
+<td class="cn">
+  ${e(p.nombre)}
+  <button class="sem sem-${sem}" onclick="openSemModal('${p.id}')" title="Semáforo ${sem}">${sem}</button>
+  ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria||'')}">🚫 OUT</button>` : ''}
+  ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
+  ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')">📄 CV</button>` : ''}
+</td>
+<td><span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</span></td>
+<td><select class="st-sel ${p.estado}" data-id="${p.id}" onchange="changeNomSt('${p.id}',this)">
+  <option value="pendiente" ${p.estado==='pendiente'?'selected':''}>Pendiente</option>
+  <option value="contactado" ${p.estado==='contactado'?'selected':''}>Contactado</option>
+  <option value="confirmado" ${p.estado==='confirmado'?'selected':''}>Confirmado</option>
+  <option value="no_asiste" ${p.estado==='no_asiste'?'selected':''}>No asiste</option>
+</select></td>
+<td class="cm">${e(p.cuit||'')}</td><td class="cm">${e(p.email||'')}</td><td class="cm">${e(p.tel||'')}</td>
+<td class="cm" title="${e(p.notas||'')}">${e(p.notas||'')}</td>
+<td style="white-space:nowrap">
+  <button class="btn btn-sec btn-xs" onclick="openEditPerson('${p.id}')">✎</button>
+  <button class="btn btn-sec btn-xs" onclick="openHistorial('${p.id}')" title="Ver historial de recitales">📅</button>
+  ${p.out_flag ? `<button class="btn btn-xs" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa" onclick="removeOut('${p.id}')">✓ OUT</button>` : `<button class="btn btn-xs" style="background:#fff7f7;color:#991b1b;border:1px solid #fecaca" onclick="openOutModal('${p.id}')">🚫</button>`}
+  <button class="btn btn-danger btn-xs" onclick="delPerson('${p.id}')">✕</button>
+</td>
+</tr>`;
+  }).join('');
+}
+function e(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+async function changeNomSt(id, sel) {
+  const p = people.find(x => x.id === id); if (!p) return;
+  p.estado = sel.value; sel.className = 'st-sel ' + sel.value;
+  nomStats(); refreshCandBadge();
+  try { await sbUpdate('personas', id, { estado: p.estado }); } catch (_) {}
+}
+
+function toggleAll() { const v = document.getElementById('selAll').checked; document.querySelectorAll('.rcb').forEach(c => c.checked = v); checkNomBulk(); }
+function checkNomBulk() { const s = [...document.querySelectorAll('.rcb:checked')]; document.getElementById('nomBulk').classList.toggle('on', s.length > 0); document.getElementById('nomBulkCnt').textContent = s.length + ' seleccionados'; }
+function selIds() { return [...document.querySelectorAll('.rcb:checked')].map(c => c.dataset.id); }
+
+async function applyBulkSt() {
+  const st = document.getElementById('bulkSt').value; if (!st) { toast('Elegí un estado'); return; }
+  const ids = selIds(); ids.forEach(id => { const p = people.find(x => x.id === id); if (p) p.estado = st; });
+  nomRefresh(); document.getElementById('selAll').checked = false; document.getElementById('nomBulk').classList.remove('on');
+  try { await sbUpdateIn('personas', ids, { estado: st }); toast(`${ids.length} personas actualizadas`); } catch (_) {}
+}
+
+async function delBulk() {
+  const ids = selIds(); if (!ids.length) return;
+  if (!confirm(`¿Eliminar ${ids.length} personas?`)) return;
+  people = people.filter(p => !ids.includes(p.id));
+  nomRefresh(); document.getElementById('nomBulk').classList.remove('on');
+  try { await sbDeleteIn('personas', ids); toast(`${ids.length} eliminadas`); } catch (_) {}
+}
+
+function renderNomPag() {
+  const total = nomFiltered.length, pages = Math.ceil(total / PS), bar = document.getElementById('nomPag');
+  if (pages <= 1) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  const s = (nomPage - 1) * PS + 1, en = Math.min(nomPage * PS, total);
+  document.getElementById('nomPagI').textContent = `${s}–${en} de ${total.toLocaleString('es-AR')}`;
+  const b = document.getElementById('nomPagB');
+  let h = `<button class="pb" onclick="nomGoPage(${nomPage - 1})" ${nomPage === 1 ? 'disabled' : ''}>←</button>`;
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || (i >= nomPage - 2 && i <= nomPage + 2)) h += `<button class="pb ${i === nomPage ? 'active' : ''}" onclick="nomGoPage(${i})">${i}</button>`;
+    else if (i === nomPage - 3 || i === nomPage + 3) h += `<span class="pb dots">…</span>`;
+  }
+  h += `<button class="pb" onclick="nomGoPage(${nomPage + 1})" ${nomPage === pages ? 'disabled' : ''}>→</button>`;
+  b.innerHTML = h;
+}
+function nomGoPage(p) { nomPage = p; renderNomTable(); renderNomPag(); }
+
+function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
+function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; showM('mPerson'); }
+
+async function savePerson() {
+  const nom = document.getElementById('pNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
+  const cuit = document.getElementById('pCuit').value.trim() || null;
+  if (cuit && !editPersonId) {
+    const dup = people.find(p => p.cuit && p.cuit === cuit && p.id !== editPersonId);
+    if (dup && !confirm(`⚠ El CUIT ${cuit} ya existe para "${dup.nombre}". ¿Continuar de todas formas?`)) return;
+  }
+  const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null };
+  if (editPersonId) { const i = people.findIndex(x => x.id === editPersonId); if (i >= 0) people[i] = { ...people[i], ...d }; }
+  else people.push(d);
+  nomRefresh(); closeM('mPerson');
+  try { await sbUpsert('personas', d); toast(editPersonId ? 'Actualizada' : 'Persona agregada'); } catch (_) {}
+}
+
+async function delPerson(id) {
+  if (!confirm('¿Eliminar?')) return;
+  people = people.filter(x => x.id !== id);
+  nomRefresh();
+  try { await sbDelete('personas', id); toast('Eliminada'); } catch (_) {}
+}
+
+// ── IMPORT ──
+function openImport() { document.getElementById('csvTxt').value = ''; document.getElementById('csvPrev').textContent = ''; document.getElementById('iArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; showM('mImport'); }
+function loadCsvFile() { const f = document.getElementById('csvFile').files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => { document.getElementById('csvTxt').value = ev.target.result; prevCsv(); }; r.readAsText(f, 'UTF-8'); }
+function prevCsv() { const rows = parseCsv(document.getElementById('csvTxt').value, 'movistar_arena'); document.getElementById('csvPrev').textContent = rows.length ? `${rows.length} personas detectadas` : ''; }
+function parseCsv(txt, def) {
+  if (!txt.trim()) return [];
+  const lines = txt.trim().split(/\r?\n/).filter(l => l.trim()); if (!lines.length) return [];
+  const fl = lines[0].toLowerCase(); const hasH = fl.includes('nombre') || fl.includes('name') || fl.includes('email');
+  let hdrs = null, data = lines;
+  if (hasH) { hdrs = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, '')); data = lines.slice(1); }
+  return data.map(line => { const c = line.split(',').map(x => x.trim().replace(/^"|"$/g, '')); if (!c[0]) return null; if (hdrs) { const o = {}; hdrs.forEach((h, i) => o[h] = c[i] || ''); return { id: uid(), nombre: o.nombre || o.name || '', area: o.area || def, estado: (['pendiente', 'contactado', 'confirmado', 'no_asiste'].includes(o.estado) ? o.estado : 'pendiente'), email: o.email || null, tel: o.telefono || o.tel || o.phone || null, cuit: o.cuit || o.cuil || null, notas: o.notas || o.nota || null }; } return { id: uid(), nombre: c[0], area: def, estado: 'pendiente', email: c[1] || null, tel: c[2] || null, notas: c[3] || null, cuit: null }; }).filter(r => r && r.nombre);
+}
+
+async function doImport() {
+  const txt = document.getElementById('csvTxt').value, area = document.getElementById('iArea').value;
+  const rows = parseCsv(txt, area); if (!rows.length) { toast('Sin datos para importar'); return; }
+  const ex = new Set(people.map(p => p.nombre.toLowerCase().trim()));
+  const news = rows.filter(r => !ex.has(r.nombre.toLowerCase().trim()));
+  const dups = rows.length - news.length;
+  if (!news.length) { toast('Todos son duplicados, nada para importar'); return; }
+  setLoad(true, `Importando ${news.length} personas...`, 30);
+  try {
+    // Insert in batches of 200
+    for (let i = 0; i < news.length; i += 200) {
+      await sbInsert('personas', news.slice(i, i + 200));
+      setLoad(true, `Importando... ${Math.min(i + 200, news.length)}/${news.length}`, 30 + (i / news.length) * 60);
+    }
+    people.push(...news);
+    nomRefresh(); closeM('mImport');
+    toast(`✓ ${news.length} importadas${dups ? ` (${dups} duplicadas omitidas)` : ''}`);
+  } catch (_) {}
+  setLoad(false);
+}
+
+function exportNom() {
+  const cols = ['nombre', 'area', 'estado', 'cuit', 'email', 'tel', 'notas'], hdrs = ['nombre', 'area', 'estado', 'cuit', 'email', 'telefono', 'notas'];
+  const rows = nomFiltered.map(p => cols.map(k => `"${(p[k] || '').replace(/"/g, '""')}"`).join(','));
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + [hdrs.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = `nomina-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+}
+
+// ── CV ──
+function openCvForm() { ['cvNombre', 'cvEmail', 'cvTel', 'cvPuesto', 'cvExp', 'cvForm', 'cvSkills', 'cvDisp'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cvArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('cvFile').value = ''; document.getElementById('cvFileStatus').textContent = ''; cvFileData = null; showM('mCvForm'); setTimeout(() => document.getElementById('cvNombre').focus(), 50); }
+function handleCvFile() { const f = document.getElementById('cvFile').files[0]; if (!f) { cvFileData = null; return; } if (f.size > 1048576) { document.getElementById('cvFileStatus').textContent = `⚠ El archivo pesa ${(f.size / 1024 / 1024).toFixed(1)} MB. Máx: 1 MB.`; document.getElementById('cvFile').value = ''; cvFileData = null; return; } const r = new FileReader(); r.onload = ev => { cvFileData = { nombre: f.name, tipo: f.type, datos: ev.target.result }; document.getElementById('cvFileStatus').textContent = `✓ ${f.name} (${(f.size / 1024).toFixed(0)} KB)`; }; r.readAsDataURL(f); }
+
+async function saveCvEntry() {
+  const nom = document.getElementById('cvNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
+  const cv = { puestoInteres: document.getElementById('cvPuesto').value.trim(), experiencia: document.getElementById('cvExp').value.trim(), formacion: document.getElementById('cvForm').value.trim(), habilidades: document.getElementById('cvSkills').value.trim(), disponibilidad: document.getElementById('cvDisp').value.trim(), fechaEnvio: new Date().toISOString().slice(0, 10), archivo: cvFileData || null };
+  const existe = people.find(p => p.nombre.toLowerCase().trim() === nom.toLowerCase().trim());
+  let d;
+  if (existe) {
+    if (!confirm(`Ya existe "${nom}". ¿Actualizar su CV?`)) return;
+    existe.cv = cv; d = existe;
+  } else {
+    d = { id: uid(), nombre: nom, area: document.getElementById('cvArea').value, estado: 'pendiente', email: document.getElementById('cvEmail').value.trim() || null, tel: document.getElementById('cvTel').value.trim() || null, notas: cv.puestoInteres ? `Interés: ${cv.puestoInteres}` : null, cv };
+    people.push(d);
+  }
+  nomRefresh(); closeM('mCvForm');
+  try { await sbUpsert('personas', { id: d.id, nombre: d.nombre, area: d.area, estado: d.estado, email: d.email, tel: d.tel, notas: d.notas, cv: d.cv }); toast(`✓ CV de ${nom} registrado`); } catch (_) {}
+}
+
+function viewCv(id) {
+  const p = people.find(x => x.id === id); if (!p || !p.cv) return;
+  const cv = p.cv;
+  document.getElementById('cvViewTitle').textContent = `CV — ${p.nombre}`;
+  const fld = (label, val) => val ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${label}</div><div class="cv-viewer-value">${e(val)}</div></div>` : '';
+  let html = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px"><span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}</span>${p.email ? `<span style="font-size:12px;color:#6b7280">✉ ${e(p.email)}</span>` : ''}${p.tel ? `<span style="font-size:12px;color:#6b7280">📞 ${e(p.tel)}</span>` : ''}<span style="font-size:12px;color:#9ca3af">Enviado: ${cv.fechaEnvio || '—'}</span></div>`;
+  html += fld('Puesto de interés', cv.puestoInteres); html += fld('Disponibilidad', cv.disponibilidad);
+  html += '<div class="cv-section-divider"></div>';
+  html += fld('Experiencia laboral', cv.experiencia); html += fld('Formación', cv.formacion); html += fld('Habilidades', cv.habilidades);
+  if (cv.archivo) html += `<div class="cv-section-divider"></div><div class="cv-file-box"><span style="font-size:18px">📎</span><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(cv.archivo.nombre)}</div><div style="font-size:11px;color:#9ca3af">${cv.archivo.tipo}</div></div></div>`;
+  document.getElementById('cvViewBody').innerHTML = html;
+  const dlBtn = document.getElementById('cvDownloadBtn'); dlBtn.style.display = cv.archivo ? 'inline-flex' : 'none'; dlBtn.dataset.id = id;
+  showM('mCvView');
+}
+function downloadCvFile() { const id = document.getElementById('cvDownloadBtn').dataset.id; const p = people.find(x => x.id === id); if (!p?.cv?.archivo) return; const a = document.createElement('a'); a.href = p.cv.archivo.datos; a.download = p.cv.archivo.nombre; a.click(); }
+function downloadCvFileById(id) { const p = people.find(x => x.id === id); if (!p?.cv?.archivo) return; const a = document.createElement('a'); a.href = p.cv.archivo.datos; a.download = p.cv.archivo.nombre; a.click(); }
+
+// ── CONVOCATORIAS ──
+function renderCvList() {
+  const q = document.getElementById('cvSrch').value.toLowerCase().trim();
+  const af = document.getElementById('cvAreaF').value;
+  const filtered = convs.filter(c => { if (af && c.area !== af) return false; if (q && !c.nombre.toLowerCase().includes(q)) return false; return true; });
+  const cont = document.getElementById('cvCards');
+  if (!filtered.length) { cont.innerHTML = `<div class="no-convs"><div class="no-convs-title">${convs.length === 0 ? 'Todavía no hay convocatorias' : 'Sin resultados'}</div><div class="no-convs-sub">${convs.length === 0 ? 'Creá una para cargar puestos y cupos.' : 'Probá con otro filtro.'}</div>${convs.length === 0 ? `<button class="btn btn-primary" onclick="openAddConv()">+ Crear primera convocatoria</button>` : ''}</div>`; return; }
+  cont.innerHTML = `<div class="cv-grid">${filtered.map(c => cvCardHTML(c)).join('')}</div>`;
+}
+function cvCardHTML(c) {
+  const cPosts = posts.filter(p => p.convId === c.id); const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0); const usados = cPosts.filter(p => p.estado !== 'rechazado').length; const pct = totalCupos > 0 ? Math.min(100, Math.round(usados / totalCupos * 100)) : 0;
+  const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' }[c.area] || c.area;
+  const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : '#34d399';
+  return `<div class="cv-card"><div class="cv-card-title">${e(c.nombre)}</div>
+<div class="cv-card-meta"><span class="a-badge ${c.area === 'movistar_arena' ? 'a-mv' : c.area === 'externos' ? 'a-ex' : 'a-ambas'}">${areaLabel}</span>${c.fecha ? c.fecha.split(',').map(f => `<span>📅 ${fmtFecha(f.trim())}</span>`).join('') : ''}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
+<div class="cv-puestos">${(c.puestos || []).slice(0, 4).map(p => { const pu = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado').length; const pp = p.cupos > 0 ? Math.min(100, Math.round(pu / p.cupos * 100)) : 0; const pc = pp < 50 ? '#e5e7eb' : pp < 80 ? '#fbbf24' : '#34d399'; return `<div class="cv-prow"><span class="cv-pname">${e(p.nombre)}</span><div class="prog-wrap"><div class="prog-fill" style="background:${pc};width:${pp}%"></div></div><span class="cv-cupo">${pu}/${p.cupos}</span></div>`; }).join('')}${(c.puestos || []).length > 4 ? `<div style="font-size:11px;color:#9ca3af">+${(c.puestos || []).length - 4} puestos más</div>` : ''}</div>
+<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;margin-bottom:12px"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span>${usados}/${totalCupos} cupos · ${pct}%</span></div>
+<div class="cv-foot"><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delConv('${c.id}')">Eliminar</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();openEditConv('${c.id}')">✎ Editar</button><button class="btn btn-sm ${c.publicada?'btn-success':'btn-sec'}" onclick="event.stopPropagation();togglePublicada('${c.id}')" title="${c.publicada?'Quitar de página pública':'Publicar en página pública'}">${c.publicada?'🌐 Publicada':'○ Publicar'}</button><button class="btn btn-primary btn-sm" onclick="openDetail('${c.id}')">Gestionar →</button></div></div>`;
+}
+function fmtFecha(f) { if (!f) return ''; try { const d = new Date(f + 'T00:00:00'); return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return f; } }
+function openDetail(id) {
+  currentConvId = id; const c = convs.find(x => x.id === id); if (!c) return;
+  document.getElementById('cv-list').style.display = 'none';
+  document.getElementById('cv-detail').style.display = 'block';
+  document.getElementById('detTitle').textContent = c.nombre;
+  document.getElementById('detMeta').textContent = `${{ movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' }[c.area] || c.area}${c.fecha ? ' · ' + c.fecha.split(',').map(f => fmtFecha(f.trim())).join(' · ') : ''}${c.descripcion ? ' · ' + c.descripcion.slice(0, 60) : ''}`;
+  syncPublicadaBtn(c);
+  renderDetStats(); renderPuestos();
+}
+
+function syncPublicadaBtn(c) {
+  const btn = document.getElementById('btnPublicada'); if (!btn) return;
+  if (c.publicada) { btn.textContent = '🌐 Publicada'; btn.className = 'btn btn-success btn-sm'; }
+  else { btn.textContent = '○ Publicar'; btn.className = 'btn btn-sec btn-sm'; }
+}
+
+async function togglePublicada(id) {
+  const c = convs.find(x => x.id === id); if (!c) return;
+  c.publicada = !c.publicada;
+  syncPublicadaBtn(c);
+  renderCvList();
+  try { await sbUpdate('convocatorias', id, { publicada: c.publicada }); toast(c.publicada ? '🌐 Convocatoria publicada' : 'Convocatoria despublicada'); } catch (_) {}
+}
+function closeDetail() { document.getElementById('cv-list').style.display = 'block'; document.getElementById('cv-detail').style.display = 'none'; currentConvId = null; renderCvList(); }
+function renderDetStats() { const c = convs.find(x => x.id === currentConvId); if (!c) return; const cPosts = posts.filter(p => p.convId === currentConvId); const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0); const usados = cPosts.filter(p => p.estado !== 'rechazado').length; document.getElementById('detStats').innerHTML = `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span><span class="dstat">Aprobados: <strong style="color:#0f6e56">${cPosts.filter(p => p.estado === 'aprobado').length}</strong></span><span class="dstat">Pendientes: <strong style="color:#854F0B">${cPosts.filter(p => p.estado === 'pendiente').length}</strong></span>`; }
+function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if (!c) { document.getElementById('puestosContainer').innerHTML = ''; return; } if (!(c.puestos || []).length) { document.getElementById('puestosContainer').innerHTML = '<div class="empty">No hay puestos. Agregá el primero.</div>'; return; } document.getElementById('puestosContainer').innerHTML = (c.puestos || []).map(p => puestoCardHTML(p, c)).join(''); }
+function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${e(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}" style="margin-top:4px;display:inline-block">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')">✎</button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
+
+// ── FECHAS MÚLTIPLES ──
+let convFechas = [];
+function renderFechasList() {
+  const el = document.getElementById('fechasList'); if (!el) return;
+  el.innerHTML = convFechas.map((f, i) => `
+    <div style="display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px">
+      <span style="font-size:13px;color:#374151;flex:1">📅 ${fmtFecha(f)}</span>
+      <button type="button" onclick="removeFecha(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0">✕</button>
+    </div>`).join('');
+}
+function addFecha() {
+  const val = document.getElementById('cFechaInput').value;
+  if (!val) return;
+  if (convFechas.includes(val)) { toast('Esa fecha ya está agregada'); return; }
+  convFechas.push(val);
+  convFechas.sort();
+  renderFechasList();
+  document.getElementById('cFechaInput').value = '';
+}
+function removeFecha(i) { convFechas.splice(i, 1); renderFechasList(); }
+
+function openAddConv() { editConvId = null; convFechas = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
+function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convFechas = c.fecha ? c.fecha.split(',').map(f => f.trim()).filter(Boolean) : []; document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; renderFechasList(); showM('mConv'); }
+function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
+
+async function saveConv() {
+  const nom = document.getElementById('cNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
+  const d = { id: editConvId || uid(), nombre: nom, fecha: convFechas.length ? convFechas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null };
+  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; } }
+  else convs.push({ ...d, puestos: [] });
+  if (currentConvId) { const c = convs.find(x => x.id === currentConvId); if (c) { document.getElementById('detTitle').textContent = c.nombre; renderDetStats(); } }
+  renderCvList(); closeM('mConv');
+  try { await sbUpsert('convocatorias', d); toast(editConvId ? 'Convocatoria actualizada' : 'Convocatoria creada'); } catch (_) {}
+}
+
+async function delConv(id) {
+  if (!confirm('¿Eliminar esta convocatoria y todas sus postulaciones?')) return;
+  convs = convs.filter(x => x.id !== id); posts = posts.filter(x => x.convId !== id);
+  renderCvList();
+  try { await sbDelete('convocatorias', id); toast('Convocatoria eliminada'); } catch (_) {}
+}
+function deleteCurrentConv() { if (!currentConvId) return; delConv(currentConvId); closeDetail(); }
+
+function openAddPuesto() { editPuestoId = null; document.getElementById('mPuestoTitle').textContent = 'Agregar puesto'; ['puNombre', 'puDesc'].forEach(i => document.getElementById(i).value = ''); document.getElementById('puCupos').value = ''; document.getElementById('puArea').value = ''; showM('mPuesto'); }
+function openEditPuesto(pid) { const c = convs.find(x => x.id === currentConvId); if (!c) return; const p = (c.puestos || []).find(x => x.id === pid); if (!p) return; editPuestoId = pid; document.getElementById('mPuestoTitle').textContent = 'Editar puesto'; document.getElementById('puNombre').value = p.nombre; document.getElementById('puCupos').value = p.cupos; document.getElementById('puArea').value = p.area || ''; document.getElementById('puDesc').value = p.desc || ''; showM('mPuesto'); }
+
+async function savePuesto() {
+  const nom = document.getElementById('puNombre').value.trim(), cupos = parseInt(document.getElementById('puCupos').value); if (!nom) { toast('El nombre es obligatorio'); return; } if (!cupos || cupos < 1) { toast('Los cupos deben ser mayor a 0'); return; }
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const d = { id: editPuestoId || uid(), conv_id: currentConvId, nombre: nom, cupos, area: document.getElementById('puArea').value || null, descripcion: document.getElementById('puDesc').value.trim() || null };
+  if (editPuestoId) { const p = (c.puestos || []).find(x => x.id === editPuestoId); if (p) { p.nombre = nom; p.cupos = cupos; p.area = d.area || ''; p.desc = d.descripcion || ''; } }
+  else { if (!c.puestos) c.puestos = []; c.puestos.push({ id: d.id, nombre: nom, cupos, area: d.area || '', desc: d.descripcion || '' }); }
+  renderPuestos(); renderDetStats(); closeM('mPuesto');
+  try { await sbUpsert('puestos', d); toast(editPuestoId ? 'Puesto actualizado' : 'Puesto agregado'); } catch (_) {}
+}
+
+async function delPuesto(pid) {
+  if (!confirm('¿Eliminar este puesto y sus postulaciones?')) return;
+  const c = convs.find(x => x.id === currentConvId); if (c) c.puestos = (c.puestos || []).filter(x => x.id !== pid);
+  posts = posts.filter(x => !(x.convId === currentConvId && x.puestoId === pid));
+  renderPuestos(); renderDetStats();
+  try { await sbDelete('puestos', pid); toast('Puesto eliminado'); } catch (_) {}
+}
+
+// ── GESTIONAR POSTULACIONES ──
+function openGestionar(pid) { currentPuestoId = pid; const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === pid); if (!p) return; document.getElementById('mGestTitle').textContent = `Postulaciones — ${p.nombre}`; document.getElementById('gSrch').value = ''; document.getElementById('gStFilter').value = ''; document.getElementById('gCupoTotal').textContent = p.cupos; renderGestList(); showM('mGestionar'); }
+function renderGestList() {
+  const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return;
+  const q = document.getElementById('gSrch').value.toLowerCase().trim(); const sf = document.getElementById('gStFilter').value;
+  const myPosts = posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId);
+  const usados = myPosts.filter(x => x.estado !== 'rechazado').length;
+  document.getElementById('gCupoUsados').textContent = usados;
+  const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0;
+  document.getElementById('gProgFill').style.width = pct + '%'; document.getElementById('gProgPct').textContent = pct + '%';
+  const shown = myPosts.filter(x => { if (sf && x.estado !== sf) return false; if (q && !x.nombre.toLowerCase().includes(q)) return false; return true; });
+  const tbody = document.getElementById('gTbody');
+  if (!shown.length) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty">Sin postulaciones todavía.</div></td></tr>`; document.getElementById('gBulkBar').style.display = 'none'; return; }
+  tbody.innerHTML = shown.map(x => {
+    const asistBadge = x.asistencia === 'presente'
+      ? `<span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✓ P</span>`
+      : x.asistencia === 'ausente'
+      ? `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✗ A</span>`
+      : `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px">—</span>`;
+    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td><button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
+  }).join('');
+}
+
+// ── ASISTENCIA ──
+function openImportAsistencia() {
+  document.getElementById('asistenciaCsv').value = '';
+  document.getElementById('asistenciaPrev').textContent = '';
+  document.getElementById('asistenciaFile').value = '';
+  showM('mAsistencia');
+}
+function loadAsistenciaFile() {
+  const f = document.getElementById('asistenciaFile').files[0]; if (!f) return;
+  const r = new FileReader(); r.onload = ev => { document.getElementById('asistenciaCsv').value = ev.target.result; prevAsistencia(); }; r.readAsText(f, 'UTF-8');
+}
+function prevAsistencia() {
+  const rows = parseAsistenciaCsv(document.getElementById('asistenciaCsv').value);
+  const pres = rows.filter(r => r.asistio).length;
+  document.getElementById('asistenciaPrev').textContent = rows.length ? `${rows.length} CUIL detectados — ${pres} presentes` : '';
+}
+function parseAsistenciaCsv(txt) {
+  if (!txt.trim()) return [];
+  const lines = txt.trim().split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return [];
+  const fl = lines[0].toLowerCase();
+  const hasH = fl.includes('cuil') || fl.includes('cuit') || fl.includes('asistencia');
+  const data = hasH ? lines.slice(1) : lines;
+  return data.map(line => {
+    const cols = line.split(/[,;]/).map(c => c.trim().replace(/^"|"$/g, ''));
+    const cuil = cols[0]?.replace(/\D/g, '');
+    const marca = (cols[1] || '').toUpperCase().trim();
+    if (!cuil) return null;
+    return { cuil, asistio: marca === 'P' };
+  }).filter(Boolean);
+}
+async function doImportAsistencia() {
+  const rows = parseAsistenciaCsv(document.getElementById('asistenciaCsv').value);
+  if (!rows.length) { toast('Sin datos para importar'); return; }
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const myPosts = posts.filter(x => x.convId === currentConvId);
+  let updated = 0;
+  for (const row of rows) {
+    const nuevaAsist = row.asistio ? 'presente' : 'ausente';
+    // Intento 1: cruzar por persona en nómina que tiene ese CUIL
+    const pers = people.find(p => (p.cuit || '').replace(/\D/g, '') === row.cuil);
+    if (pers) {
+      const post = myPosts.find(x => x.personaId === pers.id);
+      if (post) { post.asistencia = nuevaAsist; try { await sbUpdate('postulaciones', post.id, { asistencia: nuevaAsist }); updated++; } catch (_) {} continue; }
+    }
+    // Intento 2: cruzar por CUIL guardado directamente en la postulación
+    const postByCuil = myPosts.find(x => (x.cuit || '').replace(/\D/g, '') === row.cuil);
+    if (postByCuil) { postByCuil.asistencia = nuevaAsist; try { await sbUpdate('postulaciones', postByCuil.id, { asistencia: nuevaAsist }); updated++; } catch (_) {} }
+  }
+  renderGestList(); renderPuestos(); closeM('mAsistencia');
+  toast(`✓ ${updated} asistencias actualizadas`);
+}
+
+async function changePostSt(id, sel) { const p = posts.find(x => x.id === id); if (p) { p.estado = sel.value; sel.className = 'ssp ' + sel.value; renderGestList(); renderPuestos(); renderDetStats(); try { await sbUpdate('postulaciones', id, { estado: sel.value }); } catch (_) {} } }
+async function delPost(id) { posts = posts.filter(x => x.id !== id); renderGestList(); renderPuestos(); renderDetStats(); try { await sbDelete('postulaciones', id); toast('Eliminado'); } catch (_) {} }
+
+function toggleGestAll() { const v = document.getElementById('gSelAll').checked; document.querySelectorAll('.gcb').forEach(c => c.checked = v); checkGestBulk(); }
+function checkGestBulk() { const s = [...document.querySelectorAll('.gcb:checked')]; const bar = document.getElementById('gBulkBar'); bar.style.display = s.length ? 'flex' : 'none'; document.getElementById('gBulkCnt').textContent = s.length + ' seleccionados'; }
+function gSelIds() { return [...document.querySelectorAll('.gcb:checked')].map(c => c.dataset.id); }
+
+async function applyGestBulk() { const st = document.getElementById('gBulkSt').value; if (!st) { toast('Elegí un estado'); return; } const ids = gSelIds(); ids.forEach(id => { const p = posts.find(x => x.id === id); if (p) p.estado = st; }); renderGestList(); renderPuestos(); renderDetStats(); try { await sbUpdateIn('postulaciones', ids, { estado: st }); toast(`${ids.length} actualizados`); } catch (_) {} }
+async function delGestBulk() { const ids = gSelIds(); if (!ids.length) return; if (!confirm(`¿Quitar ${ids.length} personas del puesto?`)) return; posts = posts.filter(x => !ids.includes(x.id)); renderGestList(); renderPuestos(); renderDetStats(); try { await sbDeleteIn('postulaciones', ids); toast(`${ids.length} quitados`); } catch (_) {} }
+
+// ── PICKER ──
+function openPickerModal() { pickerSel = new Set(); document.getElementById('pickerSrch').value = ''; document.getElementById('pickerAreaF').value = ''; document.getElementById('pickerStF').value = ''; renderPicker(); showM('mPicker'); }
+function renderPicker() {
+  const q = document.getElementById('pickerSrch').value.toLowerCase().trim(); const af = document.getElementById('pickerAreaF').value; const sf = document.getElementById('pickerStF').value;
+  const alreadyIn = new Set(posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId).map(x => x.personaId).filter(Boolean));
+  const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
+  const el = document.getElementById('pickerList');
+  if (!avail.length) { el.innerHTML = '<div class="picker-empty">Sin resultados</div>'; document.getElementById('pickerSelCount').textContent = '0 seleccionados'; return; }
+  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</div></div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${p.estado}</span></div>`).join('');
+  document.getElementById('pickerSelCount').textContent = pickerSel.size + ' seleccionados';
+}
+function togglePickerSel(id) { if (pickerSel.has(id)) pickerSel.delete(id); else pickerSel.add(id); renderPicker(); }
+
+async function confirmPicker() {
+  if (!pickerSel.size) { toast('Seleccioná al menos una persona'); return; }
+  const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return;
+  const libres = Math.max(0, p.cupos - posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId && x.estado !== 'rechazado').length);
+  if (pickerSel.size > libres && !confirm(`Este puesto tiene ${libres} cupo(s) libre(s) y estás agregando ${pickerSel.size}. ¿Continuar?`)) return;
+  const outs = [], conflicts = [], rotViolations = [];
+  pickerSel.forEach(pid => {
+    const pers = people.find(x => x.id === pid);
+    if (pers?.out_flag) outs.push(pers.nombre);
+    if (c?.fecha) {
+      const conflict = posts.find(x => x.personaId === pid && x.convId !== currentConvId && x.estado !== 'rechazado' && convs.find(cv => cv.id === x.convId && cv.fecha === c.fecha));
+      if (conflict) { const conflConv = convs.find(cv => cv.id === conflict.convId); conflicts.push(`${pers?.nombre} (ya en "${conflConv?.nombre}")`); }
+    }
+    const rot = checkRotacion(pid);
+    if (rot.excede) rotViolations.push(`${pers?.nombre} (${rot.count}/${rot.max} eventos en ${rotacionConfig.dias_periodo}d)`);
+  });
+  if (outs.length && !confirm(`⚠ Personas marcadas como OUT:\n${outs.join(', ')}\n\n¿Continuar de todas formas?`)) return;
+  if (conflicts.length && !confirm(`⚠ Conflicto de fecha — ya asignadas en otro recital ese día:\n${conflicts.join('\n')}\n\n¿Asignar igual?`)) return;
+  if (rotViolations.length) {
+    const msg = `⚠ Límite de rotación superado (${rotacionConfig.max_eventos} eventos en ${rotacionConfig.dias_periodo} días):\n${rotViolations.join('\n')}`;
+    if (rotacionConfig.modo === 'bloqueo') { alert(msg + '\n\nNo se puede asignar en modo bloqueo.'); return; }
+    if (!confirm(msg + '\n\n¿Asignar igual?')) return;
+  }
+  const newPosts = []; pickerSel.forEach(pid => { const pers = people.find(x => x.id === pid); if (pers) { const np = { id: uid(), convId: currentConvId, puestoId: currentPuestoId, personaId: pid, nombre: pers.nombre, estado: 'pendiente', notas: '' }; posts.push(np); newPosts.push(np); } });
+  renderGestList(); renderPuestos(); renderDetStats(); closeM('mPicker');
+  try {
+    await sbInsert('postulaciones', newPosts.map(x => ({ id: x.id, conv_id: x.convId, puesto_id: x.puestoId, persona_id: x.personaId, nombre: x.nombre, estado: x.estado, notas: null })));
+    toast(`✓ ${newPosts.length} personas agregadas`);
+    checkCupoLleno(currentConvId, currentPuestoId);
+  } catch (_) {}
+}
+
+// ── MASIVA ──
+function openMasiva() { const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return; document.getElementById('masAreaF').value = ''; document.getElementById('masStF').value = ''; document.getElementById('masNomF').value = ''; const libres = Math.max(0, p.cupos - posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId && x.estado !== 'rechazado').length); document.getElementById('masLibres').textContent = libres; updateMasivaPreview(); showM('mMasiva'); }
+function updateMasivaPreview() { const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return; const libres = Math.max(0, p.cupos - posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId && x.estado !== 'rechazado').length); document.getElementById('masLibres').textContent = libres; const af = document.getElementById('masAreaF').value, sf = document.getElementById('masStF').value, q = document.getElementById('masNomF').value.toLowerCase().trim(); const alreadyIn = new Set(posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId).map(x => x.personaId).filter(Boolean)); const match = people.filter(x => { if (alreadyIn.has(x.id)) return false; if (af && x.area !== af) return false; if (sf && x.estado !== sf) return false; if (q && !x.nombre.toLowerCase().includes(q)) return false; return true; }); document.getElementById('masResumen').textContent = `${match.length} personas coinciden`; document.getElementById('masAviso').textContent = match.length > libres ? `Solo se asignarán las primeras ${libres} (límite de cupos).` : match.length > 0 ? `Se asignarán ${Math.min(match.length, libres)} personas.` : libres === 0 ? 'El puesto ya está completo.' : ''; }
+document.addEventListener('change', ev => { if (['masAreaF', 'masStF'].includes(ev.target.id)) updateMasivaPreview(); });
+document.addEventListener('input', ev => { if (ev.target.id === 'masNomF') updateMasivaPreview(); });
+
+async function doMasiva() {
+  const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return;
+  const libres = Math.max(0, p.cupos - posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId && x.estado !== 'rechazado').length);
+  if (libres === 0) { toast('No hay cupos libres'); return; }
+  const af = document.getElementById('masAreaF').value, sf = document.getElementById('masStF').value, q = document.getElementById('masNomF').value.toLowerCase().trim();
+  const alreadyIn = new Set(posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId).map(x => x.personaId).filter(Boolean));
+  const match = people.filter(x => { if (alreadyIn.has(x.id)) return false; if (af && x.area !== af) return false; if (sf && x.estado !== sf) return false; if (q && !x.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, libres);
+  if (!match.length) { toast('Ninguna persona coincide'); return; }
+  const newPosts = match.map(pers => ({ id: uid(), convId: currentConvId, puestoId: currentPuestoId, personaId: pers.id, nombre: pers.nombre, estado: 'pendiente', notas: '' }));
+  posts.push(...newPosts); renderGestList(); renderPuestos(); renderDetStats(); closeM('mMasiva');
+  try {
+    await sbInsert('postulaciones', newPosts.map(x => ({ id: x.id, conv_id: x.convId, puesto_id: x.puestoId, persona_id: x.personaId, nombre: x.nombre, estado: x.estado, notas: null })));
+    toast(`✓ ${newPosts.length} personas asignadas masivamente`);
+    checkCupoLleno(currentConvId, currentPuestoId);
+  } catch (_) {}
+}
+
+// ── CANDIDATOS ──
+function toggleCandView() { candViewMode = candViewMode === 'cards' ? 'list' : 'cards'; document.getElementById('candViewToggle').textContent = candViewMode === 'cards' ? '☰ Lista' : '⊞ Cards'; renderCandidatos(); }
+function renderCandidatos() {
+  const q = document.getElementById('candSrch').value.toLowerCase().trim(); const af = document.getElementById('candAreaF').value; const sf = document.getElementById('candStF').value; const sort = document.getElementById('candSortF').value;
+  let cands = people.filter(p => { if (!p.cv) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (q && !p.nombre.toLowerCase().includes(q) && !(p.cv.puestoInteres || '').toLowerCase().includes(q)) return false; return true; });
+  if (sort === 'fecha_desc') cands.sort((a, b) => (b.cv.fechaEnvio || '').localeCompare(a.cv.fechaEnvio || ''));
+  else if (sort === 'fecha_asc') cands.sort((a, b) => (a.cv.fechaEnvio || '').localeCompare(b.cv.fechaEnvio || ''));
+  else cands.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  const all = people.filter(p => !!p.cv);
+  n('candTotal', all.length); n('candPend', all.filter(p => p.estado === 'pendiente').length); n('candRev', all.filter(p => p.estado === 'contactado').length); n('candAprov', all.filter(p => p.estado === 'confirmado').length); n('candRech', all.filter(p => p.estado === 'no_asiste').length);
+  refreshCandBadge();
+  const cont = document.getElementById('candContent');
+  if (!cands.length) { cont.innerHTML = `<div class="empty">${all.length === 0 ? 'Todavía no hay CVs recibidos.' : 'Sin resultados para este filtro.'}</div>`; return; }
+  if (candViewMode === 'cards') { cont.innerHTML = `<div class="cand-grid">${cands.map(p => candCardHTML(p)).join('')}</div>`; }
+  else { cont.innerHTML = `<table style="width:100%;border-collapse:collapse;background:#fff"><thead><tr><th style="width:36px;padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb"><input type="checkbox" class="cb" id="candSelAllCb" onchange="candToggleAll()"></th><th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Nombre</th><th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Área</th><th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Puesto de interés</th><th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Archivo</th><th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Recibido</th><th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Estado</th><th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb;width:120px">Acciones</th></tr></thead><tbody>${cands.map(p => candRowHTML(p)).join('')}</tbody></table>`; }
+  updateCandBulkBar();
+}
+function candCardHTML(p) {
+  const cv = p.cv; const initials = p.nombre.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+  const avatarColors = { movistar_arena: 'background:#e0f2fe;color:#0369a1', externos: 'background:#f0fdf4;color:#166534' };
+  const sel = candSelIds.has(p.id);
+  return `<div class="cand-card ${sel ? 'selected' : ''}" id="cc-${p.id}"><div class="cand-card-top"><div class="cand-avatar" style="${avatarColors[p.area] || 'background:#f3f4f6;color:#374151'}">${initials}</div><div class="cand-info"><div class="cand-name">${e(p.nombre)}</div><div class="cand-puesto">${cv.puestoInteres ? e(cv.puestoInteres) : '<span style="color:#d1d5db">Sin puesto</span>'}</div><div class="cand-meta">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}${cv.fechaEnvio ? ' · ' + cv.fechaEnvio : ''}</div></div><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')" style="margin-top:2px;flex-shrink:0"></div>${cv.experiencia || cv.disponibilidad ? `<div class="cand-fields">${cv.disponibilidad ? `<div class="cand-field-row"><span class="cand-field-label">Disponib.:</span><span class="cand-field-val">${e(cv.disponibilidad)}</span></div>` : ''}${cv.experiencia ? `<div class="cand-field-row"><span class="cand-field-label">Experiencia:</span><span class="cand-field-val">${e(cv.experiencia)}</span></div>` : ''}</div>` : ''}<div class="cand-footer"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select>${cv.archivo ? `<span style="font-size:11px;color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')" title="Descargar">📎</span>` : ''}<div style="margin-left:auto;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></div></div></div>`;
+}
+function candRowHTML(p) {
+  const cv = p.cv; const sel = candSelIds.has(p.id);
+  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel ? '#f0eeff' : '#fff'}"><td style="padding:9px 14px"><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')"></td><td style="padding:9px 14px;font-weight:500;color:#111827">${e(p.nombre)}</td><td style="padding:9px 14px"><span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</span></td><td style="padding:9px 14px;font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(cv.puestoInteres || '—')}</td><td style="padding:9px 14px;font-size:12px">${cv.archivo ? `<span style="color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')">📎 ${e(cv.archivo.nombre.slice(0, 18) + (cv.archivo.nombre.length > 18 ? '…' : ''))}</span>` : '<span style="color:#d1d5db">—</span>'}</td><td style="padding:9px 14px;font-size:12px;color:#9ca3af">${cv.fechaEnvio || '—'}</td><td style="padding:9px 14px"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select></td><td style="padding:9px 14px;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></td></tr>`;
+}
+async function candChangeSt(id, sel) { const p = people.find(x => x.id === id); if (p) { p.estado = sel.value; sel.className = 'cand-st-sel ' + sel.value; renderCandidatos(); nomStats(); try { await sbUpdate('personas', id, { estado: sel.value }); } catch (_) {} } }
+async function candDel(id) { if (!confirm('¿Eliminar este candidato?')) return; people = people.filter(x => x.id !== id); candSelIds.delete(id); nomRefresh(); renderCandidatos(); try { await sbDelete('personas', id); toast('Candidato eliminado'); } catch (_) {} }
+function candToggleSel(id) { if (candSelIds.has(id)) candSelIds.delete(id); else candSelIds.add(id); const card = document.getElementById('cc-' + id); if (card) card.classList.toggle('selected', candSelIds.has(id)); updateCandBulkBar(); }
+function candToggleAll() { const v = document.getElementById('candSelAllCb')?.checked; document.querySelectorAll('.cand-cb').forEach(c => { const id = c.dataset.id; if (v) candSelIds.add(id); else candSelIds.delete(id); c.checked = v; }); document.querySelectorAll('.cand-card').forEach(c => c.classList.toggle('selected', v)); updateCandBulkBar(); }
+function updateCandBulkBar() { const bar = document.getElementById('candBulk'); bar.classList.toggle('on', candSelIds.size > 0); document.getElementById('candBulkCnt').textContent = candSelIds.size + ' seleccionados'; }
+async function bulkCandSt(st) { if (!candSelIds.size) return; const ids = [...candSelIds]; ids.forEach(id => { const p = people.find(x => x.id === id); if (p) p.estado = st; }); candSelIds.clear(); renderCandidatos(); nomStats(); try { await sbUpdateIn('personas', ids, { estado: st }); toast({ confirmado: 'Aprobados', contactado: 'En revisión', no_asiste: 'Rechazados' }[st] || 'Actualizado'); } catch (_) {} }
+async function bulkCandDel() { if (!candSelIds.size) return; if (!confirm(`¿Eliminar ${candSelIds.size} candidatos?`)) return; const ids = [...candSelIds]; people = people.filter(p => !ids.includes(p.id)); candSelIds.clear(); nomRefresh(); renderCandidatos(); try { await sbDeleteIn('personas', ids); toast('Candidatos eliminados'); } catch (_) {} }
+
+// ── UTILS ──
+function showM(id) { document.getElementById(id).style.display = 'flex'; }
+function closeM(id) { document.getElementById(id).style.display = 'none'; }
+function bgClose(id, ev) { if (ev.target.classList.contains('modal-bg')) closeM(id); }
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2800); }
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') document.querySelectorAll('.modal-bg').forEach(m => m.style.display = 'none'); });
+
+// ── NOTIFICACIONES ──
+let notifFilter = '';
+
+function refreshNotifBadge() {
+  const cnt = notificaciones.filter(n => n.estado === 'pendiente').length;
+  const b = document.getElementById('notifBadge');
+  if (b) { b.style.display = cnt > 0 ? 'block' : 'none'; b.textContent = cnt > 99 ? '99+' : cnt; }
+}
+
+async function queueNotif(tipo, titulo, cuerpo, email = null, nombre = null) {
+  const notif = { id: uid(), tipo, titulo, cuerpo, destinatario_email: email || null, destinatario_nombre: nombre || null, estado: 'pendiente', created_at: new Date().toISOString() };
+  notificaciones.unshift(notif);
+  refreshNotifBadge();
+  try { await sbInsert('notificaciones', [{ id: notif.id, tipo, titulo, cuerpo, destinatario_email: notif.destinatario_email, destinatario_nombre: notif.destinatario_nombre, estado: 'pendiente' }]); } catch (_) {}
+}
+
+function setNotifFilter(f) {
+  notifFilter = f;
+  ['All','Pend','Apro','Cupo'].forEach(k => {
+    const el = document.getElementById('nfilt' + k);
+    if (el) { el.style.background = ''; el.style.color = ''; el.className = 'btn btn-sec btn-xs'; }
+  });
+  const map = { '': 'All', 'pendiente': 'Pend', 'aprobacion': 'Apro', 'cupo_lleno': 'Cupo' };
+  const activeEl = document.getElementById('nfilt' + (map[f] || 'All'));
+  if (activeEl) { activeEl.style.background = '#534AB7'; activeEl.style.color = '#fff'; activeEl.style.border = 'none'; }
+  renderNotifs();
+}
+
+function openNotifs() { setNotifFilter(''); renderNotifs(); showM('mNotifs'); }
+
+function renderNotifs() {
+  let src = notifFilter === 'pendiente'
+    ? notificaciones.filter(n => n.estado === 'pendiente')
+    : notifFilter
+      ? notificaciones.filter(n => n.tipo === notifFilter)
+      : notificaciones;
+  const cont = document.getElementById('notifsBody');
+  if (!src.length) { cont.innerHTML = `<div class="empty">${notificaciones.length === 0 ? 'Sin notificaciones todavía. Se generan automáticamente al aprobar candidatos o llenar cupos.' : 'Sin resultados para este filtro.'}</div>`; return; }
+  const tipoIcon = { aprobacion: '✅', cupo_lleno: '🎯', rotacion: '⚠', otro: '📌' };
+  const tipoLabel = { aprobacion: 'Aprobación', cupo_lleno: 'Cupo lleno', rotacion: 'Rotación', otro: 'General' };
+  const stColors = { pendiente: '#fef3c7;color:#92400e', enviada: '#d1fae5;color:#065f46', descartada: '#f3f4f6;color:#9ca3af' };
+  cont.innerHTML = src.map(n => `
+    <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:10px;background:${n.estado==='descartada'?'#fafafa':'#fff'}">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">
+        <span style="font-size:18px;flex-shrink:0">${tipoIcon[n.tipo]||'📌'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;color:#111827">${e(n.titulo)}</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:2px">${e(n.cuerpo)}</div>
+          ${n.destinatario_nombre || n.destinatario_email ? `<div style="font-size:11px;color:#9ca3af;margin-top:4px">Para: ${e(n.destinatario_nombre||'')} ${n.destinatario_email?`&lt;${e(n.destinatario_email)}&gt;`:''}</div>` : ''}
+        </div>
+        <span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500;flex-shrink:0;background:${stColors[n.estado]||'#f3f4f6'}">${n.estado}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:11px;color:#9ca3af;flex:1">${n.created_at?new Date(n.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span>
+        <button class="btn btn-sec btn-xs" onclick="copyNotif('${n.id}')" title="Copiar texto">📋 Copiar</button>
+        ${n.destinatario_email && n.estado === 'pendiente' ? `<button class="btn btn-sec btn-xs" onclick="mailtoNotif('${n.id}')" title="Abrir en cliente de email">✉ Email</button>` : ''}
+        ${n.estado === 'pendiente' ? `<button class="btn btn-success btn-xs" onclick="markNotifSent('${n.id}')">✓ Enviada</button>` : ''}
+        ${n.estado !== 'descartada' ? `<button class="btn btn-danger btn-xs" onclick="discardNotif('${n.id}')">✕</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function copyNotif(id) {
+  const n = notificaciones.find(x => x.id === id); if (!n) return;
+  const txt = `${n.titulo}\n\n${n.cuerpo}${n.destinatario_nombre ? `\n\nPara: ${n.destinatario_nombre}` : ''}${n.destinatario_email ? `\n${n.destinatario_email}` : ''}`;
+  navigator.clipboard.writeText(txt).then(() => toast('Texto copiado al portapapeles')).catch(() => { prompt('Copiá este texto:', txt); });
+}
+
+function mailtoNotif(id) {
+  const n = notificaciones.find(x => x.id === id); if (!n || !n.destinatario_email) return;
+  const url = `mailto:${encodeURIComponent(n.destinatario_email)}?subject=${encodeURIComponent(n.titulo)}&body=${encodeURIComponent(n.cuerpo)}`;
+  window.open(url);
+}
+
+async function markNotifSent(id) {
+  const n = notificaciones.find(x => x.id === id); if (!n) return;
+  n.estado = 'enviada'; renderNotifs(); refreshNotifBadge();
+  try { await sbUpdate('notificaciones', id, { estado: 'enviada' }); } catch (_) {}
+}
+
+async function discardNotif(id) {
+  const n = notificaciones.find(x => x.id === id); if (!n) return;
+  n.estado = 'descartada'; renderNotifs(); refreshNotifBadge();
+  try { await sbUpdate('notificaciones', id, { estado: 'descartada' }); } catch (_) {}
+}
+
+async function discardAllNotifs() {
+  if (!confirm('¿Descartar todas las notificaciones pendientes?')) return;
+  const ids = notificaciones.filter(n => n.estado === 'pendiente').map(n => n.id);
+  notificaciones.forEach(n => { if (n.estado === 'pendiente') n.estado = 'descartada'; });
+  renderNotifs(); refreshNotifBadge();
+  try { await sbUpdateIn('notificaciones', ids, { estado: 'descartada' }); } catch (_) {}
+}
+
+async function checkCupoLleno(convId, puestoId) {
+  const c = convs.find(x => x.id === convId);
+  const p = (c?.puestos || []).find(x => x.id === puestoId);
+  if (!p) return;
+  const usados = posts.filter(x => x.convId === convId && x.puestoId === puestoId && x.estado !== 'rechazado').length;
+  if (usados >= p.cupos) {
+    const yaNotif = notificaciones.find(n => n.tipo === 'cupo_lleno' && n.titulo.includes(p.nombre) && n.titulo.includes(c?.nombre||'') && n.estado !== 'descartada');
+    if (!yaNotif) {
+      await queueNotif(
+        'cupo_lleno',
+        `Cupo completo — ${p.nombre} en ${c?.nombre || 'convocatoria'}`,
+        `El puesto "${p.nombre}" de la convocatoria "${c?.nombre || ''}" llegó al 100% de su capacidad (${usados}/${p.cupos} cupos).`
+      );
+    }
+  }
+}
+
+// ── EMAIL CONFIRMACIONES ──
+const RESEND_KEY = 're_jLa2QX2v_2QsSZNpnwBJYBgJ1Ezcphe58';
+let mailSolId = null, mailFromArea = null;
+
+function openMailModal(solId) {
+  mailSolId = solId;
+  document.getElementById('mMailStep1').style.display = 'block';
+  document.getElementById('mMailStep2').style.display = 'none';
+  showM('mMailConf');
+}
+
+function prepMailTemplate(area) {
+  mailFromArea = area;
+  const s = solicitudes.find(x => x.id === mailSolId); if (!s) return;
+  const conv = s.conv_id ? convs.find(c => c.id === s.conv_id) : null;
+  const nombre = s.nombre || '';
+  const puesto = s.puesto_nombre || s.puesto_interes || '';
+  const fechas = conv?.fecha ? conv.fecha.split(',').map(f => fmtFecha(f.trim())).join(' y ') : '[FECHA]';
+  const horario = conv?.horario || '[HORARIO]';
+  const venue = conv?.venue || '[VENUE]';
+  const remun = conv?.remuneracion || '[REMUNERACIÓN]';
+  const limite = conv?.fecha_limite || '[FECHA LÍMITE]';
+  const wapp = conv?.link_whatsapp || '[LINK WHATSAPP]';
+  const convNombre = conv?.nombre || '[EVENTO]';
+
+  let subject, body;
+
+  if (area === 'movistar') {
+    subject = `Confirmación - ${convNombre} - Movistar Arena`;
+    body = `Estimado/a ${nombre}:
+
+Queremos confirmarte que fuiste seleccionado/a para los eventos de las fechas ${fechas} para formar parte del equipo de ${puesto || 'STAFF'} en el MOVISTAR ARENA.
+
+Detallamos propuesta laboral:
+
+Fecha: ${fechas}
+Horario: ${horario}
+Venue: ${venue || 'MOVISTAR ARENA - HUMBOLDT 450/VILLA CRESPO'}
+Remuneración: ${remun} por jornada efectivamente realizada.
+
+IMPORTANTE:
+• Recuerden que van a estar rotando TODOS.
+• Necesitamos respetar los horarios que le correspondan a cada uno, sino vamos a tener que empezar a utilizar los strikes.
+• Tener en cuenta que el pago se realiza de manera quincenal, el 5to día hábil cerrada la quincena.
+• Se les dará prioridad a aquellos que tengan disponibilidad ambas fechas.
+
+POR FAVOR, ESPERAMOS RESPUESTA COMO ASÍ TAMBIÉN CUALQUIER ACTUALIZACIÓN DE SU CONFIRMACIÓN ANTES DEL ${limite}.
+
+IMPORTANTE: En caso de llegada tarde, se descontará un 10% sobre la remuneración total correspondiente al servicio.
+
+Saludos att!`;
+  } else {
+    subject = `Confirmación - ${convNombre}`;
+    body = `Estimado/a,
+
+Le escribimos desde SHOW BUSINESS SOLUTIONS para confirmarle que fue seleccionado/a para el evento del día ${fechas}, formando parte del equipo de ${puesto || '[PUESTO]'}.
+
+A continuación, detallamos la propuesta laboral:
+
+Fecha: ${fechas}
+Horario: ${horario}
+Venue: ${venue}
+
+Remuneración: ${remun} por jornada
+Forma de pago: Transferencia bancaria, aproximadamente a los 15 días hábiles de finalizado el evento.
+
+Sin vianda, pero pueden traer un snack y algo para hidratarse durante la jornada.
+
+Vestimenta obligatoria:
+• Total black (todo negro)
+• Sin logos de fútbol ni escudos
+
+IMPORTANTE:
+Por favor, esperamos tu confirmación uniéndote al grupo a través del siguiente link y también confirmando por este medio (mail).
+
+🔗 Link de WhatsApp: ${wapp}
+
+En caso de que no puedas asistir, te pedimos que nos lo informes a la brevedad.
+
+Saludos cordiales,
+Show Business Solutions`;
+  }
+
+  document.getElementById('mailTo').value = s.email || '';
+  document.getElementById('mailSubject').value = subject;
+  document.getElementById('mailBody').value = body;
+  document.getElementById('mMailStep1').style.display = 'none';
+  document.getElementById('mMailStep2').style.display = 'block';
+}
+
+async function sendConfirmationMail() {
+  const to = document.getElementById('mailTo').value.trim();
+  const subject = document.getElementById('mailSubject').value.trim();
+  const body = document.getElementById('mailBody').value.trim();
+  if (!to || !subject || !body) { toast('Completá todos los campos'); return; }
+
+  const from = mailFromArea === 'movistar' ? 'orientadores.arena@show-bs.com' : 'convocatorias@show-bs.com';
+  const btn = document.getElementById('btnSendMail');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: [to], subject, text: body })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Error al enviar');
+    toast('✓ Mail enviado a ' + to);
+    closeM('mMailConf');
+  } catch (err) {
+    toast('Error: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar mail →';
+  }
+}
+let solViewId = null, solSelIds = new Set();
+
+function refreshSolBadge() {
+  const cnt = solicitudes.filter(s => s.estado === 'pendiente').length;
+  const b = document.getElementById('solNavBadge');
+  if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; }
+}
+
+function renderSolicitudes() {
+  const q = document.getElementById('solSrch').value.toLowerCase().trim();
+  const af = document.getElementById('solAreaF').value;
+  const sf = document.getElementById('solStF').value;
+  const filtered = solicitudes.filter(s => {
+    if (af && s.area !== af) return false;
+    if (sf && s.estado !== sf) return false;
+    if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  // Detectar CUIL/CUIT duplicados (misma persona en dos áreas o dos veces)
+  const cuitCount = {};
+  solicitudes.filter(s => s.cuit && s.estado !== 'rechazado').forEach(s => {
+    if (!cuitCount[s.cuit]) cuitCount[s.cuit] = [];
+    cuitCount[s.cuit].push(s.area);
+  });
+  const dupCuits = new Set(Object.entries(cuitCount).filter(([,areas]) => areas.length > 1).map(([cuit]) => cuit));
+  n('solPend', solicitudes.filter(s => s.estado === 'pendiente').length);
+  n('solAprov', solicitudes.filter(s => s.estado === 'aprobado').length);
+  n('solRech', solicitudes.filter(s => s.estado === 'rechazado').length);
+  n('solTotal', solicitudes.length);
+  const cont = document.getElementById('solContent');
+  if (!filtered.length) { cont.innerHTML = `<div class="empty">${solicitudes.length === 0 ? 'Sin solicitudes todavía. Compartí el formulario candidato.html para que lleguen postulaciones.' : 'Sin resultados.'}</div>`; return; }
+  cont.innerHTML = `<table style="width:100%;border-collapse:collapse;background:#fff">
+<thead><tr>
+  <th style="width:36px;padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb"><input type="checkbox" class="cb" id="solSelAll" onchange="solToggleAll()"></th>
+  <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Nombre</th>
+  <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Área</th>
+  <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Puesto</th>
+  <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Recibido</th>
+  <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Estado</th>
+  <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb;width:140px">Acciones</th>
+</tr></thead>
+<tbody>${filtered.map(s => {
+  const stColors = { pendiente:'#fef3c7;color:#92400e', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
+  const stLabels = { pendiente:'Pendiente', aprobado:'Aprobada', rechazado:'Rechazada' };
+  const sel = solSelIds.has(s.id);
+  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel?'#f0eeff':''}">
+  <td style="padding:9px 14px"><input type="checkbox" class="cb sol-cb" data-id="${s.id}" ${sel?'checked':''} onchange="solToggleSel('${s.id}')"></td>
+  <td style="padding:9px 14px;font-weight:500;color:#111827">${e(s.nombre)}${s.cuit?`<div style="font-size:11px;color:#9ca3af">CUIT: ${e(s.cuit)}</div>`:''}${s.cuit && dupCuits.has(s.cuit)?`<span style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:4px">⚠ Duplicado</span>`:''}</td>
+  <td style="padding:9px 14px"><span class="a-badge ${s.area==='movistar_arena'?'a-mv':'a-ex'}">${s.area==='movistar_arena'?'M. Arena':'Externos'}</span></td>
+  <td style="padding:9px 14px;font-size:12px;color:#6b7280">${e(s.puesto_interes||'—')}</td>
+  <td style="padding:9px 14px;font-size:12px;color:#9ca3af;white-space:nowrap">${s.created_at?new Date(s.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}):''}</td>
+  <td style="padding:9px 14px"><span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;background:${stColors[s.estado]||'#f3f4f6'}">${stLabels[s.estado]||s.estado}</span></td>
+  <td style="padding:9px 14px;white-space:nowrap;display:flex;gap:5px">
+    <button class="btn btn-sec btn-xs" onclick="openSolView('${s.id}')">Ver</button>
+    ${s.email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModal('${s.id}')" title="Enviar confirmación">✉</button>` : ''}
+    ${s.estado==='pendiente'?`<button class="btn btn-success btn-xs" onclick="singleSolSt('${s.id}','aprobado')">✓</button><button class="btn btn-danger btn-xs" onclick="singleSolSt('${s.id}','rechazado')">✕</button>`:''}
+  </td></tr>`;
+}).join('')}</tbody></table>`;
+  updateSolBulkBar();
+}
+
+function solToggleAll() { const v = document.getElementById('solSelAll')?.checked; document.querySelectorAll('.sol-cb').forEach(c => { if(v) solSelIds.add(c.dataset.id); else solSelIds.delete(c.dataset.id); c.checked=v; }); updateSolBulkBar(); }
+function solToggleSel(id) { if(solSelIds.has(id)) solSelIds.delete(id); else solSelIds.add(id); updateSolBulkBar(); }
+function updateSolBulkBar() { const bar=document.getElementById('solBulk'); bar.classList.toggle('on',solSelIds.size>0); document.getElementById('solBulkCnt').textContent=solSelIds.size+' seleccionadas'; }
+
+function openSolView(id) {
+  solViewId = id;
+  const s = solicitudes.find(x => x.id === id); if (!s) return;
+  document.getElementById('mSolTitle').textContent = `Solicitud — ${s.nombre}`;
+  const fld = (l,v) => v !== null && v !== undefined && v !== '' ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div class="cv-viewer-value">${e(String(v))}</div></div>` : '';
+  const bool = (l,v) => v !== null && v !== undefined ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;${v?'background:#fee2e2;color:#991b1b':'background:#d1fae5;color:#065f46'}">${v?'✓ Sí':'✗ No'}</div></div>` : '';
+
+  let html = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <span class="a-badge ${s.area==='movistar_arena'?'a-mv':'a-ex'}">${s.area==='movistar_arena'?'Movistar Arena':'Externos'}</span>
+    ${s.email?`<span style="font-size:12px;color:#6b7280">✉ ${e(s.email)}</span>`:''}
+    ${s.tel?`<span style="font-size:12px;color:#6b7280">📞 ${e(s.tel)}</span>`:''}
+    ${s.cuit?`<span style="font-size:12px;color:#6b7280">CUIT: ${e(s.cuit)}</span>`:''}
+    <span style="font-size:12px;color:#9ca3af">${s.created_at?new Date(s.created_at).toLocaleDateString('es-AR'):''}</span>
+  </div>`;
+
+  html += fld('Puesto de interés', s.puesto_interes);
+  html += fld('Disponibilidad', s.disponibilidad);
+  html += '<div class="cv-section-divider"></div>';
+  html += fld('Experiencia', s.experiencia);
+  html += fld('Formación', s.formacion);
+  html += fld('Habilidades', s.habilidades);
+
+  // Datos bancarios
+  if (s.cbu || s.banco || s.numero_cuenta) {
+    html += '<div class="cv-section-divider"></div>';
+    html += `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:10px">Datos bancarios</div>`;
+    html += `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:10px">`;
+    html += fld('CBU', s.cbu);
+    html += fld('Número de cuenta', s.numero_cuenta);
+    html += fld('Banco', s.banco);
+    html += `</div>`;
+  }
+
+  // Declaración Jurada
+  if (s.antecedentes !== null && s.antecedentes !== undefined || s.beneficio_social !== null && s.beneficio_social !== undefined) {
+    html += '<div class="cv-section-divider"></div>';
+    html += `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:10px">Declaración jurada</div>`;
+    html += bool('Antecedentes penales', s.antecedentes);
+    html += bool('Cobra beneficio social / plan de gobierno / AUH', s.beneficio_social);
+  }
+
+  if (s.archivo_cv) html += `<div class="cv-section-divider"></div><div class="cv-file-box"><span style="font-size:18px">📎</span><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(s.archivo_cv.nombre)}</div></div><button class="btn btn-sec btn-xs" onclick="downloadSolFile('${s.id}')">↓ Descargar</button></div>`;
+  document.getElementById('mSolBody').innerHTML = html;
+  showM('mSolView');
+}
+function downloadSolFile(id) { const s = solicitudes.find(x => x.id === id); if(!s?.archivo_cv) return; const a=document.createElement('a'); a.href=s.archivo_cv.datos; a.download=s.archivo_cv.nombre; a.click(); }
+
+async function solAction(estado) {
+  await singleSolSt(solViewId, estado);
+  closeM('mSolView');
+}
+async function singleSolSt(id, estado) {
+  const s = solicitudes.find(x => x.id === id); if (!s) return;
+  s.estado = estado;
+  if (estado === 'aprobado') {
+    const existe = people.find(p => p.nombre.toLowerCase().trim() === s.nombre.toLowerCase().trim());
+    let personaId;
+    if (!existe) {
+      const np = { id: uid(), nombre: s.nombre, area: s.area, estado: 'confirmado', email: s.email||null, tel: s.tel||null, cuit: s.cuit||null, notas: s.puesto_interes?`Interés: ${s.puesto_interes}`:null, cv: { puestoInteres: s.puesto_interes||'', experiencia: s.experiencia||'', formacion: s.formacion||'', habilidades: s.habilidades||'', disponibilidad: s.disponibilidad||'', fechaEnvio: s.created_at?.slice(0,10)||'', archivo: s.archivo_cv||null } };
+      people.push(np);
+      personaId = np.id;
+      try { await sbUpsert('personas', { id: np.id, nombre: np.nombre, area: np.area, estado: np.estado, email: np.email, tel: np.tel, cuit: np.cuit, notas: np.notas, cv: np.cv }); } catch(_) {}
+    } else {
+      personaId = existe.id;
+    }
+    // Si la solicitud viene de un puesto específico, asignar automáticamente
+    if (s.conv_id && s.puesto_id) {
+      const yaAsignado = posts.find(p => p.personaId === personaId && p.convId === s.conv_id && p.puestoId === s.puesto_id);
+      if (!yaAsignado) {
+        const np = { id: uid(), convId: s.conv_id, puestoId: s.puesto_id, personaId, nombre: s.nombre, estado: 'aprobado', notas: '' };
+        posts.push(np);
+        try { await sbInsert('postulaciones', [{ id: np.id, conv_id: np.convId, puesto_id: np.puestoId, persona_id: np.personaId, nombre: np.nombre, estado: np.estado, notas: null }]); } catch(_) {}
+        // Actualizar vista si estamos en esa convocatoria
+        if (currentConvId === s.conv_id) { renderPuestos(); renderDetStats(); }
+      }
+    }
+    // Cola de notificación para el candidato
+    await queueNotif(
+      'aprobacion',
+      `Tu solicitud fue aprobada — ${s.nombre}`,
+      `Hola${s.nombre?' '+s.nombre.split(' ')[0]:''}!\n\nTu solicitud para sumarte al equipo de recitales fue revisada y aprobada. En breve nos contactamos con más detalles sobre los próximos recitales disponibles.\n\n¡Gracias por tu interés!`,
+      s.email || null,
+      s.nombre
+    );
+    toast(`✓ ${s.nombre} agregada a la nómina y al puesto`);
+  }
+  try { await sbUpdate('solicitudes', id, { estado }); } catch(_) {}
+  renderSolicitudes(); refreshSolBadge(); nomRefresh();
+}
+async function bulkSolSt(estado) {
+  if (!solSelIds.size) return;
+  if (estado === 'aprobado' && !confirm(`¿Aprobar ${solSelIds.size} solicitudes y pasarlas a la nómina?`)) return;
+  for (const id of [...solSelIds]) await singleSolSt(id, estado);
+  solSelIds.clear(); updateSolBulkBar(); toast(`${solSelIds.size || 'Solicitudes'} actualizadas`);
+}
+
+// ── REPORTE DE CONVOCATORIA ──
+function openReporte() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  document.getElementById('mRepTitle').textContent = `Reporte — ${c.nombre}`;
+  const cPosts = posts.filter(p => p.convId === c.id);
+  const totalCupos = (c.puestos||[]).reduce((s,p) => s+p.cupos, 0);
+  const usados = cPosts.filter(p => p.estado !== 'rechazado').length;
+  const aprobados = cPosts.filter(p => p.estado === 'aprobado').length;
+  const pct = totalCupos > 0 ? Math.round(usados/totalCupos*100) : 0;
+  let html = `<div style="background:#f9fafb;border-radius:8px;padding:14px 16px;margin-bottom:16px">
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div><div style="font-size:22px;font-weight:700;color:#111827">${usados}<span style="font-size:13px;color:#9ca3af">/${totalCupos}</span></div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Cupos</div></div>
+      <div><div style="font-size:22px;font-weight:700;color:#0f6e56">${aprobados}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Aprobados</div></div>
+      <div><div style="font-size:22px;font-weight:700;color:#534AB7">${pct}%</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Cobertura</div></div>
+      <div><div style="font-size:22px;font-weight:700;color:#854F0B">${cPosts.filter(p=>p.estado==='pendiente').length}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Pendientes</div></div>
+    </div>
+  </div>`;
+  (c.puestos||[]).forEach(p => {
+    const pp = cPosts.filter(x => x.puestoId === p.id && x.estado !== 'rechazado');
+    const ppct = p.cupos>0?Math.round(pp.length/p.cupos*100):0;
+    html += `<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:6px;display:flex;align-items:center;gap:10px">${e(p.nombre)}<span style="font-size:11px;color:#9ca3af;font-weight:400">${pp.length}/${p.cupos} cupos · ${ppct}%</span></div>`;
+    if (pp.length) {
+      html += `<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#fafafa"><th style="padding:6px 10px;text-align:left;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:10px;border-bottom:1px solid #e5e7eb">Nombre</th><th style="padding:6px 10px;text-align:left;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:10px;border-bottom:1px solid #e5e7eb">Área</th><th style="padding:6px 10px;text-align:left;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:10px;border-bottom:1px solid #e5e7eb">Estado</th><th style="padding:6px 10px;text-align:left;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:10px;border-bottom:1px solid #e5e7eb">Sem.</th></tr></thead><tbody>`;
+      pp.forEach(post => {
+        const pers = people.find(x => x.id === post.personaId);
+        const sem = pers?.semaforo || 1;
+        const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
+        html += `<tr style="border-bottom:1px solid #f9fafb"><td style="padding:6px 10px;font-weight:500">${e(post.nombre)}${pers?.out_flag?'<span class="out-badge" style="margin-left:4px;cursor:default">🚫 OUT</span>':''}</td><td style="padding:6px 10px"><span class="a-badge ${pers?.area==='movistar_arena'?'a-mv':'a-ex'}" style="font-size:10px">${pers?.area==='movistar_arena'?'M. Arena':'Ext.'}</span></td><td style="padding:6px 10px"><span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${post.estado}</span></td><td style="padding:6px 10px"><span class="sem sem-${sem}" style="cursor:default">${sem}</span></td></tr>`;
+      });
+      html += '</tbody></table>';
+    } else { html += '<div style="font-size:12px;color:#9ca3af;padding:6px 0">Sin personas asignadas</div>'; }
+    html += '</div>';
+  });
+  document.getElementById('mRepBody').innerHTML = html;
+  showM('mReporte');
+}
+
+function exportPostuladosExcel() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const rows = [];
+  (c.puestos||[]).forEach(p => {
+    posts.filter(x => x.convId === c.id && x.puestoId === p.id).forEach(post => {
+      const pers = people.find(x => x.id === post.personaId);
+      rows.push({
+        'Convocatoria': c.nombre,
+        'Fecha': c.fecha || '',
+        'Puesto': p.nombre,
+        'Nombre': post.nombre,
+        'Email': pers?.email || '',
+        'Teléfono': pers?.tel || '',
+        'CUIL': pers?.cuit || '',
+        'Área': pers?.area === 'movistar_arena' ? 'Movistar Arena' : pers?.area === 'externos' ? 'Externos' : pers?.area || '',
+        'Estado': post.estado || '',
+        'Semáforo': pers?.semaforo || 1,
+        'Out': pers?.out_flag ? 'SI' : 'NO',
+        'Notas': post.notas || ''
+      });
+    });
+  });
+  if (!rows.length) { toast('No hay postulados para exportar'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Postulados');
+  const fileName = `postulados-${c.nombre.slice(0,30).replace(/\s/g,'-')}-${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  toast('Excel descargado');
+}
+
+function exportReporte() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const rows = [['convocatoria','fecha','puesto','nombre','area','estado','semaforo','out']];
+  (c.puestos||[]).forEach(p => {
+    posts.filter(x => x.convId === c.id && x.puestoId === p.id).forEach(post => {
+      const pers = people.find(x => x.id === post.personaId);
+      rows.push([c.nombre, c.fecha||'', p.nombre, post.nombre, pers?.area||'', post.estado, pers?.semaforo||1, pers?.out_flag?'SI':'NO']);
+    });
+  });
+  const csv = rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})); a.download = `reporte-${c.nombre.slice(0,30).replace(/\s/g,'-')}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+// ── ROTACIÓN ──
+function checkRotacion(personaId) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - rotacionConfig.dias_periodo);
+  const recentConvIds = new Set(
+    posts.filter(p => {
+      if (p.personaId !== personaId || p.estado === 'rechazado') return false;
+      const conv = convs.find(c => c.id === p.convId);
+      return conv?.fecha && new Date(conv.fecha + 'T00:00:00') >= cutoff;
+    }).map(p => p.convId)
+  );
+  return { count: recentConvIds.size, excede: recentConvIds.size >= rotacionConfig.max_eventos, max: rotacionConfig.max_eventos };
+}
+
+function openRotConfig() {
+  document.getElementById('rotMaxEv').value = rotacionConfig.max_eventos;
+  document.getElementById('rotDias').value = rotacionConfig.dias_periodo;
+  document.getElementById('rotModo').value = rotacionConfig.modo;
+  updateRotPreview();
+  showM('mRotConfig');
+}
+function updateRotPreview() {
+  document.getElementById('rotPreview1').textContent = document.getElementById('rotMaxEv').value;
+  document.getElementById('rotPreview2').textContent = document.getElementById('rotDias').value;
+}
+document.addEventListener('input', ev => { if (['rotMaxEv','rotDias'].includes(ev.target.id)) updateRotPreview(); });
+
+async function saveRotConfig() {
+  rotacionConfig = { max_eventos: parseInt(document.getElementById('rotMaxEv').value), dias_periodo: parseInt(document.getElementById('rotDias').value), modo: document.getElementById('rotModo').value };
+  nomRefresh(); closeM('mRotConfig');
+  try { await sb.from('config').upsert({ key: 'rotacion', value: rotacionConfig, updated_at: new Date().toISOString() }); toast('Configuración de rotación guardada'); } catch(_) {}
+}
+
+// ── HISTORIAL DE RECITALES ──
+function openHistorial(personaId) {
+  const p = people.find(x => x.id === personaId); if (!p) return;
+  document.getElementById('mHistTitle').textContent = `Historial — ${p.nombre}`;
+  const myPosts = posts.filter(x => x.personaId === personaId);
+  const uniqueConvIds = [...new Set(myPosts.map(x => x.convId))];
+  const rot = checkRotacion(personaId);
+  const lastConv = uniqueConvIds.map(cid => convs.find(c => c.id === cid)).filter(c => c?.fecha).sort((a,b) => b.fecha.localeCompare(a.fecha))[0];
+  const daysSince = lastConv ? Math.floor((new Date() - new Date(lastConv.fecha + 'T00:00:00')) / 86400000) : null;
+  document.getElementById('mHistStats').innerHTML = `
+    <div><div style="font-size:20px;font-weight:700;color:#111827">${uniqueConvIds.length}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Recitales</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:${rot.excede?'#c2410c':'#0f6e56'}">${rot.count}/${rot.max}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Últimos ${rotacionConfig.dias_periodo}d</div></div>
+    ${daysSince !== null ? `<div><div style="font-size:20px;font-weight:700;color:#534AB7">${daysSince}d</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Desde último</div></div>` : ''}
+    ${p.cuit ? `<div><div style="font-size:13px;font-weight:600;color:#374151">${e(p.cuit)}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">CUIT</div></div>` : ''}
+  `;
+  if (!myPosts.length) { document.getElementById('mHistBody').innerHTML = '<div class="empty">Sin historial todavía</div>'; showM('mHistorial'); return; }
+  const grouped = {};
+  myPosts.forEach(post => { if (!grouped[post.convId]) grouped[post.convId] = []; grouped[post.convId].push(post); });
+  const sorted = Object.entries(grouped).map(([cid, pp]) => ({ conv: convs.find(c => c.id === cid), posts: pp })).sort((a, b) => (b.conv?.fecha||'').localeCompare(a.conv?.fecha||''));
+  const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
+  document.getElementById('mHistBody').innerHTML = sorted.map(({ conv, posts: pp }) => `
+    <div class="hist-item">
+      <div class="hist-dot ${pp[0]?.estado||'pendiente'}"></div>
+      <div class="hist-info">
+        <div class="hist-title">${conv ? e(conv.nombre) : 'Convocatoria eliminada'}</div>
+        <div class="hist-meta">${conv?.fecha ? fmtFecha(conv.fecha) : ''}${conv?.area ? ' · ' + ({movistar_arena:'Movistar Arena',externos:'Externos',ambas:'Ambas'}[conv.area]||conv.area) : ''}</div>
+        <div class="hist-tags">${pp.map(post => {
+          const puestoNom = (conv?.puestos||[]).find(pu => pu.id === post.puestoId)?.nombre || 'Puesto';
+          return `<span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${e(puestoNom)}</span>`;
+        }).join('')}</div>
+      </div>
+    </div>`).join('');
+  showM('mHistorial');
+}
+
+// ── DEDUPLICAR POR CUIT ──
+function openDedup() {
+  const grupos = {};
+  people.filter(p => p.cuit).forEach(p => { if (!grupos[p.cuit]) grupos[p.cuit] = []; grupos[p.cuit].push(p); });
+  const dups = Object.entries(grupos).filter(([, arr]) => arr.length > 1);
+  const body = document.getElementById('mDedupBody');
+  if (!dups.length) { body.innerHTML = '<div class="empty" style="padding:24px">✓ No se encontraron duplicados por CUIT</div>'; showM('mDedup'); return; }
+  body.innerHTML = dups.map(([cuit, arr]) => `
+    <div class="dedup-group">
+      <div class="dedup-group-head"><span>CUIT: ${e(cuit)}</span><span style="color:#9ca3af;font-size:11px">${arr.length} registros</span></div>
+      ${arr.map(p => {
+        const pPosts = posts.filter(x => x.personaId === p.id).length;
+        const pFbs = feedbacks.filter(x => x.persona_id === p.id).length;
+        return `<div class="dedup-person">
+          <div style="flex:1">
+            <div style="font-weight:500">${e(p.nombre)}</div>
+            <div style="font-size:11px;color:#9ca3af">${p.area==='movistar_arena'?'M. Arena':'Externos'} · ${pPosts} recitales · ${pFbs} feedbacks${p.email?' · '+e(p.email):''}</div>
+          </div>
+          <button class="btn btn-success btn-xs" onclick="keepAsMaster('${p.id}','${cuit}')" title="Mantener este, fusionar los otros">✓ Mantener</button>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+  showM('mDedup');
+}
+
+async function keepAsMaster(masterId, cuit) {
+  const dups = people.filter(p => p.cuit === cuit && p.id !== masterId);
+  if (!dups.length) return;
+  if (!confirm(`¿Fusionar ${dups.length} registro(s) duplicado(s) en este? Esta acción no se puede deshacer.`)) return;
+  setLoad(true, 'Fusionando duplicados...', 30);
+  try {
+    for (const dup of dups) {
+      await sb.from('postulaciones').update({ persona_id: masterId }).eq('persona_id', dup.id);
+      await sb.from('feedbacks').update({ persona_id: masterId }).eq('persona_id', dup.id);
+      posts.filter(x => x.personaId === dup.id).forEach(x => x.personaId = masterId);
+      feedbacks.filter(x => x.persona_id === dup.id).forEach(x => x.persona_id = masterId);
+      await sbDelete('personas', dup.id);
+      people = people.filter(x => x.id !== dup.id);
+    }
+    toast(`✓ ${dups.length} duplicado(s) fusionados`);
+    nomRefresh(); openDedup();
+  } catch (err) { toast('Error al fusionar: ' + err.message); }
+  setLoad(false);
+}
+
+// ── OUTS ──
+function openOutModal(id) {
+  outTargetId = id;
+  const p = people.find(x => x.id === id);
+  document.getElementById('mOutTitle').textContent = `Marcar como OUT — ${p?.nombre || ''}`;
+  document.getElementById('outCat').value = p?.out_categoria || 'comportamiento';
+  document.getElementById('outNota').value = p?.out_nota || '';
+  showM('mOut');
+}
+async function saveOut() {
+  const p = people.find(x => x.id === outTargetId); if (!p) return;
+  p.out_flag = true; p.out_categoria = document.getElementById('outCat').value; p.out_nota = document.getElementById('outNota').value.trim();
+  nomRefresh(); closeM('mOut');
+  try { await sbUpdate('personas', outTargetId, { out_flag: true, out_categoria: p.out_categoria, out_nota: p.out_nota }); toast('Persona marcada como OUT'); } catch (_) {}
+}
+async function removeOut(id) {
+  if (!confirm('¿Quitar el OUT de esta persona?')) return;
+  const p = people.find(x => x.id === id); if (!p) return;
+  p.out_flag = false; p.out_categoria = null; p.out_nota = null;
+  nomRefresh();
+  try { await sbUpdate('personas', id, { out_flag: false, out_categoria: null, out_nota: null }); toast('OUT removido'); } catch (_) {}
+}
+
+// ── SEMÁFORO Y FEEDBACKS ──
+function calcSemaforo(personaId) {
+  const myFbs = feedbacks.filter(f => f.persona_id === personaId);
+  if (!myFbs.length) return 1;
+  const avg = myFbs.reduce((s, f) => s + f.puntaje, 0) / myFbs.length;
+  return Math.min(3, Math.max(1, Math.round(avg)));
+}
+function openSemModal(id) {
+  const myFbs = feedbacks.filter(f => f.persona_id === id);
+  if (myFbs.length > 0) { openFbHistory(id); return; }
+  openFeedback(id, null);
+}
+function openFeedback(personaId, convId) {
+  fbTargetId = personaId; fbTargetConvId = convId;
+  const p = people.find(x => x.id === personaId);
+  document.getElementById('mFbTitle').textContent = `Feedback — ${p?.nombre || ''}`;
+  document.querySelectorAll('input[name="fbPuntaje"]').forEach(r => r.checked = false);
+  document.getElementById('fbComentario').value = '';
+  showM('mFeedback');
+}
+async function saveFeedback() {
+  const puntajeEl = document.querySelector('input[name="fbPuntaje"]:checked');
+  if (!puntajeEl) { toast('Seleccioná un semáforo'); return; }
+  const puntaje = parseInt(puntajeEl.value);
+  const comentario = document.getElementById('fbComentario').value.trim();
+  const p = people.find(x => x.id === fbTargetId); if (!p) return;
+  const fb = { id: uid(), persona_id: fbTargetId, conv_id: fbTargetConvId || null, supervisor_id: currentUserId, supervisor_nombre: currentUserName || '', puntaje, comentario: comentario || null, created_at: new Date().toISOString() };
+  feedbacks.push(fb);
+  const newSem = calcSemaforo(fbTargetId);
+  p.semaforo = newSem;
+  nomRefresh(); closeM('mFeedback');
+  try {
+    await sbInsert('feedbacks', [{ id: fb.id, persona_id: fb.persona_id, conv_id: fb.conv_id, supervisor_id: fb.supervisor_id, supervisor_nombre: fb.supervisor_nombre, puntaje: fb.puntaje, comentario: fb.comentario }]);
+    await sbUpdate('personas', fbTargetId, { semaforo: newSem });
+    toast('Feedback guardado');
+  } catch (_) {}
+}
+function openFbHistory(personaId) {
+  const p = people.find(x => x.id === personaId);
+  document.getElementById('mFbHistTitle').textContent = `Feedbacks — ${p?.nombre || ''}`;
+  const myFbs = feedbacks.filter(f => f.persona_id === personaId).sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const sem = calcSemaforo(personaId);
+  let html = `<div style="display:flex;align-items:center;gap:10px;padding:10px 0 14px;border-bottom:1px solid #f3f4f6;margin-bottom:10px">
+    <span style="font-size:13px;color:#6b7280">Semáforo actual:</span>
+    <span class="sem sem-${sem}">${sem}</span>
+    <span style="font-size:12px;color:#9ca3af">(promedio de ${myFbs.length} feedback${myFbs.length!==1?'s':''})</span>
+    <button class="btn btn-primary btn-xs" onclick="closeM('mFbHistory');openFeedback('${personaId}',null)" style="margin-left:auto">+ Nuevo feedback</button>
+  </div>`;
+  if (!myFbs.length) { html += '<div class="empty">Sin feedbacks todavía</div>'; }
+  else { html += myFbs.map(f => { const convNom = f.conv_id ? (convs.find(c => c.id === f.conv_id)?.nombre || 'Convocatoria') : '—'; return `<div class="fb-item"><div style="display:flex;align-items:center;gap:8px"><span class="sem sem-${f.puntaje}">${f.puntaje}</span><span style="font-weight:500">${e(f.supervisor_nombre || 'Admin')}</span><span style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:3px">${convNom}</span></div>${f.comentario?`<div style="margin-top:4px;color:#374151;font-size:12px">${e(f.comentario)}</div>`:''}<div class="fb-meta">${f.created_at ? new Date(f.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}) : ''}</div></div>`; }).join(''); }
+  document.getElementById('fbHistBody').innerHTML = html;
+  showM('mFbHistory');
+}
+
+// ── SUPERVISORES ──
+function renderSupList() {
+  const cont = document.getElementById('supList');
+  const sups = userProfiles.filter(p => p.rol === 'supervisor');
+  if (!sups.length) { cont.innerHTML = '<div class="empty">No hay supervisores todavía. Creá uno con el botón.</div>'; return; }
+  cont.innerHTML = sups.map(s => {
+    const myConvs = supConvLinks.filter(l => l.supervisor_id === s.id).map(l => convs.find(c => c.id === l.conv_id)).filter(Boolean);
+    return `<div class="sup-card"><div class="sup-card-head"><div><div class="sup-name">${e(s.nombre || '—')}</div><div class="sup-email" id="sup-email-${s.id}">cargando...</div></div><button class="btn btn-danger btn-xs" onclick="delSup('${s.id}')">Eliminar</button></div>
+    ${myConvs.length ? `<div class="sup-convs">${myConvs.map(c=>`<span class="sup-conv-tag">${e(c.nombre)}<button onclick="removeSupConv('${s.id}','${c.id}')" title="Quitar">×</button></span>`).join('')}</div>` : '<div style="font-size:12px;color:#9ca3af;margin-top:8px">Sin convocatorias asignadas</div>'}
+    <div style="margin-top:8px;display:flex;gap:8px;align-items:center"><select class="filt" id="addConvSel-${s.id}" style="font-size:12px;padding:4px 8px"><option value="">Asignar convocatoria...</option>${convs.map(c=>`<option value="${c.id}">${e(c.nombre)}</option>`).join('')}</select><button class="btn btn-sec btn-xs" onclick="addSupConv('${s.id}')">Asignar</button></div>
+    </div>`;
+  }).join('');
+  sups.forEach(s => {
+    sb.auth.admin?.getUserById?.(s.id).then(({data}) => { const el = document.getElementById(`sup-email-${s.id}`); if(el && data?.user) el.textContent = data.user.email; }).catch(()=>{});
+  });
+}
+function openAddSup() {
+  document.getElementById('supEmail').value = ''; document.getElementById('supNombre').value = ''; document.getElementById('supConvAsign').value = '';
+  const sel = document.getElementById('supConvAsign'); sel.innerHTML = '<option value="">— sin asignar todavía —</option>' + convs.map(c=>`<option value="${c.id}">${e(c.nombre)}</option>`).join('');
+  showM('mAddSup');
+}
+async function saveSupProfile() {
+  const email = document.getElementById('supEmail').value.trim(); const nombre = document.getElementById('supNombre').value.trim();
+  if (!email || !nombre) { toast('Email y nombre son obligatorios'); return; }
+  const convId = document.getElementById('supConvAsign').value;
+  try {
+    const { data: userData, error: uErr } = await sb.auth.admin.createUser({ email, password: Math.random().toString(36).slice(2) + 'Aa1!', email_confirm: true });
+    if (uErr) { toast('Error: ' + uErr.message); return; }
+    const uid2 = userData.user.id;
+    await sbInsert('user_profiles', [{ id: uid2, nombre, rol: 'supervisor' }]);
+    userProfiles.push({ id: uid2, nombre, rol: 'supervisor' });
+    if (convId) { await sbInsert('supervisor_convocatorias', [{ supervisor_id: uid2, conv_id: convId }]); supConvLinks.push({ supervisor_id: uid2, conv_id: convId }); }
+    closeM('mAddSup'); renderSupList(); toast('Supervisor creado — recordale que tiene que cambiar la contraseña');
+  } catch (err) { toast('Error creando supervisor: ' + err.message); }
+}
+async function addSupConv(supId) {
+  const convId = document.getElementById(`addConvSel-${supId}`)?.value; if (!convId) { toast('Seleccioná una convocatoria'); return; }
+  if (supConvLinks.find(l => l.supervisor_id === supId && l.conv_id === convId)) { toast('Ya está asignado a esa convocatoria'); return; }
+  supConvLinks.push({ supervisor_id: supId, conv_id: convId });
+  try { await sbInsert('supervisor_convocatorias', [{ supervisor_id: supId, conv_id: convId }]); renderSupList(); toast('Convocatoria asignada'); } catch (_) {}
+}
+async function removeSupConv(supId, convId) {
+  supConvLinks = supConvLinks.filter(l => !(l.supervisor_id === supId && l.conv_id === convId));
+  try { await sb.from('supervisor_convocatorias').delete().eq('supervisor_id', supId).eq('conv_id', convId); renderSupList(); toast('Asignación removida'); } catch (_) {}
+}
+async function delSup(id) {
+  if (!confirm('¿Eliminar este supervisor?')) return;
+  userProfiles = userProfiles.filter(p => p.id !== id); supConvLinks = supConvLinks.filter(l => l.supervisor_id !== id);
+  try { await sbDelete('user_profiles', id); renderSupList(); toast('Supervisor eliminado'); } catch (_) {}
+}
+
+// ── VISTA SUPERVISOR ──
+function renderSupView() {
+  const myConvIds = new Set(supConvLinks.filter(l => l.supervisor_id === currentUserId).map(l => l.conv_id));
+  const myConvs = convs.filter(c => myConvIds.has(c.id));
+  document.getElementById('supViewNombre').textContent = currentUserName ? `Hola, ${currentUserName}` : 'Mis convocatorias';
+  const cont = document.getElementById('supViewContent');
+  if (!myConvs.length) { cont.innerHTML = '<div class="empty">No tenés convocatorias asignadas todavía.</div>'; return; }
+  cont.innerHTML = myConvs.map(c => {
+    const myPosts = posts.filter(p => p.convId === c.id && p.estado !== 'rechazado');
+    const personIds = [...new Set(myPosts.map(p => p.personaId).filter(Boolean))];
+    const personas = personIds.map(id => people.find(p => p.id === id)).filter(Boolean);
+    return `<div class="sup-conv-card">
+      <div class="sup-conv-head" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div><div class="sup-conv-title">${e(c.nombre)}</div><div class="sup-conv-meta">${c.fecha?fmtFecha(c.fecha)+' · ':''}${personas.length} personas asignadas</div></div>
+        <span style="color:#9ca3af;font-size:18px">▾</span>
+      </div>
+      <div>
+        ${!personas.length ? '<div style="padding:12px 16px;font-size:13px;color:#9ca3af">Sin personas asignadas</div>' :
+          personas.map(p => {
+            const sem = p.semaforo || 1;
+            const myFbs = feedbacks.filter(f => f.persona_id === p.id && f.conv_id === c.id && f.supervisor_id === currentUserId);
+            return `<div class="sup-persona-row">
+              <span class="sem sem-${sem}">${sem}</span>
+              <span style="flex:1;font-weight:500">${e(p.nombre)}</span>
+              <span style="font-size:11px;color:#9ca3af">${myFbs.length} feedback${myFbs.length!==1?'s':''} míos</span>
+              <button class="btn btn-primary btn-xs" onclick="openFeedback('${p.id}','${c.id}')">+ Feedback</button>
+              ${myFbs.length ? `<button class="btn btn-sec btn-xs" onclick="openFbHistory('${p.id}')">Ver historial</button>` : ''}
+            </div>`;
+          }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+initAuth();
+</script>
+</body>
+</html>
