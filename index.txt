@@ -1,0 +1,1 @@
+Set-Content -Path "index.html" -Value "<meta http-equiv='refresh' content='0; url=/candidato.html'>"

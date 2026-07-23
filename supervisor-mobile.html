@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Recital">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" id="pwaManifest">
+<title>Supervisor — Recital</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f2;color:#1a1a1a;font-size:15px;min-height:100vh;-webkit-tap-highlight-color:transparent}
+.app-bar{background:#0f1117;color:#fff;padding:env(safe-area-inset-top,0) 16px 0;position:sticky;top:0;z-index:50}
+.app-bar-inner{display:flex;align-items:center;gap:12px;padding:14px 0}
+.app-bar-title{font-size:16px;font-weight:600;flex:1}
+.app-bar-sub{font-size:11px;color:#6b7280;margin-top:1px}
+.back-btn{background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;padding:4px;line-height:1}
+.logout-btn{background:none;border:1px solid #374151;color:#9ca3af;border-radius:6px;font-size:12px;padding:5px 10px;cursor:pointer}
+.screen{display:none;padding-bottom:env(safe-area-inset-bottom,16px)}.screen.active{display:block}
+.login-wrap{min-height:100vh;background:#0f1117;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:28px;width:100%;max-width:360px}
+.login-title{font-size:18px;font-weight:700;color:#fff;text-align:center;margin-bottom:4px}
+.login-sub{font-size:12px;color:#6b7280;text-align:center;margin-bottom:24px}
+.lbl{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:5px}
+.l-in{width:100%;padding:12px;background:#0f1117;border:1px solid #374151;border-radius:8px;color:#fff;font-size:15px;outline:none;margin-bottom:14px}
+.l-in:focus{border-color:#534AB7}
+.l-err{display:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:12px}
+.l-btn{width:100%;padding:13px;background:#534AB7;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+.section-pad{padding:16px}
+.page-title{font-size:18px;font-weight:700;color:#111827;margin-bottom:4px}
+.page-sub{font-size:13px;color:#9ca3af;margin-bottom:16px}
+.conv-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;transition:border-color .15s,box-shadow .15s;-webkit-tap-highlight-color:rgba(83,74,183,.1)}
+.conv-card:active{border-color:#a5b4fc;box-shadow:0 2px 8px rgba(83,74,183,.1)}
+.conv-title{font-size:15px;font-weight:600;color:#111827;margin-bottom:4px}
+.conv-meta{font-size:12px;color:#9ca3af;display:flex;gap:10px;flex-wrap:wrap}
+.conv-prog{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#6b7280}
+.prog-track{flex:1;height:5px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+.prog-fill{height:100%;border-radius:999px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.b-mv{background:#e0f2fe;color:#0369a1}.b-ex{background:#f0fdf4;color:#166534}
+.person-row{background:#fff;border-bottom:1px solid #f3f4f6;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.person-row:active{background:#f5f3ff}
+.person-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0}
+.person-name{font-size:14px;font-weight:600;color:#111827}
+.person-meta{font-size:11px;color:#9ca3af;margin-top:2px}
+.sem{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;flex-shrink:0}
+.sem-1{background:#d1fae5;color:#065f46}.sem-2{background:#fef3c7;color:#92400e}.sem-3{background:#fee2e2;color:#991b1b}
+.chevron{color:#d1d5db;font-size:16px;margin-left:auto;flex-shrink:0}
+.fb-sheet{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;justify-content:flex-end}
+.fb-sheet.hidden{display:none}
+.fb-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.fb-card{position:relative;background:#fff;border-radius:20px 20px 0 0;padding:24px 20px calc(env(safe-area-inset-bottom,0px) + 24px);max-height:85vh;overflow-y:auto}
+.fb-handle{width:36px;height:4px;background:#e5e7eb;border-radius:999px;margin:0 auto 18px}
+.fb-title{font-size:17px;font-weight:700;color:#111827;margin-bottom:4px}
+.fb-sub{font-size:13px;color:#9ca3af;margin-bottom:20px}
+.sem-options{display:flex;gap:10px;margin-bottom:18px}
+.sem-opt{flex:1;padding:12px 8px;border:2px solid #e5e7eb;border-radius:10px;cursor:pointer;text-align:center;transition:all .15s}
+.sem-opt:active{transform:scale(.97)}
+.sem-opt.sel-1{border-color:#10b981;background:#f0fdf4}
+.sem-opt.sel-2{border-color:#f59e0b;background:#fffbeb}
+.sem-opt.sel-3{border-color:#ef4444;background:#fff7f7}
+.sem-opt .icon{font-size:22px;margin-bottom:4px}
+.sem-opt .label{font-size:11px;font-weight:600;color:#374151}
+.fb-ta{width:100%;padding:12px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;outline:none;resize:none;height:90px;font-family:inherit}
+.fb-ta:focus{border-color:#534AB7}
+.fb-send{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px}
+.fb-send:disabled{opacity:.5}
+.fb-prev{margin-top:14px;border-top:1px solid #f3f4f6;padding-top:14px}
+.fb-prev-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:10px}
+.fb-prev-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;font-size:13px}
+.empty-state{text-align:center;padding:48px 20px;color:#9ca3af}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:500;color:#6b7280;margin-bottom:6px}
+.load-bar{position:fixed;top:0;left:0;right:0;height:3px;background:#534AB7;z-index:200;transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.toast-mob{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);left:50%;transform:translateX(-50%) translateY(10px);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:all .2s;white-space:nowrap;pointer-events:none}
+.toast-mob.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.install-banner{background:#534AB7;color:#fff;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.install-banner button{background:rgba(255,255,255,.2);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- Load bar -->
+<div class="load-bar" id="loadBar"></div>
+
+<!-- Install banner -->
+<div class="install-banner" id="installBanner" style="display:none" onclick="doInstall()">
+  <span style="flex:1">📱 Agregá esta app a tu pantalla de inicio para acceder más rápido</span>
+  <button>Instalar</button>
+  <span onclick="event.stopPropagation();document.getElementById('installBanner').style.display='none'" style="cursor:pointer;opacity:.6">✕</span>
+</div>
+
+<!-- Login -->
+<div id="screenLogin" class="screen active">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-title">Recital</div>
+      <div class="login-sub">Acceso para supervisores</div>
+      <label class="lbl">Email</label>
+      <input type="email" id="loginEmail" class="l-in" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+      <label class="lbl">Contraseña</label>
+      <input type="password" id="loginPass" class="l-in" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="l-err" id="loginErr"></div>
+      <button class="l-btn" id="loginBtn" onclick="doLogin()">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Home: mis convocatorias -->
+<div id="screenHome" class="screen">
+  <div class="app-bar">
+    <div class="app-bar-inner">
+      <div style="flex:1">
+        <div class="app-bar-title">Mis convocatorias</div>
+        <div class="app-bar-sub" id="homeSubtitle">Supervisor</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+  <div class="section-pad" id="homeContent">
+    <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Cargando...</div></div>
+  </div>
+</div>
+
+<!-- Detalle de convocatoria: personas -->
+<div id="screenConv" class="screen">
+  <div class="app-bar">
+    <div class="app-bar-inner">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <div style="flex:1">
+        <div class="app-bar-title" id="convScreenTitle">Convocatoria</div>
+        <div class="app-bar-sub" id="convScreenSub"></div>
+      </div>
+    </div>
+  </div>
+  <div id="convPersonList" style="background:#fff"></div>
+</div>
+
+<!-- Bottom sheet: dar feedback -->
+<div class="fb-sheet hidden" id="fbSheet">
+  <div class="fb-overlay" onclick="closeFbSheet()"></div>
+  <div class="fb-card">
+    <div class="fb-handle"></div>
+    <div class="fb-title" id="fbPersonName">Persona</div>
+    <div class="fb-sub">¿Cómo evaluás su desempeño en este recital?</div>
+    <div class="sem-options">
+      <div class="sem-opt" id="semOpt1" onclick="selectSem(1)">
+        <div class="icon">🟢</div><div class="label">Sin problemas</div><div style="font-size:18px;font-weight:700;color:#065f46">1</div>
+      </div>
+      <div class="sem-opt" id="semOpt2" onclick="selectSem(2)">
+        <div class="icon">🟡</div><div class="label">Revisar</div><div style="font-size:18px;font-weight:700;color:#92400e">2</div>
+      </div>
+      <div class="sem-opt" id="semOpt3" onclick="selectSem(3)">
+        <div class="icon">🔴</div><div class="label">No llamar</div><div style="font-size:18px;font-weight:700;color:#991b1b">3</div>
+      </div>
+    </div>
+    <textarea class="fb-ta" id="fbComentario" placeholder="Comentario (opcional)..."></textarea>
+    <button class="fb-send" id="fbSendBtn" onclick="sendFeedback()">Enviar feedback</button>
+    <div class="fb-prev" id="fbPrevSection" style="display:none">
+      <div class="fb-prev-title">Mis feedbacks anteriores para esta persona</div>
+      <div id="fbPrevList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-mob" id="toastMob"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ════════════════════════════════════════
+const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+// ════════════════════════════════════════
+
+const sb = supabase.createClient(SB_URL, SB_KEY);
+let currentUser = null, currentUserId = null, currentUserName = '';
+let myConvIds = [], convs = [], posts = [], people = [], feedbacks = [];
+let currentConvId = null, fbPersonId = null, fbConvId = null, selectedSem = 0;
+let deferredInstall = null;
+
+// ── PWA Manifest ──
+const manifest = { name:'Recital — Supervisor', short_name:'Recital', start_url:'.', display:'standalone', background_color:'#0f1117', theme_color:'#534AB7', icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%23534AB7"/><text y=".9em" font-size="80" x="10">🎵</text></svg>',sizes:'192x192',type:'image/svg+xml'}] };
+const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+document.getElementById('pwaManifest').href = URL.createObjectURL(mBlob);
+
+// ── Install prompt ──
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; document.getElementById('installBanner').style.display = 'flex'; });
+async function doInstall() { if (!deferredInstall) return; deferredInstall.prompt(); const r = await deferredInstall.userChoice; if (r.outcome === 'accepted') document.getElementById('installBanner').style.display = 'none'; deferredInstall = null; }
+
+// ── Load bar ──
+function setLoad(on, pct = 0) { const b = document.getElementById('loadBar'); b.style.transform = on ? `scaleX(${pct/100})` : 'scaleX(0)'; }
+
+// ── Toast ──
+function toast(msg) { const t = document.getElementById('toastMob'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2400); }
+
+// ── Screens ──
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
+
+// ── Auth ──
+async function initAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { currentUser = session.user; currentUserId = session.user.id; await loadData(); }
+  else showScreen('screenLogin');
+}
+
+async function doLogin() {
+  const btn = document.getElementById('loginBtn'), err = document.getElementById('loginErr');
+  const email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPass').value;
+  err.style.display = 'none'; btn.disabled = true; btn.textContent = 'Ingresando...';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Ingresar';
+  if (error) { err.textContent = error.message === 'Invalid login credentials' ? 'Email o contraseña incorrectos' : error.message; err.style.display = 'block'; return; }
+  currentUser = data.user; currentUserId = data.user.id; await loadData();
+}
+
+async function doLogout() { await sb.auth.signOut(); location.reload(); }
+
+// ── Load data ──
+async function loadData() {
+  setLoad(true, 20);
+  try {
+    const { data: profile } = await sb.from('user_profiles').select('*').eq('id', currentUserId).single().catch(() => ({ data: null }));
+    currentUserName = profile?.nombre || currentUser?.email?.split('@')[0] || 'Supervisor';
+    document.getElementById('homeSubtitle').textContent = currentUserName;
+
+    setLoad(true, 40);
+    const [{ data: scData }, { data: cData }, { data: pData }, { data: postData }, { data: fbData }] = await Promise.all([
+      sb.from('supervisor_convocatorias').select('*').eq('supervisor_id', currentUserId),
+      sb.from('convocatorias').select('*'),
+      sb.from('personas').select('id,nombre,area,semaforo,out_flag'),
+      sb.from('postulaciones').select('*').eq('estado', 'aprobado').neq('estado', 'rechazado'),
+      sb.from('feedbacks').select('*').eq('supervisor_id', currentUserId)
+    ]);
+
+    myConvIds = (scData || []).map(l => l.conv_id);
+    convs = (cData || []).filter(c => myConvIds.includes(c.id));
+    posts = postData || [];
+    people = pData || [];
+    feedbacks = fbData || [];
+
+    setLoad(true, 90);
+    renderHome();
+    showScreen('screenHome');
+  } catch (err) { toast('Error cargando datos'); console.error(err); }
+  setLoad(false);
+}
+
+// ── Home ──
+function renderHome() {
+  const cont = document.getElementById('homeContent');
+  if (!convs.length) { cont.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Sin convocatorias asignadas</div><div style="font-size:13px;color:#9ca3af">El admin todavía no te asignó ningún recital</div></div>`; return; }
+  cont.innerHTML = convs.map(c => {
+    const myPosts = posts.filter(p => p.conv_id === c.id);
+    const withFb = new Set(feedbacks.filter(f => f.conv_id === c.id).map(f => f.persona_id));
+    const pct = myPosts.length > 0 ? Math.round(withFb.size / myPosts.length * 100) : 0;
+    const pc = pct < 50 ? '#e5e7eb' : pct < 100 ? '#fbbf24' : '#10b981';
+    return `<div class="conv-card" onclick="openConv('${c.id}')">
+      <div class="conv-title">${esc(c.nombre)}</div>
+      <div class="conv-meta">
+        <span class="badge ${c.area==='movistar_arena'?'b-mv':'b-ex'}">${c.area==='movistar_arena'?'Movistar Arena':'Externos'}</span>
+        ${c.fecha ? `<span>📅 ${fmtFecha(c.fecha)}</span>` : ''}
+        <span>${myPosts.length} persona${myPosts.length!==1?'s':''}</span>
+      </div>
+      <div class="conv-prog">
+        <div class="prog-track"><div class="prog-fill" style="background:${pc};width:${pct}%"></div></div>
+        <span>${withFb.size}/${myPosts.length} feedbacks</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Convocatoria detail ──
+function openConv(convId) {
+  currentConvId = convId;
+  const c = convs.find(x => x.id === convId); if (!c) return;
+  document.getElementById('convScreenTitle').textContent = c.nombre;
+  document.getElementById('convScreenSub').textContent = c.fecha ? fmtFecha(c.fecha) : '';
+  const myPostPersonIds = posts.filter(p => p.conv_id === convId && p.persona_id).map(p => p.persona_id);
+  const myPeople = myPostPersonIds.map(id => people.find(p => p.id === id)).filter(Boolean);
+  if (!myPeople.length) { document.getElementById('convPersonList').innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Sin personas asignadas</div></div>`; showScreen('screenConv'); return; }
+  const hasFb = id => feedbacks.find(f => f.persona_id === id && f.conv_id === convId);
+  document.getElementById('convPersonList').innerHTML = myPeople.map(p => {
+    const sem = p.semaforo || 1;
+    const fb = hasFb(p.id);
+    const initials = p.nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+    const avatarBg = p.area==='movistar_arena'?'background:#e0f2fe;color:#0369a1':'background:#f0fdf4;color:#166534';
+    return `<div class="person-row" onclick="openFbSheet('${p.id}','${c.id}')">
+      <div class="person-avatar" style="${avatarBg}">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div class="person-name">${esc(p.nombre)}</div>
+        <div class="person-meta">${p.area==='movistar_arena'?'Movistar Arena':'Externos'}${fb?` · <span style="color:#0369a1">✓ Feedback dado</span>':' · Sin feedback todavía'}</div>
+      </div>
+      <span class="sem sem-${sem}">${sem}</span>
+      <span class="chevron">›</span>
+    </div>`;
+  }).join('');
+  showScreen('screenConv');
+}
+
+function goHome() { showScreen('screenHome'); renderHome(); }
+
+// ── Feedback sheet ──
+function openFbSheet(personaId, convId) {
+  fbPersonId = personaId; fbConvId = convId; selectedSem = 0;
+  const p = people.find(x => x.id === personaId);
+  document.getElementById('fbPersonName').textContent = p?.nombre || '';
+  document.getElementById('fbComentario').value = '';
+  document.getElementById('fbSendBtn').disabled = true;
+  [1,2,3].forEach(n => document.getElementById(`semOpt${n}`).className = 'sem-opt');
+  const myFbs = feedbacks.filter(f => f.persona_id === personaId && f.conv_id === convId);
+  const prev = document.getElementById('fbPrevSection');
+  if (myFbs.length) {
+    prev.style.display = 'block';
+    document.getElementById('fbPrevList').innerHTML = myFbs.map(f => `<div class="fb-prev-item"><span class="sem sem-${f.puntaje}">${f.puntaje}</span><div><div style="font-size:12px;color:#374151">${esc(f.comentario||'Sin comentario')}</div><div style="font-size:11px;color:#9ca3af">${f.created_at?new Date(f.created_at).toLocaleDateString('es-AR'):''}</div></div></div>`).join('');
+  } else { prev.style.display = 'none'; }
+  document.getElementById('fbSheet').classList.remove('hidden');
+  setTimeout(() => document.getElementById('fbComentario').blur(), 10);
+}
+function closeFbSheet() { document.getElementById('fbSheet').classList.add('hidden'); }
+function selectSem(n) {
+  selectedSem = n;
+  [1,2,3].forEach(i => { const el = document.getElementById(`semOpt${i}`); el.className = `sem-opt${i===n?' sel-'+n:''}`; });
+  document.getElementById('fbSendBtn').disabled = false;
+}
+async function sendFeedback() {
+  if (!selectedSem) { toast('Elegí un semáforo'); return; }
+  const btn = document.getElementById('fbSendBtn'); btn.disabled = true; btn.textContent = 'Enviando...';
+  const comentario = document.getElementById('fbComentario').value.trim();
+  const fb = { id: crypto.randomUUID(), persona_id: fbPersonId, conv_id: fbConvId, supervisor_id: currentUserId, supervisor_nombre: currentUserName, puntaje: selectedSem, comentario: comentario || null };
+  try {
+    await sb.from('feedbacks').insert([fb]);
+    const pers = people.find(x => x.id === fbPersonId);
+    const allFbs = [...feedbacks.filter(f => f.persona_id === fbPersonId), fb];
+    const avg = Math.min(3, Math.max(1, Math.round(allFbs.reduce((s,f)=>s+f.puntaje,0)/allFbs.length)));
+    await sb.from('personas').update({ semaforo: avg }).eq('id', fbPersonId);
+    if (pers) pers.semaforo = avg;
+    feedbacks.push(fb);
+    closeFbSheet();
+    openConv(currentConvId);
+    toast('✓ Feedback guardado');
+  } catch (err) { toast('Error al guardar'); btn.disabled = false; btn.textContent = 'Enviar feedback'; }
+}
+
+// ── Utils ──
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtFecha(f) { try { return new Date(f+'T00:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e) { return f; } }
+
+initAuth();
+</script>
+</body>
+</html>
