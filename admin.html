@@ -363,7 +363,7 @@ textarea.fi{height:64px;resize:vertical}
   <div class="ctrlbar">
     <input type="text" class="srch" id="candSrch" placeholder="Buscar por nombre o puesto..." oninput="renderCandidatos()">
     <select class="filt" id="candAreaF" onchange="renderCandidatos()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
-    <select class="filt" id="candStF" onchange="renderCandidatos()"><option value="">Todos los estados</option><option value="pendiente">Sin revisar</option><option value="contactado">En revisión</option><option value="confirmado">Aprobado</option><option value="no_asiste">Rechazado</option></select>
+    <select class="filt" id="candStF" onchange="renderCandidatos()"><option value="">Todos los estados</option><option value="pendiente">Sin revisar</option><option value="contactado">En revisión</option><option value="confirmado">Aprobado</option><option value="no_asiste">Rechazado</option></select> 
     <select class="filt" id="candSortF" onchange="renderCandidatos()"><option value="fecha_desc">Más recientes</option><option value="fecha_asc">Más antiguos</option><option value="nombre">Nombre A–Z</option></select>
     <button class="btn btn-sec btn-sm" id="candViewToggle" onclick="toggleCandView()">☰ Lista</button>
   </div>
@@ -1716,6 +1716,12 @@ function openMailModalFromPost(postId) {
 }
 
 const RESEND_KEY = 're_jLa2QX2v_2QsSZNpnwBJYBgJ1Ezcphe58';
+// Firma como imagen, una por cada área. Los archivos van en la carpeta /firmas.
+// La URL se arma sola con el dominio actual. Dejar '' para no incluir imagen de firma.
+const SIGNATURE_IMG = {
+  movistar: 'firmas/firma-arena.jpg',    // mails de Movistar Arena (orientadores.arena@show-bs.com)
+  externos: 'firmas/firma-externos.jpg'  // mails de Externos (convocatorias@show-bs.com)
+};
 let mailSolId = null, mailFromArea = null;
 
 function openMailModal(solId) {
@@ -1809,7 +1815,7 @@ Show Business Solutions`;
 }
 
 // Convierte el texto plano del mensaje en un HTML limpio y sobrio para el correo.
-function renderEmailHtml(text, fromAddr) {
+function renderEmailHtml(text, fromAddr, area) {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const linkify = s => s.replace(/((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)])/gi, u => {
     const href = u.startsWith('http') ? u : 'https://' + u;
@@ -1847,11 +1853,19 @@ function renderEmailHtml(text, fromAddr) {
   flushPara(); closeList();
 
   const contact = esc(fromAddr || 'convocatorias@show-bs.com');
+  const sigFile = (typeof SIGNATURE_IMG !== 'undefined' && SIGNATURE_IMG && SIGNATURE_IMG[area]) || '';
+  const sigUrl = sigFile ? (location.origin + '/' + sigFile.replace(/^\//, '')) : '';
+  const sigBlock = sigUrl
+    ? `<div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">
+      <img src="${sigUrl}" alt="Show Business Solutions" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0">
+    </div>`
+    : '';
   return `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
     <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#534AB7">Show Business Solutions</div>
     <div style="height:2px;width:40px;background:#534AB7;margin:12px 0 26px;border-radius:2px"></div>
     ${out}
+    ${sigBlock}
   </div>
   <div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">
     Show Business Solutions · ${contact}<br>
@@ -1874,7 +1888,7 @@ async function sendConfirmationMail() {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from), text: body })
+      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea), text: body })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Error al enviar');
