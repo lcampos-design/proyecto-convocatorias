@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Postulaciones — Recital</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a1a;color:#1a1a1a;font-size:15px;min-height:100vh;position:relative}
+.sbs-bg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden}
+.sbs-bg span{font-size:clamp(400px,75vw,1100px);font-weight:900;font-family:'Arial Black','Arial',sans-serif;letter-spacing:-.02em;line-height:1;color:#f0eeea;opacity:.9;user-select:none}
+.page-header{background:#0f1117;padding:28px 24px;text-align:center;position:relative;z-index:1}
+.page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.page-sub{font-size:13px;color:#6b7280;margin-top:5px}
+.container{max-width:700px;margin:32px auto;padding:0 16px 60px;position:relative;z-index:1}
+.loading{text-align:center;padding:48px;color:#9ca3af;font-size:14px}
+.empty{text-align:center;padding:48px;color:#9ca3af}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:500;color:#6b7280}
+.conv-block{margin-bottom:28px}
+.conv-header{background:rgba(255,255,255,.95);border:1px solid #e5e7eb;border-radius:12px 12px 0 0;padding:18px 20px;border-bottom:none}
+.puesto-row{background:rgba(255,255,255,.95);border:1px solid #e5e7eb;border-top:1px solid #f3f4f6;padding:14px 20px;display:flex;align-items:center;gap:14px;transition:background .15s}
+.puesto-row:last-child{border-radius:0 0 12px 12px}
+.puesto-row:hover{background:rgba(250,250,248,.98)}
+.loading{text-align:center;padding:48px;color:#9ca3af;font-size:14px}
+.empty{text-align:center;padding:48px;color:#9ca3af}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:500;color:#6b7280}
+.conv-block{margin-bottom:28px}
+.conv-header{background:#fff;border:1px solid #e5e7eb;border-radius:12px 12px 0 0;padding:18px 20px;border-bottom:none}
+.conv-name{font-size:17px;font-weight:700;color:#111827;margin-bottom:4px}
+.conv-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:#9ca3af;align-items:center}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.b-mv{background:#e0f2fe;color:#0369a1}.b-ex{background:#f0fdf4;color:#166534}.b-ambas{background:#f3e8ff;color:#7e22ce}
+.puesto-row{background:#fff;border:1px solid #e5e7eb;border-top:1px solid #f3f4f6;padding:14px 20px;display:flex;align-items:center;gap:14px;transition:background .15s}
+.puesto-row:last-child{border-radius:0 0 12px 12px}
+.puesto-row:hover{background:#fafaf8}
+.puesto-info{flex:1;min-width:0}
+.puesto-name{font-size:14px;font-weight:600;color:#111827}
+.puesto-desc{font-size:12px;color:#9ca3af;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cupos-info{text-align:right;flex-shrink:0}
+.cupos-num{font-size:18px;font-weight:700;color:#111827;line-height:1}
+.cupos-label{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px}
+.cupos-full{font-size:12px;font-weight:600;color:#9ca3af}
+.prog-wrap{width:80px;height:5px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin-top:5px;margin-left:auto}
+.prog-fill{height:100%;border-radius:999px}
+.apply-btn{padding:8px 16px;background:#534AB7;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
+.apply-btn:hover{opacity:.9}
+.apply-btn:disabled{background:#e5e7eb;color:#9ca3af;cursor:not-allowed;opacity:1}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:100;padding:0}
+@media(min-width:600px){.modal-bg{align-items:center;padding:20px}}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto}
+@media(min-width:600px){.modal{border-radius:12px}}
+.modal-handle{width:36px;height:4px;background:#e5e7eb;border-radius:999px;margin:0 auto 18px}
+@media(min-width:600px){.modal-handle{display:none}}
+.modal-title{font-size:17px;font-weight:700;color:#111827;margin-bottom:4px}
+.modal-sub{font-size:13px;color:#9ca3af;margin-bottom:20px}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px}
+.req{color:#ef4444}
+.fi{width:100%;padding:11px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:15px;outline:none;font-family:inherit;transition:border-color .15s}
+.fi:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.1)}
+textarea.fi{height:80px;resize:none}
+.frow{display:flex;gap:12px}.frow .fg{flex:1}
+.submit-btn{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;font-family:inherit;transition:opacity .15s}
+.submit-btn:hover{opacity:.9}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.cancel-btn{width:100%;padding:12px;background:none;border:none;color:#9ca3af;font-size:14px;cursor:pointer;margin-top:8px;font-family:inherit}
+.err-msg{background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
+.success-card{background:#fff;border-radius:12px;padding:40px 24px;text-align:center;display:none}
+.success-icon{font-size:52px;margin-bottom:16px}
+.success-title{font-size:20px;font-weight:700;color:#111827;margin-bottom:8px}
+.success-sub{font-size:14px;color:#6b7280;line-height:1.6;margin-bottom:20px}
+.back-link{color:#534AB7;font-size:14px;cursor:pointer;text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="sbs-bg">
+  <div style="position:relative;display:inline-block">
+    <span>SBS</span>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+      <div style="font-size:clamp(10px,1.8vw,22px);font-weight:700;color:#1a1a1a;letter-spacing:.15em;line-height:1.3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap">HANDS ON<br>EVERYTHING</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-header">
+  <div class="page-title">Sure, you can work with us</div>
+  <div class="page-sub">Elegí el puesto que te interesa y mandá tu solicitud</div>
+</div>
+
+<div class="container">
+  <div id="mainContent"><div class="loading">Cargando convocatorias...</div></div>
+</div>
+
+<!-- Modal de postulación -->
+<div class="modal-bg" id="modalBg" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalCard">
+    <div class="modal-handle"></div>
+    <div id="successCard" class="success-card">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">¡Solicitud enviada!</div>
+      <div class="success-sub">Recibimos tu postulación. El equipo de coordinación va a revisarla y se va a comunicar con vos a la brevedad.</div>
+      <span class="back-link" onclick="closeModal()">← Volver a las postulaciones</span>
+    </div>
+    <div id="notRegCard" style="display:none;text-align:center;padding:8px 0 4px">
+      <div style="font-size:44px;margin-bottom:12px">📝</div>
+      <div class="success-title">Primero registrate</div>
+      <div class="success-sub">No encontramos tu registro con ese CUIL. Para postularte a un puesto, primero tenés que completar tu registro (CV).</div>
+      <a href="candidato.html" class="submit-btn" style="display:block;text-decoration:none">Ir al registro →</a>
+      <button class="cancel-btn" onclick="closeModal()">Volver</button>
+    </div>
+    <div id="formCard">
+      <div class="modal-title" id="modalTitle">Postularme</div>
+      <div class="modal-sub" id="modalSub"></div>
+      <div class="err-msg" id="errMsg"></div>
+      <div class="frow">
+        <div class="fg"><label>Nombre completo <span class="req">*</span></label><input type="text" class="fi" id="fNombre" placeholder="Tu nombre y apellido"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Email</label><input type="email" class="fi" id="fEmail" placeholder="tu@email.com"></div>
+        <div class="fg"><label>Teléfono</label><input type="tel" class="fi" id="fTel" placeholder="+54 11..."></div>
+      </div>
+      <div class="fg">
+        <label>CUIL <span class="req">*</span></label>
+        <input type="text" class="fi" id="fCuil" placeholder="11 dígitos sin guiones" maxlength="11" oninput="validarCuil(this)" inputmode="numeric">
+        <div style="font-size:11px;color:#9ca3af;text-align:right;margin-top:4px" id="cuilCounter">0 / 11 dígitos</div>
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12px;color:#9a3412;margin-top:8px;display:none" id="cuilWarn">⚠ El CUIL debe tener exactamente 11 dígitos.</div>
+        <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#065f46;margin-top:8px;display:none" id="cuilOk">✓ CUIL válido</div>
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="submitPostulacion()">Enviar postulación →</button>
+      <button class="cancel-btn" onclick="closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ════════════════════════════════════════
+const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+// ════════════════════════════════════════
+
+const sb = supabase.createClient(SB_URL, SB_KEY);
+let selectedConvId = null, selectedPuestoId = null, selectedPuestoNombre = '', selectedConvNombre = '';
+
+// Área desde el link: ?area=arena o ?area=externos
+const AREA_MAP = { arena: 'movistar_arena', externos: 'externos' };
+const AREA_LABEL = { movistar_arena: 'Movistar Arena', externos: 'Externos' };
+const AREA = AREA_MAP[(new URLSearchParams(location.search).get('area') || '').toLowerCase()] || null;
+
+function setHeader() {
+  const t = document.querySelector('.page-title'), s = document.querySelector('.page-sub');
+  t.textContent = 'Sure, you can work with us';
+  if (AREA) s.textContent = 'Postulaciones — ' + AREA_LABEL[AREA];
+  else s.textContent = 'Elegí el área para ver las convocatorias';
+}
+
+function renderChooser() {
+  const card = (href, emoji, title, sub) => `<a href="${href}" style="flex:1;min-width:210px;text-decoration:none;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:30px 22px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;transition:box-shadow .15s,border-color .15s,transform .15s" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)';this.style.borderColor='#d4d4d8';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.borderColor='#e5e7eb';this.style.transform=''"><span style="font-size:42px;line-height:1">${emoji}</span><div style="font-size:17px;font-weight:700;color:#111827">${title}</div><div style="font-size:12px;color:#9ca3af">${sub}</div></a>`;
+  document.getElementById('mainContent').innerHTML =
+    `<div style="text-align:center;color:#6b7280;font-size:14px;margin:6px 0 16px">¿A qué área querés postularte?</div>
+     <div style="display:flex;gap:16px;flex-wrap:wrap;max-width:540px;margin:0 auto">
+       ${card('?area=arena', '🏟️', 'Movistar Arena', 'Convocatorias del Movistar Arena')}
+       ${card('?area=externos', '🎤', 'Externos', 'Eventos externos y giras')}
+     </div>`;
+}
+
+async function loadConvocatorias() {
+  setHeader();
+  if (!AREA) { renderChooser(); return; }
+  try {
+    const { data: convsAll, error: cErr } = await sb.from('convocatorias').select('*').eq('publicada', true).order('fecha', { ascending: true });
+    if (cErr) throw cErr;
+    const convs = (convsAll || []).filter(c => c.area === AREA || c.area === 'ambas');
+    if (!convs.length) { renderEmpty(); return; }
+
+    const { data: puestos } = await sb.from('puestos').select('*').in('conv_id', convs.map(c => c.id));
+    const { data: posts } = await sb.from('postulaciones').select('puesto_id, estado').in('conv_id', convs.map(c => c.id));
+
+    renderConvs(convs, puestos || [], posts || []);
+  } catch (err) {
+    document.getElementById('mainContent').innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><div class="empty-title">No se pudieron cargar las convocatorias</div></div>`;
+  }
+}
+
+function renderEmpty() {
+  document.getElementById('mainContent').innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No hay convocatorias abiertas por el momento</div><div style="font-size:13px;color:#9ca3af;margin-top:6px">Volvé a revisar próximamente</div></div>`;
+}
+
+function renderConvs(convs, puestos, posts) {
+  const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' };
+  const areaClass = { movistar_arena: 'b-mv', externos: 'b-ex', ambas: 'b-ambas' };
+
+  const html = convs.map(c => {
+    const cPuestos = puestos.filter(p => p.conv_id === c.id && (!p.area || p.area === AREA));
+    if (!cPuestos.length) return '';
+    return `<div class="conv-block">
+      <div class="conv-header">
+        <div class="conv-name">${esc(c.nombre)}</div>
+        <div class="conv-meta">
+          <span class="badge ${areaClass[c.area]||'b-mv'}">${areaLabel[c.area]||c.area}</span>
+          ${c.fecha ? c.fecha.split(',').map(f => `<span>📅 ${fmtFecha(f.trim())}</span>`).join('') : ''}
+          ${c.descripcion ? `<span>${esc(c.descripcion.slice(0,80))}${c.descripcion.length>80?'…':''}</span>` : ''}
+        </div>
+      </div>
+      ${cPuestos.map(p => {
+        const usados = posts.filter(x => x.puesto_id === p.id && x.estado !== 'rechazado').length;
+        const libres = Math.max(0, p.cupos - usados);
+        const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0;
+        const lleno = libres === 0;
+        const progColor = pct < 50 ? '#10b981' : pct < 80 ? '#f59e0b' : '#ef4444';
+        return `<div class="puesto-row">
+          <div class="puesto-info">
+            <div class="puesto-name">${esc(p.nombre)}</div>
+            ${p.descripcion ? `<div class="puesto-desc">${esc(p.descripcion)}</div>` : ''}
+          </div>
+          <div class="cupos-info">
+            ${lleno
+              ? `<div class="cupos-full">Sin cupos</div>`
+              : `<div class="cupos-num">${libres}</div><div class="cupos-label">cupos</div>`
+            }
+            <div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div>
+          </div>
+          <button class="apply-btn" ${lleno?'disabled':''} onclick="openModal('${c.id}','${esc(c.nombre)}','${p.id}','${esc(p.nombre)}')">${lleno?'Completo':'Postularme'}</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+
+  document.getElementById('mainContent').innerHTML = html || renderEmpty();
+}
+
+function openModal(convId, convNombre, puestoId, puestoNombre) {
+  selectedConvId = convId; selectedPuestoId = puestoId;
+  selectedConvNombre = convNombre; selectedPuestoNombre = puestoNombre;
+  document.getElementById('modalTitle').textContent = `Postularme — ${puestoNombre}`;
+  document.getElementById('modalSub').textContent = convNombre;
+  document.getElementById('errMsg').style.display = 'none';
+  ['fNombre','fEmail','fTel','fCuil'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cuilCounter').textContent = '0 / 11 dígitos';
+  document.getElementById('cuilWarn').style.display = 'none';
+  document.getElementById('cuilOk').style.display = 'none';
+  document.getElementById('successCard').style.display = 'none';
+  document.getElementById('notRegCard').style.display = 'none';
+  document.getElementById('formCard').style.display = 'block';
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('submitBtn').textContent = 'Enviar postulación →';
+  document.getElementById('modalBg').style.display = 'flex';
+  setTimeout(() => document.getElementById('fNombre').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('modalBg').style.display = 'none';
+  selectedConvId = null; selectedPuestoId = null;
+}
+
+// Verifica que el CUIL ya esté registrado (CV) — en la nómina o como registro general.
+async function estaRegistrado(cuil) {
+  try {
+    const { data: per } = await sb.from('personas').select('id').eq('cuit', cuil).limit(1);
+    if (per && per.length) return true;
+    const { data: sol } = await sb.from('solicitudes').select('id').eq('cuit', cuil).is('conv_id', null).limit(1);
+    return !!(sol && sol.length);
+  } catch (_) { return false; }
+}
+
+async function submitPostulacion() {
+  const nombre = document.getElementById('fNombre').value.trim();
+  const email  = document.getElementById('fEmail').value.trim();
+  const tel    = document.getElementById('fTel').value.trim();
+  const cuil   = document.getElementById('fCuil').value.trim();
+  const err    = document.getElementById('errMsg');
+
+  err.style.display = 'none';
+  if (!nombre) { err.textContent = 'Tu nombre es obligatorio.'; err.style.display = 'block'; return; }
+  if (!cuil) { err.textContent = 'El CUIL es obligatorio para verificar tu registro.'; err.style.display = 'block'; return; }
+  if (cuil.length !== 11) { err.textContent = 'El CUIL debe tener exactamente 11 dígitos.'; err.style.display = 'block'; return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Verificando registro...';
+
+  // Requisito: primero hay que estar registrado (CV) para poder postularse.
+  if (!(await estaRegistrado(cuil))) {
+    btn.disabled = false; btn.textContent = 'Enviar postulación →';
+    document.getElementById('formCard').style.display = 'none';
+    document.getElementById('notRegCard').style.display = 'block';
+    return;
+  }
+  btn.textContent = 'Enviando...';
+
+  const { error } = await sb.from('solicitudes').insert([{
+    nombre,
+    area: AREA,
+    email: email || null,
+    tel: tel || null,
+    cuit: cuil || null,
+    conv_id: selectedConvId,
+    puesto_id: selectedPuestoId,
+    puesto_nombre: selectedPuestoNombre,
+    estado: 'pendiente'
+  }]);
+
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Enviar postulación →';
+    err.textContent = 'Hubo un error al enviar. Intentá de nuevo.'; err.style.display = 'block';
+    return;
+  }
+
+  // También crear en postulaciones para que cuente en los cupos de la convocatoria
+  await sb.from('postulaciones').insert([{
+    nombre,
+    conv_id: selectedConvId,
+    puesto_id: selectedPuestoId,
+    puesto_nombre: selectedPuestoNombre,
+    estado: 'pendiente'
+  }]);
+
+  document.getElementById('formCard').style.display = 'none';
+  document.getElementById('successCard').style.display = 'block';
+}
+
+function fmtFecha(f) { try { return new Date(f+'T00:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'}); } catch(e){return f;} }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Cerrar con Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function validarCuil(input) {
+  input.value = input.value.replace(/\D/g, '');
+  const val = input.value;
+  const counter = document.getElementById('cuilCounter');
+  const warn = document.getElementById('cuilWarn');
+  const ok = document.getElementById('cuilOk');
+  counter.textContent = `${val.length} / 11 dígitos`;
+  warn.style.display = val.length > 0 && val.length !== 11 ? 'block' : 'none';
+  ok.style.display = val.length === 11 ? 'block' : 'none';
+  input.style.borderColor = val.length === 0 ? '' : val.length === 11 ? '#10b981' : '#f97316';
+}
+
+loadConvocatorias();
+</script>
+<!-- Footer -->
+<footer style="margin-top:48px;border-top:1px solid #e5e7eb;padding:32px 16px;text-align:center;background:rgba(255,255,255,.95);position:relative;z-index:1">
+  <div style="max-width:520px;margin:0 auto">
+    <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:16px">¿Tenés alguna consulta?</div>
+    <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af">Movistar Arena</span>
+        <a href="mailto:convocatorias.arena@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias.arena@show-bs.com</a>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af">Externos</span>
+        <a href="mailto:convocatorias@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias@show-bs.com</a>
+      </div>
+      <a href="https://www.instagram.com/showbs/" target="_blank" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
+        @showbs
+      </a>
+    </div>
+    <div style="margin-top:20px;font-size:11px;color:#9ca3af">Show Business Solutions © 2026</div>
+  </div>
+</footer>
+
+</body>
+</html>

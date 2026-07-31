@@ -105,7 +105,7 @@ textarea.fi{height:64px;resize:vertical}
 .cv-prow{display:flex;align-items:center;gap:8px;font-size:12px}
 .cv-pname{flex:1;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cv-cupo{font-size:11px;color:#9ca3af;white-space:nowrap}
-.cv-foot{display:flex;gap:8px;justify-content:flex-end;border-top:1px solid #f3f4f6;padding-top:12px}
+.cv-foot{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;border-top:1px solid #f3f4f6;padding-top:12px}
 .det-hdr{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 24px;display:flex;align-items:flex-start;gap:14px}
 .back-btn{background:none;border:1px solid #d1d5db;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;color:#6b7280;display:flex;align-items:center;gap:4px;white-space:nowrap;flex-shrink:0}
 .back-btn:hover{background:#f3f4f6}
@@ -203,6 +203,67 @@ textarea.fi{height:64px;resize:vertical}
 .rot-config-label{font-size:13px;color:#374151;flex:1}
 .rot-num{width:64px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;text-align:center;outline:none}
 .rot-num:focus{border-color:#534AB7}
+
+/* ===== REDISEÑO — refresh moderno, negro/blanco SBS (violeta = acento) ===== */
+:root{--r-ink:#18181b;--r-ink2:#3f3f46;--r-muted:#71717a;--r-faint:#a1a1aa;--r-line:#e8e8ec;--r-line2:#f1f1f4;--r-bg:#f4f4f5;--r-accent:#534AB7}
+body{background:var(--r-bg);color:var(--r-ink);-webkit-font-smoothing:antialiased}
+/* Header claro con logo */
+.app-hdr{background:#fff;border-bottom:1px solid var(--r-line)}
+.brand{flex-direction:row;align-items:center;gap:11px;border-right-color:var(--r-line)}
+.brand-logo{width:30px;height:30px;display:block;flex-shrink:0}
+.brand-name{color:var(--r-ink);font-weight:650}
+.brand-sub{color:var(--r-faint)}
+.mnav-btn{color:var(--r-muted);font-weight:500}
+.mnav-btn:hover{color:var(--r-ink)}
+.mnav-btn.active{color:var(--r-ink);font-weight:600;border-bottom-color:var(--r-accent)}
+#userEmail{color:var(--r-muted)}
+/* Botones */
+.btn{border-radius:8px;font-weight:550}
+.btn-primary{background:var(--r-ink);color:#fff}
+.btn-primary:hover{background:#000;opacity:1}
+.btn-sec{background:#fff;color:var(--r-ink2);border:1px solid var(--r-line)}
+.btn-sec:hover{background:#f7f7f8;opacity:1}
+/* Stats como tiles */
+.stats-bar{background:#fff;border-bottom:1px solid var(--r-line);gap:12px;padding:16px 22px}
+.stat{flex:1;background:var(--r-bg);border:1px solid var(--r-line);border-radius:12px;padding:13px 16px;min-width:116px}
+.stat-num{font-size:25px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat-label{color:var(--r-faint);letter-spacing:.07em;margin-top:7px}
+/* Tabs de área */
+.atabs{background:#fff;border-bottom:1px solid var(--r-line);gap:22px;padding:0 22px}
+.atab{color:var(--r-muted);font-weight:500;padding:13px 2px}
+.atab:hover{color:var(--r-ink)}
+.atab.active{color:var(--r-ink);font-weight:600;border-bottom-color:var(--r-ink)}
+.tc{background:var(--r-bg);border:1px solid var(--r-line);color:var(--r-muted)}
+.atab.active .tc{background:var(--r-ink);color:#fff;border-color:var(--r-ink)}
+/* Barra de control + inputs */
+.ctrlbar{background:#fff;border-bottom:1px solid var(--r-line);gap:9px;padding:15px 22px}
+.srch,select.filt,.fi{border:1px solid var(--r-line);border-radius:9px}
+.srch:focus,select.filt:focus,.fi:focus{border-color:var(--r-accent);box-shadow:0 0 0 3px rgba(83,74,183,.13)}
+/* Tabla contenida tipo tarjeta */
+.tbl-wrap{margin:18px 22px 22px;border:1px solid var(--r-line);border-radius:14px;overflow:auto;box-shadow:0 1px 2px rgba(24,24,27,.03)}
+th{position:static;background:#fafafa;border-bottom:1px solid var(--r-line);color:var(--r-faint);padding:12px 16px;letter-spacing:.06em}
+td{padding:13px 16px;border-bottom:1px solid var(--r-line2);color:var(--r-ink2)}
+tr:hover td{background:#fafafa}
+.cn{color:var(--r-ink)}
+/* Tarjetas */
+.cv-card,.cand-card{border:1px solid var(--r-line);border-radius:14px}
+.cv-card:hover,.cand-card:hover{border-color:#d4d4d8;box-shadow:0 4px 16px rgba(24,24,27,.07)}
+.cv-card-title{color:var(--r-ink)}
+/* Modales + paginación */
+.modal{border-radius:14px}
+.pb.active{background:var(--r-ink);border-color:var(--r-ink)}
+/* Login claro */
+.login-wrap{background:var(--r-bg)}
+.login-card{background:#fff;border:1px solid var(--r-line);border-radius:16px;box-shadow:0 4px 24px rgba(24,24,27,.08);padding:40px 36px}
+.login-logo{width:54px;height:54px;display:block;margin:0 auto 20px}
+.login-title{color:var(--r-ink)}
+.login-sub{color:var(--r-muted)}
+.lbl{color:var(--r-muted)}
+.l-in{background:#fff;border:1px solid var(--r-line);color:var(--r-ink);border-radius:9px}
+.l-in::placeholder{color:var(--r-faint)}
+.l-in:focus{border-color:var(--r-accent);box-shadow:0 0 0 3px rgba(83,74,183,.13)}
+.l-btn{background:var(--r-ink);border-radius:9px}
+.l-btn:hover{background:#000;opacity:1}
 </style>
 </head>
 <body>
@@ -210,6 +271,7 @@ textarea.fi{height:64px;resize:vertical}
 <!-- ══ LOGIN ══ -->
 <div class="login-wrap" id="loginWrap">
   <div class="login-card">
+    <img src="logo-sbs.png" alt="SBS" class="login-logo">
     <div class="login-title">Gestión Recital</div>
     <div class="login-sub">Panel de administración</div>
     <label class="lbl">Email</label>
@@ -232,12 +294,13 @@ textarea.fi{height:64px;resize:vertical}
 <div id="app" style="display:none">
 
 <header class="app-hdr">
-  <div class="brand"><div class="brand-name">Gestión Recital</div><div class="brand-sub">Panel de administración</div></div>
+  <div class="brand"><img src="logo-sbs.png" alt="SBS" class="brand-logo"><div><div class="brand-name">Gestión Recital</div><div class="brand-sub">Panel de administración</div></div></div>
   <nav class="main-nav">
     <button class="mnav-btn active" data-s="nomina" onclick="goSec('nomina')">Nómina</button>
     <button class="mnav-btn" data-s="convs" onclick="goSec('convs')">Convocatorias</button>
     <button class="mnav-btn" data-s="candidatos" onclick="goSec('candidatos')">Candidatos <span id="candNavBadge" style="background:#1d4ed8;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
     <button class="mnav-btn" data-s="solicitudes" onclick="goSec('solicitudes')">Solicitudes <span id="solNavBadge" style="background:#dc2626;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
+    <button class="mnav-btn" data-s="respuestas" onclick="goSec('respuestas')">Respuestas <span id="respNavBadge" style="background:#0369a1;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
     <button class="mnav-btn" data-s="supervisores" id="navSupervisores" onclick="goSec('supervisores')" style="display:none">Supervisores</button>
   </nav>
   <div class="hdr-actions">
@@ -363,7 +426,8 @@ textarea.fi{height:64px;resize:vertical}
   <div class="ctrlbar">
     <input type="text" class="srch" id="candSrch" placeholder="Buscar por nombre o puesto..." oninput="renderCandidatos()">
     <select class="filt" id="candAreaF" onchange="renderCandidatos()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
-    <select class="filt" id="candStF" onchange="renderCandidatos()"><option value="">Todos los estados</option><option value="pendiente">Sin revisar</option><option value="contactado">En revisión</option><option value="confirmado">Aprobado</option><option value="no_asiste">Rechazado</option></select> 
+    <select class="filt" id="candStF" onchange="renderCandidatos()"><option value="">Todos los estados</option><option value="pendiente">Sin revisar</option><option value="contactado">En revisión</option><option value="confirmado">Aprobado</option><option value="no_asiste">Rechazado</option></select>
+    <select class="filt" id="candOutFilter" onchange="renderCandidatos()" title="Filtrar por OUT"><option value="">Todos</option><option value="out">Solo OUTS</option><option value="no_out">Sin OUTS</option></select>
     <select class="filt" id="candSortF" onchange="renderCandidatos()"><option value="fecha_desc">Más recientes</option><option value="fecha_asc">Más antiguos</option><option value="nombre">Nombre A–Z</option></select>
     <button class="btn btn-sec btn-sm" id="candViewToggle" onclick="toggleCandView()">☰ Lista</button>
   </div>
@@ -414,6 +478,25 @@ textarea.fi{height:64px;resize:vertical}
     <div class="sec-sup-sub">Podés ver los integrantes asignados y dejar feedback de cada uno</div>
     <div id="supViewContent"></div>
   </div>
+</div>
+
+<!-- RESPUESTAS -->
+<div id="sec-respuestas" class="sec">
+  <div class="ctrlbar">
+    <input type="text" class="srch" id="respSrch" placeholder="Buscar por nombre, email o texto..." oninput="renderRespuestas()">
+    <select class="filt" id="respCasillaF" onchange="renderRespuestas()">
+      <option value="">Todas las casillas</option>
+      <option value="arena">Movistar Arena</option>
+      <option value="externos">Externos</option>
+    </select>
+    <select class="filt" id="respLeidoF" onchange="renderRespuestas()">
+      <option value="">Leídas y sin leer</option>
+      <option value="no">Solo sin leer</option>
+      <option value="si">Solo leídas</option>
+    </select>
+    <button class="btn btn-sec btn-sm" onclick="markAllRespRead()">Marcar todas leídas</button>
+  </div>
+  <div style="padding:20px 24px" id="respContent"><div class="empty">Cargando...</div></div>
 </div>
 
 </div><!-- /app -->
@@ -556,6 +639,7 @@ textarea.fi{height:64px;resize:vertical}
         <option value="">Todos</option><option value="pendiente">Pendiente</option><option value="en_revision">En revisión</option>
         <option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option>
       </select>
+      <select class="filt" id="gOutFilter" onchange="renderGestList()" title="Filtrar por OUT" style="font-size:12px;padding:5px 8px"><option value="">Todos</option><option value="out">Solo OUTS</option><option value="no_out">Sin OUTS</option></select>
       <button class="btn btn-primary btn-sm" onclick="openPickerModal()">+ Agregar desde nómina</button>
     </div>
     <div class="post-table-wrap"><table>
@@ -572,6 +656,7 @@ textarea.fi{height:64px;resize:vertical}
         <option value="en_revision">En revisión</option><option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option>
       </select>
       <button class="btn btn-sm btn-primary" onclick="applyGestBulk()">Aplicar</button>
+      <button class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd" onclick="openBulkMail()">✉ Enviar confirmación</button>
       <button class="btn btn-sm btn-danger" onclick="delGestBulk()">Quitar seleccionados</button>
     </div>
     <div class="ma" style="border-top:1px solid #f3f4f6;padding-top:14px;margin-top:8px"><button class="btn btn-sec" onclick="closeM('mGestionar')">Cerrar</button></div>
@@ -807,7 +892,7 @@ textarea.fi{height:64px;resize:vertical}
       <div style="display:flex;gap:12px;margin-bottom:8px">
         <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepMailTemplate('movistar')">
           <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Movistar Arena</div>
-          <div style="font-size:11px;color:#9ca3af">orientadores.arena@show-bs.com</div>
+          <div style="font-size:11px;color:#9ca3af">convocatorias.arena@show-bs.com</div>
         </button>
         <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepMailTemplate('externos')">
           <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Externos</div>
@@ -819,10 +904,69 @@ textarea.fi{height:64px;resize:vertical}
     <div id="mMailStep2" style="display:none">
       <div class="fg"><label>Para</label><input type="email" class="fi" id="mailTo" readonly style="background:#f9fafb"></div>
       <div class="fg"><label>Asunto</label><input type="text" class="fi" id="mailSubject"></div>
+      <div id="mailMvFields" style="display:none">
+        <div class="frow">
+          <div class="fg"><label>Fecha</label><input type="text" class="fi" id="mailFFecha" oninput="regenMailBody()"></div>
+          <div class="fg"><label>Horario</label><input type="text" class="fi" id="mailFHorario" oninput="regenMailBody()"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label>Monto</label><input type="text" class="fi" id="mailFMonto" oninput="regenMailBody()"></div>
+          <div class="fg"><label>Sector (equipo)</label><input type="text" class="fi" id="mailFSector" oninput="regenMailBody()"></div>
+        </div>
+        <div class="frow" id="mailExtraFields" style="display:none">
+          <div class="fg"><label>Venue</label><input type="text" class="fi" id="mailFVenue" oninput="regenMailBody()"></div>
+          <div class="fg"><label>Link de WhatsApp</label><input type="text" class="fi" id="mailFWhatsapp" oninput="regenMailBody()"></div>
+        </div>
+      </div>
       <div class="fg"><label>Mensaje</label><textarea class="fi" id="mailBody" style="height:260px;font-size:12px;font-family:monospace"></textarea></div>
       <div class="ma">
         <button class="btn btn-sec" onclick="document.getElementById('mMailStep2').style.display='none';document.getElementById('mMailStep1').style.display='block'">← Atrás</button>
         <button class="btn btn-primary" id="btnSendMail" onclick="sendConfirmationMail()">Enviar mail →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Envío masivo de confirmación -->
+<div class="modal-bg" id="mBulkMail" style="display:none" onclick="bgClose('mBulkMail',event)">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title"><span>✉ Envío masivo de confirmación</span><button class="mclose" onclick="closeM('mBulkMail')">✕</button></div>
+    <div id="bmStep1">
+      <div style="font-size:13px;color:#374151;margin-bottom:16px">¿Desde qué correo querés enviar?</div>
+      <div style="display:flex;gap:12px">
+        <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepBulkTemplate('movistar')">
+          <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Movistar Arena</div>
+          <div style="font-size:11px;color:#9ca3af">convocatorias.arena@show-bs.com</div>
+        </button>
+        <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepBulkTemplate('externos')">
+          <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Externos</div>
+          <div style="font-size:11px;color:#9ca3af">convocatorias@show-bs.com</div>
+        </button>
+      </div>
+      <button class="btn btn-sec" style="width:100%;margin-top:10px" onclick="closeM('mBulkMail')">Cancelar</button>
+    </div>
+    <div id="bmStep2" style="display:none">
+      <div id="bmRecap" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px"></div>
+      <div class="fg"><label>Asunto</label><input type="text" class="fi" id="bmSubject"></div>
+      <div id="bmMvFields" style="display:none">
+        <div class="frow">
+          <div class="fg"><label>Fecha</label><input type="text" class="fi" id="bmFFecha" oninput="regenBulkBody()"></div>
+          <div class="fg"><label>Horario</label><input type="text" class="fi" id="bmFHorario" oninput="regenBulkBody()"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label>Monto</label><input type="text" class="fi" id="bmFMonto" oninput="regenBulkBody()"></div>
+          <div class="fg"><label>Sector (equipo)</label><input type="text" class="fi" id="bmFSector" oninput="regenBulkBody()"></div>
+        </div>
+        <div class="frow" id="bmExtraFields" style="display:none">
+          <div class="fg"><label>Venue</label><input type="text" class="fi" id="bmFVenue" oninput="regenBulkBody()"></div>
+          <div class="fg"><label>Link de WhatsApp</label><input type="text" class="fi" id="bmFWhatsapp" oninput="regenBulkBody()"></div>
+        </div>
+      </div>
+      <div class="fg"><label>Mensaje <span style="font-weight:400;text-transform:none;color:#9ca3af">— escribí {nombre} y se reemplaza por el de cada persona</span></label><textarea class="fi" id="bmBody" style="height:230px;font-size:12px;font-family:monospace"></textarea></div>
+      <div id="bmProgress" style="display:none;font-size:13px;color:#534AB7;font-weight:500;margin-bottom:8px"></div>
+      <div class="ma">
+        <button class="btn btn-sec" onclick="document.getElementById('bmStep2').style.display='none';document.getElementById('bmStep1').style.display='block'">← Atrás</button>
+        <button class="btn btn-primary" id="bmSendBtn" onclick="sendBulkMail()">Enviar a todos →</button>
       </div>
     </div>
   </div>
@@ -845,7 +989,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 
 // ── Estado global ──
 const PS = 50;
-let people = [], convs = [], posts = [], feedbacks = [], userProfiles = [], supConvLinks = [], solicitudes = [], notificaciones = [];
+let people = [], convs = [], posts = [], feedbacks = [], userProfiles = [], supConvLinks = [], solicitudes = [], notificaciones = [], respuestas = [];
 let nomPage = 1, nomAreaTab = 'all', nomFiltered = [];
 let editPersonId = null, editConvId = null, editPuestoId = null;
 let currentConvId = null, currentPuestoId = null;
@@ -909,7 +1053,7 @@ async function loadUserRole() {
     const areaLabel = currentUserRole === 'admin_movistar' ? 'Movistar Arena' : 'Externos';
     document.querySelector('.brand-sub').textContent = `Admin — ${areaLabel}`;
   } else {
-    ['nomina','convs','candidatos','solicitudes'].forEach(s => { const b = document.querySelector(`[data-s="${s}"]`); if(b) b.style.display='none'; });
+    ['nomina','convs','candidatos','solicitudes','respuestas'].forEach(s => { const b = document.querySelector(`[data-s="${s}"]`); if(b) b.style.display='none'; });
     document.getElementById('navSupervisores').style.display = 'none';
   }
   // Filter data by area for area admins
@@ -950,7 +1094,7 @@ async function loadAll() {
     setLoad(true, `Cargando nómina... (${people.length})`, Math.min(60, 15 + people.length / 100));
   }
   setLoad(true, 'Cargando convocatorias...', 70);
-  const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }] = await Promise.all([
+  const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }] = await Promise.all([
     sb.from('convocatorias').select('*').order('created_at'),
     sb.from('puestos').select('*').order('created_at'),
     sb.from('postulaciones').select('*').order('created_at'),
@@ -959,7 +1103,8 @@ async function loadAll() {
     sb.from('supervisor_convocatorias').select('*'),
     sb.from('solicitudes').select('*').order('created_at', { ascending: false }),
     sb.from('config').select('*'),
-    sb.from('notificaciones').select('*').order('created_at', { ascending: false })
+    sb.from('notificaciones').select('*').order('created_at', { ascending: false }),
+    sb.from('respuestas').select('*').order('received_at', { ascending: false })
   ]);
   convs = (cData || []).map(c => ({
     ...c,
@@ -974,6 +1119,7 @@ async function loadAll() {
   supConvLinks = scData || [];
   solicitudes = solData || [];
   notificaciones = notifData || [];
+  respuestas = respData || [];
   const rotCfg = (cfgData || []).find(c => c.key === 'rotacion');
   if (rotCfg) rotacionConfig = rotCfg.value;
   await loadUserRole();
@@ -988,6 +1134,7 @@ async function loadAll() {
     refreshCandBadge();
     refreshSolBadge();
     refreshNotifBadge();
+    refreshRespBadge();
   }
 }
 
@@ -1055,6 +1202,7 @@ function goSec(s) {
   if (s === 'candidatos') renderCandidatos();
   if (s === 'supervisores') renderSupList();
   if (s === 'solicitudes') renderSolicitudes();
+  if (s === 'respuestas') renderRespuestas();
 }
 function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('.atab').forEach(t => t.classList.toggle('active', t.dataset.area === a)); nomPage = 1; nomRefresh(); }
 function nomSearch() { nomPage = 1; nomApply(); }
@@ -1389,22 +1537,23 @@ async function delPuesto(pid) {
 function openGestionar(pid) { currentPuestoId = pid; const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === pid); if (!p) return; document.getElementById('mGestTitle').textContent = `Postulaciones — ${p.nombre}`; document.getElementById('gSrch').value = ''; document.getElementById('gStFilter').value = ''; document.getElementById('gCupoTotal').textContent = p.cupos; renderGestList(); showM('mGestionar'); }
 function renderGestList() {
   const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return;
-  const q = document.getElementById('gSrch').value.toLowerCase().trim(); const sf = document.getElementById('gStFilter').value;
+  const q = document.getElementById('gSrch').value.toLowerCase().trim(); const sf = document.getElementById('gStFilter').value; const outF = document.getElementById('gOutFilter').value;
   const myPosts = posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId);
   const usados = myPosts.filter(x => x.estado !== 'rechazado').length;
   document.getElementById('gCupoUsados').textContent = usados;
   const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0;
   document.getElementById('gProgFill').style.width = pct + '%'; document.getElementById('gProgPct').textContent = pct + '%';
-  const shown = myPosts.filter(x => { if (sf && x.estado !== sf) return false; if (q && !x.nombre.toLowerCase().includes(q)) return false; return true; });
+  const shown = myPosts.filter(x => { if (sf && x.estado !== sf) return false; if (outF) { const pr = people.find(pp => pp.id === x.personaId); if (outF === 'out' && !pr?.out_flag) return false; if (outF === 'no_out' && pr?.out_flag) return false; } if (q && !x.nombre.toLowerCase().includes(q)) return false; return true; });
   const tbody = document.getElementById('gTbody');
   if (!shown.length) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty">Sin postulaciones todavía.</div></td></tr>`; document.getElementById('gBulkBar').style.display = 'none'; return; }
   tbody.innerHTML = shown.map(x => {
+    const pers = people.find(pp => pp.id === x.personaId);
     const asistBadge = x.asistencia === 'presente'
       ? `<span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✓ P</span>`
       : x.asistencia === 'ausente'
       ? `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✗ A</span>`
       : `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px">—</span>`;
-    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación">✉</button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
+    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}">🚫 OUT</button>` : ''}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación">✉</button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
   }).join('');
 }
 
@@ -1542,8 +1691,8 @@ async function doMasiva() {
 // ── CANDIDATOS ──
 function toggleCandView() { candViewMode = candViewMode === 'cards' ? 'list' : 'cards'; document.getElementById('candViewToggle').textContent = candViewMode === 'cards' ? '☰ Lista' : '⊞ Cards'; renderCandidatos(); }
 function renderCandidatos() {
-  const q = document.getElementById('candSrch').value.toLowerCase().trim(); const af = document.getElementById('candAreaF').value; const sf = document.getElementById('candStF').value; const sort = document.getElementById('candSortF').value;
-  let cands = people.filter(p => { if (!p.cv) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (q && !p.nombre.toLowerCase().includes(q) && !(p.cv.puestoInteres || '').toLowerCase().includes(q)) return false; return true; });
+  const q = document.getElementById('candSrch').value.toLowerCase().trim(); const af = document.getElementById('candAreaF').value; const sf = document.getElementById('candStF').value; const sort = document.getElementById('candSortF').value; const outF = document.getElementById('candOutFilter').value;
+  let cands = people.filter(p => { if (!p.cv) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (outF === 'out' && !p.out_flag) return false; if (outF === 'no_out' && p.out_flag) return false; if (q && !p.nombre.toLowerCase().includes(q) && !(p.cv.puestoInteres || '').toLowerCase().includes(q)) return false; return true; });
   if (sort === 'fecha_desc') cands.sort((a, b) => (b.cv.fechaEnvio || '').localeCompare(a.cv.fechaEnvio || ''));
   else if (sort === 'fecha_asc') cands.sort((a, b) => (a.cv.fechaEnvio || '').localeCompare(b.cv.fechaEnvio || ''));
   else cands.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
@@ -1560,11 +1709,11 @@ function candCardHTML(p) {
   const cv = p.cv; const initials = p.nombre.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
   const avatarColors = { movistar_arena: 'background:#e0f2fe;color:#0369a1', externos: 'background:#f0fdf4;color:#166534' };
   const sel = candSelIds.has(p.id);
-  return `<div class="cand-card ${sel ? 'selected' : ''}" id="cc-${p.id}"><div class="cand-card-top"><div class="cand-avatar" style="${avatarColors[p.area] || 'background:#f3f4f6;color:#374151'}">${initials}</div><div class="cand-info"><div class="cand-name">${e(p.nombre)}</div><div class="cand-puesto">${cv.puestoInteres ? e(cv.puestoInteres) : '<span style="color:#d1d5db">Sin puesto</span>'}</div><div class="cand-meta">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}${cv.fechaEnvio ? ' · ' + cv.fechaEnvio : ''}</div></div><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')" style="margin-top:2px;flex-shrink:0"></div>${cv.experiencia || cv.disponibilidad ? `<div class="cand-fields">${cv.disponibilidad ? `<div class="cand-field-row"><span class="cand-field-label">Disponib.:</span><span class="cand-field-val">${e(cv.disponibilidad)}</span></div>` : ''}${cv.experiencia ? `<div class="cand-field-row"><span class="cand-field-label">Experiencia:</span><span class="cand-field-val">${e(cv.experiencia)}</span></div>` : ''}</div>` : ''}<div class="cand-footer"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select>${cv.archivo ? `<span style="font-size:11px;color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')" title="Descargar">📎</span>` : ''}<div style="margin-left:auto;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></div></div></div>`;
+  return `<div class="cand-card ${sel ? 'selected' : ''}" id="cc-${p.id}"><div class="cand-card-top"><div class="cand-avatar" style="${avatarColors[p.area] || 'background:#f3f4f6;color:#374151'}">${initials}</div><div class="cand-info"><div class="cand-name">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}">🚫 OUT</button>` : ''}</div><div class="cand-puesto">${cv.puestoInteres ? e(cv.puestoInteres) : '<span style="color:#d1d5db">Sin puesto</span>'}</div><div class="cand-meta">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}${cv.fechaEnvio ? ' · ' + cv.fechaEnvio : ''}</div></div><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')" style="margin-top:2px;flex-shrink:0"></div>${cv.experiencia || cv.disponibilidad ? `<div class="cand-fields">${cv.disponibilidad ? `<div class="cand-field-row"><span class="cand-field-label">Disponib.:</span><span class="cand-field-val">${e(cv.disponibilidad)}</span></div>` : ''}${cv.experiencia ? `<div class="cand-field-row"><span class="cand-field-label">Experiencia:</span><span class="cand-field-val">${e(cv.experiencia)}</span></div>` : ''}</div>` : ''}<div class="cand-footer"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select>${cv.archivo ? `<span style="font-size:11px;color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')" title="Descargar">📎</span>` : ''}<div style="margin-left:auto;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></div></div></div>`;
 }
 function candRowHTML(p) {
   const cv = p.cv; const sel = candSelIds.has(p.id);
-  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel ? '#f0eeff' : '#fff'}"><td style="padding:9px 14px"><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')"></td><td style="padding:9px 14px;font-weight:500;color:#111827">${e(p.nombre)}</td><td style="padding:9px 14px"><span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</span></td><td style="padding:9px 14px;font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(cv.puestoInteres || '—')}</td><td style="padding:9px 14px;font-size:12px">${cv.archivo ? `<span style="color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')">📎 ${e(cv.archivo.nombre.slice(0, 18) + (cv.archivo.nombre.length > 18 ? '…' : ''))}</span>` : '<span style="color:#d1d5db">—</span>'}</td><td style="padding:9px 14px;font-size:12px;color:#9ca3af">${cv.fechaEnvio || '—'}</td><td style="padding:9px 14px"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select></td><td style="padding:9px 14px;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></td></tr>`;
+  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel ? '#f0eeff' : '#fff'}"><td style="padding:9px 14px"><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')"></td><td style="padding:9px 14px;font-weight:500;color:#111827">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}">🚫 OUT</button>` : ''}</td><td style="padding:9px 14px"><span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</span></td><td style="padding:9px 14px;font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(cv.puestoInteres || '—')}</td><td style="padding:9px 14px;font-size:12px">${cv.archivo ? `<span style="color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')">📎 ${e(cv.archivo.nombre.slice(0, 18) + (cv.archivo.nombre.length > 18 ? '…' : ''))}</span>` : '<span style="color:#d1d5db">—</span>'}</td><td style="padding:9px 14px;font-size:12px;color:#9ca3af">${cv.fechaEnvio || '—'}</td><td style="padding:9px 14px"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select></td><td style="padding:9px 14px;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></td></tr>`;
 }
 async function candChangeSt(id, sel) { const p = people.find(x => x.id === id); if (p) { p.estado = sel.value; sel.className = 'cand-st-sel ' + sel.value; renderCandidatos(); nomStats(); try { await sbUpdate('personas', id, { estado: sel.value }); } catch (_) {} } }
 async function candDel(id) { if (!confirm('¿Eliminar este candidato?')) return; people = people.filter(x => x.id !== id); candSelIds.delete(id); nomRefresh(); renderCandidatos(); try { await sbDelete('personas', id); toast('Candidato eliminado'); } catch (_) {} }
@@ -1719,9 +1868,12 @@ const RESEND_KEY = 're_jLa2QX2v_2QsSZNpnwBJYBgJ1Ezcphe58';
 // Firma como imagen, una por cada área. Los archivos van en la carpeta /firmas.
 // La URL se arma sola con el dominio actual. Dejar '' para no incluir imagen de firma.
 const SIGNATURE_IMG = {
-  movistar: 'firmas/firma-arena.jpg',    // mails de Movistar Arena (orientadores.arena@show-bs.com)
+  movistar: 'firmas/firma-arena.jpg',    // mails de Movistar Arena (convocatorias.arena@show-bs.com)
   externos: 'firmas/firma-externos.jpg'  // mails de Externos (convocatorias@show-bs.com)
 };
+// Logo del encabezado del mail. Archivo en la raíz del sitio (misma carpeta que admin.html).
+// Dejar '' para volver al título de texto.
+const LOGO_IMG = 'logo-sbs.png';
 let mailSolId = null, mailFromArea = null;
 
 function openMailModal(solId) {
@@ -1729,6 +1881,76 @@ function openMailModal(solId) {
   document.getElementById('mMailStep1').style.display = 'block';
   document.getElementById('mMailStep2').style.display = 'none';
   showM('mMailConf');
+}
+
+// Cuerpo del mail de Movistar Arena, armado desde los 4 campos editables (fecha, horario, monto, sector).
+function movistarBodyFromFields(saludo, fecha, horario, monto, sector, fechaLimite) {
+  return `Estimado/a ${saludo}:
+
+Queremos confirmarte que fuiste seleccionado/a para los eventos de las fechas ${fecha} para formar parte del equipo de ${sector || 'STAFF'} en el MOVISTAR ARENA.
+
+Detallamos propuesta laboral:
+
+Fecha: ${fecha}
+Horario: ${horario}
+Venue: MOVISTAR ARENA - HUMBOLDT 450/VILLA CRESPO
+Remuneración: ${monto}
+
+IMPORTANTE:
+• Recuerden que van a estar rotando TODOS.
+• Necesitamos respetar los horarios que le correspondan a cada uno, sino vamos a tener que empezar a utilizar los strikes.
+• Tener en cuenta que el pago se realiza de manera quincenal, el 5to día hábil cerrada la quincena.
+• Se les dará prioridad a aquellos que tengan disponibilidad ambas fechas.
+
+POR FAVOR, ESPERAMOS RESPUESTA COMO ASÍ TAMBIÉN CUALQUIER ACTUALIZACIÓN DE SU CONFIRMACIÓN ANTES DEL ${fechaLimite} 11HS.
+
+IMPORTANTE: En caso de llegada tarde, se descontará un 10% sobre la remuneración total correspondiente al servicio.
+
+Saludos att!`;
+}
+let mailNombreCtx = '', mailFechaLimiteCtx = '[COMPLETAR FECHA LÍMITE]', bmFechaLimiteCtx = '[COMPLETAR FECHA LÍMITE]';
+// Cuerpo del mail de Externos, armado desde sus campos editables.
+function externosBodyFromFields(saludo, fecha, horario, venue, monto, sector, whatsapp) {
+  return `Estimado/a ${saludo},
+
+Le escribimos desde SHOW BUSINESS SOLUTIONS para confirmarle que fue seleccionado/a para el evento del día ${fecha}, formando parte del equipo de ${sector || '[COMPLETAR PUESTO]'}.
+
+A continuación, detallamos la propuesta laboral:
+
+Fecha: ${fecha}
+Horario: ${horario}
+Venue: ${venue}
+
+Remuneración: ${monto}
+Forma de pago: Transferencia bancaria, aproximadamente a los 15 días hábiles de finalizado el evento.
+
+Sin vianda, pero pueden traer un snack y algo para hidratarse durante la jornada.
+
+Vestimenta obligatoria:
+• Total black (todo negro)
+• Sin logos de fútbol ni escudos
+
+IMPORTANTE:
+Por favor, esperamos tu confirmación uniéndote al grupo a través del siguiente link y también confirmando por este medio (mail).
+
+🔗 Link de WhatsApp: ${whatsapp}
+
+En caso de que no puedas asistir, te pedimos que nos lo informes a la brevedad.
+
+Saludos cordiales,
+Show Business Solutions`;
+}
+function regenMailBody() {
+  const f = id => document.getElementById(id).value;
+  document.getElementById('mailBody').value = mailFromArea === 'movistar'
+    ? movistarBodyFromFields(mailNombreCtx || '', f('mailFFecha'), f('mailFHorario'), f('mailFMonto'), f('mailFSector'), mailFechaLimiteCtx)
+    : externosBodyFromFields(mailNombreCtx || '', f('mailFFecha'), f('mailFHorario'), f('mailFVenue'), f('mailFMonto'), f('mailFSector'), f('mailFWhatsapp'));
+}
+function regenBulkBody() {
+  const f = id => document.getElementById(id).value;
+  document.getElementById('bmBody').value = bmFromArea === 'movistar'
+    ? movistarBodyFromFields('{nombre}', f('bmFFecha'), f('bmFHorario'), f('bmFMonto'), f('bmFSector'), bmFechaLimiteCtx)
+    : externosBodyFromFields('{nombre}', f('bmFFecha'), f('bmFHorario'), f('bmFVenue'), f('bmFMonto'), f('bmFSector'), f('bmFWhatsapp'));
 }
 
 function prepMailTemplate(area) {
@@ -1749,67 +1971,28 @@ function prepMailTemplate(area) {
   const fechas = conv?.fecha ? conv.fecha.split(',').map(f => fmtFecha(f.trim())).join(' y ') : '[COMPLETAR FECHA]';
   const convNombre = conv?.nombre || '[EVENTO]';
 
-  let subject, body;
-
+  const mvFields = document.getElementById('mailMvFields');
+  const extraFields = document.getElementById('mailExtraFields');
+  mailNombreCtx = nombre;
+  mvFields.style.display = 'block';
+  document.getElementById('mailFFecha').value = fechas;
+  document.getElementById('mailFSector').value = puesto || (area === 'movistar' ? 'STAFF' : '[COMPLETAR PUESTO]');
   if (area === 'movistar') {
-    subject = `Confirmación - ${convNombre} - Movistar Arena`;
-    body = `Estimado/a ${nombre}:
-
-Queremos confirmarte que fuiste seleccionado/a para los eventos de las fechas ${fechas} para formar parte del equipo de ${puesto || 'STAFF'} en el MOVISTAR ARENA.
-
-Detallamos propuesta laboral:
-
-Fecha: ${fechas}
-Horario: 13:00 HS a 22hs.
-Venue: MOVISTAR ARENA - HUMBOLDT 450/VILLA CRESPO
-Remuneración: $47.682 por jornada efectivamente realizada.
-
-IMPORTANTE:
-• Recuerden que van a estar rotando TODOS.
-• Necesitamos respetar los horarios que le correspondan a cada uno, sino vamos a tener que empezar a utilizar los strikes.
-• Tener en cuenta que el pago se realiza de manera quincenal, el 5to día hábil cerrada la quincena.
-• Se les dará prioridad a aquellos que tengan disponibilidad ambas fechas.
-
-POR FAVOR, ESPERAMOS RESPUESTA COMO ASÍ TAMBIÉN CUALQUIER ACTUALIZACIÓN DE SU CONFIRMACIÓN ANTES DEL [COMPLETAR FECHA LÍMITE] 11HS.
-
-IMPORTANTE: En caso de llegada tarde, se descontará un 10% sobre la remuneración total correspondiente al servicio.
-
-Saludos att!`;
+    document.getElementById('mailSubject').value = `Confirmación - ${convNombre} - Movistar Arena`;
+    mailFechaLimiteCtx = conv?.fecha_limite || '[COMPLETAR FECHA LÍMITE]';
+    document.getElementById('mailFHorario').value = conv?.horario || '13:00 HS a 22hs.';
+    document.getElementById('mailFMonto').value = conv?.remuneracion || '$47.682 por jornada efectivamente realizada.';
+    extraFields.style.display = 'none';
   } else {
-    subject = `Confirmación - ${convNombre}`;
-    body = `Estimado/a,
-
-Le escribimos desde SHOW BUSINESS SOLUTIONS para confirmarle que fue seleccionado/a para el evento del día ${fechas}, formando parte del equipo de ${puesto || '[COMPLETAR PUESTO]'}.
-
-A continuación, detallamos la propuesta laboral:
-
-Fecha: ${fechas}
-Horario: [COMPLETAR HORARIO]
-Venue: [COMPLETAR VENUE]
-
-Remuneración: [COMPLETAR REMUNERACIÓN] por jornada
-Forma de pago: Transferencia bancaria, aproximadamente a los 15 días hábiles de finalizado el evento.
-
-Sin vianda, pero pueden traer un snack y algo para hidratarse durante la jornada.
-
-Vestimenta obligatoria:
-• Total black (todo negro)
-• Sin logos de fútbol ni escudos
-
-IMPORTANTE:
-Por favor, esperamos tu confirmación uniéndote al grupo a través del siguiente link y también confirmando por este medio (mail).
-
-🔗 Link de WhatsApp: [COMPLETAR LINK WHATSAPP]
-
-En caso de que no puedas asistir, te pedimos que nos lo informes a la brevedad.
-
-Saludos cordiales,
-Show Business Solutions`;
+    document.getElementById('mailSubject').value = `Confirmación - ${convNombre}`;
+    document.getElementById('mailFHorario').value = conv?.horario || '[COMPLETAR HORARIO]';
+    document.getElementById('mailFMonto').value = conv?.remuneracion || '[COMPLETAR REMUNERACIÓN]';
+    document.getElementById('mailFVenue').value = conv?.venue || '[COMPLETAR VENUE]';
+    document.getElementById('mailFWhatsapp').value = conv?.link_whatsapp || '[COMPLETAR LINK WHATSAPP]';
+    extraFields.style.display = 'flex';
   }
-
+  regenMailBody();
   document.getElementById('mailTo').value = solEmail || '';
-  document.getElementById('mailSubject').value = subject;
-  document.getElementById('mailBody').value = body;
   document.getElementById('mMailStep1').style.display = 'none';
   document.getElementById('mMailStep2').style.display = 'block';
 }
@@ -1860,10 +2043,15 @@ function renderEmailHtml(text, fromAddr, area) {
       <img src="${sigUrl}" alt="Show Business Solutions" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0">
     </div>`
     : '';
+  const logoFile = (typeof LOGO_IMG !== 'undefined' && LOGO_IMG) || '';
+  const logoUrl = logoFile ? (location.origin + '/' + logoFile.replace(/^\//, '')) : '';
+  const header = logoUrl
+    ? `<img src="${logoUrl}" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">`
+    : `<div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#111827">Show Business Solutions</div>
+    <div style="height:2px;width:40px;background:#534AB7;margin:12px 0 26px;border-radius:2px"></div>`;
   return `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
-    <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#534AB7">Show Business Solutions</div>
-    <div style="height:2px;width:40px;background:#534AB7;margin:12px 0 26px;border-radius:2px"></div>
+    ${header}
     ${out}
     ${sigBlock}
   </div>
@@ -1880,14 +2068,14 @@ async function sendConfirmationMail() {
   const body = document.getElementById('mailBody').value.trim();
   if (!to || !subject || !body) { toast('Completá todos los campos'); return; }
 
-  const from = mailFromArea === 'movistar' ? 'orientadores.arena@show-bs.com' : 'convocatorias@show-bs.com';
+  const from = mailFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias@show-bs.com';
   const btn = document.getElementById('btnSendMail');
   btn.disabled = true; btn.textContent = 'Enviando...';
 
   try {
-    const res = await fetch('https://api.resend.com/emails', {
+    const res = await fetch('/api/send-email', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea), text: body })
     });
     const data = await res.json();
@@ -1899,6 +2087,87 @@ async function sendConfirmationMail() {
   } finally {
     btn.disabled = false; btn.textContent = 'Enviar mail →';
   }
+}
+
+// ── ENVÍO MASIVO DE CONFIRMACIÓN (a los seleccionados) ──
+let bulkMailRecipients = [], bmFromArea = null, bmSinEmail = 0;
+
+function openBulkMail() {
+  const ids = gSelIds();
+  if (!ids.length) { toast('Seleccioná al menos una persona'); return; }
+  bulkMailRecipients = []; bmSinEmail = 0;
+  ids.forEach(id => {
+    const post = posts.find(x => x.id === id); if (!post) return;
+    const persona = people.find(p => p.id === post.personaId);
+    const email = persona?.email || null;
+    if (email) bulkMailRecipients.push({ email, nombre: post.nombre });
+    else bmSinEmail++;
+  });
+  if (!bulkMailRecipients.length) { toast('Ninguno de los seleccionados tiene email cargado'); return; }
+  document.getElementById('bmStep1').style.display = 'block';
+  document.getElementById('bmStep2').style.display = 'none';
+  showM('mBulkMail');
+}
+
+function prepBulkTemplate(area) {
+  bmFromArea = area;
+  const conv = convs.find(c => c.id === currentConvId);
+  const puestoObj = (conv?.puestos || []).find(p => p.id === currentPuestoId);
+  const puesto = puestoObj?.nombre || '';
+  const fechas = conv?.fecha ? conv.fecha.split(',').map(f => fmtFecha(f.trim())).join(' y ') : '[COMPLETAR FECHA]';
+  const convNombre = conv?.nombre || '[EVENTO]';
+  const bmFields = document.getElementById('bmMvFields');
+  const bmExtra = document.getElementById('bmExtraFields');
+  bmFields.style.display = 'block';
+  document.getElementById('bmFFecha').value = fechas;
+  document.getElementById('bmFSector').value = puesto || (area === 'movistar' ? 'STAFF' : '[COMPLETAR PUESTO]');
+  if (area === 'movistar') {
+    document.getElementById('bmSubject').value = `Confirmación - ${convNombre} - Movistar Arena`;
+    bmFechaLimiteCtx = conv?.fecha_limite || '[COMPLETAR FECHA LÍMITE]';
+    document.getElementById('bmFHorario').value = conv?.horario || '13:00 HS a 22hs.';
+    document.getElementById('bmFMonto').value = conv?.remuneracion || '$47.682 por jornada efectivamente realizada.';
+    bmExtra.style.display = 'none';
+  } else {
+    document.getElementById('bmSubject').value = `Confirmación - ${convNombre}`;
+    document.getElementById('bmFHorario').value = conv?.horario || '[COMPLETAR HORARIO]';
+    document.getElementById('bmFMonto').value = conv?.remuneracion || '[COMPLETAR REMUNERACIÓN]';
+    document.getElementById('bmFVenue').value = conv?.venue || '[COMPLETAR VENUE]';
+    document.getElementById('bmFWhatsapp').value = conv?.link_whatsapp || '[COMPLETAR LINK WHATSAPP]';
+    bmExtra.style.display = 'flex';
+  }
+  regenBulkBody();
+  document.getElementById('bmRecap').innerHTML = `Vas a enviar a <b>${bulkMailRecipients.length}</b> persona(s).${bmSinEmail ? ` <span style="color:#9a3412">(${bmSinEmail} sin email — se omiten)</span>` : ''} El texto <b>{nombre}</b> se reemplaza por el nombre de cada persona.`;
+  document.getElementById('bmStep1').style.display = 'none';
+  document.getElementById('bmStep2').style.display = 'block';
+}
+
+async function sendBulkMail() {
+  const subject = document.getElementById('bmSubject').value.trim();
+  const bodyTpl = document.getElementById('bmBody').value.trim();
+  if (!subject || !bodyTpl) { toast('Completá asunto y mensaje'); return; }
+  if (!bulkMailRecipients.length) { toast('No hay destinatarios'); return; }
+  if (!confirm(`¿Enviar la confirmación a ${bulkMailRecipients.length} persona(s)?`)) return;
+  const from = bmFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias@show-bs.com';
+  const btn = document.getElementById('bmSendBtn'); btn.disabled = true;
+  const prog = document.getElementById('bmProgress'); prog.style.display = 'block';
+  let ok = 0, fail = 0;
+  for (let i = 0; i < bulkMailRecipients.length; i++) {
+    const r = bulkMailRecipients[i];
+    prog.textContent = `Enviando ${i + 1} de ${bulkMailRecipients.length}...`;
+    const body = bodyTpl.replace(/\{nombre\}/g, r.nombre || '');
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea), text: body })
+      });
+      if (res.ok) ok++; else fail++;
+    } catch (_) { fail++; }
+    await new Promise(res => setTimeout(res, 600));
+  }
+  prog.style.display = 'none'; prog.textContent = '';
+  btn.disabled = false;
+  toast(`✓ Enviados: ${ok}${fail ? ` · Fallaron: ${fail}` : ''}`);
+  if (!fail) closeM('mBulkMail');
 }
 let solViewId = null, solSelIds = new Set();
 
@@ -2416,6 +2685,62 @@ function renderSupView() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ── RESPUESTAS (mails entrantes) ──
+function refreshRespBadge() {
+  const cnt = respuestas.filter(r => !r.leido).length;
+  const b = document.getElementById('respNavBadge');
+  if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; }
+}
+function renderRespuestas() {
+  const q = (document.getElementById('respSrch')?.value || '').toLowerCase().trim();
+  const cf = document.getElementById('respCasillaF')?.value || '';
+  const lf = document.getElementById('respLeidoF')?.value || '';
+  const cont = document.getElementById('respContent'); if (!cont) return;
+  const list = respuestas.filter(r => {
+    if (cf && r.casilla !== cf) return false;
+    if (lf === 'no' && r.leido) return false;
+    if (lf === 'si' && !r.leido) return false;
+    if (q && !((r.from_name || '').toLowerCase().includes(q) || (r.from_email || '').toLowerCase().includes(q) || (r.subject || '').toLowerCase().includes(q) || (r.body || '').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  if (!list.length) { cont.innerHTML = `<div class="empty">${respuestas.length === 0 ? 'Sin respuestas todavía. Cuando un candidato responda un mail de confirmación, aparece acá unos minutos después.' : 'Sin resultados para este filtro.'}</div>`; return; }
+  cont.innerHTML = list.map(r => {
+    const persona = people.find(p => (p.email || '').toLowerCase() === (r.from_email || '').toLowerCase());
+    const fecha = r.received_at ? new Date(r.received_at).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    const casLabel = r.casilla === 'arena' ? 'Movistar Arena' : r.casilla === 'externos' ? 'Externos' : (r.casilla || '');
+    const casClass = r.casilla === 'arena' ? 'a-mv' : 'a-ex';
+    const reSubject = 'Re: ' + (r.subject || '').replace(/^re:\s*/i, '');
+    return `<div style="background:#fff;border:1px solid ${r.leido ? '#e5e7eb' : '#bae6fd'};border-left:3px solid ${r.leido ? '#e5e7eb' : '#0369a1'};border-radius:10px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:#111827;font-size:14px">${e(r.from_name || r.from_email || 'Desconocido')}${!r.leido ? ' <span style="display:inline-block;width:7px;height:7px;background:#0369a1;border-radius:50%;vertical-align:middle"></span>' : ''}</div>
+          <div style="font-size:12px;color:#6b7280">${e(r.from_email || '')}</div>
+        </div>
+        <span class="a-badge ${casClass}">${casLabel}</span>
+        <span style="font-size:11px;color:#9ca3af;white-space:nowrap">${fecha}</span>
+      </div>
+      ${persona ? `<div style="font-size:11px;color:#0369a1;margin-bottom:6px">✓ En la nómina: ${e(persona.nombre)} (${persona.area === 'movistar_arena' ? 'M. Arena' : 'Externos'})</div>` : `<div style="font-size:11px;color:#9ca3af;margin-bottom:6px">No coincide con nadie en la nómina</div>`}
+      <div style="font-size:12px;color:#374151;font-weight:600;margin-bottom:4px">${e(r.subject || '(sin asunto)')}</div>
+      <div style="font-size:13px;color:#374151;line-height:1.5;white-space:pre-wrap;max-height:160px;overflow-y:auto;background:#fafafa;border-radius:6px;padding:8px 10px">${e(r.body || r.snippet || '')}</div>
+      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
+        <a href="mailto:${e(r.from_email || '')}?subject=${encodeURIComponent(reSubject)}" class="btn btn-sec btn-xs" style="text-decoration:none">✉ Responder</a>
+        ${!r.leido ? `<button class="btn btn-sec btn-xs" onclick="markRespRead('${r.id}')">✓ Marcar leída</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+async function markRespRead(id) {
+  const r = respuestas.find(x => x.id === id); if (!r) return;
+  r.leido = true; renderRespuestas(); refreshRespBadge();
+  try { await sbUpdate('respuestas', id, { leido: true }); } catch (_) {}
+}
+async function markAllRespRead() {
+  const ids = respuestas.filter(r => !r.leido).map(r => r.id);
+  if (!ids.length) { toast('No hay respuestas sin leer'); return; }
+  respuestas.forEach(r => r.leido = true); renderRespuestas(); refreshRespBadge();
+  try { await sbUpdateIn('respuestas', ids, { leido: true }); toast(`${ids.length} marcadas como leídas`); } catch (_) {}
 }
 
 initAuth();
