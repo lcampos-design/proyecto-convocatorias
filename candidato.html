@@ -115,7 +115,7 @@ textarea.fi{height:90px;resize:vertical}
         </div>
       </div>
       <div class="fg">
-        <label>CUIT / CUIL</label>
+        <label>CUIT / CUIL <span class="req">*</span></label>
         <input type="text" class="fi" id="fCuit" placeholder="Ingresá los 11 números del CUIL/CUIT" maxlength="11" oninput="validarCuil(this)" inputmode="numeric">
         <div class="cbu-counter" id="cuilCounter">0 / 11 dígitos</div>
         <div class="cbu-warn" id="cuilWarn">⚠ El CUIL/CUIT debe tener exactamente 11 dígitos.</div>
@@ -129,16 +129,16 @@ textarea.fi{height:90px;resize:vertical}
       <div class="area-btns">
         <div class="area-btn active" id="btnMv" onclick="setArea('movistar_arena')">
           <div class="area-btn-title">Movistar Arena</div>
-          <div class="area-btn-sub">Piso, seguridad, producción</div>
+          <div class="area-btn-sub">Acomodadores, stagehands</div>
         </div>
         <div class="area-btn" id="btnEx" onclick="setArea('externos')">
           <div class="area-btn-title">Externos</div>
-          <div class="area-btn-sub">Eventos externos y giras</div>
+          <div class="area-btn-sub">Acomodadores, acreditaciones, producción</div>
         </div>
       </div>
       <div class="fg" style="margin-top:14px">
         <label>Puesto de interés</label>
-        <input type="text" class="fi" id="fPuesto" placeholder="Ej: Personal de piso, Seguridad, Producción...">
+        <input type="text" class="fi" id="fPuesto" placeholder="Ej: Acomodadores, Stagehands, Acreditaciones, Producción...">
       </div>
     </div>
 
@@ -147,7 +147,7 @@ textarea.fi{height:90px;resize:vertical}
       <div class="section-title">Perfil profesional</div>
       <div class="fg">
         <label>Experiencia laboral <span class="req">*</span></label>
-        <textarea class="fi" id="fExp" placeholder="Contanos tu experiencia en eventos, producción, seguridad u otras áreas relacionadas..."></textarea>
+        <textarea class="fi" id="fExp" placeholder="Contanos tu experiencia en eventos, producción u otras áreas relacionadas..."></textarea>
       </div>
       <div class="frow">
         <div class="fg">
@@ -182,7 +182,7 @@ textarea.fi{height:90px;resize:vertical}
     <div class="card">
       <div class="section-title">Datos bancarios</div>
       <div class="bank-info">
-        Solo se aceptan <strong>cuentas bancarias</strong>. No se aceptan alias ni billeteras virtuales (Mercado Pago, Ualá, Personal Pay, etc.). La cuenta debe estar a tu nombre.
+        Te pedimos estos datos para adelantar tareas administrativas y tenerlos a disposición para futuros pagos. Solo se aceptan <strong>cuentas bancarias</strong>. No se aceptan alias ni billeteras virtuales (Mercado Pago, Ualá, Personal Pay, etc.). La cuenta debe estar a tu nombre.
       </div>
       <div class="fg">
         <label>CBU <span class="req">*</span></label>
@@ -209,7 +209,7 @@ textarea.fi{height:90px;resize:vertical}
     <div class="card">
       <div class="section-title">Declaración jurada</div>
       <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:16px">
-        Las siguientes preguntas tienen carácter de <strong>Declaración Jurada</strong>. La información incorrecta puede resultar en la desvinculación inmediata.
+        Las siguientes preguntas tienen carácter de <strong>Declaración Jurada</strong>.
       </div>
 
       <div class="fg">
@@ -244,25 +244,23 @@ textarea.fi{height:90px;resize:vertical}
 
   <!-- Footer -->
   <footer style="margin-top:48px;border-top:1px solid #e5e7eb;padding:32px 16px;text-align:center;background:rgba(255,255,255,.95);position:relative;z-index:1">
-    <div style="max-width:640px;margin:0 auto">
+    <div style="max-width:520px;margin:0 auto">
       <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:16px">¿Tenés alguna consulta?</div>
-      <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap;align-items:center">
-        <a href="mailto:convocatorias@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
-          <span style="font-size:18px">✉</span> convocatorias@show-bs.com
-        </a>
+      <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af">Movistar Arena</span>
+          <a href="mailto:convocatorias.arena@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias.arena@show-bs.com</a>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af">Externos</span>
+          <a href="mailto:convocatorias@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias@show-bs.com</a>
+        </div>
         <a href="https://www.instagram.com/showbs/" target="_blank" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
           @showbs
         </a>
-        <a href="https://www.instagram.com/showbspain/" target="_blank" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
-          @showbspain
-        </a>
-        <a href="postulaciones.html" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
-          <span style="font-size:18px">📋</span> Ver postulaciones abiertas
-        </a>
       </div>
-      <div style="margin-top:20px;font-size:11px;color:#9ca3af">Show Business Solution © 2024</div>
+      <div style="margin-top:20px;font-size:11px;color:#9ca3af">Show Business Solutions © 2026</div>
     </div>
   </footer>
 
@@ -389,7 +387,8 @@ async function submitForm() {
   if (!nroCuenta)   { showErr('El número de cuenta es obligatorio.'); return; }
   if (!banco)       { showErr('El banco es obligatorio.'); return; }
   const cuitVal = document.getElementById('fCuit').value.trim();
-  if (cuitVal && cuitVal.length !== 11) { showErr('El CUIL/CUIT debe tener exactamente 11 dígitos.'); return; }
+  if (!cuitVal) { showErr('El CUIL/CUIT es obligatorio.'); return; }
+  if (cuitVal.length !== 11) { showErr('El CUIL/CUIT debe tener exactamente 11 dígitos.'); return; }
   if (antecedentes === null) { showErr('Respondé la pregunta sobre antecedentes penales.'); return; }
   if (beneficioSocial === null) { showErr('Respondé la pregunta sobre beneficios sociales.'); return; }
 
