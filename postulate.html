@@ -201,6 +201,9 @@ function renderConvs(convs, puestos, posts) {
         <div class="conv-meta">
           <span class="badge ${areaClass[c.area]||'b-mv'}">${areaLabel[c.area]||c.area}</span>
           ${c.fecha ? c.fecha.split(',').map(f => `<span>📅 ${fmtFecha(f.trim())}</span>`).join('') : ''}
+          ${c.horario ? `<span>🕒 ${esc(c.horario)}</span>` : ''}
+          ${c.venue ? `<span>📍 ${esc(c.venue)}</span>` : ''}
+          ${c.fecha_limite ? `<span>⏳ Fecha límite: ${esc(c.fecha_limite)}</span>` : ''}
           ${c.descripcion ? `<span>${esc(c.descripcion.slice(0,80))}${c.descripcion.length>80?'…':''}</span>` : ''}
         </div>
       </div>
@@ -255,14 +258,15 @@ function closeModal() {
   selectedConvId = null; selectedPuestoId = null;
 }
 
-// Verifica que el CUIL ya esté registrado (CV) — en la nómina o como registro general.
+// Verifica que el CUIL ya esté registrado (nómina o CV) vía RPC.
+// La página pública es anónima y RLS le impide leer 'personas'/'solicitudes'
+// directamente, así que se usa una función SECURITY DEFINER que esquiva RLS.
 async function estaRegistrado(cuil) {
   try {
-    const { data: per } = await sb.from('personas').select('id').eq('cuit', cuil).limit(1);
-    if (per && per.length) return true;
-    const { data: sol } = await sb.from('solicitudes').select('id').eq('cuit', cuil).is('conv_id', null).limit(1);
-    return !!(sol && sol.length);
-  } catch (_) { return false; }
+    const { data, error } = await sb.rpc('esta_registrado', { p_cuit: cuil });
+    if (error) { console.error('esta_registrado no disponible:', error); return true; } // no bloquear si la función no existe todavía
+    return data === true;
+  } catch (_) { return true; }
 }
 
 async function submitPostulacion() {
@@ -289,32 +293,26 @@ async function submitPostulacion() {
   }
   btn.textContent = 'Enviando...';
 
-  const { error } = await sb.from('solicitudes').insert([{
-    nombre,
-    area: AREA,
-    email: email || null,
-    tel: tel || null,
-    cuit: cuil || null,
-    conv_id: selectedConvId,
-    puesto_id: selectedPuestoId,
-    puesto_nombre: selectedPuestoNombre,
-    estado: 'pendiente'
-  }]);
+  // La página es anónima y RLS bloquea el INSERT directo de postulaciones,
+  // así que se hace por una función RPC (SECURITY DEFINER) que inserta en
+  // 'solicitudes' y 'postulaciones' con las columnas correctas.
+  const { error } = await sb.rpc('crear_postulacion', {
+    p_nombre: nombre,
+    p_area: AREA,
+    p_email: email || null,
+    p_tel: tel || null,
+    p_cuit: cuil || null,
+    p_conv_id: selectedConvId,
+    p_puesto_id: selectedPuestoId,
+    p_puesto_nombre: selectedPuestoNombre
+  });
 
   if (error) {
+    console.error('crear_postulacion', error);
     btn.disabled = false; btn.textContent = 'Enviar postulación →';
     err.textContent = 'Hubo un error al enviar. Intentá de nuevo.'; err.style.display = 'block';
     return;
   }
-
-  // También crear en postulaciones para que cuente en los cupos de la convocatoria
-  await sb.from('postulaciones').insert([{
-    nombre,
-    conv_id: selectedConvId,
-    puesto_id: selectedPuestoId,
-    puesto_nombre: selectedPuestoNombre,
-    estado: 'pendiente'
-  }]);
 
   document.getElementById('formCard').style.display = 'none';
   document.getElementById('successCard').style.display = 'block';
