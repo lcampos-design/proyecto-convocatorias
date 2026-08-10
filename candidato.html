@@ -106,11 +106,11 @@ textarea.fi{height:90px;resize:vertical}
       </div>
       <div class="frow">
         <div class="fg">
-          <label>Email</label>
+          <label>Email <span class="req">*</span></label>
           <input type="email" class="fi" id="fEmail" placeholder="tu@email.com">
         </div>
         <div class="fg">
-          <label>Teléfono</label>
+          <label>Teléfono <span class="req">*</span></label>
           <input type="tel" class="fi" id="fTel" placeholder="+54 11...">
         </div>
       </div>
@@ -137,7 +137,7 @@ textarea.fi{height:90px;resize:vertical}
         </div>
       </div>
       <div class="fg" style="margin-top:14px">
-        <label>Puesto de interés</label>
+        <label>Puesto de interés <span class="req">*</span></label>
         <input type="text" class="fi" id="fPuesto" placeholder="Ej: Acomodadores, Stagehands, Acreditaciones, Producción...">
       </div>
     </div>
@@ -151,28 +151,31 @@ textarea.fi{height:90px;resize:vertical}
       </div>
       <div class="frow">
         <div class="fg">
-          <label>Formación</label>
+          <label>Formación <span class="req">*</span></label>
           <textarea class="fi" style="height:70px" id="fForm" placeholder="Estudios, cursos, certificaciones..."></textarea>
         </div>
         <div class="fg">
-          <label>Habilidades</label>
+          <label>Habilidades <span class="req">*</span></label>
           <textarea class="fi" style="height:70px" id="fSkills" placeholder="Trabajo en equipo, idiomas, herramientas..."></textarea>
         </div>
       </div>
       <div class="fg">
-        <label>Disponibilidad</label>
+        <label>Disponibilidad <span class="req">*</span></label>
         <input type="text" class="fi" id="fDisp" placeholder="Full time, fines de semana, turno noche...">
       </div>
     </div>
 
     <!-- CV -->
     <div class="card">
-      <div class="section-title">CV / Archivo adjunto</div>
+      <div class="section-title">CV / Archivo adjunto <span class="req">*</span></div>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">
+        📸 <strong>Importante:</strong> tu CV debe incluir una <strong>foto tuya</strong> (tipo foto carnet o similar).
+      </div>
       <div class="file-area" id="fileArea" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropFile(event)">
         <input type="file" id="fFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleFile()">
         <div class="file-icon">📎</div>
         <div class="file-text">Arrastrá tu CV acá o <strong>hacé click para elegir</strong></div>
-        <div class="file-text" style="margin-top:4px">PDF, Word o imagen · Máx. 1 MB</div>
+        <div class="file-text" style="margin-top:4px">PDF, Word o imagen · Máx. 1 MB · <strong>con foto</strong></div>
         <div class="file-name" id="fileName"></div>
       </div>
       <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
@@ -253,7 +256,7 @@ textarea.fi{height:90px;resize:vertical}
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
           <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af">Externos</span>
-          <a href="mailto:convocatorias@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias@show-bs.com</a>
+          <a href="mailto:convocatorias.externos@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias.externos@show-bs.com</a>
         </div>
         <a href="https://www.instagram.com/showbs/" target="_blank" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
@@ -284,6 +287,14 @@ function setArea(a) {
   document.getElementById('btnMv').classList.toggle('active', a === 'movistar_arena');
   document.getElementById('btnEx').classList.toggle('active', a === 'externos');
 }
+
+// Preseleccionar el área si viene en el link (?area=arena|externos|movistar_arena),
+// para que el registro quede en la misma área a la que se está postulando.
+(function () {
+  const a = (new URLSearchParams(location.search).get('area') || '').toLowerCase();
+  if (a === 'externos') setArea('externos');
+  else if (a === 'arena' || a === 'movistar_arena') setArea('movistar_arena');
+})();
 
 function dragOver(e) { e.preventDefault(); document.getElementById('fileArea').classList.add('dragover'); }
 function dragLeave() { document.getElementById('fileArea').classList.remove('dragover'); }
@@ -392,22 +403,37 @@ async function submitForm() {
   if (antecedentes === null) { showErr('Respondé la pregunta sobre antecedentes penales.'); return; }
   if (beneficioSocial === null) { showErr('Respondé la pregunta sobre beneficios sociales.'); return; }
 
+  // Todos los campos son obligatorios
+  const email          = document.getElementById('fEmail').value.trim();
+  const tel            = document.getElementById('fTel').value.trim();
+  const puesto         = document.getElementById('fPuesto').value.trim();
+  const formacion      = document.getElementById('fForm').value.trim();
+  const habilidades    = document.getElementById('fSkills').value.trim();
+  const disponibilidad = document.getElementById('fDisp').value.trim();
+  if (!email)                                        { showErr('El email es obligatorio.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))     { showErr('Ingresá un email válido.'); return; }
+  if (!tel)                                          { showErr('El teléfono es obligatorio.'); return; }
+  if (!puesto)                                       { showErr('Indicá el puesto de interés.'); return; }
+  if (!formacion)                                    { showErr('Completá tu formación.'); return; }
+  if (!habilidades)                                  { showErr('Completá tus habilidades.'); return; }
+  if (!disponibilidad)                               { showErr('Indicá tu disponibilidad.'); return; }
+  if (!fileData)                                     { showErr('Adjuntá tu CV (con foto).'); return; }
+
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Verificando...';
 
-  // Verificar duplicados por CUIL/CUIT
+  // Verificar duplicados por CUIL o por NOMBRE (una persona no puede estar en ambos sectores)
   const cuit = document.getElementById('fCuit').value.trim();
-  if (cuit) {
-    try {
-      const { data: dupCheck } = await sb.rpc('check_solicitud_existe', { p_cuit: cuit });
-      if (dupCheck?.existe) {
-        const areaLabel = dupCheck.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos';
-        showErr(`Ya tenés una solicitud enviada para ${areaLabel}. Solo podés postularte a un área a la vez. Si querés hacer algún cambio, contactanos directamente.`);
-        btn.disabled = false; btn.textContent = 'Enviar solicitud →';
-        return;
-      }
-    } catch(_) { /* si falla la verificación, continúa igual */ }
-  }
+  try {
+    const { data: dupCheck } = await sb.rpc('check_solicitud_existe', { p_cuit: cuit, p_nombre: nombre });
+    if (dupCheck?.existe) {
+      const areaLabel = dupCheck.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos';
+      const porQue = dupCheck.motivo === 'nombre' ? 'con ese nombre' : 'con ese CUIL/CUIT';
+      showErr(`Ya existe una inscripción ${porQue} en ${areaLabel}. Cada persona puede registrarse en una sola área. Si necesitás un cambio, escribinos.`);
+      btn.disabled = false; btn.textContent = 'Enviar solicitud →';
+      return;
+    }
+  } catch(_) { /* si falla la verificación, continúa igual */ }
 
   document.getElementById('progressBar').style.display = 'block';
   document.getElementById('progressFill').style.width = '40%';
@@ -415,14 +441,14 @@ async function submitForm() {
   const payload = {
     nombre,
     area: selectedArea,
-    email:          document.getElementById('fEmail').value.trim() || null,
-    tel:            document.getElementById('fTel').value.trim() || null,
+    email,
+    tel,
     cuit:           document.getElementById('fCuit').value.trim() || null,
-    puesto_interes: document.getElementById('fPuesto').value.trim() || null,
+    puesto_interes: puesto,
     experiencia:    exp,
-    formacion:      document.getElementById('fForm').value.trim() || null,
-    habilidades:    document.getElementById('fSkills').value.trim() || null,
-    disponibilidad: document.getElementById('fDisp').value.trim() || null,
+    formacion,
+    habilidades,
+    disponibilidad,
     archivo_cv:     fileData ? fileData : null,
     cbu,
     numero_cuenta:  nroCuenta,

@@ -107,7 +107,7 @@ textarea.fi{height:80px;resize:none}
       <div style="font-size:44px;margin-bottom:12px">📝</div>
       <div class="success-title">Primero registrate</div>
       <div class="success-sub">No encontramos tu registro con ese CUIL. Para postularte a un puesto, primero tenés que completar tu registro (CV).</div>
-      <a href="candidato.html" class="submit-btn" style="display:block;text-decoration:none">Ir al registro →</a>
+      <a href="candidato.html" id="goRegLink" class="submit-btn" style="display:block;text-decoration:none">Ir al registro →</a>
       <button class="cancel-btn" onclick="closeModal()">Volver</button>
     </div>
     <div id="formCard">
@@ -154,6 +154,8 @@ function setHeader() {
   t.textContent = 'Sure, you can work with us';
   if (AREA) s.textContent = 'Postulaciones — ' + AREA_LABEL[AREA];
   else s.textContent = 'Elegí el área para ver las convocatorias';
+  // Que "Ir al registro" lleve el área actual, así el registro queda en la misma área.
+  if (AREA) { const gl = document.getElementById('goRegLink'); if (gl) gl.href = 'candidato.html?area=' + AREA; }
 }
 
 function renderChooser() {
@@ -349,7 +351,7 @@ loadConvocatorias();
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
         <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af">Externos</span>
-        <a href="mailto:convocatorias@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias@show-bs.com</a>
+        <a href="mailto:convocatorias.externos@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias.externos@show-bs.com</a>
       </div>
       <a href="https://www.instagram.com/showbs/" target="_blank" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
