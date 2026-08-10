@@ -296,6 +296,7 @@ tr:hover td{background:#fafafa}
 <header class="app-hdr">
   <div class="brand"><img src="logo-sbs.png" alt="SBS" class="brand-logo"><div><div class="brand-name">Gestión Recital</div><div class="brand-sub">Panel de administración</div></div></div>
   <nav class="main-nav">
+    <button class="mnav-btn" data-s="dashboard" onclick="goSec('dashboard')">Dashboard</button>
     <button class="mnav-btn active" data-s="nomina" onclick="goSec('nomina')">Nómina</button>
     <button class="mnav-btn" data-s="convs" onclick="goSec('convs')">Convocatorias</button>
     <button class="mnav-btn" data-s="candidatos" onclick="goSec('candidatos')">Candidatos <span id="candNavBadge" style="background:#1d4ed8;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
@@ -315,6 +316,10 @@ tr:hover td{background:#fafafa}
 </header>
 
 <!-- NÓMINA -->
+<div id="sec-dashboard" class="sec">
+  <div id="dashContent"></div>
+</div>
+
 <div id="sec-nomina" class="sec active">
   <div class="stats-bar">
     <div class="stat s-total"><div class="stat-num" id="sTotal">0</div><div class="stat-label">Total</div></div>
@@ -351,6 +356,9 @@ tr:hover td{background:#fafafa}
       <option value="rot">⚠ En rotación</option>
       <option value="libre">✓ Disponibles</option>
     </select>
+    <select class="filt" id="nomTagFilter" onchange="nomFilter()" title="Filtrar por etiqueta">
+      <option value="">Todas las etiquetas</option>
+    </select>
     <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT">🔍 Deduplicar</button>
     <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación">⚙ Rotación</button>
     <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
@@ -368,6 +376,9 @@ tr:hover td{background:#fafafa}
     </select>
     <button class="btn btn-sm btn-primary" onclick="applyBulkSt()">Aplicar</button>
     <button class="btn btn-sm btn-danger" onclick="delBulk()">Eliminar</button>
+    <span style="color:#c4b5fd">|</span> Etiqueta:
+    <select class="filt" id="bulkTag" style="font-size:12px;padding:4px 8px"><option value="">— etiqueta —</option></select>
+    <button class="btn btn-sm btn-primary" onclick="applyBulkTag()">+ Etiquetar</button>
   </div>
   <div class="tbl-wrap"><table>
     <thead><tr>
@@ -401,7 +412,7 @@ tr:hover td{background:#fafafa}
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0">
         <button class="btn btn-sm" id="btnPublicada" onclick="togglePublicada(currentConvId)">○ Publicar</button>
         <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()">📋 Asistencia</button>
-        <button class="btn btn-success btn-sm" onclick="exportPostuladosExcel()">↓ Excel</button>
+        <button class="btn btn-success btn-sm" onclick="exportPostuladosExcel()">↓ Planilla Excel</button>
         <button class="btn btn-sec btn-sm" onclick="openReporte()">📊 Reporte</button>
         <button class="btn btn-sec btn-sm" onclick="editCurrentConv()">✎ Editar</button>
         <button class="btn btn-danger btn-sm" onclick="deleteCurrentConv()">Eliminar</button>
@@ -516,6 +527,15 @@ tr:hover td{background:#fafafa}
     </div>
     <div class="fg"><label>CUIT / CUIL</label><input type="text" class="fi" id="pCuit" placeholder="20-12345678-9"></div>
     <div class="fg"><label>Notas</label><input type="text" class="fi" id="pNotas" placeholder="Info adicional..."></div>
+    <div class="fg"><label>Etiquetas</label>
+      <div id="pEtqChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input type="text" class="fi" id="pEtqInput" list="pEtqDatalist" placeholder="Escribí una etiqueta y Enter…" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addEtqToForm();}">
+        <input type="color" id="pEtqColor" value="#534AB7" title="Color para una etiqueta nueva" style="width:44px;height:38px;padding:2px;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;background:#fff">
+        <button type="button" class="btn btn-sec btn-sm" onclick="addEtqToForm()">Agregar</button>
+      </div>
+      <datalist id="pEtqDatalist"></datalist>
+    </div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mPerson')">Cancelar</button><button class="btn btn-primary" onclick="savePerson()">Guardar</button></div>
   </div>
 </div>
@@ -896,7 +916,7 @@ tr:hover td{background:#fafafa}
         </button>
         <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepMailTemplate('externos')">
           <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Externos</div>
-          <div style="font-size:11px;color:#9ca3af">convocatorias@show-bs.com</div>
+          <div style="font-size:11px;color:#9ca3af">convocatorias.externos@show-bs.com</div>
         </button>
       </div>
       <button class="btn btn-sec" style="width:100%;margin-top:8px" onclick="closeM('mMailConf')">Cancelar</button>
@@ -940,7 +960,7 @@ tr:hover td{background:#fafafa}
         </button>
         <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepBulkTemplate('externos')">
           <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Externos</div>
-          <div style="font-size:11px;color:#9ca3af">convocatorias@show-bs.com</div>
+          <div style="font-size:11px;color:#9ca3af">convocatorias.externos@show-bs.com</div>
         </button>
       </div>
       <button class="btn btn-sec" style="width:100%;margin-top:10px" onclick="closeM('mBulkMail')">Cancelar</button>
@@ -999,6 +1019,7 @@ let cvFileData = null;
 let currentUserRole = 'admin', currentUserId = null, currentUserName = '';
 let outTargetId = null, fbTargetId = null, fbTargetConvId = null;
 let rotacionConfig = { max_eventos: 3, dias_periodo: 30, modo: 'advertencia' };
+let etiquetasPaleta = [], formEtiquetas = [];
 
 // ── AUTH ──
 async function initAuth() {
@@ -1053,7 +1074,7 @@ async function loadUserRole() {
     const areaLabel = currentUserRole === 'admin_movistar' ? 'Movistar Arena' : 'Externos';
     document.querySelector('.brand-sub').textContent = `Admin — ${areaLabel}`;
   } else {
-    ['nomina','convs','candidatos','solicitudes','respuestas'].forEach(s => { const b = document.querySelector(`[data-s="${s}"]`); if(b) b.style.display='none'; });
+    ['dashboard','nomina','convs','candidatos','solicitudes','respuestas'].forEach(s => { const b = document.querySelector(`[data-s="${s}"]`); if(b) b.style.display='none'; });
     document.getElementById('navSupervisores').style.display = 'none';
   }
   // Filter data by area for area admins
@@ -1101,7 +1122,19 @@ async function loadAll() {
     sb.from('feedbacks').select('*').order('created_at'),
     sb.from('user_profiles').select('*'),
     sb.from('supervisor_convocatorias').select('*'),
-    sb.from('solicitudes').select('*').order('created_at', { ascending: false }),
+    (async () => {
+      // Paginado (Supabase trae máx. 1000 por request) y sin archivo_cv (pesa cientos de MB).
+      const cols = 'id,nombre,area,email,tel,cuit,puesto_interes,experiencia,formacion,habilidades,disponibilidad,cbu,numero_cuenta,banco,antecedentes,beneficio_social,estado,conv_id,puesto_id,puesto_nombre,created_at';
+      let all = [], f = 0;
+      while (true) {
+        const { data, error } = await sb.from('solicitudes').select(cols).order('created_at', { ascending: false }).range(f, f + 999);
+        if (error || !data?.length) break;
+        all = all.concat(data);
+        if (data.length < 1000) break;
+        f += 1000;
+      }
+      return { data: all };
+    })(),
     sb.from('config').select('*'),
     sb.from('notificaciones').select('*').order('created_at', { ascending: false }),
     sb.from('respuestas').select('*').order('received_at', { ascending: false })
@@ -1122,6 +1155,8 @@ async function loadAll() {
   respuestas = respData || [];
   const rotCfg = (cfgData || []).find(c => c.key === 'rotacion');
   if (rotCfg) rotacionConfig = rotCfg.value;
+  const etqCfg = (cfgData || []).find(c => c.key === 'etiquetas');
+  etiquetasPaleta = (etqCfg && Array.isArray(etqCfg.value)) ? etqCfg.value : [];
   await loadUserRole();
   setLoad(false);
   if (currentUserRole === 'supervisor') {
@@ -1199,21 +1234,84 @@ function uid() { return crypto.randomUUID(); }
 function goSec(s) {
   document.querySelectorAll('.mnav-btn').forEach(b => b.classList.toggle('active', b.dataset.s === s));
   document.querySelectorAll('.sec').forEach(d => d.classList.toggle('active', d.id === 'sec-' + s));
+  if (s === 'dashboard') renderDashboard();
   if (s === 'candidatos') renderCandidatos();
   if (s === 'supervisores') renderSupList();
   if (s === 'solicitudes') renderSolicitudes();
   if (s === 'respuestas') renderRespuestas();
 }
+
+function renderDashboard() {
+  const cont = document.getElementById('dashContent'); if (!cont) return;
+  const sols = solicitudes || [];
+  const total = sols.length;
+  const unicas = new Set(sols.filter(s => s.cuit).map(s => String(s.cuit).trim())).size;
+  const mv = sols.filter(s => s.area === 'movistar_arena').length;
+  const ex = sols.filter(s => s.area === 'externos').length;
+
+  // Inscripciones por día (bucket por fecha local de created_at)
+  const dayKey = (dt) => dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+  const byDay = {};
+  sols.forEach(s => { if (!s.created_at) return; const d = new Date(s.created_at); if (isNaN(d)) return; const k = dayKey(d); byDay[k] = (byDay[k] || 0) + 1; });
+  let keys = Object.keys(byDay).sort();
+  if (keys.length > 1) {
+    const first = new Date(keys[0] + 'T00:00:00'), last = new Date(keys[keys.length - 1] + 'T00:00:00');
+    const span = Math.round((last - first) / 86400000);
+    if (span > 0 && span <= 92) { keys = []; for (let t = new Date(first); t <= last; t.setDate(t.getDate() + 1)) keys.push(dayKey(t)); }
+  }
+  const counts = keys.map(k => byDay[k] || 0);
+  const maxC = Math.max(1, ...counts);
+
+  // Geometría del gráfico
+  const H = 240, padL = 44, padR = 14, padT = 16, padB = 46, plotH = H - padT - padB;
+  const step = 34, barW = 22, chartW = keys.length * step, W = padL + chartW + padR;
+  const ticks = 4;
+  let grid = '', ylabels = '';
+  for (let i = 0; i <= ticks; i++) {
+    const val = Math.round(maxC * i / ticks), y = padT + plotH - (val / maxC) * plotH;
+    grid += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#eef0f2" stroke-width="1"/>`;
+    ylabels += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#9ca3af">${val}</text>`;
+  }
+  const everyN = keys.length > 20 ? Math.ceil(keys.length / 16) : 1;
+  let bars = '';
+  keys.forEach((k, i) => {
+    const c = counts[i], bh = (c / maxC) * plotH, x = padL + i * step + (step - barW) / 2, y = padT + plotH - bh;
+    const dd = k.slice(8, 10) + '/' + k.slice(5, 7);
+    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(bh, 0.5)}" rx="4" fill="#534AB7"><title>${dd}: ${c} inscripción${c === 1 ? '' : 'es'}</title></rect>`;
+    if (c > 0 && keys.length <= 24) bars += `<text x="${x + barW / 2}" y="${y - 5}" text-anchor="middle" font-size="10" font-weight="600" fill="#6b7280">${c}</text>`;
+    if (i % everyN === 0) bars += `<text x="${x + barW / 2}" y="${H - padB + 16}" text-anchor="middle" font-size="10" fill="#9ca3af">${dd}</text>`;
+  });
+  const baseline = `<line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1.5"/>`;
+  const chart = keys.length
+    ? `<div style="overflow-x:auto"><svg width="${W}" height="${H}" style="display:block">${grid}${bars}${baseline}${ylabels}</svg></div>`
+    : `<div class="empty">Sin inscripciones todavía.</div>`;
+
+  const tile = (n, lbl, sub) => `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;flex:1;min-width:150px"><div style="font-size:30px;font-weight:700;color:#18181b;line-height:1">${Number(n).toLocaleString('es-AR')}</div><div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500">${lbl}</div>${sub ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px">${sub}</div>` : ''}</div>`;
+
+  cont.innerHTML = `
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px">
+      ${tile(unicas, 'Personas inscriptas', 'CUIL/CUIT únicos')}
+      ${tile(total, 'Inscripciones totales', 'incluye repetidos entre áreas')}
+      ${tile(mv, 'Movistar Arena', '')}
+      ${tile(ex, 'Externos', '')}
+    </div>
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px">
+      <div style="font-size:14px;font-weight:600;color:#18181b;margin-bottom:2px">Inscripciones por día</div>
+      <div style="font-size:12px;color:#9ca3af;margin-bottom:14px">Pasá el mouse sobre una barra para ver la fecha y la cantidad</div>
+      ${chart}
+    </div>`;
+}
 function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('.atab').forEach(t => t.classList.toggle('active', t.dataset.area === a)); nomPage = 1; nomRefresh(); }
 function nomSearch() { nomPage = 1; nomApply(); }
 function nomFilter() { nomPage = 1; nomApply(); }
-function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge(); }
+function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge(); refreshTagUI(); }
 function nomApply() {
   const q = document.getElementById('nomSrch').value.toLowerCase().trim();
   const st = document.getElementById('nomStFilter').value;
   const outF = document.getElementById('nomOutFilter').value;
   const semF = document.getElementById('nomSemFilter').value;
   const rotF = document.getElementById('nomRotFilter').value;
+  const tagF = document.getElementById('nomTagFilter') ? document.getElementById('nomTagFilter').value : '';
   nomFiltered = people.filter(p => {
     if (nomAreaTab !== 'all' && p.area !== nomAreaTab) return false;
     if (st && p.estado !== st) return false;
@@ -1223,6 +1321,7 @@ function nomApply() {
     if (outF === 'no_out' && p.out_flag) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
     if (rotF) { const r = checkRotacion(p.id); if (rotF === 'rot' && !r.excede) return false; if (rotF === 'libre' && r.excede) return false; }
+    if (tagF && !(p.etiquetas || []).includes(tagF)) return false;
     return true;
   });
   const cvCount = people.filter(p => !!p.cv).length;
@@ -1256,6 +1355,7 @@ function renderNomTable() {
   ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria||'')}">🚫 OUT</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')">📄 CV</button>` : ''}
+  ${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
 <td><span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</span></td>
 <td><select class="st-sel ${p.estado}" data-id="${p.id}" onchange="changeNomSt('${p.id}',this)">
@@ -1303,6 +1403,37 @@ async function delBulk() {
   try { await sbDeleteIn('personas', ids); toast(`${ids.length} eliminadas`); } catch (_) {}
 }
 
+// ── ETIQUETAS (libres, con color propio; paleta global en config) ──
+function textOn(hex) { const c = String(hex || '').replace('#', ''); if (c.length < 6) return '#fff'; const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16); return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#111827' : '#fff'; }
+function tagColor(nombre) { const t = etiquetasPaleta.find(x => x.nombre === nombre); return t ? t.color : '#6b7280'; }
+function etqChip(nombre, onRemoveJs) { const c = tagColor(nombre), tc = textOn(c); return `<span style="display:inline-flex;align-items:center;gap:5px;background:${c};color:${tc};border-radius:999px;padding:2px 9px;font-size:11px;font-weight:600;white-space:nowrap">${e(nombre)}${onRemoveJs ? `<span style="cursor:pointer;font-weight:800;line-height:1" onclick="${onRemoveJs}">×</span>` : ''}</span>`; }
+async function saveTagPalette() { try { await sb.from('config').upsert({ key: 'etiquetas', value: etiquetasPaleta, updated_at: new Date().toISOString() }); } catch (_) {} }
+function renderFormEtq() {
+  const cont = document.getElementById('pEtqChips'); if (!cont) return;
+  cont.innerHTML = formEtiquetas.length ? formEtiquetas.map((nm, i) => etqChip(nm, `removeEtqFromForm(${i})`)).join('') : '<span style="font-size:11px;color:#9ca3af">Sin etiquetas todavía</span>';
+  const dl = document.getElementById('pEtqDatalist'); if (dl) dl.innerHTML = etiquetasPaleta.map(t => `<option value="${e(t.nombre)}"></option>`).join('');
+}
+async function addEtqToForm() {
+  const inp = document.getElementById('pEtqInput'); const nm = (inp.value || '').trim(); if (!nm) return;
+  if (!formEtiquetas.includes(nm)) formEtiquetas.push(nm);
+  if (!etiquetasPaleta.find(t => t.nombre === nm)) { etiquetasPaleta.push({ nombre: nm, color: document.getElementById('pEtqColor').value || '#534AB7' }); saveTagPalette(); refreshTagUI(); }
+  inp.value = ''; renderFormEtq();
+}
+function removeEtqFromForm(i) { formEtiquetas.splice(i, 1); renderFormEtq(); }
+function refreshTagUI() {
+  const mk = (empty) => `<option value="">${empty}</option>` + etiquetasPaleta.map(t => `<option value="${e(t.nombre)}">${e(t.nombre)}</option>`).join('');
+  const f = document.getElementById('nomTagFilter'); if (f) { const v = f.value; f.innerHTML = mk('Todas las etiquetas'); f.value = v; }
+  const b = document.getElementById('bulkTag'); if (b) { const v = b.value; b.innerHTML = mk('— etiqueta —'); b.value = v; }
+}
+async function applyBulkTag() {
+  const nm = document.getElementById('bulkTag').value; if (!nm) { toast('Elegí una etiqueta'); return; }
+  const ids = selIds(); if (!ids.length) return;
+  const changed = [];
+  ids.forEach(id => { const p = people.find(x => x.id === id); if (p) { if (!Array.isArray(p.etiquetas)) p.etiquetas = []; if (!p.etiquetas.includes(nm)) { p.etiquetas.push(nm); changed.push(p); } } });
+  nomRefresh(); document.getElementById('selAll').checked = false; document.getElementById('nomBulk').classList.remove('on');
+  try { for (const p of changed) await sbUpdate('personas', p.id, { etiquetas: p.etiquetas }); toast(`Etiqueta aplicada a ${changed.length}`); } catch (_) {}
+}
+
 function renderNomPag() {
   const total = nomFiltered.length, pages = Math.ceil(total / PS), bar = document.getElementById('nomPag');
   if (pages <= 1) { bar.style.display = 'none'; return; }
@@ -1320,8 +1451,8 @@ function renderNomPag() {
 }
 function nomGoPage(p) { nomPage = p; renderNomTable(); renderNomPag(); }
 
-function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
-function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; showM('mPerson'); }
+function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
+function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); showM('mPerson'); }
 
 async function savePerson() {
   const nom = document.getElementById('pNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
@@ -1330,7 +1461,7 @@ async function savePerson() {
     const dup = people.find(p => p.cuit && p.cuit === cuit && p.id !== editPersonId);
     if (dup && !confirm(`⚠ El CUIT ${cuit} ya existe para "${dup.nombre}". ¿Continuar de todas formas?`)) return;
   }
-  const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null };
+  const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null, etiquetas: formEtiquetas.slice() };
   if (editPersonId) { const i = people.findIndex(x => x.id === editPersonId); if (i >= 0) people[i] = { ...people[i], ...d }; }
   else people.push(d);
   nomRefresh(); closeM('mPerson');
@@ -1869,7 +2000,7 @@ const RESEND_KEY = 're_jLa2QX2v_2QsSZNpnwBJYBgJ1Ezcphe58';
 // La URL se arma sola con el dominio actual. Dejar '' para no incluir imagen de firma.
 const SIGNATURE_IMG = {
   movistar: 'firmas/firma-arena.jpg',    // mails de Movistar Arena (convocatorias.arena@show-bs.com)
-  externos: 'firmas/firma-externos.jpg'  // mails de Externos (convocatorias@show-bs.com)
+  externos: 'firmas/firma-externos.jpg'  // mails de Externos (convocatorias.externos@show-bs.com)
 };
 // Logo del encabezado del mail. Archivo en la raíz del sitio (misma carpeta que admin.html).
 // Dejar '' para volver al título de texto.
@@ -2035,7 +2166,7 @@ function renderEmailHtml(text, fromAddr, area) {
   }
   flushPara(); closeList();
 
-  const contact = esc(fromAddr || 'convocatorias@show-bs.com');
+  const contact = esc(fromAddr || 'convocatorias.externos@show-bs.com');
   const sigFile = (typeof SIGNATURE_IMG !== 'undefined' && SIGNATURE_IMG && SIGNATURE_IMG[area]) || '';
   const sigUrl = sigFile ? (location.origin + '/' + sigFile.replace(/^\//, '')) : '';
   const sigBlock = sigUrl
@@ -2068,7 +2199,7 @@ async function sendConfirmationMail() {
   const body = document.getElementById('mailBody').value.trim();
   if (!to || !subject || !body) { toast('Completá todos los campos'); return; }
 
-  const from = mailFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias@show-bs.com';
+  const from = mailFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   const btn = document.getElementById('btnSendMail');
   btn.disabled = true; btn.textContent = 'Enviando...';
 
@@ -2147,7 +2278,7 @@ async function sendBulkMail() {
   if (!subject || !bodyTpl) { toast('Completá asunto y mensaje'); return; }
   if (!bulkMailRecipients.length) { toast('No hay destinatarios'); return; }
   if (!confirm(`¿Enviar la confirmación a ${bulkMailRecipients.length} persona(s)?`)) return;
-  const from = bmFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias@show-bs.com';
+  const from = bmFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   const btn = document.getElementById('bmSendBtn'); btn.disabled = true;
   const prog = document.getElementById('bmProgress'); prog.style.display = 'block';
   let ok = 0, fail = 0;
@@ -2235,9 +2366,14 @@ function solToggleAll() { const v = document.getElementById('solSelAll')?.checke
 function solToggleSel(id) { if(solSelIds.has(id)) solSelIds.delete(id); else solSelIds.add(id); updateSolBulkBar(); }
 function updateSolBulkBar() { const bar=document.getElementById('solBulk'); bar.classList.toggle('on',solSelIds.size>0); document.getElementById('solBulkCnt').textContent=solSelIds.size+' seleccionadas'; }
 
-function openSolView(id) {
+async function openSolView(id) {
   solViewId = id;
   const s = solicitudes.find(x => x.id === id); if (!s) return;
+  // El CV (archivo_cv) no se carga en la lista porque pesa mucho; se trae acá, por fila, bajo demanda.
+  if (s.archivo_cv === undefined) {
+    try { const { data } = await sb.from('solicitudes').select('archivo_cv').eq('id', id).single(); s.archivo_cv = data?.archivo_cv || null; }
+    catch (_) { s.archivo_cv = null; }
+  }
   document.getElementById('mSolTitle').textContent = `Solicitud — ${s.nombre}`;
   const fld = (l,v) => v !== null && v !== undefined && v !== '' ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div class="cv-viewer-value">${e(String(v))}</div></div>` : '';
   const bool = (l,v) => v !== null && v !== undefined ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;${v?'background:#fee2e2;color:#991b1b':'background:#d1fae5;color:#065f46'}">${v?'✓ Sí':'✗ No'}</div></div>` : '';
@@ -2288,8 +2424,21 @@ async function solAction(estado) {
 }
 async function singleSolSt(id, estado) {
   const s = solicitudes.find(x => x.id === id); if (!s) return;
+  if (estado === 'rechazado') {
+    // Rechazar = eliminar la solicitud, así se libera el CUIL+área y la persona puede registrarse de nuevo.
+    solicitudes = solicitudes.filter(x => x.id !== id);
+    solSelIds.delete(id);
+    try { await sbDelete('solicitudes', id); } catch (_) {}
+    renderSolicitudes(); refreshSolBadge();
+    return;
+  }
   s.estado = estado;
   if (estado === 'aprobado') {
+    // Traer el CV de esta fila (no viene en la lista) para copiarlo a la nómina.
+    if (s.archivo_cv === undefined) {
+      try { const { data } = await sb.from('solicitudes').select('archivo_cv').eq('id', id).single(); s.archivo_cv = data?.archivo_cv || null; }
+      catch (_) { s.archivo_cv = null; }
+    }
     const existe = people.find(p => p.nombre.toLowerCase().trim() === s.nombre.toLowerCase().trim());
     let personaId;
     if (!existe) {
@@ -2327,6 +2476,7 @@ async function singleSolSt(id, estado) {
 async function bulkSolSt(estado) {
   if (!solSelIds.size) return;
   if (estado === 'aprobado' && !confirm(`¿Aprobar ${solSelIds.size} solicitudes y pasarlas a la nómina?`)) return;
+  if (estado === 'rechazado' && !confirm(`¿Rechazar y ELIMINAR ${solSelIds.size} solicitudes? Las personas van a poder registrarse de nuevo.`)) return;
   for (const id of [...solSelIds]) await singleSolSt(id, estado);
   solSelIds.clear(); updateSolBulkBar(); toast(`${solSelIds.size || 'Solicitudes'} actualizadas`);
 }
@@ -2370,33 +2520,51 @@ function openReporte() {
 
 function exportPostuladosExcel() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
-  const rows = [];
-  (c.puestos||[]).forEach(p => {
-    posts.filter(x => x.convId === c.id && x.puestoId === p.id).forEach(post => {
+
+  // Una columna por cada fecha del show (dd/MM)
+  const fechas = (c.fecha || '').split(',').map(f => f.trim()).filter(Boolean);
+  const fechaCols = fechas.map(f => { const d = new Date(f + 'T00:00:00'); return isNaN(d) ? f : (String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')); });
+
+  // Separar Apellido / Nombre (mejor esfuerzo: último token = apellido)
+  const splitNombre = (full) => {
+    const t = String(full || '').trim().split(/\s+/).filter(Boolean);
+    if (t.length <= 1) return { apellido: '', nombre: t[0] || '' };
+    return { apellido: t[t.length - 1], nombre: t.slice(0, -1).join(' ') };
+  };
+
+  const aoa = [];
+  let hay = false;
+  (c.puestos || []).forEach(p => {
+    const asignados = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado');
+    if (!asignados.length) return;
+    hay = true;
+    // Fila de encabezado del sector (el nombre del puesto va en la 1ra columna)
+    aoa.push([String(p.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', '', 'CUIL', 'DNI', 'TELEFONO', 'VIANDA', ...fechaCols, 'OBSERVACIONES', 'CANT. DE DÍAS', 'CAT', 'ART y SVO', 'CONTRATO']);
+    asignados.forEach((post, i) => {
       const pers = people.find(x => x.id === post.personaId);
-      rows.push({
-        'Convocatoria': c.nombre,
-        'Fecha': c.fecha || '',
-        'Puesto': p.nombre,
-        'Nombre': post.nombre,
-        'Email': pers?.email || '',
-        'Teléfono': pers?.tel || '',
-        'CUIL': pers?.cuit || '',
-        'Área': pers?.area === 'movistar_arena' ? 'Movistar Arena' : pers?.area === 'externos' ? 'Externos' : pers?.area || '',
-        'Estado': post.estado || '',
-        'Semáforo': pers?.semaforo || 1,
-        'Out': pers?.out_flag ? 'SI' : 'NO',
-        'Notas': post.notas || ''
-      });
+      const cuil = String(pers?.cuit || post.cuit || '').replace(/\D/g, '');
+      const sol  = cuil ? solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cuil) : null;
+      const cuil9 = cuil.length === 11 ? cuil.slice(2) : '';       // CUIL sin prefijo (9)
+      const dni   = cuil.length === 11 ? cuil.slice(2, 10) : '';   // DNI (8)
+      const nm  = splitNombre(post.nombre || pers?.nombre || sol?.nombre || '');
+      const tel = pers?.tel || sol?.tel || '';
+      const obs = post.notas || pers?.notas || '';
+      aoa.push([i + 1, nm.apellido, nm.nombre, cuil9, cuil, dni, tel, '', ...fechaCols.map(() => ''), obs, '', '', '', '']);
     });
+    aoa.push([]); // separación entre sectores
   });
-  if (!rows.length) { toast('No hay postulados para exportar'); return; }
-  const ws = XLSX.utils.json_to_sheet(rows);
+
+  if (!hay) { toast('No hay personas asignadas para exportar'); return; }
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 11 }, { wch: 13 }, { wch: 10 }, { wch: 13 }, { wch: 9 }]
+    .concat(fechaCols.map(() => ({ wch: 8 })))
+    .concat([{ wch: 26 }, { wch: 12 }, { wch: 6 }, { wch: 9 }, { wch: 9 }]);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Postulados');
-  const fileName = `postulados-${c.nombre.slice(0,30).replace(/\s/g,'-')}-${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.utils.book_append_sheet(wb, ws, 'Planilla');
+  const fileName = `planilla-${c.nombre.slice(0, 30).replace(/\s/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`;
   XLSX.writeFile(wb, fileName);
-  toast('Excel descargado');
+  toast('Planilla descargada');
 }
 
 function exportReporte() {
