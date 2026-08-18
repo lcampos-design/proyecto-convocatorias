@@ -121,6 +121,10 @@ textarea.fi{height:90px;resize:vertical}
         <div class="cbu-warn" id="cuilWarn">⚠ El CUIL/CUIT debe tener exactamente 11 dígitos.</div>
         <div class="cbu-ok" id="cuilOk">✓ CUIL/CUIT válido</div>
       </div>
+      <div class="fg">
+        <label>Localidad <span class="req">*</span></label>
+        <input type="text" class="fi" id="fLocalidad" placeholder="Ej: Villa Crespo (CABA) / La Plata (Bs. As.)">
+      </div>
     </div>
 
     <!-- Área de interés -->
@@ -406,6 +410,7 @@ async function submitForm() {
   // Todos los campos son obligatorios
   const email          = document.getElementById('fEmail').value.trim();
   const tel            = document.getElementById('fTel').value.trim();
+  const localidad      = document.getElementById('fLocalidad').value.trim();
   const puesto         = document.getElementById('fPuesto').value.trim();
   const formacion      = document.getElementById('fForm').value.trim();
   const habilidades    = document.getElementById('fSkills').value.trim();
@@ -413,6 +418,7 @@ async function submitForm() {
   if (!email)                                        { showErr('El email es obligatorio.'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))     { showErr('Ingresá un email válido.'); return; }
   if (!tel)                                          { showErr('El teléfono es obligatorio.'); return; }
+  if (!localidad)                                    { showErr('Indicá tu localidad.'); return; }
   if (!puesto)                                       { showErr('Indicá el puesto de interés.'); return; }
   if (!formacion)                                    { showErr('Completá tu formación.'); return; }
   if (!habilidades)                                  { showErr('Completá tus habilidades.'); return; }
@@ -443,6 +449,7 @@ async function submitForm() {
     area: selectedArea,
     email,
     tel,
+    localidad,
     cuit:           document.getElementById('fCuit').value.trim() || null,
     puesto_interes: puesto,
     experiencia:    exp,
