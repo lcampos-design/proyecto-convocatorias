@@ -90,6 +90,7 @@ textarea.fi{height:80px;resize:none}
 </div>
 
 <div class="container">
+  <div style="text-align:center;margin:0 0 18px"><button onclick="openGestion()" style="background:#fff;border:1px solid #e5e7eb;color:#534AB7;font-size:13px;font-weight:600;border-radius:999px;padding:8px 16px;cursor:pointer">Ya me anoté — gestionar / cambiar mi inscripción</button></div>
   <div id="mainContent"><div class="loading">Cargando convocatorias...</div></div>
 </div>
 
@@ -131,6 +132,23 @@ textarea.fi{height:80px;resize:none}
       <button class="submit-btn" id="submitBtn" onclick="submitPostulacion()">Enviar postulación →</button>
       <button class="cancel-btn" onclick="closeModal()">Cancelar</button>
     </div>
+  </div>
+</div>
+
+<!-- Modal: gestionar mi inscripción / darme de baja -->
+<div class="modal-bg" id="gestBg" style="display:none" onclick="if(event.target===this)closeGestion()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Gestioná tu inscripción</div>
+    <div class="modal-sub">Poné tu CUIL para ver dónde estás anotado/a. Podés darte de baja para liberar tu lugar y anotarte en otro (hasta cierto plazo antes del evento).</div>
+    <div class="err-msg" id="gestErr"></div>
+    <div class="fg">
+      <label>CUIL <span class="req">*</span></label>
+      <input type="text" class="fi" id="gCuil" placeholder="11 dígitos sin guiones" maxlength="11" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter')buscarMisInscripciones()">
+    </div>
+    <button class="submit-btn" id="gBuscarBtn" onclick="buscarMisInscripciones()">Ver mis inscripciones</button>
+    <div id="gestList" style="margin-top:14px"></div>
+    <button class="cancel-btn" onclick="closeGestion()">Cerrar</button>
   </div>
 </div>
 
@@ -324,7 +342,69 @@ function fmtFecha(f) { try { return new Date(f+'T00:00:00').toLocaleDateString('
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // Cerrar con Escape
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeGestion(); } });
+
+// ── Autogestión: ver mis inscripciones y darme de baja ──
+let bajaDiasPublico = 3;
+(async () => { try { const { data } = await sb.from('config').select('value').eq('key', 'baja').single(); if (data && data.value && Number.isFinite(+data.value.dias)) bajaDiasPublico = +data.value.dias; } catch (_) {} })();
+
+function openGestion() {
+  document.getElementById('gestErr').style.display = 'none';
+  document.getElementById('gCuil').value = '';
+  document.getElementById('gestList').innerHTML = '';
+  document.getElementById('gestBg').style.display = 'flex';
+  setTimeout(() => document.getElementById('gCuil').focus(), 100);
+}
+function closeGestion() { const el = document.getElementById('gestBg'); if (el) el.style.display = 'none'; }
+
+async function buscarMisInscripciones() {
+  const err = document.getElementById('gestErr'); err.style.display = 'none';
+  const cuil = document.getElementById('gCuil').value.replace(/\D/g, '');
+  const list = document.getElementById('gestList');
+  if (cuil.length !== 11) { err.textContent = 'Ingresá tu CUIL (11 dígitos).'; err.style.display = 'block'; return; }
+  list.innerHTML = '<div class="loading">Buscando...</div>';
+  try {
+    const { data: mine } = await sb.from('postulaciones').select('id,conv_id,puesto_id,estado').eq('cuit', cuil);
+    if (!mine || !mine.length) { list.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:14px;padding:16px">No encontramos inscripciones con ese CUIL.</div>'; return; }
+    const convIds = [...new Set(mine.map(p => p.conv_id).filter(Boolean))];
+    const { data: cvs } = await sb.from('convocatorias').select('id,nombre,fecha').in('id', convIds);
+    const { data: pus } = await sb.from('puestos').select('id,nombre').in('conv_id', convIds);
+    const cById = {}; (cvs || []).forEach(c => cById[c.id] = c);
+    const pById = {}; (pus || []).forEach(p => pById[p.id] = p);
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    list.innerHTML = mine.map(p => {
+      const c = cById[p.conv_id] || {};
+      const puesto = (pById[p.puesto_id] || {}).nombre || 'Puesto';
+      const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+      const first = fechas.length ? new Date(fechas[0] + 'T00:00:00') : null;
+      const deadline = first ? new Date(first.getTime() - bajaDiasPublico * 86400000) : null;
+      const tarde = deadline ? hoy > deadline : false;
+      const fechaTxt = fechas.map(f => { const d = new Date(f + 'T00:00:00'); return isNaN(d) ? f : d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }); }).join(', ');
+      return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff">
+        <div style="font-weight:700;color:#111827;font-size:14px">${esc(c.nombre || 'Convocatoria')}</div>
+        <div style="font-size:12px;color:#9ca3af;margin:2px 0 8px">${esc(puesto)}${fechaTxt ? ' · ' + fechaTxt : ''} · ${esc(p.estado || '')}</div>
+        ${tarde
+          ? `<div style="font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px">Ya no podés darte de baja online (menos de ${bajaDiasPublico} día/s para el evento). Escribinos si necesitás un cambio.</div>`
+          : `<button onclick="darmeDeBaja('${p.id}','${cuil}',this)" style="width:100%;padding:10px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Darme de baja de este servicio</button>`}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = ''; err.textContent = 'Hubo un error al buscar. Probá de nuevo.'; err.style.display = 'block';
+  }
+}
+
+async function darmeDeBaja(postId, cuil, btn) {
+  if (!confirm('¿Seguro que querés darte de baja de este servicio? Vas a liberar tu lugar.')) return;
+  btn.disabled = true; btn.textContent = 'Dándote de baja...';
+  const restore = () => { btn.disabled = false; btn.textContent = 'Darme de baja de este servicio'; };
+  try {
+    const { data, error } = await sb.rpc('dar_de_baja', { p_cuit: cuil, p_postulacion_id: postId });
+    if (error) throw error;
+    if (data && data.ok) { alert('Listo, te diste de baja. Ya podés anotarte en otro puesto.'); buscarMisInscripciones(); }
+    else if (data && data.motivo === 'tarde') { alert('Ya no se puede dar de baja online: el plazo venció el ' + (data.limite || '') + ' (evento: ' + (data.evento || '') + '). Escribinos para cualquier cambio.'); restore(); }
+    else { alert('No se pudo dar de baja. Verificá que el CUIL sea el tuyo.'); restore(); }
+  } catch (e) { alert('Hubo un error. Probá de nuevo.'); restore(); }
+}
 
 function validarCuil(input) {
   input.value = input.value.replace(/\D/g, '');

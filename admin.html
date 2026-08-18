@@ -361,6 +361,7 @@ tr:hover td{background:#fafafa}
     </select>
     <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT">🔍 Deduplicar</button>
     <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación">⚙ Rotación</button>
+    <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
     <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
     <button class="btn btn-sec" onclick="exportNom()">↓ Exportar</button>
     <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter()">📄 Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
@@ -772,6 +773,15 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
+<!-- Modal: Conflictos de agenda / Buscar por CUIT -->
+<div class="modal-bg" id="mConflictos" style="display:none" onclick="bgClose('mConflictos',event)">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title"><span>Conflictos de agenda · Buscar por CUIT</span><button class="mclose" onclick="closeM('mConflictos')">✕</button></div>
+    <div id="confBody"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mConflictos')">Cerrar</button></div>
+  </div>
+</div>
+
 <!-- Modal: Deduplicar por CUIT -->
 <div class="modal-bg" id="mDedup" style="display:none" onclick="bgClose('mDedup',event)">
   <div class="modal" style="max-width:600px">
@@ -785,7 +795,7 @@ tr:hover td{background:#fafafa}
 <!-- Modal: Config rotación -->
 <div class="modal-bg" id="mRotConfig" style="display:none" onclick="bgClose('mRotConfig',event)">
   <div class="modal" style="max-width:460px">
-    <div class="modal-title"><span>Configuración de rotación</span><button class="mclose" onclick="closeM('mRotConfig')">✕</button></div>
+    <div class="modal-title"><span>Reglas y penalidades</span><button class="mclose" onclick="closeM('mRotConfig')">✕</button></div>
     <div style="font-size:13px;color:#6b7280;margin-bottom:16px">El sistema advierte o bloquea cuando una persona supera el límite de eventos en el período configurado.</div>
     <div class="rot-config-row">
       <span class="rot-config-label">Máximo de eventos por período</span>
@@ -802,8 +812,23 @@ tr:hover td{background:#fafafa}
         <option value="bloqueo">Bloqueo — impide asignar si excede el límite</option>
       </select>
     </div>
+    <div class="rot-config-row" style="margin-top:6px;border-top:1px solid #f0f0f0;padding-top:14px">
+      <span class="rot-config-label">Días límite para que un candidato se dé de baja (antes del evento)</span>
+      <input type="number" class="rot-num" id="bajaDias" min="0" max="60" value="3">
+    </div>
+    <div class="rot-config-row" style="margin-top:6px;border-top:1px solid #f0f0f0;padding-top:14px">
+      <span class="rot-config-label">Ausentes: no reconvocar hasta X días después de una falta</span>
+      <input type="number" class="rot-num" id="ausDias" min="0" max="180" value="30">
+    </div>
+    <div class="fg">
+      <label>Ausentes — modo</label>
+      <select class="fi" id="ausModo">
+        <option value="advertencia">Advertencia — avisa pero permite asignar</option>
+        <option value="bloqueo">Bloqueo — impide asignar durante la penalidad</option>
+      </select>
+    </div>
     <div style="background:#f9fafb;border-radius:6px;padding:10px 14px;font-size:12px;color:#6b7280;margin-bottom:4px">
-      Con la configuración actual: una persona no puede estar en más de <strong id="rotPreview1">3</strong> eventos en <strong id="rotPreview2">30</strong> días.
+      Con la configuración actual: una persona no puede estar en más de <strong id="rotPreview1">3</strong> eventos en <strong id="rotPreview2">30</strong> días. Un candidato puede darse de baja solo hasta <strong id="bajaPreview">3</strong> día(s) antes del evento.
     </div>
     <div class="ma">
       <button class="btn btn-sec" onclick="closeM('mRotConfig')">Cancelar</button>
@@ -1020,6 +1045,8 @@ let currentUserRole = 'admin', currentUserId = null, currentUserName = '';
 let outTargetId = null, fbTargetId = null, fbTargetConvId = null;
 let rotacionConfig = { max_eventos: 3, dias_periodo: 30, modo: 'advertencia' };
 let etiquetasPaleta = [], formEtiquetas = [];
+let bajaDiasLimite = 3;
+let ausenciaConfig = { dias: 30, modo: 'advertencia' };
 
 // ── AUTH ──
 async function initAuth() {
@@ -1157,6 +1184,10 @@ async function loadAll() {
   if (rotCfg) rotacionConfig = rotCfg.value;
   const etqCfg = (cfgData || []).find(c => c.key === 'etiquetas');
   etiquetasPaleta = (etqCfg && Array.isArray(etqCfg.value)) ? etqCfg.value : [];
+  const bajaCfg = (cfgData || []).find(c => c.key === 'baja');
+  bajaDiasLimite = (bajaCfg && bajaCfg.value && Number.isFinite(+bajaCfg.value.dias)) ? +bajaCfg.value.dias : 3;
+  const ausCfg = (cfgData || []).find(c => c.key === 'ausencia');
+  if (ausCfg && ausCfg.value) ausenciaConfig = { dias: Number.isFinite(+ausCfg.value.dias) ? +ausCfg.value.dias : 30, modo: ausCfg.value.modo || 'advertencia' };
   await loadUserRole();
   setLoad(false);
   if (currentUserRole === 'supervisor') {
@@ -1346,7 +1377,8 @@ function renderNomTable() {
   tbody.innerHTML = sl.map(p => {
     const sem = p.semaforo || 1;
     const rot = checkRotacion(p.id);
-    const rowBg = p.out_flag ? 'background:#fff7f7' : rot.excede ? 'background:#fffbeb' : '';
+    const aus = checkAusencia(p);
+    const rowBg = p.out_flag ? 'background:#fff7f7' : aus.penalizado ? 'background:#fff7f7' : rot.excede ? 'background:#fffbeb' : '';
     return `<tr style="${rowBg}">
 <td><input type="checkbox" class="cb rcb" data-id="${p.id}" onchange="checkNomBulk()"></td>
 <td class="cn">
@@ -1354,6 +1386,7 @@ function renderNomTable() {
   <button class="sem sem-${sem}" onclick="openSemModal('${p.id}')" title="Semáforo ${sem}">${sem}</button>
   ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria||'')}">🚫 OUT</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
+  ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)">🚫 Faltó</span>` : ''}
   ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')">📄 CV</button>` : ''}
   ${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
@@ -1510,8 +1543,14 @@ async function doImport() {
 }
 
 function exportNom() {
-  const cols = ['nombre', 'area', 'estado', 'cuit', 'email', 'tel', 'notas'], hdrs = ['nombre', 'area', 'estado', 'cuit', 'email', 'telefono', 'notas'];
-  const rows = nomFiltered.map(p => cols.map(k => `"${(p[k] || '').replace(/"/g, '""')}"`).join(','));
+  const hdrs = ['nombre', 'area', 'estado', 'cuit', 'email', 'telefono', 'notas', 'cbu', 'banco', 'numero_cuenta'];
+  const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const rows = nomFiltered.map(p => {
+    // Los datos bancarios viven en la solicitud (registro); se matchea por CUIL.
+    const cuil = String(p.cuit || '').replace(/\D/g, '');
+    const sol = cuil ? solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cuil) : null;
+    return [p.nombre, p.area, p.estado, p.cuit, p.email, p.tel, p.notas, sol && sol.cbu, sol && sol.banco, sol && sol.numero_cuenta].map(esc).join(',');
+  });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + [hdrs.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = `nomina-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
 }
 
@@ -1769,7 +1808,7 @@ async function confirmPicker() {
   const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return;
   const libres = Math.max(0, p.cupos - posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId && x.estado !== 'rechazado').length);
   if (pickerSel.size > libres && !confirm(`Este puesto tiene ${libres} cupo(s) libre(s) y estás agregando ${pickerSel.size}. ¿Continuar?`)) return;
-  const outs = [], conflicts = [], rotViolations = [];
+  const outs = [], conflicts = [], rotViolations = [], ausPenal = [];
   pickerSel.forEach(pid => {
     const pers = people.find(x => x.id === pid);
     if (pers?.out_flag) outs.push(pers.nombre);
@@ -1779,12 +1818,19 @@ async function confirmPicker() {
     }
     const rot = checkRotacion(pid);
     if (rot.excede) rotViolations.push(`${pers?.nombre} (${rot.count}/${rot.max} eventos en ${rotacionConfig.dias_periodo}d)`);
+    const a = checkAusencia(pers);
+    if (a.penalizado) ausPenal.push(`${pers?.nombre} (faltó — no reconvocar hasta ${a.hasta ? a.hasta.toLocaleDateString('es-AR') : ''})`);
   });
   if (outs.length && !confirm(`⚠ Personas marcadas como OUT:\n${outs.join(', ')}\n\n¿Continuar de todas formas?`)) return;
   if (conflicts.length && !confirm(`⚠ Conflicto de fecha — ya asignadas en otro recital ese día:\n${conflicts.join('\n')}\n\n¿Asignar igual?`)) return;
   if (rotViolations.length) {
     const msg = `⚠ Límite de rotación superado (${rotacionConfig.max_eventos} eventos en ${rotacionConfig.dias_periodo} días):\n${rotViolations.join('\n')}`;
     if (rotacionConfig.modo === 'bloqueo') { alert(msg + '\n\nNo se puede asignar en modo bloqueo.'); return; }
+    if (!confirm(msg + '\n\n¿Asignar igual?')) return;
+  }
+  if (ausPenal.length) {
+    const msg = `⚠ Faltaron hace poco (penalidad por ausencia activa):\n${ausPenal.join('\n')}`;
+    if (ausenciaConfig.modo === 'bloqueo') { alert(msg + '\n\nNo se puede asignar durante la penalidad (modo bloqueo).'); return; }
     if (!confirm(msg + '\n\n¿Asignar igual?')) return;
   }
   const newPosts = []; pickerSel.forEach(pid => { const pers = people.find(x => x.id === pid); if (pers) { const np = { id: uid(), convId: currentConvId, puestoId: currentPuestoId, personaId: pid, nombre: pers.nombre, estado: 'pendiente', notas: '' }; posts.push(np); newPosts.push(np); } });
@@ -2315,7 +2361,7 @@ function renderSolicitudes() {
   const filtered = solicitudes.filter(s => {
     if (af && s.area !== af) return false;
     if (sf && s.estado !== sf) return false;
-    if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q)) return false;
+    if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q)) return false;
     return true;
   });
 
@@ -2338,6 +2384,7 @@ function renderSolicitudes() {
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Nombre</th>
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Área</th>
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Puesto</th>
+  <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Localidad</th>
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Recibido</th>
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Estado</th>
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb;width:140px">Acciones</th>
@@ -2351,6 +2398,7 @@ function renderSolicitudes() {
   <td style="padding:9px 14px;font-weight:500;color:#111827">${e(s.nombre)}${s.cuit?`<div style="font-size:11px;color:#9ca3af">CUIT: ${e(s.cuit)}</div>`:''}${s.cuit && dupCuits.has(s.cuit)?`<span style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:4px">⚠ Duplicado</span>`:''}</td>
   <td style="padding:9px 14px"><span class="a-badge ${s.area==='movistar_arena'?'a-mv':'a-ex'}">${s.area==='movistar_arena'?'M. Arena':'Externos'}</span></td>
   <td style="padding:9px 14px;font-size:12px;color:#6b7280">${e(s.puesto_interes||'—')}</td>
+  <td style="padding:9px 14px;font-size:12px;color:#6b7280">${e(s.localidad||'—')}</td>
   <td style="padding:9px 14px;font-size:12px;color:#9ca3af;white-space:nowrap">${s.created_at?new Date(s.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}):''}</td>
   <td style="padding:9px 14px"><span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;background:${stColors[s.estado]||'#f3f4f6'}">${stLabels[s.estado]||s.estado}</span></td>
   <td style="padding:9px 14px;white-space:nowrap;display:flex;gap:5px">
@@ -2386,6 +2434,7 @@ async function openSolView(id) {
     <span style="font-size:12px;color:#9ca3af">${s.created_at?new Date(s.created_at).toLocaleDateString('es-AR'):''}</span>
   </div>`;
 
+  html += fld('Localidad', s.localidad);
   html += fld('Puesto de interés', s.puesto_interes);
   html += fld('Disponibilidad', s.disponibilidad);
   html += '<div class="cv-section-divider"></div>';
@@ -2594,23 +2643,55 @@ function checkRotacion(personaId) {
   return { count: recentConvIds.size, excede: recentConvIds.size >= rotacionConfig.max_eventos, max: rotacionConfig.max_eventos };
 }
 
+// Seguimiento de ausentes: cuenta faltas y si está "en penalidad" (no reconvocar hasta X días después de la última falta).
+function checkAusencia(persona) {
+  if (!persona) return { ausencias: 0, penalizado: false, hasta: null, ultima: null };
+  const pid = persona.id, pcuit = String(persona.cuit || '').replace(/\D/g, '');
+  const ausentes = posts.filter(p => {
+    if (p.asistencia !== 'ausente') return false;
+    if (p.personaId && p.personaId === pid) return true;
+    return !!pcuit && String(p.cuit || '').replace(/\D/g, '') === pcuit;
+  });
+  if (!ausentes.length) return { ausencias: 0, penalizado: false, hasta: null, ultima: null };
+  const fechas = ausentes.map(p => { const c = convs.find(cv => cv.id === p.convId); const fs = String(c?.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort(); return fs[0] || null; }).filter(Boolean).sort();
+  const ultima = fechas[fechas.length - 1] || null;
+  let penalizado = false, hasta = null;
+  if (ultima) {
+    hasta = new Date(ultima + 'T00:00:00'); hasta.setDate(hasta.getDate() + (ausenciaConfig.dias || 0));
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    penalizado = (ausenciaConfig.dias || 0) > 0 && hoy <= hasta;
+  }
+  return { ausencias: ausentes.length, penalizado, hasta, ultima };
+}
+
 function openRotConfig() {
   document.getElementById('rotMaxEv').value = rotacionConfig.max_eventos;
   document.getElementById('rotDias').value = rotacionConfig.dias_periodo;
   document.getElementById('rotModo').value = rotacionConfig.modo;
+  document.getElementById('bajaDias').value = bajaDiasLimite;
+  document.getElementById('ausDias').value = ausenciaConfig.dias;
+  document.getElementById('ausModo').value = ausenciaConfig.modo;
   updateRotPreview();
   showM('mRotConfig');
 }
 function updateRotPreview() {
   document.getElementById('rotPreview1').textContent = document.getElementById('rotMaxEv').value;
   document.getElementById('rotPreview2').textContent = document.getElementById('rotDias').value;
+  const bp = document.getElementById('bajaPreview'); if (bp) bp.textContent = document.getElementById('bajaDias').value;
 }
-document.addEventListener('input', ev => { if (['rotMaxEv','rotDias'].includes(ev.target.id)) updateRotPreview(); });
+document.addEventListener('input', ev => { if (['rotMaxEv','rotDias','bajaDias'].includes(ev.target.id)) updateRotPreview(); });
 
 async function saveRotConfig() {
   rotacionConfig = { max_eventos: parseInt(document.getElementById('rotMaxEv').value), dias_periodo: parseInt(document.getElementById('rotDias').value), modo: document.getElementById('rotModo').value };
+  bajaDiasLimite = Math.max(0, parseInt(document.getElementById('bajaDias').value) || 0);
+  ausenciaConfig = { dias: Math.max(0, parseInt(document.getElementById('ausDias').value) || 0), modo: document.getElementById('ausModo').value };
   nomRefresh(); closeM('mRotConfig');
-  try { await sb.from('config').upsert({ key: 'rotacion', value: rotacionConfig, updated_at: new Date().toISOString() }); toast('Configuración de rotación guardada'); } catch(_) {}
+  try {
+    await sb.from('config').upsert({ key: 'rotacion', value: rotacionConfig, updated_at: new Date().toISOString() });
+    await sb.from('config').upsert({ key: 'baja', value: { dias: bajaDiasLimite }, updated_at: new Date().toISOString() });
+    await sb.from('config').upsert({ key: 'ausencia', value: ausenciaConfig, updated_at: new Date().toISOString() });
+    toast('Configuración guardada');
+  } catch(_) {}
 }
 
 // ── HISTORIAL DE RECITALES ──
@@ -2620,12 +2701,14 @@ function openHistorial(personaId) {
   const myPosts = posts.filter(x => x.personaId === personaId);
   const uniqueConvIds = [...new Set(myPosts.map(x => x.convId))];
   const rot = checkRotacion(personaId);
+  const aus = checkAusencia(p);
   const lastConv = uniqueConvIds.map(cid => convs.find(c => c.id === cid)).filter(c => c?.fecha).sort((a,b) => b.fecha.localeCompare(a.fecha))[0];
   const daysSince = lastConv ? Math.floor((new Date() - new Date(lastConv.fecha + 'T00:00:00')) / 86400000) : null;
   document.getElementById('mHistStats').innerHTML = `
     <div><div style="font-size:20px;font-weight:700;color:#111827">${uniqueConvIds.length}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Recitales</div></div>
     <div><div style="font-size:20px;font-weight:700;color:${rot.excede?'#c2410c':'#0f6e56'}">${rot.count}/${rot.max}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Últimos ${rotacionConfig.dias_periodo}d</div></div>
     ${daysSince !== null ? `<div><div style="font-size:20px;font-weight:700;color:#534AB7">${daysSince}d</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Desde último</div></div>` : ''}
+    <div><div style="font-size:20px;font-weight:700;color:${aus.ausencias>0?'#991b1b':'#0f6e56'}">${aus.ausencias}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Ausencias${aus.penalizado?' ⛔':''}</div></div>
     ${p.cuit ? `<div><div style="font-size:13px;font-weight:600;color:#374151">${e(p.cuit)}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">CUIT</div></div>` : ''}
   `;
   if (!myPosts.length) { document.getElementById('mHistBody').innerHTML = '<div class="empty">Sin historial todavía</div>'; showM('mHistorial'); return; }
@@ -2633,7 +2716,9 @@ function openHistorial(personaId) {
   myPosts.forEach(post => { if (!grouped[post.convId]) grouped[post.convId] = []; grouped[post.convId].push(post); });
   const sorted = Object.entries(grouped).map(([cid, pp]) => ({ conv: convs.find(c => c.id === cid), posts: pp })).sort((a, b) => (b.conv?.fecha||'').localeCompare(a.conv?.fecha||''));
   const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
-  document.getElementById('mHistBody').innerHTML = sorted.map(({ conv, posts: pp }) => `
+  const asistBadge = a => a === 'ausente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b">✗ Ausente</span>` : a === 'presente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#d1fae5;color:#065f46">✓ Presente</span>` : '';
+  const penalBanner = aus.penalizado ? `<div style="background:#fff7f7;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#991b1b">🚫 <strong>Penalizado por ausencia</strong> — no reconvocar hasta el ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} (${aus.ausencias} ausencia/s).</div>` : '';
+  document.getElementById('mHistBody').innerHTML = penalBanner + sorted.map(({ conv, posts: pp }) => `
     <div class="hist-item">
       <div class="hist-dot ${pp[0]?.estado||'pendiente'}"></div>
       <div class="hist-info">
@@ -2641,11 +2726,82 @@ function openHistorial(personaId) {
         <div class="hist-meta">${conv?.fecha ? fmtFecha(conv.fecha) : ''}${conv?.area ? ' · ' + ({movistar_arena:'Movistar Arena',externos:'Externos',ambas:'Ambas'}[conv.area]||conv.area) : ''}</div>
         <div class="hist-tags">${pp.map(post => {
           const puestoNom = (conv?.puestos||[]).find(pu => pu.id === post.puestoId)?.nombre || 'Puesto';
-          return `<span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${e(puestoNom)}</span>`;
+          return `<span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${e(puestoNom)}</span>${asistBadge(post.asistencia)}`;
         }).join('')}</div>
       </div>
     </div>`).join('');
   showM('mHistorial');
+}
+
+// ── CONFLICTOS DE AGENDA / BUSCAR POR CUIT ──
+function convFechasArr(conv) { return String(conv?.fecha || '').split(',').map(f => f.trim()).filter(Boolean); }
+
+// Mapa cuit -> { nombre, items:[{fecha, conv, convId, area, puesto, estado}] } con todas las asignaciones (no rechazadas)
+function agendaPorCuit() {
+  const map = {};
+  posts.forEach(p => {
+    if (p.estado === 'rechazado') return;
+    const cuit = String(p.cuit || '').replace(/\D/g, ''); if (!cuit) return;
+    const conv = convs.find(c => c.id === p.convId); if (!conv) return;
+    const puesto = (conv.puestos || []).find(pu => pu.id === p.puestoId)?.nombre || 'Puesto';
+    if (!map[cuit]) map[cuit] = { nombre: p.nombre || '', items: [] };
+    if (!map[cuit].nombre && p.nombre) map[cuit].nombre = p.nombre;
+    convFechasArr(conv).forEach(f => map[cuit].items.push({ fecha: f, conv: conv.nombre, convId: conv.id, area: conv.area, puesto, estado: p.estado }));
+  });
+  return map;
+}
+
+// Personas (por cuit) que están en 2+ servicios el MISMO día
+function conflictosMismoDia() {
+  const map = agendaPorCuit(), out = [];
+  Object.entries(map).forEach(([cuit, rec]) => {
+    const byF = {};
+    rec.items.forEach(it => { (byF[it.fecha] = byF[it.fecha] || []).push(it); });
+    Object.entries(byF).forEach(([fecha, its]) => {
+      if ([...new Set(its.map(i => i.convId))].length >= 2) out.push({ cuit, nombre: rec.nombre, fecha, servicios: its });
+    });
+  });
+  out.sort((a, b) => a.fecha.localeCompare(b.fecha) || (a.nombre || '').localeCompare(b.nombre || ''));
+  return out;
+}
+
+function estBadgeConf(est) { const c = { pendiente: '#fef3c7;color:#92400e', aprobado: '#d1fae5;color:#065f46', confirmado: '#d1fae5;color:#065f46', en_revision: '#e0f2fe;color:#0369a1' }[est] || '#f3f4f6'; return `<span style="padding:1px 7px;border-radius:999px;font-size:10px;background:${c}">${e(est || '')}</span>`; }
+
+function openConflictos() {
+  const confs = conflictosMismoDia();
+  const lista = confs.length ? confs.map(cf => `
+    <div style="border:1px solid #fecaca;background:#fff7f7;border-radius:8px;padding:10px 12px;margin-bottom:8px">
+      <div style="font-weight:600;color:#991b1b;font-size:13px">⚠ ${e(cf.nombre || '(sin nombre)')} <span style="font-weight:400;color:#9ca3af">· CUIT ${e(cf.cuit)}</span></div>
+      <div style="font-size:12px;color:#374151;margin:3px 0">Mismo día <strong>${fmtFecha(cf.fecha)}</strong>:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${cf.servicios.map(s => `<span style="font-size:11px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:2px 8px">${e(s.conv)} · ${e(s.puesto)} ${estBadgeConf(s.estado)}</span>`).join('')}</div>
+    </div>`).join('') : '<div class="empty">Sin cruces: nadie está en 2 servicios el mismo día. 🎉</div>';
+  document.getElementById('confBody').innerHTML = `
+    <div style="font-size:12px;color:#6b7280;margin-bottom:10px">Verificá si una persona ya está tomada en otro servicio. Pegá un CUIT para ver todos sus servicios, o revisá abajo los cruces detectados.</div>
+    <input type="text" class="fi" id="confCuit" inputmode="numeric" placeholder="Pegá un CUIT (11 dígitos)…" oninput="buscarConflictoCuit()" style="margin-bottom:10px">
+    <div id="confBusca" style="margin-bottom:16px"></div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:8px">Cruces mismo día (${confs.length})</div>
+    <div id="confLista" style="max-height:320px;overflow:auto">${lista}</div>`;
+  showM('mConflictos');
+  setTimeout(() => { const el = document.getElementById('confCuit'); if (el) el.focus(); }, 50);
+}
+
+function buscarConflictoCuit() {
+  const raw = String(document.getElementById('confCuit').value || '').replace(/\D/g, '');
+  const cont = document.getElementById('confBusca');
+  if (raw.length < 6) { cont.innerHTML = ''; return; }
+  const rec = agendaPorCuit()[raw];
+  if (!rec) { cont.innerHTML = `<div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px">Ese CUIT no está asignado a ningún servicio.</div>`; return; }
+  const byF = {}; rec.items.forEach(it => { (byF[it.fecha] = byF[it.fecha] || []).push(it); });
+  const convGroups = {};
+  rec.items.forEach(it => { const g = convGroups[it.convId] = convGroups[it.convId] || { conv: it.conv, fechas: new Set(), puestos: new Set(), estado: it.estado }; g.fechas.add(it.fecha); g.puestos.add(it.puesto); });
+  const dupDias = Object.entries(byF).filter(([, its]) => [...new Set(its.map(i => i.convId))].length >= 2);
+  let html = `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 12px">
+    <div style="font-weight:600;font-size:13px;color:#0369a1">${e(rec.nombre || '(sin nombre)')} <span style="font-weight:400;color:#9ca3af">· CUIT ${e(raw)}</span></div>
+    <div style="font-size:12px;color:#374151;margin-top:4px">Está en <strong>${Object.keys(convGroups).length}</strong> servicio(s):</div>
+    <div style="margin-top:6px;display:flex;flex-direction:column;gap:5px">${Object.values(convGroups).map(g => `<div style="font-size:12px">• <strong>${e(g.conv)}</strong> — ${[...g.puestos].map(x => e(x)).join(', ')} · ${[...g.fechas].sort().map(f => fmtFecha(f)).join(', ')} ${estBadgeConf(g.estado)}</div>`).join('')}</div>`;
+  if (dupDias.length) html += `<div style="margin-top:8px;background:#fff7f7;border:1px solid #fecaca;border-radius:6px;padding:8px 10px;font-size:12px;color:#991b1b"><strong>⚠ Doble agenda:</strong> ${dupDias.map(([f, its]) => `${fmtFecha(f)} (${[...new Set(its.map(i => i.conv))].map(x => e(x)).join(' + ')})`).join('; ')}</div>`;
+  html += `</div>`;
+  cont.innerHTML = html;
 }
 
 // ── DEDUPLICAR POR CUIT ──
