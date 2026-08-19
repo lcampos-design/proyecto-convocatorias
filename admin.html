@@ -462,9 +462,9 @@ tr:hover td{background:#fafafa}
     <div class="stat s-total"><div class="stat-num" id="solTotal">0</div><div class="stat-label">Total</div></div>
   </div>
   <div class="ctrlbar">
-    <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, email o puesto..." oninput="renderSolicitudes()">
-    <select class="filt" id="solAreaF" onchange="renderSolicitudes()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
-    <select class="filt" id="solStF" onchange="renderSolicitudes()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
+    <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, email, puesto o localidad..." oninput="solFilter()">
+    <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
+    <select class="filt" id="solStF" onchange="solFilter()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
   </div>
   <div class="bulk-bar" id="solBulk">
     <span id="solBulkCnt">0 seleccionadas</span><span style="color:#c4b5fd">|</span>
@@ -1036,6 +1036,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 const PS = 50;
 let people = [], convs = [], posts = [], feedbacks = [], userProfiles = [], supConvLinks = [], solicitudes = [], notificaciones = [], respuestas = [];
 let nomPage = 1, nomAreaTab = 'all', nomFiltered = [];
+let solPage = 1;
 let editPersonId = null, editConvId = null, editPuestoId = null;
 let currentConvId = null, currentPuestoId = null;
 let pickerSel = new Set(), candSelIds = new Set();
@@ -1151,7 +1152,7 @@ async function loadAll() {
     sb.from('supervisor_convocatorias').select('*'),
     (async () => {
       // Paginado (Supabase trae máx. 1000 por request) y sin archivo_cv (pesa cientos de MB).
-      const cols = 'id,nombre,area,email,tel,cuit,puesto_interes,experiencia,formacion,habilidades,disponibilidad,cbu,numero_cuenta,banco,antecedentes,beneficio_social,estado,conv_id,puesto_id,puesto_nombre,created_at';
+      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,experiencia,formacion,habilidades,disponibilidad,cbu,numero_cuenta,banco,antecedentes,beneficio_social,estado,conv_id,puesto_id,puesto_nombre,created_at';
       let all = [], f = 0;
       while (true) {
         const { data, error } = await sb.from('solicitudes').select(cols).order('created_at', { ascending: false }).range(f, f + 999);
@@ -2354,6 +2355,9 @@ function refreshSolBadge() {
   if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; }
 }
 
+function solFilter() { solPage = 1; renderSolicitudes(); }
+function solPageGo(n) { solPage = n; renderSolicitudes(); const el = document.getElementById('sec-solicitudes'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
 function renderSolicitudes() {
   const q = document.getElementById('solSrch').value.toLowerCase().trim();
   const af = document.getElementById('solAreaF').value;
@@ -2378,6 +2382,13 @@ function renderSolicitudes() {
   n('solTotal', solicitudes.length);
   const cont = document.getElementById('solContent');
   if (!filtered.length) { cont.innerHTML = `<div class="empty">${solicitudes.length === 0 ? 'Sin solicitudes todavía. Compartí el formulario candidato.html para que lleguen postulaciones.' : 'Sin resultados.'}</div>`; return; }
+  const PS_SOL = 80;
+  const totalPagSol = Math.max(1, Math.ceil(filtered.length / PS_SOL));
+  if (solPage > totalPagSol) solPage = totalPagSol; if (solPage < 1) solPage = 1;
+  const pageRows = filtered.slice((solPage - 1) * PS_SOL, solPage * PS_SOL);
+  const pagerSol = totalPagSol > 1
+    ? `<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:12px;font-size:13px;color:#6b7280"><button class="btn btn-sec btn-sm" ${solPage<=1?'disabled':''} onclick="solPageGo(${solPage-1})">← Anterior</button><span>Página ${solPage} de ${totalPagSol} · ${filtered.length} solicitudes</span><button class="btn btn-sec btn-sm" ${solPage>=totalPagSol?'disabled':''} onclick="solPageGo(${solPage+1})">Siguiente →</button></div>`
+    : `<div style="padding:8px 12px;font-size:12px;color:#9ca3af">${filtered.length} solicitud(es)</div>`;
   cont.innerHTML = `<table style="width:100%;border-collapse:collapse;background:#fff">
 <thead><tr>
   <th style="width:36px;padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb"><input type="checkbox" class="cb" id="solSelAll" onchange="solToggleAll()"></th>
@@ -2389,7 +2400,7 @@ function renderSolicitudes() {
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Estado</th>
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb;width:140px">Acciones</th>
 </tr></thead>
-<tbody>${filtered.map(s => {
+<tbody>${pageRows.map(s => {
   const stColors = { pendiente:'#fef3c7;color:#92400e', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
   const stLabels = { pendiente:'Pendiente', aprobado:'Aprobada', rechazado:'Rechazada' };
   const sel = solSelIds.has(s.id);
@@ -2406,7 +2417,7 @@ function renderSolicitudes() {
     ${s.email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModal('${s.id}')" title="Enviar confirmación">✉</button>` : ''}
     ${s.estado==='pendiente'?`<button class="btn btn-success btn-xs" onclick="singleSolSt('${s.id}','aprobado')">✓</button><button class="btn btn-danger btn-xs" onclick="singleSolSt('${s.id}','rechazado')">✕</button>`:''}
   </td></tr>`;
-}).join('')}</tbody></table>`;
+}).join('')}</tbody></table>` + pagerSol;
   updateSolBulkBar();
 }
 
