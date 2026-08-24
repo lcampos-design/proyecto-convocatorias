@@ -1651,15 +1651,17 @@ function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if
 function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${e(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}" style="margin-top:4px;display:inline-block">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')">✎</button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
 
 // ── FECHAS MÚLTIPLES ──
-let convFechas = [];
+let convFechas = [], convHorarios = {};
 function renderFechasList() {
   const el = document.getElementById('fechasList'); if (!el) return;
   el.innerHTML = convFechas.map((f, i) => `
     <div style="display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px">
-      <span style="font-size:13px;color:#374151;flex:1">📅 ${fmtFecha(f)}</span>
+      <span style="font-size:13px;color:#374151;min-width:140px">📅 ${fmtFecha(f)}</span>
+      <input type="text" value="${(convHorarios[f] || '').replace(/"/g, '&quot;')}" oninput="setConvHorario('${f}', this.value)" placeholder="Horario de este día (opcional)" style="flex:1;font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
       <button type="button" onclick="removeFecha(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0">✕</button>
     </div>`).join('');
 }
+function setConvHorario(f, val) { convHorarios[f] = val; }
 function addFecha() {
   const val = document.getElementById('cFechaInput').value;
   if (!val) return;
@@ -1669,16 +1671,17 @@ function addFecha() {
   renderFechasList();
   document.getElementById('cFechaInput').value = '';
 }
-function removeFecha(i) { convFechas.splice(i, 1); renderFechasList(); }
+function removeFecha(i) { const f = convFechas[i]; delete convHorarios[f]; convFechas.splice(i, 1); renderFechasList(); }
 
-function openAddConv() { editConvId = null; convFechas = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
-function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convFechas = c.fecha ? c.fecha.split(',').map(f => f.trim()).filter(Boolean) : []; document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; renderFechasList(); showM('mConv'); }
+function openAddConv() { editConvId = null; convFechas = []; convHorarios = {}; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
+function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convFechas = c.fecha ? c.fecha.split(',').map(f => f.trim()).filter(Boolean) : []; convHorarios = (c.horarios_por_fecha && typeof c.horarios_por_fecha === 'object') ? { ...c.horarios_por_fecha } : {}; document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; renderFechasList(); showM('mConv'); }
 function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
 
 async function saveConv() {
   const nom = document.getElementById('cNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
-  const d = { id: editConvId || uid(), nombre: nom, fecha: convFechas.length ? convFechas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null };
-  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; } }
+  const horariosPF = convFechas.reduce((o, f) => { const v = (convHorarios[f] || '').trim(); if (v) o[f] = v; return o; }, {});
+  const d = { id: editConvId || uid(), nombre: nom, fecha: convFechas.length ? convFechas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, horarios_por_fecha: horariosPF, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null };
+  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; c.horario = d.horario; c.horarios_por_fecha = d.horarios_por_fecha; } }
   else convs.push({ ...d, puestos: [] });
   if (currentConvId) { const c = convs.find(x => x.id === currentConvId); if (c) { document.getElementById('detTitle').textContent = c.nombre; renderDetStats(); } }
   renderCvList(); closeM('mConv');
