@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disponibilidad — Recital</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f5;color:#1a1a1a;font-size:15px;min-height:100vh}
+.page-header{background:#0f1117;padding:26px 24px;text-align:center}
+.page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.page-sub{font-size:13px;color:#9ca3af;margin-top:5px}
+.wrap{max-width:560px;margin:26px auto;padding:0 16px 60px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:22px}
+.conv-name{font-size:18px;font-weight:700;color:#111827}
+.conv-meta{font-size:13px;color:#9ca3af;margin-top:4px}
+.lbl{display:block;font-size:12px;font-weight:600;color:#374151;margin:18px 0 6px}
+.fi{width:100%;padding:12px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:16px;outline:none;font-family:inherit}
+.fi:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.12)}
+.drow{display:flex;align-items:center;gap:12px;border:1.5px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .12s;user-select:none}
+.drow:hover{border-color:#c7c9d1}
+.drow.on{border-color:#534AB7;background:#f0eeff}
+.drow input{width:20px;height:20px;accent-color:#534AB7;pointer-events:none}
+.drow .d1{font-weight:600;color:#111827;text-transform:capitalize}
+.btn{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px;font-family:inherit}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.msg{border-radius:10px;padding:12px 14px;font-size:13px;margin-top:12px;display:none}
+.msg.err{background:#fee2e2;color:#991b1b}
+.msg.ok{background:#dcfce7;color:#166534}
+.center{text-align:center;color:#6b7280;padding:40px 10px}
+.link{color:#534AB7;font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div class="page-title">Disponibilidad</div>
+  <div class="page-sub">Marcá qué días podés</div>
+</div>
+<div class="wrap"><div id="content"><div class="center">Cargando…</div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const CONV = new URLSearchParams(location.search).get('conv');
+const AREA_LABEL = { movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' };
+let conv = null, fechas = [];
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtFecha(f){ try { return new Date(f+'T00:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'}); } catch(e){ return f; } }
+function show(html){ document.getElementById('content').innerHTML = html; }
+
+async function init(){
+  if (!CONV) { show('<div class="card"><div class="center">Link inválido. Pedile el link a la coordinación.</div></div>'); return; }
+  const { data, error } = await sb.from('convocatorias').select('id,nombre,fecha,area,disp_abierta').eq('id', CONV).single();
+  if (error || !data) { show('<div class="card"><div class="center">No encontramos esta convocatoria.</div></div>'); return; }
+  conv = data;
+  if (!conv.disp_abierta) { show(`<div class="card"><div class="conv-name">${esc(conv.nombre)}</div><div class="center">La ronda de disponibilidad no está abierta en este momento.</div></div>`); return; }
+  fechas = String(conv.fecha||'').split(',').map(f=>f.trim()).filter(Boolean).sort();
+  renderForm();
+}
+
+function renderForm(){
+  const filas = fechas.length
+    ? fechas.map(f => `<label class="drow" data-f="${f}" onclick="toggleRow(this)"><input type="checkbox"><span class="d1">${fmtFecha(f)}</span></label>`).join('')
+    : '<div class="center">Esta convocatoria no tiene fechas cargadas.</div>';
+  show(`<div class="card">
+    <div class="conv-name">${esc(conv.nombre)}</div>
+    <div class="conv-meta">${AREA_LABEL[conv.area]||conv.area||''}</div>
+    <label class="lbl">Tu CUIL (11 dígitos)</label>
+    <input class="fi" id="cuil" inputmode="numeric" maxlength="11" placeholder="Sin guiones" oninput="onCuil(this)">
+    <label class="lbl">¿Qué días podés? (marcá los que sí)</label>
+    ${filas}
+    <button class="btn" id="enviarBtn" onclick="enviar()">Enviar disponibilidad</button>
+    <div class="msg err" id="err"></div>
+    <div class="msg ok" id="ok"></div>
+  </div>`);
+}
+
+function toggleRow(el){ const cb = el.querySelector('input'); cb.checked = !cb.checked; el.classList.toggle('on', cb.checked); }
+function selectedFechas(){ return [...document.querySelectorAll('.drow')].filter(r => r.querySelector('input').checked).map(r => r.dataset.f); }
+
+let prefillTimer = null;
+function onCuil(inp){
+  inp.value = inp.value.replace(/\D/g,'');
+  clearTimeout(prefillTimer);
+  if (inp.value.length === 11) prefillTimer = setTimeout(prefill, 250);
+}
+async function prefill(){
+  const cuil = document.getElementById('cuil').value.replace(/\D/g,'');
+  if (cuil.length !== 11) return;
+  try {
+    const { data } = await sb.rpc('mi_disponibilidad', { p_cuit: cuil, p_conv_id: CONV });
+    const prev = Array.isArray(data) ? data : [];
+    document.querySelectorAll('.drow').forEach(r => { const on = prev.includes(r.dataset.f); r.querySelector('input').checked = on; r.classList.toggle('on', on); });
+  } catch(_) {}
+}
+
+async function enviar(){
+  const err = document.getElementById('err'), ok = document.getElementById('ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  const cuil = document.getElementById('cuil').value.replace(/\D/g,'');
+  if (cuil.length !== 11) { err.textContent = 'Ingresá tu CUIL (11 dígitos).'; err.style.display = 'block'; return; }
+  const btn = document.getElementById('enviarBtn'); btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    const { data, error } = await sb.rpc('guardar_disponibilidad', { p_cuit: cuil, p_conv_id: CONV, p_fechas: selectedFechas() });
+    if (error) throw error;
+    if (data && data.ok) {
+      const n = selectedFechas().length;
+      show(`<div class="card"><div style="font-size:46px;text-align:center;margin-bottom:10px">✅</div>
+        <div class="conv-name" style="text-align:center">¡Gracias${data.nombre?', '+esc(String(data.nombre).split(' ')[0]):''}!</div>
+        <div class="center" style="padding:12px 0 0">Registramos tu disponibilidad para <strong>${esc(conv.nombre)}</strong>${n?` (${n} fecha/s)`:' (sin fechas marcadas)'}.<br>Si te seleccionan, te vamos a enviar la confirmación.</div>
+        <button class="btn" onclick="init()">Modificar mi respuesta</button></div>`);
+      return;
+    }
+    if (data && data.motivo === 'no_registrado') {
+      err.innerHTML = 'No encontramos tu registro con ese CUIL. Primero tenés que <a class="link" href="candidato.html">registrarte acá</a>.';
+      err.style.display = 'block';
+    } else if (data && data.motivo === 'cerrada') {
+      err.textContent = 'La ronda de disponibilidad se cerró.'; err.style.display = 'block';
+    } else {
+      err.textContent = 'No se pudo guardar. Revisá el CUIL e intentá de nuevo.'; err.style.display = 'block';
+    }
+    btn.disabled = false; btn.textContent = 'Enviar disponibilidad';
+  } catch (e) {
+    err.textContent = 'Hubo un error. Probá de nuevo.'; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Enviar disponibilidad';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
