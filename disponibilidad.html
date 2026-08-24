@@ -53,7 +53,7 @@ function show(html){ document.getElementById('content').innerHTML = html; }
 
 async function init(){
   if (!CONV) { show('<div class="card"><div class="center">Link inválido. Pedile el link a la coordinación.</div></div>'); return; }
-  const { data, error } = await sb.from('convocatorias').select('id,nombre,fecha,area,disp_abierta,horario,venue').eq('id', CONV).single();
+  const { data, error } = await sb.from('convocatorias').select('id,nombre,fecha,area,disp_abierta,horario,venue,horarios_por_fecha').eq('id', CONV).single();
   if (error || !data) { show('<div class="card"><div class="center">No encontramos esta convocatoria.</div></div>'); return; }
   conv = data;
   if (!conv.disp_abierta) { show(`<div class="card"><div class="conv-name">${esc(conv.nombre)}</div><div class="center">La ronda de disponibilidad no está abierta en este momento.</div></div>`); return; }
@@ -62,8 +62,9 @@ async function init(){
 }
 
 function renderForm(){
+  const hpf = (conv.horarios_por_fecha && typeof conv.horarios_por_fecha === 'object') ? conv.horarios_por_fecha : {};
   const filas = fechas.length
-    ? fechas.map(f => `<label class="drow" data-f="${f}" onclick="toggleRow(this)"><input type="checkbox"><span class="d1">${fmtFecha(f)}</span></label>`).join('')
+    ? fechas.map(f => { const h = hpf[f] || conv.horario || ''; return `<label class="drow" data-f="${f}" onclick="toggleRow(this)"><input type="checkbox"><span class="d1">${fmtFecha(f)}</span>${h ? `<span style="margin-left:auto;font-size:12px;color:#6b7280;font-weight:500;white-space:nowrap">🕒 ${esc(h)}</span>` : ''}</label>`; }).join('')
     : '<div class="center">Esta convocatoria no tiene fechas cargadas.</div>';
   show(`<div class="card">
     <div class="conv-name">${esc(conv.nombre)}</div>
