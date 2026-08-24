@@ -603,7 +603,7 @@ tr:hover td{background:#fafafa}
     <div class="fg"><label>Nombre del recital / evento *</label><input type="text" class="fi" id="cNombre" placeholder="Ej: Recital Soda Stereo — Oct 2024"></div>
     <div class="frow">
       <div class="fg" style="flex:2">
-        <label>Fechas</label>
+        <label>Fechas y turnos <span style="font-weight:400;color:#9ca3af;font-size:11px">(podés repetir una fecha para varios turnos)</span></label>
         <div id="fechasList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="date" class="fi" id="cFechaInput" style="flex:1">
@@ -1651,37 +1651,43 @@ function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if
 function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${e(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}" style="margin-top:4px;display:inline-block">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')">✎</button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
 
 // ── FECHAS MÚLTIPLES ──
-let convFechas = [], convHorarios = {};
+let convTurnos = [];  // [{id, fecha, horario}] — la misma fecha puede repetirse (turnos)
+function migrarTurnos(c) {
+  if (Array.isArray(c.turnos) && c.turnos.length) return c.turnos.map(t => ({ id: t.id || uid(), fecha: t.fecha, horario: t.horario || '' }));
+  const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean);
+  const hpf = (c.horarios_por_fecha && typeof c.horarios_por_fecha === 'object') ? c.horarios_por_fecha : {};
+  return fechas.map(f => ({ id: uid(), fecha: f, horario: hpf[f] || '' }));
+}
 function renderFechasList() {
   const el = document.getElementById('fechasList'); if (!el) return;
-  el.innerHTML = convFechas.map((f, i) => `
+  const sorted = [...convTurnos].sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  el.innerHTML = sorted.length ? sorted.map(t => `
     <div style="display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px">
-      <span style="font-size:13px;color:#374151;min-width:140px">📅 ${fmtFecha(f)}</span>
-      <input type="text" value="${(convHorarios[f] || '').replace(/"/g, '&quot;')}" oninput="setConvHorario('${f}', this.value)" placeholder="Horario de este día (opcional)" style="flex:1;font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
-      <button type="button" onclick="removeFecha(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0">✕</button>
-    </div>`).join('');
+      <span style="font-size:13px;color:#374151;min-width:140px">📅 ${fmtFecha(t.fecha)}</span>
+      <input type="text" value="${(t.horario || '').replace(/"/g, '&quot;')}" oninput="setTurnoHorario('${t.id}', this.value)" placeholder="Horario / turno (opcional)" style="flex:1;font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
+      <button type="button" onclick="removeTurno('${t.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0">✕</button>
+    </div>`).join('') : '<div style="font-size:12px;color:#9ca3af">Agregá una o más fechas. Podés repetir la misma fecha para cargar varios turnos (cada uno con su horario).</div>';
 }
-function setConvHorario(f, val) { convHorarios[f] = val; }
+function setTurnoHorario(id, val) { const t = convTurnos.find(x => x.id === id); if (t) t.horario = val; }
 function addFecha() {
   const val = document.getElementById('cFechaInput').value;
   if (!val) return;
-  if (convFechas.includes(val)) { toast('Esa fecha ya está agregada'); return; }
-  convFechas.push(val);
-  convFechas.sort();
+  convTurnos.push({ id: uid(), fecha: val, horario: '' });
   renderFechasList();
   document.getElementById('cFechaInput').value = '';
 }
-function removeFecha(i) { const f = convFechas[i]; delete convHorarios[f]; convFechas.splice(i, 1); renderFechasList(); }
+function removeTurno(id) { convTurnos = convTurnos.filter(x => x.id !== id); renderFechasList(); }
 
-function openAddConv() { editConvId = null; convFechas = []; convHorarios = {}; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
-function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convFechas = c.fecha ? c.fecha.split(',').map(f => f.trim()).filter(Boolean) : []; convHorarios = (c.horarios_por_fecha && typeof c.horarios_por_fecha === 'object') ? { ...c.horarios_por_fecha } : {}; document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; renderFechasList(); showM('mConv'); }
+function openAddConv() { editConvId = null; convTurnos = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
+function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; renderFechasList(); showM('mConv'); }
 function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
 
 async function saveConv() {
   const nom = document.getElementById('cNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
-  const horariosPF = convFechas.reduce((o, f) => { const v = (convHorarios[f] || '').trim(); if (v) o[f] = v; return o; }, {});
-  const d = { id: editConvId || uid(), nombre: nom, fecha: convFechas.length ? convFechas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, horarios_por_fecha: horariosPF, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null };
-  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; c.horario = d.horario; c.horarios_por_fecha = d.horarios_por_fecha; } }
+  const turnos = convTurnos.filter(t => t.fecha).map(t => ({ id: t.id, fecha: t.fecha, horario: (t.horario || '').trim() }));
+  const fechasUnicas = [...new Set(turnos.map(t => t.fecha))].sort();
+  const d = { id: editConvId || uid(), nombre: nom, fecha: fechasUnicas.length ? fechasUnicas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, turnos, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null };
+  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; c.horario = d.horario; c.turnos = d.turnos; } }
   else convs.push({ ...d, puestos: [] });
   if (currentConvId) { const c = convs.find(x => x.id === currentConvId); if (c) { document.getElementById('detTitle').textContent = c.nombre; renderDetStats(); } }
   renderCvList(); closeM('mConv');
@@ -2669,10 +2675,16 @@ async function openDispAdmin() {
   renderDispBody();
 }
 
+function slotsDe(c) {
+  if (Array.isArray(c.turnos) && c.turnos.length) return c.turnos.map(t => ({ id: t.id, fecha: t.fecha, horario: t.horario || c.horario || '' })).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  const fs = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+  const hpf = (c.horarios_por_fecha && typeof c.horarios_por_fecha === 'object') ? c.horarios_por_fecha : {};
+  return fs.map(f => ({ id: f, fecha: f, horario: hpf[f] || c.horario || '' }));
+}
 function renderDispBody() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   const link = location.origin + '/disponibilidad?conv=' + currentConvId;
-  const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+  const slots = slotsDe(c);
   const abierta = !!c.disp_abierta;
   let html = `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:14px">
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="checkbox" ${abierta ? 'checked' : ''} onchange="toggleDispAbierta(this.checked)" style="width:18px;height:18px;accent-color:#534AB7"> Ronda abierta</label>
@@ -2682,21 +2694,21 @@ function renderDispBody() {
   if (!abierta) html += `<div style="font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;margin-bottom:12px">La ronda está <strong>cerrada</strong>: el link no acepta respuestas. Activá "Ronda abierta" para recibir disponibilidad.</div>`;
   if (!dispRows.length) { html += '<div class="empty">Todavía nadie respondió. Compartí el link con tu grupo.</div>'; document.getElementById('dispBody').innerHTML = html; return; }
   const th = s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center">${s}</th>`;
-  const thDates = fechas.map(f => th(fmtFechaCorta(f))).join('');
+  const thDates = slots.map(s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center;vertical-align:bottom" title="${e(s.horario || '')}">${fmtFechaCorta(s.fecha)}${s.horario ? `<div style="font-size:9px;font-weight:400;color:#8b8fa3;text-transform:none;max-width:100px;margin:2px auto 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(s.horario)}</div>` : ''}</th>`).join('');
   const rows = dispRows.map(r => {
     const rf = Array.isArray(r.fechas) ? r.fechas : [];
     const cn = String(r.cuit || '').replace(/\D/g, '');
     const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
     const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
     const email = per?.email || sol?.email || '';
-    const cells = fechas.map(f => `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${rf.includes(f) ? '<span style="color:#16a34a;font-weight:700">✓</span>' : '<span style="color:#d1d5db">·</span>'}</td>`).join('');
+    const cells = slots.map(s => `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${rf.includes(s.id) ? '<span style="color:#16a34a;font-weight:700">✓</span>' : '<span style="color:#d1d5db">·</span>'}</td>`).join('');
     return `<tr>
       <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${e(r.nombre || '—')}<div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
       ${cells}
       <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')">✉ Confirmar</button>` : '<span style="font-size:10px;color:#9ca3af">sin email</span>'}</td>
     </tr>`;
   }).join('');
-  const counts = fechas.map(f => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(f)).length);
+  const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
   const foot = counts.map(n => `<td style="text-align:center;padding:6px 8px;font-weight:700;color:#534AB7">${n}</td>`).join('');
   html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
     <thead><tr>${th('Persona (' + dispRows.length + ')')}${thDates}<th style="border-bottom:1px solid #e5e7eb"></th></tr></thead>

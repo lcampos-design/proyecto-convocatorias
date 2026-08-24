@@ -47,26 +47,32 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const CONV = new URLSearchParams(location.search).get('conv');
 const AREA_LABEL = { movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' };
-let conv = null, fechas = [];
+let conv = null, slots = [];
 
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtFecha(f){ try { return new Date(f+'T00:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'}); } catch(e){ return f; } }
 function show(html){ document.getElementById('content').innerHTML = html; }
+// Turnos (fecha + horario, la misma fecha puede repetirse). Fallback a fechas viejas.
+function slotsDe(c){
+  if (Array.isArray(c.turnos) && c.turnos.length) return c.turnos.map(t => ({ id: t.id, fecha: t.fecha, horario: t.horario || c.horario || '' })).sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  const fs = String(c.fecha||'').split(',').map(f=>f.trim()).filter(Boolean).sort();
+  const hpf = (c.horarios_por_fecha && typeof c.horarios_por_fecha==='object') ? c.horarios_por_fecha : {};
+  return fs.map(f => ({ id: f, fecha: f, horario: hpf[f] || c.horario || '' }));
+}
 
 async function init(){
   if (!CONV) { show('<div class="card"><div class="center">Link inválido. Pedile el link a la coordinación.</div></div>'); return; }
-  const { data, error } = await sb.from('convocatorias').select('id,nombre,fecha,area,disp_abierta,horario,venue,horarios_por_fecha').eq('id', CONV).single();
+  const { data, error } = await sb.from('convocatorias').select('id,nombre,fecha,area,disp_abierta,horario,venue,horarios_por_fecha,turnos').eq('id', CONV).single();
   if (error || !data) { show('<div class="card"><div class="center">No encontramos esta convocatoria.</div></div>'); return; }
   conv = data;
   if (!conv.disp_abierta) { show(`<div class="card"><div class="conv-name">${esc(conv.nombre)}</div><div class="center">La ronda de disponibilidad no está abierta en este momento.</div></div>`); return; }
-  fechas = String(conv.fecha||'').split(',').map(f=>f.trim()).filter(Boolean).sort();
+  slots = slotsDe(conv);
   renderForm();
 }
 
 function renderForm(){
-  const hpf = (conv.horarios_por_fecha && typeof conv.horarios_por_fecha === 'object') ? conv.horarios_por_fecha : {};
-  const filas = fechas.length
-    ? fechas.map(f => { const h = hpf[f] || conv.horario || ''; return `<label class="drow" data-f="${f}" onclick="toggleRow(this)"><input type="checkbox"><span class="dcol"><span class="d1">${fmtFecha(f)}</span>${h ? `<span class="dh">🕒 ${esc(h)}</span>` : ''}</span></label>`; }).join('')
+  const filas = slots.length
+    ? slots.map(s => `<label class="drow" data-f="${s.id}" onclick="toggleRow(this)"><input type="checkbox"><span class="dcol"><span class="d1">${fmtFecha(s.fecha)}</span>${s.horario ? `<span class="dh">🕒 ${esc(s.horario)}</span>` : ''}</span></label>`).join('')
     : '<div class="center">Esta convocatoria no tiene fechas cargadas.</div>';
   show(`<div class="card">
     <div class="conv-name">${esc(conv.nombre)}</div>
