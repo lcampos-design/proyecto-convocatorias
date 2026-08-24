@@ -415,6 +415,7 @@ tr:hover td{background:#fafafa}
         <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()">📋 Asistencia</button>
         <button class="btn btn-success btn-sm" onclick="exportPostuladosExcel()">↓ Planilla Excel</button>
         <button class="btn btn-sec btn-sm" onclick="openReporte()">📊 Reporte</button>
+        <button class="btn btn-sec btn-sm" onclick="openDispAdmin()">🗓 Disponibilidad</button>
         <button class="btn btn-sec btn-sm" onclick="editCurrentConv()">✎ Editar</button>
         <button class="btn btn-danger btn-sm" onclick="deleteCurrentConv()">Eliminar</button>
       </div>
@@ -770,6 +771,15 @@ tr:hover td{background:#fafafa}
     <div id="mHistStats" style="display:flex;gap:20px;background:#f9fafb;border-radius:8px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap"></div>
     <div id="mHistBody" style="max-height:420px;overflow-y:auto"></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mHistorial')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Modal: Disponibilidad (admin) -->
+<div class="modal-bg" id="mDispAdmin" style="display:none" onclick="bgClose('mDispAdmin',event)">
+  <div class="modal" style="max-width:840px">
+    <div class="modal-title"><span id="mDispTitle">Disponibilidad</span><button class="mclose" onclick="closeM('mDispAdmin')">✕</button></div>
+    <div id="dispBody"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mDispAdmin')">Cerrar</button></div>
   </div>
 </div>
 
@@ -2638,6 +2648,79 @@ function exportReporte() {
   });
   const csv = rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})); a.download = `reporte-${c.nombre.slice(0,30).replace(/\s/g,'-')}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+// ── RONDA DE DISPONIBILIDAD (admin) ──
+let dispRows = [];
+function fmtFechaCorta(f) { try { return new Date(f + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }); } catch (e) { return f; } }
+
+async function openDispAdmin() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  document.getElementById('mDispTitle').textContent = `Disponibilidad — ${c.nombre}`;
+  document.getElementById('dispBody').innerHTML = '<div class="empty">Cargando…</div>';
+  showM('mDispAdmin');
+  try {
+    const { data } = await sb.from('disponibilidad').select('*').eq('conv_id', currentConvId).order('updated_at', { ascending: false });
+    dispRows = data || [];
+  } catch (_) { dispRows = []; }
+  renderDispBody();
+}
+
+function renderDispBody() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const link = location.origin + '/disponibilidad?conv=' + currentConvId;
+  const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+  const abierta = !!c.disp_abierta;
+  let html = `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:14px">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="checkbox" ${abierta ? 'checked' : ''} onchange="toggleDispAbierta(this.checked)" style="width:18px;height:18px;accent-color:#534AB7"> Ronda abierta</label>
+    <span style="flex:1;min-width:200px;font-size:12px;color:#6b7280;word-break:break-all">${e(link)}</span>
+    <button class="btn btn-sec btn-sm" onclick="copiarDispLink('${e(link)}')">📋 Copiar link</button>
+  </div>`;
+  if (!abierta) html += `<div style="font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;margin-bottom:12px">La ronda está <strong>cerrada</strong>: el link no acepta respuestas. Activá "Ronda abierta" para recibir disponibilidad.</div>`;
+  if (!dispRows.length) { html += '<div class="empty">Todavía nadie respondió. Compartí el link con tu grupo.</div>'; document.getElementById('dispBody').innerHTML = html; return; }
+  const th = s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center">${s}</th>`;
+  const thDates = fechas.map(f => th(fmtFechaCorta(f))).join('');
+  const rows = dispRows.map(r => {
+    const rf = Array.isArray(r.fechas) ? r.fechas : [];
+    const cn = String(r.cuit || '').replace(/\D/g, '');
+    const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
+    const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+    const email = per?.email || sol?.email || '';
+    const cells = fechas.map(f => `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${rf.includes(f) ? '<span style="color:#16a34a;font-weight:700">✓</span>' : '<span style="color:#d1d5db">·</span>'}</td>`).join('');
+    return `<tr>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${e(r.nombre || '—')}<div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
+      ${cells}
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')">✉ Confirmar</button>` : '<span style="font-size:10px;color:#9ca3af">sin email</span>'}</td>
+    </tr>`;
+  }).join('');
+  const counts = fechas.map(f => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(f)).length);
+  const foot = counts.map(n => `<td style="text-align:center;padding:6px 8px;font-weight:700;color:#534AB7">${n}</td>`).join('');
+  html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr>${th('Persona (' + dispRows.length + ')')}${thDates}<th style="border-bottom:1px solid #e5e7eb"></th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td style="padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">Disponibles</td>${foot}<td></td></tr></tfoot>
+  </table></div>`;
+  document.getElementById('dispBody').innerHTML = html;
+}
+
+async function toggleDispAbierta(val) {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  c.disp_abierta = val; renderDispBody();
+  try { await sbUpdate('convocatorias', currentConvId, { disp_abierta: val }); toast(val ? 'Ronda de disponibilidad abierta' : 'Ronda cerrada'); } catch (_) {}
+}
+function copiarDispLink(link) { if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => toast('Link copiado')).catch(() => toast('Copialo manualmente')); else toast('Copialo manualmente'); }
+function confirmarDisponibilidad(cuit, nombre) {
+  const cn = String(cuit || '').replace(/\D/g, '');
+  const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
+  const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+  const email = per?.email || sol?.email;
+  if (!email) { toast('Esta persona no tiene email cargado'); return; }
+  closeM('mDispAdmin');
+  mailSolId = '__post__disp';
+  window._tempMailData = { email, nombre: nombre || per?.nombre || sol?.nombre || '', conv_id: currentConvId, puesto_nombre: '' };
+  document.getElementById('mMailStep1').style.display = 'block';
+  document.getElementById('mMailStep2').style.display = 'none';
+  showM('mMailConf');
 }
 
 // ── ROTACIÓN ──
