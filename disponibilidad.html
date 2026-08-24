@@ -53,7 +53,7 @@ function show(html){ document.getElementById('content').innerHTML = html; }
 
 async function init(){
   if (!CONV) { show('<div class="card"><div class="center">Link inválido. Pedile el link a la coordinación.</div></div>'); return; }
-  const { data, error } = await sb.from('convocatorias').select('id,nombre,fecha,area,disp_abierta').eq('id', CONV).single();
+  const { data, error } = await sb.from('convocatorias').select('id,nombre,fecha,area,disp_abierta,horario,venue').eq('id', CONV).single();
   if (error || !data) { show('<div class="card"><div class="center">No encontramos esta convocatoria.</div></div>'); return; }
   conv = data;
   if (!conv.disp_abierta) { show(`<div class="card"><div class="conv-name">${esc(conv.nombre)}</div><div class="center">La ronda de disponibilidad no está abierta en este momento.</div></div>`); return; }
@@ -67,9 +67,10 @@ function renderForm(){
     : '<div class="center">Esta convocatoria no tiene fechas cargadas.</div>';
   show(`<div class="card">
     <div class="conv-name">${esc(conv.nombre)}</div>
-    <div class="conv-meta">${AREA_LABEL[conv.area]||conv.area||''}</div>
+    <div class="conv-meta">${AREA_LABEL[conv.area]||conv.area||''}${conv.horario?` &nbsp;·&nbsp; 🕒 ${esc(conv.horario)}`:''}${conv.venue?` &nbsp;·&nbsp; 📍 ${esc(conv.venue)}`:''}</div>
     <label class="lbl">Tu CUIL (11 dígitos)</label>
     <input class="fi" id="cuil" inputmode="numeric" maxlength="11" placeholder="Sin guiones" oninput="onCuil(this)">
+    <div class="msg err" id="regWarn" style="margin-top:8px"></div>
     <label class="lbl">¿Qué días podés? (marcá los que sí)</label>
     ${filas}
     <button class="btn" id="enviarBtn" onclick="enviar()">Enviar disponibilidad</button>
@@ -85,7 +86,17 @@ let prefillTimer = null;
 function onCuil(inp){
   inp.value = inp.value.replace(/\D/g,'');
   clearTimeout(prefillTimer);
-  if (inp.value.length === 11) prefillTimer = setTimeout(prefill, 250);
+  const w = document.getElementById('regWarn'); if (w && inp.value.length < 11) w.style.display = 'none';
+  if (inp.value.length === 11) prefillTimer = setTimeout(() => { prefill(); checkReg(); }, 250);
+}
+async function checkReg(){
+  const cuil = document.getElementById('cuil').value.replace(/\D/g,'');
+  const w = document.getElementById('regWarn'); if (!w || cuil.length !== 11) return;
+  try {
+    const { data } = await sb.rpc('esta_registrado', { p_cuit: cuil });
+    if (data === true) { w.style.display = 'none'; }
+    else { w.innerHTML = 'Este CUIL no está registrado. Para poder enviar tu disponibilidad, <a class="link" href="candidato.html">registrate primero acá</a>.'; w.style.display = 'block'; }
+  } catch(_) {}
 }
 async function prefill(){
   const cuil = document.getElementById('cuil').value.replace(/\D/g,'');
