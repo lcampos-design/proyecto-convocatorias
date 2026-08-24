@@ -17,11 +17,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .lbl{display:block;font-size:12px;font-weight:600;color:#374151;margin:18px 0 6px}
 .fi{width:100%;padding:12px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:16px;outline:none;font-family:inherit}
 .fi:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.12)}
-.drow{display:flex;align-items:center;gap:12px;border:1.5px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .12s;user-select:none}
+.drow{display:flex;align-items:flex-start;gap:12px;border:1.5px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .12s;user-select:none}
 .drow:hover{border-color:#c7c9d1}
 .drow.on{border-color:#534AB7;background:#f0eeff}
-.drow input{width:20px;height:20px;accent-color:#534AB7;pointer-events:none}
+.drow input{width:20px;height:20px;accent-color:#534AB7;pointer-events:none;flex-shrink:0;margin-top:1px}
+.dcol{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
 .drow .d1{font-weight:600;color:#111827;text-transform:capitalize}
+.dh{font-size:12px;color:#6b7280;font-weight:500;line-height:1.45;word-break:break-word}
 .btn{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px;font-family:inherit}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .msg{border-radius:10px;padding:12px 14px;font-size:13px;margin-top:12px;display:none}
@@ -64,7 +66,7 @@ async function init(){
 function renderForm(){
   const hpf = (conv.horarios_por_fecha && typeof conv.horarios_por_fecha === 'object') ? conv.horarios_por_fecha : {};
   const filas = fechas.length
-    ? fechas.map(f => { const h = hpf[f] || conv.horario || ''; return `<label class="drow" data-f="${f}" onclick="toggleRow(this)"><input type="checkbox"><span class="d1">${fmtFecha(f)}</span>${h ? `<span style="margin-left:auto;font-size:12px;color:#6b7280;font-weight:500;white-space:nowrap">🕒 ${esc(h)}</span>` : ''}</label>`; }).join('')
+    ? fechas.map(f => { const h = hpf[f] || conv.horario || ''; return `<label class="drow" data-f="${f}" onclick="toggleRow(this)"><input type="checkbox"><span class="dcol"><span class="d1">${fmtFecha(f)}</span>${h ? `<span class="dh">🕒 ${esc(h)}</span>` : ''}</span></label>`; }).join('')
     : '<div class="center">Esta convocatoria no tiene fechas cargadas.</div>';
   show(`<div class="card">
     <div class="conv-name">${esc(conv.nombre)}</div>
