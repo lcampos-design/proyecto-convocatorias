@@ -609,9 +609,10 @@ tr:hover td{background:#fafafa}
           <input type="date" class="fi" id="cFechaInput" style="flex:1">
           <button type="button" class="btn btn-sec btn-sm" onclick="addFecha()" style="white-space:nowrap;flex-shrink:0">+ Agregar</button>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-          <input type="text" class="fi" id="cHorarioTodos" placeholder="Mismo horario para TODAS las fechas (opcional)" style="flex:1;font-size:12px;padding:7px 10px">
-          <button type="button" class="btn btn-sec btn-sm" onclick="aplicarHorarioATodos()" style="white-space:nowrap;flex-shrink:0">Aplicar a todas</button>
+        <div style="margin-top:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:11px;color:#6b7280;margin-bottom:6px">Turnos (uno por línea) — se generan en <strong>todas</strong> las fechas de arriba. Ej: <em>TM: 07.00 a 16.00</em></div>
+          <textarea id="cTurnosMultiples" placeholder="TM: 07.00 a 16.00&#10;TC: 07.00 a 13.00&#10;TN: 22.30 a 07.30" style="width:100%;height:72px;font-size:12px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;font-family:inherit"></textarea>
+          <button type="button" class="btn btn-sec btn-sm" onclick="aplicarTurnosATodas()" style="margin-top:6px">↧ Aplicar estos turnos a todas las fechas</button>
         </div>
       </div>
       <div class="fg"><label>Área</label><select class="fi" id="cArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="ambas">Ambas áreas</option></select></div>
@@ -1681,16 +1682,19 @@ function addFecha() {
   document.getElementById('cFechaInput').value = '';
 }
 function removeTurno(id) { convTurnos = convTurnos.filter(x => x.id !== id); renderFechasList(); }
-function aplicarHorarioATodos() {
-  const val = document.getElementById('cHorarioTodos').value.trim();
-  if (!convTurnos.length) { toast('Primero agregá al menos una fecha'); return; }
-  convTurnos.forEach(t => t.horario = val);
+function aplicarTurnosATodas() {
+  const lines = document.getElementById('cTurnosMultiples').value.split('\n').map(l => l.trim()).filter(Boolean);
+  const fechasUnicas = [...new Set(convTurnos.map(t => t.fecha).filter(Boolean))].sort();
+  if (!fechasUnicas.length) { toast('Primero agregá las fechas'); return; }
+  if (!lines.length) { toast('Escribí al menos un turno (uno por línea)'); return; }
+  convTurnos = [];
+  fechasUnicas.forEach(f => lines.forEach(h => convTurnos.push({ id: uid(), fecha: f, horario: h })));
   renderFechasList();
-  toast('Horario aplicado a ' + convTurnos.length + ' fecha(s)');
+  toast(convTurnos.length + ' turnos generados (' + fechasUnicas.length + ' fechas × ' + lines.length + ')');
 }
 
-function openAddConv() { editConvId = null; convTurnos = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cHorarioTodos'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
-function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cHorarioTodos').value = ''; renderFechasList(); showM('mConv'); }
+function openAddConv() { editConvId = null; convTurnos = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
+function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
 function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
 
 async function saveConv() {
