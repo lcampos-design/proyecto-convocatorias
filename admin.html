@@ -2705,6 +2705,7 @@ function renderDispBody() {
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="checkbox" ${abierta ? 'checked' : ''} onchange="toggleDispAbierta(this.checked)" style="width:18px;height:18px;accent-color:#534AB7"> Ronda abierta</label>
     <span style="flex:1;min-width:200px;font-size:12px;color:#6b7280;word-break:break-all">${e(link)}</span>
     <button class="btn btn-sec btn-sm" onclick="copiarDispLink('${e(link)}')">📋 Copiar link</button>
+    ${dispRows.length ? `<button class="btn btn-sec btn-sm" onclick="exportarDisponibilidad()">↓ Exportar CSV</button>` : ''}
   </div>`;
   if (!abierta) html += `<div style="font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;margin-bottom:12px">La ronda está <strong>cerrada</strong>: el link no acepta respuestas. Activá "Ronda abierta" para recibir disponibilidad.</div>`;
   if (!dispRows.length) { html += '<div class="empty">Todavía nadie respondió. Compartí el link con tu grupo.</div>'; document.getElementById('dispBody').innerHTML = html; return; }
@@ -2739,6 +2740,31 @@ async function toggleDispAbierta(val) {
   try { await sbUpdate('convocatorias', currentConvId, { disp_abierta: val }); toast(val ? 'Ronda de disponibilidad abierta' : 'Ronda cerrada'); } catch (_) {}
 }
 function copiarDispLink(link) { if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => toast('Link copiado')).catch(() => toast('Copialo manualmente')); else toast('Copialo manualmente'); }
+function exportarDisponibilidad() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  if (!dispRows.length) { toast('Todavía no hay respuestas para exportar'); return; }
+  const slots = slotsDe(c);
+  const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const colLabel = s => (fmtFechaCorta(s.fecha) + (s.horario ? ' ' + s.horario : '')).trim();
+  const hdrs = ['Persona', 'CUIT', 'Email', ...slots.map(colLabel), 'Turnos disponibles'];
+  const rows = dispRows.map(r => {
+    const rf = Array.isArray(r.fechas) ? r.fechas : [];
+    const cn = String(r.cuit || '').replace(/\D/g, '');
+    const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
+    const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+    const email = per?.email || sol?.email || '';
+    const marks = slots.map(s => rf.includes(s.id) ? 'SÍ' : '');
+    const total = slots.filter(s => rf.includes(s.id)).length;
+    return [r.nombre || '', r.cuit || '', email, ...marks, total].map(esc).join(',');
+  });
+  const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
+  const footer = ['Disponibles', '', '', ...counts, ''].map(esc).join(',');
+  const csv = [hdrs.map(esc).join(','), ...rows, footer].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `disponibilidad-${String(c.nombre || '').slice(0, 30).replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+}
 function confirmarDisponibilidad(cuit, nombre) {
   const cn = String(cuit || '').replace(/\D/g, '');
   const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
