@@ -466,7 +466,6 @@ tr:hover td{background:#fafafa}
     <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, email, puesto o localidad..." oninput="solFilter()">
     <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
     <select class="filt" id="solStF" onchange="solFilter()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
-    <button class="btn btn-sec btn-sm" onclick="openBloqueados()" style="margin-left:auto">🚫 Bloqueados <span id="bloqCount" style="background:#fee2e2;color:#991b1b;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;margin-left:4px">0</span></button>
   </div>
   <div class="bulk-bar" id="solBulk">
     <span id="solBulkCnt">0 seleccionadas</span><span style="color:#c4b5fd">|</span>
@@ -789,16 +788,6 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
-<!-- Modal: Bloqueados -->
-<div class="modal-bg" id="mBloqueados" style="display:none" onclick="bgClose('mBloqueados',event)">
-  <div class="modal" style="max-width:720px">
-    <div class="modal-title"><span>🚫 CUIL bloqueados</span><button class="mclose" onclick="closeM('mBloqueados')">✕</button></div>
-    <div style="font-size:12px;color:#6b7280;margin-bottom:12px">Estas personas no pueden volver a registrarse. Desbloqueá si fue un error.</div>
-    <div id="bloqBody"></div>
-    <div class="ma"><button class="btn btn-sec" onclick="closeM('mBloqueados')">Cerrar</button></div>
-  </div>
-</div>
-
 <!-- Modal: Conflictos de agenda / Buscar por CUIT -->
 <div class="modal-bg" id="mConflictos" style="display:none" onclick="bgClose('mConflictos',event)">
   <div class="modal" style="max-width:640px">
@@ -1060,7 +1049,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 
 // ── Estado global ──
 const PS = 50;
-let people = [], convs = [], posts = [], feedbacks = [], userProfiles = [], supConvLinks = [], solicitudes = [], notificaciones = [], respuestas = [], bloqueados = [];
+let people = [], convs = [], posts = [], feedbacks = [], userProfiles = [], supConvLinks = [], solicitudes = [], notificaciones = [], respuestas = [];
 let nomPage = 1, nomAreaTab = 'all', nomFiltered = [];
 let solPage = 1;
 let editPersonId = null, editConvId = null, editPuestoId = null;
@@ -1169,7 +1158,7 @@ async function loadAll() {
     setLoad(true, `Cargando nómina... (${people.length})`, Math.min(60, 15 + people.length / 100));
   }
   setLoad(true, 'Cargando convocatorias...', 70);
-  const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }, { data: bloqData }] = await Promise.all([
+  const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }] = await Promise.all([
     sb.from('convocatorias').select('*').order('created_at'),
     sb.from('puestos').select('*').order('created_at'),
     sb.from('postulaciones').select('*').order('created_at'),
@@ -1191,8 +1180,7 @@ async function loadAll() {
     })(),
     sb.from('config').select('*'),
     sb.from('notificaciones').select('*').order('created_at', { ascending: false }),
-    sb.from('respuestas').select('*').order('received_at', { ascending: false }),
-    sb.from('bloqueados').select('*').order('created_at', { ascending: false })
+    sb.from('respuestas').select('*').order('received_at', { ascending: false })
   ]);
   convs = (cData || []).map(c => ({
     ...c,
@@ -1208,7 +1196,6 @@ async function loadAll() {
   solicitudes = solData || [];
   notificaciones = notifData || [];
   respuestas = respData || [];
-  bloqueados = bloqData || [];
   const rotCfg = (cfgData || []).find(c => c.key === 'rotacion');
   if (rotCfg) rotacionConfig = rotCfg.value;
   const etqCfg = (cfgData || []).find(c => c.key === 'etiquetas');
@@ -2406,7 +2393,6 @@ function solFilter() { solPage = 1; renderSolicitudes(); }
 function solPageGo(n) { solPage = n; renderSolicitudes(); const el = document.getElementById('sec-solicitudes'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
 function renderSolicitudes() {
-  refreshBloqCount();
   const q = document.getElementById('solSrch').value.toLowerCase().trim();
   const af = document.getElementById('solAreaF').value;
   const sf = document.getElementById('solStF').value;
@@ -2533,20 +2519,10 @@ async function solAction(estado) {
 async function singleSolSt(id, estado) {
   const s = solicitudes.find(x => x.id === id); if (!s) return;
   if (estado === 'rechazado') {
-    // Rechazar = BLOQUEAR el CUIL (global) y borrar sus solicitudes; queda en la lista de Bloqueados.
-    const cn = String(s.cuit || '').replace(/\D/g, '');
-    if (!cn) {
-      // Sin CUIL no se puede bloquear: se elimina solo esta solicitud.
-      solicitudes = solicitudes.filter(x => x.id !== id);
-      solSelIds.delete(id);
-      try { await sbDelete('solicitudes', id); } catch (_) {}
-      renderSolicitudes(); refreshSolBadge();
-      return;
-    }
-    try { await sb.rpc('bloquear_cuit', { p_cuit: cn, p_nombre: s.nombre || null, p_email: s.email || null, p_area: s.area || null, p_motivo: null }); } catch (_) {}
-    solicitudes = solicitudes.filter(x => String(x.cuit || '').replace(/\D/g, '') !== cn);
+    // Rechazar = eliminar la solicitud, así se libera el CUIL+área y la persona puede registrarse de nuevo.
+    solicitudes = solicitudes.filter(x => x.id !== id);
     solSelIds.delete(id);
-    if (!bloqueados.some(b => String(b.cuit || '').replace(/\D/g, '') === cn)) bloqueados.unshift({ cuit: cn, nombre: s.nombre, email: s.email, area: s.area, created_at: new Date().toISOString() });
+    try { await sbDelete('solicitudes', id); } catch (_) {}
     renderSolicitudes(); refreshSolBadge();
     return;
   }
@@ -2594,7 +2570,7 @@ async function singleSolSt(id, estado) {
 async function bulkSolSt(estado) {
   if (!solSelIds.size) return;
   if (estado === 'aprobado' && !confirm(`¿Aprobar ${solSelIds.size} solicitudes y pasarlas a la nómina?`)) return;
-  if (estado === 'rechazado' && !confirm(`¿Rechazar y BLOQUEAR ${solSelIds.size} solicitud(es)? Esos CUIL quedan bloqueados y NO van a poder registrarse de nuevo (podés desbloquearlos después).`)) return;
+  if (estado === 'rechazado' && !confirm(`¿Rechazar y ELIMINAR ${solSelIds.size} solicitudes? Las personas van a poder registrarse de nuevo.`)) return;
   for (const id of [...solSelIds]) await singleSolSt(id, estado);
   solSelIds.clear(); updateSolBulkBar(); toast(`${solSelIds.size || 'Solicitudes'} actualizadas`);
 }
@@ -2764,34 +2740,6 @@ async function toggleDispAbierta(val) {
   try { await sbUpdate('convocatorias', currentConvId, { disp_abierta: val }); toast(val ? 'Ronda de disponibilidad abierta' : 'Ronda cerrada'); } catch (_) {}
 }
 function copiarDispLink(link) { if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => toast('Link copiado')).catch(() => toast('Copialo manualmente')); else toast('Copialo manualmente'); }
-function refreshBloqCount() { const el = document.getElementById('bloqCount'); if (el) el.textContent = bloqueados.length; }
-function openBloqueados() { renderBloqueados(); showM('mBloqueados'); }
-function renderBloqueados() {
-  const body = document.getElementById('bloqBody'); if (!body) return;
-  if (!bloqueados.length) { body.innerHTML = '<div class="empty">No hay CUIL bloqueados.</div>'; return; }
-  const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos' };
-  const rows = [...bloqueados].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).map(b => {
-    const cn = String(b.cuit || '').replace(/\D/g, '');
-    const fecha = b.created_at ? new Date(b.created_at).toLocaleDateString('es-AR') : '';
-    return `<tr style="border-bottom:1px solid #f3f4f6">
-      <td style="padding:8px;font-weight:500">${e(b.nombre || '—')}<div style="font-size:11px;color:#9ca3af">${e(b.cuit || '')}</div></td>
-      <td style="padding:8px;font-size:12px;color:#6b7280">${e(b.email || '')}</td>
-      <td style="padding:8px;font-size:12px;color:#6b7280">${e(areaLabel[b.area] || b.area || '')}</td>
-      <td style="padding:8px;font-size:12px;color:#9ca3af;white-space:nowrap">${e(fecha)}</td>
-      <td style="padding:8px;text-align:right"><button class="btn btn-sec btn-xs" onclick="desbloquear('${cn}')">Desbloquear</button></td>
-    </tr>`;
-  }).join('');
-  body.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
-    <thead><tr>${['Persona', 'Email', 'Área', 'Bloqueado', ''].map(h => `<th style="padding:8px;text-align:left;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb">${h}</th>`).join('')}</tr></thead>
-    <tbody>${rows}</tbody></table></div>`;
-}
-async function desbloquear(cuit) {
-  const cn = String(cuit || '').replace(/\D/g, ''); if (!cn) return;
-  if (!confirm('¿Desbloquear este CUIL? Va a poder registrarse de nuevo.')) return;
-  try { await sb.rpc('desbloquear_cuit', { p_cuit: cn }); } catch (_) {}
-  bloqueados = bloqueados.filter(b => String(b.cuit || '').replace(/\D/g, '') !== cn);
-  renderBloqueados(); refreshBloqCount(); toast('CUIL desbloqueado');
-}
 function exportarDisponibilidad() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   if (!dispRows.length) { toast('Todavía no hay respuestas para exportar'); return; }
