@@ -431,6 +431,12 @@ async function submitForm() {
   // Verificar duplicados por CUIL o por NOMBRE (una persona no puede estar en ambos sectores)
   const cuit = document.getElementById('fCuit').value.trim();
   try {
+    const { data: bloqueado } = await sb.rpc('esta_bloqueado', { p_cuit: cuit });
+    if (bloqueado === true) {
+      showErr('No podés registrarte con este CUIL/CUIT. Si creés que es un error, escribinos a la coordinación.');
+      btn.disabled = false; btn.textContent = 'Enviar solicitud →';
+      return;
+    }
     const { data: dupCheck } = await sb.rpc('check_solicitud_existe', { p_cuit: cuit, p_nombre: nombre });
     if (dupCheck?.existe) {
       const areaLabel = dupCheck.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos';
