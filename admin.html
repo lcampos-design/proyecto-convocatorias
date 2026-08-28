@@ -1148,15 +1148,26 @@ function setLoad(on, msg = '', pct = 0) {
 async function loadAll() {
   setLoad(true, 'Cargando nómina...', 15);
   people = [];
-  let from = 0;
-  while (true) {
-    const { data, error } = await sb.from('personas').select('*').range(from, from + 999).order('created_at');
-    if (error || !data?.length) break;
-    people = people.concat(data);
-    if (data.length < 1000) break;
-    from += 1000;
-    setLoad(true, `Cargando nómina... (${people.length})`, Math.min(60, 15 + people.length / 100));
+  // La Nómina se trae SIN el archivo del CV (cv.archivo.datos pesa cientos de MB con muchas personas
+  // y hacía que la consulta cortara y quedara en 0). El base64 se baja por persona bajo demanda.
+  {
+    const { data, error } = await sb.rpc('personas_lista');
+    if (!error && Array.isArray(data)) {
+      people = data;
+    } else {
+      // Fallback (si la función personas_lista aún no está creada): columnas livianas, sin cv.
+      const cols = 'id,nombre,area,estado,email,tel,notas,cuit,semaforo,out_flag,etiquetas,created_at';
+      let from = 0;
+      while (true) {
+        const r = await sb.from('personas').select(cols).range(from, from + 999).order('created_at');
+        if (r.error || !r.data?.length) break;
+        people = people.concat(r.data);
+        if (r.data.length < 1000) break;
+        from += 1000;
+      }
+    }
   }
+  setLoad(true, `Cargando nómina... (${people.length})`, 60);
   setLoad(true, 'Cargando convocatorias...', 70);
   const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }] = await Promise.all([
     sb.from('convocatorias').select('*').order('created_at'),
@@ -1604,8 +1615,18 @@ function viewCv(id) {
   const dlBtn = document.getElementById('cvDownloadBtn'); dlBtn.style.display = cv.archivo ? 'inline-flex' : 'none'; dlBtn.dataset.id = id;
   showM('mCvView');
 }
-function downloadCvFile() { const id = document.getElementById('cvDownloadBtn').dataset.id; const p = people.find(x => x.id === id); if (!p?.cv?.archivo) return; const a = document.createElement('a'); a.href = p.cv.archivo.datos; a.download = p.cv.archivo.nombre; a.click(); }
-function downloadCvFileById(id) { const p = people.find(x => x.id === id); if (!p?.cv?.archivo) return; const a = document.createElement('a'); a.href = p.cv.archivo.datos; a.download = p.cv.archivo.nombre; a.click(); }
+async function bajarCvArchivo(id) {
+  const p = people.find(x => x.id === id); if (!p?.cv?.archivo) return;
+  let datos = p.cv.archivo.datos;
+  if (!datos) {
+    // El base64 no viene en la lista (pesa); se trae de esta persona bajo demanda.
+    try { const { data } = await sb.from('personas').select('cv').eq('id', id).single(); datos = data?.cv?.archivo?.datos; if (datos) p.cv.archivo.datos = datos; } catch (_) {}
+  }
+  if (!datos) { toast('No se pudo cargar el archivo del CV'); return; }
+  const a = document.createElement('a'); a.href = datos; a.download = p.cv.archivo.nombre || 'cv'; a.click();
+}
+async function downloadCvFile() { await bajarCvArchivo(document.getElementById('cvDownloadBtn').dataset.id); }
+async function downloadCvFileById(id) { await bajarCvArchivo(id); }
 
 // ── CONVOCATORIAS ──
 function renderCvList() {
