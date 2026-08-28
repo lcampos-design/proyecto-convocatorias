@@ -2700,6 +2700,14 @@ function exportReporte() {
 // ── RONDA DE DISPONIBILIDAD (admin) ──
 let dispRows = [];
 function fmtFechaCorta(f) { try { return new Date(f + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }); } catch (e) { return f; } }
+function waLink(tel) {
+  let d = String(tel || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.startsWith('54')) d = d.slice(2);
+  if (d.startsWith('0')) d = d.slice(1);
+  if (d.startsWith('9')) d = d.slice(1);
+  return d ? 'https://wa.me/549' + d : '#';
+}
 
 async function openDispAdmin() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
@@ -2740,11 +2748,12 @@ function renderDispBody() {
     const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
     const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
     const email = per?.email || sol?.email || '';
+    const tel = per?.tel || sol?.tel || '';
     const cells = slots.map(s => `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${rf.includes(s.id) ? '<span style="color:#16a34a;font-weight:700">✓</span>' : '<span style="color:#d1d5db">·</span>'}</td>`).join('');
     return `<tr>
       <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${e(r.nombre || '—')}<div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
       ${cells}
-      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')">✉ Confirmar</button>` : '<span style="font-size:10px;color:#9ca3af">sin email</span>'}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')">✉ Confirmar</button>` : (tel ? `<a href="${waLink(tel)}" target="_blank" rel="noopener" class="btn btn-xs" style="background:#dcfce7;color:#166534;text-decoration:none" title="${e(tel)}">🟢 WhatsApp</a>` : '<span style="font-size:10px;color:#9ca3af">sin contacto</span>')}</td>
     </tr>`;
   }).join('');
   const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
