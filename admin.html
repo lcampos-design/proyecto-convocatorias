@@ -697,6 +697,7 @@ tr:hover td{background:#fafafa}
     <div style="margin-bottom:8px">
       <select class="filt" id="pickerAreaF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
       <select class="filt" id="pickerStF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px;margin-left:6px"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option></select>
+      <select class="filt" id="pickerTagF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px;margin-left:6px"><option value="">Todas las etiquetas</option></select>
     </div>
     <div class="picker-list" id="pickerList"></div>
     <div style="font-size:12px;color:#9ca3af;margin-top:8px" id="pickerSelCount">0 seleccionados</div>
@@ -1847,14 +1848,14 @@ async function applyGestBulk() { const st = document.getElementById('gBulkSt').v
 async function delGestBulk() { const ids = gSelIds(); if (!ids.length) return; if (!confirm(`¿Quitar ${ids.length} personas del puesto?`)) return; posts = posts.filter(x => !ids.includes(x.id)); renderGestList(); renderPuestos(); renderDetStats(); try { await sbDeleteIn('postulaciones', ids); toast(`${ids.length} quitados`); } catch (_) {} }
 
 // ── PICKER ──
-function openPickerModal() { pickerSel = new Set(); document.getElementById('pickerSrch').value = ''; document.getElementById('pickerAreaF').value = ''; document.getElementById('pickerStF').value = ''; renderPicker(); showM('mPicker'); }
+function openPickerModal() { pickerSel = new Set(); document.getElementById('pickerSrch').value = ''; document.getElementById('pickerAreaF').value = ''; document.getElementById('pickerStF').value = ''; const tf = document.getElementById('pickerTagF'); if (tf) { tf.innerHTML = '<option value="">Todas las etiquetas</option>' + etiquetasPaleta.map(t => `<option value="${e(t.nombre)}">${e(t.nombre)}</option>`).join(''); tf.value = ''; } renderPicker(); showM('mPicker'); }
 function renderPicker() {
-  const q = document.getElementById('pickerSrch').value.toLowerCase().trim(); const af = document.getElementById('pickerAreaF').value; const sf = document.getElementById('pickerStF').value;
+  const q = document.getElementById('pickerSrch').value.toLowerCase().trim(); const af = document.getElementById('pickerAreaF').value; const sf = document.getElementById('pickerStF').value; const tgf = document.getElementById('pickerTagF') ? document.getElementById('pickerTagF').value : '';
   const alreadyIn = new Set(posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId).map(x => x.personaId).filter(Boolean));
-  const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
+  const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (tgf && !(p.etiquetas || []).includes(tgf)) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
   const el = document.getElementById('pickerList');
   if (!avail.length) { el.innerHTML = '<div class="picker-empty">Sin resultados</div>'; document.getElementById('pickerSelCount').textContent = '0 seleccionados'; return; }
-  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</div></div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${p.estado}</span></div>`).join('');
+  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${p.estado}</span></div>`).join('');
   document.getElementById('pickerSelCount').textContent = pickerSel.size + ' seleccionados';
 }
 function togglePickerSel(id) { if (pickerSel.has(id)) pickerSel.delete(id); else pickerSel.add(id); renderPicker(); }
