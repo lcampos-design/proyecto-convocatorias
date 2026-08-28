@@ -463,7 +463,7 @@ tr:hover td{background:#fafafa}
     <div class="stat s-total"><div class="stat-num" id="solTotal">0</div><div class="stat-label">Total</div></div>
   </div>
   <div class="ctrlbar">
-    <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, email, puesto o localidad..." oninput="solFilter()">
+    <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, CUIL, email, puesto o localidad..." oninput="solFilter()">
     <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
     <select class="filt" id="solStF" onchange="solFilter()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
   </div>
@@ -2416,12 +2416,13 @@ function solPageGo(n) { solPage = n; renderSolicitudes(); const el = document.ge
 
 function renderSolicitudes() {
   const q = document.getElementById('solSrch').value.toLowerCase().trim();
+  const qd = q.replace(/\D/g, '');
   const af = document.getElementById('solAreaF').value;
   const sf = document.getElementById('solStF').value;
   const filtered = solicitudes.filter(s => {
     if (af && s.area !== af) return false;
     if (sf && s.estado !== sf) return false;
-    if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q)) return false;
+    if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q) && !(qd && String(s.cuit||'').replace(/\D/g,'').includes(qd))) return false;
     return true;
   });
 
