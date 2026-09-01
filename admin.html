@@ -415,6 +415,7 @@ tr:hover td{background:#fafafa}
         <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()">📋 Asistencia</button>
         <button class="btn btn-success btn-sm" onclick="exportPostuladosExcel()">↓ Planilla Excel</button>
         <button class="btn btn-sec btn-sm" onclick="openReporte()">📊 Reporte</button>
+        <button class="btn btn-sec btn-sm" onclick="openDispAdmin()">🗓 Disponibilidad</button>
         <button class="btn btn-sec btn-sm" onclick="editCurrentConv()">✎ Editar</button>
         <button class="btn btn-danger btn-sm" onclick="deleteCurrentConv()">Eliminar</button>
       </div>
@@ -462,9 +463,9 @@ tr:hover td{background:#fafafa}
     <div class="stat s-total"><div class="stat-num" id="solTotal">0</div><div class="stat-label">Total</div></div>
   </div>
   <div class="ctrlbar">
-    <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, email o puesto..." oninput="renderSolicitudes()">
-    <select class="filt" id="solAreaF" onchange="renderSolicitudes()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
-    <select class="filt" id="solStF" onchange="renderSolicitudes()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
+    <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, CUIL, email, puesto o localidad..." oninput="solFilter()">
+    <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
+    <select class="filt" id="solStF" onchange="solFilter()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
   </div>
   <div class="bulk-bar" id="solBulk">
     <span id="solBulkCnt">0 seleccionadas</span><span style="color:#c4b5fd">|</span>
@@ -602,11 +603,16 @@ tr:hover td{background:#fafafa}
     <div class="fg"><label>Nombre del recital / evento *</label><input type="text" class="fi" id="cNombre" placeholder="Ej: Recital Soda Stereo — Oct 2024"></div>
     <div class="frow">
       <div class="fg" style="flex:2">
-        <label>Fechas</label>
+        <label>Fechas y turnos <span style="font-weight:400;color:#9ca3af;font-size:11px">(podés repetir una fecha para varios turnos)</span></label>
         <div id="fechasList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="date" class="fi" id="cFechaInput" style="flex:1">
           <button type="button" class="btn btn-sec btn-sm" onclick="addFecha()" style="white-space:nowrap;flex-shrink:0">+ Agregar</button>
+        </div>
+        <div style="margin-top:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:11px;color:#6b7280;margin-bottom:6px">Turnos (uno por línea) — se generan en <strong>todas</strong> las fechas de arriba. Ej: <em>TM: 07.00 a 16.00</em></div>
+          <textarea id="cTurnosMultiples" placeholder="TM: 07.00 a 16.00&#10;TC: 07.00 a 13.00&#10;TN: 22.30 a 07.30" style="width:100%;height:72px;font-size:12px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;font-family:inherit"></textarea>
+          <button type="button" class="btn btn-sec btn-sm" onclick="aplicarTurnosATodas()" style="margin-top:6px">↧ Aplicar estos turnos a todas las fechas</button>
         </div>
       </div>
       <div class="fg"><label>Área</label><select class="fi" id="cArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="ambas">Ambas áreas</option></select></div>
@@ -691,6 +697,7 @@ tr:hover td{background:#fafafa}
     <div style="margin-bottom:8px">
       <select class="filt" id="pickerAreaF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
       <select class="filt" id="pickerStF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px;margin-left:6px"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option></select>
+      <select class="filt" id="pickerTagF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px;margin-left:6px"><option value="">Todas las etiquetas</option></select>
     </div>
     <div class="picker-list" id="pickerList"></div>
     <div style="font-size:12px;color:#9ca3af;margin-top:8px" id="pickerSelCount">0 seleccionados</div>
@@ -770,6 +777,15 @@ tr:hover td{background:#fafafa}
     <div id="mHistStats" style="display:flex;gap:20px;background:#f9fafb;border-radius:8px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap"></div>
     <div id="mHistBody" style="max-height:420px;overflow-y:auto"></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mHistorial')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Modal: Disponibilidad (admin) -->
+<div class="modal-bg" id="mDispAdmin" style="display:none" onclick="bgClose('mDispAdmin',event)">
+  <div class="modal" style="max-width:840px">
+    <div class="modal-title"><span id="mDispTitle">Disponibilidad</span><button class="mclose" onclick="closeM('mDispAdmin')">✕</button></div>
+    <div id="dispBody"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mDispAdmin')">Cerrar</button></div>
   </div>
 </div>
 
@@ -1036,6 +1052,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 const PS = 50;
 let people = [], convs = [], posts = [], feedbacks = [], userProfiles = [], supConvLinks = [], solicitudes = [], notificaciones = [], respuestas = [];
 let nomPage = 1, nomAreaTab = 'all', nomFiltered = [];
+let solPage = 1;
 let editPersonId = null, editConvId = null, editPuestoId = null;
 let currentConvId = null, currentPuestoId = null;
 let pickerSel = new Set(), candSelIds = new Set();
@@ -1132,15 +1149,26 @@ function setLoad(on, msg = '', pct = 0) {
 async function loadAll() {
   setLoad(true, 'Cargando nómina...', 15);
   people = [];
-  let from = 0;
-  while (true) {
-    const { data, error } = await sb.from('personas').select('*').range(from, from + 999).order('created_at');
-    if (error || !data?.length) break;
-    people = people.concat(data);
-    if (data.length < 1000) break;
-    from += 1000;
-    setLoad(true, `Cargando nómina... (${people.length})`, Math.min(60, 15 + people.length / 100));
+  // La Nómina se trae SIN el archivo del CV (cv.archivo.datos pesa cientos de MB con muchas personas
+  // y hacía que la consulta cortara y quedara en 0). El base64 se baja por persona bajo demanda.
+  {
+    const { data, error } = await sb.rpc('personas_lista');
+    if (!error && Array.isArray(data)) {
+      people = data;
+    } else {
+      // Fallback (si la función personas_lista aún no está creada): columnas livianas, sin cv.
+      const cols = 'id,nombre,area,estado,email,tel,notas,cuit,semaforo,out_flag,etiquetas,created_at';
+      let from = 0;
+      while (true) {
+        const r = await sb.from('personas').select(cols).range(from, from + 999).order('created_at');
+        if (r.error || !r.data?.length) break;
+        people = people.concat(r.data);
+        if (r.data.length < 1000) break;
+        from += 1000;
+      }
+    }
   }
+  setLoad(true, `Cargando nómina... (${people.length})`, 60);
   setLoad(true, 'Cargando convocatorias...', 70);
   const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }] = await Promise.all([
     sb.from('convocatorias').select('*').order('created_at'),
@@ -1151,7 +1179,7 @@ async function loadAll() {
     sb.from('supervisor_convocatorias').select('*'),
     (async () => {
       // Paginado (Supabase trae máx. 1000 por request) y sin archivo_cv (pesa cientos de MB).
-      const cols = 'id,nombre,area,email,tel,cuit,puesto_interes,experiencia,formacion,habilidades,disponibilidad,cbu,numero_cuenta,banco,antecedentes,beneficio_social,estado,conv_id,puesto_id,puesto_nombre,created_at';
+      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,experiencia,formacion,habilidades,disponibilidad,cbu,numero_cuenta,banco,antecedentes,beneficio_social,estado,conv_id,puesto_id,puesto_nombre,created_at';
       let all = [], f = 0;
       while (true) {
         const { data, error } = await sb.from('solicitudes').select(cols).order('created_at', { ascending: false }).range(f, f + 999);
@@ -1588,8 +1616,18 @@ function viewCv(id) {
   const dlBtn = document.getElementById('cvDownloadBtn'); dlBtn.style.display = cv.archivo ? 'inline-flex' : 'none'; dlBtn.dataset.id = id;
   showM('mCvView');
 }
-function downloadCvFile() { const id = document.getElementById('cvDownloadBtn').dataset.id; const p = people.find(x => x.id === id); if (!p?.cv?.archivo) return; const a = document.createElement('a'); a.href = p.cv.archivo.datos; a.download = p.cv.archivo.nombre; a.click(); }
-function downloadCvFileById(id) { const p = people.find(x => x.id === id); if (!p?.cv?.archivo) return; const a = document.createElement('a'); a.href = p.cv.archivo.datos; a.download = p.cv.archivo.nombre; a.click(); }
+async function bajarCvArchivo(id) {
+  const p = people.find(x => x.id === id); if (!p?.cv?.archivo) return;
+  let datos = p.cv.archivo.datos;
+  if (!datos) {
+    // El base64 no viene en la lista (pesa); se trae de esta persona bajo demanda.
+    try { const { data } = await sb.from('personas').select('cv').eq('id', id).single(); datos = data?.cv?.archivo?.datos; if (datos) p.cv.archivo.datos = datos; } catch (_) {}
+  }
+  if (!datos) { toast('No se pudo cargar el archivo del CV'); return; }
+  const a = document.createElement('a'); a.href = datos; a.download = p.cv.archivo.nombre || 'cv'; a.click();
+}
+async function downloadCvFile() { await bajarCvArchivo(document.getElementById('cvDownloadBtn').dataset.id); }
+async function downloadCvFileById(id) { await bajarCvArchivo(id); }
 
 // ── CONVOCATORIAS ──
 function renderCvList() {
@@ -1640,34 +1678,53 @@ function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if
 function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${e(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}" style="margin-top:4px;display:inline-block">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')">✎</button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
 
 // ── FECHAS MÚLTIPLES ──
-let convFechas = [];
+let convTurnos = [];  // [{id, fecha, horario}] — la misma fecha puede repetirse (turnos)
+function migrarTurnos(c) {
+  if (Array.isArray(c.turnos) && c.turnos.length) return c.turnos.map(t => ({ id: t.id || uid(), fecha: t.fecha, horario: t.horario || '' }));
+  const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean);
+  const hpf = (c.horarios_por_fecha && typeof c.horarios_por_fecha === 'object') ? c.horarios_por_fecha : {};
+  return fechas.map(f => ({ id: uid(), fecha: f, horario: hpf[f] || '' }));
+}
 function renderFechasList() {
   const el = document.getElementById('fechasList'); if (!el) return;
-  el.innerHTML = convFechas.map((f, i) => `
+  const sorted = [...convTurnos].sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  el.innerHTML = sorted.length ? sorted.map(t => `
     <div style="display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px">
-      <span style="font-size:13px;color:#374151;flex:1">📅 ${fmtFecha(f)}</span>
-      <button type="button" onclick="removeFecha(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0">✕</button>
-    </div>`).join('');
+      <span style="font-size:13px;color:#374151;min-width:140px">📅 ${fmtFecha(t.fecha)}</span>
+      <input type="text" value="${(t.horario || '').replace(/"/g, '&quot;')}" oninput="setTurnoHorario('${t.id}', this.value)" placeholder="Horario / turno (opcional)" style="flex:1;font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
+      <button type="button" onclick="removeTurno('${t.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0">✕</button>
+    </div>`).join('') : '<div style="font-size:12px;color:#9ca3af">Agregá una o más fechas. Podés repetir la misma fecha para cargar varios turnos (cada uno con su horario).</div>';
 }
+function setTurnoHorario(id, val) { const t = convTurnos.find(x => x.id === id); if (t) t.horario = val; }
 function addFecha() {
   const val = document.getElementById('cFechaInput').value;
   if (!val) return;
-  if (convFechas.includes(val)) { toast('Esa fecha ya está agregada'); return; }
-  convFechas.push(val);
-  convFechas.sort();
+  convTurnos.push({ id: uid(), fecha: val, horario: '' });
   renderFechasList();
   document.getElementById('cFechaInput').value = '';
 }
-function removeFecha(i) { convFechas.splice(i, 1); renderFechasList(); }
+function removeTurno(id) { convTurnos = convTurnos.filter(x => x.id !== id); renderFechasList(); }
+function aplicarTurnosATodas() {
+  const lines = document.getElementById('cTurnosMultiples').value.split('\n').map(l => l.trim()).filter(Boolean);
+  const fechasUnicas = [...new Set(convTurnos.map(t => t.fecha).filter(Boolean))].sort();
+  if (!fechasUnicas.length) { toast('Primero agregá las fechas'); return; }
+  if (!lines.length) { toast('Escribí al menos un turno (uno por línea)'); return; }
+  convTurnos = [];
+  fechasUnicas.forEach(f => lines.forEach(h => convTurnos.push({ id: uid(), fecha: f, horario: h })));
+  renderFechasList();
+  toast(convTurnos.length + ' turnos generados (' + fechasUnicas.length + ' fechas × ' + lines.length + ')');
+}
 
-function openAddConv() { editConvId = null; convFechas = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
-function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convFechas = c.fecha ? c.fecha.split(',').map(f => f.trim()).filter(Boolean) : []; document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; renderFechasList(); showM('mConv'); }
+function openAddConv() { editConvId = null; convTurnos = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
+function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
 function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
 
 async function saveConv() {
   const nom = document.getElementById('cNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
-  const d = { id: editConvId || uid(), nombre: nom, fecha: convFechas.length ? convFechas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null };
-  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; } }
+  const turnos = convTurnos.filter(t => t.fecha).map(t => ({ id: t.id, fecha: t.fecha, horario: (t.horario || '').trim() }));
+  const fechasUnicas = [...new Set(turnos.map(t => t.fecha))].sort();
+  const d = { id: editConvId || uid(), nombre: nom, fecha: fechasUnicas.length ? fechasUnicas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, turnos, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null };
+  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; c.horario = d.horario; c.turnos = d.turnos; } }
   else convs.push({ ...d, puestos: [] });
   if (currentConvId) { const c = convs.find(x => x.id === currentConvId); if (c) { document.getElementById('detTitle').textContent = c.nombre; renderDetStats(); } }
   renderCvList(); closeM('mConv');
@@ -1791,14 +1848,14 @@ async function applyGestBulk() { const st = document.getElementById('gBulkSt').v
 async function delGestBulk() { const ids = gSelIds(); if (!ids.length) return; if (!confirm(`¿Quitar ${ids.length} personas del puesto?`)) return; posts = posts.filter(x => !ids.includes(x.id)); renderGestList(); renderPuestos(); renderDetStats(); try { await sbDeleteIn('postulaciones', ids); toast(`${ids.length} quitados`); } catch (_) {} }
 
 // ── PICKER ──
-function openPickerModal() { pickerSel = new Set(); document.getElementById('pickerSrch').value = ''; document.getElementById('pickerAreaF').value = ''; document.getElementById('pickerStF').value = ''; renderPicker(); showM('mPicker'); }
+function openPickerModal() { pickerSel = new Set(); document.getElementById('pickerSrch').value = ''; document.getElementById('pickerAreaF').value = ''; document.getElementById('pickerStF').value = ''; const tf = document.getElementById('pickerTagF'); if (tf) { tf.innerHTML = '<option value="">Todas las etiquetas</option>' + etiquetasPaleta.map(t => `<option value="${e(t.nombre)}">${e(t.nombre)}</option>`).join(''); tf.value = ''; } renderPicker(); showM('mPicker'); }
 function renderPicker() {
-  const q = document.getElementById('pickerSrch').value.toLowerCase().trim(); const af = document.getElementById('pickerAreaF').value; const sf = document.getElementById('pickerStF').value;
+  const q = document.getElementById('pickerSrch').value.toLowerCase().trim(); const af = document.getElementById('pickerAreaF').value; const sf = document.getElementById('pickerStF').value; const tgf = document.getElementById('pickerTagF') ? document.getElementById('pickerTagF').value : '';
   const alreadyIn = new Set(posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId).map(x => x.personaId).filter(Boolean));
-  const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
+  const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (tgf && !(p.etiquetas || []).includes(tgf)) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
   const el = document.getElementById('pickerList');
   if (!avail.length) { el.innerHTML = '<div class="picker-empty">Sin resultados</div>'; document.getElementById('pickerSelCount').textContent = '0 seleccionados'; return; }
-  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</div></div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${p.estado}</span></div>`).join('');
+  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${p.estado}</span></div>`).join('');
   document.getElementById('pickerSelCount').textContent = pickerSel.size + ' seleccionados';
 }
 function togglePickerSel(id) { if (pickerSel.has(id)) pickerSel.delete(id); else pickerSel.add(id); renderPicker(); }
@@ -2354,14 +2411,18 @@ function refreshSolBadge() {
   if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; }
 }
 
+function solFilter() { solPage = 1; renderSolicitudes(); }
+function solPageGo(n) { solPage = n; renderSolicitudes(); const el = document.getElementById('sec-solicitudes'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
 function renderSolicitudes() {
   const q = document.getElementById('solSrch').value.toLowerCase().trim();
+  const qd = q.replace(/\D/g, '');
   const af = document.getElementById('solAreaF').value;
   const sf = document.getElementById('solStF').value;
   const filtered = solicitudes.filter(s => {
     if (af && s.area !== af) return false;
     if (sf && s.estado !== sf) return false;
-    if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q)) return false;
+    if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q) && !(qd && String(s.cuit||'').replace(/\D/g,'').includes(qd))) return false;
     return true;
   });
 
@@ -2378,6 +2439,13 @@ function renderSolicitudes() {
   n('solTotal', solicitudes.length);
   const cont = document.getElementById('solContent');
   if (!filtered.length) { cont.innerHTML = `<div class="empty">${solicitudes.length === 0 ? 'Sin solicitudes todavía. Compartí el formulario candidato.html para que lleguen postulaciones.' : 'Sin resultados.'}</div>`; return; }
+  const PS_SOL = 80;
+  const totalPagSol = Math.max(1, Math.ceil(filtered.length / PS_SOL));
+  if (solPage > totalPagSol) solPage = totalPagSol; if (solPage < 1) solPage = 1;
+  const pageRows = filtered.slice((solPage - 1) * PS_SOL, solPage * PS_SOL);
+  const pagerSol = totalPagSol > 1
+    ? `<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:12px;font-size:13px;color:#6b7280"><button class="btn btn-sec btn-sm" ${solPage<=1?'disabled':''} onclick="solPageGo(${solPage-1})">← Anterior</button><span>Página ${solPage} de ${totalPagSol} · ${filtered.length} solicitudes</span><button class="btn btn-sec btn-sm" ${solPage>=totalPagSol?'disabled':''} onclick="solPageGo(${solPage+1})">Siguiente →</button></div>`
+    : `<div style="padding:8px 12px;font-size:12px;color:#9ca3af">${filtered.length} solicitud(es)</div>`;
   cont.innerHTML = `<table style="width:100%;border-collapse:collapse;background:#fff">
 <thead><tr>
   <th style="width:36px;padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb"><input type="checkbox" class="cb" id="solSelAll" onchange="solToggleAll()"></th>
@@ -2389,7 +2457,7 @@ function renderSolicitudes() {
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb">Estado</th>
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb;width:140px">Acciones</th>
 </tr></thead>
-<tbody>${filtered.map(s => {
+<tbody>${pageRows.map(s => {
   const stColors = { pendiente:'#fef3c7;color:#92400e', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
   const stLabels = { pendiente:'Pendiente', aprobado:'Aprobada', rechazado:'Rechazada' };
   const sel = solSelIds.has(s.id);
@@ -2406,7 +2474,7 @@ function renderSolicitudes() {
     ${s.email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModal('${s.id}')" title="Enviar confirmación">✉</button>` : ''}
     ${s.estado==='pendiente'?`<button class="btn btn-success btn-xs" onclick="singleSolSt('${s.id}','aprobado')">✓</button><button class="btn btn-danger btn-xs" onclick="singleSolSt('${s.id}','rechazado')">✕</button>`:''}
   </td></tr>`;
-}).join('')}</tbody></table>`;
+}).join('')}</tbody></table>` + pagerSol;
   updateSolBulkBar();
 }
 
@@ -2627,6 +2695,120 @@ function exportReporte() {
   });
   const csv = rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})); a.download = `reporte-${c.nombre.slice(0,30).replace(/\s/g,'-')}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+// ── RONDA DE DISPONIBILIDAD (admin) ──
+let dispRows = [];
+function fmtFechaCorta(f) { try { return new Date(f + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }); } catch (e) { return f; } }
+function waLink(tel) {
+  let d = String(tel || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.startsWith('54')) d = d.slice(2);
+  if (d.startsWith('0')) d = d.slice(1);
+  if (d.startsWith('9')) d = d.slice(1);
+  return d ? 'https://wa.me/549' + d : '#';
+}
+
+async function openDispAdmin() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  document.getElementById('mDispTitle').textContent = `Disponibilidad — ${c.nombre}`;
+  document.getElementById('dispBody').innerHTML = '<div class="empty">Cargando…</div>';
+  showM('mDispAdmin');
+  try {
+    const { data } = await sb.from('disponibilidad').select('*').eq('conv_id', currentConvId).order('updated_at', { ascending: false });
+    dispRows = data || [];
+  } catch (_) { dispRows = []; }
+  renderDispBody();
+}
+
+function slotsDe(c) {
+  if (Array.isArray(c.turnos) && c.turnos.length) return c.turnos.map(t => ({ id: t.id, fecha: t.fecha, horario: t.horario || c.horario || '' })).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  const fs = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+  const hpf = (c.horarios_por_fecha && typeof c.horarios_por_fecha === 'object') ? c.horarios_por_fecha : {};
+  return fs.map(f => ({ id: f, fecha: f, horario: hpf[f] || c.horario || '' }));
+}
+function renderDispBody() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const link = location.origin + '/disponibilidad?conv=' + currentConvId;
+  const slots = slotsDe(c);
+  const abierta = !!c.disp_abierta;
+  let html = `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:14px">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="checkbox" ${abierta ? 'checked' : ''} onchange="toggleDispAbierta(this.checked)" style="width:18px;height:18px;accent-color:#534AB7"> Ronda abierta</label>
+    <span style="flex:1;min-width:200px;font-size:12px;color:#6b7280;word-break:break-all">${e(link)}</span>
+    <button class="btn btn-sec btn-sm" onclick="copiarDispLink('${e(link)}')">📋 Copiar link</button>
+    ${dispRows.length ? `<button class="btn btn-sec btn-sm" onclick="exportarDisponibilidad()">↓ Exportar CSV</button>` : ''}
+  </div>`;
+  if (!abierta) html += `<div style="font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;margin-bottom:12px">La ronda está <strong>cerrada</strong>: el link no acepta respuestas. Activá "Ronda abierta" para recibir disponibilidad.</div>`;
+  if (!dispRows.length) { html += '<div class="empty">Todavía nadie respondió. Compartí el link con tu grupo.</div>'; document.getElementById('dispBody').innerHTML = html; return; }
+  const th = s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center">${s}</th>`;
+  const thDates = slots.map(s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center;vertical-align:bottom" title="${e(s.horario || '')}">${fmtFechaCorta(s.fecha)}${s.horario ? `<div style="font-size:9px;font-weight:400;color:#8b8fa3;text-transform:none;max-width:100px;margin:2px auto 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(s.horario)}</div>` : ''}</th>`).join('');
+  const rows = dispRows.map(r => {
+    const rf = Array.isArray(r.fechas) ? r.fechas : [];
+    const cn = String(r.cuit || '').replace(/\D/g, '');
+    const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
+    const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+    const email = per?.email || sol?.email || '';
+    const tel = per?.tel || sol?.tel || '';
+    const cells = slots.map(s => `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${rf.includes(s.id) ? '<span style="color:#16a34a;font-weight:700">✓</span>' : '<span style="color:#d1d5db">·</span>'}</td>`).join('');
+    return `<tr>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${e(r.nombre || '—')}<div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
+      ${cells}
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')">✉ Confirmar</button>` : (tel ? `<a href="${waLink(tel)}" target="_blank" rel="noopener" class="btn btn-xs" style="background:#dcfce7;color:#166534;text-decoration:none" title="${e(tel)}">🟢 WhatsApp</a>` : '<span style="font-size:10px;color:#9ca3af">sin contacto</span>')}</td>
+    </tr>`;
+  }).join('');
+  const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
+  const foot = counts.map(n => `<td style="text-align:center;padding:6px 8px;font-weight:700;color:#534AB7">${n}</td>`).join('');
+  html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr>${th('Persona (' + dispRows.length + ')')}${thDates}<th style="border-bottom:1px solid #e5e7eb"></th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td style="padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">Disponibles</td>${foot}<td></td></tr></tfoot>
+  </table></div>`;
+  document.getElementById('dispBody').innerHTML = html;
+}
+
+async function toggleDispAbierta(val) {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  c.disp_abierta = val; renderDispBody();
+  try { await sbUpdate('convocatorias', currentConvId, { disp_abierta: val }); toast(val ? 'Ronda de disponibilidad abierta' : 'Ronda cerrada'); } catch (_) {}
+}
+function copiarDispLink(link) { if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => toast('Link copiado')).catch(() => toast('Copialo manualmente')); else toast('Copialo manualmente'); }
+function exportarDisponibilidad() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  if (!dispRows.length) { toast('Todavía no hay respuestas para exportar'); return; }
+  const slots = slotsDe(c);
+  const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const colLabel = s => (fmtFechaCorta(s.fecha) + (s.horario ? ' ' + s.horario : '')).trim();
+  const hdrs = ['Persona', 'CUIT', 'Email', ...slots.map(colLabel), 'Turnos disponibles'];
+  const rows = dispRows.map(r => {
+    const rf = Array.isArray(r.fechas) ? r.fechas : [];
+    const cn = String(r.cuit || '').replace(/\D/g, '');
+    const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
+    const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+    const email = per?.email || sol?.email || '';
+    const marks = slots.map(s => rf.includes(s.id) ? 'SÍ' : '');
+    const total = slots.filter(s => rf.includes(s.id)).length;
+    return [r.nombre || '', r.cuit || '', email, ...marks, total].map(esc).join(',');
+  });
+  const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
+  const footer = ['Disponibles', '', '', ...counts, ''].map(esc).join(',');
+  const csv = [hdrs.map(esc).join(','), ...rows, footer].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `disponibilidad-${String(c.nombre || '').slice(0, 30).replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+}
+function confirmarDisponibilidad(cuit, nombre) {
+  const cn = String(cuit || '').replace(/\D/g, '');
+  const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
+  const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+  const email = per?.email || sol?.email;
+  if (!email) { toast('Esta persona no tiene email cargado'); return; }
+  closeM('mDispAdmin');
+  mailSolId = '__post__disp';
+  window._tempMailData = { email, nombre: nombre || per?.nombre || sol?.nombre || '', conv_id: currentConvId, puesto_nombre: '' };
+  document.getElementById('mMailStep1').style.display = 'block';
+  document.getElementById('mMailStep2').style.display = 'none';
+  showM('mMailConf');
 }
 
 // ── ROTACIÓN ──
