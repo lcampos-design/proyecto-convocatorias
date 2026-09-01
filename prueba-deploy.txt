@@ -1,0 +1,7 @@
+Prueba de publicación
+Fecha: 2026-09-01
+
+Este archivo se creó solo para verificar que los cambios que subís
+desde VS Code llegan al sitio publicado en Netlify.
+
+Se puede borrar sin ningún problema una vez confirmado.
