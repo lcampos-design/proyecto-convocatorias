@@ -2076,22 +2076,36 @@ async function checkCupoLleno(convId, puestoId) {
 }
 
 // ── EMAIL CONFIRMACIONES ──
+// Busca la solicitud (registro) de una postulación: por CUIL, o por nombre+convocatoria.
+function solDePost(post) {
+  if (!post) return null;
+  const cn = String(post.cuit || '').replace(/\D/g, '');
+  let sol = null;
+  if (cn) sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+  if (!sol) sol = solicitudes.find(s => (s.nombre || '').toLowerCase().trim() === (post.nombre || '').toLowerCase().trim() && s.conv_id === post.convId);
+  return sol || null;
+}
 function getPersonaEmail(post) {
-  if (!post.personaId) return null;
-  const p = people.find(x => x.id === post.personaId);
-  return p?.email || null;
+  // 1) Si vino de la nómina, el email de la persona.
+  if (post && post.personaId) {
+    const p = people.find(x => x.id === post.personaId);
+    if (p?.email) return p.email;
+  }
+  // 2) Externa (o nómina sin email): el email vive en la solicitud (registro).
+  return solDePost(post)?.email || null;
 }
 
 function openMailModalFromPost(postId) {
   const post = posts.find(x => x.id === postId); if (!post) return;
-  const persona = people.find(x => x.id === post.personaId);
-  if (!persona?.email) { toast('Esta persona no tiene email cargado'); return; }
-  const sol = solicitudes.find(s => s.nombre?.toLowerCase() === post.nombre?.toLowerCase() && s.conv_id === post.convId);
+  const persona = post.personaId ? people.find(x => x.id === post.personaId) : null;
+  const sol = solDePost(post);
+  const email = persona?.email || sol?.email;
+  if (!email) { toast('No encontramos email para esta persona'); return; }
   if (sol) {
     openMailModal(sol.id);
   } else {
     mailSolId = '__post__' + postId;
-    window._tempMailData = { email: persona.email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '' };
+    window._tempMailData = { email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '' };
     document.getElementById('mMailStep1').style.display = 'block';
     document.getElementById('mMailStep2').style.display = 'none';
     showM('mMailConf');
@@ -2332,8 +2346,7 @@ function openBulkMail() {
   bulkMailRecipients = []; bmSinEmail = 0;
   ids.forEach(id => {
     const post = posts.find(x => x.id === id); if (!post) return;
-    const persona = people.find(p => p.id === post.personaId);
-    const email = persona?.email || null;
+    const email = getPersonaEmail(post);
     if (email) bulkMailRecipients.push({ email, nombre: post.nombre });
     else bmSinEmail++;
   });
