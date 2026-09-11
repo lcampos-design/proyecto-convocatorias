@@ -2669,7 +2669,7 @@ function exportPostuladosExcel() {
     if (!asignados.length) return;
     hay = true;
     // Fila de encabezado del sector (el nombre del puesto va en la 1ra columna)
-    aoa.push([String(p.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', '', 'CUIL', 'DNI', 'TELEFONO', 'VIANDA', ...fechaCols, 'OBSERVACIONES', 'CANT. DE DÍAS', 'CAT', 'ART y SVO', 'CONTRATO']);
+    aoa.push([String(p.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', '', 'CUIL', 'DNI', 'TELEFONO', 'EMAIL', 'VIANDA', ...fechaCols, 'OBSERVACIONES', 'CANT. DE DÍAS', 'CAT', 'ART y SVO', 'CONTRATO']);
     asignados.forEach((post, i) => {
       const pers = people.find(x => x.id === post.personaId);
       const cuil = String(pers?.cuit || post.cuit || '').replace(/\D/g, '');
@@ -2678,8 +2678,9 @@ function exportPostuladosExcel() {
       const dni   = cuil.length === 11 ? cuil.slice(2, 10) : '';   // DNI (8)
       const nm  = splitNombre(post.nombre || pers?.nombre || sol?.nombre || '');
       const tel = pers?.tel || sol?.tel || '';
+      const email = pers?.email || sol?.email || '';
       const obs = post.notas || pers?.notas || '';
-      aoa.push([i + 1, nm.apellido, nm.nombre, cuil9, cuil, dni, tel, '', ...fechaCols.map(() => ''), obs, '', '', '', '']);
+      aoa.push([i + 1, nm.apellido, nm.nombre, cuil9, cuil, dni, tel, email, '', ...fechaCols.map(() => ''), obs, '', '', '', '']);
     });
     aoa.push([]); // separación entre sectores
   });
@@ -2687,7 +2688,7 @@ function exportPostuladosExcel() {
   if (!hay) { toast('No hay personas asignadas para exportar'); return; }
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 11 }, { wch: 13 }, { wch: 10 }, { wch: 13 }, { wch: 9 }]
+  ws['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 11 }, { wch: 13 }, { wch: 10 }, { wch: 13 }, { wch: 26 }, { wch: 9 }]
     .concat(fechaCols.map(() => ({ wch: 8 })))
     .concat([{ wch: 26 }, { wch: 12 }, { wch: 6 }, { wch: 9 }, { wch: 9 }]);
   const wb = XLSX.utils.book_new();
