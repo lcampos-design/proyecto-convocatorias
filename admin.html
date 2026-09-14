@@ -466,6 +466,7 @@ tr:hover td{background:#fafafa}
     <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, CUIL, email, puesto o localidad..." oninput="solFilter()">
     <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
     <select class="filt" id="solStF" onchange="solFilter()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
+    <select class="filt" id="solLocF" onchange="solFilter()"><option value="">Todas las localidades</option></select>
   </div>
   <div class="bulk-bar" id="solBulk">
     <span id="solBulkCnt">0 seleccionadas</span><span style="color:#c4b5fd">|</span>
@@ -2424,17 +2425,29 @@ function refreshSolBadge() {
   if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; }
 }
 
+function fillSolLocOptions() {
+  const sel = document.getElementById('solLocF'); if (!sel) return;
+  const cur = sel.value;
+  const map = new Map();
+  solicitudes.forEach(s => { const l = (s.localidad || '').trim(); if (l) { const k = l.toLowerCase(); if (!map.has(k)) map.set(k, l); } });
+  const locs = [...map.values()].sort((a, b) => a.localeCompare(b, 'es'));
+  sel.innerHTML = '<option value="">Todas las localidades</option>' + locs.map(l => `<option value="${e(l)}">${e(l)}</option>`).join('');
+  if (cur) sel.value = cur;
+}
 function solFilter() { solPage = 1; renderSolicitudes(); }
 function solPageGo(n) { solPage = n; renderSolicitudes(); const el = document.getElementById('sec-solicitudes'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
 function renderSolicitudes() {
+  fillSolLocOptions();
   const q = document.getElementById('solSrch').value.toLowerCase().trim();
   const qd = q.replace(/\D/g, '');
   const af = document.getElementById('solAreaF').value;
   const sf = document.getElementById('solStF').value;
+  const lf = document.getElementById('solLocF').value.trim().toLowerCase();
   const filtered = solicitudes.filter(s => {
     if (af && s.area !== af) return false;
     if (sf && s.estado !== sf) return false;
+    if (lf && (s.localidad || '').trim().toLowerCase() !== lf) return false;
     if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q) && !(qd && String(s.cuit||'').replace(/\D/g,'').includes(qd))) return false;
     return true;
   });
