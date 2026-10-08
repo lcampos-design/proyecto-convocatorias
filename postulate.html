@@ -311,6 +311,24 @@ async function submitPostulacion() {
     document.getElementById('notRegCard').style.display = 'block';
     return;
   }
+
+  // Solo UNA postulación activa por persona. Si ya tiene una, tirar error.
+  try {
+    const { data: previas } = await sb.from('postulaciones').select('id,estado,puesto_id,conv_id').eq('cuit', cuil);
+    const activas = (previas || []).filter(p => p.estado !== 'rechazado');
+    if (activas.some(p => p.puesto_id === selectedPuestoId && p.conv_id === selectedConvId)) {
+      btn.disabled = false; btn.textContent = 'Enviar postulación →';
+      err.textContent = 'Ya estás anotado/a a este puesto.'; err.style.display = 'block';
+      return;
+    }
+    if (activas.length) {
+      btn.disabled = false; btn.textContent = 'Enviar postulación →';
+      err.innerHTML = 'Solo podés postularte a <strong>un puesto</strong>. Ya tenés una postulación activa — si querés cambiar, entrá a <strong>"Ver mis inscripciones"</strong> y date de baja primero.';
+      err.style.display = 'block';
+      return;
+    }
+  } catch (_) { /* si la verificación falla, no bloquear la postulación */ }
+
   btn.textContent = 'Enviando...';
 
   // La página es anónima y RLS bloquea el INSERT directo de postulaciones,
