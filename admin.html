@@ -1217,6 +1217,10 @@ async function loadAll() {
   if (rotCfg) rotacionConfig = rotCfg.value;
   const etqCfg = (cfgData || []).find(c => c.key === 'etiquetas');
   etiquetasPaleta = (etqCfg && Array.isArray(etqCfg.value)) ? etqCfg.value : [];
+  // Estado "archivada" guardado en config (no depende de una columna nueva en convocatorias).
+  const archCfg = (cfgData || []).find(c => c.key === 'archivadas');
+  const archSet = new Set(Array.isArray(archCfg && archCfg.value) ? archCfg.value : []);
+  convs.forEach(c => { c.archivada = archSet.has(c.id); });
   const bajaCfg = (cfgData || []).find(c => c.key === 'baja');
   bajaDiasLimite = (bajaCfg && bajaCfg.value && Number.isFinite(+bajaCfg.value.dias)) ? +bajaCfg.value.dias : 3;
   const ausCfg = (cfgData || []).find(c => c.key === 'ausencia');
@@ -1755,13 +1759,18 @@ function deleteCurrentConv() { if (!currentConvId) return; delConv(currentConvId
 async function archivarConv(id, val) {
   const c = convs.find(x => x.id === id); if (!c) return;
   if (val && !confirm('¿Archivar esta convocatoria? Se guarda con todos sus datos (puestos, postulaciones, disponibilidad, planilla), sale de la lista activa y se despublica de la página. La podés desarchivar cuando quieras.')) return;
+  // El estado "archivada" se guarda en config (key 'archivadas'); así no depende de una columna nueva.
+  const nuevo = val
+    ? [...new Set([...convs.filter(x => x.archivada).map(x => x.id), id])]
+    : convs.filter(x => x.archivada && x.id !== id).map(x => x.id);
+  const { error } = await sb.from('config').upsert({ key: 'archivadas', value: nuevo, updated_at: new Date().toISOString() });
+  if (error) { toast('No se pudo archivar. Reintentá.'); return; }
   c.archivada = val;
-  const patch = { archivada: val };
-  if (val) { c.publicada = false; patch.publicada = false; }
+  if (val && c.publicada) { c.publicada = false; try { await sbUpdate('convocatorias', id, { publicada: false }); } catch (_) {} }
   renderCvList();
   const ab = document.getElementById('btnArchivar');
   if (ab && currentConvId === id) { ab.textContent = val ? '📤 Desarchivar' : '📦 Archivar'; syncPublicadaBtn(c); }
-  try { await sbUpdate('convocatorias', id, patch); toast(val ? '📦 Convocatoria archivada' : 'Convocatoria desarchivada'); } catch (_) {}
+  toast(val ? '📦 Convocatoria archivada' : 'Convocatoria desarchivada');
 }
 function toggleArchivar(id) { const c = convs.find(x => x.id === id); if (c) archivarConv(id, !c.archivada); }
 
