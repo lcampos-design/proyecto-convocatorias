@@ -161,6 +161,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 const sb = supabase.createClient(SB_URL, SB_KEY);
 let selectedConvId = null, selectedPuestoId = null, selectedPuestoNombre = '', selectedConvNombre = '';
+let openConvIds = new Set(); // convocatorias publicadas/abiertas ahora (para no anotarse a varias a la vez)
 
 // Área desde el link: ?area=arena o ?area=externos
 const AREA_MAP = { arena: 'movistar_arena', externos: 'externos' };
@@ -192,6 +193,7 @@ async function loadConvocatorias() {
   try {
     const { data: convsAll, error: cErr } = await sb.from('convocatorias').select('*').eq('publicada', true).order('fecha', { ascending: true });
     if (cErr) throw cErr;
+    openConvIds = new Set((convsAll || []).map(c => c.id));
     const convs = (convsAll || []).filter(c => c.area === AREA || c.area === 'ambas');
     if (!convs.length) { renderEmpty(); return; }
 
@@ -311,6 +313,24 @@ async function submitPostulacion() {
     document.getElementById('notRegCard').style.display = 'block';
     return;
   }
+
+  // No anotarse a varios puestos de las convocatorias ABIERTAS ahora (las viejas/pasadas no cuentan).
+  try {
+    const { data: previas } = await sb.from('postulaciones').select('id,estado,puesto_id,conv_id').eq('cuit', cuil);
+    const activas = (previas || []).filter(p => p.estado !== 'rechazado' && openConvIds.has(p.conv_id));
+    if (activas.some(p => p.puesto_id === selectedPuestoId && p.conv_id === selectedConvId)) {
+      btn.disabled = false; btn.textContent = 'Enviar postulación →';
+      err.textContent = 'Ya estás anotado/a a este puesto.'; err.style.display = 'block';
+      return;
+    }
+    if (activas.length) {
+      btn.disabled = false; btn.textContent = 'Enviar postulación →';
+      err.innerHTML = 'Solo podés anotarte a <strong>un puesto</strong> de las convocatorias abiertas. Si querés cambiar, entrá a <strong>"Ver mis inscripciones"</strong> y date de baja primero.';
+      err.style.display = 'block';
+      return;
+    }
+  } catch (_) { /* si la verificación falla, no bloquear la postulación */ }
+
   btn.textContent = 'Enviando...';
 
   // La página es anónima y RLS bloquea el INSERT directo de postulaciones,
