@@ -1205,7 +1205,7 @@ async function loadAll() {
   }));
   posts = (postData || []).map(p => {
     const persona = (people || []).find(x => x.id === p.persona_id);
-    return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, cuit: persona?.cuit || p.cuit || null };
+    return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, cuit: persona?.cuit || p.cuit || null, confirmacion: p.confirmacion || null };
   });
   feedbacks = fbData || [];
   userProfiles = upData || [];
@@ -1815,7 +1815,7 @@ function renderGestList() {
       : x.asistencia === 'ausente'
       ? `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✗ A</span>`
       : `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px">—</span>`;
-    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}">🚫 OUT</button>` : ''}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación">✉</button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
+    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}">🚫 OUT</button>` : ''}${x.confirmacion === 'si' ? ` <span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✅ Confirmó</span>` : x.confirmacion === 'no' ? ` <span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✕ No viene</span>` : ''}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación">✉</button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
   }).join('');
 }
 
@@ -2037,8 +2037,8 @@ function renderNotifs() {
       : notificaciones;
   const cont = document.getElementById('notifsBody');
   if (!src.length) { cont.innerHTML = `<div class="empty">${notificaciones.length === 0 ? 'Sin notificaciones todavía. Se generan automáticamente al aprobar candidatos o llenar cupos.' : 'Sin resultados para este filtro.'}</div>`; return; }
-  const tipoIcon = { aprobacion: '✅', cupo_lleno: '🎯', rotacion: '⚠', otro: '📌' };
-  const tipoLabel = { aprobacion: 'Aprobación', cupo_lleno: 'Cupo lleno', rotacion: 'Rotación', otro: 'General' };
+  const tipoIcon = { aprobacion: '✅', cupo_lleno: '🎯', rotacion: '⚠', confirmacion: '📩', otro: '📌' };
+  const tipoLabel = { aprobacion: 'Aprobación', cupo_lleno: 'Cupo lleno', rotacion: 'Rotación', confirmacion: 'Confirmación', otro: 'General' };
   const stColors = { pendiente: '#fef3c7;color:#92400e', enviada: '#d1fae5;color:#065f46', descartada: '#f3f4f6;color:#9ca3af' };
   cont.innerHTML = src.map(n => `
     <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:10px;background:${n.estado==='descartada'?'#fafafa':'#fff'}">
@@ -2140,7 +2140,7 @@ function openMailModalFromPost(postId) {
     openMailModal(sol.id);
   } else {
     mailSolId = '__post__' + postId;
-    window._tempMailData = { email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '' };
+    window._tempMailData = { email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '', cuit: String(post.cuit || '').replace(/\D/g, '') };
     document.getElementById('mMailStep1').style.display = 'block';
     document.getElementById('mMailStep2').style.display = 'none';
     showM('mMailConf');
@@ -2157,7 +2157,7 @@ const SIGNATURE_IMG = {
 // Logo del encabezado del mail. Archivo en la raíz del sitio (misma carpeta que admin.html).
 // Dejar '' para volver al título de texto.
 const LOGO_IMG = 'logo-sbs.png';
-let mailSolId = null, mailFromArea = null;
+let mailSolId = null, mailFromArea = null, mailConfirmCuit = '', mailConfirmConv = '';
 
 function openMailModal(solId) {
   mailSolId = solId;
@@ -2238,16 +2238,19 @@ function regenBulkBody() {
 
 function prepMailTemplate(area) {
   mailFromArea = area;
-  let solEmail, solNombre, solConvId, solPuesto;
+  let solEmail, solNombre, solConvId, solPuesto, solCuit;
   if (mailSolId && mailSolId.startsWith('__post__') && window._tempMailData) {
     solEmail = window._tempMailData.email;
     solNombre = window._tempMailData.nombre;
     solConvId = window._tempMailData.conv_id;
     solPuesto = window._tempMailData.puesto_nombre || '';
+    solCuit = window._tempMailData.cuit || '';
   } else {
     const s = solicitudes.find(x => x.id === mailSolId); if (!s) return;
-    solEmail = s.email; solNombre = s.nombre; solConvId = s.conv_id; solPuesto = s.puesto_nombre || s.puesto_interes || '';
+    solEmail = s.email; solNombre = s.nombre; solConvId = s.conv_id; solPuesto = s.puesto_nombre || s.puesto_interes || ''; solCuit = s.cuit || '';
   }
+  mailConfirmCuit = String(solCuit || '').replace(/\D/g, '');
+  mailConfirmConv = solConvId || '';
   const conv = solConvId ? convs.find(c => c.id === solConvId) : null;
   const nombre = solNombre || '';
   const puesto = solPuesto || '';
@@ -2281,7 +2284,7 @@ function prepMailTemplate(area) {
 }
 
 // Convierte el texto plano del mensaje en un HTML limpio y sobrio para el correo.
-function renderEmailHtml(text, fromAddr, area) {
+function renderEmailHtml(text, fromAddr, area, confirm) {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const linkify = s => s.replace(/((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)])/gi, u => {
     const href = u.startsWith('http') ? u : 'https://' + u;
@@ -2332,10 +2335,13 @@ function renderEmailHtml(text, fromAddr, area) {
     ? `<img src="${logoUrl}" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">`
     : `<div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#111827">Show Business Solutions</div>
     <div style="height:2px;width:40px;background:#534AB7;margin:12px 0 26px;border-radius:2px"></div>`;
+  const base = (typeof location !== 'undefined' && location.origin) || 'https://convocatorias.show-bs.com';
+  const btns = (confirm && confirm.cuit && confirm.convId) ? `<div style="margin:30px 0 4px;text-align:center"><div style="font-size:13px;color:#6b7280;margin-bottom:12px">Confirmá tu asistencia tocando un botón:</div><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=si" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px">✅ CONFIRMO</a><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=no" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px">✕ NO CONFIRMO</a></div>` : '';
   return `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
     ${header}
     ${out}
+    ${btns}
     ${sigBlock}
   </div>
   <div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">
@@ -2359,7 +2365,7 @@ async function sendConfirmationMail() {
     const res = await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea), text: body })
+      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea, { cuit: mailConfirmCuit, convId: mailConfirmConv }), text: body })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Error al enviar');
@@ -2382,7 +2388,7 @@ function openBulkMail() {
   ids.forEach(id => {
     const post = posts.find(x => x.id === id); if (!post) return;
     const email = getPersonaEmail(post);
-    if (email) bulkMailRecipients.push({ email, nombre: post.nombre });
+    if (email) bulkMailRecipients.push({ email, nombre: post.nombre, cuit: String(post.cuit || '').replace(/\D/g, '') });
     else bmSinEmail++;
   });
   if (!bulkMailRecipients.length) { toast('Ninguno de los seleccionados tiene email cargado'); return; }
@@ -2440,7 +2446,7 @@ async function sendBulkMail() {
     try {
       const res = await fetch('/api/send-email', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea), text: body })
+        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea, { cuit: r.cuit, convId: currentConvId }), text: body })
       });
       if (res.ok) ok++; else fail++;
     } catch (_) { fail++; }
@@ -2869,7 +2875,7 @@ function confirmarDisponibilidad(cuit, nombre) {
   if (!email) { toast('Esta persona no tiene email cargado'); return; }
   closeM('mDispAdmin');
   mailSolId = '__post__disp';
-  window._tempMailData = { email, nombre: nombre || per?.nombre || sol?.nombre || '', conv_id: currentConvId, puesto_nombre: '' };
+  window._tempMailData = { email, nombre: nombre || per?.nombre || sol?.nombre || '', conv_id: currentConvId, puesto_nombre: '', cuit: cn };
   document.getElementById('mMailStep1').style.display = 'block';
   document.getElementById('mMailStep2').style.display = 'none';
   showM('mMailConf');

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmación — Recital</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f5;color:#1a1a1a;font-size:15px;min-height:100vh}
+.page-header{background:#0f1117;padding:26px 24px;text-align:center}
+.page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.wrap{max-width:520px;margin:30px auto;padding:0 16px 60px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:30px 24px;text-align:center}
+.ic{font-size:52px;margin-bottom:12px}
+.t{font-size:20px;font-weight:700;color:#111827;margin-bottom:10px}
+.center{color:#4b5563;line-height:1.6}
+.note{font-size:12px;color:#9ca3af;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="page-header"><div class="page-title">Confirmación</div></div>
+<div class="wrap"><div id="content"><div class="card"><div class="center">Registrando tu respuesta…</div></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const q = new URLSearchParams(location.search);
+const CUIT = q.get('c'), CONV = q.get('v'), RESP = (q.get('r') || '').toLowerCase();
+
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function show(html){ document.getElementById('content').innerHTML = '<div class="card">' + html + '</div>'; }
+
+async function go(){
+  if (!CUIT || !CONV || (RESP !== 'si' && RESP !== 'no')) {
+    show('<div class="center">Link inválido. Pedile el link a la coordinación.</div>'); return;
+  }
+  try {
+    const { data, error } = await sb.rpc('registrar_confirmacion', { p_cuit: CUIT, p_conv_id: CONV, p_respuesta: RESP });
+    if (error) throw error;
+    if (data && data.ok) {
+      const nombre = data.nombre ? (', ' + String(data.nombre).split(' ')[0]) : '';
+      const conv = data.convocatoria ? (' para <strong>' + esc(data.convocatoria) + '</strong>') : '';
+      if (RESP === 'si') {
+        show('<div class="ic">✅</div><div class="t">¡Gracias' + esc(nombre) + '!</div>'
+          + '<div class="center">Registramos que <strong>CONFIRMÁS</strong> tu asistencia' + conv + '. ¡Nos vemos!</div>'
+          + '<div class="note">¿Te equivocaste? Volvé al mail y tocá el otro botón.</div>');
+      } else {
+        show('<div class="ic">✖️</div><div class="t">Listo' + esc(nombre) + '</div>'
+          + '<div class="center">Registramos que <strong>NO vas a asistir</strong>' + conv + '. Gracias por avisar.</div>'
+          + '<div class="note">¿Te equivocaste? Volvé al mail y tocá el otro botón.</div>');
+      }
+      return;
+    }
+    show('<div class="center">No pudimos registrar tu respuesta (el link puede no corresponder a una convocatoria activa). Escribinos a la coordinación.</div>');
+  } catch (e) {
+    show('<div class="center">Hubo un error al registrar tu respuesta. Probá de nuevo en un rato.</div>');
+  }
+}
+go();
+</script>
+</body>
+</html>
