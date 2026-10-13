@@ -331,6 +331,17 @@ async function submitPostulacion() {
     }
   } catch (_) { /* si la verificación falla, no bloquear la postulación */ }
 
+  // Tope de cupos: no anotarse si el puesto ya se llenó.
+  try {
+    const { data: pu } = await sb.from('puestos').select('cupos').eq('id', selectedPuestoId).single();
+    const { count: ocupados } = await sb.from('postulaciones').select('id', { count: 'exact', head: true }).eq('puesto_id', selectedPuestoId).neq('estado', 'rechazado');
+    if (pu && Number.isFinite(pu.cupos) && ocupados != null && ocupados >= pu.cupos) {
+      btn.disabled = false; btn.textContent = 'Enviar postulación →';
+      err.textContent = 'Este puesto ya se llenó. Elegí otro o volvé a revisar más adelante.'; err.style.display = 'block';
+      return;
+    }
+  } catch (_) { /* si la verificación falla, el candado del servidor igual corta */ }
+
   btn.textContent = 'Enviando...';
 
   // La página es anónima y RLS bloquea el INSERT directo de postulaciones,
@@ -348,6 +359,12 @@ async function submitPostulacion() {
   });
 
   if (error) {
+    const msg = (error.message || '') + ' ' + (error.details || '') + ' ' + (error.hint || '');
+    if (/CUPO_LLENO/i.test(msg)) {
+      btn.disabled = false; btn.textContent = 'Enviar postulación →';
+      err.textContent = 'Este puesto se llenó mientras completabas. Elegí otro o volvé a revisar más adelante.'; err.style.display = 'block';
+      return;
+    }
     console.error('crear_postulacion', error);
     btn.disabled = false; btn.textContent = 'Enviar postulación →';
     err.textContent = 'Hubo un error al enviar. Intentá de nuevo.'; err.style.display = 'block';

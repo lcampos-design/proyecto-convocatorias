@@ -1899,7 +1899,7 @@ async function confirmPicker() {
   if (!pickerSel.size) { toast('Seleccioná al menos una persona'); return; }
   const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return;
   const libres = Math.max(0, p.cupos - posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId && x.estado !== 'rechazado').length);
-  if (pickerSel.size > libres && !confirm(`Este puesto tiene ${libres} cupo(s) libre(s) y estás agregando ${pickerSel.size}. ¿Continuar?`)) return;
+  if (pickerSel.size > libres) { toast(`Este puesto tiene ${libres} cupo(s) libre(s) y estás agregando ${pickerSel.size}. Quitá ${pickerSel.size - libres} para no pasarte del tope.`); return; }
   const outs = [], conflicts = [], rotViolations = [], ausPenal = [];
   pickerSel.forEach(pid => {
     const pers = people.find(x => x.id === pid);
