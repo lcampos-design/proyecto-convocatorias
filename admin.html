@@ -2158,8 +2158,8 @@ const SIGNATURE_IMG = {
 // Dejar '' para volver al título de texto.
 const LOGO_IMG = 'logo-sbs.png';
 let mailSolId = null, mailFromArea = null, mailConfirmCuit = '', mailConfirmConv = '';
-// Botones Confirmo/No confirmo en el mail: poner en true DESPUÉS de correr confirmacion-botones.sql en Supabase.
-const CONFIRM_BTNS_ON = false;
+// Botones Confirmo/No confirmo en el mail: requiere confirmacion-botones.sql corrido en Supabase.
+const CONFIRM_BTNS_ON = true;
 
 function openMailModal(solId) {
   mailSolId = solId;
