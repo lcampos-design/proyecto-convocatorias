@@ -267,6 +267,101 @@ tr:hover td{background:#fafafa}
 .l-in:focus{border-color:var(--r-accent);box-shadow:0 0 0 3px rgba(83,74,183,.13)}
 .l-btn{background:var(--r-ink);border-radius:9px}
 .l-btn:hover{background:#000;opacity:1}
+
+/* ═══════════════════════════════════════════════════════════════
+   IDENTIDAD VISUAL
+   · Un color por área (Arena, Externos, España, Ambas)
+   · Íconos de trazo en lugar de emojis
+   · Distintivos y estados con una misma forma
+   ═══════════════════════════════════════════════════════════════ */
+
+:root{
+  /* Un color por área, usado igual en toda la plataforma */
+  --arena:#0284c7;      --arena-sv:#e0f2fe;    /* celeste  */
+  --externos:#7c3aed;   --externos-sv:#f1ebff; /* violeta  */
+  --espana:#ea580c;     --espana-sv:#ffeede;   /* naranja  */
+  --ambas:#0d9488;      --ambas-sv:#d9f5f1;    /* verde azulado */
+  /* Estados */
+  --ok:#15803d;    --ok-sv:#dcfce7;
+  --espera:#a16207; --espera-sv:#fef6da;
+  --alerta:#b91c1c; --alerta-sv:#fee9e9;
+  --neutro:#5b5b66; --neutro-sv:#f1f1f4;
+}
+
+/* ── Íconos ───────────────────────────────────────────────────
+   Se dibujan con el color del texto que los rodea. */
+.ic{display:inline-block;width:1.05em;height:1.05em;background:currentColor;vertical-align:-.16em;flex:0 0 auto;
+    -webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+.ic-lg{width:1.25em;height:1.25em}
+
+.ic-campana{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9'/%3E%3Cpath d='M10.3 21a1.94 1.94 0 0 0 3.4 0'/%3E%3C/svg%3E")}
+.ic-lupa{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E")}
+.ic-ajustes{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'/%3E%3C/svg%3E")}
+.ic-doc{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z'/%3E%3Cpath d='M14 2v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E")}
+.ic-planilla{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/%3E%3Crect x='8' y='2' width='8' height='4' rx='1'/%3E%3C/svg%3E")}
+.ic-grafico{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20V10M18 20V4M6 20v-4'/%3E%3C/svg%3E")}
+.ic-calendario{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E")}
+.ic-caja{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='3' width='20' height='5' rx='1'/%3E%3Cpath d='M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4'/%3E%3C/svg%3E")}
+.ic-caja-abrir{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='3' width='20' height='5' rx='1'/%3E%3Cpath d='M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M12 18v-6M9 15l3-3 3 3'/%3E%3C/svg%3E")}
+.ic-lista{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'/%3E%3C/svg%3E")}
+.ic-ojo{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E")}
+.ic-tacho{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'/%3E%3C/svg%3E")}
+.ic-sobre{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpath d='m22 7-10 5L2 7'/%3E%3C/svg%3E")}
+.ic-prohibido{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m4.9 4.9 14.2 14.2'/%3E%3C/svg%3E")}
+.ic-telefono{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z'/%3E%3C/svg%3E")}
+.ic-clip{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.4 11.1 12.3 20a5.6 5.6 0 1 1-8-8l9.2-9a3.7 3.7 0 1 1 5.3 5.3l-9.2 9a1.9 1.9 0 0 1-2.7-2.7l8.5-8.4'/%3E%3C/svg%3E")}
+.ic-globo{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20'/%3E%3C/svg%3E")}
+.ic-chincheta{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 17v5M9 10.8V4h6v6.8l2 3.2H7z'/%3E%3C/svg%3E")}
+.ic-enlace{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7'/%3E%3C/svg%3E")}
+.ic-diana{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='12' r='6'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3C/svg%3E")}
+.ic-bandeja{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 12h-6l-2 3h-4l-2-3H2'/%3E%3Cpath d='M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z'/%3E%3C/svg%3E")}
+.ic-tilde-circ{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E")}
+.ic-lapiz{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z'/%3E%3C/svg%3E")}
+.ic-firma{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 17c4 0 3-9 6-9s2 9 5 9 3-5 5-5'/%3E%3Cpath d='M2 21h20'/%3E%3C/svg%3E")}
+.ic-subir{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12'/%3E%3C/svg%3E")}
+.ic-bajar{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3'/%3E%3C/svg%3E")}
+.ic-aviso{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E")}
+.ic-recargar{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6'/%3E%3C/svg%3E")}
+
+/* ── Distintivo de área ───────────────────────────────────── */
+.a-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;
+         font-size:11px;font-weight:600;letter-spacing:.01em;border:1px solid transparent;line-height:1.5}
+.a-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.a-mv{background:var(--arena-sv);color:var(--arena);border-color:color-mix(in srgb,var(--arena) 22%,transparent)}
+.a-ex{background:var(--externos-sv);color:var(--externos);border-color:color-mix(in srgb,var(--externos) 22%,transparent)}
+.a-es{background:var(--espana-sv);color:var(--espana);border-color:color-mix(in srgb,var(--espana) 22%,transparent)}
+.a-ambas{background:var(--ambas-sv);color:var(--ambas);border-color:color-mix(in srgb,var(--ambas) 22%,transparent)}
+
+/* La pestaña activa de cada área toma su color */
+.atab[data-area="movistar_arena"].active{color:var(--arena);border-bottom-color:var(--arena)}
+.atab[data-area="movistar_arena"].active .tc{background:var(--arena);border-color:var(--arena)}
+.atab[data-area="externos"].active{color:var(--externos);border-bottom-color:var(--externos)}
+.atab[data-area="externos"].active .tc{background:var(--externos);border-color:var(--externos)}
+.atab[data-area="espana"].active{color:var(--espana);border-bottom-color:var(--espana)}
+.atab[data-area="espana"].active .tc{background:var(--espana);border-color:var(--espana)}
+
+/* ── Estados: una sola forma para todos ───────────────────── */
+.st-sel,.ssp,.cand-st-sel{border-radius:999px;font-size:11px;font-weight:600;padding:4px 11px;border:1px solid transparent}
+.st-sel.pendiente,.ssp.pendiente,.cand-st-sel.pendiente{background:var(--espera-sv);color:var(--espera);border-color:color-mix(in srgb,var(--espera) 20%,transparent)}
+.st-sel.contactado,.cand-st-sel.contactado{background:var(--arena-sv);color:var(--arena);border-color:color-mix(in srgb,var(--arena) 20%,transparent)}
+.ssp.en_revision{background:var(--arena-sv);color:var(--arena);border-color:color-mix(in srgb,var(--arena) 20%,transparent)}
+.st-sel.confirmado,.ssp.aprobado,.cand-st-sel.confirmado{background:var(--ok-sv);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 20%,transparent)}
+.st-sel.no_asiste,.ssp.rechazado,.cand-st-sel.no_asiste{background:var(--alerta-sv);color:var(--alerta);border-color:color-mix(in srgb,var(--alerta) 20%,transparent)}
+
+/* ── Botones con ícono ────────────────────────────────────── */
+.btn{gap:6px;letter-spacing:.01em}
+.btn .ic{opacity:.85}
+.mnav-btn{letter-spacing:.01em}
+
+/* ── Semáforo ─────────────────────────────────────────────── */
+.sem{font-weight:700;border:1px solid transparent}
+.sem-1{background:var(--ok-sv);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 25%,transparent)}
+.sem-2{background:var(--espera-sv);color:var(--espera);border-color:color-mix(in srgb,var(--espera) 25%,transparent)}
+.sem-3{background:var(--alerta-sv);color:var(--alerta);border-color:color-mix(in srgb,var(--alerta) 25%,transparent)}
+
+/* ── Etiquetas en versalita ───────────────────────────────── */
+.stat-label,th,.puestos-sec-title,.section-title,.cv-viewer-label,.fg label{font-variant-caps:normal}
+
 </style>
 </head>
 <body>
@@ -313,7 +408,7 @@ tr:hover td{background:#fafafa}
     <span id="userEmail" style="font-size:12px;color:#6b7280;margin-right:4px"></span>
     <button class="btn btn-sec btn-sm" onclick="loadAll()" title="Recargar datos desde Supabase">↺</button>
     <button class="btn btn-sec btn-sm" onclick="openNotifs()" style="position:relative;padding:7px 10px" title="Notificaciones">
-      🔔 <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:999px;font-size:9px;padding:1px 5px;font-weight:700;line-height:1.4"></span>
+      <i class="ic ic-campana"></i> <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:999px;font-size:9px;padding:1px 5px;font-weight:700;line-height:1.4"></span>
     </button>
     <button class="btn btn-sec btn-sm" onclick="doLogout()">Salir</button>
   </div>
@@ -364,13 +459,13 @@ tr:hover td{background:#fafafa}
     <select class="filt" id="nomTagFilter" onchange="nomFilter()" title="Filtrar por etiqueta">
       <option value="">Todas las etiquetas</option>
     </select>
-    <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT">🔍 Deduplicar</button>
-    <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación">⚙ Rotación</button>
+    <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT"><i class="ic ic-lupa"></i> Deduplicar</button>
+    <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
     <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
     <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
     <button class="btn btn-sec" onclick="exportNom()">↓ Exportar</button>
-    <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter()">📄 Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
-    <button class="btn btn-primary" onclick="openCvForm()">📄 Subir CV</button>
+    <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter()"><i class="ic ic-doc"></i> Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
+    <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
     <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
   </div>
   <div class="bulk-bar" id="nomBulk">
@@ -420,12 +515,12 @@ tr:hover td{background:#fafafa}
       <div><div class="det-title" id="detTitle"></div><div class="det-meta" id="detMeta"></div><div class="det-stats" id="detStats"></div></div>
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0">
         <button class="btn btn-sm" id="btnPublicada" onclick="togglePublicada(currentConvId)">○ Publicar</button>
-        <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()">📋 Asistencia</button>
+        <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()"><i class="ic ic-planilla"></i> Asistencia</button>
         <button class="btn btn-success btn-sm" onclick="exportPostuladosExcel()">↓ Planilla Excel</button>
-        <button class="btn btn-sec btn-sm" onclick="openReporte()">📊 Reporte</button>
-        <button class="btn btn-sec btn-sm" onclick="openDispAdmin()">🗓 Disponibilidad</button>
-        <button class="btn btn-sec btn-sm" onclick="editCurrentConv()">✎ Editar</button>
-        <button class="btn btn-sec btn-sm" id="btnArchivar" onclick="toggleArchivar(currentConvId)">📦 Archivar</button>
+        <button class="btn btn-sec btn-sm" onclick="openReporte()"><i class="ic ic-grafico"></i> Reporte</button>
+        <button class="btn btn-sec btn-sm" onclick="openDispAdmin()"><i class="ic ic-calendario"></i> Disponibilidad</button>
+        <button class="btn btn-sec btn-sm" onclick="editCurrentConv()"><i class="ic ic-lapiz"></i> Editar</button>
+        <button class="btn btn-sec btn-sm" id="btnArchivar" onclick="toggleArchivar(currentConvId)"><i class="ic ic-caja"></i> Archivar</button>
         <button class="btn btn-danger btn-sm" onclick="deleteCurrentConv()">Eliminar</button>
       </div>
     </div>
@@ -451,14 +546,14 @@ tr:hover td{background:#fafafa}
     <select class="filt" id="candStF" onchange="renderCandidatos()"><option value="">Todos los estados</option><option value="pendiente">Sin revisar</option><option value="contactado">En revisión</option><option value="confirmado">Aprobado</option><option value="no_asiste">Rechazado</option></select>
     <select class="filt" id="candOutFilter" onchange="renderCandidatos()" title="Filtrar por OUT"><option value="">Todos</option><option value="out">Solo OUTS</option><option value="no_out">Sin OUTS</option></select>
     <select class="filt" id="candSortF" onchange="renderCandidatos()"><option value="fecha_desc">Más recientes</option><option value="fecha_asc">Más antiguos</option><option value="nombre">Nombre A–Z</option></select>
-    <button class="btn btn-sec btn-sm" id="candViewToggle" onclick="toggleCandView()">☰ Lista</button>
+    <button class="btn btn-sec btn-sm" id="candViewToggle" onclick="toggleCandView()"><i class="ic ic-lista"></i> Lista</button>
   </div>
   <div class="bulk-bar" id="candBulk">
     <span id="candBulkCnt">0 seleccionados</span><span style="color:#c4b5fd">|</span>
     <button class="btn btn-sm btn-success" onclick="bulkCandSt('confirmado')">✓ Aprobar</button>
-    <button class="btn btn-sm btn-sec" onclick="bulkCandSt('contactado')">👁 En revisión</button>
+    <button class="btn btn-sm btn-sec" onclick="bulkCandSt('contactado')"><i class="ic ic-ojo"></i> En revisión</button>
     <button class="btn btn-sm btn-danger" onclick="bulkCandSt('no_asiste')">✕ Rechazar</button>
-    <button class="btn btn-sm btn-danger" onclick="bulkCandDel()">🗑 Eliminar</button>
+    <button class="btn btn-sm btn-danger" onclick="bulkCandDel()"><i class="ic ic-tacho"></i> Eliminar</button>
   </div>
   <div id="candContent"></div>
 </div>
@@ -641,7 +736,7 @@ tr:hover td{background:#fafafa}
         <div style="margin-top:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
           <div style="font-size:11px;color:#6b7280;margin-bottom:6px">Turnos (uno por línea) — se generan en <strong>todas</strong> las fechas de arriba. Ej: <em>TM: 07.00 a 16.00</em></div>
           <textarea id="cTurnosMultiples" placeholder="TM: 07.00 a 16.00&#10;TC: 07.00 a 13.00&#10;TN: 22.30 a 07.30" style="width:100%;height:72px;font-size:12px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;font-family:inherit"></textarea>
-          <button type="button" class="btn btn-sec btn-sm" onclick="aplicarTurnosATodas()" style="margin-top:6px">↧ Aplicar estos turnos a todas las fechas</button>
+          <button type="button" class="btn btn-sec btn-sm" onclick="aplicarTurnosATodas()" style="margin-top:6px"><i class="ic ic-bajar"></i> Aplicar estos turnos a todas las fechas</button>
         </div>
       </div>
       <div class="fg"><label>Área</label><select class="fi" id="cArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="ambas">Ambas áreas</option></select></div>
@@ -713,7 +808,7 @@ tr:hover td{background:#fafafa}
         <option value="en_revision">En revisión</option><option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option>
       </select>
       <button class="btn btn-sm btn-primary" onclick="applyGestBulk()">Aplicar</button>
-      <button class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd" onclick="openBulkMail()">✉ Enviar confirmación</button>
+      <button class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd" onclick="openBulkMail()"><i class="ic ic-sobre"></i> Enviar confirmación</button>
       <button class="btn btn-sm btn-danger" onclick="delGestBulk()">Quitar seleccionados</button>
     </div>
     <div class="ma" style="border-top:1px solid #f3f4f6;padding-top:14px;margin-top:8px"><button class="btn btn-sec" onclick="closeM('mGestionar')">Cerrar</button></div>
@@ -758,7 +853,7 @@ tr:hover td{background:#fafafa}
 <div class="modal-bg" id="mNotifs" style="display:none" onclick="bgClose('mNotifs',event)">
   <div class="modal" style="max-width:600px">
     <div class="modal-title">
-      <span>🔔 Notificaciones</span>
+      <span><i class="ic ic-campana"></i> Notificaciones</span>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn btn-sec btn-xs" onclick="discardAllNotifs()">Descartar todas</button>
         <button class="mclose" onclick="closeM('mNotifs')">✕</button>
@@ -953,7 +1048,7 @@ tr:hover td{background:#fafafa}
 <!-- Modal: Importar asistencia -->
 <div class="modal-bg" id="mAsistencia" style="display:none" onclick="bgClose('mAsistencia',event)">
   <div class="modal" style="max-width:520px">
-    <div class="modal-title"><span>📋 Importar asistencia</span><button class="mclose" onclick="closeM('mAsistencia')">✕</button></div>
+    <div class="modal-title"><span><i class="ic ic-planilla"></i> Importar asistencia</span><button class="mclose" onclick="closeM('mAsistencia')">✕</button></div>
     <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">
       Subí una planilla con los CUIL y una columna de asistencia marcada con <strong>P</strong> para los que fueron. Los que no aparezcan o no tengan P quedan como ausentes.
     </div>
@@ -977,16 +1072,16 @@ tr:hover td{background:#fafafa}
 <!-- Modal: Enviar confirmación por mail -->
 <div class="modal-bg" id="mMailConf" style="display:none" onclick="bgClose('mMailConf',event)">
   <div class="modal" style="max-width:580px">
-    <div class="modal-title"><span>✉ Enviar confirmación</span><button class="mclose" onclick="closeM('mMailConf')">✕</button></div>
+    <div class="modal-title"><span><i class="ic ic-sobre"></i> Enviar confirmación</span><button class="mclose" onclick="closeM('mMailConf')">✕</button></div>
     <div id="mMailStep1">
       <div style="font-size:13px;color:#374151;margin-bottom:16px">¿Desde qué correo querés enviar la confirmación?</div>
       <div style="display:flex;gap:12px;margin-bottom:8px">
         <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepMailTemplate('movistar')">
-          <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Movistar Arena</div>
+          <div style="font-weight:600;color:#111827;margin-bottom:3px"><i class="ic ic-sobre"></i> Movistar Arena</div>
           <div style="font-size:11px;color:#9ca3af">convocatorias.arena@show-bs.com</div>
         </button>
         <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepMailTemplate('externos')">
-          <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Externos</div>
+          <div style="font-weight:600;color:#111827;margin-bottom:3px"><i class="ic ic-sobre"></i> Externos</div>
           <div style="font-size:11px;color:#9ca3af">convocatorias.externos@show-bs.com</div>
         </button>
       </div>
@@ -1010,7 +1105,7 @@ tr:hover td{background:#fafafa}
         </div>
       </div>
       <div id="mailContratoBlock" style="display:none;margin:4px 0 10px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="mailAdjContrato" style="width:16px;height:16px" onchange="toggleContratoFields('mail')"> 📄 Adjuntar contrato de trabajo (con link para firmar)</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="mailAdjContrato" style="width:16px;height:16px" onchange="toggleContratoFields('mail')"> <i class="ic ic-doc"></i> Adjuntar contrato de trabajo (con link para firmar)</label>
         <div id="mailContratoFields" style="display:none;margin-top:10px">
           <div class="frow">
             <div class="fg"><label>Nombre y apellido</label><input type="text" class="fi" id="mcNombre"></div>
@@ -1041,16 +1136,16 @@ tr:hover td{background:#fafafa}
 <!-- Modal: Envío masivo de confirmación -->
 <div class="modal-bg" id="mBulkMail" style="display:none" onclick="bgClose('mBulkMail',event)">
   <div class="modal" style="max-width:600px">
-    <div class="modal-title"><span>✉ Envío masivo de confirmación</span><button class="mclose" onclick="closeM('mBulkMail')">✕</button></div>
+    <div class="modal-title"><span><i class="ic ic-sobre"></i> Envío masivo de confirmación</span><button class="mclose" onclick="closeM('mBulkMail')">✕</button></div>
     <div id="bmStep1">
       <div style="font-size:13px;color:#374151;margin-bottom:16px">¿Desde qué correo querés enviar?</div>
       <div style="display:flex;gap:12px">
         <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepBulkTemplate('movistar')">
-          <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Movistar Arena</div>
+          <div style="font-weight:600;color:#111827;margin-bottom:3px"><i class="ic ic-sobre"></i> Movistar Arena</div>
           <div style="font-size:11px;color:#9ca3af">convocatorias.arena@show-bs.com</div>
         </button>
         <button class="btn btn-sec" style="flex:1;padding:14px;font-size:13px" onclick="prepBulkTemplate('externos')">
-          <div style="font-weight:600;color:#111827;margin-bottom:3px">📧 Externos</div>
+          <div style="font-weight:600;color:#111827;margin-bottom:3px"><i class="ic ic-sobre"></i> Externos</div>
           <div style="font-size:11px;color:#9ca3af">convocatorias.externos@show-bs.com</div>
         </button>
       </div>
@@ -1074,7 +1169,7 @@ tr:hover td{background:#fafafa}
         </div>
       </div>
       <div id="bmContratoBlock" style="display:none;margin:4px 0 10px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="bmAdjContrato" style="width:16px;height:16px" onchange="toggleContratoFields('bm')"> 📄 Adjuntar contrato de trabajo a cada uno (con link para firmar)</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="bmAdjContrato" style="width:16px;height:16px" onchange="toggleContratoFields('bm')"> <i class="ic ic-doc"></i> Adjuntar contrato de trabajo a cada uno (con link para firmar)</label>
         <div id="bmContratoFields" style="display:none;margin-top:10px">
           <div style="font-size:11px;color:#9ca3af;margin-bottom:6px">El nombre, apellido y CUIL de cada contrato se toman automáticamente de cada persona seleccionada.</div>
           <div class="fg"><label>Puesto</label><input type="text" class="fi" id="bmcPuesto"></div>
@@ -1103,7 +1198,7 @@ tr:hover td{background:#fafafa}
 <!-- Modal: trazabilidad de un contrato -->
 <div class="modal-bg" id="mContratoTrace" style="display:none" onclick="bgClose('mContratoTrace',event)">
   <div class="modal" style="max-width:520px">
-    <div class="modal-title"><span>📄 Contrato — <span id="ctTraceNombre"></span></span><button class="mclose" onclick="closeM('mContratoTrace')">✕</button></div>
+    <div class="modal-title"><span><i class="ic ic-doc"></i> Contrato — <span id="ctTraceNombre"></span></span><button class="mclose" onclick="closeM('mContratoTrace')">✕</button></div>
     <div id="ctTraceBody"><div class="empty">Cargando...</div></div>
     <div class="ma">
       <button class="btn btn-sec" onclick="closeM('mContratoTrace')">Cerrar</button>
@@ -1354,7 +1449,7 @@ function setSaveStatus(state) {
   const el = document.getElementById('saveStatus'); if (!el) return;
   clearTimeout(saveTimer);
   if (state === 'saving') {
-    el.style.display = 'inline'; el.style.background = '#ede9fe'; el.style.color = '#5b21b6'; el.textContent = '⬆ Guardando...';
+    el.style.display = 'inline'; el.style.background = '#ede9fe'; el.style.color = '#5b21b6'; el.textContent = '<i class="ic ic-subir"></i> Guardando...';
   } else if (state === 'ok') {
     el.style.display = 'inline'; el.style.background = '#d1fae5'; el.style.color = '#065f46'; el.textContent = '✓ Guardado';
     saveTimer = setTimeout(() => { el.style.display = 'none'; }, 2500);
@@ -1410,6 +1505,18 @@ async function sbDeleteIn(table, ids) {
 }
 
 function uid() { return crypto.randomUUID(); }
+
+// Rótulos para lo que guarda la base: ahí los valores van en minúscula y con
+// guión bajo (no_asiste, en_revision). En pantalla se muestran escritos.
+const ROTULOS = { pendiente:'Pendiente', contactado:'Contactado', confirmado:'Confirmado',
+  no_asiste:'No asiste', en_revision:'En revisión', aprobado:'Aprobado', rechazado:'Rechazado',
+  enviada:'Enviada', descartada:'Descartada', creado:'Creado', enviado:'Enviado',
+  reenviado:'Reenviado', visto:'Visto', consentimiento:'Consentimiento', firmado:'Firmado' };
+function rotulo(v) {
+  const k = String(v == null ? '' : v).trim();
+  return ROTULOS[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ') : '');
+}
+
 
 // ── NÓMINA ──
 function goSec(s) {
@@ -1537,14 +1644,14 @@ function renderNomTable() {
 <td class="cn">
   ${e(p.nombre)}
   <button class="sem sem-${sem}" onclick="openSemModal('${p.id}')" title="Semáforo ${sem}">${sem}</button>
-  ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria||'')}">🚫 OUT</button>` : ''}
+  ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria||'')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
-  ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)">🚫 Faltó</span>` : ''}
-  ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')">📄 CV</button>` : ''}
+  ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
+  ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')"><i class="ic ic-doc"></i> CV</button>` : ''}
   ${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
 <td><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td>
-<td><select class="st-sel ${p.estado}" data-id="${p.id}" onchange="changeNomSt('${p.id}',this)">
+<td><select class="st-sel ${rotulo(p.estado)}" data-id="${p.id}" onchange="changeNomSt('${p.id}',this)">
   <option value="pendiente" ${p.estado==='pendiente'?'selected':''}>Pendiente</option>
   <option value="contactado" ${p.estado==='contactado'?'selected':''}>Contactado</option>
   <option value="confirmado" ${p.estado==='confirmado'?'selected':''}>Confirmado</option>
@@ -1553,9 +1660,9 @@ function renderNomTable() {
 <td class="cm">${e(p.cuit||'')}</td><td class="cm">${e(p.email||'')}</td><td class="cm">${e(p.tel||'')}</td>
 <td class="cm" title="${e(p.notas||'')}">${e(p.notas||'')}</td>
 <td style="white-space:nowrap">
-  <button class="btn btn-sec btn-xs" onclick="openEditPerson('${p.id}')">✎</button>
-  <button class="btn btn-sec btn-xs" onclick="openHistorial('${p.id}')" title="Ver historial de recitales">📅</button>
-  ${p.out_flag ? `<button class="btn btn-xs" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa" onclick="removeOut('${p.id}')">✓ OUT</button>` : `<button class="btn btn-xs" style="background:#fff7f7;color:#991b1b;border:1px solid #fecaca" onclick="openOutModal('${p.id}')">🚫</button>`}
+  <button class="btn btn-sec btn-xs" onclick="openEditPerson('${p.id}')"><i class="ic ic-lapiz"></i></button>
+  <button class="btn btn-sec btn-xs" onclick="openHistorial('${p.id}')" title="Ver historial de recitales"><i class="ic ic-calendario"></i></button>
+  ${p.out_flag ? `<button class="btn btn-xs" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa" onclick="removeOut('${p.id}')">✓ OUT</button>` : `<button class="btn btn-xs" style="background:#fff7f7;color:#991b1b;border:1px solid #fecaca" onclick="openOutModal('${p.id}')"><i class="ic ic-prohibido"></i></button>`}
   <button class="btn btn-danger btn-xs" onclick="delPerson('${p.id}')">✕</button>
 </td>
 </tr>`;
@@ -1734,7 +1841,7 @@ function viewCv(id) {
   const cv = p.cv;
   document.getElementById('cvViewTitle').textContent = `CV — ${p.nombre}`;
   const fld = (label, val) => val ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${label}</div><div class="cv-viewer-value">${e(val)}</div></div>` : '';
-  let html = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px"><span class="a-badge ${areaClase(p.area)}">${areaLargo(p.area)}</span>${p.email ? `<span style="font-size:12px;color:#6b7280">✉ ${e(p.email)}</span>` : ''}${p.tel ? `<span style="font-size:12px;color:#6b7280">📞 ${e(p.tel)}</span>` : ''}<span style="font-size:12px;color:#9ca3af">Enviado: ${cv.fechaEnvio || '—'}</span></div>`;
+  let html = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px"><span class="a-badge ${areaClase(p.area)}">${areaLargo(p.area)}</span>${p.email ? `<span style="font-size:12px;color:#6b7280"><i class="ic ic-sobre"></i> ${e(p.email)}</span>` : ''}${p.tel ? `<span style="font-size:12px;color:#6b7280"><i class="ic ic-telefono"></i> ${e(p.tel)}</span>` : ''}<span style="font-size:12px;color:#9ca3af">Enviado: ${cv.fechaEnvio || '—'}</span></div>`;
   html += fld('Puesto de interés', cv.puestoInteres); html += fld('Disponibilidad', cv.disponibilidad);
   html += '<div class="cv-section-divider"></div>';
   html += fld('Experiencia laboral', cv.experiencia); html += fld('Formación', cv.formacion); html += fld('Habilidades', cv.habilidades);
@@ -1745,7 +1852,7 @@ function viewCv(id) {
     html += fld('Contacto de emergencia', cv.contactoEmergencia); html += fld('Observaciones', cv.observaciones);
     html += fld('IBAN', cv.iban); html += fld('Titular de la cuenta', cv.titularCuenta);
   }
-  if (cv.archivo) html += `<div class="cv-section-divider"></div><div class="cv-file-box"><span style="font-size:18px">📎</span><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(cv.archivo.nombre)}</div><div style="font-size:11px;color:#9ca3af">${cv.archivo.tipo}</div></div></div>`;
+  if (cv.archivo) html += `<div class="cv-section-divider"></div><div class="cv-file-box"><span style="font-size:18px"><i class="ic ic-clip"></i></span><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(cv.archivo.nombre)}</div><div style="font-size:11px;color:#9ca3af">${cv.archivo.tipo}</div></div></div>`;
   document.getElementById('cvViewBody').innerHTML = html;
   const dlBtn = document.getElementById('cvDownloadBtn'); dlBtn.style.display = cv.archivo ? 'inline-flex' : 'none'; dlBtn.dataset.id = id;
   showM('mCvView');
@@ -1784,10 +1891,10 @@ function cvCardHTML(c) {
   const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' }[c.area] || c.area;
   const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : '#34d399';
   return `<div class="cv-card"><div class="cv-card-title">${e(c.nombre)}</div>
-<div class="cv-card-meta">${c.archivada ? '<span class="a-badge" style="background:#e5e7eb;color:#6b7280">📦 Archivada</span>' : ''}<span class="a-badge ${c.area === 'movistar_arena' ? 'a-mv' : c.area === 'externos' ? 'a-ex' : c.area === 'espana' ? 'a-es' : 'a-ambas'}">${areaLabel}</span>${c.fecha ? c.fecha.split(',').map(f => `<span>📅 ${fmtFecha(f.trim())}</span>`).join('') : ''}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
+<div class="cv-card-meta">${c.archivada ? '<span class="a-badge" style="background:#e5e7eb;color:#6b7280"><i class="ic ic-caja"></i> Archivada</span>' : ''}<span class="a-badge ${c.area === 'movistar_arena' ? 'a-mv' : c.area === 'externos' ? 'a-ex' : c.area === 'espana' ? 'a-es' : 'a-ambas'}">${areaLabel}</span>${c.fecha ? c.fecha.split(',').map(f => `<span><i class="ic ic-calendario"></i> ${fmtFecha(f.trim())}</span>`).join('') : ''}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
 <div class="cv-puestos">${(c.puestos || []).slice(0, 4).map(p => { const pu = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado').length; const pp = p.cupos > 0 ? Math.min(100, Math.round(pu / p.cupos * 100)) : 0; const pc = pp < 50 ? '#e5e7eb' : pp < 80 ? '#fbbf24' : '#34d399'; return `<div class="cv-prow"><span class="cv-pname">${e(p.nombre)}</span><div class="prog-wrap"><div class="prog-fill" style="background:${pc};width:${pp}%"></div></div><span class="cv-cupo">${pu}/${p.cupos}</span></div>`; }).join('')}${(c.puestos || []).length > 4 ? `<div style="font-size:11px;color:#9ca3af">+${(c.puestos || []).length - 4} puestos más</div>` : ''}</div>
 <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;margin-bottom:12px"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span>${usados}/${totalCupos} cupos · ${pct}%</span></div>
-<div class="cv-foot"><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delConv('${c.id}')">Eliminar</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();archivarConv('${c.id}',${c.archivada ? 'false' : 'true'})">${c.archivada ? '📤 Desarchivar' : '📦 Archivar'}</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();openEditConv('${c.id}')">✎ Editar</button><button class="btn btn-sm ${c.publicada?'btn-success':'btn-sec'}" onclick="event.stopPropagation();togglePublicada('${c.id}')" title="${c.publicada?'Quitar de página pública':'Publicar en página pública'}">${c.publicada?'🌐 Publicada':'○ Publicar'}</button><button class="btn btn-primary btn-sm" onclick="openDetail('${c.id}')">Gestionar →</button></div></div>`;
+<div class="cv-foot"><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delConv('${c.id}')">Eliminar</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();archivarConv('${c.id}',${c.archivada ? 'false' : 'true'})">${c.archivada ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar'}</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();openEditConv('${c.id}')"><i class="ic ic-lapiz"></i> Editar</button><button class="btn btn-sm ${c.publicada?'btn-success':'btn-sec'}" onclick="event.stopPropagation();togglePublicada('${c.id}')" title="${c.publicada?'Quitar de página pública':'Publicar en página pública'}">${c.publicada?'<i class="ic ic-globo"></i> Publicada':'○ Publicar'}</button><button class="btn btn-primary btn-sm" onclick="openDetail('${c.id}')">Gestionar →</button></div></div>`;
 }
 function fmtFecha(f) { if (!f) return ''; try { const d = new Date(f + 'T00:00:00'); return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return f; } }
 function openDetail(id) {
@@ -1797,13 +1904,13 @@ function openDetail(id) {
   document.getElementById('detTitle').textContent = c.nombre;
   document.getElementById('detMeta').textContent = `${{ movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' }[c.area] || c.area}${c.fecha ? ' · ' + c.fecha.split(',').map(f => fmtFecha(f.trim())).join(' · ') : ''}${c.descripcion ? ' · ' + c.descripcion.slice(0, 60) : ''}`;
   syncPublicadaBtn(c);
-  const ab = document.getElementById('btnArchivar'); if (ab) ab.textContent = c.archivada ? '📤 Desarchivar' : '📦 Archivar';
+  const ab = document.getElementById('btnArchivar'); if (ab) ab.innerHTML = c.archivada ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar';
   renderDetStats(); renderPuestos();
 }
 
 function syncPublicadaBtn(c) {
   const btn = document.getElementById('btnPublicada'); if (!btn) return;
-  if (c.publicada) { btn.textContent = '🌐 Publicada'; btn.className = 'btn btn-success btn-sm'; }
+  if (c.publicada) { btn.textContent = '<i class="ic ic-globo"></i> Publicada'; btn.className = 'btn btn-success btn-sm'; }
   else { btn.textContent = '○ Publicar'; btn.className = 'btn btn-sec btn-sm'; }
 }
 
@@ -1812,12 +1919,12 @@ async function togglePublicada(id) {
   c.publicada = !c.publicada;
   syncPublicadaBtn(c);
   renderCvList();
-  try { await sbUpdate('convocatorias', id, { publicada: c.publicada }); toast(c.publicada ? '🌐 Convocatoria publicada' : 'Convocatoria despublicada'); } catch (_) {}
+  try { await sbUpdate('convocatorias', id, { publicada: c.publicada }); toast(c.publicada ? '<i class="ic ic-globo"></i> Convocatoria publicada' : 'Convocatoria despublicada'); } catch (_) {}
 }
 function closeDetail() { document.getElementById('cv-list').style.display = 'block'; document.getElementById('cv-detail').style.display = 'none'; currentConvId = null; renderCvList(); }
 function renderDetStats() { const c = convs.find(x => x.id === currentConvId); if (!c) return; const cPosts = posts.filter(p => p.convId === currentConvId); const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0); const usados = cPosts.filter(p => p.estado !== 'rechazado').length; document.getElementById('detStats').innerHTML = `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span><span class="dstat">Aprobados: <strong style="color:#0f6e56">${cPosts.filter(p => p.estado === 'aprobado').length}</strong></span><span class="dstat">Pendientes: <strong style="color:#854F0B">${cPosts.filter(p => p.estado === 'pendiente').length}</strong></span>`; }
 function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if (!c) { document.getElementById('puestosContainer').innerHTML = ''; return; } if (!(c.puestos || []).length) { document.getElementById('puestosContainer').innerHTML = '<div class="empty">No hay puestos. Agregá el primero.</div>'; return; } document.getElementById('puestosContainer').innerHTML = (c.puestos || []).map(p => puestoCardHTML(p, c)).join(''); }
-function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${e(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${areaClase(p.area)}" style="margin-top:4px;display:inline-block">${areaLargo(p.area)}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')">✎</button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
+function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${e(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${areaClase(p.area)}" style="margin-top:4px;display:inline-block">${areaLargo(p.area)}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')"><i class="ic ic-lapiz"></i></button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
 
 // ── FECHAS MÚLTIPLES ──
 let convTurnos = [];  // [{id, fecha, horario}] — la misma fecha puede repetirse (turnos)
@@ -1832,7 +1939,7 @@ function renderFechasList() {
   const sorted = [...convTurnos].sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   el.innerHTML = sorted.length ? sorted.map(t => `
     <div style="display:flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px">
-      <span style="font-size:13px;color:#374151;min-width:140px">📅 ${fmtFecha(t.fecha)}</span>
+      <span style="font-size:13px;color:#374151;min-width:140px"><i class="ic ic-calendario"></i> ${fmtFecha(t.fecha)}</span>
       <input type="text" value="${(t.horario || '').replace(/"/g, '&quot;')}" oninput="setTurnoHorario('${t.id}', this.value)" placeholder="Horario / turno (opcional)" style="flex:1;font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
       <button type="button" onclick="removeTurno('${t.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0">✕</button>
     </div>`).join('') : '<div style="font-size:12px;color:#9ca3af">Agregá una o más fechas. Podés repetir la misma fecha para cargar varios turnos (cada uno con su horario).</div>';
@@ -1894,8 +2001,8 @@ async function archivarConv(id, val) {
   if (val && c.publicada) { c.publicada = false; try { await sbUpdate('convocatorias', id, { publicada: false }); } catch (_) {} }
   renderCvList();
   const ab = document.getElementById('btnArchivar');
-  if (ab && currentConvId === id) { ab.textContent = val ? '📤 Desarchivar' : '📦 Archivar'; syncPublicadaBtn(c); }
-  toast(val ? '📦 Convocatoria archivada' : 'Convocatoria desarchivada');
+  if (ab && currentConvId === id) { ab.textContent = val ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar'; syncPublicadaBtn(c); }
+  toast(val ? '<i class="ic ic-caja"></i> Convocatoria archivada' : 'Convocatoria desarchivada');
 }
 function toggleArchivar(id) { const c = convs.find(x => x.id === id); if (c) archivarConv(id, !c.archivada); }
 
@@ -1940,7 +2047,7 @@ function renderGestList() {
       : x.asistencia === 'ausente'
       ? `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✗ A</span>`
       : `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px">—</span>`;
-    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}">🚫 OUT</button>` : ''}${x.confirmacion === 'si' ? ` <span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✅ Confirmó</span>` : x.confirmacion === 'no' ? ` <span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✕ No viene</span>` : ''}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación">✉</button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
+    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}${x.confirmacion === 'si' ? ` <span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600"><i class="ic ic-tilde-circ"></i> Confirmó</span>` : x.confirmacion === 'no' ? ` <span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✕ No viene</span>` : ''}</td><td><select class="ssp ${rotulo(x.estado)}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación"><i class="ic ic-sobre"></i></button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
   }).join('');
 }
 
@@ -2015,7 +2122,7 @@ function renderPicker() {
   const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (tgf && !(p.etiquetas || []).includes(tgf)) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
   const el = document.getElementById('pickerList');
   if (!avail.length) { el.innerHTML = '<div class="picker-empty">Sin resultados</div>'; document.getElementById('pickerSelCount').textContent = '0 seleccionados'; return; }
-  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${p.estado}</span></div>`).join('');
+  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${rotulo(p.estado)}</span></div>`).join('');
   document.getElementById('pickerSelCount').textContent = pickerSel.size + ' seleccionados';
 }
 function togglePickerSel(id) { if (pickerSel.has(id)) pickerSel.delete(id); else pickerSel.add(id); renderPicker(); }
@@ -2083,7 +2190,7 @@ async function doMasiva() {
 }
 
 // ── CANDIDATOS ──
-function toggleCandView() { candViewMode = candViewMode === 'cards' ? 'list' : 'cards'; document.getElementById('candViewToggle').textContent = candViewMode === 'cards' ? '☰ Lista' : '⊞ Cards'; renderCandidatos(); }
+function toggleCandView() { candViewMode = candViewMode === 'cards' ? 'list' : 'cards'; document.getElementById('candViewToggle').innerHTML = candViewMode === 'cards' ? '<i class="ic ic-lista"></i> Lista' : '<i class="ic ic-planilla"></i> Cards'; renderCandidatos(); }
 function renderCandidatos() {
   const q = document.getElementById('candSrch').value.toLowerCase().trim(); const af = document.getElementById('candAreaF').value; const sf = document.getElementById('candStF').value; const sort = document.getElementById('candSortF').value; const outF = document.getElementById('candOutFilter').value;
   let cands = people.filter(p => { if (!p.cv) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (outF === 'out' && !p.out_flag) return false; if (outF === 'no_out' && p.out_flag) return false; if (q && !p.nombre.toLowerCase().includes(q) && !(p.cv.puestoInteres || '').toLowerCase().includes(q)) return false; return true; });
@@ -2103,11 +2210,11 @@ function candCardHTML(p) {
   const cv = p.cv; const initials = p.nombre.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
   const avatarColors = { movistar_arena: 'background:#e0f2fe;color:#0369a1', externos: 'background:#f0fdf4;color:#166534', espana: 'background:#fef3c7;color:#92400e' };
   const sel = candSelIds.has(p.id);
-  return `<div class="cand-card ${sel ? 'selected' : ''}" id="cc-${p.id}"><div class="cand-card-top"><div class="cand-avatar" style="${avatarColors[p.area] || 'background:#f3f4f6;color:#374151'}">${initials}</div><div class="cand-info"><div class="cand-name">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}">🚫 OUT</button>` : ''}</div><div class="cand-puesto">${cv.puestoInteres ? e(cv.puestoInteres) : '<span style="color:#d1d5db">Sin puesto</span>'}</div><div class="cand-meta">${areaLargo(p.area)}${cv.fechaEnvio ? ' · ' + cv.fechaEnvio : ''}</div></div><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')" style="margin-top:2px;flex-shrink:0"></div>${cv.experiencia || cv.disponibilidad ? `<div class="cand-fields">${cv.disponibilidad ? `<div class="cand-field-row"><span class="cand-field-label">Disponib.:</span><span class="cand-field-val">${e(cv.disponibilidad)}</span></div>` : ''}${cv.experiencia ? `<div class="cand-field-row"><span class="cand-field-label">Experiencia:</span><span class="cand-field-val">${e(cv.experiencia)}</span></div>` : ''}</div>` : ''}<div class="cand-footer"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select>${cv.archivo ? `<span style="font-size:11px;color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')" title="Descargar">📎</span>` : ''}<div style="margin-left:auto;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></div></div></div>`;
+  return `<div class="cand-card ${sel ? 'selected' : ''}" id="cc-${p.id}"><div class="cand-card-top"><div class="cand-avatar" style="${avatarColors[p.area] || 'background:#f3f4f6;color:#374151'}">${initials}</div><div class="cand-info"><div class="cand-name">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}</div><div class="cand-puesto">${cv.puestoInteres ? e(cv.puestoInteres) : '<span style="color:#d1d5db">Sin puesto</span>'}</div><div class="cand-meta">${areaLargo(p.area)}${cv.fechaEnvio ? ' · ' + cv.fechaEnvio : ''}</div></div><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')" style="margin-top:2px;flex-shrink:0"></div>${cv.experiencia || cv.disponibilidad ? `<div class="cand-fields">${cv.disponibilidad ? `<div class="cand-field-row"><span class="cand-field-label">Disponib.:</span><span class="cand-field-val">${e(cv.disponibilidad)}</span></div>` : ''}${cv.experiencia ? `<div class="cand-field-row"><span class="cand-field-label">Experiencia:</span><span class="cand-field-val">${e(cv.experiencia)}</span></div>` : ''}</div>` : ''}<div class="cand-footer"><select class="cand-st-sel ${rotulo(p.estado)}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select>${cv.archivo ? `<span style="font-size:11px;color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')" title="Descargar"><i class="ic ic-clip"></i></span>` : ''}<div style="margin-left:auto;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></div></div></div>`;
 }
 function candRowHTML(p) {
   const cv = p.cv; const sel = candSelIds.has(p.id);
-  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel ? '#f0eeff' : '#fff'}"><td style="padding:9px 14px"><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')"></td><td style="padding:9px 14px;font-weight:500;color:#111827">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}">🚫 OUT</button>` : ''}</td><td style="padding:9px 14px"><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td><td style="padding:9px 14px;font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(cv.puestoInteres || '—')}</td><td style="padding:9px 14px;font-size:12px">${cv.archivo ? `<span style="color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')">📎 ${e(cv.archivo.nombre.slice(0, 18) + (cv.archivo.nombre.length > 18 ? '…' : ''))}</span>` : '<span style="color:#d1d5db">—</span>'}</td><td style="padding:9px 14px;font-size:12px;color:#9ca3af">${cv.fechaEnvio || '—'}</td><td style="padding:9px 14px"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select></td><td style="padding:9px 14px;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></td></tr>`;
+  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel ? '#f0eeff' : '#fff'}"><td style="padding:9px 14px"><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')"></td><td style="padding:9px 14px;font-weight:500;color:#111827">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}</td><td style="padding:9px 14px"><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td><td style="padding:9px 14px;font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(cv.puestoInteres || '—')}</td><td style="padding:9px 14px;font-size:12px">${cv.archivo ? `<span style="color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')"><i class="ic ic-clip"></i> ${e(cv.archivo.nombre.slice(0, 18) + (cv.archivo.nombre.length > 18 ? '…' : ''))}</span>` : '<span style="color:#d1d5db">—</span>'}</td><td style="padding:9px 14px;font-size:12px;color:#9ca3af">${cv.fechaEnvio || '—'}</td><td style="padding:9px 14px"><select class="cand-st-sel ${rotulo(p.estado)}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select></td><td style="padding:9px 14px;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></td></tr>`;
 }
 async function candChangeSt(id, sel) { const p = people.find(x => x.id === id); if (p) { p.estado = sel.value; sel.className = 'cand-st-sel ' + sel.value; renderCandidatos(); nomStats(); try { await sbUpdate('personas', id, { estado: sel.value }); } catch (_) {} } }
 async function candDel(id) { if (!confirm('¿Eliminar este candidato?')) return; people = people.filter(x => x.id !== id); candSelIds.delete(id); nomRefresh(); renderCandidatos(); try { await sbDelete('personas', id); toast('Candidato eliminado'); } catch (_) {} }
@@ -2162,24 +2269,24 @@ function renderNotifs() {
       : notificaciones;
   const cont = document.getElementById('notifsBody');
   if (!src.length) { cont.innerHTML = `<div class="empty">${notificaciones.length === 0 ? 'Sin notificaciones todavía. Se generan automáticamente al aprobar candidatos o llenar cupos.' : 'Sin resultados para este filtro.'}</div>`; return; }
-  const tipoIcon = { aprobacion: '✅', cupo_lleno: '🎯', rotacion: '⚠', confirmacion: '📩', otro: '📌' };
+  const tipoIcon = { aprobacion: '<i class="ic ic-tilde-circ"></i>', cupo_lleno: '<i class="ic ic-diana"></i>', rotacion: '⚠', confirmacion: '<i class="ic ic-bandeja"></i>', otro: '<i class="ic ic-chincheta"></i>' };
   const tipoLabel = { aprobacion: 'Aprobación', cupo_lleno: 'Cupo lleno', rotacion: 'Rotación', confirmacion: 'Confirmación', otro: 'General' };
   const stColors = { pendiente: '#fef3c7;color:#92400e', enviada: '#d1fae5;color:#065f46', descartada: '#f3f4f6;color:#9ca3af' };
   cont.innerHTML = src.map(n => `
     <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:10px;background:${n.estado==='descartada'?'#fafafa':'#fff'}">
       <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">
-        <span style="font-size:18px;flex-shrink:0">${tipoIcon[n.tipo]||'📌'}</span>
+        <span style="font-size:18px;flex-shrink:0">${tipoIcon[n.tipo]||'<i class="ic ic-chincheta"></i>'}</span>
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:13px;color:#111827">${e(n.titulo)}</div>
           <div style="font-size:12px;color:#6b7280;margin-top:2px">${e(n.cuerpo)}</div>
           ${n.destinatario_nombre || n.destinatario_email ? `<div style="font-size:11px;color:#9ca3af;margin-top:4px">Para: ${e(n.destinatario_nombre||'')} ${n.destinatario_email?`&lt;${e(n.destinatario_email)}&gt;`:''}</div>` : ''}
         </div>
-        <span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500;flex-shrink:0;background:${stColors[n.estado]||'#f3f4f6'}">${n.estado}</span>
+        <span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500;flex-shrink:0;background:${stColors[n.estado]||'#f3f4f6'}">${rotulo(n.estado)}</span>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <span style="font-size:11px;color:#9ca3af;flex:1">${n.created_at?new Date(n.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span>
-        <button class="btn btn-sec btn-xs" onclick="copyNotif('${n.id}')" title="Copiar texto">📋 Copiar</button>
-        ${n.destinatario_email && n.estado === 'pendiente' ? `<button class="btn btn-sec btn-xs" onclick="mailtoNotif('${n.id}')" title="Abrir en cliente de email">✉ Email</button>` : ''}
+        <button class="btn btn-sec btn-xs" onclick="copyNotif('${n.id}')" title="Copiar texto"><i class="ic ic-planilla"></i> Copiar</button>
+        ${n.destinatario_email && n.estado === 'pendiente' ? `<button class="btn btn-sec btn-xs" onclick="mailtoNotif('${n.id}')" title="Abrir en cliente de email"><i class="ic ic-sobre"></i> Email</button>` : ''}
         ${n.estado === 'pendiente' ? `<button class="btn btn-success btn-xs" onclick="markNotifSent('${n.id}')">✓ Enviada</button>` : ''}
         ${n.estado !== 'descartada' ? `<button class="btn btn-danger btn-xs" onclick="discardNotif('${n.id}')">✕</button>` : ''}
       </div>
@@ -2348,7 +2455,7 @@ Vestimenta obligatoria:
 IMPORTANTE:
 Por favor, esperamos tu confirmación uniéndote al grupo a través del siguiente link y también confirmando por este medio (mail).
 
-🔗 Link de WhatsApp: ${whatsapp}
+<i class="ic ic-enlace"></i> Link de WhatsApp: ${whatsapp}
 
 En caso de que no puedas asistir, te pedimos que nos lo informes a la brevedad.
 
@@ -2488,7 +2595,7 @@ function renderEmailHtml(text, fromAddr, area, confirm) {
     : `<div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#111827">Show Business Solutions</div>
     <div style="height:2px;width:40px;background:#534AB7;margin:12px 0 26px;border-radius:2px"></div>`;
   const base = (typeof location !== 'undefined' && location.origin) || 'https://convocatorias.show-bs.com';
-  const btns = (CONFIRM_BTNS_ON && confirm && confirm.cuit && confirm.convId) ? `<div style="margin:30px 0 4px;text-align:center"><div style="font-size:13px;color:#6b7280;margin-bottom:12px">Confirmá tu asistencia tocando un botón:</div><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=si" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px">✅ CONFIRMO</a><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=no" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px">✕ NO CONFIRMO</a></div>` : '';
+  const btns = (CONFIRM_BTNS_ON && confirm && confirm.cuit && confirm.convId) ? `<div style="margin:30px 0 4px;text-align:center"><div style="font-size:13px;color:#6b7280;margin-bottom:12px">Confirmá tu asistencia tocando un botón:</div><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=si" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px"><i class="ic ic-tilde-circ"></i> CONFIRMO</a><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=no" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px">✕ NO CONFIRMO</a></div>` : '';
   return `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
     ${header}
@@ -3069,7 +3176,7 @@ async function verContratoTrace(id) {
   if (!row) { document.getElementById('ctTraceBody').innerHTML = '<div class="empty">No se encontró el contrato.</div>'; return; }
   ctTraceRow = row;
   document.getElementById('ctTraceNombre').textContent = row.nombre || '';
-  const tipoLabel = { creado: '📝 Creado', enviado: '✉ Enviado', visto: '👁 Visto', consentimiento: '☑ Consentimiento', firmado: '✍ Firmado', reenviado: '↻ Reenviado' };
+  const tipoLabel = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i class="ic ic-sobre"></i> Enviado', visto: '<i class="ic ic-ojo"></i> Visto', consentimiento: '<i class="ic ic-tilde-circ"></i> Consentimiento', firmado: '<i class="ic ic-firma"></i> Firmado', reenviado: '↻ Reenviado' };
   const timeline = (eventos || []).map(ev => `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6">
     <div style="display:flex;gap:10px">
       <div style="flex:1;font-size:13px;color:#374151">${tipoLabel[ev.tipo] || ev.tipo}</div>
@@ -3222,7 +3329,7 @@ function renderSolicitudes() {
   <td style="padding:9px 14px"><span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;background:${stColors[s.estado]||'#f3f4f6'}">${stLabels[s.estado]||s.estado}</span></td>
   <td style="padding:9px 14px;white-space:nowrap;display:flex;gap:5px">
     <button class="btn btn-sec btn-xs" onclick="openSolView('${s.id}')">Ver</button>
-    ${s.email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModal('${s.id}')" title="Enviar confirmación">✉</button>` : ''}
+    ${s.email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModal('${s.id}')" title="Enviar confirmación"><i class="ic ic-sobre"></i></button>` : ''}
     ${s.estado==='pendiente'?`<button class="btn btn-success btn-xs" onclick="singleSolSt('${s.id}','aprobado')">✓</button><button class="btn btn-danger btn-xs" onclick="singleSolSt('${s.id}','rechazado')">✕</button>`:''}
   </td></tr>`;
 }).join('')}</tbody></table>` + pagerSol;
@@ -3247,8 +3354,8 @@ async function openSolView(id) {
 
   let html = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
     <span class="a-badge ${areaClase(s.area)}">${areaLargo(s.area)}</span>
-    ${s.email?`<span style="font-size:12px;color:#6b7280">✉ ${e(s.email)}</span>`:''}
-    ${s.tel?`<span style="font-size:12px;color:#6b7280">📞 ${e(s.tel)}</span>`:''}
+    ${s.email?`<span style="font-size:12px;color:#6b7280"><i class="ic ic-sobre"></i> ${e(s.email)}</span>`:''}
+    ${s.tel?`<span style="font-size:12px;color:#6b7280"><i class="ic ic-telefono"></i> ${e(s.tel)}</span>`:''}
     ${s.cuit?`<span style="font-size:12px;color:#6b7280">${etiquetaDoc(s.area)}: ${e(s.cuit)}</span>`:''}
     <span style="font-size:12px;color:#9ca3af">${s.created_at?new Date(s.created_at).toLocaleDateString('es-AR'):''}</span>
   </div>`;
@@ -3299,7 +3406,7 @@ async function openSolView(id) {
     html += bool('Cobra beneficio social / plan de gobierno / AUH', s.beneficio_social);
   }
 
-  if (s.archivo_cv) html += `<div class="cv-section-divider"></div><div class="cv-file-box"><span style="font-size:18px">📎</span><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(s.archivo_cv.nombre)}</div></div><button class="btn btn-sec btn-xs" onclick="downloadSolFile('${s.id}')">↓ Descargar</button></div>`;
+  if (s.archivo_cv) html += `<div class="cv-section-divider"></div><div class="cv-file-box"><span style="font-size:18px"><i class="ic ic-clip"></i></span><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(s.archivo_cv.nombre)}</div></div><button class="btn btn-sec btn-xs" onclick="downloadSolFile('${s.id}')">↓ Descargar</button></div>`;
   document.getElementById('mSolBody').innerHTML = html;
   showM('mSolView');
 }
@@ -3396,7 +3503,7 @@ function openReporte() {
         const pers = people.find(x => x.id === post.personaId);
         const sem = pers?.semaforo || 1;
         const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
-        html += `<tr style="border-bottom:1px solid #f9fafb"><td style="padding:6px 10px;font-weight:500">${e(post.nombre)}${pers?.out_flag?'<span class="out-badge" style="margin-left:4px;cursor:default">🚫 OUT</span>':''}</td><td style="padding:6px 10px"><span class="a-badge ${areaClase(pers?.area)}" style="font-size:10px">${areaMini(pers?.area)}</span></td><td style="padding:6px 10px"><span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${post.estado}</span></td><td style="padding:6px 10px"><span class="sem sem-${sem}" style="cursor:default">${sem}</span></td></tr>`;
+        html += `<tr style="border-bottom:1px solid #f9fafb"><td style="padding:6px 10px;font-weight:500">${e(post.nombre)}${pers?.out_flag?'<span class="out-badge" style="margin-left:4px;cursor:default"><i class="ic ic-prohibido"></i> OUT</span>':''}</td><td style="padding:6px 10px"><span class="a-badge ${areaClase(pers?.area)}" style="font-size:10px">${areaMini(pers?.area)}</span></td><td style="padding:6px 10px"><span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${rotulo(post.estado)}</span></td><td style="padding:6px 10px"><span class="sem sem-${sem}" style="cursor:default">${sem}</span></td></tr>`;
       });
       html += '</tbody></table>';
     } else { html += '<div style="font-size:12px;color:#9ca3af;padding:6px 0">Sin personas asignadas</div>'; }
@@ -3510,7 +3617,7 @@ function renderDispBody() {
   let html = `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:14px">
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="checkbox" ${abierta ? 'checked' : ''} onchange="toggleDispAbierta(this.checked)" style="width:18px;height:18px;accent-color:#534AB7"> Ronda abierta</label>
     <span style="flex:1;min-width:200px;font-size:12px;color:#6b7280;word-break:break-all">${e(link)}</span>
-    <button class="btn btn-sec btn-sm" onclick="copiarDispLink('${e(link)}')">📋 Copiar link</button>
+    <button class="btn btn-sec btn-sm" onclick="copiarDispLink('${e(link)}')"><i class="ic ic-planilla"></i> Copiar link</button>
     ${dispRows.length ? `<button class="btn btn-sec btn-sm" onclick="exportarDisponibilidad()">↓ Exportar CSV</button>` : ''}
   </div>`;
   if (!abierta) html += `<div style="font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;margin-bottom:12px">La ronda está <strong>cerrada</strong>: el link no acepta respuestas. Activá "Ronda abierta" para recibir disponibilidad.</div>`;
@@ -3528,7 +3635,7 @@ function renderDispBody() {
     return `<tr>
       <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${e(r.nombre || '—')}<div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
       ${cells}
-      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')">✉ Confirmar</button>` : (tel ? `<a href="${waLink(tel)}" target="_blank" rel="noopener" class="btn btn-xs" style="background:#dcfce7;color:#166534;text-decoration:none" title="${e(tel)}">🟢 WhatsApp</a>` : '<span style="font-size:10px;color:#9ca3af">sin contacto</span>')}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')"><i class="ic ic-sobre"></i> Confirmar</button>` : (tel ? `<a href="${waLink(tel)}" target="_blank" rel="noopener" class="btn btn-xs" style="background:#dcfce7;color:#166534;text-decoration:none" title="${e(tel)}">🟢 WhatsApp</a>` : '<span style="font-size:10px;color:#9ca3af">sin contacto</span>')}</td>
     </tr>`;
   }).join('');
   const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
@@ -3665,7 +3772,7 @@ function openHistorial(personaId) {
     <div><div style="font-size:20px;font-weight:700;color:#111827">${uniqueConvIds.length}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Recitales</div></div>
     <div><div style="font-size:20px;font-weight:700;color:${rot.excede?'#c2410c':'#0f6e56'}">${rot.count}/${rot.max}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Últimos ${rotacionConfig.dias_periodo}d</div></div>
     ${daysSince !== null ? `<div><div style="font-size:20px;font-weight:700;color:#534AB7">${daysSince}d</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Desde último</div></div>` : ''}
-    <div><div style="font-size:20px;font-weight:700;color:${aus.ausencias>0?'#991b1b':'#0f6e56'}">${aus.ausencias}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Ausencias${aus.penalizado?' ⛔':''}</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:${aus.ausencias>0?'#991b1b':'#0f6e56'}">${aus.ausencias}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Ausencias${aus.penalizado?' <i class="ic ic-prohibido"></i>':''}</div></div>
     ${p.cuit ? `<div><div style="font-size:13px;font-weight:600;color:#374151">${e(p.cuit)}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">CUIT</div></div>` : ''}
   `;
   if (!myPosts.length) { document.getElementById('mHistBody').innerHTML = '<div class="empty">Sin historial todavía</div>'; showM('mHistorial'); return; }
@@ -3674,7 +3781,7 @@ function openHistorial(personaId) {
   const sorted = Object.entries(grouped).map(([cid, pp]) => ({ conv: convs.find(c => c.id === cid), posts: pp })).sort((a, b) => (b.conv?.fecha||'').localeCompare(a.conv?.fecha||''));
   const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
   const asistBadge = a => a === 'ausente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b">✗ Ausente</span>` : a === 'presente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#d1fae5;color:#065f46">✓ Presente</span>` : '';
-  const penalBanner = aus.penalizado ? `<div style="background:#fff7f7;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#991b1b">🚫 <strong>Penalizado por ausencia</strong> — no reconvocar hasta el ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} (${aus.ausencias} ausencia/s).</div>` : '';
+  const penalBanner = aus.penalizado ? `<div style="background:#fff7f7;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#991b1b"><i class="ic ic-prohibido"></i> <strong>Penalizado por ausencia</strong> — no reconvocar hasta el ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} (${aus.ausencias} ausencia/s).</div>` : '';
   document.getElementById('mHistBody').innerHTML = penalBanner + sorted.map(({ conv, posts: pp }) => `
     <div class="hist-item">
       <div class="hist-dot ${pp[0]?.estado||'pendiente'}"></div>
@@ -3731,7 +3838,7 @@ function openConflictos() {
       <div style="font-weight:600;color:#991b1b;font-size:13px">⚠ ${e(cf.nombre || '(sin nombre)')} <span style="font-weight:400;color:#9ca3af">· CUIT ${e(cf.cuit)}</span></div>
       <div style="font-size:12px;color:#374151;margin:3px 0">Mismo día <strong>${fmtFecha(cf.fecha)}</strong>:</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">${cf.servicios.map(s => `<span style="font-size:11px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:2px 8px">${e(s.conv)} · ${e(s.puesto)} ${estBadgeConf(s.estado)}</span>`).join('')}</div>
-    </div>`).join('') : '<div class="empty">Sin cruces: nadie está en 2 servicios el mismo día. 🎉</div>';
+    </div>`).join('') : '<div class="empty">Sin cruces: nadie está en 2 servicios el mismo día. <i class="ic ic-tilde-circ ic-lg"></i></div>';
   document.getElementById('confBody').innerHTML = `
     <div style="font-size:12px;color:#6b7280;margin-bottom:10px">Verificá si una persona ya está tomada en otro servicio. Pegá un CUIT para ver todos sus servicios, o revisá abajo los cruces detectados.</div>
     <input type="text" class="fi" id="confCuit" inputmode="numeric" placeholder="Pegá un CUIT (11 dígitos)…" oninput="buscarConflictoCuit()" style="margin-bottom:10px">
@@ -4006,7 +4113,7 @@ function renderRespuestas() {
       <div style="font-size:12px;color:#374151;font-weight:600;margin-bottom:4px">${e(r.subject || '(sin asunto)')}</div>
       <div style="font-size:13px;color:#374151;line-height:1.5;white-space:pre-wrap;max-height:160px;overflow-y:auto;background:#fafafa;border-radius:6px;padding:8px 10px">${e(r.body || r.snippet || '')}</div>
       <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
-        <a href="mailto:${e(r.from_email || '')}?subject=${encodeURIComponent(reSubject)}" class="btn btn-sec btn-xs" style="text-decoration:none">✉ Responder</a>
+        <a href="mailto:${e(r.from_email || '')}?subject=${encodeURIComponent(reSubject)}" class="btn btn-sec btn-xs" style="text-decoration:none"><i class="ic ic-sobre"></i> Responder</a>
         ${!r.leido ? `<button class="btn btn-sec btn-xs" onclick="markRespRead('${r.id}')">✓ Marcar leída</button>` : ''}
       </div>
     </div>`;
