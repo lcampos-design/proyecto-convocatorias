@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/:pagina", "destination": "/:pagina.html" }
+  ]
+}
