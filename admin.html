@@ -1264,7 +1264,20 @@ async function loadAll() {
   const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }, { data: ctData }] = await Promise.all([
     sb.from('convocatorias').select('*').order('created_at'),
     sb.from('puestos').select('*').order('created_at'),
-    sb.from('postulaciones').select('*').order('created_at'),
+    (async () => {
+      // Paginado: Supabase devuelve máx. 1000 filas por consulta. Al pasar las 1000
+      // postulaciones, las más nuevas no se cargaban nunca: se agregaba gente al puesto,
+      // se guardaba bien en la base, y al recargar no aparecía (y los cupos daban mal).
+      let all = [], f = 0;
+      while (true) {
+        const { data, error } = await sb.from('postulaciones').select('*').order('created_at').range(f, f + 999);
+        if (error || !data?.length) break;
+        all = all.concat(data);
+        if (data.length < 1000) break;
+        f += 1000;
+      }
+      return { data: all };
+    })(),
     sb.from('feedbacks').select('*').order('created_at'),
     sb.from('user_profiles').select('*'),
     sb.from('supervisor_convocatorias').select('*'),
