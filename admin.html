@@ -302,6 +302,7 @@ tr:hover td{background:#fafafa}
     <button class="mnav-btn" data-s="candidatos" onclick="goSec('candidatos')">Candidatos <span id="candNavBadge" style="background:#1d4ed8;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
     <button class="mnav-btn" data-s="solicitudes" onclick="goSec('solicitudes')">Solicitudes <span id="solNavBadge" style="background:#dc2626;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
     <button class="mnav-btn" data-s="respuestas" onclick="goSec('respuestas')">Respuestas <span id="respNavBadge" style="background:#0369a1;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
+    <button class="mnav-btn" data-s="contratos" onclick="goSec('contratos')">Contratos</button>
     <button class="mnav-btn" data-s="supervisores" id="navSupervisores" onclick="goSec('supervisores')" style="display:none">Supervisores</button>
   </nav>
   <div class="hdr-actions">
@@ -512,6 +513,21 @@ tr:hover td{background:#fafafa}
   <div style="padding:20px 24px" id="respContent"><div class="empty">Cargando...</div></div>
 </div>
 
+<!-- CONTRATOS -->
+<div id="sec-contratos" class="sec">
+  <div class="ctrlbar">
+    <input type="text" class="srch" id="ctSrch" placeholder="Buscar por nombre o CUIL..." oninput="renderContratos()">
+    <select class="filt" id="ctConvFilter" onchange="renderContratos()"><option value="">Todas las convocatorias</option></select>
+    <select class="filt" id="ctPeriodoFilter" onchange="renderContratos()"><option value="">Todos los períodos</option></select>
+    <select class="filt" id="ctEstadoFilter" onchange="renderContratos()">
+      <option value="">Todos los estados</option>
+      <option value="pendiente">Pendiente</option><option value="enviado">Enviado</option>
+      <option value="visto">Visto</option><option value="firmado">Firmado</option>
+    </select>
+  </div>
+  <div style="padding:20px 24px" id="ctContent"><div class="empty">Cargando...</div></div>
+</div>
+
 </div><!-- /app -->
 
 <!-- MODALES -->
@@ -537,6 +553,10 @@ tr:hover td{background:#fafafa}
         <button type="button" class="btn btn-sec btn-sm" onclick="addEtqToForm()">Agregar</button>
       </div>
       <datalist id="pEtqDatalist"></datalist>
+    </div>
+    <div id="pContratosBlock" style="display:none;margin-top:6px">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:8px 0 8px">Contratos de esta persona</div>
+      <div id="pContratosList"></div>
     </div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mPerson')">Cancelar</button><button class="btn btn-primary" onclick="savePerson()">Guardar</button></div>
   </div>
@@ -628,6 +648,7 @@ tr:hover td{background:#fafafa}
       <div class="fg"><label>Fecha límite confirmación</label><input type="text" class="fi" id="cFechaLimite" placeholder="Ej: 26 de Julio 11hs"></div>
     </div>
     <div class="fg"><label>Link de WhatsApp</label><input type="text" class="fi" id="cWhatsapp" placeholder="https://chat.whatsapp.com/..."></div>
+    <label style="display:flex;align-items:center;gap:8px;margin:4px 0 8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="cContratosHab" style="width:16px;height:16px"> Contratos habilitados <span style="font-weight:400;color:#9ca3af">— muestra la opción de adjuntar contrato con firma en esta convocatoria (piloto)</span></label>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mConv')">Cancelar</button><button class="btn btn-primary" onclick="saveConv()">Guardar</button></div>
   </div>
 </div>
@@ -979,6 +1000,26 @@ tr:hover td{background:#fafafa}
           <div class="fg"><label>Link de WhatsApp</label><input type="text" class="fi" id="mailFWhatsapp" oninput="regenMailBody()"></div>
         </div>
       </div>
+      <div id="mailContratoBlock" style="display:none;margin:4px 0 10px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="mailAdjContrato" style="width:16px;height:16px" onchange="toggleContratoFields('mail')"> 📄 Adjuntar contrato de trabajo (con link para firmar)</label>
+        <div id="mailContratoFields" style="display:none;margin-top:10px">
+          <div class="frow">
+            <div class="fg"><label>Nombre y apellido</label><input type="text" class="fi" id="mcNombre"></div>
+            <div class="fg"><label>CUIL</label><input type="text" class="fi" id="mcCuil"></div>
+          </div>
+          <div class="fg"><label>Puesto</label><input type="text" class="fi" id="mcPuesto"></div>
+          <div class="frow">
+            <div class="fg"><label>Fecha inicio</label><input type="text" class="fi" id="mcFechaInicio" placeholder="Ej: 16 DE SEPTIEMBRE"></div>
+            <div class="fg"><label>Fecha fin</label><input type="text" class="fi" id="mcFechaFin" placeholder="Ej: 30 DE SEPTIEMBRE"></div>
+            <div class="fg" style="max-width:100px"><label>Año</label><input type="text" class="fi" id="mcAnio"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label>Monto en letras</label><input type="text" class="fi" id="mcMontoLetras" placeholder="treinta y tres mil quinientos sesenta"></div>
+            <div class="fg" style="max-width:140px"><label>Monto $</label><input type="text" class="fi" id="mcMontoNumero" placeholder="33.560,00"></div>
+          </div>
+          <div class="fg"><label>Fecha de firma (texto del contrato)</label><input type="text" class="fi" id="mcFechaFirmaDoc" placeholder="Ej: 24 DE SEPTIEMBRE"></div>
+        </div>
+      </div>
       <div class="fg"><label>Mensaje</label><textarea class="fi" id="mailBody" style="height:260px;font-size:12px;font-family:monospace"></textarea></div>
       <div class="ma">
         <button class="btn btn-sec" onclick="document.getElementById('mMailStep2').style.display='none';document.getElementById('mMailStep1').style.display='block'">← Atrás</button>
@@ -1023,6 +1064,23 @@ tr:hover td{background:#fafafa}
           <div class="fg"><label>Link de WhatsApp</label><input type="text" class="fi" id="bmFWhatsapp" oninput="regenBulkBody()"></div>
         </div>
       </div>
+      <div id="bmContratoBlock" style="display:none;margin:4px 0 10px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="bmAdjContrato" style="width:16px;height:16px" onchange="toggleContratoFields('bm')"> 📄 Adjuntar contrato de trabajo a cada uno (con link para firmar)</label>
+        <div id="bmContratoFields" style="display:none;margin-top:10px">
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:6px">El nombre, apellido y CUIL de cada contrato se toman automáticamente de cada persona seleccionada.</div>
+          <div class="fg"><label>Puesto</label><input type="text" class="fi" id="bmcPuesto"></div>
+          <div class="frow">
+            <div class="fg"><label>Fecha inicio</label><input type="text" class="fi" id="bmcFechaInicio" placeholder="Ej: 16 DE SEPTIEMBRE"></div>
+            <div class="fg"><label>Fecha fin</label><input type="text" class="fi" id="bmcFechaFin" placeholder="Ej: 30 DE SEPTIEMBRE"></div>
+            <div class="fg" style="max-width:100px"><label>Año</label><input type="text" class="fi" id="bmcAnio"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label>Monto en letras</label><input type="text" class="fi" id="bmcMontoLetras" placeholder="treinta y tres mil quinientos sesenta"></div>
+            <div class="fg" style="max-width:140px"><label>Monto $</label><input type="text" class="fi" id="bmcMontoNumero" placeholder="33.560,00"></div>
+          </div>
+          <div class="fg"><label>Fecha de firma (texto del contrato)</label><input type="text" class="fi" id="bmcFechaFirmaDoc" placeholder="Ej: 24 DE SEPTIEMBRE"></div>
+        </div>
+      </div>
       <div class="fg"><label>Mensaje <span style="font-weight:400;text-transform:none;color:#9ca3af">— escribí {nombre} y se reemplaza por el de cada persona</span></label><textarea class="fi" id="bmBody" style="height:230px;font-size:12px;font-family:monospace"></textarea></div>
       <div id="bmProgress" style="display:none;font-size:13px;color:#534AB7;font-weight:500;margin-bottom:8px"></div>
       <div class="ma">
@@ -1033,10 +1091,24 @@ tr:hover td{background:#fafafa}
   </div>
 </div>
 
+<!-- Modal: trazabilidad de un contrato -->
+<div class="modal-bg" id="mContratoTrace" style="display:none" onclick="bgClose('mContratoTrace',event)">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title"><span>📄 Contrato — <span id="ctTraceNombre"></span></span><button class="mclose" onclick="closeM('mContratoTrace')">✕</button></div>
+    <div id="ctTraceBody"><div class="empty">Cargando...</div></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mContratoTrace')">Cerrar</button>
+      <button class="btn btn-sec" id="ctReenviarBtn" onclick="reenviarContrato()" style="display:none">↻ Reenviar mail</button>
+      <button class="btn btn-primary" id="ctDescargarBtn" onclick="descargarContratoFirmado()" style="display:none">↓ Descargar PDF firmado</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script>
 // ════════════════════════════════════════════════
 //  CONFIGURACIÓN — completar con tus credenciales
@@ -1118,7 +1190,7 @@ async function loadUserRole() {
     const areaLabel = currentUserRole === 'admin_movistar' ? 'Movistar Arena' : 'Externos';
     document.querySelector('.brand-sub').textContent = `Admin — ${areaLabel}`;
   } else {
-    ['dashboard','nomina','convs','candidatos','solicitudes','respuestas'].forEach(s => { const b = document.querySelector(`[data-s="${s}"]`); if(b) b.style.display='none'; });
+    ['dashboard','nomina','convs','candidatos','solicitudes','respuestas','contratos'].forEach(s => { const b = document.querySelector(`[data-s="${s}"]`); if(b) b.style.display='none'; });
     document.getElementById('navSupervisores').style.display = 'none';
   }
   // Filter data by area for area admins
@@ -1126,11 +1198,15 @@ async function loadUserRole() {
     people = people.filter(p => p.area === 'movistar_arena');
     convs = convs.filter(c => c.area !== 'externos');
     solicitudes = solicitudes.filter(s => s.area === 'movistar_arena');
+    contratos = contratos.filter(c => convs.some(x => x.id === c.conv_id));
+    populateCtFilters();
   }
   if (currentUserRole === 'admin_externos') {
     people = people.filter(p => p.area === 'externos');
     convs = convs.filter(c => c.area !== 'movistar_arena');
     solicitudes = solicitudes.filter(s => s.area === 'externos');
+    contratos = contratos.filter(c => convs.some(x => x.id === c.conv_id));
+    populateCtFilters();
   }
 }
 
@@ -1170,7 +1246,7 @@ async function loadAll() {
   }
   setLoad(true, `Cargando nómina... (${people.length})`, 60);
   setLoad(true, 'Cargando convocatorias...', 70);
-  const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }] = await Promise.all([
+  const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }, { data: ctData }] = await Promise.all([
     sb.from('convocatorias').select('*').order('created_at'),
     sb.from('puestos').select('*').order('created_at'),
     sb.from('postulaciones').select('*').order('created_at'),
@@ -1192,7 +1268,9 @@ async function loadAll() {
     })(),
     sb.from('config').select('*'),
     sb.from('notificaciones').select('*').order('created_at', { ascending: false }),
-    sb.from('respuestas').select('*').order('received_at', { ascending: false })
+    sb.from('respuestas').select('*').order('received_at', { ascending: false }),
+    // Sin texto_contrato/pdf_firmado/firma_png (pesados) — se traen bajo demanda al ver el detalle.
+    sb.from('contratos').select('id,conv_id,persona_id,postulacion_id,puesto_id,nombre,cuil,email,puesto,estado,fecha_creacion,fecha_envio,fecha_visto,fecha_firma,token').order('fecha_creacion', { ascending: false })
   ]);
   convs = (cData || []).map(c => ({
     ...c,
@@ -1208,6 +1286,8 @@ async function loadAll() {
   solicitudes = solData || [];
   notificaciones = notifData || [];
   respuestas = respData || [];
+  contratos = ctData || [];
+  populateCtFilters();
   const rotCfg = (cfgData || []).find(c => c.key === 'rotacion');
   if (rotCfg) rotacionConfig = rotCfg.value;
   const etqCfg = (cfgData || []).find(c => c.key === 'etiquetas');
@@ -1246,6 +1326,12 @@ function setSaveStatus(state) {
     el.style.display = 'inline'; el.style.background = '#fee2e2'; el.style.color = '#991b1b'; el.textContent = '⚠ Error al guardar';
     saveTimer = setTimeout(() => { el.style.display = 'none'; }, 5000);
   }
+}
+
+// Header con el token de la sesión de admin, para que /api/send-email pueda validarla.
+async function authHeader() {
+  const { data: { session } } = await sb.auth.getSession();
+  return session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {};
 }
 
 async function sbUpsert(table, data) {
@@ -1298,6 +1384,7 @@ function goSec(s) {
   if (s === 'supervisores') renderSupList();
   if (s === 'solicitudes') renderSolicitudes();
   if (s === 'respuestas') renderRespuestas();
+  if (s === 'contratos') renderContratos();
 }
 
 function renderDashboard() {
@@ -1512,8 +1599,8 @@ function renderNomPag() {
 }
 function nomGoPage(p) { nomPage = p; renderNomTable(); renderNomPag(); }
 
-function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
-function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); showM('mPerson'); }
+function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); document.getElementById('pContratosBlock').style.display = 'none'; showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
+function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); renderPersonContratos(p); showM('mPerson'); }
 
 async function savePerson() {
   const nom = document.getElementById('pNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
@@ -1715,16 +1802,16 @@ function aplicarTurnosATodas() {
   toast(convTurnos.length + ' turnos generados (' + fechasUnicas.length + ' fechas × ' + lines.length + ')');
 }
 
-function openAddConv() { editConvId = null; convTurnos = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; renderFechasList(); showM('mConv'); }
-function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
+function openAddConv() { editConvId = null; convTurnos = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = 'movistar_arena'; document.getElementById('cContratosHab').checked = false; renderFechasList(); showM('mConv'); }
+function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cContratosHab').checked = !!c.contratos_habilitados; document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
 function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
 
 async function saveConv() {
   const nom = document.getElementById('cNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
   const turnos = convTurnos.filter(t => t.fecha).map(t => ({ id: t.id, fecha: t.fecha, horario: (t.horario || '').trim() }));
   const fechasUnicas = [...new Set(turnos.map(t => t.fecha))].sort();
-  const d = { id: editConvId || uid(), nombre: nom, fecha: fechasUnicas.length ? fechasUnicas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, turnos, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null };
-  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; c.horario = d.horario; c.turnos = d.turnos; } }
+  const d = { id: editConvId || uid(), nombre: nom, fecha: fechasUnicas.length ? fechasUnicas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, turnos, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null, contratos_habilitados: document.getElementById('cContratosHab').checked };
+  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; c.horario = d.horario; c.turnos = d.turnos; c.venue = d.venue; c.remuneracion = d.remuneracion; c.fecha_limite = d.fecha_limite; c.link_whatsapp = d.link_whatsapp; c.contratos_habilitados = d.contratos_habilitados; } }
   else convs.push({ ...d, puestos: [] });
   if (currentConvId) { const c = convs.find(x => x.id === currentConvId); if (c) { document.getElementById('detTitle').textContent = c.nombre; renderDetStats(); } }
   renderCvList(); closeM('mConv');
@@ -2091,14 +2178,13 @@ function openMailModalFromPost(postId) {
     openMailModal(sol.id);
   } else {
     mailSolId = '__post__' + postId;
-    window._tempMailData = { email: persona.email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '' };
+    window._tempMailData = { email: persona.email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '', cuit: persona.cuit || post.cuit || '', personaId: post.personaId || persona.id || null };
     document.getElementById('mMailStep1').style.display = 'block';
     document.getElementById('mMailStep2').style.display = 'none';
     showM('mMailConf');
   }
 }
 
-const RESEND_KEY = 're_jLa2QX2v_2QsSZNpnwBJYBgJ1Ezcphe58';
 // Firma como imagen, una por cada área. Los archivos van en la carpeta /firmas.
 // La URL se arma sola con el dominio actual. Dejar '' para no incluir imagen de firma.
 const SIGNATURE_IMG = {
@@ -2189,19 +2275,41 @@ function regenBulkBody() {
 
 function prepMailTemplate(area) {
   mailFromArea = area;
-  let solEmail, solNombre, solConvId, solPuesto;
+  let solEmail, solNombre, solConvId, solPuesto, solCuil, solPersonaId;
   if (mailSolId && mailSolId.startsWith('__post__') && window._tempMailData) {
     solEmail = window._tempMailData.email;
     solNombre = window._tempMailData.nombre;
     solConvId = window._tempMailData.conv_id;
     solPuesto = window._tempMailData.puesto_nombre || '';
+    solCuil = window._tempMailData.cuit || '';
+    solPersonaId = window._tempMailData.personaId || null;
   } else {
     const s = solicitudes.find(x => x.id === mailSolId); if (!s) return;
     solEmail = s.email; solNombre = s.nombre; solConvId = s.conv_id; solPuesto = s.puesto_nombre || s.puesto_interes || '';
+    solCuil = s.cuit || '';
+    const per = people.find(p => normCuit(p.cuit) && normCuit(p.cuit) === normCuit(s.cuit));
+    solPersonaId = per ? per.id : null;
   }
   const conv = solConvId ? convs.find(c => c.id === solConvId) : null;
   const nombre = solNombre || '';
   const puesto = solPuesto || '';
+  mailContratoCtx = { convId: solConvId || null, personaId: solPersonaId, email: solEmail || '' };
+  const ctBlock = document.getElementById('mailContratoBlock');
+  ctBlock.style.display = conv?.contratos_habilitados ? 'block' : 'none';
+  document.getElementById('mailAdjContrato').checked = false;
+  document.getElementById('mailContratoFields').style.display = 'none';
+  if (conv?.contratos_habilitados) {
+    document.getElementById('mcNombre').value = nombre;
+    document.getElementById('mcCuil').value = solCuil || '';
+    document.getElementById('mcPuesto').value = puesto;
+    const rango = rangoFechasConv(conv);
+    document.getElementById('mcFechaInicio').value = rango.inicio;
+    document.getElementById('mcFechaFin').value = rango.fin;
+    document.getElementById('mcAnio').value = rango.anio;
+    document.getElementById('mcMontoLetras').value = '';
+    document.getElementById('mcMontoNumero').value = '';
+    document.getElementById('mcFechaFirmaDoc').value = fechaHoyTexto();
+  }
   const fechas = conv?.fecha ? conv.fecha.split(',').map(f => fmtFecha(f.trim())).join(' y ') : '[COMPLETAR FECHA]';
   const convNombre = conv?.nombre || '[EVENTO]';
 
@@ -2299,7 +2407,7 @@ function renderEmailHtml(text, fromAddr, area) {
 async function sendConfirmationMail() {
   const to = document.getElementById('mailTo').value.trim();
   const subject = document.getElementById('mailSubject').value.trim();
-  const body = document.getElementById('mailBody').value.trim();
+  let body = document.getElementById('mailBody').value.trim();
   if (!to || !subject || !body) { toast('Completá todos los campos'); return; }
 
   const from = mailFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
@@ -2307,13 +2415,28 @@ async function sendConfirmationMail() {
   btn.disabled = true; btn.textContent = 'Enviando...';
 
   try {
+    let attachments, contratoRow;
+    if (document.getElementById('mailAdjContrato')?.checked) {
+      const conv = convs.find(c => c.id === mailContratoCtx?.convId);
+      const datos = {
+        nombre: v('mcNombre'), cuil: v('mcCuil'), puesto: v('mcPuesto'), venue: conv?.venue || '',
+        fecha_inicio: v('mcFechaInicio'), fecha_fin: v('mcFechaFin'), anio: v('mcAnio'),
+        monto_letras: v('mcMontoLetras'), monto_numero: v('mcMontoNumero'), fecha_firma_doc: v('mcFechaFirmaDoc')
+      };
+      contratoRow = await crearContrato(datos, mailContratoCtx?.convId, mailContratoCtx?.personaId, to, null, null, mailFromArea);
+      const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + (SIGNATURE_IMG[mailFromArea] || ''), hashTexto: await sha256Hex(contratoRow.texto_contrato) });
+      attachments = [{ filename: 'contrato.pdf', content: pdfBase64 }];
+      body += `\n\nAdjuntamos tu contrato de trabajo. Para firmarlo online, ingresá a este link:\n${location.origin}/contrato.html?t=${contratoRow.token}`;
+    }
+
     const res = await fetch('/api/send-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea), text: body })
+      headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea), text: body, ...(attachments ? { attachments } : {}) })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Error al enviar');
+    if (!res.ok) throw new Error(data.message || data.error || 'Error al enviar');
+    if (contratoRow) await marcarContratoEnviado(contratoRow.id);
     toast('✓ Mail enviado a ' + to);
     closeM('mMailConf');
   } catch (err) {
@@ -2334,7 +2457,7 @@ function openBulkMail() {
     const post = posts.find(x => x.id === id); if (!post) return;
     const persona = people.find(p => p.id === post.personaId);
     const email = persona?.email || null;
-    if (email) bulkMailRecipients.push({ email, nombre: post.nombre });
+    if (email) bulkMailRecipients.push({ email, nombre: post.nombre, cuit: persona?.cuit || post.cuit || '', personaId: post.personaId || null, postulacionId: post.id || null, puestoId: post.puestoId || null });
     else bmSinEmail++;
   });
   if (!bulkMailRecipients.length) { toast('Ninguno de los seleccionados tiene email cargado'); return; }
@@ -2350,6 +2473,20 @@ function prepBulkTemplate(area) {
   const puesto = puestoObj?.nombre || '';
   const fechas = conv?.fecha ? conv.fecha.split(',').map(f => fmtFecha(f.trim())).join(' y ') : '[COMPLETAR FECHA]';
   const convNombre = conv?.nombre || '[EVENTO]';
+  const bmCtBlock = document.getElementById('bmContratoBlock');
+  bmCtBlock.style.display = conv?.contratos_habilitados ? 'block' : 'none';
+  document.getElementById('bmAdjContrato').checked = false;
+  document.getElementById('bmContratoFields').style.display = 'none';
+  if (conv?.contratos_habilitados) {
+    document.getElementById('bmcPuesto').value = puesto;
+    const rango = rangoFechasConv(conv);
+    document.getElementById('bmcFechaInicio').value = rango.inicio;
+    document.getElementById('bmcFechaFin').value = rango.fin;
+    document.getElementById('bmcAnio').value = rango.anio;
+    document.getElementById('bmcMontoLetras').value = '';
+    document.getElementById('bmcMontoNumero').value = '';
+    document.getElementById('bmcFechaFirmaDoc').value = fechaHoyTexto();
+  }
   const bmFields = document.getElementById('bmMvFields');
   const bmExtra = document.getElementById('bmExtraFields');
   bmFields.style.display = 'block';
@@ -2384,17 +2521,31 @@ async function sendBulkMail() {
   const from = bmFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   const btn = document.getElementById('bmSendBtn'); btn.disabled = true;
   const prog = document.getElementById('bmProgress'); prog.style.display = 'block';
+  const adjContrato = document.getElementById('bmAdjContrato')?.checked;
+  const conv = convs.find(c => c.id === currentConvId);
+  const datosComunes = adjContrato ? {
+    venue: conv?.venue || '', puesto: v('bmcPuesto'), fecha_inicio: v('bmcFechaInicio'), fecha_fin: v('bmcFechaFin'),
+    anio: v('bmcAnio'), monto_letras: v('bmcMontoLetras'), monto_numero: v('bmcMontoNumero'), fecha_firma_doc: v('bmcFechaFirmaDoc')
+  } : null;
   let ok = 0, fail = 0;
   for (let i = 0; i < bulkMailRecipients.length; i++) {
     const r = bulkMailRecipients[i];
     prog.textContent = `Enviando ${i + 1} de ${bulkMailRecipients.length}...`;
-    const body = bodyTpl.replace(/\{nombre\}/g, r.nombre || '');
+    let body = bodyTpl.replace(/\{nombre\}/g, r.nombre || '');
     try {
+      let attachments, contratoRow;
+      if (adjContrato) {
+        const datos = { ...datosComunes, nombre: r.nombre || '', cuil: r.cuit || '' };
+        contratoRow = await crearContrato(datos, currentConvId, r.personaId, r.email, r.postulacionId, r.puestoId, bmFromArea);
+        const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + (SIGNATURE_IMG[bmFromArea] || ''), hashTexto: await sha256Hex(contratoRow.texto_contrato) });
+        attachments = [{ filename: 'contrato.pdf', content: pdfBase64 }];
+        body += `\n\nAdjuntamos tu contrato de trabajo. Para firmarlo online, ingresá a este link:\n${location.origin}/contrato.html?t=${contratoRow.token}`;
+      }
       const res = await fetch('/api/send-email', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea), text: body })
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea), text: body, ...(attachments ? { attachments } : {}) })
       });
-      if (res.ok) ok++; else fail++;
+      if (res.ok) { ok++; if (contratoRow) await marcarContratoEnviado(contratoRow.id); } else fail++;
     } catch (_) { fail++; }
     await new Promise(res => setTimeout(res, 600));
   }
@@ -2403,6 +2554,359 @@ async function sendBulkMail() {
   toast(`✓ Enviados: ${ok}${fail ? ` · Fallaron: ${fail}` : ''}`);
   if (!fail) closeM('mBulkMail');
 }
+// ── CONTRATOS ──
+let contratos = [], mailContratoCtx = null, ctTraceId = null, ctTraceRow = null;
+function normCuit(v) { return String(v || '').replace(/\D/g, ''); }
+function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function toggleContratoFields(prefix) {
+  const checked = document.getElementById(prefix + 'AdjContrato').checked;
+  document.getElementById(prefix + 'ContratoFields').style.display = checked ? 'block' : 'none';
+}
+
+function rangoFechasConv(conv) {
+  const fechas = conv?.fecha ? conv.fecha.split(',').map(f => f.trim()).filter(Boolean).sort() : [];
+  const anioActual = String(new Date().getFullYear());
+  if (!fechas.length) return { inicio: '', fin: '', anio: anioActual };
+  const fmt = f => { try { return new Date(f + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' }).toUpperCase(); } catch (_) { return f; } };
+  const first = fechas[0], last = fechas[fechas.length - 1];
+  return { inicio: fmt(first), fin: fmt(last), anio: first.slice(0, 4) || anioActual };
+}
+function fechaHoyTexto() { return new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'long' }).toUpperCase(); }
+
+// Texto legal base del contrato. Placeholders {{...}} se completan al generarlo.
+const CONTRATO_TEMPLATE = `CONTRATO DE TRABAJO A PLAZO FIJO
+
+En Buenos Aires a los días {{fecha_inicio}} al {{fecha_fin}} de {{anio}} entre: {{nombre}} con CUIL N° {{cuil}} cuyo domicilio es: _______________________________________ en adelante "EL TRABAJADOR" y representada por Richard Rickemberg, DNI 32558207, en su carácter de Socio Gerente, con domicilio en Ramallo 4608, de la Ciudad Autónoma de Buenos Aires, en adelante "LA EMPRESA" SHOW BUSINESS SOLUTIONS, celebran el presente CONTRATO DE TRABAJO A PLAZO FIJO (Art.93 de la Ley 20.744), con sujeción a las siguientes normas:
+
+Primera: La empresa contrata al trabajador para desempeñar tareas de {{puesto}}. Las actividades mencionadas revisten naturaleza transitoria, conforme a lo normado por el ART 90 de la LCT, y se desarrollarán en el {{venue}}.
+
+Segunda: El presente contrato se celebra los días {{fecha_inicio}} al {{fecha_fin}} de {{anio}}, fecha en que de hecho y de derecho, quedará extinguida la relación laboral entre las partes, dejando aclarado que en el caso en que las necesidades de la actividad transitoria así lo requieran, deberá notificarse a el trabajador por escrito, pudiendo la empresa optar por una prórroga si la modalidad de la tarea o la actividad así lo justifica.
+
+Tercera: El trabajador percibirá por dicho período una remuneración neta diaria por JORNADA EFECTIVAMENTE TRABAJADA de {{monto_letras}} (\${{monto_numero}}) por todo concepto. - Durante las jornadas extendidas, el valor de la JORNADA EFECTIVAMENTE TRABAJADA será el INDICADO EN LA CONVOCATORIA OFICIAL.
+
+Cuarta: Se deja expresa constancia y de común acuerdo se ratifica el vencimiento del presente contrato el día {{fecha_fin}} de {{anio}} sirviendo la presente de suficiente preaviso legal conforme al Art. 90 y concordantes LCT.
+
+Quinta: a) Mantener el orden del lugar de trabajo al finalizar la jornada. b) Utilizar correctamente el uniforme provisto, manteniéndolo limpio y en buen estado, y devolverlo en las mismas condiciones al finalizar la relación laboral. No se permiten modificaciones ni el uso de calzado/ropa deportiva. c) Cuidar y reportar cualquier daño, pérdida o deterioro de los materiales e implementos de trabajo provistos por la empresa.
+
+Sexta: Para todos los efectos legales, las partes constituyen domicilios en los lugares indicados en el encabezamiento del presente, lugar en que serán válidas todas las notificaciones derivadas del presente. Ante cualquier conflicto judicial y/o extrajudicial que pudiera derivarse del presente contrato de trabajo, las partes acuerdan que será competente la Justicia Nacional del Trabajo de Capital Federal.
+
+Séptima: Show Business Solution S.R.L prohíbe estrictamente cualquier forma de acoso y discriminación, creando un ambiente de trabajo hostil, intimidatorio, ofensivo o abusivo. Esto incluye, sin limitación, acoso sexual, laboral y discriminación por raza, género, religión, orientación sexual, edad, discapacidad, o cualquier otra característica protegida por la ley. La violación de esta política conllevará medidas disciplinarias, incluyendo la rescisión del contrato, sin perjuicio de acciones legales.
+
+Octava: El trabajador autoriza a la empresa a captar, reproducir y difundir su imagen y/o voz obtenidas durante la prestación de tareas, con fines institucionales y promocionales, en cualquier medio y sin contraprestación adicional, conforme al Art. 31 de la Ley 11.723. La empresa no podrá darles un uso discriminatorio ni lesivo de la dignidad del trabajador. NO se pueden sacar fotos ni generar contenido en/con/durante la convocatoria ni lugar de trabajo.
+
+En expresión de conformidad y previa lectura de ratificación de las partes firman el presente ejemplar los días {{fecha_firma_doc}} de {{anio}}.`;
+
+function buildTextoContrato(d) {
+  const map = {
+    nombre: d.nombre || '', cuil: d.cuil || '', puesto: d.puesto || '', venue: d.venue || '',
+    fecha_inicio: d.fecha_inicio || '', fecha_fin: d.fecha_fin || '', anio: d.anio || '',
+    monto_letras: d.monto_letras || '', monto_numero: d.monto_numero || '', fecha_firma_doc: d.fecha_firma_doc || ''
+  };
+  return CONTRATO_TEMPLATE.replace(/\{\{(\w+)\}\}/g, (_, k) => (map[k] != null ? map[k] : ''));
+}
+
+// ── Generación de PDF (pdf-lib) ──
+async function fetchBytes(url) { const r = await fetch(url); return new Uint8Array(await r.arrayBuffer()); }
+function dataUrlToBytes(dataUrl) {
+  const b64 = dataUrl.split(',')[1] || '';
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+async function sha256Hex(txt) {
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (_) { return ''; }
+}
+// Corta texto en líneas que entren en maxWidth, partiendo palabras sin espacios (hashes).
+function wrapPlain(text, font, size, maxWidth) {
+  const piezas = [];
+  String(text == null ? '' : text).split(/\s+/).filter(Boolean).forEach(word => {
+    let w = word;
+    while (font.widthOfTextAtSize(w, size) > maxWidth) {
+      let cut = 1;
+      while (cut < w.length && font.widthOfTextAtSize(w.slice(0, cut + 1), size) <= maxWidth) cut++;
+      piezas.push({ txt: w.slice(0, cut), forzado: true });
+      w = w.slice(cut);
+    }
+    piezas.push({ txt: w, forzado: false });
+  });
+  const lines = []; let cur = '';
+  piezas.forEach(({ txt, forzado }) => {
+    if (forzado) { if (cur) { lines.push(cur); cur = ''; } lines.push(txt); return; }
+    const test = cur ? cur + ' ' + txt : txt;
+    if (font.widthOfTextAtSize(test, size) > maxWidth && cur) { lines.push(cur); cur = txt; }
+    else cur = test;
+  });
+  if (cur) lines.push(cur);
+  return lines;
+}
+// Envuelve un párrafo en líneas, detectando "Label:" inicial para renderizarlo en negrita.
+function wrapParagraphRuns(paragraph, font, fontBold, size, maxWidth) {
+  const m = paragraph.match(/^([A-ZÁÉÍÓÚÑ][^:\n]{0,20}):\s*([\s\S]*)$/);
+  const runs = [];
+  if (m) { runs.push({ t: m[1] + ':', b: true }); runs.push({ t: ' ' + m[2], b: false }); }
+  else runs.push({ t: paragraph, b: false });
+  const words = [];
+  runs.forEach(r => { r.t.split(/(\s+)/).forEach(tok => { if (tok) words.push({ tok, b: r.b }); }); });
+  const lines = []; let cur = [], curW = 0;
+  words.forEach(w => {
+    if (/^\s+$/.test(w.tok) && !cur.length) return;
+    const f = w.b ? fontBold : font;
+    const ww = f.widthOfTextAtSize(w.tok, size);
+    if (curW + ww > maxWidth && cur.length) { lines.push(cur); cur = []; curW = 0; if (/^\s+$/.test(w.tok)) return; }
+    cur.push(w); curW += ww;
+  });
+  if (cur.length) lines.push(cur);
+  return lines;
+}
+// Genera el PDF del contrato. opts: logoUrl, firmaEmpleadorUrl (jpg), firmaTrabajadorBytes (png, si ya está firmado).
+async function generarContratoPDF(texto, opts) {
+  opts = opts || {};
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const W = 595.28, H = 841.89, M = 56;
+  const maxWidth = W - M * 2;
+  const size = 10.5, lineH = 15, parGap = 8;
+  let page = pdfDoc.addPage([W, H]);
+  let y = H - M;
+
+  try {
+    if (opts.logoUrl) {
+      const logoBytes = await fetchBytes(opts.logoUrl);
+      const logoImg = await pdfDoc.embedPng(logoBytes);
+      const dim = logoImg.scale(40 / logoImg.width);
+      page.drawImage(logoImg, { x: M, y: y - dim.height, width: dim.width, height: dim.height });
+    }
+  } catch (_) {}
+  page.drawText('CONTRATO DE TRABAJO A PLAZO FIJO', { x: M, y: y - 14, size: 13, font: fontBold, color: rgb(0.07, 0.07, 0.09) });
+  y -= 46;
+
+  const parrafos = String(texto).split(/\n\n+/);
+  for (const par of parrafos) {
+    const lines = wrapParagraphRuns(par.trim(), font, fontBold, size, maxWidth);
+    const needed = lines.length * lineH + parGap;
+    if (y - needed < M + 90) { page = pdfDoc.addPage([W, H]); y = H - M; }
+    lines.forEach(line => {
+      let x = M;
+      line.forEach(w => {
+        const f = w.b ? fontBold : font;
+        page.drawText(w.tok, { x, y, size, font: f, color: rgb(0.13, 0.15, 0.18) });
+        x += f.widthOfTextAtSize(w.tok, size);
+      });
+      y -= lineH;
+    });
+    y -= parGap;
+  }
+
+  if (y < M + 130) { page = pdfDoc.addPage([W, H]); y = H - M; }
+  y -= 30;
+  const colW = (maxWidth - 30) / 2;
+  const sigH = 46;
+  try {
+    if (opts.firmaEmpleadorUrl) {
+      const bytes = await fetchBytes(opts.firmaEmpleadorUrl);
+      const img = await pdfDoc.embedJpg(bytes);
+      const dim = img.scale(Math.min(colW / img.width, sigH / img.height));
+      page.drawImage(img, { x: M, y: y - dim.height, width: dim.width, height: dim.height });
+    }
+  } catch (_) {}
+  if (opts.firmaTrabajadorBytes) {
+    try {
+      const img = await pdfDoc.embedPng(opts.firmaTrabajadorBytes);
+      const dim = img.scale(Math.min(colW / img.width, sigH / img.height));
+      page.drawImage(img, { x: M + colW + 30, y: y - dim.height, width: dim.width, height: dim.height });
+    } catch (_) {}
+  }
+  y -= sigH + 4;
+  page.drawLine({ start: { x: M, y }, end: { x: M + colW, y }, thickness: 0.7, color: rgb(0.6, 0.6, 0.6) });
+  page.drawLine({ start: { x: M + colW + 30, y }, end: { x: M + colW * 2 + 30, y }, thickness: 0.7, color: rgb(0.6, 0.6, 0.6) });
+  y -= 14;
+  page.drawText('EMPLEADOR', { x: M, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+  page.drawText(opts.firmaTrabajadorBytes ? 'TRABAJADOR (firmado electrónicamente)' : 'TRABAJADOR (pendiente de firma)', { x: M + colW + 30, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+
+  y -= 20;
+  const nota = `Este contrato se firma electrónicamente desde el link enviado por correo. Al firmarlo se genera un informe de auditoría —envío, apertura, consentimiento y firma, con fecha, hora de servidor, dirección IP y dispositivo— que se incorpora como última página del documento firmado, conforme a los arts. 286 y 288 del Código Civil y Comercial y al art. 5 de la Ley N.º 25.506.${opts.hashTexto ? ` Huella SHA-256 del texto: ${opts.hashTexto}` : ''}`;
+  wrapPlain(nota, font, 7.5, maxWidth).forEach(ln => { page.drawText(ln, { x: M, y, size: 7.5, font, color: rgb(0.55, 0.57, 0.6) }); y -= 10; });
+
+  return await pdfDoc.saveAsBase64({ dataUri: false });
+}
+
+// ── Alta y estado de contratos ──
+async function crearContrato(datos, convId, personaId, email, postulacionId, puestoId, area) {
+  const texto = buildTextoContrato(datos);
+  const row = {
+    conv_id: convId || null, persona_id: personaId || null, postulacion_id: postulacionId || null, puesto_id: puestoId || null,
+    nombre: datos.nombre, cuil: datos.cuil, email: email || null, puesto: datos.puesto, venue: datos.venue,
+    fecha_inicio: datos.fecha_inicio, fecha_fin: datos.fecha_fin, anio: datos.anio,
+    monto_letras: datos.monto_letras, monto_numero: datos.monto_numero, fecha_firma_doc: datos.fecha_firma_doc,
+    texto_contrato: texto, estado: 'pendiente', creado_por: currentUserId || null,
+    firma_empleador_img: SIGNATURE_IMG[area] || null
+  };
+  const { data, error } = await sb.from('contratos').insert(row).select().single();
+  if (error) throw error;
+  await sb.from('contrato_eventos').insert({ contrato_id: data.id, tipo: 'creado' });
+  contratos.unshift(data);
+  populateCtFilters(); renderContratos();
+  return data;
+}
+async function marcarContratoEnviado(id) {
+  const now = new Date().toISOString();
+  try {
+    await sb.from('contratos').update({ estado: 'enviado', fecha_envio: now }).eq('id', id);
+    await sb.from('contrato_eventos').insert({ contrato_id: id, tipo: 'enviado' });
+    const c = contratos.find(x => x.id === id); if (c) { c.estado = 'enviado'; c.fecha_envio = now; }
+    renderContratos();
+  } catch (_) {}
+}
+
+// ── Sección Contratos ──
+function estadoBadge(estado) {
+  const map = {
+    pendiente: ['#f3f4f6', '#6b7280', 'Pendiente'], enviado: ['#e0f2fe', '#0369a1', 'Enviado'],
+    visto: ['#fef3c7', '#92400e', 'Visto'], firmado: ['#dcfce7', '#166534', 'Firmado']
+  };
+  const [bg, fg, label] = map[estado] || map.pendiente;
+  return `<span style="background:${bg};color:${fg};font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap">${label}</span>`;
+}
+function periodoDe(c) { const d = c.fecha_creacion ? new Date(c.fecha_creacion) : null; if (!d || isNaN(d)) return ''; return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+
+function populateCtFilters() {
+  const sel = document.getElementById('ctConvFilter'); if (!sel) return;
+  const curConv = sel.value;
+  const convIds = [...new Set(contratos.map(c => c.conv_id).filter(Boolean))];
+  sel.innerHTML = '<option value="">Todas las convocatorias</option>' + convIds.map(id => { const c = convs.find(x => x.id === id); return `<option value="${id}">${e(c?.nombre || 'Convocatoria')}</option>`; }).join('');
+  sel.value = curConv;
+
+  const selP = document.getElementById('ctPeriodoFilter'); if (!selP) return;
+  const curP = selP.value;
+  const periodos = [...new Set(contratos.map(periodoDe).filter(Boolean))].sort().reverse();
+  const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  selP.innerHTML = '<option value="">Todos los períodos</option>' + periodos.map(p => { const [y, m] = p.split('-'); return `<option value="${p}">${meses[+m - 1]} ${y}</option>`; }).join('');
+  selP.value = curP;
+}
+
+function renderContratos() {
+  const cont = document.getElementById('ctContent'); if (!cont) return;
+  const q = (document.getElementById('ctSrch')?.value || '').toLowerCase().trim();
+  const convF = document.getElementById('ctConvFilter')?.value || '';
+  const perF = document.getElementById('ctPeriodoFilter')?.value || '';
+  const estF = document.getElementById('ctEstadoFilter')?.value || '';
+  const list = contratos.filter(c => {
+    if (convF && c.conv_id !== convF) return false;
+    if (perF && periodoDe(c) !== perF) return false;
+    if (estF && c.estado !== estF) return false;
+    if (q && !((c.nombre || '').toLowerCase().includes(q) || normCuit(c.cuil).includes(q.replace(/\D/g, '')))) return false;
+    return true;
+  }).sort((a, b) => (b.fecha_creacion || '').localeCompare(a.fecha_creacion || ''));
+  if (!list.length) { cont.innerHTML = `<div class="empty">${contratos.length === 0 ? 'Todavía no se generó ningún contrato.' : 'Sin resultados para este filtro.'}</div>`; return; }
+  cont.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>CUIL</th><th>Puesto</th><th>Convocatoria</th><th>Estado</th><th>Creado</th><th></th></tr></thead><tbody>${list.map(c => {
+    const conv = convs.find(x => x.id === c.conv_id);
+    const fecha = c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    return `<tr>
+      <td>${e(c.nombre || '')}</td>
+      <td>${e(c.cuil || '')}</td>
+      <td>${e(c.puesto || '')}</td>
+      <td>${e(conv?.nombre || '—')}</td>
+      <td>${estadoBadge(c.estado)}</td>
+      <td>${fecha}</td>
+      <td><button class="btn btn-sec btn-xs" onclick="verContratoTrace('${c.id}')">Ver</button></td>
+    </tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+
+async function verContratoTrace(id) {
+  ctTraceId = id; ctTraceRow = null;
+  document.getElementById('ctTraceNombre').textContent = '';
+  document.getElementById('ctTraceBody').innerHTML = '<div class="empty">Cargando...</div>';
+  document.getElementById('ctReenviarBtn').style.display = 'none';
+  document.getElementById('ctDescargarBtn').style.display = 'none';
+  showM('mContratoTrace');
+  const [{ data: row }, { data: eventos }] = await Promise.all([
+    sb.from('contratos').select('*').eq('id', id).single(),
+    sb.from('contrato_eventos').select('*').eq('contrato_id', id).order('fecha')
+  ]);
+  if (!row) { document.getElementById('ctTraceBody').innerHTML = '<div class="empty">No se encontró el contrato.</div>'; return; }
+  ctTraceRow = row;
+  document.getElementById('ctTraceNombre').textContent = row.nombre || '';
+  const tipoLabel = { creado: '📝 Creado', enviado: '✉ Enviado', visto: '👁 Visto', consentimiento: '☑ Consentimiento', firmado: '✍ Firmado', reenviado: '↻ Reenviado' };
+  const timeline = (eventos || []).map(ev => `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;font-size:13px;color:#374151">${tipoLabel[ev.tipo] || ev.tipo}</div>
+      <div style="font-size:12px;color:#9ca3af;white-space:nowrap">${ev.fecha ? new Date(ev.fecha).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}</div>
+    </div>
+    ${ev.ip || ev.user_agent ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px;word-break:break-all">${ev.ip ? 'IP: ' + e(ev.ip) : ''}${ev.ip && ev.user_agent ? ' · ' : ''}${ev.user_agent ? e(String(ev.user_agent).slice(0, 90)) : ''}</div>` : ''}
+  </div>`).join('') || '<div class="empty">Sin eventos.</div>';
+  document.getElementById('ctTraceBody').innerHTML = `
+    <div style="font-size:13px;color:#374151;margin-bottom:10px">
+      <div><strong>CUIL:</strong> ${e(row.cuil || '')}</div>
+      <div><strong>Puesto:</strong> ${e(row.puesto || '')}</div>
+      <div><strong>Estado:</strong> ${estadoBadge(row.estado)}</div>
+    </div>
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:10px 0 6px">Trazabilidad</div>
+    ${timeline}`;
+  document.getElementById('ctReenviarBtn').style.display = row.estado !== 'firmado' ? 'inline-block' : 'none';
+  document.getElementById('ctDescargarBtn').style.display = (row.estado === 'firmado' && row.pdf_firmado) ? 'inline-block' : 'none';
+}
+
+function descargarContratoFirmado() {
+  if (!ctTraceRow?.pdf_firmado) return;
+  const a = document.createElement('a');
+  a.href = 'data:application/pdf;base64,' + ctTraceRow.pdf_firmado;
+  a.download = `contrato-${(ctTraceRow.nombre || 'firmado').replace(/\s+/g, '-')}.pdf`;
+  a.click();
+}
+
+async function reenviarContrato() {
+  if (!ctTraceRow) return;
+  if (!ctTraceRow.email) { toast('Este contrato no tiene email asociado'); return; }
+  if (!confirm(`¿Reenviar el contrato a ${ctTraceRow.email}?`)) return;
+  const btn = document.getElementById('ctReenviarBtn'); btn.disabled = true; btn.textContent = 'Reenviando...';
+  try {
+    const conv = convs.find(c => c.id === ctTraceRow.conv_id);
+    const area = conv?.area === 'externos' ? 'externos' : 'movistar';
+    const from = area === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
+    const pdfBase64 = await generarContratoPDF(ctTraceRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + (SIGNATURE_IMG[area] || ''), hashTexto: await sha256Hex(ctTraceRow.texto_contrato) });
+    const body = `Te reenviamos tu contrato de trabajo. Para firmarlo online, ingresá a este link:\n${location.origin}/contrato.html?t=${ctTraceRow.token}`;
+    const res = await fetch('/api/send-email', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+      body: JSON.stringify({ from, to: [ctTraceRow.email], subject: 'Reenvío — Contrato de trabajo', html: renderEmailHtml(body, from, area), text: body, attachments: [{ filename: 'contrato.pdf', content: pdfBase64 }] })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || data.error || 'Error al enviar');
+    await sb.from('contrato_eventos').insert({ contrato_id: ctTraceRow.id, tipo: 'reenviado' });
+    toast('✓ Contrato reenviado');
+    verContratoTrace(ctTraceRow.id);
+  } catch (err) {
+    toast('Error: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '↻ Reenviar mail';
+  }
+}
+
+// Bloque "Contratos de esta persona" dentro de la ficha de edición.
+function renderPersonContratos(p) {
+  const block = document.getElementById('pContratosBlock');
+  const list = document.getElementById('pContratosList');
+  const mios = contratos.filter(c => c.persona_id === p.id || (p.cuit && normCuit(c.cuil) === normCuit(p.cuit)));
+  if (!mios.length) { block.style.display = 'none'; return; }
+  block.style.display = 'block';
+  list.innerHTML = mios.sort((a, b) => (b.fecha_creacion || '').localeCompare(a.fecha_creacion || '')).map(c => {
+    const conv = convs.find(x => x.id === c.conv_id);
+    const fecha = c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:12px">
+      <div style="flex:1;color:#374151">${e(conv?.nombre || c.puesto || 'Contrato')} <span style="color:#9ca3af">— ${fecha}</span></div>
+      ${estadoBadge(c.estado)}
+      <button class="btn btn-sec btn-xs" onclick="verContratoTrace('${c.id}')">Ver</button>
+    </div>`;
+  }).join('');
+}
+
 let solViewId = null, solSelIds = new Set();
 
 function refreshSolBadge() {
@@ -2805,7 +3309,7 @@ function confirmarDisponibilidad(cuit, nombre) {
   if (!email) { toast('Esta persona no tiene email cargado'); return; }
   closeM('mDispAdmin');
   mailSolId = '__post__disp';
-  window._tempMailData = { email, nombre: nombre || per?.nombre || sol?.nombre || '', conv_id: currentConvId, puesto_nombre: '' };
+  window._tempMailData = { email, nombre: nombre || per?.nombre || sol?.nombre || '', conv_id: currentConvId, puesto_nombre: '', cuit: per?.cuit || sol?.cuit || cuit || '', personaId: per?.id || null };
   document.getElementById('mMailStep1').style.display = 'block';
   document.getElementById('mMailStep2').style.display = 'none';
   showM('mMailConf');
