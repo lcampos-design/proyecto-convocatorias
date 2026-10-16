@@ -257,6 +257,14 @@ begin
     'fecha_firma',         c.fecha_firma,
     'transaccion_id',      c.transaccion_id,
     'hash_texto',          c.hash_texto,
+    -- Datos propios del contrato: la página de firma los usa para resaltarlos
+    -- en negrita dentro del PDF, igual que el modelo en Word.
+    'puesto',              c.puesto,
+    'fecha_inicio',        c.fecha_inicio,
+    'fecha_fin',           c.fecha_fin,
+    'monto_letras',        c.monto_letras,
+    'monto_numero',        c.monto_numero,
+    'fecha_firma_doc',     c.fecha_firma_doc,
     'eventos',             eventos
   );
 end;
