@@ -403,6 +403,9 @@ tr:hover td{background:#fafafa}
         <option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option>
         <option value="externos">Externos</option><option value="ambas">Ambas</option>
       </select>
+      <select class="filt" id="cvArchF" onchange="renderCvList()">
+        <option value="activas">Activas</option><option value="archivadas">Archivadas</option><option value="todas">Todas</option>
+      </select>
       <button class="btn btn-primary" onclick="openAddConv()">+ Nueva convocatoria</button>
     </div>
     <div id="cvCards"></div>
@@ -418,6 +421,7 @@ tr:hover td{background:#fafafa}
         <button class="btn btn-sec btn-sm" onclick="openReporte()">📊 Reporte</button>
         <button class="btn btn-sec btn-sm" onclick="openDispAdmin()">🗓 Disponibilidad</button>
         <button class="btn btn-sec btn-sm" onclick="editCurrentConv()">✎ Editar</button>
+        <button class="btn btn-sec btn-sm" id="btnArchivar" onclick="toggleArchivar(currentConvId)">📦 Archivar</button>
         <button class="btn btn-danger btn-sm" onclick="deleteCurrentConv()">Eliminar</button>
       </div>
     </div>
@@ -467,6 +471,7 @@ tr:hover td{background:#fafafa}
     <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, CUIL, email, puesto o localidad..." oninput="solFilter()">
     <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
     <select class="filt" id="solStF" onchange="solFilter()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
+    <select class="filt" id="solLocF" onchange="solFilter()"><option value="">Todas las localidades</option></select>
   </div>
   <div class="bulk-bar" id="solBulk">
     <span id="solBulkCnt">0 seleccionadas</span><span style="color:#c4b5fd">|</span>
@@ -1278,7 +1283,7 @@ async function loadAll() {
   }));
   posts = (postData || []).map(p => {
     const persona = (people || []).find(x => x.id === p.persona_id);
-    return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, cuit: persona?.cuit || p.cuit || null };
+    return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, cuit: persona?.cuit || p.cuit || null, confirmacion: p.confirmacion || null };
   });
   feedbacks = fbData || [];
   userProfiles = upData || [];
@@ -1292,6 +1297,10 @@ async function loadAll() {
   if (rotCfg) rotacionConfig = rotCfg.value;
   const etqCfg = (cfgData || []).find(c => c.key === 'etiquetas');
   etiquetasPaleta = (etqCfg && Array.isArray(etqCfg.value)) ? etqCfg.value : [];
+  // Estado "archivada" guardado en config (no depende de una columna nueva en convocatorias).
+  const archCfg = (cfgData || []).find(c => c.key === 'archivadas');
+  const archSet = new Set(Array.isArray(archCfg && archCfg.value) ? archCfg.value : []);
+  convs.forEach(c => { c.archivada = archSet.has(c.id); });
   const bajaCfg = (cfgData || []).find(c => c.key === 'baja');
   bajaDiasLimite = (bajaCfg && bajaCfg.value && Number.isFinite(+bajaCfg.value.dias)) ? +bajaCfg.value.dias : 3;
   const ausCfg = (cfgData || []).find(c => c.key === 'ausencia');
@@ -1720,7 +1729,14 @@ async function downloadCvFileById(id) { await bajarCvArchivo(id); }
 function renderCvList() {
   const q = document.getElementById('cvSrch').value.toLowerCase().trim();
   const af = document.getElementById('cvAreaF').value;
-  const filtered = convs.filter(c => { if (af && c.area !== af) return false; if (q && !c.nombre.toLowerCase().includes(q)) return false; return true; });
+  const arch = document.getElementById('cvArchF') ? document.getElementById('cvArchF').value : 'activas';
+  const filtered = convs.filter(c => {
+    if (arch === 'activas' && c.archivada) return false;
+    if (arch === 'archivadas' && !c.archivada) return false;
+    if (af && c.area !== af) return false;
+    if (q && !c.nombre.toLowerCase().includes(q)) return false;
+    return true;
+  });
   const cont = document.getElementById('cvCards');
   if (!filtered.length) { cont.innerHTML = `<div class="no-convs"><div class="no-convs-title">${convs.length === 0 ? 'Todavía no hay convocatorias' : 'Sin resultados'}</div><div class="no-convs-sub">${convs.length === 0 ? 'Creá una para cargar puestos y cupos.' : 'Probá con otro filtro.'}</div>${convs.length === 0 ? `<button class="btn btn-primary" onclick="openAddConv()">+ Crear primera convocatoria</button>` : ''}</div>`; return; }
   cont.innerHTML = `<div class="cv-grid">${filtered.map(c => cvCardHTML(c)).join('')}</div>`;
@@ -1730,10 +1746,10 @@ function cvCardHTML(c) {
   const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' }[c.area] || c.area;
   const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : '#34d399';
   return `<div class="cv-card"><div class="cv-card-title">${e(c.nombre)}</div>
-<div class="cv-card-meta"><span class="a-badge ${c.area === 'movistar_arena' ? 'a-mv' : c.area === 'externos' ? 'a-ex' : 'a-ambas'}">${areaLabel}</span>${c.fecha ? c.fecha.split(',').map(f => `<span>📅 ${fmtFecha(f.trim())}</span>`).join('') : ''}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
+<div class="cv-card-meta">${c.archivada ? '<span class="a-badge" style="background:#e5e7eb;color:#6b7280">📦 Archivada</span>' : ''}<span class="a-badge ${c.area === 'movistar_arena' ? 'a-mv' : c.area === 'externos' ? 'a-ex' : 'a-ambas'}">${areaLabel}</span>${c.fecha ? c.fecha.split(',').map(f => `<span>📅 ${fmtFecha(f.trim())}</span>`).join('') : ''}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
 <div class="cv-puestos">${(c.puestos || []).slice(0, 4).map(p => { const pu = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado').length; const pp = p.cupos > 0 ? Math.min(100, Math.round(pu / p.cupos * 100)) : 0; const pc = pp < 50 ? '#e5e7eb' : pp < 80 ? '#fbbf24' : '#34d399'; return `<div class="cv-prow"><span class="cv-pname">${e(p.nombre)}</span><div class="prog-wrap"><div class="prog-fill" style="background:${pc};width:${pp}%"></div></div><span class="cv-cupo">${pu}/${p.cupos}</span></div>`; }).join('')}${(c.puestos || []).length > 4 ? `<div style="font-size:11px;color:#9ca3af">+${(c.puestos || []).length - 4} puestos más</div>` : ''}</div>
 <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;margin-bottom:12px"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span>${usados}/${totalCupos} cupos · ${pct}%</span></div>
-<div class="cv-foot"><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delConv('${c.id}')">Eliminar</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();openEditConv('${c.id}')">✎ Editar</button><button class="btn btn-sm ${c.publicada?'btn-success':'btn-sec'}" onclick="event.stopPropagation();togglePublicada('${c.id}')" title="${c.publicada?'Quitar de página pública':'Publicar en página pública'}">${c.publicada?'🌐 Publicada':'○ Publicar'}</button><button class="btn btn-primary btn-sm" onclick="openDetail('${c.id}')">Gestionar →</button></div></div>`;
+<div class="cv-foot"><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delConv('${c.id}')">Eliminar</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();archivarConv('${c.id}',${c.archivada ? 'false' : 'true'})">${c.archivada ? '📤 Desarchivar' : '📦 Archivar'}</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();openEditConv('${c.id}')">✎ Editar</button><button class="btn btn-sm ${c.publicada?'btn-success':'btn-sec'}" onclick="event.stopPropagation();togglePublicada('${c.id}')" title="${c.publicada?'Quitar de página pública':'Publicar en página pública'}">${c.publicada?'🌐 Publicada':'○ Publicar'}</button><button class="btn btn-primary btn-sm" onclick="openDetail('${c.id}')">Gestionar →</button></div></div>`;
 }
 function fmtFecha(f) { if (!f) return ''; try { const d = new Date(f + 'T00:00:00'); return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return f; } }
 function openDetail(id) {
@@ -1743,6 +1759,7 @@ function openDetail(id) {
   document.getElementById('detTitle').textContent = c.nombre;
   document.getElementById('detMeta').textContent = `${{ movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' }[c.area] || c.area}${c.fecha ? ' · ' + c.fecha.split(',').map(f => fmtFecha(f.trim())).join(' · ') : ''}${c.descripcion ? ' · ' + c.descripcion.slice(0, 60) : ''}`;
   syncPublicadaBtn(c);
+  const ab = document.getElementById('btnArchivar'); if (ab) ab.textContent = c.archivada ? '📤 Desarchivar' : '📦 Archivar';
   renderDetStats(); renderPuestos();
 }
 
@@ -1826,6 +1843,24 @@ async function delConv(id) {
 }
 function deleteCurrentConv() { if (!currentConvId) return; delConv(currentConvId); closeDetail(); }
 
+async function archivarConv(id, val) {
+  const c = convs.find(x => x.id === id); if (!c) return;
+  if (val && !confirm('¿Archivar esta convocatoria? Se guarda con todos sus datos (puestos, postulaciones, disponibilidad, planilla), sale de la lista activa y se despublica de la página. La podés desarchivar cuando quieras.')) return;
+  // El estado "archivada" se guarda en config (key 'archivadas'); así no depende de una columna nueva.
+  const nuevo = val
+    ? [...new Set([...convs.filter(x => x.archivada).map(x => x.id), id])]
+    : convs.filter(x => x.archivada && x.id !== id).map(x => x.id);
+  const { error } = await sb.from('config').upsert({ key: 'archivadas', value: nuevo, updated_at: new Date().toISOString() });
+  if (error) { toast('No se pudo archivar. Reintentá.'); return; }
+  c.archivada = val;
+  if (val && c.publicada) { c.publicada = false; try { await sbUpdate('convocatorias', id, { publicada: false }); } catch (_) {} }
+  renderCvList();
+  const ab = document.getElementById('btnArchivar');
+  if (ab && currentConvId === id) { ab.textContent = val ? '📤 Desarchivar' : '📦 Archivar'; syncPublicadaBtn(c); }
+  toast(val ? '📦 Convocatoria archivada' : 'Convocatoria desarchivada');
+}
+function toggleArchivar(id) { const c = convs.find(x => x.id === id); if (c) archivarConv(id, !c.archivada); }
+
 function openAddPuesto() { editPuestoId = null; document.getElementById('mPuestoTitle').textContent = 'Agregar puesto'; ['puNombre', 'puDesc'].forEach(i => document.getElementById(i).value = ''); document.getElementById('puCupos').value = ''; document.getElementById('puArea').value = ''; showM('mPuesto'); }
 function openEditPuesto(pid) { const c = convs.find(x => x.id === currentConvId); if (!c) return; const p = (c.puestos || []).find(x => x.id === pid); if (!p) return; editPuestoId = pid; document.getElementById('mPuestoTitle').textContent = 'Editar puesto'; document.getElementById('puNombre').value = p.nombre; document.getElementById('puCupos').value = p.cupos; document.getElementById('puArea').value = p.area || ''; document.getElementById('puDesc').value = p.desc || ''; showM('mPuesto'); }
 
@@ -1867,7 +1902,7 @@ function renderGestList() {
       : x.asistencia === 'ausente'
       ? `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✗ A</span>`
       : `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px">—</span>`;
-    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}">🚫 OUT</button>` : ''}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación">✉</button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
+    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}">🚫 OUT</button>` : ''}${x.confirmacion === 'si' ? ` <span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✅ Confirmó</span>` : x.confirmacion === 'no' ? ` <span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✕ No viene</span>` : ''}</td><td><select class="ssp ${x.estado}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación">✉</button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
   }).join('');
 }
 
@@ -1951,7 +1986,7 @@ async function confirmPicker() {
   if (!pickerSel.size) { toast('Seleccioná al menos una persona'); return; }
   const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return;
   const libres = Math.max(0, p.cupos - posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId && x.estado !== 'rechazado').length);
-  if (pickerSel.size > libres && !confirm(`Este puesto tiene ${libres} cupo(s) libre(s) y estás agregando ${pickerSel.size}. ¿Continuar?`)) return;
+  if (pickerSel.size > libres) { toast(`Este puesto tiene ${libres} cupo(s) libre(s) y estás agregando ${pickerSel.size}. Quitá ${pickerSel.size - libres} para no pasarte del tope.`); return; }
   const outs = [], conflicts = [], rotViolations = [], ausPenal = [];
   pickerSel.forEach(pid => {
     const pers = people.find(x => x.id === pid);
@@ -2089,8 +2124,8 @@ function renderNotifs() {
       : notificaciones;
   const cont = document.getElementById('notifsBody');
   if (!src.length) { cont.innerHTML = `<div class="empty">${notificaciones.length === 0 ? 'Sin notificaciones todavía. Se generan automáticamente al aprobar candidatos o llenar cupos.' : 'Sin resultados para este filtro.'}</div>`; return; }
-  const tipoIcon = { aprobacion: '✅', cupo_lleno: '🎯', rotacion: '⚠', otro: '📌' };
-  const tipoLabel = { aprobacion: 'Aprobación', cupo_lleno: 'Cupo lleno', rotacion: 'Rotación', otro: 'General' };
+  const tipoIcon = { aprobacion: '✅', cupo_lleno: '🎯', rotacion: '⚠', confirmacion: '📩', otro: '📌' };
+  const tipoLabel = { aprobacion: 'Aprobación', cupo_lleno: 'Cupo lleno', rotacion: 'Rotación', confirmacion: 'Confirmación', otro: 'General' };
   const stColors = { pendiente: '#fef3c7;color:#92400e', enviada: '#d1fae5;color:#065f46', descartada: '#f3f4f6;color:#9ca3af' };
   cont.innerHTML = src.map(n => `
     <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:10px;background:${n.estado==='descartada'?'#fafafa':'#fff'}">
@@ -2163,22 +2198,36 @@ async function checkCupoLleno(convId, puestoId) {
 }
 
 // ── EMAIL CONFIRMACIONES ──
+// Busca la solicitud (registro) de una postulación: por CUIL, o por nombre+convocatoria.
+function solDePost(post) {
+  if (!post) return null;
+  const cn = String(post.cuit || '').replace(/\D/g, '');
+  let sol = null;
+  if (cn) sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+  if (!sol) sol = solicitudes.find(s => (s.nombre || '').toLowerCase().trim() === (post.nombre || '').toLowerCase().trim() && s.conv_id === post.convId);
+  return sol || null;
+}
 function getPersonaEmail(post) {
-  if (!post.personaId) return null;
-  const p = people.find(x => x.id === post.personaId);
-  return p?.email || null;
+  // 1) Si vino de la nómina, el email de la persona.
+  if (post && post.personaId) {
+    const p = people.find(x => x.id === post.personaId);
+    if (p?.email) return p.email;
+  }
+  // 2) Externa (o nómina sin email): el email vive en la solicitud (registro).
+  return solDePost(post)?.email || null;
 }
 
 function openMailModalFromPost(postId) {
   const post = posts.find(x => x.id === postId); if (!post) return;
-  const persona = people.find(x => x.id === post.personaId);
-  if (!persona?.email) { toast('Esta persona no tiene email cargado'); return; }
-  const sol = solicitudes.find(s => s.nombre?.toLowerCase() === post.nombre?.toLowerCase() && s.conv_id === post.convId);
+  const persona = post.personaId ? people.find(x => x.id === post.personaId) : null;
+  const sol = solDePost(post);
+  const email = persona?.email || sol?.email;
+  if (!email) { toast('No encontramos email para esta persona'); return; }
   if (sol) {
     openMailModal(sol.id);
   } else {
     mailSolId = '__post__' + postId;
-    window._tempMailData = { email: persona.email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '', cuit: persona.cuit || post.cuit || '', personaId: post.personaId || persona.id || null };
+    window._tempMailData = { email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '', cuit: String(post.cuit || persona?.cuit || '').replace(/\D/g, ''), personaId: post.personaId || persona?.id || null };
     document.getElementById('mMailStep1').style.display = 'block';
     document.getElementById('mMailStep2').style.display = 'none';
     showM('mMailConf');
@@ -2194,7 +2243,9 @@ const SIGNATURE_IMG = {
 // Logo del encabezado del mail. Archivo en la raíz del sitio (misma carpeta que admin.html).
 // Dejar '' para volver al título de texto.
 const LOGO_IMG = 'logo-sbs.png';
-let mailSolId = null, mailFromArea = null;
+let mailSolId = null, mailFromArea = null, mailConfirmCuit = '', mailConfirmConv = '';
+// Botones Confirmo/No confirmo en el mail: requiere confirmacion-botones.sql corrido en Supabase.
+const CONFIRM_BTNS_ON = true;
 
 function openMailModal(solId) {
   mailSolId = solId;
@@ -2275,21 +2326,22 @@ function regenBulkBody() {
 
 function prepMailTemplate(area) {
   mailFromArea = area;
-  let solEmail, solNombre, solConvId, solPuesto, solCuil, solPersonaId;
+  let solEmail, solNombre, solConvId, solPuesto, solCuit, solPersonaId;
   if (mailSolId && mailSolId.startsWith('__post__') && window._tempMailData) {
     solEmail = window._tempMailData.email;
     solNombre = window._tempMailData.nombre;
     solConvId = window._tempMailData.conv_id;
     solPuesto = window._tempMailData.puesto_nombre || '';
-    solCuil = window._tempMailData.cuit || '';
+    solCuit = window._tempMailData.cuit || '';
     solPersonaId = window._tempMailData.personaId || null;
   } else {
     const s = solicitudes.find(x => x.id === mailSolId); if (!s) return;
-    solEmail = s.email; solNombre = s.nombre; solConvId = s.conv_id; solPuesto = s.puesto_nombre || s.puesto_interes || '';
-    solCuil = s.cuit || '';
+    solEmail = s.email; solNombre = s.nombre; solConvId = s.conv_id; solPuesto = s.puesto_nombre || s.puesto_interes || ''; solCuit = s.cuit || '';
     const per = people.find(p => normCuit(p.cuit) && normCuit(p.cuit) === normCuit(s.cuit));
     solPersonaId = per ? per.id : null;
   }
+  mailConfirmCuit = String(solCuit || '').replace(/\D/g, '');
+  mailConfirmConv = solConvId || '';
   const conv = solConvId ? convs.find(c => c.id === solConvId) : null;
   const nombre = solNombre || '';
   const puesto = solPuesto || '';
@@ -2300,7 +2352,7 @@ function prepMailTemplate(area) {
   document.getElementById('mailContratoFields').style.display = 'none';
   if (conv?.contratos_habilitados) {
     document.getElementById('mcNombre').value = nombre;
-    document.getElementById('mcCuil').value = solCuil || '';
+    document.getElementById('mcCuil').value = solCuit || '';
     document.getElementById('mcPuesto').value = puesto;
     const rango = rangoFechasConv(conv);
     document.getElementById('mcFechaInicio').value = rango.inicio;
@@ -2340,7 +2392,7 @@ function prepMailTemplate(area) {
 }
 
 // Convierte el texto plano del mensaje en un HTML limpio y sobrio para el correo.
-function renderEmailHtml(text, fromAddr, area) {
+function renderEmailHtml(text, fromAddr, area, confirm) {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const linkify = s => s.replace(/((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)])/gi, u => {
     const href = u.startsWith('http') ? u : 'https://' + u;
@@ -2391,10 +2443,13 @@ function renderEmailHtml(text, fromAddr, area) {
     ? `<img src="${logoUrl}" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">`
     : `<div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#111827">Show Business Solutions</div>
     <div style="height:2px;width:40px;background:#534AB7;margin:12px 0 26px;border-radius:2px"></div>`;
+  const base = (typeof location !== 'undefined' && location.origin) || 'https://convocatorias.show-bs.com';
+  const btns = (CONFIRM_BTNS_ON && confirm && confirm.cuit && confirm.convId) ? `<div style="margin:30px 0 4px;text-align:center"><div style="font-size:13px;color:#6b7280;margin-bottom:12px">Confirmá tu asistencia tocando un botón:</div><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=si" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px">✅ CONFIRMO</a><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=no" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px">✕ NO CONFIRMO</a></div>` : '';
   return `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
     ${header}
     ${out}
+    ${btns}
     ${sigBlock}
   </div>
   <div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">
@@ -2432,7 +2487,7 @@ async function sendConfirmationMail() {
     const res = await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea), text: body, ...(attachments ? { attachments } : {}) })
+      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea, { cuit: mailConfirmCuit, convId: mailConfirmConv }), text: body, ...(attachments ? { attachments } : {}) })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || data.error || 'Error al enviar');
@@ -2455,9 +2510,8 @@ function openBulkMail() {
   bulkMailRecipients = []; bmSinEmail = 0;
   ids.forEach(id => {
     const post = posts.find(x => x.id === id); if (!post) return;
-    const persona = people.find(p => p.id === post.personaId);
-    const email = persona?.email || null;
-    if (email) bulkMailRecipients.push({ email, nombre: post.nombre, cuit: persona?.cuit || post.cuit || '', personaId: post.personaId || null, postulacionId: post.id || null, puestoId: post.puestoId || null });
+    const email = getPersonaEmail(post);
+    if (email) bulkMailRecipients.push({ email, nombre: post.nombre, cuit: String(post.cuit || '').replace(/\D/g, ''), personaId: post.personaId || null, postulacionId: post.id || null, puestoId: post.puestoId || null });
     else bmSinEmail++;
   });
   if (!bulkMailRecipients.length) { toast('Ninguno de los seleccionados tiene email cargado'); return; }
@@ -2543,7 +2597,7 @@ async function sendBulkMail() {
       }
       const res = await fetch('/api/send-email', {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea), text: body, ...(attachments ? { attachments } : {}) })
+        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea, { cuit: r.cuit, convId: currentConvId }), text: body, ...(attachments ? { attachments } : {}) })
       });
       if (res.ok) { ok++; if (contratoRow) await marcarContratoEnviado(contratoRow.id); } else fail++;
     } catch (_) { fail++; }
@@ -2915,17 +2969,29 @@ function refreshSolBadge() {
   if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; }
 }
 
+function fillSolLocOptions() {
+  const sel = document.getElementById('solLocF'); if (!sel) return;
+  const cur = sel.value;
+  const map = new Map();
+  solicitudes.forEach(s => { const l = (s.localidad || '').trim(); if (l) { const k = l.toLowerCase(); if (!map.has(k)) map.set(k, l); } });
+  const locs = [...map.values()].sort((a, b) => a.localeCompare(b, 'es'));
+  sel.innerHTML = '<option value="">Todas las localidades</option>' + locs.map(l => `<option value="${e(l)}">${e(l)}</option>`).join('');
+  if (cur) sel.value = cur;
+}
 function solFilter() { solPage = 1; renderSolicitudes(); }
 function solPageGo(n) { solPage = n; renderSolicitudes(); const el = document.getElementById('sec-solicitudes'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
 function renderSolicitudes() {
+  fillSolLocOptions();
   const q = document.getElementById('solSrch').value.toLowerCase().trim();
   const qd = q.replace(/\D/g, '');
   const af = document.getElementById('solAreaF').value;
   const sf = document.getElementById('solStF').value;
+  const lf = document.getElementById('solLocF').value.trim().toLowerCase();
   const filtered = solicitudes.filter(s => {
     if (af && s.area !== af) return false;
     if (sf && s.estado !== sf) return false;
+    if (lf && (s.localidad || '').trim().toLowerCase() !== lf) return false;
     if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q) && !(qd && String(s.cuit||'').replace(/\D/g,'').includes(qd))) return false;
     return true;
   });
@@ -3156,11 +3222,14 @@ function exportPostuladosExcel() {
   const aoa = [];
   let hay = false;
   (c.puestos || []).forEach(p => {
-    const asignados = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado');
+    const ordenEstado = { aprobado: 0, en_revision: 1, pendiente: 2, rechazado: 3 };
+    const estadoLabel = { pendiente: 'Pendiente', en_revision: 'En revisión', aprobado: 'Aprobado', rechazado: 'Rechazado' };
+    const asignados = posts.filter(x => x.convId === c.id && x.puestoId === p.id)
+      .sort((a, b) => (ordenEstado[a.estado] ?? 9) - (ordenEstado[b.estado] ?? 9));
     if (!asignados.length) return;
     hay = true;
     // Fila de encabezado del sector (el nombre del puesto va en la 1ra columna)
-    aoa.push([String(p.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', '', 'CUIL', 'DNI', 'TELEFONO', 'VIANDA', ...fechaCols, 'OBSERVACIONES', 'CANT. DE DÍAS', 'CAT', 'ART y SVO', 'CONTRATO']);
+    aoa.push([String(p.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'ESTADO', '', 'CUIL', 'DNI', 'TELEFONO', 'EMAIL', 'VIANDA', ...fechaCols, 'OBSERVACIONES', 'CANT. DE DÍAS', 'CAT', 'ART y SVO', 'CONTRATO']);
     asignados.forEach((post, i) => {
       const pers = people.find(x => x.id === post.personaId);
       const cuil = String(pers?.cuit || post.cuit || '').replace(/\D/g, '');
@@ -3169,8 +3238,9 @@ function exportPostuladosExcel() {
       const dni   = cuil.length === 11 ? cuil.slice(2, 10) : '';   // DNI (8)
       const nm  = splitNombre(post.nombre || pers?.nombre || sol?.nombre || '');
       const tel = pers?.tel || sol?.tel || '';
+      const email = pers?.email || sol?.email || '';
       const obs = post.notas || pers?.notas || '';
-      aoa.push([i + 1, nm.apellido, nm.nombre, cuil9, cuil, dni, tel, '', ...fechaCols.map(() => ''), obs, '', '', '', '']);
+      aoa.push([i + 1, nm.apellido, nm.nombre, estadoLabel[post.estado] || post.estado || '', cuil9, cuil, dni, tel, email, '', ...fechaCols.map(() => ''), obs, '', '', '', '']);
     });
     aoa.push([]); // separación entre sectores
   });
@@ -3178,7 +3248,7 @@ function exportPostuladosExcel() {
   if (!hay) { toast('No hay personas asignadas para exportar'); return; }
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 11 }, { wch: 13 }, { wch: 10 }, { wch: 13 }, { wch: 9 }]
+  ws['!cols'] = [{ wch: 10 }, { wch: 18 }, { wch: 16 }, { wch: 13 }, { wch: 11 }, { wch: 13 }, { wch: 10 }, { wch: 13 }, { wch: 26 }, { wch: 9 }]
     .concat(fechaCols.map(() => ({ wch: 8 })))
     .concat([{ wch: 26 }, { wch: 12 }, { wch: 6 }, { wch: 9 }, { wch: 9 }]);
   const wb = XLSX.utils.book_new();
@@ -3309,7 +3379,7 @@ function confirmarDisponibilidad(cuit, nombre) {
   if (!email) { toast('Esta persona no tiene email cargado'); return; }
   closeM('mDispAdmin');
   mailSolId = '__post__disp';
-  window._tempMailData = { email, nombre: nombre || per?.nombre || sol?.nombre || '', conv_id: currentConvId, puesto_nombre: '', cuit: per?.cuit || sol?.cuit || cuit || '', personaId: per?.id || null };
+  window._tempMailData = { email, nombre: nombre || per?.nombre || sol?.nombre || '', conv_id: currentConvId, puesto_nombre: '', cuit: cn, personaId: per?.id || null };
   document.getElementById('mMailStep1').style.display = 'block';
   document.getElementById('mMailStep2').style.display = 'none';
   showM('mMailConf');
