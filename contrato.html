@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Contrato de trabajo — Show Business Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f5;color:#1a1a1a;font-size:15px;min-height:100vh}
+body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f5;color:#1a1a1a;font-size:15px;min-height:100vh}
 .page-header{background:#0f1117;padding:26px 24px;text-align:center}
 .page-title{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px}
 .page-sub{font-size:13px;color:#9ca3af;margin-top:5px}
@@ -43,6 +46,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script>
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
@@ -261,96 +265,196 @@ function descripcionEvento(ev, cert) {
   }
 }
 
-function wrapParagraphRuns(paragraph, font, fontBold, size, maxWidth) {
-  const m = paragraph.match(/^([A-ZÁÉÍÓÚÑ][^:\n]{0,20}):\s*([\s\S]*)$/);
-  const runs = [];
-  if (m) { runs.push({ t: m[1] + ':', b: true }); runs.push({ t: ' ' + m[2], b: false }); }
-  else runs.push({ t: paragraph, b: false });
-  const words = [];
-  runs.forEach(r => { r.t.split(/(\s+)/).forEach(tok => { if (tok) words.push({ tok, b: r.b }); }); });
-  const lines = []; let cur = [], curW = 0;
-  words.forEach(w => {
-    if (/^\s+$/.test(w.tok) && !cur.length) return;
-    const f = w.b ? fontBold : font;
-    const ww = f.widthOfTextAtSize(w.tok, size);
-    if (curW + ww > maxWidth && cur.length) { lines.push(cur); cur = []; curW = 0; if (/^\s+$/.test(w.tok)) return; }
-    cur.push(w); curW += ww;
-  });
-  if (cur.length) lines.push(cur);
-  return lines;
+// ── Tipografía del contrato (Poppins, la misma de la plataforma) ──
+// Se incrusta en el PDF para que salga con la letra de la empresa. Si los
+// archivos no cargaran, se usa Helvetica: preferimos un contrato con otra
+// tipografía antes que no poder generarlo.
+async function cargarFuentes(pdfDoc) {
+  try {
+    if (typeof fontkit === 'undefined') throw new Error('falta fontkit');
+    pdfDoc.registerFontkit(fontkit);
+    const [reg, neg] = await Promise.all([
+      fetchBytes(location.origin + '/fuentes/Poppins-Regular.ttf'),
+      fetchBytes(location.origin + '/fuentes/Poppins-SemiBold.ttf')
+    ]);
+    return { normal: await pdfDoc.embedFont(reg, { subset: true }),
+             negrita: await pdfDoc.embedFont(neg, { subset: true }) };
+  } catch (_) {
+    const { StandardFonts } = PDFLib;
+    return { normal: await pdfDoc.embedFont(StandardFonts.Helvetica),
+             negrita: await pdfDoc.embedFont(StandardFonts.HelveticaBold) };
+  }
 }
+
+// Imagen por extensión (las firmas pueden ser .png o .jpg).
+async function incrustarImagen(pdfDoc, url) {
+  const bytes = await fetchBytes(url);
+  return /\.jpe?g($|\?)/i.test(url) ? pdfDoc.embedJpg(bytes) : pdfDoc.embedPng(bytes);
+}
+
+// Parte un párrafo en líneas y marca en negrita los datos propios del contrato
+// (nombre, CUIL, fechas, puesto, monto), igual que el modelo en Word.
+function armarLineas(parrafo, fuentes, size, maxWidth, destacar) {
+  const marcas = (destacar || [])
+    .map(t => String(t == null ? '' : t).trim())
+    .filter(t => t.length > 2)
+    .sort((a, b) => b.length - a.length);   // primero los más largos, para no cortarlos
+
+  let trozos = [{ t: parrafo, b: false }];
+  for (const m of marcas) {
+    const nuevos = [];
+    for (const tr of trozos) {
+      if (tr.b || !tr.t.includes(m)) { nuevos.push(tr); continue; }
+      const partes = tr.t.split(m);
+      partes.forEach((p, i) => {
+        if (p) nuevos.push({ t: p, b: false });
+        if (i < partes.length - 1) nuevos.push({ t: m, b: true });
+      });
+    }
+    trozos = nuevos;
+  }
+
+  const palabras = [];
+  trozos.forEach(tr => tr.t.split(/(\s+)/).forEach(tok => { if (tok) palabras.push({ tok, b: tr.b }); }));
+
+  const lineas = []; let actual = [], ancho = 0;
+  palabras.forEach(p => {
+    if (/^\s+$/.test(p.tok) && !actual.length) return;
+    const f = p.b ? fuentes.negrita : fuentes.normal;
+    const w = f.widthOfTextAtSize(p.tok, size);
+    if (ancho + w > maxWidth && actual.length) {
+      lineas.push(actual); actual = []; ancho = 0;
+      if (/^\s+$/.test(p.tok)) return;
+    }
+    actual.push(p); ancho += w;
+  });
+  if (actual.length) lineas.push(actual);
+  return lineas;
+}
+
+// Dibuja una línea. Si va justificada, reparte el sobrante entre los espacios.
+function dibujarLinea(page, linea, x, y, size, fuentes, color, maxWidth, justificar) {
+  const ancho = linea.reduce((s, p) => s + (p.b ? fuentes.negrita : fuentes.normal).widthOfTextAtSize(p.tok, size), 0);
+  const espacios = linea.filter(p => /^\s+$/.test(p.tok)).length;
+  let extra = 0;
+  if (justificar && espacios > 0) {
+    const sobra = (maxWidth - ancho) / espacios;
+    if (sobra > 0 && sobra < 5) extra = sobra;   // si sobra demasiado, mejor no estirar
+  }
+  let cx = x;
+  for (const p of linea) {
+    const f = p.b ? fuentes.negrita : fuentes.normal;
+    const esEspacio = /^\s+$/.test(p.tok);
+    if (!esEspacio) page.drawText(p.tok, { x: cx, y, size, font: f, color });
+    cx += f.widthOfTextAtSize(p.tok, size) + (esEspacio ? extra : 0);
+  }
+}
+
 async function generarContratoPDF(texto, opts) {
   opts = opts || {};
-  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const { PDFDocument, rgb } = PDFLib;
   const pdfDoc = await PDFDocument.create();
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const W = 595.28, H = 841.89, M = 56;
+  const fuentes = await cargarFuentes(pdfDoc);
+
+  const W = 595.28, H = 841.89, M = 52;
   const maxWidth = W - M * 2;
-  const size = 10.5, lineH = 15, parGap = 8;
+  const size = 9, lineH = 12.6, parGap = 7;
+  const tinta = rgb(0.11, 0.11, 0.13);
+  const azul = rgb(0.17, 0.27, 0.50);
+  const TITULO = 'CONTRATO DE TRABAJO A PLAZO FIJO';
+
   let page = pdfDoc.addPage([W, H]);
   let y = H - M;
-  let logoAncho = 0;
+
+  // Encabezado: logo a la izquierda, título centrado y subrayado.
   try {
     if (opts.logoUrl) {
-      const logoBytes = await fetchBytes(opts.logoUrl);
-      const logoImg = await pdfDoc.embedPng(logoBytes);
-      const dim = logoImg.scale(40 / logoImg.width);
-      page.drawImage(logoImg, { x: M, y: y - dim.height, width: dim.width, height: dim.height });
-      logoAncho = dim.width + 14;   // el título arranca después del logo, no encima
+      const img = await incrustarImagen(pdfDoc, opts.logoUrl);
+      const d = img.scale(50 / img.width);
+      page.drawImage(img, { x: M, y: y - d.height, width: d.width, height: d.height });
     }
   } catch (_) {}
-  page.drawText('CONTRATO DE TRABAJO A PLAZO FIJO', { x: M + logoAncho, y: y - 14, size: 13, font: fontBold, color: rgb(0.07, 0.07, 0.09) });
-  y -= 46;
+  const titSize = 11;
+  const titAncho = fuentes.negrita.widthOfTextAtSize(TITULO, titSize);
+  const titX = (W - titAncho) / 2, titY = y - 26;
+  page.drawText(TITULO, { x: titX, y: titY, size: titSize, font: fuentes.negrita, color: tinta });
+  page.drawLine({ start: { x: titX, y: titY - 2.5 }, end: { x: titX + titAncho, y: titY - 2.5 },
+                  thickness: 0.8, color: tinta });
+  y -= 74;
+
+  // Cuerpo (la primera línea del texto es el título: no se repite).
   const parrafos = String(texto).split(/\n\n+/)
-    .filter((p, i) => !(i === 0 && p.trim().toUpperCase() === 'CONTRATO DE TRABAJO A PLAZO FIJO'));
+    .filter((p, i) => !(i === 0 && p.trim().toUpperCase() === TITULO));
   for (const par of parrafos) {
-    const lines = wrapParagraphRuns(par.trim(), font, fontBold, size, maxWidth);
-    const needed = lines.length * lineH + parGap;
-    if (y - needed < M + 90) { page = pdfDoc.addPage([W, H]); y = H - M; }
-    lines.forEach(line => {
-      let x = M;
-      line.forEach(w => {
-        const f = w.b ? fontBold : font;
-        page.drawText(w.tok, { x, y, size, font: f, color: rgb(0.13, 0.15, 0.18) });
-        x += f.widthOfTextAtSize(w.tok, size);
-      });
+    const lineas = armarLineas(par.trim(), fuentes, size, maxWidth, opts.destacar);
+    if (y - (lineas.length * lineH + parGap) < M + 150) { page = pdfDoc.addPage([W, H]); y = H - M; }
+    lineas.forEach((ln, i) => {
+      dibujarLinea(page, ln, M, y, size, fuentes, tinta, maxWidth, i < lineas.length - 1);
       y -= lineH;
     });
     y -= parGap;
   }
-  if (y < M + 130) { page = pdfDoc.addPage([W, H]); y = H - M; }
+
+  // Firmas
+  if (y < M + 150) { page = pdfDoc.addPage([W, H]); y = H - M; }
   y -= 30;
-  const colW = (maxWidth - 30) / 2;
-  const sigH = 46;
+  const colAncho = (maxWidth - 40) / 2;
+  const xEmp = M, xTra = M + colAncho + 40;
+  const altoFirma = 52;
+
+  const firmar = async (url, bytes, x) => {
+    try {
+      const img = url ? await incrustarImagen(pdfDoc, url) : await pdfDoc.embedPng(bytes);
+      const esc = Math.min(colAncho / img.width, altoFirma / img.height);
+      const d = img.scale(esc);
+      page.drawImage(img, { x: x + (colAncho - d.width) / 2, y: y - d.height, width: d.width, height: d.height });
+    } catch (_) {}
+  };
+  if (opts.firmaEmpleadorUrl) await firmar(opts.firmaEmpleadorUrl, null, xEmp);
+  if (opts.firmaTrabajadorBytes) await firmar(null, opts.firmaTrabajadorBytes, xTra);
+
+  y -= altoFirma + 2;
+  page.drawLine({ start: { x: xEmp, y }, end: { x: xEmp + colAncho, y }, thickness: 0.7, color: rgb(0.45, 0.45, 0.45) });
+  page.drawLine({ start: { x: xTra, y }, end: { x: xTra + colAncho, y }, thickness: 0.7, color: rgb(0.45, 0.45, 0.45) });
+  y -= 12;
+  const centrado = (t, x, size2, f) => x + (colAncho - f.widthOfTextAtSize(t, size2)) / 2;
+  page.drawText('EMPLEADOR', { x: centrado('EMPLEADOR', xEmp, 8, fuentes.normal), y, size: 8, font: fuentes.normal, color: rgb(0.35, 0.35, 0.35) });
+  const etiqTra = opts.firmaTrabajadorBytes ? 'TRABAJADOR (firmado electrónicamente)' : 'TRABAJADOR';
+  page.drawText(etiqTra, { x: centrado(etiqTra, xTra, 8, fuentes.normal), y, size: 8, font: fuentes.normal, color: rgb(0.35, 0.35, 0.35) });
+
+  // Pie: logo y domicilio de la empresa, abajo a la derecha.
   try {
-    if (opts.firmaEmpleadorUrl) {
-      const bytes = await fetchBytes(opts.firmaEmpleadorUrl);
-      const img = await pdfDoc.embedJpg(bytes);
-      const dim = img.scale(Math.min(colW / img.width, sigH / img.height));
-      page.drawImage(img, { x: M, y: y - dim.height, width: dim.width, height: dim.height });
+    if (opts.logoUrl) {
+      const img = await incrustarImagen(pdfDoc, opts.logoUrl);
+      const d = img.scale(24 / img.width);
+      page.drawImage(img, { x: W - M - d.width, y: M + 26, width: d.width, height: d.height });
     }
   } catch (_) {}
-  if (opts.firmaTrabajadorBytes) {
-    try {
-      const img = await pdfDoc.embedPng(opts.firmaTrabajadorBytes);
-      const dim = img.scale(Math.min(colW / img.width, sigH / img.height));
-      page.drawImage(img, { x: M + colW + 30, y: y - dim.height, width: dim.width, height: dim.height });
-    } catch (_) {}
-  }
-  y -= sigH + 4;
-  page.drawLine({ start: { x: M, y }, end: { x: M + colW, y }, thickness: 0.7, color: rgb(0.6, 0.6, 0.6) });
-  page.drawLine({ start: { x: M + colW + 30, y }, end: { x: M + colW * 2 + 30, y }, thickness: 0.7, color: rgb(0.6, 0.6, 0.6) });
-  y -= 14;
-  page.drawText('EMPLEADOR', { x: M, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
-  page.drawText(opts.firmaTrabajadorBytes ? 'TRABAJADOR (firmado electrónicamente)' : 'TRABAJADOR (pendiente de firma)', { x: M + colW + 30, y, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+  const pie = ['Ramallo 4608, CABA', 'BUENOS AIRES, ARGENTINA'];
+  let yPie = M + 14;
+  pie.forEach(t => {
+    const w = fuentes.normal.widthOfTextAtSize(t, 6.5);
+    page.drawText(t, { x: W - M - w, y: yPie, size: 6.5, font: fuentes.normal, color: azul });
+    yPie -= 8.5;
+  });
 
-  if (opts.certificado) {
-    y -= 20;
-    const nota = `Firmado electrónicamente. El informe de auditoría con la trazabilidad completa de la firma se incluye en la última página de este documento. Huella SHA-256 del texto: ${opts.certificado.hash_texto || '—'}`;
-    wrapPlain(nota, font, 7.5, maxWidth).forEach(ln => { page.drawText(ln, { x: M, y, size: 7.5, font, color: rgb(0.55, 0.57, 0.6) }); y -= 10; });
-    agregarCertificado(pdfDoc, font, fontBold, rgb, opts.certificado);
+  // Huella del texto al pie: permite verificar después que el contrato no se alteró.
+  const huella = (opts.certificado && opts.certificado.hash_texto) || opts.hashTexto || '';
+  if (huella) {
+    const nota = (opts.certificado
+      ? 'Firmado electrónicamente. El informe de auditoría con la trazabilidad completa de la firma se incluye en la última página de este documento. '
+      : '') + 'Huella SHA-256 del texto: ' + huella;
+    let yNota = M + 52;
+    armarLineas(nota, fuentes, 6.5, maxWidth, []).forEach(ln => {
+      dibujarLinea(page, ln, M, yNota, 6.5, fuentes, rgb(0.55, 0.55, 0.55), maxWidth, false);
+      yNota -= 9;
+    });
   }
+  // El informe de auditoría sólo se arma en la página de firma.
+  if (opts.certificado && typeof agregarCertificado === 'function') {
+    agregarCertificado(pdfDoc, fuentes.normal, fuentes.negrita, rgb, opts.certificado);
+  }
+
   return await pdfDoc.saveAsBase64({ dataUri: false });
 }
 
@@ -372,6 +476,7 @@ async function firmar() {
       logoUrl: location.origin + '/logo-sbs.png',
       firmaEmpleadorUrl: data.firma_empleador_img ? (location.origin + '/' + data.firma_empleador_img) : null,
       firmaTrabajadorBytes: dataUrlToBytes(firmaDataUrl),
+      destacar: [data.nombre, data.cuil, data.puesto, data.fecha_inicio, data.fecha_fin, data.monto_letras, data.monto_numero, data.fecha_firma_doc],
       certificado: data
     });
     await sb.rpc('contrato_guardar_pdf', { p_token: TOKEN, p_pdf_firmado: pdfBase64 });
