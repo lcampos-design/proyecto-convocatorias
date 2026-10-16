@@ -2799,18 +2799,21 @@ async function generarContratoPDF(texto, opts) {
   let page = pdfDoc.addPage([W, H]);
   let y = H - M;
 
+  let logoAncho = 0;
   try {
     if (opts.logoUrl) {
       const logoBytes = await fetchBytes(opts.logoUrl);
       const logoImg = await pdfDoc.embedPng(logoBytes);
       const dim = logoImg.scale(40 / logoImg.width);
       page.drawImage(logoImg, { x: M, y: y - dim.height, width: dim.width, height: dim.height });
+      logoAncho = dim.width + 14;   // el título arranca después del logo, no encima
     }
   } catch (_) {}
-  page.drawText('CONTRATO DE TRABAJO A PLAZO FIJO', { x: M, y: y - 14, size: 13, font: fontBold, color: rgb(0.07, 0.07, 0.09) });
+  page.drawText('CONTRATO DE TRABAJO A PLAZO FIJO', { x: M + logoAncho, y: y - 14, size: 13, font: fontBold, color: rgb(0.07, 0.07, 0.09) });
   y -= 46;
 
-  const parrafos = String(texto).split(/\n\n+/);
+  const parrafos = String(texto).split(/\n\n+/)
+    .filter((p, i) => !(i === 0 && p.trim().toUpperCase() === 'CONTRATO DE TRABAJO A PLAZO FIJO'));
   for (const par of parrafos) {
     const lines = wrapParagraphRuns(par.trim(), font, fontBold, size, maxWidth);
     const needed = lines.length * lineH + parGap;
