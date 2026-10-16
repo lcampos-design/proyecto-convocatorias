@@ -6,12 +6,12 @@
 <title>Postulaciones — Recital</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a1a;color:#1a1a1a;font-size:15px;min-height:100vh;position:relative}
 .sbs-bg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden}
-.sbs-bg span{font-size:clamp(400px,75vw,1100px);font-weight:900;font-family:'Arial Black','Arial',sans-serif;letter-spacing:-.02em;line-height:1;color:#f0eeea;opacity:.9;user-select:none}
+.sbs-bg span{font-size:clamp(400px,75vw,1100px);font-weight:900;font-family:'Poppins',sans-serif;letter-spacing:-.02em;line-height:1;color:#f0eeea;opacity:.9;user-select:none}
 .page-header{background:#0f1117;padding:28px 24px;text-align:center;position:relative;z-index:1}
 .page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
 .page-sub{font-size:13px;color:#6b7280;margin-top:5px}
@@ -75,6 +75,9 @@ textarea.fi{height:80px;resize:none}
 .success-title{font-size:20px;font-weight:700;color:#111827;margin-bottom:8px}
 .success-sub{font-size:14px;color:#6b7280;line-height:1.6;margin-bottom:20px}
 .back-link{color:#534AB7;font-size:14px;cursor:pointer;text-decoration:underline}
+
+/* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
+button,input,select,textarea,optgroup,option{font-family:inherit}
 </style>
 </head>
 <body>
