@@ -2261,7 +2261,11 @@ function openMailModalFromPost(postId) {
     openMailModal(sol.id);
   } else {
     mailSolId = '__post__' + postId;
-    window._tempMailData = { email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: '', cuit: String(post.cuit || persona?.cuit || '').replace(/\D/g, ''), personaId: post.personaId || persona?.id || null };
+    // El puesto sale de la propia postulación: sin esto el contrato salía con
+    // "tareas de ." y el mail con el sector vacío.
+    const convPost = convs.find(c => c.id === post.convId);
+    const puestoNom = (convPost?.puestos || []).find(pu => pu.id === post.puestoId)?.nombre || '';
+    window._tempMailData = { email, nombre: post.nombre, conv_id: post.convId, puesto_nombre: puestoNom, cuit: String(post.cuit || persona?.cuit || '').replace(/\D/g, ''), personaId: post.personaId || persona?.id || null };
     document.getElementById('mMailStep1').style.display = 'block';
     document.getElementById('mMailStep2').style.display = 'none';
     showM('mMailConf');
@@ -2512,6 +2516,11 @@ async function sendConfirmationMail() {
         fecha_inicio: v('mcFechaInicio'), fecha_fin: v('mcFechaFin'), anio: v('mcAnio'),
         monto_letras: v('mcMontoLetras'), monto_numero: v('mcMontoNumero'), fecha_firma_doc: v('mcFechaFirmaDoc')
       };
+      const faltan = faltanDatosContrato(datos);
+      if (faltan.length) {
+        toast('No se envió: al contrato le falta ' + faltan.join(', '));
+        return;
+      }
       contratoRow = await crearContrato(datos, mailContratoCtx?.convId, mailContratoCtx?.personaId, to, null, null, mailFromArea);
       const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + (SIGNATURE_IMG[mailFromArea] || ''), hashTexto: await sha256Hex(contratoRow.texto_contrato) });
       attachments = [{ filename: 'contrato.pdf', content: pdfBase64 }];
@@ -2615,6 +2624,22 @@ async function sendBulkMail() {
     venue: conv?.venue || '', puesto: v('bmcPuesto'), fecha_inicio: v('bmcFechaInicio'), fecha_fin: v('bmcFechaFin'),
     anio: v('bmcAnio'), monto_letras: v('bmcMontoLetras'), monto_numero: v('bmcMontoNumero'), fecha_firma_doc: v('bmcFechaFirmaDoc')
   } : null;
+  // En el masivo se valida una sola vez, antes de empezar: los datos del contrato
+  // son los mismos para todos salvo el nombre y el CUIL de cada persona.
+  if (adjContrato) {
+    const faltan = faltanDatosContrato({ ...datosComunes, nombre: 'x', cuil: 'x' });
+    if (faltan.length) {
+      toast('No se envió: al contrato le falta ' + faltan.join(', '));
+      btn.disabled = false; prog.style.display = 'none';
+      return;
+    }
+    const sinDatos = bulkMailRecipients.filter(r => !String(r.nombre || '').trim() || !String(r.cuit || '').trim());
+    if (sinDatos.length) {
+      toast(`No se envió: ${sinDatos.length} persona(s) sin nombre o CUIL cargado`);
+      btn.disabled = false; prog.style.display = 'none';
+      return;
+    }
+  }
   let ok = 0, fail = 0;
   for (let i = 0; i < bulkMailRecipients.length; i++) {
     const r = bulkMailRecipients[i];
@@ -2646,6 +2671,16 @@ async function sendBulkMail() {
 let contratos = [], mailContratoCtx = null, ctTraceId = null, ctTraceRow = null;
 function normDoc(v) { return String(v || '').replace(/\D/g, ''); }
 function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+// Un contrato con huecos no se manda: es un documento legal. Devuelve qué falta.
+function faltanDatosContrato(d) {
+  const obligatorios = {
+    nombre: 'nombre', cuil: 'CUIL', puesto: 'puesto', venue: 'lugar de trabajo (Venue de la convocatoria)',
+    fecha_inicio: 'fecha de inicio', fecha_fin: 'fecha de fin', anio: 'año',
+    monto_letras: 'monto en letras', monto_numero: 'monto $', fecha_firma_doc: 'fecha de firma'
+  };
+  return Object.keys(obligatorios).filter(k => !String(d[k] || '').trim()).map(k => obligatorios[k]);
+}
 
 function toggleContratoFields(prefix) {
   const checked = document.getElementById(prefix + 'AdjContrato').checked;
