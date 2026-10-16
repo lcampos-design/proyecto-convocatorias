@@ -62,6 +62,18 @@ textarea.fi{height:90px;resize:vertical}
 .cbu-counter.over{color:#991b1b;font-weight:600}
 .dj-note{font-size:11px;color:#6b7280;font-style:italic;margin-top:4px}
 .bank-info{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px}
+/* España: lo marcado .solo-es aparece solo con el área España; lo marcado .solo-ar se oculta con España */
+body:not(.es) .solo-es{display:none !important}
+body.es .solo-ar{display:none !important}
+.radio-opt input[type=checkbox]{accent-color:#534AB7;width:16px;height:16px;flex-shrink:0}
+.opt-desc{display:block;font-size:12px;color:#6b7280;font-weight:400;margin-top:2px}
+.opt-inline{display:grid;gap:10px}
+.opt-inline .radio-opt{justify-content:center;padding:10px 8px;gap:6px}
+#tallaEs{grid-template-columns:repeat(6,1fr)}
+#permisoEs{grid-template-columns:repeat(2,1fr)}
+@media(max-width:500px){#tallaEs{grid-template-columns:repeat(3,1fr)}}
+.solo-es .radio-opt:has(input:checked){border-color:#534AB7;background:#f0eeff}
+.privacy-text{font-size:12px;color:#4b5563;line-height:1.55;margin-bottom:12px}
 @media(max-width:500px){.frow{flex-direction:column}.area-btns{flex-direction:column}}
 </style>
 </head>
@@ -77,7 +89,7 @@ textarea.fi{height:90px;resize:vertical}
 
 <div class="page-header">
   <div class="page-title">Sure, you can work with us</div>
-  <div class="page-sub">Completá el formulario y nos ponemos en contacto</div>
+  <div class="page-sub"><span class="solo-ar">Completá el formulario y nos ponemos en contacto</span><span class="solo-es">Rellena el formulario y nos pondremos en contacto contigo</span></div>
 </div>
 
 <div class="container">
@@ -87,7 +99,7 @@ textarea.fi{height:90px;resize:vertical}
     <div class="card">
       <div class="success-icon">🎉</div>
       <div class="success-title">¡Solicitud enviada!</div>
-      <div class="success-sub">Recibimos tus datos. El equipo de coordinación va a revisarlos y se va a comunicar con vos a la brevedad.</div>
+      <div class="success-sub"><span class="solo-ar">Recibimos tus datos. El equipo de coordinación va a revisarlos y se va a comunicar con vos a la brevedad.</span><span class="solo-es">Hemos recibido tus datos. El equipo de coordinación los revisará y te contactará lo antes posible. Apuntarte no garantiza la plaza.</span></div>
       <span class="success-back" onclick="resetForm()">Enviar otra solicitud</span>
     </div>
   </div>
@@ -97,24 +109,42 @@ textarea.fi{height:90px;resize:vertical}
     <div class="required-note">Los campos marcados con <span style="color:#ef4444">*</span> son obligatorios</div>
     <div class="err-msg" id="errMsg"></div>
 
+    <!-- España: presentación -->
+    <div class="card solo-es">
+      <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:8px">¿Quieres trabajar con nosotros?</div>
+      <div style="font-size:13px;color:#4b5563;line-height:1.6">¿Resides en España? ¿Quieres trabajar en nuestros eventos? Rellena este formulario para apuntarte. Recopilamos tus datos para valorar tu candidatura y asignarte una posición. Apuntarte no garantiza la plaza: te contactaremos para confirmar.</div>
+    </div>
+
     <!-- Datos personales -->
     <div class="card">
       <div class="section-title">Datos personales</div>
       <div class="fg">
-        <label>Nombre completo <span class="req">*</span></label>
+        <label><span class="solo-ar">Nombre completo</span><span class="solo-es">Nombre y apellidos</span> <span class="req">*</span></label>
         <input type="text" class="fi" id="fNombre" placeholder="Tu nombre y apellido">
       </div>
       <div class="frow">
         <div class="fg">
-          <label>Email <span class="req">*</span></label>
+          <label><span class="solo-ar">Email</span><span class="solo-es">Correo electrónico</span> <span class="req">*</span></label>
           <input type="email" class="fi" id="fEmail" placeholder="tu@email.com">
         </div>
         <div class="fg">
-          <label>Teléfono <span class="req">*</span></label>
+          <label><span class="solo-ar">Teléfono</span><span class="solo-es">Teléfono móvil</span> <span class="req">*</span></label>
           <input type="tel" class="fi" id="fTel" placeholder="+54 11...">
         </div>
       </div>
-      <div class="fg">
+      <div class="frow solo-es">
+        <div class="fg">
+          <label>DNI / NIE <span class="req">*</span></label>
+          <input type="text" class="fi" id="fDni" placeholder="Ej: 12345678Z o X1234567L" maxlength="12" oninput="validarDniInput(this)" autocapitalize="characters">
+          <div class="cbu-warn" id="dniWarn">⚠ Revisa el DNI/NIE: 8 números y una letra (DNI) o X/Y/Z, 7 números y una letra (NIE).</div>
+          <div class="cbu-ok" id="dniOk">✓ DNI/NIE válido</div>
+        </div>
+        <div class="fg">
+          <label>Fecha de nacimiento <span class="req">*</span></label>
+          <input type="date" class="fi" id="fNacimiento">
+        </div>
+      </div>
+      <div class="fg solo-ar">
         <label>CUIT / CUIL <span class="req">*</span></label>
         <input type="text" class="fi" id="fCuit" placeholder="Ingresá los 11 números del CUIL/CUIT" maxlength="11" oninput="validarCuil(this)" inputmode="numeric">
         <div class="cbu-counter" id="cuilCounter">0 / 11 dígitos</div>
@@ -122,7 +152,7 @@ textarea.fi{height:90px;resize:vertical}
         <div class="cbu-ok" id="cuilOk">✓ CUIL/CUIT válido</div>
       </div>
       <div class="fg">
-        <label>Localidad <span class="req">*</span></label>
+        <label><span class="solo-ar">Localidad</span><span class="solo-es">Ciudad / zona de residencia</span> <span class="req">*</span></label>
         <input type="text" class="fi" id="fLocalidad" placeholder="Ej: Villa Crespo (CABA) / La Plata (Bs. As.)">
       </div>
     </div>
@@ -139,15 +169,34 @@ textarea.fi{height:90px;resize:vertical}
           <div class="area-btn-title">Externos</div>
           <div class="area-btn-sub">Acomodadores, acreditaciones, producción</div>
         </div>
+        <div class="area-btn" id="btnEs" onclick="setArea('espana')">
+          <div class="area-btn-title">España</div>
+          <div class="area-btn-sub">Si resides en España</div>
+        </div>
       </div>
-      <div class="fg" style="margin-top:14px">
+      <div class="fg solo-ar" style="margin-top:14px">
         <label>Puesto de interés <span class="req">*</span></label>
         <input type="text" class="fi" id="fPuesto" placeholder="Ej: Acomodadores, Stagehands, Acreditaciones, Producción...">
+      </div>
+      <div class="fg solo-es" style="margin-top:14px">
+        <label>¿A qué posición(es) te quieres apuntar? <span class="req">*</span></label>
+        <div class="radio-group" id="posicionesEs">
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Orientadores"> <span class="radio-label">Orientadores<span class="opt-desc">Guían al público e informan sobre accesos, sectores y salidas</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Acomodadores"> <span class="radio-label">Acomodadores<span class="opt-desc">Asignan y gestionan las ubicaciones de los asistentes</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Host / Azafatos"> <span class="radio-label">Host / Azafatos<span class="opt-desc">Atienden espacios VIP y zonas exclusivas</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Hidratadores"> <span class="radio-label">Hidratadores<span class="opt-desc">Distribuyen agua y cuidan el bienestar del público</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Etiquetadores"> <span class="radio-label">Etiquetadores<span class="opt-desc">Numeran y organizan butacas y sillas</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Personal de carga"> <span class="radio-label">Personal de carga<span class="opt-desc">Carga y descarga de equipos, backline y escenografía (montaje y desmontaje)</span></span></label>
+        </div>
+      </div>
+      <div class="fg solo-es">
+        <label>¿Tienes experiencia previa en alguna de estas posiciones? Cuéntanos cuál y dónde</label>
+        <textarea class="fi" id="fExpEs" placeholder="Opcional"></textarea>
       </div>
     </div>
 
     <!-- Perfil profesional -->
-    <div class="card">
+    <div class="card solo-ar">
       <div class="section-title">Perfil profesional</div>
       <div class="fg">
         <label>Experiencia laboral <span class="req">*</span></label>
@@ -169,24 +218,61 @@ textarea.fi{height:90px;resize:vertical}
       </div>
     </div>
 
+    <!-- España: disponibilidad y datos para el trabajo -->
+    <div class="card solo-es">
+      <div class="section-title">Disponibilidad y datos para el trabajo</div>
+      <div class="fg">
+        <label>Disponibilidad <span class="req">*</span></label>
+        <input type="text" class="fi" id="fDispEs" placeholder="Días y turnos en los que puedes trabajar">
+      </div>
+      <div class="fg">
+        <label>Talla de ropa (uniforme) <span class="req">*</span></label>
+        <div class="radio-group opt-inline" id="tallaEs">
+          <label class="radio-opt"><input type="radio" name="tallaEs" value="XS"> <span class="radio-label">XS</span></label>
+          <label class="radio-opt"><input type="radio" name="tallaEs" value="S"> <span class="radio-label">S</span></label>
+          <label class="radio-opt"><input type="radio" name="tallaEs" value="M"> <span class="radio-label">M</span></label>
+          <label class="radio-opt"><input type="radio" name="tallaEs" value="L"> <span class="radio-label">L</span></label>
+          <label class="radio-opt"><input type="radio" name="tallaEs" value="XL"> <span class="radio-label">XL</span></label>
+          <label class="radio-opt"><input type="radio" name="tallaEs" value="XXL"> <span class="radio-label">XXL</span></label>
+        </div>
+      </div>
+      <div class="fg">
+        <label>¿Tienes permiso de trabajo en España? <span class="req">*</span></label>
+        <div class="radio-group opt-inline" id="permisoEs">
+          <label class="radio-opt"><input type="radio" name="permisoEs" value="si"> <span class="radio-label">Sí</span></label>
+          <label class="radio-opt"><input type="radio" name="permisoEs" value="no"> <span class="radio-label">No</span></label>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Contacto de emergencia (nombre y teléfono) <span class="req">*</span></label>
+        <input type="text" class="fi" id="fEmergenciaEs" placeholder="Ej: Ana Pérez — +34 600 000 000">
+      </div>
+      <div class="fg">
+        <label>Observaciones o comentarios</label>
+        <textarea class="fi" style="height:70px" id="fObsEs" placeholder="Opcional"></textarea>
+      </div>
+    </div>
+
     <!-- CV -->
     <div class="card">
-      <div class="section-title">CV / Archivo adjunto <span class="req">*</span></div>
-      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">
+      <div class="section-title">CV / Archivo adjunto <span class="req solo-ar">*</span><span class="solo-es" style="text-transform:none;letter-spacing:0;font-weight:500">(opcional)</span></div>
+      <div class="solo-ar" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">
         📸 <strong>Importante:</strong> tu CV debe incluir una <strong>foto tuya</strong> (tipo foto carnet o similar).
       </div>
       <div class="file-area" id="fileArea" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropFile(event)">
         <input type="file" id="fFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleFile()">
         <div class="file-icon">📎</div>
-        <div class="file-text">Arrastrá tu CV acá o <strong>hacé click para elegir</strong></div>
-        <div class="file-text" style="margin-top:4px">PDF, Word o imagen · Máx. 1 MB · <strong>con foto</strong></div>
+        <div class="file-text solo-ar">Arrastrá tu CV acá o <strong>hacé click para elegir</strong></div>
+        <div class="file-text solo-es">Arrastra tu CV aquí o <strong>haz clic para elegirlo</strong></div>
+        <div class="file-text solo-ar" style="margin-top:4px">PDF, Word o imagen · Máx. 1 MB · <strong>con foto</strong></div>
+        <div class="file-text solo-es" style="margin-top:4px">PDF, Word o imagen · Máx. 1 MB</div>
         <div class="file-name" id="fileName"></div>
       </div>
       <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
     </div>
 
     <!-- Datos bancarios -->
-    <div class="card">
+    <div class="card solo-ar">
       <div class="section-title">Datos bancarios</div>
       <div class="bank-info">
         Te pedimos estos datos para adelantar tareas administrativas y tenerlos a disposición para futuros pagos. Solo se aceptan <strong>cuentas bancarias</strong>. No se aceptan alias ni billeteras virtuales (Mercado Pago, Ualá, Personal Pay, etc.). La cuenta debe estar a tu nombre.
@@ -212,8 +298,37 @@ textarea.fi{height:90px;resize:vertical}
       </div>
     </div>
 
+    <!-- España: datos bancarios (opcionales) -->
+    <div class="card solo-es">
+      <div class="section-title">Datos bancarios <span style="text-transform:none;letter-spacing:0;font-weight:500">(opcional)</span></div>
+      <div class="bank-info">
+        Si tienes una cuenta bancaria, puedes dejarnos sus datos para agilizar los pagos. Si todavía no tienes, deja estos campos vacíos.
+      </div>
+      <div class="fg">
+        <label>IBAN</label>
+        <input type="text" class="fi" id="fIban" placeholder="ES00 0000 0000 0000 0000 0000" maxlength="42" oninput="validarIbanInput(this)" autocapitalize="characters">
+        <div class="cbu-warn" id="ibanWarn">⚠ El IBAN no es válido. Revisa que esté completo y sin errores.</div>
+        <div class="cbu-ok" id="ibanOk">✓ IBAN válido</div>
+      </div>
+      <div class="fg">
+        <label>Titular de la cuenta</label>
+        <input type="text" class="fi" id="fTitular" placeholder="Nombre y apellidos del titular">
+      </div>
+    </div>
+
+    <!-- España: protección de datos -->
+    <div class="card solo-es">
+      <div class="section-title">Protección de datos</div>
+      <div class="privacy-text">
+        Tus datos se tratarán únicamente para gestionar tu candidatura y, en su caso, organizar el equipo de trabajo de nuestros eventos. No se cederán a terceros salvo obligación legal. Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a <a id="privacyMail" href="mailto:contacto@show-bs.com" style="color:#534AB7">contacto@show-bs.com</a>.
+      </div>
+      <label class="radio-opt" style="align-items:flex-start">
+        <input type="checkbox" id="fPrivacidad" style="margin-top:2px"> <span class="radio-label" style="font-size:13px">He leído la información sobre protección de datos y acepto el tratamiento de mis datos personales. <span class="req" style="color:#ef4444">*</span></span>
+      </label>
+    </div>
+
     <!-- Declaración Jurada -->
-    <div class="card">
+    <div class="card solo-ar">
       <div class="section-title">Declaración jurada</div>
       <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:16px">
         Las siguientes preguntas tienen carácter de <strong>Declaración Jurada</strong>.
@@ -252,6 +367,17 @@ textarea.fi{height:90px;resize:vertical}
   <!-- Footer -->
   <footer style="margin-top:48px;border-top:1px solid #e5e7eb;padding:32px 16px;text-align:center;background:rgba(255,255,255,.95);position:relative;z-index:1">
     <div style="max-width:520px;margin:0 auto">
+      <div class="solo-es">
+        <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:16px">¿Tienes alguna consulta?</div>
+        <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;align-items:center">
+          <a href="mailto:contacto@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> contacto@show-bs.com</a>
+          <a href="https://www.instagram.com/showbspain/" target="_blank" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
+            @showbspain
+          </a>
+        </div>
+      </div>
+      <div class="solo-ar">
       <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:16px">¿Tenés alguna consulta?</div>
       <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;align-items:center">
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
@@ -266,6 +392,7 @@ textarea.fi{height:90px;resize:vertical}
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
           @showbs
         </a>
+      </div>
       </div>
       <div style="margin-top:20px;font-size:11px;color:#9ca3af">Show Business Solutions © 2026</div>
     </div>
@@ -283,21 +410,37 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 // ════════════════════════════════════════
 
 const sb = supabase.createClient(SB_URL, SB_KEY);
+const AREA_LABEL = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España' };
 let selectedArea = 'movistar_arena';
 let fileData = null;
+
+const TITULO_ORIGINAL = document.title;
+const PLACEHOLDERS = {
+  fNombre: { ar: 'Tu nombre y apellido', es: 'Tu nombre y apellidos' },
+  fTel: { ar: '+54 11...', es: '+34 6...' },
+  fLocalidad: { ar: 'Ej: Villa Crespo (CABA) / La Plata (Bs. As.)', es: 'Ej: Madrid (Chamberí) / Valencia' },
+};
 
 function setArea(a) {
   selectedArea = a;
   document.getElementById('btnMv').classList.toggle('active', a === 'movistar_arena');
   document.getElementById('btnEx').classList.toggle('active', a === 'externos');
+  // España cambia campos y textos (clases .solo-es / .solo-ar)
+  const es = a === 'espana';
+  document.getElementById('btnEs').classList.toggle('active', es);
+  document.body.classList.toggle('es', es);
+  document.documentElement.lang = es ? 'es-ES' : 'es';
+  document.title = es ? 'Inscripción — SBS España' : TITULO_ORIGINAL;
+  Object.keys(PLACEHOLDERS).forEach(id => { document.getElementById(id).placeholder = PLACEHOLDERS[id][es ? 'es' : 'ar']; });
 }
 
-// Preseleccionar el área si viene en el link (?area=arena|externos|movistar_arena),
+// Preseleccionar el área si viene en el link (?area=arena|externos|movistar_arena|espana),
 // para que el registro quede en la misma área a la que se está postulando.
 (function () {
   const a = (new URLSearchParams(location.search).get('area') || '').toLowerCase();
   if (a === 'externos') setArea('externos');
   else if (a === 'arena' || a === 'movistar_arena') setArea('movistar_arena');
+  else if (a === 'espana' || a === 'españa') setArea('espana');
 })();
 
 function dragOver(e) { e.preventDefault(); document.getElementById('fileArea').classList.add('dragover'); }
@@ -306,7 +449,7 @@ function dropFile(e) { e.preventDefault(); dragLeave(); const f = e.dataTransfer
 function handleFile() { const f = document.getElementById('fFile').files[0]; if (f) processFile(f); }
 
 function processFile(f) {
-  if (f.size > 1048576) { showErr('El archivo supera 1 MB. Elegí uno más liviano.'); document.getElementById('fFile').value = ''; return; }
+  if (f.size > 1048576) { showErr(selectedArea === 'espana' ? 'El archivo supera 1 MB. Elige uno más ligero.' : 'El archivo supera 1 MB. Elegí uno más liviano.'); document.getElementById('fFile').value = ''; return; }
   const r = new FileReader();
   r.onload = ev => { fileData = { nombre: f.name, tipo: f.type, datos: ev.target.result }; document.getElementById('fileName').textContent = `✓ ${f.name} (${(f.size/1024).toFixed(0)} KB)`; };
   r.readAsDataURL(f);
@@ -369,6 +512,42 @@ function validarCuil(input) {
   ok.style.display = val.length === 11 ? 'block' : 'none';
   input.style.borderColor = val.length === 0 ? '' : val.length === 11 ? '#10b981' : '#f97316';
 }
+// ── España: DNI/NIE e IBAN ──
+// DNI: 8 números + letra de control. NIE: X/Y/Z + 7 números + letra de control.
+function normalizarDni(v) { return (v || '').toUpperCase().replace(/[\s.\-]/g, ''); }
+function dniValido(v) {
+  const m = /^([XYZ]?)(\d{7,8})([A-Z])$/.exec(v);
+  if (!m) return false;
+  if (m[1] ? m[2].length !== 7 : m[2].length !== 8) return false;
+  const num = parseInt(({ '': '', X: '0', Y: '1', Z: '2' })[m[1]] + m[2], 10);
+  return 'TRWAGMYFPDXBNJZSQVHLCKE'[num % 23] === m[3];
+}
+function validarDniInput(input) {
+  const val = normalizarDni(input.value);
+  const ok = val.length > 0 && dniValido(val);
+  const completo = val.length >= 9;
+  document.getElementById('dniOk').style.display = ok ? 'block' : 'none';
+  document.getElementById('dniWarn').style.display = completo && !ok ? 'block' : 'none';
+  input.style.borderColor = val.length === 0 ? '' : ok ? '#10b981' : completo ? '#f97316' : '';
+}
+function normalizarIban(v) { return (v || '').toUpperCase().replace(/[\s.\-]/g, ''); }
+function ibanValido(v) {
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(v)) return false;
+  if (v.startsWith('ES') && v.length !== 24) return false;
+  const reordenado = (v.slice(4) + v.slice(0, 4)).replace(/[A-Z]/g, c => (c.charCodeAt(0) - 55).toString());
+  let resto = 0;
+  for (const d of reordenado) resto = (resto * 10 + Number(d)) % 97;
+  return resto === 1;
+}
+function validarIbanInput(input) {
+  const val = normalizarIban(input.value);
+  const ok = val.length > 0 && ibanValido(val);
+  const completo = val.length >= (val.startsWith('ES') ? 24 : 15);
+  document.getElementById('ibanOk').style.display = ok ? 'block' : 'none';
+  document.getElementById('ibanWarn').style.display = completo && !ok ? 'block' : 'none';
+  input.style.borderColor = val.length === 0 ? '' : ok ? '#10b981' : completo ? '#f97316' : '';
+}
+
 let antecedentes = null, beneficioSocial = null;
 
 function selectRadio(grupo, valor) {
@@ -387,6 +566,7 @@ function selectRadio(grupo, valor) {
 
 async function submitForm() {
   hideErr();
+  if (selectedArea === 'espana') return submitFormEs();
   const nombre   = document.getElementById('fNombre').value.trim();
   const exp      = document.getElementById('fExp').value.trim();
   const cbu      = document.getElementById('fCbu').value.trim();
@@ -433,7 +613,7 @@ async function submitForm() {
   try {
     const { data: dupCheck } = await sb.rpc('check_solicitud_existe', { p_cuit: cuit, p_nombre: nombre });
     if (dupCheck?.existe) {
-      const areaLabel = dupCheck.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos';
+      const areaLabel = AREA_LABEL[dupCheck.area] || 'Externos';
       const porQue = dupCheck.motivo === 'nombre' ? 'con ese nombre' : 'con ese CUIL/CUIT';
       showErr(`Ya existe una inscripción ${porQue} en ${areaLabel}. Cada persona puede registrarse en una sola área. Si necesitás un cambio, escribinos.`);
       btn.disabled = false; btn.textContent = 'Enviar solicitud →';
@@ -485,7 +665,109 @@ async function submitForm() {
   }, 400);
 }
 
+// ── Envío de España ──
+// DNI/NIE va en "cuit": es el identificador de persona que usa todo el sistema
+// (duplicados, postulaciones, disponibilidad). Las posiciones van en "puesto_interes".
+async function submitFormEs() {
+  const val = id => document.getElementById(id).value.trim();
+  const marcado = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value);
+
+  const nombre       = val('fNombre');
+  const email        = val('fEmail');
+  const tel          = val('fTel');
+  const dni          = normalizarDni(val('fDni'));
+  const nacimiento   = val('fNacimiento');
+  const ciudad       = val('fLocalidad');
+  const posiciones   = marcado('posicionEs');
+  const experiencia  = val('fExpEs');
+  const disponib     = val('fDispEs');
+  const talla        = marcado('tallaEs')[0] || '';
+  const permiso      = marcado('permisoEs')[0] || '';
+  const emergencia   = val('fEmergenciaEs');
+  const observ       = val('fObsEs');
+  const iban         = normalizarIban(val('fIban'));
+  const titular      = val('fTitular');
+  const privacidad   = document.getElementById('fPrivacidad').checked;
+
+  if (!nombre)                                    { showErr('Indica tu nombre y apellidos.'); return; }
+  if (!email)                                     { showErr('El correo electrónico es obligatorio.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))  { showErr('Introduce un correo electrónico válido.'); return; }
+  if (!tel)                                       { showErr('El teléfono móvil es obligatorio.'); return; }
+  if (!dni)                                       { showErr('El DNI/NIE es obligatorio.'); return; }
+  if (!dniValido(dni))                            { showErr('El DNI/NIE no es válido. Revisa los números y la letra.'); return; }
+  if (!nacimiento)                                { showErr('Indica tu fecha de nacimiento.'); return; }
+  if (nacimiento > new Date().toISOString().slice(0, 10) || nacimiento < '1900-01-01') { showErr('Revisa la fecha de nacimiento.'); return; }
+  if (!ciudad)                                    { showErr('Indica tu ciudad o zona de residencia.'); return; }
+  if (!posiciones.length)                         { showErr('Elige al menos una posición.'); return; }
+  if (!disponib)                                  { showErr('Indica tu disponibilidad.'); return; }
+  if (!talla)                                     { showErr('Elige tu talla de ropa.'); return; }
+  if (!permiso)                                   { showErr('Indica si tienes permiso de trabajo en España.'); return; }
+  if (!emergencia)                                { showErr('Indica un contacto de emergencia (nombre y teléfono).'); return; }
+  if (iban && !ibanValido(iban))                  { showErr('El IBAN no es válido. Revísalo o deja el campo vacío.'); return; }
+  if (iban && !titular)                           { showErr('Indica el titular de la cuenta bancaria.'); return; }
+  if (!privacidad)                                { showErr('Para enviar la inscripción tienes que aceptar el tratamiento de tus datos.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Verificando...';
+
+  // Duplicados solo por DNI/NIE: el nombre no se usa porque podría coincidir con alguien de Argentina.
+  try {
+    const { data: dupCheck } = await sb.rpc('check_solicitud_existe', { p_cuit: dni, p_nombre: '' });
+    if (dupCheck?.existe) {
+      showErr(`Ya existe una inscripción con ese DNI/NIE en ${AREA_LABEL[dupCheck.area] || dupCheck.area}. Cada persona puede apuntarse en una sola área. Si necesitas un cambio, escríbenos.`);
+      btn.disabled = false; btn.textContent = 'Enviar solicitud →';
+      return;
+    }
+  } catch(_) { /* si falla la verificación, continúa igual */ }
+
+  document.getElementById('progressBar').style.display = 'block';
+  document.getElementById('progressFill').style.width = '40%';
+
+  const payload = {
+    nombre,
+    area: 'espana',
+    email,
+    tel,
+    localidad:            ciudad,
+    cuit:                 dni,
+    puesto_interes:       posiciones.join(', '),
+    experiencia:          experiencia || null,
+    disponibilidad:       disponib,
+    archivo_cv:           fileData ? fileData : null,
+    fecha_nacimiento:     nacimiento,
+    talla,
+    permiso_trabajo:      permiso === 'si',
+    contacto_emergencia:  emergencia,
+    observaciones:        observ || null,
+    iban:                 iban || null,
+    titular_cuenta:       iban ? titular : null,
+    acepta_privacidad:    true,
+    acepta_privacidad_at: new Date().toISOString(),
+    estado: 'pendiente'
+  };
+
+  document.getElementById('progressFill').style.width = '70%';
+
+  const { error } = await sb.from('solicitudes').insert([payload]);
+
+  document.getElementById('progressFill').style.width = '100%';
+
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Enviar solicitud →';
+    document.getElementById('progressBar').style.display = 'none';
+    showErr('Ha habido un error al enviar. Inténtalo de nuevo en unos minutos.');
+    return;
+  }
+
+  setTimeout(() => {
+    document.getElementById('formScreen').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }, 400);
+}
+
 function resetForm() {
+  const eraEspana = selectedArea === 'espana';
   document.getElementById('successScreen').style.display = 'none';
   document.getElementById('formScreen').style.display = 'block';
   ['fNombre','fEmail','fTel','fCuit','fPuesto','fExp','fForm','fSkills','fDisp','fCbu','fNroCuenta','fBanco'].forEach(id => document.getElementById(id).value = '');
@@ -502,7 +784,11 @@ function resetForm() {
   document.getElementById('submitBtn').textContent = 'Enviar solicitud →';
   antecedentes = null; beneficioSocial = null;
   ['antSi','antNo','benSi','benNo'].forEach(id => document.getElementById(id).classList.remove('selected'));
-  fileData = null; setArea('movistar_arena');
+  // España: limpiar sus campos y quedarse en España
+  ['fDni','fNacimiento','fExpEs','fDispEs','fEmergenciaEs','fObsEs','fIban','fTitular'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.style.borderColor = ''; });
+  document.querySelectorAll('input[name="posicionEs"], input[name="tallaEs"], input[name="permisoEs"], #fPrivacidad').forEach(i => i.checked = false);
+  ['dniOk','dniWarn','ibanOk','ibanWarn'].forEach(id => document.getElementById(id).style.display = 'none');
+  fileData = null; setArea(eraEspana ? 'espana' : 'movistar_arena');
   window.scrollTo({top:0,behavior:'smooth'});
 }
 </script>

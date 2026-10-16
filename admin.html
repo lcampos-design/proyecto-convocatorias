@@ -60,7 +60,7 @@ td{padding:9px 14px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
 tr:hover td{background:#fafaf8}
 .cn{font-weight:500;color:#111827}.cm{color:#9ca3af;font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .a-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
-.a-mv{background:#e0f2fe;color:#0369a1}.a-ex{background:#f0fdf4;color:#166534}.a-ambas{background:#f3e8ff;color:#7e22ce}
+.a-mv{background:#e0f2fe;color:#0369a1}.a-ex{background:#f0fdf4;color:#166534}.a-ambas{background:#f3e8ff;color:#7e22ce}.a-es{background:#fef3c7;color:#92400e}
 .st-sel{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;border:1px solid transparent;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none}
 .st-sel.pendiente{background:#fef3c7;color:#92400e}.st-sel.contactado{background:#ede9fe;color:#5b21b6}
 .st-sel.confirmado{background:#d1fae5;color:#065f46}.st-sel.no_asiste{background:#fee2e2;color:#991b1b}
@@ -333,6 +333,7 @@ tr:hover td{background:#fafafa}
     <div class="atab active" data-area="all" onclick="setNomTab('all')">Todos <span class="tc" id="tcAll">0</span></div>
     <div class="atab" data-area="movistar_arena" onclick="setNomTab('movistar_arena')">Movistar Arena <span class="tc" id="tcMv">0</span></div>
     <div class="atab" data-area="externos" onclick="setNomTab('externos')">Externos <span class="tc" id="tcEx">0</span></div>
+    <div class="atab" data-area="espana" onclick="setNomTab('espana')">España <span class="tc" id="tcEs">0</span></div>
   </div>
   <div class="ctrlbar">
     <input type="text" class="srch" id="nomSrch" placeholder="Buscar por nombre..." oninput="nomSearch()">
@@ -443,7 +444,7 @@ tr:hover td{background:#fafafa}
   </div>
   <div class="ctrlbar">
     <input type="text" class="srch" id="candSrch" placeholder="Buscar por nombre o puesto..." oninput="renderCandidatos()">
-    <select class="filt" id="candAreaF" onchange="renderCandidatos()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
+    <select class="filt" id="candAreaF" onchange="renderCandidatos()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select>
     <select class="filt" id="candStF" onchange="renderCandidatos()"><option value="">Todos los estados</option><option value="pendiente">Sin revisar</option><option value="contactado">En revisión</option><option value="confirmado">Aprobado</option><option value="no_asiste">Rechazado</option></select>
     <select class="filt" id="candOutFilter" onchange="renderCandidatos()" title="Filtrar por OUT"><option value="">Todos</option><option value="out">Solo OUTS</option><option value="no_out">Sin OUTS</option></select>
     <select class="filt" id="candSortF" onchange="renderCandidatos()"><option value="fecha_desc">Más recientes</option><option value="fecha_asc">Más antiguos</option><option value="nombre">Nombre A–Z</option></select>
@@ -469,7 +470,7 @@ tr:hover td{background:#fafafa}
   </div>
   <div class="ctrlbar">
     <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, CUIL, email, puesto o localidad..." oninput="solFilter()">
-    <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
+    <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select>
     <select class="filt" id="solStF" onchange="solFilter()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
     <select class="filt" id="solLocF" onchange="solFilter()"><option value="">Todas las localidades</option></select>
   </div>
@@ -541,7 +542,7 @@ tr:hover td{background:#fafafa}
     <div class="modal-title"><span id="mPersonTitle">Agregar persona</span><button class="mclose" onclick="closeM('mPerson')">✕</button></div>
     <div class="fg"><label>Nombre completo *</label><input type="text" class="fi" id="pNombre" placeholder="Ej: Juan Pérez"></div>
     <div class="frow">
-      <div class="fg"><label>Área *</label><select class="fi" id="pArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+      <div class="fg"><label>Área *</label><select class="fi" id="pArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select></div>
       <div class="fg"><label>Estado</label><select class="fi" id="pEstado"><option value="pendiente">Pendiente</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option><option value="no_asiste">No asiste</option></select></div>
     </div>
     <div class="frow">
@@ -570,7 +571,7 @@ tr:hover td{background:#fafafa}
 <div class="modal-bg" id="mImport" style="display:none" onclick="bgClose('mImport',event)">
   <div class="modal">
     <div class="modal-title"><span>Importar desde CSV</span><button class="mclose" onclick="closeM('mImport')">✕</button></div>
-    <div class="fg"><label>Área por defecto</label><select class="fi" id="iArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+    <div class="fg"><label>Área por defecto</label><select class="fi" id="iArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select></div>
     <div class="fg">
       <label>Pegá el CSV aquí</label>
       <textarea class="csv-ta" id="csvTxt" placeholder="nombre,email,telefono,notas&#10;Juan Pérez,juan@mail.com,,VIP&#10;&#10;O solo nombres:&#10;Carlos López&#10;Ana Martínez" oninput="prevCsv()"></textarea>
@@ -589,7 +590,7 @@ tr:hover td{background:#fafafa}
     <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">Completá los datos. La persona quedará en la nómina con estado <strong>Pendiente</strong>.</div>
     <div class="frow">
       <div class="fg"><label>Nombre completo *</label><input type="text" class="fi" id="cvNombre" placeholder="Laura García"></div>
-      <div class="fg"><label>Área *</label><select class="fi" id="cvArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+      <div class="fg"><label>Área *</label><select class="fi" id="cvArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select></div>
     </div>
     <div class="frow">
       <div class="fg"><label>Email</label><input type="email" class="fi" id="cvEmail" placeholder="correo@ejemplo.com"></div>
@@ -721,7 +722,7 @@ tr:hover td{background:#fafafa}
     <div class="modal-title"><span>Agregar desde nómina</span><button class="mclose" onclick="closeM('mPicker')">✕</button></div>
     <input type="text" class="picker-srch" id="pickerSrch" placeholder="Buscar por nombre..." oninput="renderPicker()">
     <div style="margin-bottom:8px">
-      <select class="filt" id="pickerAreaF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
+      <select class="filt" id="pickerAreaF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select>
       <select class="filt" id="pickerStF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px;margin-left:6px"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option></select>
       <select class="filt" id="pickerTagF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px;margin-left:6px"><option value="">Todas las etiquetas</option></select>
     </div>
@@ -736,7 +737,7 @@ tr:hover td{background:#fafafa}
     <div class="modal-title"><span>Asignación masiva desde nómina</span><button class="mclose" onclick="closeM('mMasiva')">✕</button></div>
     <div style="background:#f0eeff;border-radius:8px;padding:12px;font-size:13px;color:#5b21b6;margin-bottom:14px">Filtrá la nómina y asignás todos los resultados al puesto, hasta el límite de cupos disponibles.</div>
     <div class="frow">
-      <div class="fg"><label>Filtrar por área</label><select class="fi" id="masAreaF"><option value="">Todas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+      <div class="fg"><label>Filtrar por área</label><select class="fi" id="masAreaF"><option value="">Todas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select></div>
       <div class="fg"><label>Filtrar por estado</label><select class="fi" id="masStF"><option value="">Todos</option><option value="pendiente">Pendiente</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option></select></div>
     </div>
     <div class="fg"><label>Buscar nombre</label><input type="text" class="fi" id="masNomF" placeholder="Filtrar por nombre..."></div>
@@ -1124,6 +1125,15 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 // ════════════════════════════════════════════════
 
 const sb = supabase.createClient(SB_URL, SB_KEY);
+// Áreas: España se suma a Movistar Arena y Externos. Lo que no es España se muestra igual que antes.
+function areaClase(a) { return a === 'movistar_arena' ? 'a-mv' : a === 'espana' ? 'a-es' : 'a-ex'; }
+function areaCorto(a) { return a === 'movistar_arena' ? 'M. Arena' : a === 'espana' ? 'España' : 'Externos'; }
+function areaLargo(a) { return a === 'movistar_arena' ? 'Movistar Arena' : a === 'espana' ? 'España' : 'Externos'; }
+function areaMini(a) { return a === 'movistar_arena' ? 'M. Arena' : a === 'espana' ? 'Esp.' : 'Ext.'; }
+function etiquetaDoc(a) { return a === 'espana' ? 'DNI/NIE' : 'CUIT'; }
+// Documento para comparar personas: DNI/NIE español completo (con letras); cualquier otro (CUIL), solo los números como siempre.
+function normDoc(v) { const t = String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, ''); return /^[XYZ]?\d{7,8}[A-Z]$/.test(t) ? t : String(v || '').replace(/\D/g, ''); }
+function fechaDMA(iso) { const [y, m, d] = String(iso || '').slice(0, 10).split('-'); return d ? `${d}/${m}/${y}` : ''; }
 
 // ── Estado global ──
 const PS = 50;
@@ -1201,14 +1211,14 @@ async function loadUserRole() {
   // Filter data by area for area admins
   if (currentUserRole === 'admin_movistar') {
     people = people.filter(p => p.area === 'movistar_arena');
-    convs = convs.filter(c => c.area !== 'externos');
+    convs = convs.filter(c => c.area !== 'externos' && c.area !== 'espana');
     solicitudes = solicitudes.filter(s => s.area === 'movistar_arena');
     contratos = contratos.filter(c => convs.some(x => x.id === c.conv_id));
     populateCtFilters();
   }
   if (currentUserRole === 'admin_externos') {
     people = people.filter(p => p.area === 'externos');
-    convs = convs.filter(c => c.area !== 'movistar_arena');
+    convs = convs.filter(c => c.area !== 'movistar_arena' && c.area !== 'espana');
     solicitudes = solicitudes.filter(s => s.area === 'externos');
     contratos = contratos.filter(c => convs.some(x => x.id === c.conv_id));
     populateCtFilters();
@@ -1260,7 +1270,7 @@ async function loadAll() {
     sb.from('supervisor_convocatorias').select('*'),
     (async () => {
       // Paginado (Supabase trae máx. 1000 por request) y sin archivo_cv (pesa cientos de MB).
-      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,experiencia,formacion,habilidades,disponibilidad,cbu,numero_cuenta,banco,antecedentes,beneficio_social,estado,conv_id,puesto_id,puesto_nombre,created_at';
+      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,experiencia,formacion,habilidades,disponibilidad,cbu,numero_cuenta,banco,antecedentes,beneficio_social,estado,conv_id,puesto_id,puesto_nombre,created_at,fecha_nacimiento,talla,permiso_trabajo,contacto_emergencia,observaciones,iban,titular_cuenta,acepta_privacidad,acepta_privacidad_at';
       let all = [], f = 0;
       while (true) {
         const { data, error } = await sb.from('solicitudes').select(cols).order('created_at', { ascending: false }).range(f, f + 999);
@@ -1403,6 +1413,7 @@ function renderDashboard() {
   const unicas = new Set(sols.filter(s => s.cuit).map(s => String(s.cuit).trim())).size;
   const mv = sols.filter(s => s.area === 'movistar_arena').length;
   const ex = sols.filter(s => s.area === 'externos').length;
+  const es = sols.filter(s => s.area === 'espana').length;
 
   // Inscripciones por día (bucket por fecha local de created_at)
   const dayKey = (dt) => dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
@@ -1449,6 +1460,7 @@ function renderDashboard() {
       ${tile(total, 'Inscripciones totales', 'incluye repetidos entre áreas')}
       ${tile(mv, 'Movistar Arena', '')}
       ${tile(ex, 'Externos', '')}
+      ${tile(es, 'España', '')}
     </div>
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px">
       <div style="font-size:14px;font-weight:600;color:#18181b;margin-bottom:2px">Inscripciones por día</div>
@@ -1490,7 +1502,7 @@ function nomStats() {
   n('sCont', src.filter(p => p.estado === 'contactado').length); n('sPend', src.filter(p => p.estado === 'pendiente').length);
   n('sNo', src.filter(p => p.estado === 'no_asiste').length);
 }
-function nomTabCounts() { n('tcAll', people.length); n('tcMv', people.filter(p => p.area === 'movistar_arena').length); n('tcEx', people.filter(p => p.area === 'externos').length); }
+function nomTabCounts() { n('tcAll', people.length); n('tcMv', people.filter(p => p.area === 'movistar_arena').length); n('tcEx', people.filter(p => p.area === 'externos').length); n('tcEs', people.filter(p => p.area === 'espana').length); }
 function n(id, v) { const el = document.getElementById(id); if (el) el.textContent = v.toLocaleString('es-AR'); }
 function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado === 'pendiente').length; const b = document.getElementById('candNavBadge'); if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; } }
 
@@ -1514,7 +1526,7 @@ function renderNomTable() {
   ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')">📄 CV</button>` : ''}
   ${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
-<td><span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</span></td>
+<td><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td>
 <td><select class="st-sel ${p.estado}" data-id="${p.id}" onchange="changeNomSt('${p.id}',this)">
   <option value="pendiente" ${p.estado==='pendiente'?'selected':''}>Pendiente</option>
   <option value="contactado" ${p.estado==='contactado'?'selected':''}>Contactado</option>
@@ -1667,13 +1679,15 @@ async function doImport() {
 }
 
 function exportNom() {
-  const hdrs = ['nombre', 'area', 'estado', 'cuit', 'email', 'telefono', 'notas', 'cbu', 'banco', 'numero_cuenta'];
+  // Si hay gente de España en lo exportado, se agregan sus columnas bancarias propias.
+  const conEs = nomFiltered.some(p => p.area === 'espana');
+  const hdrs = ['nombre', 'area', 'estado', 'cuit', 'email', 'telefono', 'notas', 'cbu', 'banco', 'numero_cuenta', ...(conEs ? ['iban', 'titular_cuenta'] : [])];
   const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const rows = nomFiltered.map(p => {
     // Los datos bancarios viven en la solicitud (registro); se matchea por CUIL.
-    const cuil = String(p.cuit || '').replace(/\D/g, '');
-    const sol = cuil ? solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cuil) : null;
-    return [p.nombre, p.area, p.estado, p.cuit, p.email, p.tel, p.notas, sol && sol.cbu, sol && sol.banco, sol && sol.numero_cuenta].map(esc).join(',');
+    const cuil = normDoc(p.cuit);
+    const sol = cuil ? solicitudes.find(s => normDoc(s.cuit) === cuil) : null;
+    return [p.nombre, p.area, p.estado, p.cuit, p.email, p.tel, p.notas, sol && sol.cbu, sol && sol.banco, sol && sol.numero_cuenta, ...(conEs ? [sol && sol.iban, sol && sol.titular_cuenta] : [])].map(esc).join(',');
   });
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + [hdrs.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = `nomina-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
 }
@@ -1703,10 +1717,17 @@ function viewCv(id) {
   const cv = p.cv;
   document.getElementById('cvViewTitle').textContent = `CV — ${p.nombre}`;
   const fld = (label, val) => val ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${label}</div><div class="cv-viewer-value">${e(val)}</div></div>` : '';
-  let html = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px"><span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}</span>${p.email ? `<span style="font-size:12px;color:#6b7280">✉ ${e(p.email)}</span>` : ''}${p.tel ? `<span style="font-size:12px;color:#6b7280">📞 ${e(p.tel)}</span>` : ''}<span style="font-size:12px;color:#9ca3af">Enviado: ${cv.fechaEnvio || '—'}</span></div>`;
+  let html = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px"><span class="a-badge ${areaClase(p.area)}">${areaLargo(p.area)}</span>${p.email ? `<span style="font-size:12px;color:#6b7280">✉ ${e(p.email)}</span>` : ''}${p.tel ? `<span style="font-size:12px;color:#6b7280">📞 ${e(p.tel)}</span>` : ''}<span style="font-size:12px;color:#9ca3af">Enviado: ${cv.fechaEnvio || '—'}</span></div>`;
   html += fld('Puesto de interés', cv.puestoInteres); html += fld('Disponibilidad', cv.disponibilidad);
   html += '<div class="cv-section-divider"></div>';
   html += fld('Experiencia laboral', cv.experiencia); html += fld('Formación', cv.formacion); html += fld('Habilidades', cv.habilidades);
+  if (p.area === 'espana') {
+    html += '<div class="cv-section-divider"></div>';
+    html += fld('Fecha de nacimiento', fechaDMA(cv.fechaNacimiento)); html += fld('Talla de ropa', cv.talla);
+    if (cv.permisoTrabajo !== null && cv.permisoTrabajo !== undefined) html += fld('Permiso de trabajo en España', cv.permisoTrabajo ? 'Sí' : 'No');
+    html += fld('Contacto de emergencia', cv.contactoEmergencia); html += fld('Observaciones', cv.observaciones);
+    html += fld('IBAN', cv.iban); html += fld('Titular de la cuenta', cv.titularCuenta);
+  }
   if (cv.archivo) html += `<div class="cv-section-divider"></div><div class="cv-file-box"><span style="font-size:18px">📎</span><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(cv.archivo.nombre)}</div><div style="font-size:11px;color:#9ca3af">${cv.archivo.tipo}</div></div></div>`;
   document.getElementById('cvViewBody').innerHTML = html;
   const dlBtn = document.getElementById('cvDownloadBtn'); dlBtn.style.display = cv.archivo ? 'inline-flex' : 'none'; dlBtn.dataset.id = id;
@@ -1743,10 +1764,10 @@ function renderCvList() {
 }
 function cvCardHTML(c) {
   const cPosts = posts.filter(p => p.convId === c.id); const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0); const usados = cPosts.filter(p => p.estado !== 'rechazado').length; const pct = totalCupos > 0 ? Math.min(100, Math.round(usados / totalCupos * 100)) : 0;
-  const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' }[c.area] || c.area;
+  const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' }[c.area] || c.area;
   const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : '#34d399';
   return `<div class="cv-card"><div class="cv-card-title">${e(c.nombre)}</div>
-<div class="cv-card-meta">${c.archivada ? '<span class="a-badge" style="background:#e5e7eb;color:#6b7280">📦 Archivada</span>' : ''}<span class="a-badge ${c.area === 'movistar_arena' ? 'a-mv' : c.area === 'externos' ? 'a-ex' : 'a-ambas'}">${areaLabel}</span>${c.fecha ? c.fecha.split(',').map(f => `<span>📅 ${fmtFecha(f.trim())}</span>`).join('') : ''}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
+<div class="cv-card-meta">${c.archivada ? '<span class="a-badge" style="background:#e5e7eb;color:#6b7280">📦 Archivada</span>' : ''}<span class="a-badge ${c.area === 'movistar_arena' ? 'a-mv' : c.area === 'externos' ? 'a-ex' : c.area === 'espana' ? 'a-es' : 'a-ambas'}">${areaLabel}</span>${c.fecha ? c.fecha.split(',').map(f => `<span>📅 ${fmtFecha(f.trim())}</span>`).join('') : ''}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
 <div class="cv-puestos">${(c.puestos || []).slice(0, 4).map(p => { const pu = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado').length; const pp = p.cupos > 0 ? Math.min(100, Math.round(pu / p.cupos * 100)) : 0; const pc = pp < 50 ? '#e5e7eb' : pp < 80 ? '#fbbf24' : '#34d399'; return `<div class="cv-prow"><span class="cv-pname">${e(p.nombre)}</span><div class="prog-wrap"><div class="prog-fill" style="background:${pc};width:${pp}%"></div></div><span class="cv-cupo">${pu}/${p.cupos}</span></div>`; }).join('')}${(c.puestos || []).length > 4 ? `<div style="font-size:11px;color:#9ca3af">+${(c.puestos || []).length - 4} puestos más</div>` : ''}</div>
 <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;margin-bottom:12px"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span>${usados}/${totalCupos} cupos · ${pct}%</span></div>
 <div class="cv-foot"><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delConv('${c.id}')">Eliminar</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();archivarConv('${c.id}',${c.archivada ? 'false' : 'true'})">${c.archivada ? '📤 Desarchivar' : '📦 Archivar'}</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();openEditConv('${c.id}')">✎ Editar</button><button class="btn btn-sm ${c.publicada?'btn-success':'btn-sec'}" onclick="event.stopPropagation();togglePublicada('${c.id}')" title="${c.publicada?'Quitar de página pública':'Publicar en página pública'}">${c.publicada?'🌐 Publicada':'○ Publicar'}</button><button class="btn btn-primary btn-sm" onclick="openDetail('${c.id}')">Gestionar →</button></div></div>`;
@@ -1757,7 +1778,7 @@ function openDetail(id) {
   document.getElementById('cv-list').style.display = 'none';
   document.getElementById('cv-detail').style.display = 'block';
   document.getElementById('detTitle').textContent = c.nombre;
-  document.getElementById('detMeta').textContent = `${{ movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' }[c.area] || c.area}${c.fecha ? ' · ' + c.fecha.split(',').map(f => fmtFecha(f.trim())).join(' · ') : ''}${c.descripcion ? ' · ' + c.descripcion.slice(0, 60) : ''}`;
+  document.getElementById('detMeta').textContent = `${{ movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' }[c.area] || c.area}${c.fecha ? ' · ' + c.fecha.split(',').map(f => fmtFecha(f.trim())).join(' · ') : ''}${c.descripcion ? ' · ' + c.descripcion.slice(0, 60) : ''}`;
   syncPublicadaBtn(c);
   const ab = document.getElementById('btnArchivar'); if (ab) ab.textContent = c.archivada ? '📤 Desarchivar' : '📦 Archivar';
   renderDetStats(); renderPuestos();
@@ -1779,7 +1800,7 @@ async function togglePublicada(id) {
 function closeDetail() { document.getElementById('cv-list').style.display = 'block'; document.getElementById('cv-detail').style.display = 'none'; currentConvId = null; renderCvList(); }
 function renderDetStats() { const c = convs.find(x => x.id === currentConvId); if (!c) return; const cPosts = posts.filter(p => p.convId === currentConvId); const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0); const usados = cPosts.filter(p => p.estado !== 'rechazado').length; document.getElementById('detStats').innerHTML = `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span><span class="dstat">Aprobados: <strong style="color:#0f6e56">${cPosts.filter(p => p.estado === 'aprobado').length}</strong></span><span class="dstat">Pendientes: <strong style="color:#854F0B">${cPosts.filter(p => p.estado === 'pendiente').length}</strong></span>`; }
 function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if (!c) { document.getElementById('puestosContainer').innerHTML = ''; return; } if (!(c.puestos || []).length) { document.getElementById('puestosContainer').innerHTML = '<div class="empty">No hay puestos. Agregá el primero.</div>'; return; } document.getElementById('puestosContainer').innerHTML = (c.puestos || []).map(p => puestoCardHTML(p, c)).join(''); }
-function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${e(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}" style="margin-top:4px;display:inline-block">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')">✎</button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
+function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${e(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${areaClase(p.area)}" style="margin-top:4px;display:inline-block">${areaLargo(p.area)}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')">✎</button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
 
 // ── FECHAS MÚLTIPLES ──
 let convTurnos = [];  // [{id, fecha, horario}] — la misma fecha puede repetirse (turnos)
@@ -1931,7 +1952,7 @@ function parseAsistenciaCsv(txt) {
   const data = hasH ? lines.slice(1) : lines;
   return data.map(line => {
     const cols = line.split(/[,;]/).map(c => c.trim().replace(/^"|"$/g, ''));
-    const cuil = cols[0]?.replace(/\D/g, '');
+    const cuil = normDoc(cols[0]);
     const marca = (cols[1] || '').toUpperCase().trim();
     if (!cuil) return null;
     return { cuil, asistio: marca === 'P' };
@@ -1946,13 +1967,13 @@ async function doImportAsistencia() {
   for (const row of rows) {
     const nuevaAsist = row.asistio ? 'presente' : 'ausente';
     // Intento 1: cruzar por persona en nómina que tiene ese CUIL
-    const pers = people.find(p => (p.cuit || '').replace(/\D/g, '') === row.cuil);
+    const pers = people.find(p => normDoc(p.cuit) === row.cuil);
     if (pers) {
       const post = myPosts.find(x => x.personaId === pers.id);
       if (post) { post.asistencia = nuevaAsist; try { await sbUpdate('postulaciones', post.id, { asistencia: nuevaAsist }); updated++; } catch (_) {} continue; }
     }
     // Intento 2: cruzar por CUIL guardado directamente en la postulación
-    const postByCuil = myPosts.find(x => (x.cuit || '').replace(/\D/g, '') === row.cuil);
+    const postByCuil = myPosts.find(x => normDoc(x.cuit) === row.cuil);
     if (postByCuil) { postByCuil.asistencia = nuevaAsist; try { await sbUpdate('postulaciones', postByCuil.id, { asistencia: nuevaAsist }); updated++; } catch (_) {} }
   }
   renderGestList(); renderPuestos(); closeM('mAsistencia');
@@ -1977,7 +1998,7 @@ function renderPicker() {
   const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (tgf && !(p.etiquetas || []).includes(tgf)) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
   const el = document.getElementById('pickerList');
   if (!avail.length) { el.innerHTML = '<div class="picker-empty">Sin resultados</div>'; document.getElementById('pickerSelCount').textContent = '0 seleccionados'; return; }
-  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${p.estado}</span></div>`).join('');
+  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${p.estado}</span></div>`).join('');
   document.getElementById('pickerSelCount').textContent = pickerSel.size + ' seleccionados';
 }
 function togglePickerSel(id) { if (pickerSel.has(id)) pickerSel.delete(id); else pickerSel.add(id); renderPicker(); }
@@ -2063,13 +2084,13 @@ function renderCandidatos() {
 }
 function candCardHTML(p) {
   const cv = p.cv; const initials = p.nombre.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
-  const avatarColors = { movistar_arena: 'background:#e0f2fe;color:#0369a1', externos: 'background:#f0fdf4;color:#166534' };
+  const avatarColors = { movistar_arena: 'background:#e0f2fe;color:#0369a1', externos: 'background:#f0fdf4;color:#166534', espana: 'background:#fef3c7;color:#92400e' };
   const sel = candSelIds.has(p.id);
-  return `<div class="cand-card ${sel ? 'selected' : ''}" id="cc-${p.id}"><div class="cand-card-top"><div class="cand-avatar" style="${avatarColors[p.area] || 'background:#f3f4f6;color:#374151'}">${initials}</div><div class="cand-info"><div class="cand-name">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}">🚫 OUT</button>` : ''}</div><div class="cand-puesto">${cv.puestoInteres ? e(cv.puestoInteres) : '<span style="color:#d1d5db">Sin puesto</span>'}</div><div class="cand-meta">${p.area === 'movistar_arena' ? 'Movistar Arena' : 'Externos'}${cv.fechaEnvio ? ' · ' + cv.fechaEnvio : ''}</div></div><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')" style="margin-top:2px;flex-shrink:0"></div>${cv.experiencia || cv.disponibilidad ? `<div class="cand-fields">${cv.disponibilidad ? `<div class="cand-field-row"><span class="cand-field-label">Disponib.:</span><span class="cand-field-val">${e(cv.disponibilidad)}</span></div>` : ''}${cv.experiencia ? `<div class="cand-field-row"><span class="cand-field-label">Experiencia:</span><span class="cand-field-val">${e(cv.experiencia)}</span></div>` : ''}</div>` : ''}<div class="cand-footer"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select>${cv.archivo ? `<span style="font-size:11px;color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')" title="Descargar">📎</span>` : ''}<div style="margin-left:auto;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></div></div></div>`;
+  return `<div class="cand-card ${sel ? 'selected' : ''}" id="cc-${p.id}"><div class="cand-card-top"><div class="cand-avatar" style="${avatarColors[p.area] || 'background:#f3f4f6;color:#374151'}">${initials}</div><div class="cand-info"><div class="cand-name">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}">🚫 OUT</button>` : ''}</div><div class="cand-puesto">${cv.puestoInteres ? e(cv.puestoInteres) : '<span style="color:#d1d5db">Sin puesto</span>'}</div><div class="cand-meta">${areaLargo(p.area)}${cv.fechaEnvio ? ' · ' + cv.fechaEnvio : ''}</div></div><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')" style="margin-top:2px;flex-shrink:0"></div>${cv.experiencia || cv.disponibilidad ? `<div class="cand-fields">${cv.disponibilidad ? `<div class="cand-field-row"><span class="cand-field-label">Disponib.:</span><span class="cand-field-val">${e(cv.disponibilidad)}</span></div>` : ''}${cv.experiencia ? `<div class="cand-field-row"><span class="cand-field-label">Experiencia:</span><span class="cand-field-val">${e(cv.experiencia)}</span></div>` : ''}</div>` : ''}<div class="cand-footer"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select>${cv.archivo ? `<span style="font-size:11px;color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')" title="Descargar">📎</span>` : ''}<div style="margin-left:auto;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></div></div></div>`;
 }
 function candRowHTML(p) {
   const cv = p.cv; const sel = candSelIds.has(p.id);
-  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel ? '#f0eeff' : '#fff'}"><td style="padding:9px 14px"><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')"></td><td style="padding:9px 14px;font-weight:500;color:#111827">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}">🚫 OUT</button>` : ''}</td><td style="padding:9px 14px"><span class="a-badge ${p.area === 'movistar_arena' ? 'a-mv' : 'a-ex'}">${p.area === 'movistar_arena' ? 'M. Arena' : 'Externos'}</span></td><td style="padding:9px 14px;font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(cv.puestoInteres || '—')}</td><td style="padding:9px 14px;font-size:12px">${cv.archivo ? `<span style="color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')">📎 ${e(cv.archivo.nombre.slice(0, 18) + (cv.archivo.nombre.length > 18 ? '…' : ''))}</span>` : '<span style="color:#d1d5db">—</span>'}</td><td style="padding:9px 14px;font-size:12px;color:#9ca3af">${cv.fechaEnvio || '—'}</td><td style="padding:9px 14px"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select></td><td style="padding:9px 14px;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></td></tr>`;
+  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel ? '#f0eeff' : '#fff'}"><td style="padding:9px 14px"><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')"></td><td style="padding:9px 14px;font-weight:500;color:#111827">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}">🚫 OUT</button>` : ''}</td><td style="padding:9px 14px"><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td><td style="padding:9px 14px;font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(cv.puestoInteres || '—')}</td><td style="padding:9px 14px;font-size:12px">${cv.archivo ? `<span style="color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')">📎 ${e(cv.archivo.nombre.slice(0, 18) + (cv.archivo.nombre.length > 18 ? '…' : ''))}</span>` : '<span style="color:#d1d5db">—</span>'}</td><td style="padding:9px 14px;font-size:12px;color:#9ca3af">${cv.fechaEnvio || '—'}</td><td style="padding:9px 14px"><select class="cand-st-sel ${p.estado}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select></td><td style="padding:9px 14px;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></td></tr>`;
 }
 async function candChangeSt(id, sel) { const p = people.find(x => x.id === id); if (p) { p.estado = sel.value; sel.className = 'cand-st-sel ' + sel.value; renderCandidatos(); nomStats(); try { await sbUpdate('personas', id, { estado: sel.value }); } catch (_) {} } }
 async function candDel(id) { if (!confirm('¿Eliminar este candidato?')) return; people = people.filter(x => x.id !== id); candSelIds.delete(id); nomRefresh(); renderCandidatos(); try { await sbDelete('personas', id); toast('Candidato eliminado'); } catch (_) {} }
@@ -2201,9 +2222,9 @@ async function checkCupoLleno(convId, puestoId) {
 // Busca la solicitud (registro) de una postulación: por CUIL, o por nombre+convocatoria.
 function solDePost(post) {
   if (!post) return null;
-  const cn = String(post.cuit || '').replace(/\D/g, '');
+  const cn = normDoc(post.cuit);
   let sol = null;
-  if (cn) sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+  if (cn) sol = solicitudes.find(s => normDoc(s.cuit) === cn);
   if (!sol) sol = solicitudes.find(s => (s.nombre || '').toLowerCase().trim() === (post.nombre || '').toLowerCase().trim() && s.conv_id === post.convId);
   return sol || null;
 }
@@ -2337,7 +2358,7 @@ function prepMailTemplate(area) {
   } else {
     const s = solicitudes.find(x => x.id === mailSolId); if (!s) return;
     solEmail = s.email; solNombre = s.nombre; solConvId = s.conv_id; solPuesto = s.puesto_nombre || s.puesto_interes || ''; solCuit = s.cuit || '';
-    const per = people.find(p => normCuit(p.cuit) && normCuit(p.cuit) === normCuit(s.cuit));
+    const per = people.find(p => normDoc(p.cuit) && normDoc(p.cuit) === normDoc(s.cuit));
     solPersonaId = per ? per.id : null;
   }
   mailConfirmCuit = String(solCuit || '').replace(/\D/g, '');
@@ -2610,7 +2631,7 @@ async function sendBulkMail() {
 }
 // ── CONTRATOS ──
 let contratos = [], mailContratoCtx = null, ctTraceId = null, ctTraceRow = null;
-function normCuit(v) { return String(v || '').replace(/\D/g, ''); }
+function normDoc(v) { return String(v || '').replace(/\D/g, ''); }
 function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
 
 function toggleContratoFields(prefix) {
@@ -2855,7 +2876,7 @@ function renderContratos() {
     if (convF && c.conv_id !== convF) return false;
     if (perF && periodoDe(c) !== perF) return false;
     if (estF && c.estado !== estF) return false;
-    if (q && !((c.nombre || '').toLowerCase().includes(q) || normCuit(c.cuil).includes(q.replace(/\D/g, '')))) return false;
+    if (q && !((c.nombre || '').toLowerCase().includes(q) || normDoc(c.cuil).includes(q.replace(/\D/g, '')))) return false;
     return true;
   }).sort((a, b) => (b.fecha_creacion || '').localeCompare(a.fecha_creacion || ''));
   if (!list.length) { cont.innerHTML = `<div class="empty">${contratos.length === 0 ? 'Todavía no se generó ningún contrato.' : 'Sin resultados para este filtro.'}</div>`; return; }
@@ -2947,7 +2968,7 @@ async function reenviarContrato() {
 function renderPersonContratos(p) {
   const block = document.getElementById('pContratosBlock');
   const list = document.getElementById('pContratosList');
-  const mios = contratos.filter(c => c.persona_id === p.id || (p.cuit && normCuit(c.cuil) === normCuit(p.cuit)));
+  const mios = contratos.filter(c => c.persona_id === p.id || (p.cuit && normDoc(c.cuil) === normDoc(p.cuit)));
   if (!mios.length) { block.style.display = 'none'; return; }
   block.style.display = 'block';
   list.innerHTML = mios.sort((a, b) => (b.fecha_creacion || '').localeCompare(a.fecha_creacion || '')).map(c => {
@@ -3033,7 +3054,7 @@ function renderSolicitudes() {
   const sel = solSelIds.has(s.id);
   return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel?'#f0eeff':''}">
   <td style="padding:9px 14px"><input type="checkbox" class="cb sol-cb" data-id="${s.id}" ${sel?'checked':''} onchange="solToggleSel('${s.id}')"></td>
-  <td style="padding:9px 14px;font-weight:500;color:#111827">${e(s.nombre)}${s.cuit?`<div style="font-size:11px;color:#9ca3af">CUIT: ${e(s.cuit)}</div>`:''}${s.cuit && dupCuits.has(s.cuit)?`<span style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:4px">⚠ Duplicado</span>`:''}</td>
+  <td style="padding:9px 14px;font-weight:500;color:#111827">${e(s.nombre)}${s.cuit?`<div style="font-size:11px;color:#9ca3af">${etiquetaDoc(s.area)}: ${e(s.cuit)}</div>`:''}${s.cuit && dupCuits.has(s.cuit)?`<span style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:4px">⚠ Duplicado</span>`:''}</td>
   <td style="padding:9px 14px"><span class="a-badge ${s.area==='movistar_arena'?'a-mv':'a-ex'}">${s.area==='movistar_arena'?'M. Arena':'Externos'}</span></td>
   <td style="padding:9px 14px;font-size:12px;color:#6b7280">${e(s.puesto_interes||'—')}</td>
   <td style="padding:9px 14px;font-size:12px;color:#6b7280">${e(s.localidad||'—')}</td>
@@ -3065,20 +3086,39 @@ async function openSolView(id) {
   const bool = (l,v) => v !== null && v !== undefined ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;${v?'background:#fee2e2;color:#991b1b':'background:#d1fae5;color:#065f46'}">${v?'✓ Sí':'✗ No'}</div></div>` : '';
 
   let html = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    <span class="a-badge ${s.area==='movistar_arena'?'a-mv':'a-ex'}">${s.area==='movistar_arena'?'Movistar Arena':'Externos'}</span>
+    <span class="a-badge ${areaClase(s.area)}">${areaLargo(s.area)}</span>
     ${s.email?`<span style="font-size:12px;color:#6b7280">✉ ${e(s.email)}</span>`:''}
     ${s.tel?`<span style="font-size:12px;color:#6b7280">📞 ${e(s.tel)}</span>`:''}
-    ${s.cuit?`<span style="font-size:12px;color:#6b7280">CUIT: ${e(s.cuit)}</span>`:''}
+    ${s.cuit?`<span style="font-size:12px;color:#6b7280">${etiquetaDoc(s.area)}: ${e(s.cuit)}</span>`:''}
     <span style="font-size:12px;color:#9ca3af">${s.created_at?new Date(s.created_at).toLocaleDateString('es-AR'):''}</span>
   </div>`;
 
-  html += fld('Localidad', s.localidad);
-  html += fld('Puesto de interés', s.puesto_interes);
+  html += fld(s.area === 'espana' ? 'Ciudad / zona' : 'Localidad', s.localidad);
+  html += fld(s.area === 'espana' ? 'Posiciones' : 'Puesto de interés', s.puesto_interes);
   html += fld('Disponibilidad', s.disponibilidad);
   html += '<div class="cv-section-divider"></div>';
   html += fld('Experiencia', s.experiencia);
   html += fld('Formación', s.formacion);
   html += fld('Habilidades', s.habilidades);
+
+  // España: los datos propios de su formulario
+  if (s.area === 'espana') {
+    html += '<div class="cv-section-divider"></div>';
+    html += fld('Fecha de nacimiento', fechaDMA(s.fecha_nacimiento));
+    html += fld('Talla de ropa', s.talla);
+    if (s.permiso_trabajo !== null && s.permiso_trabajo !== undefined) html += fld('Permiso de trabajo en España', s.permiso_trabajo ? 'Sí' : 'No');
+    html += fld('Contacto de emergencia', s.contacto_emergencia);
+    html += fld('Observaciones', s.observaciones);
+    if (s.iban || s.titular_cuenta) {
+      html += '<div class="cv-section-divider"></div>';
+      html += `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:10px">Datos bancarios</div>`;
+      html += `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:10px">`;
+      html += fld('IBAN', s.iban);
+      html += fld('Titular de la cuenta', s.titular_cuenta);
+      html += `</div>`;
+    }
+    if (s.acepta_privacidad) html += fld('Protección de datos', 'Aceptada' + (s.acepta_privacidad_at ? ' el ' + new Date(s.acepta_privacidad_at).toLocaleString('es-ES') : ''));
+  }
 
   // Datos bancarios
   if (s.cbu || s.banco || s.numero_cuenta) {
@@ -3130,6 +3170,7 @@ async function singleSolSt(id, estado) {
     let personaId;
     if (!existe) {
       const np = { id: uid(), nombre: s.nombre, area: s.area, estado: 'confirmado', email: s.email||null, tel: s.tel||null, cuit: s.cuit||null, notas: s.puesto_interes?`Interés: ${s.puesto_interes}`:null, cv: { puestoInteres: s.puesto_interes||'', experiencia: s.experiencia||'', formacion: s.formacion||'', habilidades: s.habilidades||'', disponibilidad: s.disponibilidad||'', fechaEnvio: s.created_at?.slice(0,10)||'', archivo: s.archivo_cv||null } };
+      if (s.area === 'espana') Object.assign(np.cv, { fechaNacimiento: s.fecha_nacimiento || '', talla: s.talla || '', permisoTrabajo: s.permiso_trabajo, contactoEmergencia: s.contacto_emergencia || '', observaciones: s.observaciones || '', iban: s.iban || '', titularCuenta: s.titular_cuenta || '', aceptaPrivacidadAt: s.acepta_privacidad_at || '' });
       people.push(np);
       personaId = np.id;
       try { await sbUpsert('personas', { id: np.id, nombre: np.nombre, area: np.area, estado: np.estado, email: np.email, tel: np.tel, cuit: np.cuit, notas: np.notas, cv: np.cv }); } catch(_) {}
@@ -3195,7 +3236,7 @@ function openReporte() {
         const pers = people.find(x => x.id === post.personaId);
         const sem = pers?.semaforo || 1;
         const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
-        html += `<tr style="border-bottom:1px solid #f9fafb"><td style="padding:6px 10px;font-weight:500">${e(post.nombre)}${pers?.out_flag?'<span class="out-badge" style="margin-left:4px;cursor:default">🚫 OUT</span>':''}</td><td style="padding:6px 10px"><span class="a-badge ${pers?.area==='movistar_arena'?'a-mv':'a-ex'}" style="font-size:10px">${pers?.area==='movistar_arena'?'M. Arena':'Ext.'}</span></td><td style="padding:6px 10px"><span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${post.estado}</span></td><td style="padding:6px 10px"><span class="sem sem-${sem}" style="cursor:default">${sem}</span></td></tr>`;
+        html += `<tr style="border-bottom:1px solid #f9fafb"><td style="padding:6px 10px;font-weight:500">${e(post.nombre)}${pers?.out_flag?'<span class="out-badge" style="margin-left:4px;cursor:default">🚫 OUT</span>':''}</td><td style="padding:6px 10px"><span class="a-badge ${areaClase(pers?.area)}" style="font-size:10px">${areaMini(pers?.area)}</span></td><td style="padding:6px 10px"><span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${post.estado}</span></td><td style="padding:6px 10px"><span class="sem sem-${sem}" style="cursor:default">${sem}</span></td></tr>`;
       });
       html += '</tbody></table>';
     } else { html += '<div style="font-size:12px;color:#9ca3af;padding:6px 0">Sin personas asignadas</div>'; }
@@ -3232,8 +3273,8 @@ function exportPostuladosExcel() {
     aoa.push([String(p.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'ESTADO', '', 'CUIL', 'DNI', 'TELEFONO', 'EMAIL', 'VIANDA', ...fechaCols, 'OBSERVACIONES', 'CANT. DE DÍAS', 'CAT', 'ART y SVO', 'CONTRATO']);
     asignados.forEach((post, i) => {
       const pers = people.find(x => x.id === post.personaId);
-      const cuil = String(pers?.cuit || post.cuit || '').replace(/\D/g, '');
-      const sol  = cuil ? solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cuil) : null;
+      const cuil = normDoc(pers?.cuit || post.cuit);
+      const sol  = cuil ? solicitudes.find(s => normDoc(s.cuit) === cuil) : null;
       const cuil9 = cuil.length === 11 ? cuil.slice(2) : '';       // CUIL sin prefijo (9)
       const dni   = cuil.length === 11 ? cuil.slice(2, 10) : '';   // DNI (8)
       const nm  = splitNombre(post.nombre || pers?.nombre || sol?.nombre || '');
@@ -3318,9 +3359,9 @@ function renderDispBody() {
   const thDates = slots.map(s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center;vertical-align:bottom" title="${e(s.horario || '')}">${fmtFechaCorta(s.fecha)}${s.horario ? `<div style="font-size:9px;font-weight:400;color:#8b8fa3;text-transform:none;max-width:100px;margin:2px auto 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(s.horario)}</div>` : ''}</th>`).join('');
   const rows = dispRows.map(r => {
     const rf = Array.isArray(r.fechas) ? r.fechas : [];
-    const cn = String(r.cuit || '').replace(/\D/g, '');
-    const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
-    const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+    const cn = normDoc(r.cuit);
+    const per = people.find(p => normDoc(p.cuit) === cn);
+    const sol = solicitudes.find(s => normDoc(s.cuit) === cn);
     const email = per?.email || sol?.email || '';
     const tel = per?.tel || sol?.tel || '';
     const cells = slots.map(s => `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${rf.includes(s.id) ? '<span style="color:#16a34a;font-weight:700">✓</span>' : '<span style="color:#d1d5db">·</span>'}</td>`).join('');
@@ -3355,9 +3396,9 @@ function exportarDisponibilidad() {
   const hdrs = ['Persona', 'CUIT', 'Email', ...slots.map(colLabel), 'Turnos disponibles'];
   const rows = dispRows.map(r => {
     const rf = Array.isArray(r.fechas) ? r.fechas : [];
-    const cn = String(r.cuit || '').replace(/\D/g, '');
-    const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
-    const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+    const cn = normDoc(r.cuit);
+    const per = people.find(p => normDoc(p.cuit) === cn);
+    const sol = solicitudes.find(s => normDoc(s.cuit) === cn);
     const email = per?.email || sol?.email || '';
     const marks = slots.map(s => rf.includes(s.id) ? 'SÍ' : '');
     const total = slots.filter(s => rf.includes(s.id)).length;
@@ -3372,9 +3413,9 @@ function exportarDisponibilidad() {
   a.click();
 }
 function confirmarDisponibilidad(cuit, nombre) {
-  const cn = String(cuit || '').replace(/\D/g, '');
-  const per = people.find(p => String(p.cuit || '').replace(/\D/g, '') === cn);
-  const sol = solicitudes.find(s => String(s.cuit || '').replace(/\D/g, '') === cn);
+  const cn = normDoc(cuit);
+  const per = people.find(p => normDoc(p.cuit) === cn);
+  const sol = solicitudes.find(s => normDoc(s.cuit) === cn);
   const email = per?.email || sol?.email;
   if (!email) { toast('Esta persona no tiene email cargado'); return; }
   closeM('mDispAdmin');
@@ -3402,11 +3443,11 @@ function checkRotacion(personaId) {
 // Seguimiento de ausentes: cuenta faltas y si está "en penalidad" (no reconvocar hasta X días después de la última falta).
 function checkAusencia(persona) {
   if (!persona) return { ausencias: 0, penalizado: false, hasta: null, ultima: null };
-  const pid = persona.id, pcuit = String(persona.cuit || '').replace(/\D/g, '');
+  const pid = persona.id, pcuit = normDoc(persona.cuit);
   const ausentes = posts.filter(p => {
     if (p.asistencia !== 'ausente') return false;
     if (p.personaId && p.personaId === pid) return true;
-    return !!pcuit && String(p.cuit || '').replace(/\D/g, '') === pcuit;
+    return !!pcuit && normDoc(p.cuit) === pcuit;
   });
   if (!ausentes.length) return { ausencias: 0, penalizado: false, hasta: null, ultima: null };
   const fechas = ausentes.map(p => { const c = convs.find(cv => cv.id === p.convId); const fs = String(c?.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort(); return fs[0] || null; }).filter(Boolean).sort();
@@ -3479,7 +3520,7 @@ function openHistorial(personaId) {
       <div class="hist-dot ${pp[0]?.estado||'pendiente'}"></div>
       <div class="hist-info">
         <div class="hist-title">${conv ? e(conv.nombre) : 'Convocatoria eliminada'}</div>
-        <div class="hist-meta">${conv?.fecha ? fmtFecha(conv.fecha) : ''}${conv?.area ? ' · ' + ({movistar_arena:'Movistar Arena',externos:'Externos',ambas:'Ambas'}[conv.area]||conv.area) : ''}</div>
+        <div class="hist-meta">${conv?.fecha ? fmtFecha(conv.fecha) : ''}${conv?.area ? ' · ' + ({movistar_arena:'Movistar Arena',externos:'Externos',espana:'España',ambas:'Ambas'}[conv.area]||conv.area) : ''}</div>
         <div class="hist-tags">${pp.map(post => {
           const puestoNom = (conv?.puestos||[]).find(pu => pu.id === post.puestoId)?.nombre || 'Puesto';
           return `<span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${e(puestoNom)}</span>${asistBadge(post.asistencia)}`;
@@ -3497,7 +3538,7 @@ function agendaPorCuit() {
   const map = {};
   posts.forEach(p => {
     if (p.estado === 'rechazado') return;
-    const cuit = String(p.cuit || '').replace(/\D/g, ''); if (!cuit) return;
+    const cuit = normDoc(p.cuit); if (!cuit) return;
     const conv = convs.find(c => c.id === p.convId); if (!conv) return;
     const puesto = (conv.puestos || []).find(pu => pu.id === p.puestoId)?.nombre || 'Puesto';
     if (!map[cuit]) map[cuit] = { nombre: p.nombre || '', items: [] };
@@ -3542,7 +3583,7 @@ function openConflictos() {
 }
 
 function buscarConflictoCuit() {
-  const raw = String(document.getElementById('confCuit').value || '').replace(/\D/g, '');
+  const raw = normDoc(document.getElementById('confCuit').value);
   const cont = document.getElementById('confBusca');
   if (raw.length < 6) { cont.innerHTML = ''; return; }
   const rec = agendaPorCuit()[raw];
@@ -3801,7 +3842,7 @@ function renderRespuestas() {
         <span class="a-badge ${casClass}">${casLabel}</span>
         <span style="font-size:11px;color:#9ca3af;white-space:nowrap">${fecha}</span>
       </div>
-      ${persona ? `<div style="font-size:11px;color:#0369a1;margin-bottom:6px">✓ En la nómina: ${e(persona.nombre)} (${persona.area === 'movistar_arena' ? 'M. Arena' : 'Externos'})</div>` : `<div style="font-size:11px;color:#9ca3af;margin-bottom:6px">No coincide con nadie en la nómina</div>`}
+      ${persona ? `<div style="font-size:11px;color:#0369a1;margin-bottom:6px">✓ En la nómina: ${e(persona.nombre)} (${areaCorto(persona.area)})</div>` : `<div style="font-size:11px;color:#9ca3af;margin-bottom:6px">No coincide con nadie en la nómina</div>`}
       <div style="font-size:12px;color:#374151;font-weight:600;margin-bottom:4px">${e(r.subject || '(sin asunto)')}</div>
       <div style="font-size:13px;color:#374151;line-height:1.5;white-space:pre-wrap;max-height:160px;overflow-y:auto;background:#fafafa;border-radius:6px;padding:8px 10px">${e(r.body || r.snippet || '')}</div>
       <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
