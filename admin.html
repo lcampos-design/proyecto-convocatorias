@@ -692,6 +692,10 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 
 <!-- CONTRATOS -->
 <div id="sec-contratos" class="sec">
+  <div class="atabs">
+    <div class="atab active" data-ct="activos" onclick="setCtTab('activos')">Contratos <span class="tc" id="tcCtAct">0</span></div>
+    <div class="atab atab-out" data-ct="borrados" onclick="setCtTab('borrados')">Borrados <span class="tc" id="tcCtBor">·</span></div>
+  </div>
   <div class="ctrlbar">
     <input type="text" class="srch" id="ctSrch" placeholder="Buscar por nombre o CUIL..." oninput="renderContratos()">
     <select class="filt" id="ctConvFilter" onchange="renderContratos()"><option value="">Todas las convocatorias</option></select>
@@ -1282,6 +1286,18 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   </div>
 </div>
 
+<div class="modal-bg" id="mCtBorrado" style="display:none" onclick="bgClose('mCtBorrado',event)">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title"><span><i class="ic ic-doc"></i> Contrato borrado — <span id="ctBorNombre"></span></span><button class="mclose" onclick="closeM('mCtBorrado')">✕</button></div>
+    <div id="ctBorBody"><div class="empty">Cargando...</div></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mCtBorrado')">Cerrar</button>
+      <button class="btn btn-sec" id="ctBorTextoBtn" onclick="verTextoBorrado()" style="display:none">Ver el texto</button>
+      <button class="btn btn-primary" id="ctBorPdfBtn" onclick="descargarPdfBorrado()" style="display:none">↓ Descargar PDF firmado</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1740,7 +1756,7 @@ function verSolicitudesDe(area) {
   solFilter();
 }
 
-function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('.atab').forEach(t => t.classList.toggle('active', t.dataset.area === a)); nomPage = 1; nomRefresh(); }
+function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('#sec-nomina .atab').forEach(t => t.classList.toggle('active', t.dataset.area === a)); nomPage = 1; nomRefresh(); }
 function nomSearch() { nomPage = 1; nomApply(); }
 function nomFilter() { nomPage = 1; nomApply(); }
 function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge(); refreshTagUI(); }
@@ -3466,7 +3482,147 @@ function populateCtFilters() {
   selP.value = curP;
 }
 
+// Cómo se nombra cada paso de la trazabilidad, acá y en el detalle de un borrado.
+const CT_EVENTO = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i class="ic ic-sobre"></i> Enviado', visto: '<i class="ic ic-ojo"></i> Visto', consentimiento: '<i class="ic ic-tilde-circ"></i> Consentimiento', firmado: '<i class="ic ic-firma"></i> Firmado', reenviado: '↻ Reenviado' };
+
+// ── CONTRATOS BORRADOS ────────────────────────────────────────
+// Lo que se borró no desaparece: contrato_borrar() deja una copia completa en
+// contratos_borrados. Acá se lee ese registro, para no tener que ir a la base.
+let ctTab = 'activos', contratosBorrados = null, ctBorRow = null;
+
+function setCtTab(t) {
+  ctTab = t;
+  document.querySelectorAll('#sec-contratos .atab').forEach(x => x.classList.toggle('active', x.dataset.ct === t));
+  renderContratos();
+}
+function ctTabCounts() {
+  const a = document.getElementById('tcCtAct'); if (a) a.textContent = contratos.length.toLocaleString('es-AR');
+  const b = document.getElementById('tcCtBor'); if (b) b.textContent = contratosBorrados ? contratosBorrados.length.toLocaleString('es-AR') : '·';
+}
+
+async function renderContratosBorrados() {
+  const cont = document.getElementById('ctContent'); if (!cont) return;
+  // Se trae una sola vez y sin el texto ni el PDF, que pesan: eso se busca
+  // recién al abrir el detalle de uno.
+  if (!contratosBorrados) {
+    cont.innerHTML = '<div class="empty">Cargando...</div>';
+    const { data, error } = await sb.from('contratos_borrados')
+      .select('id,contrato_id,transaccion_id,hash_texto,nombre,cuil,puesto,conv_id,estado,fecha_creacion,fecha_firma,motivo,borrado_por_mail,borrado_at')
+      .order('borrado_at', { ascending: false });
+    if (error) {
+      cont.innerHTML = `<div class="empty">No se pudo leer el registro de borrados.<br>
+        <span style="font-size:11.5px;color:#9ca3af">${e(error.message || '')}</span><br>
+        <span style="font-size:11.5px;color:#9ca3af">Si todavía no corriste contratos-borrar.sql en Supabase, esa tabla no existe.</span></div>`;
+      return;
+    }
+    contratosBorrados = data || [];
+    ctTabCounts();
+  }
+  if (ctTab !== 'borrados') return;   // cambió de pestaña mientras cargaba
+
+  const q = (document.getElementById('ctSrch')?.value || '').toLowerCase().trim();
+  const convF = document.getElementById('ctConvFilter')?.value || '';
+  const perF = document.getElementById('ctPeriodoFilter')?.value || '';
+  const estF = document.getElementById('ctEstadoFilter')?.value || '';
+  const list = contratosBorrados.filter(c => {
+    if (convF && c.conv_id !== convF) return false;
+    if (perF && periodoDe(c) !== perF) return false;
+    if (estF && c.estado !== estF) return false;
+    const qd = q.replace(/\D/g, '');
+    if (q && !((c.nombre || '').toLowerCase().includes(q) || (qd && normDoc(c.cuil).includes(qd)) || (c.motivo || '').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  if (!list.length) {
+    cont.innerHTML = `<div class="empty">${contratosBorrados.length === 0 ? 'Todavía no se borró ningún contrato.' : 'Sin resultados para este filtro.'}</div>`;
+    return;
+  }
+  cont.innerHTML = `<div style="font-size:12px;color:#9ca3af;margin-bottom:12px">De cada contrato borrado se guarda el texto, el PDF firmado y toda la trazabilidad. Desde el panel esto no se puede editar ni borrar.</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>CUIL</th><th>Puesto</th><th>Convocatoria</th><th>Estado al borrarlo</th><th>Motivo</th><th>Lo borró</th><th>Cuándo</th><th></th></tr></thead><tbody>${list.map(c => {
+    const conv = convs.find(x => x.id === c.conv_id);
+    const cuando = c.borrado_at ? new Date(c.borrado_at).toLocaleString('es-AR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    return `<tr>
+      <td>${e(c.nombre || '')}</td>
+      <td>${e(c.cuil || '')}</td>
+      <td>${e(c.puesto || '')}</td>
+      <td>${e(conv?.nombre || '—')}</td>
+      <td>${estadoBadge(c.estado)}</td>
+      <td class="cm" title="${e(c.motivo || '')}">${e(c.motivo || '')}</td>
+      <td class="cm" title="${e(c.borrado_por_mail || '')}">${e(c.borrado_por_mail || '—')}</td>
+      <td style="white-space:nowrap;font-size:12px;color:#6b7280">${cuando}</td>
+      <td><button class="btn btn-sec btn-xs" onclick="verContratoBorrado('${c.id}')">Ver</button></td>
+    </tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+
+async function verContratoBorrado(id) {
+  ctBorRow = null;
+  document.getElementById('ctBorNombre').textContent = '';
+  document.getElementById('ctBorBody').innerHTML = '<div class="empty">Cargando...</div>';
+  document.getElementById('ctBorPdfBtn').style.display = 'none';
+  document.getElementById('ctBorTextoBtn').style.display = 'none';
+  showM('mCtBorrado');
+  const { data: row } = await sb.from('contratos_borrados').select('*').eq('id', id).single();
+  if (!row) { document.getElementById('ctBorBody').innerHTML = '<div class="empty">No se encontró el registro.</div>'; return; }
+  ctBorRow = row;
+  document.getElementById('ctBorNombre').textContent = row.nombre || '';
+  const conv = convs.find(x => x.id === row.conv_id);
+  const eventos = Array.isArray(row.eventos) ? row.eventos : [];
+  const timeline = eventos.map(ev => `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6">
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;font-size:13px;color:#374151">${CT_EVENTO[ev.tipo] || e(ev.tipo || '')}</div>
+      <div style="font-size:12px;color:#9ca3af;white-space:nowrap">${ev.fecha ? new Date(ev.fecha).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}</div>
+    </div>
+    ${ev.ip || ev.user_agent ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px;word-break:break-all">${ev.ip ? 'IP: ' + e(ev.ip) : ''}${ev.ip && ev.user_agent ? ' · ' : ''}${ev.user_agent ? e(String(ev.user_agent).slice(0, 90)) : ''}</div>` : ''}
+  </div>`).join('') || '<div class="empty">Sin eventos.</div>';
+  const fh = v => v ? new Date(v).toLocaleString('es-AR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+  document.getElementById('ctBorBody').innerHTML = `
+    <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:8px;padding:10px 14px;font-size:12.5px;color:var(--alerta);margin-bottom:14px">
+      <div><strong>Lo borró:</strong> ${e(row.borrado_por_mail || 'desconocido')} · ${fh(row.borrado_at)}</div>
+      <div style="margin-top:3px"><strong>Motivo:</strong> ${e(row.motivo || '')}</div>
+    </div>
+    <div style="font-size:13px;color:#374151">
+      <div><strong>CUIL:</strong> ${e(row.cuil || '')}</div>
+      <div><strong>Puesto:</strong> ${e(row.puesto || '')}</div>
+      <div><strong>Convocatoria:</strong> ${e(conv?.nombre || '—')}</div>
+      <div><strong>Estado al borrarlo:</strong> ${estadoBadge(row.estado)}</div>
+      <div><strong>Creado:</strong> ${fh(row.fecha_creacion)}${row.fecha_firma ? ' · <strong>Firmado:</strong> ' + fh(row.fecha_firma) : ''}</div>
+    </div>
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:14px 0 6px">Huella del documento</div>
+    <div style="font-size:11.5px;color:#6b7280;word-break:break-all;line-height:1.6">
+      ${row.transaccion_id ? `<div>ID de transacción: <code>${e(row.transaccion_id)}</code></div>` : ''}
+      <div title="${e(row.hash_texto || '')}">SHA-256: <code>${e((row.hash_texto || '—').slice(0, 32))}${(row.hash_texto || '').length > 32 ? '…' : ''}</code></div>
+      <div style="color:#9ca3af;margin-top:3px">Sirve para verificar que un PDF que aparezca más adelante es el que se firmó.</div>
+    </div>
+    <div id="ctBorTexto" style="display:none;margin-top:12px">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:6px">Texto del contrato</div>
+      <div style="font-size:12px;color:#374151;line-height:1.55;white-space:pre-wrap;word-break:break-word;max-height:300px;overflow:auto;background:#fafafa;border:1px solid #f3f4f6;border-radius:8px;padding:10px 12px">${e(row.texto_contrato || '')}</div>
+    </div>
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:14px 0 6px">Trazabilidad</div>
+    ${timeline}`;
+  document.getElementById('ctBorPdfBtn').style.display = row.pdf_firmado ? 'inline-block' : 'none';
+  const tb = document.getElementById('ctBorTextoBtn');
+  tb.style.display = row.texto_contrato ? 'inline-block' : 'none';
+  tb.textContent = 'Ver el texto';
+}
+
+function verTextoBorrado() {
+  const el = document.getElementById('ctBorTexto'); if (!el) return;
+  const abierto = el.style.display !== 'none';
+  el.style.display = abierto ? 'none' : 'block';
+  document.getElementById('ctBorTextoBtn').textContent = abierto ? 'Ver el texto' : 'Ocultar el texto';
+}
+
+function descargarPdfBorrado() {
+  if (!ctBorRow?.pdf_firmado) { toast('Este contrato no tenía PDF firmado'); return; }
+  const a = document.createElement('a');
+  a.href = 'data:application/pdf;base64,' + ctBorRow.pdf_firmado;
+  a.download = `contrato-borrado-${(ctBorRow.nombre || 'sin-nombre').replace(/\s+/g, '-')}.pdf`;
+  a.click();
+}
+
 function renderContratos() {
+  ctTabCounts();
+  if (ctTab === 'borrados') { renderContratosBorrados(); return; }
   const cont = document.getElementById('ctContent'); if (!cont) return;
   const q = (document.getElementById('ctSrch')?.value || '').toLowerCase().trim();
   const convF = document.getElementById('ctConvFilter')?.value || '';
@@ -3476,7 +3632,8 @@ function renderContratos() {
     if (convF && c.conv_id !== convF) return false;
     if (perF && periodoDe(c) !== perF) return false;
     if (estF && c.estado !== estF) return false;
-    if (q && !((c.nombre || '').toLowerCase().includes(q) || normDoc(c.cuil).includes(q.replace(/\D/g, '')))) return false;
+    const qd = q.replace(/\D/g, '');
+    if (q && !((c.nombre || '').toLowerCase().includes(q) || (qd && normDoc(c.cuil).includes(qd)))) return false;
     return true;
   }).sort((a, b) => (b.fecha_creacion || '').localeCompare(a.fecha_creacion || ''));
   if (!list.length) { cont.innerHTML = `<div class="empty">${contratos.length === 0 ? 'Todavía no se generó ningún contrato.' : 'Sin resultados para este filtro.'}</div>`; return; }
@@ -3510,10 +3667,9 @@ async function verContratoTrace(id) {
   if (!row) { document.getElementById('ctTraceBody').innerHTML = '<div class="empty">No se encontró el contrato.</div>'; return; }
   ctTraceRow = row;
   document.getElementById('ctTraceNombre').textContent = row.nombre || '';
-  const tipoLabel = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i class="ic ic-sobre"></i> Enviado', visto: '<i class="ic ic-ojo"></i> Visto', consentimiento: '<i class="ic ic-tilde-circ"></i> Consentimiento', firmado: '<i class="ic ic-firma"></i> Firmado', reenviado: '↻ Reenviado' };
   const timeline = (eventos || []).map(ev => `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6">
     <div style="display:flex;gap:10px">
-      <div style="flex:1;font-size:13px;color:#374151">${tipoLabel[ev.tipo] || ev.tipo}</div>
+      <div style="flex:1;font-size:13px;color:#374151">${CT_EVENTO[ev.tipo] || ev.tipo}</div>
       <div style="font-size:12px;color:#9ca3af;white-space:nowrap">${ev.fecha ? new Date(ev.fecha).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}</div>
     </div>
     ${ev.ip || ev.user_agent ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px;word-break:break-all">${ev.ip ? 'IP: ' + e(ev.ip) : ''}${ev.ip && ev.user_agent ? ' · ' : ''}${ev.user_agent ? e(String(ev.user_agent).slice(0, 90)) : ''}</div>` : ''}
@@ -3557,6 +3713,7 @@ async function borrarContrato() {
     const { error } = await sb.rpc('contrato_borrar', { p_id: ctTraceRow.id, p_motivo: motivo.trim() });
     if (error) throw error;
     contratos = contratos.filter(c => c.id !== ctTraceRow.id);
+    contratosBorrados = null;   // se vuelve a leer al entrar a la pestaña
     ctTraceRow = null; ctTraceId = null;
     closeM('mContratoTrace');
     populateCtFilters(); renderContratos();
