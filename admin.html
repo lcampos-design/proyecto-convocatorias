@@ -1868,6 +1868,91 @@ function esLocalidad(v) {
   if (/^[\d\s.\-_/]+$/.test(t)) return false;
   return true;
 }
+
+// ── Localidades: una sola entrada por lugar ───────────────────
+// La gente escribe la misma localidad de nueve maneras: "Glew", "Glew (PBA)",
+// "Glew, Alte. Brown, Bs. As.", "Glew Zona Sur". Para agrupar se saca lo que no
+// distingue un lugar de otro —la provincia, el partido, la zona, la aclaración
+// entre paréntesis— y se compara lo que queda. El dato que cargó la persona no
+// se toca: esto sólo decide cómo se agrupa y cómo se muestra.
+const LOC_ABREV = [
+  [/\bc\s*\.\s*a\s*\.\s*b\s*\.\s*a\s*\.?/g, ' caba '],
+  [/\bbs\s*\.?\s*as\s*\.?/g, ' buenos aires '],
+  [/\bbsas\b/g, ' buenos aires '],
+  [/\bpba\b/g, ' buenos aires '],
+  [/\bcap\s*\.?\s*fed\s*\.?/g, ' capital federal '],
+  // Ojo con el orden: si "prov" va antes que "provincia", parte la palabra.
+  [/\b(provincia|pcia|prov)\s*\.?\s*(de\s+)?/g, ' '],
+  [/\b(partido|pdo)\s*\.?\s*(de\s+)?/g, ' '],
+  [/\balte\.?\s+/g, 'almirante '],
+  [/\bgral\.?\s+/g, 'general '],
+  [/\bvte\.?\s+/g, 'vicente '],
+  [/\bsta\.?\s+/g, 'santa '],
+  [/\bsto\.?\s+/g, 'santo '],
+  [/\bf\s*\.\s*varela\b/g, 'florencio varela'],
+  [/\be\s*\.\s*echeverria\b/g, 'esteban echeverria']
+];
+// Lo que puede venir pegado a una localidad sin ser otro lugar distinto.
+const LOC_ZONAS = 'zona (sur|norte|oeste|este|centro)|gran buenos aires|conurbano( bonaerense)?|gba|amba|buenos aires|capital federal|caba|ciudad autonoma( de buenos aires)?|ciudad de buenos aires|argentina';
+const LOC_PROVINCIAS = 'catamarca|chaco|chubut|cordoba|corrientes|entre rios|formosa|jujuy|la pampa|la rioja|mendoza|misiones|neuquen|rio negro|salta|san juan|san luis|santa cruz|santa fe|santiago del estero|tierra del fuego|tucuman';
+// Partidos del conurbano: "Glew, Almirante Brown" es Glew.
+const LOC_PARTIDOS = 'almirante brown|avellaneda|berazategui|berisso|brandsen|campana|canuelas|ensenada|escobar|esteban echeverria|exaltacion de la cruz|ezeiza|florencio varela|general las heras|general rodriguez|general san martin|hurlingham|ituzaingo|jose c paz|la matanza|la plata|lanus|lomas de zamora|lujan|malvinas argentinas|marcos paz|merlo|moreno|moron|navarro|pilar|presidente peron|quilmes|san andres de giles|san fernando|san isidro|san miguel|san vicente|tigre|tres de febrero|vicente lopez|zarate';
+const RE_LOC_SEGMENTO = new RegExp('^(' + LOC_ZONAS + '|' + LOC_PROVINCIAS + '|' + LOC_PARTIDOS + '|san martin)$');
+// Como sufijo pegado sin coma ("Wilde Avellaneda") se saca lo mismo, menos
+// "San Martín" suelto, que es parte de nombres reales ("Villa San Martín").
+const RE_LOC_SUFIJO = new RegExp('\\s+(' + LOC_ZONAS + '|' + LOC_PROVINCIAS + '|' + LOC_PARTIDOS + ')$');
+// Dos nombres para el mismo lugar.
+const LOC_SINONIMOS = { 'capital federal': 'caba', 'ciudad autonoma': 'caba', 'ciudad autonoma de buenos aires': 'caba', 'ciudad de buenos aires': 'caba', 'capital': 'caba' };
+const LOC_SIGLAS = { caba: 'CABA' };
+
+function localidadCanonica(v) {
+  let t = String(v == null ? '' : v).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')   // sin tildes: "Ituzaingó" e "Ituzaingo" son lo mismo
+    .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ');             // "(Bs.As)" nunca distingue un lugar de otro
+  LOC_ABREV.forEach(([re, a]) => { t = t.replace(re, a); });
+  // Los puntos que sobrevivieron a las abreviaturas separan, no abrevian.
+  t = t.replace(/[.;/]+/g, ',').replace(/\s+-\s+/g, ',');
+  const partes = t.split(',').map(x => x.replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+  if (!partes.length) return '';
+  let base = partes[0];
+  // Lo que sigue a una coma se descarta si es provincia, partido o zona.
+  partes.slice(1).forEach(p => { if (!RE_LOC_SEGMENTO.test(p)) base += ' ' + p; });
+  // Y lo mismo pegado al final sin coma, mientras quede algo.
+  for (let i = 0; i < 4; i++) {
+    const corto = base.replace(RE_LOC_SUFIJO, '').trim();
+    if (!corto || corto === base) break;
+    base = corto;
+  }
+  base = base.replace(/\s+/g, ' ').trim();
+  return LOC_SINONIMOS[base] || base;
+}
+
+// Cómo se escribe cada localidad en pantalla. Se prefiere una forma que alguien
+// haya escrito tal cual (así se conservan las tildes y los puntos: "José C. Paz"
+// y no "Jose C Paz"); si nadie la escribió limpia, se arma desde la agrupada.
+let locEtiquetas = new Map();
+function recalcularLocalidades(valores) {
+  const grupos = new Map();
+  valores.forEach(v => {
+    const c = localidadCanonica(v); if (!c) return;
+    if (!grupos.has(c)) grupos.set(c, []);
+    grupos.get(c).push(String(v).trim());
+  });
+  const pelado = x => String(x).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const tildes = x => (String(x).normalize('NFD').match(/[̀-ͯ]/g) || []).length;
+  locEtiquetas = new Map();
+  for (const [c, originales] of grupos) {
+    const limpias = originales.filter(o => pelado(o) === c);
+    limpias.sort((a, b) => tildes(b) - tildes(a) || a.length - b.length);
+    locEtiquetas.set(c, LOC_SIGLAS[c] || nombrePropio(limpias[0] || c, true));
+  }
+  return grupos;
+}
+function localidadLinda(v) {
+  const c = localidadCanonica(v); if (!c) return '';
+  return locEtiquetas.get(c) || LOC_SIGLAS[c] || nombrePropio(c, true);
+}
 function e(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
 async function changeNomSt(id, sel) {
@@ -3517,11 +3602,15 @@ function refreshSolBadge() {
 function fillSolLocOptions() {
   const sel = document.getElementById('solLocF'); if (!sel) return;
   const cur = sel.value;
-  const map = new Map();
-  // Se omiten los valores que no son localidades (CUIL, códigos postales, números sueltos)
-  solicitudes.forEach(s => { const l = (s.localidad || '').trim(); if (l && esLocalidad(l)) { const k = nombrePropio(l, true).toLowerCase(); if (!map.has(k)) map.set(k, nombrePropio(l, true)); } });
-  const locs = [...map.values()].sort((a, b) => a.localeCompare(b, 'es'));
-  sel.innerHTML = '<option value="">Todas las localidades</option>' + locs.map(l => `<option value="${e(l)}">${e(l)}</option>`).join('');
+  // Se omiten los valores que no son localidades (CUIL, códigos postales, números
+  // sueltos) y las distintas formas de escribir el mismo lugar quedan en una sola
+  // opción, con el total al lado para que se note cuántas se juntaron.
+  const grupos = recalcularLocalidades(solicitudes.map(x => (x.localidad || '').trim()).filter(l => l && esLocalidad(l)));
+  const locs = [...grupos.keys()]
+    .map(c => ({ clave: c, texto: locEtiquetas.get(c) || c, cuantas: grupos.get(c).length }))
+    .sort((a, b) => a.texto.localeCompare(b.texto, 'es'));
+  sel.innerHTML = '<option value="">Todas las localidades</option>' +
+    locs.map(l => `<option value="${e(l.clave)}">${e(l.texto)} · ${l.cuantas}</option>`).join('');
   if (cur) sel.value = cur;
 }
 function solFilter() { solPage = 1; renderSolicitudes(); }
@@ -3537,7 +3626,7 @@ function renderSolicitudes() {
   const filtered = solicitudes.filter(s => {
     if (af && s.area !== af) return false;
     if (sf && s.estado !== sf) return false;
-    if (lf && nombrePropio((s.localidad || '').trim(), true).toLowerCase() !== lf.toLowerCase()) return false;
+    if (lf && localidadCanonica(s.localidad) !== lf) return false;
     if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q) && !(qd && String(s.cuit||'').replace(/\D/g,'').includes(qd))) return false;
     return true;
   });
@@ -3582,7 +3671,7 @@ function renderSolicitudes() {
   <td style="padding:9px 14px;font-weight:500;color:#111827">${eN(s.nombre)}${s.cuit?`<div style="font-size:11px;color:#9ca3af">${etiquetaDoc(s.area)}: ${e(s.cuit)}</div>`:''}${s.cuit && dupCuits.has(s.cuit)?`<span style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:4px">⚠ Duplicado</span>`:''}</td>
   <td style="padding:9px 14px"><span class="a-badge ${s.area==='movistar_arena'?'a-mv':'a-ex'}">${s.area==='movistar_arena'?'M. Arena':'Externos'}</span></td>
   <td style="padding:9px 14px;font-size:12px;color:#6b7280">${e(s.puesto_interes||'—')}</td>
-  <td style="padding:9px 14px;font-size:12px;color:#6b7280">${eL(s.localidad||'—')}</td>
+  <td style="padding:9px 14px;font-size:12px;color:#6b7280" title="${e(s.localidad||'')}">${s.localidad ? e(localidadLinda(s.localidad) || nombrePropio(s.localidad, true)) : '—'}</td>
   <td style="padding:9px 14px;font-size:12px;color:#9ca3af;white-space:nowrap">${s.created_at?new Date(s.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}):''}</td>
   <td style="padding:9px 14px"><span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;background:${stColors[s.estado]||'#f3f4f6'}">${stLabels[s.estado]||s.estado}</span></td>
   <td style="padding:9px 14px;white-space:nowrap;display:flex;gap:5px">
