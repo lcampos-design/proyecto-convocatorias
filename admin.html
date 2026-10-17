@@ -368,6 +368,31 @@ tr:hover td{background:#fafafa}
 
 /* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
 button,input,select,textarea,optgroup,option{font-family:inherit}
+
+/* ── Respuestas: lista compacta, el detalle se abre al tocar ── */
+.resp{background:#fff;border:1px solid var(--r-line);border-radius:10px;margin-bottom:5px;overflow:hidden;transition:border-color .12s}
+.resp:hover{border-color:#d4d4d8}
+.resp.sin-leer{box-shadow:inset 3px 0 0 var(--arena)}
+.resp.abierta{border-color:#d4d4d8;box-shadow:0 2px 10px rgba(24,24,27,.06)}
+.resp-fila{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;user-select:none}
+.resp-fila:hover{background:#fafafa}
+.resp-punto{width:7px;height:7px;border-radius:50%;background:var(--arena);flex:0 0 auto}
+.resp-punto.vacio{background:transparent}
+.resp-de{font-weight:600;color:var(--r-ink);font-size:13px;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}
+.resp-txt{flex:1;min-width:0;font-size:12.5px;color:var(--r-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.resp-txt b{color:var(--r-ink2);font-weight:600}
+.resp-fecha{font-size:11px;color:var(--r-faint);white-space:nowrap;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.resp-det{padding:0 14px 12px}
+.resp-meta{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--r-muted);padding:2px 0 8px;border-top:1px solid var(--r-line2);margin-top:2px;padding-top:9px}
+.resp-nomina{color:var(--arena)}
+.resp-sin{color:var(--r-faint)}
+.resp-cuerpo{font-size:13px;color:var(--r-ink2);line-height:1.55;white-space:pre-wrap;word-break:break-word;max-height:340px;overflow:auto;background:#fafafa;border:1px solid var(--r-line2);border-radius:8px;padding:10px 12px}
+.resp-acc{display:flex;gap:6px;justify-content:flex-end;margin-top:9px}
+@media(max-width:720px){
+  .resp-fila{flex-wrap:wrap}
+  .resp-txt{flex-basis:100%;order:3;white-space:normal}
+}
+
 </style>
 </head>
 <body>
@@ -4150,6 +4175,16 @@ function renderSupView() {
 }
 
 // ── RESPUESTAS (mails entrantes) ──
+
+// Una sola respuesta abierta a la vez. Al abrir una sin leer, queda leída.
+let respAbierta = null;
+function toggleResp(id) {
+  respAbierta = respAbierta === id ? null : id;
+  const r = respuestas.find(x => x.id === id);
+  if (respAbierta === id && r && !r.leido) { markRespRead(id); return; }
+  renderRespuestas();
+}
+
 function refreshRespBadge() {
   const cnt = respuestas.filter(r => !r.leido).length;
   const b = document.getElementById('respNavBadge');
@@ -4168,28 +4203,36 @@ function renderRespuestas() {
     return true;
   });
   if (!list.length) { cont.innerHTML = `<div class="empty">${respuestas.length === 0 ? 'Sin respuestas todavía. Cuando un candidato responda un mail de confirmación, aparece acá unos minutos después.' : 'Sin resultados para este filtro.'}</div>`; return; }
+  // Lista compacta: una línea por respuesta. El texto completo y las acciones
+  // aparecen al tocarla, así entran muchas más en pantalla.
   cont.innerHTML = list.map(r => {
     const persona = people.find(p => (p.email || '').toLowerCase() === (r.from_email || '').toLowerCase());
     const fecha = r.received_at ? new Date(r.received_at).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
     const casLabel = r.casilla === 'arena' ? 'Movistar Arena' : r.casilla === 'externos' ? 'Externos' : (r.casilla || '');
     const casClass = r.casilla === 'arena' ? 'a-mv' : 'a-ex';
     const reSubject = 'Re: ' + (r.subject || '').replace(/^re:\s*/i, '');
-    return `<div style="background:#fff;border:1px solid ${r.leido ? '#e5e7eb' : '#bae6fd'};border-left:3px solid ${r.leido ? '#e5e7eb' : '#0369a1'};border-radius:10px;padding:14px 16px;margin-bottom:10px">
-      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px">
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;color:#111827;font-size:14px">${e(r.from_name || r.from_email || 'Desconocido')}${!r.leido ? ' <span style="display:inline-block;width:7px;height:7px;background:#0369a1;border-radius:50%;vertical-align:middle"></span>' : ''}</div>
-          <div style="font-size:12px;color:#6b7280">${e(r.from_email || '')}</div>
-        </div>
+    const cuerpo = String(r.body || r.snippet || '').trim();
+    const asunto = (r.subject || '').trim();
+    const resumen = cuerpo.replace(/\s+/g, ' ').slice(0, 160);
+    const abierta = respAbierta === r.id;
+    return `<div class="resp${r.leido ? '' : ' sin-leer'}${abierta ? ' abierta' : ''}">
+      <div class="resp-fila" onclick="toggleResp('${r.id}')">
+        ${r.leido ? '<span class="resp-punto vacio"></span>' : '<span class="resp-punto"></span>'}
+        <span class="resp-de">${eN(r.from_name || r.from_email || 'Desconocido')}</span>
+        <span class="resp-txt">${asunto ? `<b>${e(asunto)}</b>` : ''}${asunto && resumen ? ' — ' : ''}${e(resumen) || (asunto ? '' : '<i>(sin texto)</i>')}</span>
         <span class="a-badge ${casClass}">${casLabel}</span>
-        <span style="font-size:11px;color:#9ca3af;white-space:nowrap">${fecha}</span>
+        <span class="resp-fecha">${fecha}</span>
       </div>
-      ${persona ? `<div style="font-size:11px;color:#0369a1;margin-bottom:6px">✓ En la nómina: ${eN(persona.nombre)} (${areaCorto(persona.area)})</div>` : `<div style="font-size:11px;color:#9ca3af;margin-bottom:6px">No coincide con nadie en la nómina</div>`}
-      <div style="font-size:12px;color:#374151;font-weight:600;margin-bottom:4px">${e(r.subject || '(sin asunto)')}</div>
-      <div style="font-size:13px;color:#374151;line-height:1.5;white-space:pre-wrap;max-height:160px;overflow-y:auto;background:#fafafa;border-radius:6px;padding:8px 10px">${e(r.body || r.snippet || '')}</div>
-      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
-        <a href="mailto:${e(r.from_email || '')}?subject=${encodeURIComponent(reSubject)}" class="btn btn-sec btn-xs" style="text-decoration:none"><i class="ic ic-sobre"></i> Responder</a>
-        ${!r.leido ? `<button class="btn btn-sec btn-xs" onclick="markRespRead('${r.id}')">✓ Marcar leída</button>` : ''}
-      </div>
+      ${abierta ? `<div class="resp-det">
+        <div class="resp-meta">
+          <span>${e(r.from_email || '')}</span>
+          ${persona ? `<span class="resp-nomina">En la nómina: ${eN(persona.nombre)} · ${areaCorto(persona.area)}</span>` : '<span class="resp-sin">No coincide con nadie en la nómina</span>'}
+        </div>
+        <div class="resp-cuerpo">${e(cuerpo) || '<i>(sin texto)</i>'}</div>
+        <div class="resp-acc">
+          <a href="mailto:${e(r.from_email || '')}?subject=${encodeURIComponent(reSubject)}" class="btn btn-sec btn-xs" style="text-decoration:none"><i class="ic ic-sobre"></i> Responder</a>
+        </div>
+      </div>` : ''}
     </div>`;
   }).join('');
 }
