@@ -1615,7 +1615,7 @@ function nomApply() {
     if (outF === 'no_out' && p.out_flag) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
     if (rotF) { const r = checkRotacion(p.id); if (rotF === 'rot' && !r.excede) return false; if (rotF === 'libre' && r.excede) return false; }
-    if (tagF && !(p.etiquetas || []).includes(tagF)) return false;
+    if (tagF && !(p.etiquetas || []).some(t => String(t).toLowerCase() === tagF.toLowerCase())) return false;
     return true;
   });
   const cvCount = people.filter(p => !!p.cv).length;
@@ -1645,7 +1645,7 @@ function renderNomTable() {
     return `<tr style="${rowBg}">
 <td><input type="checkbox" class="cb rcb" data-id="${p.id}" onchange="checkNomBulk()"></td>
 <td class="cn">
-  ${e(p.nombre)}
+  ${eN(p.nombre)}
   <button class="sem sem-${sem}" onclick="openSemModal('${p.id}')" title="Semáforo ${sem}">${sem}</button>
   ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria||'')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
@@ -1670,6 +1670,54 @@ function renderNomTable() {
 </td>
 </tr>`;
   }).join('');
+}
+
+// Los candidatos cargan su nombre como quieren ("ludmila balmaceda", "PEREZ").
+// Acá se escribe como corresponde sólo para mostrarlo: el dato guardado no cambia.
+const PALABRAS_MINUSCULA = new Set(['de','del','la','las','los','y','e','da','das','do','dos','di','van','von','el','al','en']);
+function nombrePropio(v, conSiglas) {
+  const t = String(v == null ? '' : v).trim();
+  if (!t) return '';
+  return t.split(/(\s+|-|\/|,)/).map((p, i) => {
+    if (/^(\s+|-|\/|,)$/.test(p) || !p) return p;
+    // Siglas y lugares como CABA, (CABA) o C.A.B.A. se dejan como están. Se mira la
+    // palabra sin los signos que la rodean, y nunca se toma por sigla un artículo
+    // ("LA PLATA" es La Plata, no LA Plata).
+    const nucleo = p.replace(/^[^0-9A-Za-zÁÉÍÓÚÑÜáéíóúñü]+|[^0-9A-Za-zÁÉÍÓÚÑÜáéíóúñü]+$/g, '');
+    if (conSiglas && nucleo && !PALABRAS_MINUSCULA.has(nucleo.toLowerCase()) &&
+        (nucleo.includes('.') || (nucleo.length <= 4 && nucleo === nucleo.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(nucleo)))) return p;
+    const b = p.toLowerCase();
+    if (i > 0 && PALABRAS_MINUSCULA.has(b)) return b;
+    return b.charAt(0).toUpperCase() + b.slice(1);
+  }).join('');
+}
+// Las etiquetas no son nombres propios sino frases ("ya trabajo con nosotros"),
+// así que llevan mayúscula sólo al principio. Las siglas que la gente escribió
+// en mayúsculas (OP, PPS) se respetan; las palabras comunes, no.
+const NO_SON_SIGLAS = new Set(['no','si','la','el','de','del','y','e','con','por','sin','mas','más','que','un','una']);
+function frase(v) {
+  const t = String(v == null ? '' : v).trim();
+  if (!t) return '';
+  const r = t.split(/(\s+)/).map(p => {
+    const n = p.replace(/^[^0-9A-Za-zÁÉÍÓÚÑÜáéíóúñü]+|[^0-9A-Za-zÁÉÍÓÚÑÜáéíóúñü]+$/g, '');
+    if (n.length >= 2 && n.length <= 4 && n === n.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(n) && !NO_SON_SIGLAS.has(n.toLowerCase())) return p;
+    return p.toLowerCase();
+  }).join('');
+  return r.charAt(0).toUpperCase() + r.slice(1);
+}
+
+// Escapar + escribir bien, para usar directo en las pantallas
+function eN(v) { return e(nombrePropio(v)); }
+function eL(v) { return e(nombrePropio(v, true)); }
+
+// Lo que la gente escribió en "localidad" pero no es una localidad:
+// códigos postales, CUIL, DNI, números sueltos.
+function esLocalidad(v) {
+  const t = String(v == null ? '' : v).trim();
+  if (t.length < 3) return false;
+  if (!/[a-záéíóúñ]/i.test(t)) return false;
+  if (/^[\d\s.\-_/]+$/.test(t)) return false;
+  return true;
 }
 function e(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
@@ -1702,7 +1750,7 @@ async function delBulk() {
 // ── ETIQUETAS (libres, con color propio; paleta global en config) ──
 function textOn(hex) { const c = String(hex || '').replace('#', ''); if (c.length < 6) return '#fff'; const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16); return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#111827' : '#fff'; }
 function tagColor(nombre) { const t = etiquetasPaleta.find(x => x.nombre === nombre); return t ? t.color : '#6b7280'; }
-function etqChip(nombre, onRemoveJs) { const c = tagColor(nombre), tc = textOn(c); return `<span style="display:inline-flex;align-items:center;gap:5px;background:${c};color:${tc};border-radius:999px;padding:2px 9px;font-size:11px;font-weight:600;white-space:nowrap">${e(nombre)}${onRemoveJs ? `<span style="cursor:pointer;font-weight:800;line-height:1" onclick="${onRemoveJs}">×</span>` : ''}</span>`; }
+function etqChip(nombre, onRemoveJs) { const c = tagColor(nombre), tc = textOn(c); return `<span style="display:inline-flex;align-items:center;gap:5px;background:${c};color:${tc};border-radius:999px;padding:2px 9px;font-size:11px;font-weight:600;white-space:nowrap">${e(frase(nombre))}${onRemoveJs ? `<span style="cursor:pointer;font-weight:800;line-height:1" onclick="${onRemoveJs}">×</span>` : ''}</span>`; }
 async function saveTagPalette() { try { await sb.from('config').upsert({ key: 'etiquetas', value: etiquetasPaleta, updated_at: new Date().toISOString() }); } catch (_) {} }
 function renderFormEtq() {
   const cont = document.getElementById('pEtqChips'); if (!cont) return;
@@ -1717,7 +1765,11 @@ async function addEtqToForm() {
 }
 function removeEtqFromForm(i) { formEtiquetas.splice(i, 1); renderFormEtq(); }
 function refreshTagUI() {
-  const mk = (empty) => `<option value="">${empty}</option>` + etiquetasPaleta.map(t => `<option value="${e(t.nombre)}">${e(t.nombre)}</option>`).join('');
+  // Las mismas etiquetas escritas distinto ("op", "OP") se muestran una sola vez.
+  const vistas = new Map();
+  etiquetasPaleta.forEach(t => { const k = String(t.nombre || '').trim().toLowerCase(); if (k && !vistas.has(k)) vistas.set(k, t.nombre); });
+  const ordenadas = [...vistas.values()].sort((a, b) => frase(a).localeCompare(frase(b), 'es'));
+  const mk = (empty) => `<option value="">${empty}</option>` + ordenadas.map(n => `<option value="${e(n)}">${e(frase(n))}</option>`).join('');
   const f = document.getElementById('nomTagFilter'); if (f) { const v = f.value; f.innerHTML = mk('Todas las etiquetas'); f.value = v; }
   const b = document.getElementById('bulkTag'); if (b) { const v = b.value; b.innerHTML = mk('— etiqueta —'); b.value = v; }
 }
@@ -1894,10 +1946,22 @@ function cvCardHTML(c) {
   const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' }[c.area] || c.area;
   const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : '#34d399';
   return `<div class="cv-card"><div class="cv-card-title">${e(c.nombre)}</div>
-<div class="cv-card-meta">${c.archivada ? '<span class="a-badge" style="background:#e5e7eb;color:#6b7280"><i class="ic ic-caja"></i> Archivada</span>' : ''}<span class="a-badge ${c.area === 'movistar_arena' ? 'a-mv' : c.area === 'externos' ? 'a-ex' : c.area === 'espana' ? 'a-es' : 'a-ambas'}">${areaLabel}</span>${c.fecha ? c.fecha.split(',').map(f => `<span><i class="ic ic-calendario"></i> ${fmtFecha(f.trim())}</span>`).join('') : ''}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
-<div class="cv-puestos">${(c.puestos || []).slice(0, 4).map(p => { const pu = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado').length; const pp = p.cupos > 0 ? Math.min(100, Math.round(pu / p.cupos * 100)) : 0; const pc = pp < 50 ? '#e5e7eb' : pp < 80 ? '#fbbf24' : '#34d399'; return `<div class="cv-prow"><span class="cv-pname">${e(p.nombre)}</span><div class="prog-wrap"><div class="prog-fill" style="background:${pc};width:${pp}%"></div></div><span class="cv-cupo">${pu}/${p.cupos}</span></div>`; }).join('')}${(c.puestos || []).length > 4 ? `<div style="font-size:11px;color:#9ca3af">+${(c.puestos || []).length - 4} puestos más</div>` : ''}</div>
+<div class="cv-card-meta">${c.archivada ? '<span class="a-badge" style="background:#e5e7eb;color:#6b7280"><i class="ic ic-caja"></i> Archivada</span>' : ''}<span class="a-badge ${c.area === 'movistar_arena' ? 'a-mv' : c.area === 'externos' ? 'a-ex' : c.area === 'espana' ? 'a-es' : 'a-ambas'}">${areaLabel}</span>${resumenFechas(c.fecha)}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
+<div class="cv-puestos">${(c.puestos || []).slice(0, 4).map(p => { const pu = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado').length; const pp = p.cupos > 0 ? Math.min(100, Math.round(pu / p.cupos * 100)) : 0; const pc = pp < 50 ? '#e5e7eb' : pp < 80 ? '#fbbf24' : '#34d399'; return `<div class="cv-prow"><span class="cv-pname">${eN(p.nombre)}</span><div class="prog-wrap"><div class="prog-fill" style="background:${pc};width:${pp}%"></div></div><span class="cv-cupo">${pu}/${p.cupos}</span></div>`; }).join('')}${(c.puestos || []).length > 4 ? `<div style="font-size:11px;color:#9ca3af">+${(c.puestos || []).length - 4} puestos más</div>` : ''}</div>
 <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;margin-bottom:12px"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span>${usados}/${totalCupos} cupos · ${pct}%</span></div>
 <div class="cv-foot"><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delConv('${c.id}')">Eliminar</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();archivarConv('${c.id}',${c.archivada ? 'false' : 'true'})">${c.archivada ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar'}</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();openEditConv('${c.id}')"><i class="ic ic-lapiz"></i> Editar</button><button class="btn btn-sm ${c.publicada?'btn-success':'btn-sec'}" onclick="event.stopPropagation();togglePublicada('${c.id}')" title="${c.publicada?'Quitar de página pública':'Publicar en página pública'}">${c.publicada?'<i class="ic ic-globo"></i> Publicada':'○ Publicar'}</button><button class="btn btn-primary btn-sm" onclick="openDetail('${c.id}')">Gestionar →</button></div></div>`;
+}
+// Diecisiete fechas apiladas no se leen. Se muestra el período y cuántas son;
+// el detalle completo queda en el globo de ayuda al pasar el mouse.
+function resumenFechas(fechaCsv) {
+  const fs = String(fechaCsv || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+  if (!fs.length) return '';
+  const chip = (txt, tit) => `<span${tit ? ' title="' + e(tit) + '"' : ''}><i class="ic ic-calendario"></i> ${e(txt)}</span>`;
+  if (fs.length === 1) return chip(fmtFecha(fs[0]));
+  if (fs.length === 2) return fs.map(f => chip(fmtFecha(f))).join('');
+  const todas = fs.map(f => fmtFecha(f)).join(' · ');
+  return chip(fmtFechaCorta(fs[0]) + ' al ' + fmtFecha(fs[fs.length - 1]), todas) +
+         `<span title="${e(todas)}">${fs.length} fechas</span>`;
 }
 function fmtFecha(f) { if (!f) return ''; try { const d = new Date(f + 'T00:00:00'); return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return f; } }
 function openDetail(id) {
@@ -1927,7 +1991,7 @@ async function togglePublicada(id) {
 function closeDetail() { document.getElementById('cv-list').style.display = 'block'; document.getElementById('cv-detail').style.display = 'none'; currentConvId = null; renderCvList(); }
 function renderDetStats() { const c = convs.find(x => x.id === currentConvId); if (!c) return; const cPosts = posts.filter(p => p.convId === currentConvId); const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0); const usados = cPosts.filter(p => p.estado !== 'rechazado').length; document.getElementById('detStats').innerHTML = `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span><span class="dstat">Aprobados: <strong style="color:#0f6e56">${cPosts.filter(p => p.estado === 'aprobado').length}</strong></span><span class="dstat">Pendientes: <strong style="color:#854F0B">${cPosts.filter(p => p.estado === 'pendiente').length}</strong></span>`; }
 function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if (!c) { document.getElementById('puestosContainer').innerHTML = ''; return; } if (!(c.puestos || []).length) { document.getElementById('puestosContainer').innerHTML = '<div class="empty">No hay puestos. Agregá el primero.</div>'; return; } document.getElementById('puestosContainer').innerHTML = (c.puestos || []).map(p => puestoCardHTML(p, c)).join(''); }
-function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${e(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${areaClase(p.area)}" style="margin-top:4px;display:inline-block">${areaLargo(p.area)}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')"><i class="ic ic-lapiz"></i></button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
+function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${eN(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${areaClase(p.area)}" style="margin-top:4px;display:inline-block">${areaLargo(p.area)}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')"><i class="ic ic-lapiz"></i></button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
 
 // ── FECHAS MÚLTIPLES ──
 let convTurnos = [];  // [{id, fecha, horario}] — la misma fecha puede repetirse (turnos)
@@ -2050,7 +2114,7 @@ function renderGestList() {
       : x.asistencia === 'ausente'
       ? `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✗ A</span>`
       : `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px">—</span>`;
-    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${e(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}${x.confirmacion === 'si' ? ` <span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600"><i class="ic ic-tilde-circ"></i> Confirmó</span>` : x.confirmacion === 'no' ? ` <span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✕ No viene</span>` : ''}</td><td><select class="ssp ${rotulo(x.estado)}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación"><i class="ic ic-sobre"></i></button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
+    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${eN(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}${x.confirmacion === 'si' ? ` <span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600"><i class="ic ic-tilde-circ"></i> Confirmó</span>` : x.confirmacion === 'no' ? ` <span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✕ No viene</span>` : ''}</td><td><select class="ssp ${rotulo(x.estado)}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación"><i class="ic ic-sobre"></i></button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
   }).join('');
 }
 
@@ -2125,7 +2189,7 @@ function renderPicker() {
   const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (tgf && !(p.etiquetas || []).includes(tgf)) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
   const el = document.getElementById('pickerList');
   if (!avail.length) { el.innerHTML = '<div class="picker-empty">Sin resultados</div>'; document.getElementById('pickerSelCount').textContent = '0 seleccionados'; return; }
-  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${rotulo(p.estado)}</span></div>`).join('');
+  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${rotulo(p.estado)}</span></div>`).join('');
   document.getElementById('pickerSelCount').textContent = pickerSel.size + ' seleccionados';
 }
 function togglePickerSel(id) { if (pickerSel.has(id)) pickerSel.delete(id); else pickerSel.add(id); renderPicker(); }
@@ -2213,11 +2277,11 @@ function candCardHTML(p) {
   const cv = p.cv; const initials = p.nombre.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
   const avatarColors = { movistar_arena: 'background:#e0f2fe;color:#0369a1', externos: 'background:#f0fdf4;color:#166534', espana: 'background:#fef3c7;color:#92400e' };
   const sel = candSelIds.has(p.id);
-  return `<div class="cand-card ${sel ? 'selected' : ''}" id="cc-${p.id}"><div class="cand-card-top"><div class="cand-avatar" style="${avatarColors[p.area] || 'background:#f3f4f6;color:#374151'}">${initials}</div><div class="cand-info"><div class="cand-name">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}</div><div class="cand-puesto">${cv.puestoInteres ? e(cv.puestoInteres) : '<span style="color:#d1d5db">Sin puesto</span>'}</div><div class="cand-meta">${areaLargo(p.area)}${cv.fechaEnvio ? ' · ' + cv.fechaEnvio : ''}</div></div><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')" style="margin-top:2px;flex-shrink:0"></div>${cv.experiencia || cv.disponibilidad ? `<div class="cand-fields">${cv.disponibilidad ? `<div class="cand-field-row"><span class="cand-field-label">Disponib.:</span><span class="cand-field-val">${e(cv.disponibilidad)}</span></div>` : ''}${cv.experiencia ? `<div class="cand-field-row"><span class="cand-field-label">Experiencia:</span><span class="cand-field-val">${e(cv.experiencia)}</span></div>` : ''}</div>` : ''}<div class="cand-footer"><select class="cand-st-sel ${rotulo(p.estado)}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select>${cv.archivo ? `<span style="font-size:11px;color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')" title="Descargar"><i class="ic ic-clip"></i></span>` : ''}<div style="margin-left:auto;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></div></div></div>`;
+  return `<div class="cand-card ${sel ? 'selected' : ''}" id="cc-${p.id}"><div class="cand-card-top"><div class="cand-avatar" style="${avatarColors[p.area] || 'background:#f3f4f6;color:#374151'}">${initials}</div><div class="cand-info"><div class="cand-name">${eN(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}</div><div class="cand-puesto">${cv.puestoInteres ? e(cv.puestoInteres) : '<span style="color:#d1d5db">Sin puesto</span>'}</div><div class="cand-meta">${areaLargo(p.area)}${cv.fechaEnvio ? ' · ' + cv.fechaEnvio : ''}</div></div><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')" style="margin-top:2px;flex-shrink:0"></div>${cv.experiencia || cv.disponibilidad ? `<div class="cand-fields">${cv.disponibilidad ? `<div class="cand-field-row"><span class="cand-field-label">Disponib.:</span><span class="cand-field-val">${e(cv.disponibilidad)}</span></div>` : ''}${cv.experiencia ? `<div class="cand-field-row"><span class="cand-field-label">Experiencia:</span><span class="cand-field-val">${e(cv.experiencia)}</span></div>` : ''}</div>` : ''}<div class="cand-footer"><select class="cand-st-sel ${rotulo(p.estado)}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select>${cv.archivo ? `<span style="font-size:11px;color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')" title="Descargar"><i class="ic ic-clip"></i></span>` : ''}<div style="margin-left:auto;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></div></div></div>`;
 }
 function candRowHTML(p) {
   const cv = p.cv; const sel = candSelIds.has(p.id);
-  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel ? '#f0eeff' : '#fff'}"><td style="padding:9px 14px"><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')"></td><td style="padding:9px 14px;font-weight:500;color:#111827">${e(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}</td><td style="padding:9px 14px"><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td><td style="padding:9px 14px;font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(cv.puestoInteres || '—')}</td><td style="padding:9px 14px;font-size:12px">${cv.archivo ? `<span style="color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')"><i class="ic ic-clip"></i> ${e(cv.archivo.nombre.slice(0, 18) + (cv.archivo.nombre.length > 18 ? '…' : ''))}</span>` : '<span style="color:#d1d5db">—</span>'}</td><td style="padding:9px 14px;font-size:12px;color:#9ca3af">${cv.fechaEnvio || '—'}</td><td style="padding:9px 14px"><select class="cand-st-sel ${rotulo(p.estado)}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select></td><td style="padding:9px 14px;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></td></tr>`;
+  return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel ? '#f0eeff' : '#fff'}"><td style="padding:9px 14px"><input type="checkbox" class="cb cand-cb" data-id="${p.id}" ${sel ? 'checked' : ''} onchange="candToggleSel('${p.id}')"></td><td style="padding:9px 14px;font-weight:500;color:#111827">${eN(p.nombre)}${p.out_flag ? ` <button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}</td><td style="padding:9px 14px"><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td><td style="padding:9px 14px;font-size:12px;color:#6b7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(cv.puestoInteres || '—')}</td><td style="padding:9px 14px;font-size:12px">${cv.archivo ? `<span style="color:#0369a1;cursor:pointer" onclick="downloadCvFileById('${p.id}')"><i class="ic ic-clip"></i> ${e(cv.archivo.nombre.slice(0, 18) + (cv.archivo.nombre.length > 18 ? '…' : ''))}</span>` : '<span style="color:#d1d5db">—</span>'}</td><td style="padding:9px 14px;font-size:12px;color:#9ca3af">${cv.fechaEnvio || '—'}</td><td style="padding:9px 14px"><select class="cand-st-sel ${rotulo(p.estado)}" onchange="candChangeSt('${p.id}',this)"><option value="pendiente" ${p.estado === 'pendiente' ? 'selected' : ''}>Sin revisar</option><option value="contactado" ${p.estado === 'contactado' ? 'selected' : ''}>En revisión</option><option value="confirmado" ${p.estado === 'confirmado' ? 'selected' : ''}>Aprobado</option><option value="no_asiste" ${p.estado === 'no_asiste' ? 'selected' : ''}>Rechazado</option></select></td><td style="padding:9px 14px;display:flex;gap:5px"><button class="btn btn-sec btn-xs" onclick="viewCv('${p.id}')">Ver CV</button><button class="btn btn-danger btn-xs" onclick="candDel('${p.id}')">✕</button></td></tr>`;
 }
 async function candChangeSt(id, sel) { const p = people.find(x => x.id === id); if (p) { p.estado = sel.value; sel.className = 'cand-st-sel ' + sel.value; renderCandidatos(); nomStats(); try { await sbUpdate('personas', id, { estado: sel.value }); } catch (_) {} } }
 async function candDel(id) { if (!confirm('¿Eliminar este candidato?')) return; people = people.filter(x => x.id !== id); candSelIds.delete(id); nomRefresh(); renderCandidatos(); try { await sbDelete('personas', id); toast('Candidato eliminado'); } catch (_) {} }
@@ -3267,7 +3331,8 @@ function fillSolLocOptions() {
   const sel = document.getElementById('solLocF'); if (!sel) return;
   const cur = sel.value;
   const map = new Map();
-  solicitudes.forEach(s => { const l = (s.localidad || '').trim(); if (l) { const k = l.toLowerCase(); if (!map.has(k)) map.set(k, l); } });
+  // Se omiten los valores que no son localidades (CUIL, códigos postales, números sueltos)
+  solicitudes.forEach(s => { const l = (s.localidad || '').trim(); if (l && esLocalidad(l)) { const k = nombrePropio(l, true).toLowerCase(); if (!map.has(k)) map.set(k, nombrePropio(l, true)); } });
   const locs = [...map.values()].sort((a, b) => a.localeCompare(b, 'es'));
   sel.innerHTML = '<option value="">Todas las localidades</option>' + locs.map(l => `<option value="${e(l)}">${e(l)}</option>`).join('');
   if (cur) sel.value = cur;
@@ -3285,7 +3350,7 @@ function renderSolicitudes() {
   const filtered = solicitudes.filter(s => {
     if (af && s.area !== af) return false;
     if (sf && s.estado !== sf) return false;
-    if (lf && (s.localidad || '').trim().toLowerCase() !== lf) return false;
+    if (lf && nombrePropio((s.localidad || '').trim(), true).toLowerCase() !== lf.toLowerCase()) return false;
     if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q) && !(qd && String(s.cuit||'').replace(/\D/g,'').includes(qd))) return false;
     return true;
   });
@@ -3327,10 +3392,10 @@ function renderSolicitudes() {
   const sel = solSelIds.has(s.id);
   return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel?'#f0eeff':''}">
   <td style="padding:9px 14px"><input type="checkbox" class="cb sol-cb" data-id="${s.id}" ${sel?'checked':''} onchange="solToggleSel('${s.id}')"></td>
-  <td style="padding:9px 14px;font-weight:500;color:#111827">${e(s.nombre)}${s.cuit?`<div style="font-size:11px;color:#9ca3af">${etiquetaDoc(s.area)}: ${e(s.cuit)}</div>`:''}${s.cuit && dupCuits.has(s.cuit)?`<span style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:4px">⚠ Duplicado</span>`:''}</td>
+  <td style="padding:9px 14px;font-weight:500;color:#111827">${eN(s.nombre)}${s.cuit?`<div style="font-size:11px;color:#9ca3af">${etiquetaDoc(s.area)}: ${e(s.cuit)}</div>`:''}${s.cuit && dupCuits.has(s.cuit)?`<span style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:4px">⚠ Duplicado</span>`:''}</td>
   <td style="padding:9px 14px"><span class="a-badge ${s.area==='movistar_arena'?'a-mv':'a-ex'}">${s.area==='movistar_arena'?'M. Arena':'Externos'}</span></td>
   <td style="padding:9px 14px;font-size:12px;color:#6b7280">${e(s.puesto_interes||'—')}</td>
-  <td style="padding:9px 14px;font-size:12px;color:#6b7280">${e(s.localidad||'—')}</td>
+  <td style="padding:9px 14px;font-size:12px;color:#6b7280">${eL(s.localidad||'—')}</td>
   <td style="padding:9px 14px;font-size:12px;color:#9ca3af;white-space:nowrap">${s.created_at?new Date(s.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short'}):''}</td>
   <td style="padding:9px 14px"><span style="padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500;background:${stColors[s.estado]||'#f3f4f6'}">${stLabels[s.estado]||s.estado}</span></td>
   <td style="padding:9px 14px;white-space:nowrap;display:flex;gap:5px">
@@ -3502,14 +3567,14 @@ function openReporte() {
   (c.puestos||[]).forEach(p => {
     const pp = cPosts.filter(x => x.puestoId === p.id && x.estado !== 'rechazado');
     const ppct = p.cupos>0?Math.round(pp.length/p.cupos*100):0;
-    html += `<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:6px;display:flex;align-items:center;gap:10px">${e(p.nombre)}<span style="font-size:11px;color:#9ca3af;font-weight:400">${pp.length}/${p.cupos} cupos · ${ppct}%</span></div>`;
+    html += `<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:6px;display:flex;align-items:center;gap:10px">${eN(p.nombre)}<span style="font-size:11px;color:#9ca3af;font-weight:400">${pp.length}/${p.cupos} cupos · ${ppct}%</span></div>`;
     if (pp.length) {
       html += `<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#fafafa"><th style="padding:6px 10px;text-align:left;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:10px;border-bottom:1px solid #e5e7eb">Nombre</th><th style="padding:6px 10px;text-align:left;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:10px;border-bottom:1px solid #e5e7eb">Área</th><th style="padding:6px 10px;text-align:left;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:10px;border-bottom:1px solid #e5e7eb">Estado</th><th style="padding:6px 10px;text-align:left;color:#9ca3af;font-weight:600;text-transform:uppercase;font-size:10px;border-bottom:1px solid #e5e7eb">Sem.</th></tr></thead><tbody>`;
       pp.forEach(post => {
         const pers = people.find(x => x.id === post.personaId);
         const sem = pers?.semaforo || 1;
         const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
-        html += `<tr style="border-bottom:1px solid #f9fafb"><td style="padding:6px 10px;font-weight:500">${e(post.nombre)}${pers?.out_flag?'<span class="out-badge" style="margin-left:4px;cursor:default"><i class="ic ic-prohibido"></i> OUT</span>':''}</td><td style="padding:6px 10px"><span class="a-badge ${areaClase(pers?.area)}" style="font-size:10px">${areaMini(pers?.area)}</span></td><td style="padding:6px 10px"><span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${rotulo(post.estado)}</span></td><td style="padding:6px 10px"><span class="sem sem-${sem}" style="cursor:default">${sem}</span></td></tr>`;
+        html += `<tr style="border-bottom:1px solid #f9fafb"><td style="padding:6px 10px;font-weight:500">${eN(post.nombre)}${pers?.out_flag?'<span class="out-badge" style="margin-left:4px;cursor:default"><i class="ic ic-prohibido"></i> OUT</span>':''}</td><td style="padding:6px 10px"><span class="a-badge ${areaClase(pers?.area)}" style="font-size:10px">${areaMini(pers?.area)}</span></td><td style="padding:6px 10px"><span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${rotulo(post.estado)}</span></td><td style="padding:6px 10px"><span class="sem sem-${sem}" style="cursor:default">${sem}</span></td></tr>`;
       });
       html += '</tbody></table>';
     } else { html += '<div style="font-size:12px;color:#9ca3af;padding:6px 0">Sin personas asignadas</div>'; }
@@ -3639,7 +3704,7 @@ function renderDispBody() {
     const tel = per?.tel || sol?.tel || '';
     const cells = slots.map(s => `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${rf.includes(s.id) ? '<span style="color:#16a34a;font-weight:700">✓</span>' : '<span style="color:#d1d5db">·</span>'}</td>`).join('');
     return `<tr>
-      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${e(r.nombre || '—')}<div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${eN(r.nombre || '—')}<div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
       ${cells}
       <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')"><i class="ic ic-sobre"></i> Confirmar</button>` : (tel ? `<a href="${waLink(tel)}" target="_blank" rel="noopener" class="btn btn-xs" style="background:#dcfce7;color:#166534;text-decoration:none" title="${e(tel)}">🟢 WhatsApp</a>` : '<span style="font-size:10px;color:#9ca3af">sin contacto</span>')}</td>
     </tr>`;
@@ -3889,7 +3954,7 @@ function openDedup() {
         const pFbs = feedbacks.filter(x => x.persona_id === p.id).length;
         return `<div class="dedup-person">
           <div style="flex:1">
-            <div style="font-weight:500">${e(p.nombre)}</div>
+            <div style="font-weight:500">${eN(p.nombre)}</div>
             <div style="font-size:11px;color:#9ca3af">${p.area==='movistar_arena'?'M. Arena':'Externos'} · ${pPosts} recitales · ${pFbs} feedbacks${p.email?' · '+e(p.email):''}</div>
           </div>
           <button class="btn btn-success btn-xs" onclick="keepAsMaster('${p.id}','${cuit}')" title="Mantener este, fusionar los otros">✓ Mantener</button>
@@ -4070,7 +4135,7 @@ function renderSupView() {
             const myFbs = feedbacks.filter(f => f.persona_id === p.id && f.conv_id === c.id && f.supervisor_id === currentUserId);
             return `<div class="sup-persona-row">
               <span class="sem sem-${sem}">${sem}</span>
-              <span style="flex:1;font-weight:500">${e(p.nombre)}</span>
+              <span style="flex:1;font-weight:500">${eN(p.nombre)}</span>
               <span style="font-size:11px;color:#9ca3af">${myFbs.length} feedback${myFbs.length!==1?'s':''} míos</span>
               <button class="btn btn-primary btn-xs" onclick="openFeedback('${p.id}','${c.id}')">+ Feedback</button>
               ${myFbs.length ? `<button class="btn btn-sec btn-xs" onclick="openFbHistory('${p.id}')">Ver historial</button>` : ''}
@@ -4115,7 +4180,7 @@ function renderRespuestas() {
         <span class="a-badge ${casClass}">${casLabel}</span>
         <span style="font-size:11px;color:#9ca3af;white-space:nowrap">${fecha}</span>
       </div>
-      ${persona ? `<div style="font-size:11px;color:#0369a1;margin-bottom:6px">✓ En la nómina: ${e(persona.nombre)} (${areaCorto(persona.area)})</div>` : `<div style="font-size:11px;color:#9ca3af;margin-bottom:6px">No coincide con nadie en la nómina</div>`}
+      ${persona ? `<div style="font-size:11px;color:#0369a1;margin-bottom:6px">✓ En la nómina: ${eN(persona.nombre)} (${areaCorto(persona.area)})</div>` : `<div style="font-size:11px;color:#9ca3af;margin-bottom:6px">No coincide con nadie en la nómina</div>`}
       <div style="font-size:12px;color:#374151;font-weight:600;margin-bottom:4px">${e(r.subject || '(sin asunto)')}</div>
       <div style="font-size:13px;color:#374151;line-height:1.5;white-space:pre-wrap;max-height:160px;overflow-y:auto;background:#fafafa;border-radius:6px;padding:8px 10px">${e(r.body || r.snippet || '')}</div>
       <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
