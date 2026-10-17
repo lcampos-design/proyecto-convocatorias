@@ -1859,13 +1859,42 @@ function frase(v) {
 function eN(v) { return e(nombrePropio(v)); }
 function eL(v) { return e(nombrePropio(v, true)); }
 
-// Lo que la gente escribió en "localidad" pero no es una localidad:
-// códigos postales, CUIL, DNI, números sueltos.
+// Lo que la gente escribió en "localidad" pero no nombra ningún lugar: el puesto
+// al que se postula ("Acomodadores"), una respuesta suelta ("Ninguna", "Zona Sur"),
+// un mail, o códigos postales, CUIL y números sueltos.
+// Son palabras elegidas para que ninguna aparezca dentro de una localidad real:
+// por eso no están "ciudad" (Ciudad Evita, Ciudad Jardín) ni "barrio" ni "villa".
+const NO_ES_LUGAR = new Set([
+  // el puesto, no el lugar
+  'acomodador', 'acomodadora', 'acomodadores', 'acomodadoras', 'acomodacion', 'acomodar',
+  'seguridad', 'vigilancia', 'vigilador', 'vigiladora', 'boleteria', 'boletero', 'boletera',
+  'ticketing', 'ticket', 'tickets', 'azafata', 'azafatas', 'promotor', 'promotora',
+  'promotores', 'promotoras', 'cadete', 'cadeteria', 'mozo', 'moza', 'mozos',
+  'camarero', 'camarera', 'barman', 'bartender', 'limpieza', 'maestranza', 'mantenimiento',
+  'logistica', 'produccion', 'sonido', 'iluminacion', 'escenario', 'backstage',
+  'catering', 'gastronomia', 'cocina', 'recepcion', 'recepcionista',
+  'administrativo', 'administrativa', 'administracion', 'vendedor', 'vendedora', 'ventas',
+  'cajero', 'cajera', 'chofer', 'conductor', 'supervisor', 'supervisora',
+  'encargado', 'encargada', 'coordinador', 'coordinadora', 'operador', 'operadora',
+  'staff', 'personal', 'rrpp', 'relaciones', 'publicas', 'fotografia', 'fotografo',
+  'merchandising', 'merchan', 'guardarropa', 'guardaropa', 'accesos',
+  // respuestas que no nombran ningún lugar
+  'no', 'ninguna', 'ninguno', 'nada', 'na', 'ns', 'nc', 'cualquiera', 'cualquier',
+  'todas', 'todos', 'disponible', 'disponibilidad', 'zona', 'zonas',
+  'localidad', 'domicilio', 'direccion', 'test', 'prueba', 'ejemplo', 'asd', 'asdf'
+]);
 function esLocalidad(v) {
   const t = String(v == null ? '' : v).trim();
   if (t.length < 3) return false;
   if (!/[a-záéíóúñ]/i.test(t)) return false;
   if (/^[\d\s.\-_/]+$/.test(t)) return false;
+  if (/@|https?:/i.test(t)) return false;
+  // Se mira sobre la forma agrupada, no sobre lo que escribieron: así
+  // "Glew Zona Sur" (que ya quedó en "glew") no se descarta por "zona".
+  const c = localidadCanonica(t);
+  if (!c || c.length < 3) return false;
+  if (/^(.)\1+$/.test(c.replace(/\s/g, ''))) return false;
+  if (c.split(' ').some(p => NO_ES_LUGAR.has(p))) return false;
   return true;
 }
 
