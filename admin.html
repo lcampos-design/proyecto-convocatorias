@@ -429,6 +429,16 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .atab-out.active{color:var(--alerta);border-bottom-color:var(--alerta)}
 .atab-out.active .tc{background:#fff1f2;border-color:#fecdd3;color:var(--alerta)}
 
+
+/* Estado del envío de mails, arriba del Dashboard */
+.d-mail{border-radius:10px;padding:11px 15px;margin-bottom:18px;display:flex;align-items:center;gap:11px;font-size:12.5px}
+.d-mail.ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
+.d-mail.mal{background:#fff1f2;border:1px solid #fecdd3;color:var(--alerta)}
+.d-mail.neutro{background:#fafafa;border:1px solid var(--r-line);color:var(--r-muted)}
+.d-mail-ic{flex:0 0 auto;display:flex;align-items:center;font-size:15px}
+.d-mail-txt{flex:1;min-width:0}
+.d-mail-det{font-size:11.5px;opacity:.88;margin-top:2px;line-height:1.45}
+
 </style>
 </head>
 <body>
@@ -1658,6 +1668,7 @@ function renderDashboard() {
   const subArea = a => { const p = sinAprobar(a); return p ? p.toLocaleString('es-AR') + ' sin aprobar' : 'todas aprobadas'; };
 
   cont.innerHTML = `
+    <div id="dashMail" class="d-mail neutro"></div>
     <div class="d-tit">Para resolver</div>
     <div class="d-sub">Lo que está esperando que alguien lo mire. Tocá cualquiera para ir ahí.</div>
     <div class="d-tareas">
@@ -1683,6 +1694,39 @@ function renderDashboard() {
       ${tile(ex, 'Externos', subArea('externos'), 'externos')}
       ${tile(es, 'España', subArea('espana'), 'espana')}
     </div>`;
+  pintarEstadoMail();
+  probarEnvioMails();
+}
+
+// ── ¿Pueden salir mails? ──────────────────────────────────────
+// Es lo que más se rompe y no se notaba hasta que alguien intentaba mandar una
+// confirmación y le saltaba "API key is invalid", que no dice dónde mirar.
+// Se prueba una vez por carga de página; el botón fuerza otra.
+let mailEstado = null;
+async function probarEnvioMails(forzar) {
+  if (mailEstado && mailEstado.estado !== 'probando' && !forzar) { pintarEstadoMail(); return; }
+  mailEstado = { estado: 'probando', titulo: 'Probando el envío de mails…' };
+  pintarEstadoMail();
+  try {
+    const res = await fetch('/api/send-email', { headers: await authHeader() });
+    const d = await res.json();
+    mailEstado = res.ok ? d : { estado: 'error', titulo: 'No se pudo probar el envío', detalle: d.error || ('El servidor contestó ' + res.status) };
+  } catch (err) {
+    mailEstado = { estado: 'error', titulo: 'No se pudo probar el envío', detalle: err.message };
+  }
+  pintarEstadoMail();
+}
+function pintarEstadoMail() {
+  const el = document.getElementById('dashMail'); if (!el) return;
+  const m = mailEstado || { estado: 'probando', titulo: 'Probando el envío de mails…' };
+  const bien = m.estado === 'ok', probando = m.estado === 'probando';
+  el.className = 'd-mail ' + (probando ? 'neutro' : bien ? 'ok' : 'mal');
+  el.innerHTML = `<span class="d-mail-ic">${probando ? '…' : bien ? '<i class="ic ic-tilde-circ"></i>' : '<i class="ic ic-prohibido"></i>'}</span>
+    <div class="d-mail-txt">
+      <b>${e(m.titulo || '')}</b>
+      ${m.detalle ? `<div class="d-mail-det">${e(m.detalle)}</div>` : ''}
+    </div>
+    ${probando ? '' : `<button class="btn btn-sec btn-xs" onclick="probarEnvioMails(true)">Volver a probar</button>`}`;
 }
 // Desde el Dashboard, ir directo a las inscripciones de un área.
 function verSolicitudesDe(area) {
