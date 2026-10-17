@@ -124,6 +124,12 @@ create or replace function public.contrato_eventos_solo_alta()
 returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
+  -- Única excepción: el borrado completo de un contrato desde el panel, que
+  -- pasa por contrato_borrar() (contratos-borrar.sql) y ya dejó una copia de
+  -- todo en contratos_borrados antes de llegar acá.
+  if tg_op = 'DELETE' and current_setting('app.borrando_contrato', true) = 'on' then
+    return old;
+  end if;
   raise exception 'Los eventos de un contrato no se pueden modificar ni borrar';
 end;
 $$;

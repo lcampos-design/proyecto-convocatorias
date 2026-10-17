@@ -393,6 +393,40 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   .resp-txt{flex-basis:100%;order:3;white-space:normal}
 }
 
+
+/* ── Dashboard: qué quedó para resolver y cómo viene el cupo de cada show ── */
+.d-tit{font-size:14px;font-weight:600;color:var(--r-ink)}
+.d-sub{font-size:12px;color:var(--r-faint);margin:2px 0 12px}
+.d-tareas{display:flex;gap:12px;flex-wrap:wrap}
+.d-tarea{flex:1;min-width:150px;background:#fff;border:1px solid var(--r-line);border-radius:12px;padding:16px 18px;cursor:pointer;transition:border-color .12s,box-shadow .12s}
+.d-tarea:hover{border-color:#d4d4d8;box-shadow:0 2px 10px rgba(24,24,27,.06)}
+.d-tarea-n{font-size:28px;font-weight:700;color:var(--alerta);line-height:1;font-variant-numeric:tabular-nums}
+.d-tarea-lbl{font-size:12px;color:var(--r-ink2);margin-top:5px;font-weight:500}
+.d-tarea-sub{font-size:11px;color:var(--r-faint);margin-top:2px}
+.d-tarea.d-ok .d-tarea-n{color:#d4d4d8}
+.d-panel{background:#fff;border:1px solid var(--r-line);border-radius:12px;overflow:hidden}
+.d-show{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--r-line2);cursor:pointer}
+.d-show:last-child{border-bottom:none}
+.d-show:hover{background:#fafafa}
+.d-show-fecha{width:42px;text-align:center;flex:0 0 auto}
+.d-show-fecha b{display:block;font-size:19px;font-weight:700;color:var(--r-ink);line-height:1.1;font-variant-numeric:tabular-nums}
+.d-show-fecha span{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--r-faint)}
+.d-show-mid{flex:1;min-width:0}
+.d-show-nom{font-size:13.5px;font-weight:600;color:var(--r-ink);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.d-show-sub{font-size:11.5px;color:var(--r-faint);margin-top:2px}
+.d-show-cupo{display:flex;align-items:center;gap:9px;flex:0 0 auto;width:280px}
+.d-show-cupo .prog-wrap{flex:1}
+.d-show-num{font-size:12px;color:var(--r-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.d-show-faltan{font-size:11px;font-weight:600;white-space:nowrap;width:104px;text-align:right}
+@media(max-width:860px){
+  .d-show{flex-wrap:wrap}
+  .d-show-cupo{width:100%;padding-left:56px}
+}
+/* La pestaña de OUT va aparte, al otro extremo de las áreas */
+.atab-out{margin-left:auto}
+.atab-out.active{color:var(--alerta);border-bottom-color:var(--alerta)}
+.atab-out.active .tc{background:#fff1f2;border-color:#fecdd3;color:var(--alerta)}
+
 </style>
 </head>
 <body>
@@ -463,6 +497,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="atab" data-area="movistar_arena" onclick="setNomTab('movistar_arena')">Movistar Arena <span class="tc" id="tcMv">0</span></div>
     <div class="atab" data-area="externos" onclick="setNomTab('externos')">Externos <span class="tc" id="tcEx">0</span></div>
     <div class="atab" data-area="espana" onclick="setNomTab('espana')">España <span class="tc" id="tcEs">0</span></div>
+    <div class="atab atab-out" data-area="out" onclick="setNomTab('out')"><i class="ic ic-prohibido"></i> OUT <span class="tc" id="tcOut">0</span></div>
   </div>
   <div class="ctrlbar">
     <input type="text" class="srch" id="nomSrch" placeholder="Buscar por nombre..." oninput="nomSearch()">
@@ -470,11 +505,6 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <option value="">Todos los estados</option>
       <option value="pendiente">Pendiente</option><option value="contactado">Contactado</option>
       <option value="confirmado">Confirmado</option><option value="no_asiste">No asiste</option>
-    </select>
-    <select class="filt" id="nomOutFilter" onchange="nomFilter()" title="Filtrar por OUT">
-      <option value="">Todos</option>
-      <option value="out">Solo OUTS</option>
-      <option value="no_out">Sin OUTS</option>
     </select>
     <select class="filt" id="nomSemFilter" onchange="nomFilter()" title="Filtrar por semáforo">
       <option value="">Todos los semáforos</option>
@@ -1232,6 +1262,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="modal-title"><span><i class="ic ic-doc"></i> Contrato — <span id="ctTraceNombre"></span></span><button class="mclose" onclick="closeM('mContratoTrace')">✕</button></div>
     <div id="ctTraceBody"><div class="empty">Cargando...</div></div>
     <div class="ma">
+      <button class="btn btn-danger" id="ctBorrarBtn" onclick="borrarContrato()" style="display:none;margin-right:auto">Borrar contrato</button>
       <button class="btn btn-sec" onclick="closeM('mContratoTrace')">Cerrar</button>
       <button class="btn btn-sec" id="ctReenviarBtn" onclick="reenviarContrato()" style="display:none">↻ Reenviar mail</button>
       <button class="btn btn-primary" id="ctDescargarBtn" onclick="descargarContratoFirmado()" style="display:none">↓ Descargar PDF firmado</button>
@@ -1570,42 +1601,53 @@ function renderDashboard() {
   const ex = sols.filter(s => s.area === 'externos').length;
   const es = sols.filter(s => s.area === 'espana').length;
 
-  // Inscripciones por día (bucket por fecha local de created_at)
-  const dayKey = (dt) => dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
-  const byDay = {};
-  sols.forEach(s => { if (!s.created_at) return; const d = new Date(s.created_at); if (isNaN(d)) return; const k = dayKey(d); byDay[k] = (byDay[k] || 0) + 1; });
-  let keys = Object.keys(byDay).sort();
-  if (keys.length > 1) {
-    const first = new Date(keys[0] + 'T00:00:00'), last = new Date(keys[keys.length - 1] + 'T00:00:00');
-    const span = Math.round((last - first) / 86400000);
-    if (span > 0 && span <= 92) { keys = []; for (let t = new Date(first); t <= last; t.setDate(t.getDate() + 1)) keys.push(dayKey(t)); }
-  }
-  const counts = keys.map(k => byDay[k] || 0);
-  const maxC = Math.max(1, ...counts);
+  // ── Lo que está esperando que alguien lo resuelva ──
+  // Antes acá había un gráfico de inscripciones por día: lindo pero no se hacía
+  // nada con él. Lo que sirve al abrir el panel es saber qué quedó trabado.
+  const solPend  = sols.filter(s => s.estado === 'pendiente').length;
+  const cvPend   = (people || []).filter(p => p.cv && p.estado === 'pendiente').length;
+  const ctPend   = (contratos || []).filter(c => c.estado !== 'firmado').length;
+  const respPend = (respuestas || []).filter(r => !r.leido).length;
+  const outs     = (people || []).filter(p => p.out_flag).length;
 
-  // Geometría del gráfico
-  const H = 240, padL = 44, padR = 14, padT = 16, padB = 46, plotH = H - padT - padB;
-  const step = 34, barW = 22, chartW = keys.length * step, W = padL + chartW + padR;
-  const ticks = 4;
-  let grid = '', ylabels = '';
-  for (let i = 0; i <= ticks; i++) {
-    const val = Math.round(maxC * i / ticks), y = padT + plotH - (val / maxC) * plotH;
-    grid += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#eef0f2" stroke-width="1"/>`;
-    ylabels += `<text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#9ca3af">${val}</text>`;
-  }
-  const everyN = keys.length > 20 ? Math.ceil(keys.length / 16) : 1;
-  let bars = '';
-  keys.forEach((k, i) => {
-    const c = counts[i], bh = (c / maxC) * plotH, x = padL + i * step + (step - barW) / 2, y = padT + plotH - bh;
-    const dd = k.slice(8, 10) + '/' + k.slice(5, 7);
-    bars += `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(bh, 0.5)}" rx="4" fill="#534AB7"><title>${dd}: ${c} inscripción${c === 1 ? '' : 'es'}</title></rect>`;
-    if (c > 0 && keys.length <= 24) bars += `<text x="${x + barW / 2}" y="${y - 5}" text-anchor="middle" font-size="10" font-weight="600" fill="#6b7280">${c}</text>`;
-    if (i % everyN === 0) bars += `<text x="${x + barW / 2}" y="${H - padB + 16}" text-anchor="middle" font-size="10" fill="#9ca3af">${dd}</text>`;
-  });
-  const baseline = `<line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="#d1d5db" stroke-width="1.5"/>`;
-  const chart = keys.length
-    ? `<div style="overflow-x:auto"><svg width="${W}" height="${H}" style="display:block">${grid}${bars}${baseline}${ylabels}</svg></div>`
-    : `<div class="empty">Sin inscripciones todavía.</div>`;
+  const tarea = (n, lbl, sub, ir) => `<div class="d-tarea${n ? '' : ' d-ok'}" onclick="${ir}">
+      <div class="d-tarea-n">${n.toLocaleString('es-AR')}</div>
+      <div class="d-tarea-lbl">${lbl}</div>
+      <div class="d-tarea-sub">${n ? sub : 'Al día'}</div>
+    </div>`;
+
+  // ── Próximos shows: fecha más cercana todavía por delante y cómo va el cupo ──
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const prox = (convs || []).filter(c => !c.archivada).map(c => {
+    const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+    const porVenir = fechas.filter(f => { const d = new Date(f + 'T00:00:00'); return !isNaN(d) && d >= hoy; });
+    if (!porVenir.length) return null;
+    const usados = (posts || []).filter(p => p.convId === c.id && p.estado !== 'rechazado').length;
+    const cupos = (c.puestos || []).reduce((s, p) => s + (p.cupos || 0), 0);
+    return { c, fecha: porVenir[0], otras: porVenir.length - 1, usados, cupos };
+  }).filter(Boolean).sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(0, 8);
+
+  const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const filaShow = x => {
+    const d = new Date(x.fecha + 'T00:00:00');
+    const dias = Math.round((d - hoy) / 86400000);
+    const cuando = dias === 0 ? 'Hoy' : dias === 1 ? 'Mañana' : 'En ' + dias + ' días';
+    const pct = x.cupos > 0 ? Math.min(100, Math.round(x.usados / x.cupos * 100)) : 0;
+    const faltan = Math.max(0, x.cupos - x.usados);
+    const color = pct >= 100 ? '#0f6e56' : pct >= 80 ? '#34d399' : pct >= 50 ? '#fbbf24' : '#e5e7eb';
+    return `<div class="d-show" onclick="goSec('convs');openDetail('${x.c.id}')" title="Abrir esta convocatoria">
+      <div class="d-show-fecha"><b>${String(d.getDate()).padStart(2, '0')}</b><span>${MESES[d.getMonth()]}</span></div>
+      <div class="d-show-mid">
+        <div class="d-show-nom">${e(x.c.nombre || '')} <span class="a-badge ${areaClase(x.c.area)}">${areaCorto(x.c.area)}</span></div>
+        <div class="d-show-sub">${cuando}${x.otras ? ' · ' + x.otras + ' fecha' + (x.otras === 1 ? '' : 's') + ' más' : ''}</div>
+      </div>
+      <div class="d-show-cupo">
+        <div class="prog-wrap"><div class="prog-fill" style="background:${color};width:${pct}%"></div></div>
+        <span class="d-show-num">${x.usados}/${x.cupos || 0}</span>
+        <span class="d-show-faltan" style="color:${faltan ? '#854F0B' : '#0f6e56'}">${x.cupos === 0 ? 'Sin puestos cargados' : faltan ? 'Faltan ' + faltan : 'Completo'}</span>
+      </div>
+    </div>`;
+  };
 
   const tile = (n, lbl, sub, area) => `<div ${area ? `onclick="verSolicitudesDe('${area}')" title="Ver estas inscripciones" style="cursor:pointer;` : 'style="'}background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;flex:1;min-width:150px"><div style="font-size:30px;font-weight:700;color:#18181b;line-height:1">${Number(n).toLocaleString('es-AR')}</div><div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500">${lbl}</div>${sub ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px">${sub}</div>` : ''}</div>`;
   // Cuántas de cada área están esperando aprobación: explica por qué un área
@@ -1614,21 +1656,30 @@ function renderDashboard() {
   const subArea = a => { const p = sinAprobar(a); return p ? p.toLocaleString('es-AR') + ' sin aprobar' : 'todas aprobadas'; };
 
   cont.innerHTML = `
-    <div style="margin-bottom:10px">
-      <div style="font-size:14px;font-weight:600;color:#18181b">Inscripciones recibidas</div>
-      <div style="font-size:12px;color:#9ca3af;margin-top:2px">Lo que llegó por el formulario público. Pasan a la Nómina recién cuando se aprueban en Solicitudes.</div>
+    <div class="d-tit">Para resolver</div>
+    <div class="d-sub">Lo que está esperando que alguien lo mire. Tocá cualquiera para ir ahí.</div>
+    <div class="d-tareas">
+      ${tarea(solPend,  'Inscripciones sin aprobar', 'Esperando en Solicitudes', "goSec('solicitudes')")}
+      ${tarea(cvPend,   'CV sin revisar',            'Esperando en Candidatos',  "goSec('candidatos')")}
+      ${tarea(ctPend,   'Contratos sin firmar',      'Enviados o sin enviar',    "goSec('contratos')")}
+      ${tarea(respPend, 'Respuestas sin leer',       'Mails que contestaron',    "goSec('respuestas')")}
+      ${tarea(outs,     'Personas en OUT',           'Apartadas de la nómina',   "goSec('nomina');setNomTab('out')")}
     </div>
-    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px">
+
+    <div class="d-tit" style="margin-top:26px">Próximos shows</div>
+    <div class="d-sub">Cómo viene el cupo de cada uno, del más cercano al más lejano.</div>
+    <div class="d-panel">
+      ${prox.length ? prox.map(filaShow).join('') : '<div class="empty">No hay convocatorias con fechas por delante. Las que ya pasaron están en Convocatorias.</div>'}
+    </div>
+
+    <div class="d-tit" style="margin-top:26px">Inscripciones recibidas</div>
+    <div class="d-sub">Lo que llegó por el formulario público. Pasan a la Nómina recién cuando se aprueban en Solicitudes.</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
       ${tile(unicas, 'Personas inscriptas', 'CUIL/CUIT únicos')}
       ${tile(total, 'Inscripciones totales', 'incluye repetidos entre áreas')}
       ${tile(mv, 'Movistar Arena', subArea('movistar_arena'), 'movistar_arena')}
       ${tile(ex, 'Externos', subArea('externos'), 'externos')}
       ${tile(es, 'España', subArea('espana'), 'espana')}
-    </div>
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px">
-      <div style="font-size:14px;font-weight:600;color:#18181b;margin-bottom:2px">Inscripciones por día</div>
-      <div style="font-size:12px;color:#9ca3af;margin-bottom:14px">Pasá el mouse sobre una barra para ver la fecha y la cantidad</div>
-      ${chart}
     </div>`;
 }
 // Desde el Dashboard, ir directo a las inscripciones de un área.
@@ -1650,17 +1701,17 @@ function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge
 function nomApply() {
   const q = document.getElementById('nomSrch').value.toLowerCase().trim();
   const st = document.getElementById('nomStFilter').value;
-  const outF = document.getElementById('nomOutFilter').value;
   const semF = document.getElementById('nomSemFilter').value;
   const rotF = document.getElementById('nomRotFilter').value;
   const tagF = document.getElementById('nomTagFilter') ? document.getElementById('nomTagFilter').value : '';
   nomFiltered = people.filter(p => {
-    if (nomAreaTab !== 'all' && p.area !== nomAreaTab) return false;
+    // Los OUT tienen su propia pestaña: no se mezclan con el resto de la nómina.
+    if (nomAreaTab === 'out') { if (!p.out_flag) return false; }
+    else if (p.out_flag) return false;
+    else if (nomAreaTab !== 'all' && p.area !== nomAreaTab) return false;
     if (st && p.estado !== st) return false;
     if (q && !p.nombre.toLowerCase().includes(q)) return false;
     if (cvFilterOn && !p.cv) return false;
-    if (outF === 'out' && !p.out_flag) return false;
-    if (outF === 'no_out' && p.out_flag) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
     if (rotF) { const r = checkRotacion(p.id); if (rotF === 'rot' && !r.excede) return false; if (rotF === 'libre' && r.excede) return false; }
     if (tagF && !(p.etiquetas || []).some(t => String(t).toLowerCase() === tagF.toLowerCase())) return false;
@@ -1672,17 +1723,21 @@ function nomApply() {
 }
 function toggleCvFilter() { cvFilterOn = !cvFilterOn; const btn = document.getElementById('cvFilterBtn'); btn.style.background = cvFilterOn ? '#0369a1' : ''; btn.style.color = cvFilterOn ? '#fff' : ''; nomPage = 1; nomApply(); }
 function nomStats() {
-  const src = nomAreaTab === 'all' ? people : people.filter(p => p.area === nomAreaTab);
+  const base = nomAreaTab === 'out' ? people.filter(p => p.out_flag) : people.filter(p => !p.out_flag);
+  const src = (nomAreaTab === 'all' || nomAreaTab === 'out') ? base : base.filter(p => p.area === nomAreaTab);
   n('sTotal', src.length); n('sConf', src.filter(p => p.estado === 'confirmado').length);
   n('sCont', src.filter(p => p.estado === 'contactado').length); n('sPend', src.filter(p => p.estado === 'pendiente').length);
   n('sNo', src.filter(p => p.estado === 'no_asiste').length);
 }
-function nomTabCounts() { n('tcAll', people.length); n('tcMv', people.filter(p => p.area === 'movistar_arena').length); n('tcEx', people.filter(p => p.area === 'externos').length); n('tcEs', people.filter(p => p.area === 'espana').length); }
+function nomTabCounts() { const act = people.filter(p => !p.out_flag); n('tcAll', act.length); n('tcMv', act.filter(p => p.area === 'movistar_arena').length); n('tcEx', act.filter(p => p.area === 'externos').length); n('tcEs', act.filter(p => p.area === 'espana').length); n('tcOut', people.filter(p => p.out_flag).length); }
 function n(id, v) { const el = document.getElementById(id); if (el) el.textContent = v.toLocaleString('es-AR'); }
 function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado === 'pendiente').length; const b = document.getElementById('candNavBadge'); if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; } }
 
 function renderNomTable() {
   const tbody = document.getElementById('nomTbody');
+  // Las etiquetas sólo las tiene una parte de la gente y dejaban la lista despareja.
+  // Aparecen al filtrar por una (ahí todos la tienen) y en la ficha de cada persona.
+  const verEtiquetas = !!(document.getElementById('nomTagFilter') || {}).value;
   const sl = nomFiltered.slice((nomPage - 1) * PS, nomPage * PS);
   if (!sl.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty">${people.length === 0 ? 'Todavía no hay personas.' : 'Sin resultados para este filtro.'}</div></td></tr>`; return; }
   tbody.innerHTML = sl.map(p => {
@@ -1695,11 +1750,11 @@ function renderNomTable() {
 <td class="cn">
   ${eN(p.nombre)}
   <button class="sem sem-${sem}" onclick="openSemModal('${p.id}')" title="Semáforo ${sem}">${sem}</button>
-  ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_categoria||'')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}
+  ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_nota||p.out_categoria||'')}"><i class="ic ic-prohibido"></i> ${nomAreaTab === 'out' && p.out_categoria ? e(frase(p.out_categoria)) : 'OUT'}</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
   ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')"><i class="ic ic-doc"></i> CV</button>` : ''}
-  ${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
+  ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
 <td><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td>
 <td><select class="st-sel ${rotulo(p.estado)}" data-id="${p.id}" onchange="changeNomSt('${p.id}',this)">
@@ -3286,6 +3341,7 @@ async function verContratoTrace(id) {
   document.getElementById('ctTraceBody').innerHTML = '<div class="empty">Cargando...</div>';
   document.getElementById('ctReenviarBtn').style.display = 'none';
   document.getElementById('ctDescargarBtn').style.display = 'none';
+  document.getElementById('ctBorrarBtn').style.display = 'none';
   showM('mContratoTrace');
   const [{ data: row }, { data: eventos }] = await Promise.all([
     sb.from('contratos').select('*').eq('id', id).single(),
@@ -3312,6 +3368,43 @@ async function verContratoTrace(id) {
     ${timeline}`;
   document.getElementById('ctReenviarBtn').style.display = row.estado !== 'firmado' ? 'inline-block' : 'none';
   document.getElementById('ctDescargarBtn').style.display = (row.estado === 'firmado' && row.pdf_firmado) ? 'inline-block' : 'none';
+  const bb = document.getElementById('ctBorrarBtn');
+  bb.style.display = esAdmin() ? 'inline-block' : 'none';
+  bb.disabled = false; bb.textContent = 'Borrar contrato';
+}
+
+// Un supervisor no borra contratos. La función de la base lo vuelve a controlar;
+// acá se esconde el botón para que ni siquiera aparezca.
+function esAdmin() { return String(currentUserRole || '').startsWith('admin'); }
+
+// Borrar un contrato, firmado o no. No desaparece del todo: contrato_borrar()
+// guarda antes una copia completa (texto, PDF y trazabilidad) en
+// contratos_borrados, con quién lo borró, cuándo y por qué.
+async function borrarContrato() {
+  if (!ctTraceRow) return;
+  const firmado = ctTraceRow.estado === 'firmado';
+  const quien = ctTraceRow.nombre || 'esta persona';
+  const aviso = firmado
+    ? `El contrato de ${quien} está FIRMADO.\n\nSe borra del panel, pero queda guardada una copia completa (texto, PDF firmado y trazabilidad) en el registro de borrados, por si alguna vez hay que probar que existió.\n\n¿Borrarlo igual?`
+    : `¿Borrar el contrato de ${quien}?\n\nQueda guardada una copia en el registro de borrados.`;
+  if (!confirm(aviso)) return;
+  const motivo = prompt('¿Por qué se borra? Queda registrado junto con tu usuario y la fecha.', firmado ? '' : 'Contrato de prueba');
+  if (motivo === null) return;
+  if (!motivo.trim()) { toast('Hay que escribir el motivo'); return; }
+  const btn = document.getElementById('ctBorrarBtn');
+  btn.disabled = true; btn.textContent = 'Borrando...';
+  try {
+    const { error } = await sb.rpc('contrato_borrar', { p_id: ctTraceRow.id, p_motivo: motivo.trim() });
+    if (error) throw error;
+    contratos = contratos.filter(c => c.id !== ctTraceRow.id);
+    ctTraceRow = null; ctTraceId = null;
+    closeM('mContratoTrace');
+    populateCtFilters(); renderContratos();
+    toast('Contrato borrado');
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Borrar contrato';
+    toast((err && err.message) ? err.message : 'No se pudo borrar el contrato');
+  }
 }
 
 function descargarContratoFirmado() {
