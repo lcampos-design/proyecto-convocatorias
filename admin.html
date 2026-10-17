@@ -395,8 +395,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 
 
 /* ── Dashboard: qué quedó para resolver y cómo viene el cupo de cada show ── */
-/* Sin esto el contenido arranca pegado al borde y se corta del lado derecho. */
-#dashContent{max-width:1280px;margin:0 auto;padding:24px 28px 40px}
+/* Mismo margen lateral que el resto de las secciones (.stats-bar, .ctrlbar, .tbl-wrap). */
+#dashContent{padding:22px 22px 28px}
 .d-tit{font-size:14px;font-weight:600;color:var(--r-ink)}
 .d-sub{font-size:12px;color:var(--r-faint);margin:2px 0 12px}
 .d-tareas{display:flex;gap:12px;flex-wrap:wrap}
@@ -416,13 +416,13 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .d-show-mid{flex:1;min-width:0}
 .d-show-nom{font-size:13.5px;font-weight:600;color:var(--r-ink);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .d-show-sub{font-size:11.5px;color:var(--r-faint);margin-top:2px}
-.d-show-cupo{display:flex;align-items:center;gap:9px;flex:0 0 auto;width:280px}
+.d-show-cupo{display:flex;align-items:center;gap:9px;flex:0 0 auto;width:330px}
 .d-show-cupo .prog-wrap{flex:1}
 .d-show-num{font-size:12px;color:var(--r-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.d-show-faltan{font-size:11px;font-weight:600;white-space:nowrap;width:104px;text-align:right}
+.d-show-faltan{font-size:11px;font-weight:600;white-space:nowrap;min-width:86px;text-align:right}
 @media(max-width:860px){
   .d-show{flex-wrap:wrap}
-  .d-show-cupo{width:100%;padding-left:56px}
+  .d-show-cupo{width:100%;padding-left:56px;box-sizing:border-box}
 }
 /* La pestaña de OUT va aparte, al otro extremo de las áreas */
 .atab-out{margin-left:auto}
