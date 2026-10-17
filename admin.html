@@ -1607,15 +1607,23 @@ function renderDashboard() {
     ? `<div style="overflow-x:auto"><svg width="${W}" height="${H}" style="display:block">${grid}${bars}${baseline}${ylabels}</svg></div>`
     : `<div class="empty">Sin inscripciones todavía.</div>`;
 
-  const tile = (n, lbl, sub) => `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;flex:1;min-width:150px"><div style="font-size:30px;font-weight:700;color:#18181b;line-height:1">${Number(n).toLocaleString('es-AR')}</div><div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500">${lbl}</div>${sub ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px">${sub}</div>` : ''}</div>`;
+  const tile = (n, lbl, sub, area) => `<div ${area ? `onclick="verSolicitudesDe('${area}')" title="Ver estas inscripciones" style="cursor:pointer;` : 'style="'}background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;flex:1;min-width:150px"><div style="font-size:30px;font-weight:700;color:#18181b;line-height:1">${Number(n).toLocaleString('es-AR')}</div><div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500">${lbl}</div>${sub ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px">${sub}</div>` : ''}</div>`;
+  // Cuántas de cada área están esperando aprobación: explica por qué un área
+  // puede tener inscripciones acá y todavía nadie en la Nómina.
+  const sinAprobar = a => sols.filter(s => s.area === a && s.estado === 'pendiente').length;
+  const subArea = a => { const p = sinAprobar(a); return p ? p.toLocaleString('es-AR') + ' sin aprobar' : 'todas aprobadas'; };
 
   cont.innerHTML = `
+    <div style="margin-bottom:10px">
+      <div style="font-size:14px;font-weight:600;color:#18181b">Inscripciones recibidas</div>
+      <div style="font-size:12px;color:#9ca3af;margin-top:2px">Lo que llegó por el formulario público. Pasan a la Nómina recién cuando se aprueban en Solicitudes.</div>
+    </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px">
       ${tile(unicas, 'Personas inscriptas', 'CUIL/CUIT únicos')}
       ${tile(total, 'Inscripciones totales', 'incluye repetidos entre áreas')}
-      ${tile(mv, 'Movistar Arena', '')}
-      ${tile(ex, 'Externos', '')}
-      ${tile(es, 'España', '')}
+      ${tile(mv, 'Movistar Arena', subArea('movistar_arena'), 'movistar_arena')}
+      ${tile(ex, 'Externos', subArea('externos'), 'externos')}
+      ${tile(es, 'España', subArea('espana'), 'espana')}
     </div>
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px">
       <div style="font-size:14px;font-weight:600;color:#18181b;margin-bottom:2px">Inscripciones por día</div>
@@ -1623,6 +1631,14 @@ function renderDashboard() {
       ${chart}
     </div>`;
 }
+// Desde el Dashboard, ir directo a las inscripciones de un área.
+function verSolicitudesDe(area) {
+  goSec('solicitudes');
+  const f = document.getElementById('solAreaF'); if (f) f.value = area;
+  const st = document.getElementById('solStF'); if (st) st.value = 'pendiente';
+  solFilter();
+}
+
 function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('.atab').forEach(t => t.classList.toggle('active', t.dataset.area === a)); nomPage = 1; nomRefresh(); }
 function nomSearch() { nomPage = 1; nomApply(); }
 function nomFilter() { nomPage = 1; nomApply(); }
