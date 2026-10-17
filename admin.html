@@ -1635,7 +1635,11 @@ function renderDashboard() {
 function verSolicitudesDe(area) {
   goSec('solicitudes');
   const f = document.getElementById('solAreaF'); if (f) f.value = area;
-  const st = document.getElementById('solStF'); if (st) st.value = 'pendiente';
+  // Sin filtrar por estado: si se filtrara por pendientes y estuvieran aprobadas
+  // o rechazadas, la pantalla quedaría vacía y parecería que no hay ninguna.
+  const st = document.getElementById('solStF'); if (st) st.value = '';
+  const q = document.getElementById('solSrch'); if (q) q.value = '';
+  const loc = document.getElementById('solLocF'); if (loc) loc.value = '';
   solFilter();
 }
 
