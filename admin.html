@@ -395,6 +395,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 
 
 /* ── Dashboard: qué quedó para resolver y cómo viene el cupo de cada show ── */
+/* Sin esto el contenido arranca pegado al borde y se corta del lado derecho. */
+#dashContent{max-width:1280px;margin:0 auto;padding:24px 28px 40px}
 .d-tit{font-size:14px;font-weight:600;color:var(--r-ink)}
 .d-sub{font-size:12px;color:var(--r-faint);margin:2px 0 12px}
 .d-tareas{display:flex;gap:12px;flex-wrap:wrap}
