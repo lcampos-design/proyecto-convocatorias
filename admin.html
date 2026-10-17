@@ -276,15 +276,18 @@ tr:hover td{background:#fafafa}
    ═══════════════════════════════════════════════════════════════ */
 
 :root{
-  /* Un color por área, usado igual en toda la plataforma */
-  --arena:#0284c7;      --arena-sv:#e0f2fe;    /* celeste  */
-  --externos:#7c3aed;   --externos-sv:#f1ebff; /* violeta  */
-  --espana:#ea580c;     --espana-sv:#ffeede;   /* naranja  */
-  --ambas:#0d9488;      --ambas-sv:#d9f5f1;    /* verde azulado */
+  /* Un color por área, usado igual en toda la plataforma.
+     Los cuatro tonos están separados en el círculo cromático y ninguno se
+     confunde con los de estado (verde confirmado, ámbar pendiente, rojo no
+     asiste) ni con el violeta de la marca. */
+  --arena:#0369a1;      --arena-sv:#e0f2fe;    /* celeste */
+  --externos:#a21caf;   --externos-sv:#fae8ff; /* fucsia  */
+  --espana:#c2410c;     --espana-sv:#fff7ed;   /* naranja */
+  --ambas:#475569;      --ambas-sv:#eef2f6;    /* gris pizarra: es el caso sin área propia */
   /* Estados */
   --ok:#15803d;    --ok-sv:#dcfce7;
   --espera:#a16207; --espera-sv:#fef6da;
-  --alerta:#b91c1c; --alerta-sv:#fee9e9;
+  --alerta:#9f1239; --alerta-sv:#ffe9ee;
   --neutro:#5b5b66; --neutro-sv:#f1f1f4;
 }
 
