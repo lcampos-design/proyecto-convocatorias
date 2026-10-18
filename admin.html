@@ -3988,7 +3988,15 @@ async function singleSolSt(id, estado) {
       try { const { data } = await sb.from('solicitudes').select('archivo_cv').eq('id', id).single(); s.archivo_cv = data?.archivo_cv || null; }
       catch (_) { s.archivo_cv = null; }
     }
-    const existe = people.find(p => p.nombre.toLowerCase().trim() === s.nombre.toLowerCase().trim());
+    // Antes se buscaba sólo por nombre: dos personas distintas que se llaman
+    // igual quedaban fusionadas en una sola, y la segunda no entraba nunca a la
+    // nómina aunque su solicitud figurara aprobada. Lo que identifica a alguien
+    // es el documento; el nombre, no. Sin documento se cae al nombre, pero sólo
+    // dentro de la misma área.
+    const docSol = normDoc(s.cuit);
+    const existe = docSol
+      ? people.find(p => normDoc(p.cuit) === docSol)
+      : people.find(p => p.area === s.area && (p.nombre || '').toLowerCase().trim() === (s.nombre || '').toLowerCase().trim());
     let personaId;
     if (!existe) {
       const np = { id: uid(), nombre: s.nombre, area: s.area, estado: 'confirmado', email: s.email||null, tel: s.tel||null, cuit: s.cuit||null, notas: s.puesto_interes?`Interés: ${s.puesto_interes}`:null, cv: { puestoInteres: s.puesto_interes||'', experiencia: s.experiencia||'', formacion: s.formacion||'', habilidades: s.habilidades||'', disponibilidad: s.disponibilidad||'', fechaEnvio: s.created_at?.slice(0,10)||'', archivo: s.archivo_cv||null } };
@@ -4018,7 +4026,11 @@ async function singleSolSt(id, estado) {
       s.email || null,
       s.nombre
     );
-    toast(`✓ ${s.nombre} agregada a la nómina y al puesto`);
+    // Decía siempre "agregada a la nómina", incluso cuando no se agregaba nada.
+    const alPuesto = s.conv_id && s.puesto_id ? ' y al puesto' : '';
+    toast(existe
+      ? `Solicitud aprobada. ${s.nombre} ya estaba en la nómina${alPuesto ? ', se asignó al puesto' : ''}`
+      : `✓ ${s.nombre} agregada a la nómina${alPuesto}`);
   }
   try { await sbUpdate('solicitudes', id, { estado }); } catch(_) {}
   renderSolicitudes(); refreshSolBadge(); nomRefresh();
