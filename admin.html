@@ -1315,11 +1315,25 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 const sb = supabase.createClient(SB_URL, SB_KEY);
 // Áreas: España se suma a Movistar Arena y Externos. Lo que no es España se muestra igual que antes.
-function areaClase(a) { return a === 'movistar_arena' ? 'a-mv' : a === 'espana' ? 'a-es' : 'a-ex'; }
-function areaCorto(a) { return a === 'movistar_arena' ? 'M. Arena' : a === 'espana' ? 'España' : 'Externos'; }
-function areaLargo(a) { return a === 'movistar_arena' ? 'Movistar Arena' : a === 'espana' ? 'España' : 'Externos'; }
-function areaMini(a) { return a === 'movistar_arena' ? 'M. Arena' : a === 'espana' ? 'Esp.' : 'Ext.'; }
-function etiquetaDoc(a) { return a === 'espana' ? 'DNI/NIE' : 'CUIT'; }
+// El área se guardó desde varios lados —el formulario público, importaciones,
+// carga a mano— y no siempre con el mismo texto: "espana", "España", "ESPAÑA".
+// Como todas estas funciones terminaban en "si no es ninguna de las dos,
+// Externos", cualquier variante se mostraba como Externos. Acá se emparejan.
+function normArea(a) {
+  const t = String(a == null ? '' : a).trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (!t) return '';
+  if (/^(espana|esp|es|spain|madrid)$/.test(t)) return 'espana';
+  if (/^(movistar([ _-]?arena)?|arena|m\.? ?arena)$/.test(t)) return 'movistar_arena';
+  if (/^(externos?|ext)$/.test(t)) return 'externos';
+  if (/^(ambas( areas)?|todas)$/.test(t)) return 'ambas';
+  return t;
+}
+function areaClase(a) { const x = normArea(a); return x === 'movistar_arena' ? 'a-mv' : x === 'espana' ? 'a-es' : x === 'ambas' ? 'a-ambas' : 'a-ex'; }
+function areaCorto(a) { const x = normArea(a); return x === 'movistar_arena' ? 'M. Arena' : x === 'espana' ? 'España' : x === 'ambas' ? 'Ambas' : 'Externos'; }
+function areaLargo(a) { const x = normArea(a); return x === 'movistar_arena' ? 'Movistar Arena' : x === 'espana' ? 'España' : x === 'ambas' ? 'Ambas áreas' : 'Externos'; }
+function areaMini(a) { const x = normArea(a); return x === 'movistar_arena' ? 'M. Arena' : x === 'espana' ? 'Esp.' : x === 'ambas' ? 'Ambas' : 'Ext.'; }
+function etiquetaDoc(a) { return normArea(a) === 'espana' ? 'DNI/NIE' : 'CUIT'; }
 // Documento para comparar personas: DNI/NIE español completo (con letras); cualquier otro (CUIL), solo los números como siempre.
 function normDoc(v) { const t = String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, ''); return /^[XYZ]?\d{7,8}[A-Z]$/.test(t) ? t : String(v || '').replace(/\D/g, ''); }
 function fechaDMA(iso) { const [y, m, d] = String(iso || '').slice(0, 10).split('-'); return d ? `${d}/${m}/${y}` : ''; }
@@ -1504,6 +1518,15 @@ async function loadAll() {
   notificaciones = notifData || [];
   respuestas = respData || [];
   contratos = ctData || [];
+  // Se empareja una sola vez, acá, para que las comparaciones con 'espana'
+  // repartidas por todo el panel (pestañas, contadores, filtros) funcionen sin
+  // tener que tocarlas una por una.
+  people.forEach(p => { p.area = normArea(p.area); });
+  solicitudes.forEach(x => { x.area = normArea(x.area); });
+  convs.forEach(c => {
+    c.area = normArea(c.area);
+    (c.puestos || []).forEach(q => { q.area = q.area ? normArea(q.area) : ''; });
+  });
   populateCtFilters();
   const rotCfg = (cfgData || []).find(c => c.key === 'rotacion');
   if (rotCfg) rotacionConfig = rotCfg.value;
