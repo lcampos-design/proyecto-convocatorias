@@ -446,6 +446,12 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .etq-fila:last-child{border-bottom:none}
 .etq-fila-activa{background:#fafafa;border-radius:8px;padding:9px 10px}
 
+
+/* Aviso de qué le falta a la convocatoria para llenar el contrato solo */
+.ct-aviso{font-size:11.5px;color:#0f6e56;display:flex;align-items:flex-start;gap:6px;margin-top:2px;line-height:1.45}
+.ct-aviso-falta{color:#92400e}
+.lbl-auto{font-weight:500;text-transform:none;letter-spacing:0;color:#9ca3af;font-size:10.5px;margin-left:5px}
+
 </style>
 </head>
 <body>
@@ -1203,9 +1209,10 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
             <div class="fg" style="max-width:100px"><label>Año</label><input type="text" class="fi" id="mcAnio"></div>
           </div>
           <div class="frow">
-            <div class="fg"><label>Monto en letras</label><input type="text" class="fi" id="mcMontoLetras" placeholder="treinta y tres mil quinientos sesenta"></div>
-            <div class="fg" style="max-width:140px"><label>Monto $</label><input type="text" class="fi" id="mcMontoNumero" placeholder="33.560,00"></div>
+            <div class="fg"><label>Monto en letras <span class="lbl-auto">se escribe solo</span></label><input type="text" class="fi" id="mcMontoLetras" placeholder="treinta y tres mil quinientos sesenta"></div>
+            <div class="fg" style="max-width:140px"><label>Monto $</label><input type="text" class="fi" id="mcMontoNumero" placeholder="33.560,00" oninput="montoCambio('mc')"></div>
           </div>
+          <div class="ct-aviso" id="mcAviso"></div>
           <div class="fg"><label>Fecha de firma (texto del contrato)</label><input type="text" class="fi" id="mcFechaFirmaDoc" placeholder="Ej: 24 DE SEPTIEMBRE"></div>
         </div>
       </div>
@@ -1264,9 +1271,10 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
             <div class="fg" style="max-width:100px"><label>Año</label><input type="text" class="fi" id="bmcAnio"></div>
           </div>
           <div class="frow">
-            <div class="fg"><label>Monto en letras</label><input type="text" class="fi" id="bmcMontoLetras" placeholder="treinta y tres mil quinientos sesenta"></div>
-            <div class="fg" style="max-width:140px"><label>Monto $</label><input type="text" class="fi" id="bmcMontoNumero" placeholder="33.560,00"></div>
+            <div class="fg"><label>Monto en letras <span class="lbl-auto">se escribe solo</span></label><input type="text" class="fi" id="bmcMontoLetras" placeholder="treinta y tres mil quinientos sesenta"></div>
+            <div class="fg" style="max-width:140px"><label>Monto $</label><input type="text" class="fi" id="bmcMontoNumero" placeholder="33.560,00" oninput="montoCambio('bmc')"></div>
           </div>
+          <div class="ct-aviso" id="bmcAviso"></div>
           <div class="fg"><label>Fecha de firma (texto del contrato)</label><input type="text" class="fi" id="bmcFechaFirmaDoc" placeholder="Ej: 24 DE SEPTIEMBRE"></div>
         </div>
       </div>
@@ -3031,8 +3039,7 @@ function prepMailTemplate(area) {
     document.getElementById('mcFechaInicio').value = rango.inicio;
     document.getElementById('mcFechaFin').value = rango.fin;
     document.getElementById('mcAnio').value = rango.anio;
-    document.getElementById('mcMontoLetras').value = '';
-    document.getElementById('mcMontoNumero').value = '';
+    llenarMontoYAvisos('mc', conv);
     document.getElementById('mcFechaFirmaDoc').value = fechaHoyTexto();
   }
   const fechas = conv?.fecha ? conv.fecha.split(',').map(f => fmtFecha(f.trim())).join(' y ') : '[COMPLETAR FECHA]';
@@ -3218,8 +3225,7 @@ function prepBulkTemplate(area) {
     document.getElementById('bmcFechaInicio').value = rango.inicio;
     document.getElementById('bmcFechaFin').value = rango.fin;
     document.getElementById('bmcAnio').value = rango.anio;
-    document.getElementById('bmcMontoLetras').value = '';
-    document.getElementById('bmcMontoNumero').value = '';
+    llenarMontoYAvisos('bmc', conv);
     document.getElementById('bmcFechaFirmaDoc').value = fechaHoyTexto();
   }
   const bmFields = document.getElementById('bmMvFields');
@@ -3334,6 +3340,90 @@ function rangoFechasConv(conv) {
   return { inicio: fmt(first), fin: fmt(last), anio: first.slice(0, 4) || anioActual };
 }
 function fechaHoyTexto() { return new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'long' }).toUpperCase(); }
+
+// ── El importe del contrato, escrito solo ─────────────────────
+// Pasar el monto a letras a mano es donde más fácil se cuela un error, y en un
+// contrato el importe en letras es el que manda. Se arma a partir del número,
+// y el número sale de la remuneración que ya tiene cargada la convocatoria.
+const MONTO_UNIDADES = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez',
+  'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte',
+  'veintiuno', 'veintidós', 'veintitrés', 'veinticuatro', 'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve'];
+const MONTO_DECENAS = ['', '', '', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+const MONTO_CENTENAS = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+
+// "apocope" es para lo que va delante de mil o millones: veintiún mil, no veintiuno mil.
+function montoHastaMil(n, apocope) {
+  if (!n) return '';
+  if (n === 100) return 'cien';
+  const c = Math.floor(n / 100), r = n % 100;
+  let t = c ? MONTO_CENTENAS[c] : '';
+  if (r) {
+    if (t) t += ' ';
+    if (r < 30) t += (apocope && r === 1) ? 'un' : (apocope && r === 21) ? 'veintiún' : MONTO_UNIDADES[r];
+    else {
+      const d = Math.floor(r / 10), u = r % 10;
+      t += MONTO_DECENAS[d];
+      if (u) t += ' y ' + ((apocope && u === 1) ? 'un' : MONTO_UNIDADES[u]);
+    }
+  }
+  return t;
+}
+function montoEnteroALetras(n) {
+  if (!n) return 'cero';
+  const millones = Math.floor(n / 1000000), miles = Math.floor((n % 1000000) / 1000), resto = n % 1000;
+  const partes = [];
+  if (millones) partes.push(millones === 1 ? 'un millón' : montoHastaMil(millones, true) + ' millones');
+  if (miles) partes.push(miles === 1 ? 'mil' : montoHastaMil(miles, true) + ' mil');
+  if (resto) partes.push(montoHastaMil(resto, false));
+  return partes.join(' ');
+}
+function numeroALetras(n) {
+  const num = Math.abs(Number(n) || 0);
+  const entero = Math.floor(num);
+  const centavos = Math.round((num - entero) * 100);
+  let t = montoEnteroALetras(entero);
+  // Delante del sustantivo va apocopado: un centavo, veintiún centavos.
+  if (centavos) t += ' con ' + montoHastaMil(centavos, true) + (centavos === 1 ? ' centavo' : ' centavos');
+  return t;
+}
+// Acepta lo que se escriba: "33560", "33.560", "$33.560,00", "ARS 33 560".
+function montoANumero(txt) {
+  const m = String(txt == null ? '' : txt).match(/\d{1,3}(?:[.\s]\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?/);
+  if (!m) return 0;
+  let t = m[0];
+  if (/[.\s]\d{3}(?!\d)/.test(t)) t = t.replace(/[.\s]/g, '');
+  const n = Number(t.replace(',', '.'));
+  return Number.isFinite(n) ? n : 0;
+}
+function montoFormateado(n) { return Number(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+// La convocatoria ya tiene el campo Remuneración; de ahí sale el importe.
+function montoDeConv(conv) { return montoANumero(conv && conv.remuneracion); }
+
+// Al escribir el importe, el monto en letras se rehace solo.
+function montoCambio(prefijo) {
+  const num = document.getElementById(prefijo + 'MontoNumero');
+  const letras = document.getElementById(prefijo + 'MontoLetras');
+  if (!num || !letras) return;
+  const n = montoANumero(num.value);
+  letras.value = n ? numeroALetras(n) : '';
+}
+// Completa los dos campos del importe y avisa qué le falta a la convocatoria.
+function llenarMontoYAvisos(prefijo, conv) {
+  const n = montoDeConv(conv);
+  const num = document.getElementById(prefijo + 'MontoNumero');
+  const letras = document.getElementById(prefijo + 'MontoLetras');
+  if (num) num.value = n ? montoFormateado(n) : '';
+  if (letras) letras.value = n ? numeroALetras(n) : '';
+  const av = document.getElementById(prefijo + 'Aviso'); if (!av) return;
+  const falta = [];
+  if (!rangoFechasConv(conv).inicio) falta.push('fechas');
+  if (!n) falta.push('remuneración');
+  if (!String(conv && conv.venue || '').trim()) falta.push('venue');
+  av.innerHTML = falta.length
+    ? `<i class="ic ic-aviso"></i> Esta convocatoria no tiene cargada${falta.length > 1 ? 's' : ''} ${falta.join(' ni ')}. Completala en Convocatorias y esto se llena solo.`
+    : '<i class="ic ic-tilde-circ"></i> Todo tomado de la convocatoria. Revisá y, si hace falta, corregí a mano.';
+  av.className = falta.length ? 'ct-aviso ct-aviso-falta' : 'ct-aviso';
+}
 
 // Texto legal base del contrato. Placeholders {{...}} se completan al generarlo.
 const CONTRATO_TEMPLATE = `CONTRATO DE TRABAJO A PLAZO FIJO
