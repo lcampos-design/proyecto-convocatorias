@@ -4695,7 +4695,7 @@ function openDedup() {
         return `<div class="dedup-person">
           <div style="flex:1">
             <div style="font-weight:500">${eN(p.nombre)}</div>
-            <div style="font-size:11px;color:#9ca3af">${p.area==='movistar_arena'?'M. Arena':'Externos'} · ${pPosts} recitales · ${pFbs} feedbacks${p.email?' · '+e(p.email):''}</div>
+            <div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)} · ${pPosts} recitales · ${pFbs} feedbacks${p.email?' · '+e(p.email):''}</div>
           </div>
           <button class="btn btn-success btn-xs" onclick="keepAsMaster('${p.id}','${cuit}')" title="Mantener este, fusionar los otros">✓ Mantener</button>
         </div>`;
