@@ -1240,6 +1240,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div class="fg"><label>Mensaje</label><textarea class="fi" id="mailBody" style="height:260px;font-size:12.5px;line-height:1.6"></textarea></div>
       <div class="ma">
         <button class="btn btn-sec" onclick="document.getElementById('mMailStep2').style.display='none';document.getElementById('mMailStep1').style.display='block'">← Atrás</button>
+        <button class="btn btn-sec" id="btnGenContrato" onclick="generarContratoSinMail()" title="Crea el contrato, baja el PDF y copia el link de firma, sin mandar el mail">Generar sin enviar</button>
         <button class="btn btn-primary" id="btnSendMail" onclick="sendConfirmationMail()">Enviar mail →</button>
       </div>
     </div>
@@ -1317,6 +1318,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="ma">
       <button class="btn btn-danger" id="ctBorrarBtn" onclick="borrarContrato()" style="display:none;margin-right:auto">Borrar contrato</button>
       <button class="btn btn-sec" onclick="closeM('mContratoTrace')">Cerrar</button>
+      <button class="btn btn-sec" id="ctLinkBtn" onclick="copiarLinkDeContrato()" style="display:none">Copiar link de firma</button>
+      <button class="btn btn-sec" id="ctPdfBtn" onclick="descargarContratoSinFirmar()" style="display:none">↓ Descargar PDF</button>
       <button class="btn btn-sec" id="ctReenviarBtn" onclick="reenviarContrato()" style="display:none">↻ Reenviar mail</button>
       <button class="btn btn-primary" id="ctDescargarBtn" onclick="descargarContratoFirmado()" style="display:none">↓ Descargar PDF firmado</button>
     </div>
@@ -1353,6 +1356,26 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="fg"><label>Repetila</label><input type="password" class="fi" id="claveRepe" placeholder="La misma otra vez" autocomplete="new-password" oninput="revisarClave()" onkeydown="if(event.key==='Enter')guardarClave()"></div>
     <div id="claveAviso" style="font-size:11.5px;min-height:16px;color:var(--alerta)"></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mClave')">Cancelar</button><button class="btn btn-primary" id="claveBtn" onclick="guardarClave()">Guardar</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="mLinkFirma" style="display:none" onclick="bgClose('mLinkFirma',event)">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title"><span><i class="ic ic-firma"></i> Contrato de <span id="lfNombre"></span></span><button class="mclose" onclick="closeM('mLinkFirma')">✕</button></div>
+    <div style="font-size:12.5px;color:var(--r-ink2);line-height:1.6;margin-bottom:12px">
+      El PDF se descargó. Mandáselo por mail junto con este link, que es donde firma.
+      <span id="lfAviso" style="color:var(--r-faint)"></span>
+    </div>
+    <div class="fg"><label>Link para firmar</label>
+      <input type="text" class="fi" id="lfLink" readonly onclick="this.select()" style="font-size:12px">
+    </div>
+    <div style="font-size:11.5px;color:var(--r-faint);line-height:1.55">
+      El contrato ya quedó registrado en la sección Contratos. Cuando la persona lo abra y lo firme, el estado y la trazabilidad se actualizan solos.
+    </div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mLinkFirma')">Cerrar</button>
+      <button class="btn btn-primary" onclick="copiarLinkFirma()">Copiar link</button>
+    </div>
   </div>
 </div>
 
@@ -1394,6 +1417,24 @@ function areaMini(a) { const x = normArea(a); return x === 'movistar_arena' ? 'M
 function etiquetaDoc(a) { return normArea(a) === 'espana' ? 'DNI/NIE' : 'CUIT'; }
 // Documento para comparar personas: DNI/NIE español completo (con letras); cualquier otro (CUIL), solo los números como siempre.
 function normDoc(v) { const t = String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, ''); return /^[XYZ]?\d{7,8}[A-Z]$/.test(t) ? t : String(v || '').replace(/\D/g, ''); }
+// La gente lo escribe de tres formas: "@user", "user" o la dirección entera.
+// Se guarda lo que escribió; acá sólo se muestra parejo y enlazado.
+function usuarioInstagram(v) {
+  let t = String(v == null ? '' : v).trim().replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+  // Una dirección de otra red no es un usuario de Instagram.
+  if (t.includes('/')) {
+    if (!/^instagram\.com\//i.test(t)) return '';
+    t = t.replace(/^instagram\.com\//i, '');
+  }
+  t = t.replace(/[/?#].*$/, '').replace(/^@/, '');
+  if (/^[a-z0-9.-]+\.(com|net|org|io|me|ar|es|com\.ar)$/i.test(t)) return '';
+  return /^[A-Za-z0-9._]{1,40}$/.test(t) ? t : '';
+}
+function chipInstagram(v) {
+  const u = usuarioInstagram(v);
+  if (!u) return '';
+  return `<a href="https://instagram.com/${encodeURIComponent(u)}" target="_blank" rel="noopener noreferrer" style="color:#a21caf;text-decoration:none">@${e(u)}</a>`;
+}
 function fechaDMA(iso) { const [y, m, d] = String(iso || '').slice(0, 10).split('-'); return d ? `${d}/${m}/${y}` : ''; }
 
 // ── Estado global ──
@@ -2518,7 +2559,9 @@ function pintarPlanillaSol(contenedorId, sol) {
     ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;${v ? 'background:#fee2e2;color:#991b1b' : 'background:#d1fae5;color:#065f46'}">${v ? '✓ Sí' : '✗ No'}</div></div>` : '';
   const titulo = t => `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:10px">${t}</div>`;
   let h = '';
-  if (sol.localidad) h += '<div class="cv-section-divider"></div>' + fld('Localidad', localidadLinda(sol.localidad) || sol.localidad);
+  if (sol.localidad || usuarioInstagram(sol.instagram)) h += '<div class="cv-section-divider"></div>';
+  if (sol.localidad) h += fld('Localidad', localidadLinda(sol.localidad) || sol.localidad);
+  if (usuarioInstagram(sol.instagram)) h += `<div class="cv-viewer-field"><div class="cv-viewer-label">Instagram</div><div class="cv-viewer-value">${chipInstagram(sol.instagram)}</div></div>`;
   const banco = sol.cbu || sol.banco || sol.numero_cuenta;
   if (banco) {
     h += '<div class="cv-section-divider"></div>' + titulo('Datos bancarios');
@@ -3494,6 +3537,100 @@ function renderEmailHtml(text, fromAddr, area, confirm) {
 </div>`;
 }
 
+
+// ── GENERAR EL CONTRATO SIN MANDAR MAIL ───────────────────────
+// El contrato sólo se creaba dentro del envío de mail, así que con el envío
+// caído no se podía ni generar. Acá se crea igual, se baja el PDF y se copia el
+// link de firma: el contrato queda en el panel con su trazabilidad completa y el
+// mail lo manda una persona desde su casilla. Lo único que cambia es quién
+// aprieta enviar; la firma del trabajador sigue siendo online y con auditoría.
+
+// navigator.clipboard falla si la página no está en https o si el navegador lo
+// bloquea, así que hay un segundo intento con el método viejo.
+async function copiarAlPortapapeles(texto) {
+  try { await navigator.clipboard.writeText(texto); return true; } catch (_) {}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = texto; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch (_) { return false; }
+}
+function linkDeFirma(token) { return location.origin + '/contrato.html?t=' + token; }
+
+async function bajarContratoPDF(row) {
+  const pdf = await generarContratoPDF(row.texto_contrato, {
+    logoUrl: location.origin + '/' + LOGO_IMG,
+    firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO,
+    hashTexto: await sha256Hex(row.texto_contrato),
+    destacar: destacarDe(row)
+  });
+  const a = document.createElement('a');
+  a.href = 'data:application/pdf;base64,' + pdf;
+  a.download = 'contrato-' + String(row.nombre || 'sin-nombre').replace(/\s+/g, '-') + '.pdf';
+  a.click();
+}
+
+function mostrarLinkFirma(nombre, link, copiado) {
+  document.getElementById('lfNombre').textContent = nombre || '';
+  document.getElementById('lfLink').value = link;
+  document.getElementById('lfAviso').textContent = copiado
+    ? 'El link ya quedó copiado en el portapapeles.'
+    : 'Copialo de acá: el navegador no dejó copiarlo solo.';
+  showM('mLinkFirma');
+}
+async function copiarLinkFirma() {
+  const i = document.getElementById('lfLink'); i.select();
+  const ok = await copiarAlPortapapeles(i.value);
+  toast(ok ? 'Link copiado' : 'No se pudo copiar: copialo a mano');
+}
+
+async function generarContratoSinMail() {
+  if (!document.getElementById('mailAdjContrato') || !document.getElementById('mailAdjContrato').checked) {
+    toast('Primero tildá "Adjuntar contrato de trabajo"'); return;
+  }
+  const to = document.getElementById('mailTo').value.trim();
+  const conv = convs.find(c => c.id === (mailContratoCtx && mailContratoCtx.convId));
+  const datos = {
+    nombre: v('mcNombre'), cuil: v('mcCuil'), puesto: v('mcPuesto'), venue: (conv && conv.venue) || '',
+    fecha_inicio: v('mcFechaInicio'), fecha_fin: v('mcFechaFin'), anio: v('mcAnio'),
+    monto_letras: v('mcMontoLetras'), monto_numero: v('mcMontoNumero'), fecha_firma_doc: v('mcFechaFirmaDoc')
+  };
+  const faltan = faltanDatosContrato(datos);
+  if (faltan.length) { toast('Falta completar: ' + faltan.join(', ')); return; }
+  const btn = document.getElementById('btnGenContrato');
+  btn.disabled = true; btn.textContent = 'Generando...';
+  try {
+    const row = await crearContrato(datos, mailContratoCtx && mailContratoCtx.convId, mailContratoCtx && mailContratoCtx.personaId, to || null, null, null, mailFromArea);
+    await bajarContratoPDF(row);
+    const link = linkDeFirma(row.token);
+    const copiado = await copiarAlPortapapeles(link);
+    closeM('mMailConf');
+    mostrarLinkFirma(row.nombre, link, copiado);
+  } catch (err) {
+    toast('Error: ' + (err.message || 'no se pudo generar el contrato'));
+  }
+  btn.disabled = false; btn.textContent = 'Generar sin enviar';
+}
+
+// Desde el detalle de un contrato ya creado, para volver a tener el link o el PDF.
+async function copiarLinkDeContrato() {
+  if (!ctTraceRow || !ctTraceRow.token) return;
+  const link = linkDeFirma(ctTraceRow.token);
+  const ok = await copiarAlPortapapeles(link);
+  mostrarLinkFirma(ctTraceRow.nombre, link, ok);
+}
+async function descargarContratoSinFirmar() {
+  if (!ctTraceRow || !ctTraceRow.texto_contrato) { toast('Este contrato no tiene texto guardado'); return; }
+  const btn = document.getElementById('ctPdfBtn');
+  btn.disabled = true; btn.textContent = 'Generando...';
+  try { await bajarContratoPDF(ctTraceRow); }
+  catch (err) { toast('Error: ' + (err.message || 'no se pudo generar el PDF')); }
+  btn.disabled = false; btn.textContent = '↓ Descargar PDF';
+}
+
 async function sendConfirmationMail() {
   const to = document.getElementById('mailTo').value.trim();
   const subject = document.getElementById('mailSubject').value.trim();
@@ -4277,6 +4414,8 @@ async function verContratoTrace(id) {
   document.getElementById('ctReenviarBtn').style.display = 'none';
   document.getElementById('ctDescargarBtn').style.display = 'none';
   document.getElementById('ctBorrarBtn').style.display = 'none';
+  document.getElementById('ctLinkBtn').style.display = 'none';
+  document.getElementById('ctPdfBtn').style.display = 'none';
   showM('mContratoTrace');
   const [{ data: row }, { data: eventos }] = await Promise.all([
     sb.from('contratos').select('*').eq('id', id).single(),
@@ -4300,6 +4439,12 @@ async function verContratoTrace(id) {
     </div>
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:10px 0 6px">Trazabilidad</div>
     ${timeline}`;
+  // Mientras no esté firmado, sirven el link y el PDF sin firmar: es la forma de
+  // mandarlo a mano cuando el envío automático no está disponible.
+  document.getElementById('ctLinkBtn').style.display = row.estado !== 'firmado' ? 'inline-block' : 'none';
+  const pdfBtn = document.getElementById('ctPdfBtn');
+  pdfBtn.style.display = (row.estado !== 'firmado' && row.texto_contrato) ? 'inline-block' : 'none';
+  pdfBtn.disabled = false; pdfBtn.textContent = '↓ Descargar PDF';
   document.getElementById('ctReenviarBtn').style.display = row.estado !== 'firmado' ? 'inline-block' : 'none';
   document.getElementById('ctDescargarBtn').style.display = (row.estado === 'firmado' && row.pdf_firmado) ? 'inline-block' : 'none';
   const bb = document.getElementById('ctBorrarBtn');
@@ -4524,6 +4669,7 @@ async function openSolView(id) {
   html += fld(s.area === 'espana' ? 'Posiciones' : 'Puesto de interés', s.puesto_interes);
   html += fld('Disponibilidad', s.disponibilidad);
   html += '<div class="cv-section-divider"></div>';
+  if (usuarioInstagram(s.instagram)) html += `<div class="cv-viewer-field"><div class="cv-viewer-label">Instagram</div><div class="cv-viewer-value">${chipInstagram(s.instagram)}</div></div>`;
   html += fld('Experiencia', s.experiencia);
   html += fld('Formación', s.formacion);
   html += fld('Habilidades', s.habilidades);
