@@ -321,6 +321,7 @@ tr:hover td{background:#fafafa}
 .ic-tilde-circ{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E")}
 .ic-lapiz{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z'/%3E%3C/svg%3E")}
 .ic-etiqueta{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.6 13.4 12 22l-9-9V3h10z'/%3E%3Ccircle cx='7.5' cy='7.5' r='1.3'/%3E%3C/svg%3E")}
+.ic-llave{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='7.5' cy='15.5' r='4.5'/%3E%3Cpath d='M10.7 12.3 21 2'/%3E%3Cpath d='m17 6 3 3'/%3E%3C/svg%3E")}
 .ic-firma{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 17c4 0 3-9 6-9s2 9 5 9 3-5 5-5'/%3E%3Cpath d='M2 21h20'/%3E%3C/svg%3E")}
 .ic-subir{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12'/%3E%3C/svg%3E")}
 .ic-bajar{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3'/%3E%3C/svg%3E")}
@@ -500,6 +501,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <button class="btn btn-sec btn-sm" onclick="openNotifs()" style="position:relative;padding:7px 10px" title="Notificaciones">
       <i class="ic ic-campana"></i> <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:999px;font-size:9px;padding:1px 5px;font-weight:700;line-height:1.4"></span>
     </button>
+    <button class="btn btn-sec btn-sm" onclick="openClave()" title="Cambiar mi contraseña"><i class="ic ic-llave"></i></button>
     <button class="btn btn-sec btn-sm" onclick="doLogout()">Salir</button>
   </div>
 </header>
@@ -1324,6 +1326,17 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   </div>
 </div>
 
+<div class="modal-bg" id="mClave" style="display:none" onclick="bgClose('mClave',event)">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title"><span><i class="ic ic-llave"></i> Cambiar contraseña</span><button class="mclose" onclick="closeM('mClave')">✕</button></div>
+    <div style="font-size:12px;color:#9ca3af;margin-bottom:14px">Cambia la contraseña de <strong id="claveMail"></strong>. Al guardar seguís con la sesión abierta.</div>
+    <div class="fg"><label>Contraseña nueva</label><input type="password" class="fi" id="claveNueva" placeholder="Al menos 6 caracteres" autocomplete="new-password" oninput="revisarClave()"></div>
+    <div class="fg"><label>Repetila</label><input type="password" class="fi" id="claveRepe" placeholder="La misma otra vez" autocomplete="new-password" oninput="revisarClave()" onkeydown="if(event.key==='Enter')guardarClave()"></div>
+    <div id="claveAviso" style="font-size:11.5px;min-height:16px;color:var(--alerta)"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mClave')">Cancelar</button><button class="btn btn-primary" id="claveBtn" onclick="guardarClave()">Guardar</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1452,6 +1465,46 @@ async function loadUserRole() {
     contratos = contratos.filter(c => convs.some(x => x.id === c.conv_id));
     populateCtFilters();
   }
+}
+
+// ── CAMBIAR MI CONTRASEÑA ─────────────────────────────────────
+// Sin esto la única forma era entrar a Supabase o pedir un mail de
+// recuperación, y el envío de mails no siempre está disponible.
+function openClave() {
+  document.getElementById('claveMail').textContent = (document.getElementById('userEmail').textContent || '').trim();
+  document.getElementById('claveNueva').value = '';
+  document.getElementById('claveRepe').value = '';
+  document.getElementById('claveAviso').textContent = '';
+  showM('mClave');
+  setTimeout(() => document.getElementById('claveNueva').focus(), 50);
+}
+// Se avisa mientras escribe, no al apretar Guardar.
+function revisarClave() {
+  const a = document.getElementById('claveNueva').value;
+  const b = document.getElementById('claveRepe').value;
+  const av = document.getElementById('claveAviso');
+  if (a && a.length < 6) { av.textContent = 'Tiene que tener al menos 6 caracteres'; return false; }
+  if (b && a !== b) { av.textContent = 'Las dos no coinciden'; return false; }
+  av.textContent = '';
+  return a.length >= 6 && a === b;
+}
+async function guardarClave() {
+  const a = document.getElementById('claveNueva').value;
+  const b = document.getElementById('claveRepe').value;
+  const av = document.getElementById('claveAviso');
+  if (a.length < 6) { av.textContent = 'Tiene que tener al menos 6 caracteres'; return; }
+  if (a !== b) { av.textContent = 'Las dos no coinciden'; return; }
+  const btn = document.getElementById('claveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const { error } = await sb.auth.updateUser({ password: a });
+    if (error) throw error;
+    closeM('mClave');
+    toast('Contraseña cambiada');
+  } catch (err) {
+    av.textContent = (err && err.message) ? err.message : 'No se pudo cambiar';
+  }
+  btn.disabled = false; btn.textContent = 'Guardar';
 }
 
 async function doLogout() {
