@@ -925,13 +925,17 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 
 <div class="modal-bg" id="mPicker" style="display:none" onclick="bgClose('mPicker',event)">
   <div class="modal">
-    <div class="modal-title"><span>Agregar desde nómina</span><button class="mclose" onclick="closeM('mPicker')">✕</button></div>
+    <div class="modal-title"><span>Agregar personas</span><button class="mclose" onclick="closeM('mPicker')">✕</button></div>
     <input type="text" class="picker-srch" id="pickerSrch" placeholder="Buscar por nombre..." oninput="renderPicker()">
     <div style="margin-bottom:8px">
       <select class="filt" id="pickerAreaF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select>
       <select class="filt" id="pickerStF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px;margin-left:6px"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="contactado">Contactado</option><option value="confirmado">Confirmado</option></select>
       <select class="filt" id="pickerTagF" onchange="renderPicker()" style="font-size:12px;padding:5px 8px;margin-left:6px"><option value="">Todas las etiquetas</option></select>
     </div>
+    <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--r-ink2);margin-bottom:8px;cursor:pointer">
+      <input type="checkbox" class="cb" id="pickerSolChk" onchange="togglePickerSol()">
+      Incluir inscripciones sin aprobar <span style="color:var(--r-faint)">— al agregarlas se aprueban y pasan a la nómina</span>
+    </label>
     <div class="picker-list" id="pickerList"></div>
     <div style="font-size:12px;color:#9ca3af;margin-top:8px" id="pickerSelCount">0 seleccionados</div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mPicker')">Cancelar</button><button class="btn btn-primary" onclick="confirmPicker()">Agregar seleccionados</button></div>
@@ -2910,33 +2914,120 @@ function renderPicker() {
   const q = document.getElementById('pickerSrch').value.toLowerCase().trim(); const af = document.getElementById('pickerAreaF').value; const sf = document.getElementById('pickerStF').value; const tgf = document.getElementById('pickerTagF') ? document.getElementById('pickerTagF').value : '';
   const alreadyIn = new Set(posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId).map(x => x.personaId).filter(Boolean));
   const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (tgf && !(p.etiquetas || []).includes(tgf)) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
+  // Las inscripciones sin aprobar se identifican con "sol:" adelante, para no
+  // confundirlas con los id de la nómina.
+  const sols = pickerConSol ? solicitudesSinAprobar(af, q) : [];
   const el = document.getElementById('pickerList');
-  if (!avail.length) { el.innerHTML = '<div class="picker-empty">Sin resultados</div>'; document.getElementById('pickerSelCount').textContent = '0 seleccionados'; return; }
+  if (!avail.length && !sols.length) { el.innerHTML = '<div class="picker-empty">Sin resultados</div>'; document.getElementById('pickerSelCount').textContent = '0 seleccionados'; return; }
   el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${rotulo(p.estado)}</span></div>`).join('');
+  el.innerHTML += sols.map(so => { const k = 'sol:' + so.id; return `<div class="picker-item ${pickerSel.has(k) ? 'sel' : ''}" onclick="togglePickerSel('${k}')"><input type="checkbox" class="cb" ${pickerSel.has(k) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${k}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(so.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(so.area)}${so.cuit ? ' · ' + e(so.cuit) : ''}</div></div><span class="a-badge" style="font-size:10px;background:#fef3c7;color:#92400e">Sin aprobar</span></div>`; }).join('');
   document.getElementById('pickerSelCount').textContent = pickerSel.size + ' seleccionados';
 }
 function togglePickerSel(id) { if (pickerSel.has(id)) pickerSel.delete(id); else pickerSel.add(id); renderPicker(); }
 
+
+// ── CHOQUES DE FECHA AL ASIGNAR ───────────────────────────────
+// Un documento no puede estar en dos puestos el mismo día, ni siquiera en
+// puestos distintos del mismo show.
+// Antes se comparaba la lista de fechas entera como texto (cv.fecha === c.fecha),
+// así que una convocatoria del 17 y 18 no chocaba con otra del 18: sólo saltaba
+// cuando las dos tenían exactamente las mismas fechas. Ahora se comparan los
+// días uno por uno, y por documento, que es lo que identifica a la persona:
+// alguien con dos fichas y el mismo CUIT también se detecta.
+function choquesDeFecha(persona, convDestino, puestoDestino) {
+  const fechas = new Set(convFechasArr(convDestino));
+  if (!fechas.size) return [];
+  const doc = normDoc(persona && persona.cuit);
+  const choques = [];
+  posts.forEach(x => {
+    if (x.estado === 'rechazado') return;
+    // La misma persona, por id o por documento.
+    const otra = people.find(y => y.id === x.personaId);
+    const mismo = x.personaId === persona.id || (doc && normDoc(x.cuit || (otra && otra.cuit)) === doc);
+    if (!mismo) return;
+    if (x.convId === convDestino.id && x.puestoId === puestoDestino.id) return;   // ya está en este puesto
+    const conv = convs.find(c => c.id === x.convId); if (!conv) return;
+    const comunes = convFechasArr(conv).filter(f => fechas.has(f));
+    if (!comunes.length) return;
+    const puesto = (conv.puestos || []).find(q => q.id === x.puestoId);
+    choques.push({ fechas: comunes, conv: conv.nombre, puesto: (puesto && puesto.nombre) || 'un puesto', mismaConv: conv.id === convDestino.id });
+  });
+  return choques;
+}
+function textoChoque(nombre, ch) {
+  const dias = ch.fechas.map(f => fmtFechaCorta ? fmtFechaCorta(f) : f).join(', ');
+  return `· ${nombre} — ${dias}: ya está en ${ch.mismaConv ? 'el puesto' : '"' + ch.conv + '", puesto'} ${ch.puesto}`;
+}
+
+// ── CONVOCAR A ALGUIEN QUE TODAVÍA NO ESTÁ APROBADO ───────────
+// Al puesto sólo se podía sumar gente de la nómina, y a la nómina se entra
+// recién al aprobar la solicitud. Con esto se puede elegir una inscripción sin
+// aprobar: al confirmar se aprueba primero (pasa a la nómina con todos sus
+// datos) y después se asigna, en un solo paso.
+let pickerConSol = false;
+function togglePickerSol() {
+  pickerConSol = !!document.getElementById('pickerSolChk').checked;
+  renderPicker();
+}
+// Inscripciones sin aprobar que todavía no tienen ficha en la nómina.
+function solicitudesSinAprobar(area, q) {
+  const enNomina = new Set(people.map(p => normDoc(p.cuit)).filter(Boolean));
+  return (solicitudes || []).filter(s => {
+    if (s.estado !== 'pendiente' && s.estado !== 'en_revision') return false;
+    if (area && s.area !== area) return false;
+    const d = normDoc(s.cuit);
+    if (d && enNomina.has(d)) return false;
+    const qd = q ? q.replace(/\D/g, '') : '';
+    if (q && !(s.nombre || '').toLowerCase().includes(q) && !(qd && normDoc(s.cuit).includes(qd))) return false;
+    return true;
+  }).slice(0, 50);
+}
+// Aprueba las inscripciones elegidas y devuelve los id de persona que quedaron.
+async function aprobarElegidas(claves) {
+  const ids = [];
+  for (const k of claves) {
+    const solId = k.slice(4);
+    const sol = solicitudes.find(x => x.id === solId); if (!sol) continue;
+    await singleSolSt(solId, 'aprobado');
+    const d = normDoc(sol.cuit);
+    const pers = d ? people.find(p => normDoc(p.cuit) === d) : people.find(p => p.nombre === sol.nombre);
+    if (pers) ids.push(pers.id);
+  }
+  return ids;
+}
+
 async function confirmPicker() {
   if (!pickerSel.size) { toast('Seleccioná al menos una persona'); return; }
   const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return;
+  // Primero las inscripciones sin aprobar: se aprueban y entran a la nómina,
+  // y desde ahí siguen el mismo camino que el resto.
+  const aAprobar = [...pickerSel].filter(k => String(k).startsWith('sol:'));
+  if (aAprobar.length) {
+    if (!confirm(`${aAprobar.length} de las seleccionadas todavía no están aprobadas. Se van a aprobar y pasar a la nómina. ¿Seguir?`)) return;
+    const nuevos = await aprobarElegidas(aAprobar);
+    aAprobar.forEach(k => pickerSel.delete(k));
+    nuevos.forEach(id => pickerSel.add(id));
+    if (!pickerSel.size) { closeM('mPicker'); renderPuestos(); renderDetStats(); return; }
+  }
   const libres = Math.max(0, p.cupos - posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId && x.estado !== 'rechazado').length);
   if (pickerSel.size > libres) { toast(`Este puesto tiene ${libres} cupo(s) libre(s) y estás agregando ${pickerSel.size}. Quitá ${pickerSel.size - libres} para no pasarte del tope.`); return; }
   const outs = [], conflicts = [], rotViolations = [], ausPenal = [];
   pickerSel.forEach(pid => {
     const pers = people.find(x => x.id === pid);
     if (pers?.out_flag) outs.push(pers.nombre);
-    if (c?.fecha) {
-      const conflict = posts.find(x => x.personaId === pid && x.convId !== currentConvId && x.estado !== 'rechazado' && convs.find(cv => cv.id === x.convId && cv.fecha === c.fecha));
-      if (conflict) { const conflConv = convs.find(cv => cv.id === conflict.convId); conflicts.push(`${pers?.nombre} (ya en "${conflConv?.nombre}")`); }
-    }
+    if (pers) choquesDeFecha(pers, c, p).forEach(ch => conflicts.push(textoChoque(pers.nombre, ch)));
     const rot = checkRotacion(pid);
     if (rot.excede) rotViolations.push(`${pers?.nombre} (${rot.count}/${rot.max} eventos en ${rotacionConfig.dias_periodo}d)`);
     const a = checkAusencia(pers);
     if (a.penalizado) ausPenal.push(`${pers?.nombre} (faltó — no reconvocar hasta ${a.hasta ? a.hasta.toLocaleDateString('es-AR') : ''})`);
   });
   if (outs.length && !confirm(`⚠ Personas marcadas como OUT:\n${outs.join(', ')}\n\n¿Continuar de todas formas?`)) return;
-  if (conflicts.length && !confirm(`⚠ Conflicto de fecha — ya asignadas en otro recital ese día:\n${conflicts.join('\n')}\n\n¿Asignar igual?`)) return;
+  // Esto no se puede saltear: un documento en dos puestos el mismo día es un
+  // problema real el día del show, no un aviso.
+  if (conflicts.length) {
+    alert(`No se pueden agregar: ya están anotadas ese mismo día.\n\n${conflicts.join('\n')}\n\nQuitalas del otro puesto primero, o sacalas de la selección.`);
+    return;
+  }
   if (rotViolations.length) {
     const msg = `⚠ Límite de rotación superado (${rotacionConfig.max_eventos} eventos en ${rotacionConfig.dias_periodo} días):\n${rotViolations.join('\n')}`;
     if (rotacionConfig.modo === 'bloqueo') { alert(msg + '\n\nNo se puede asignar en modo bloqueo.'); return; }
