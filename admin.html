@@ -1601,8 +1601,13 @@ async function loadAll() {
     sb.from('user_profiles').select('*'),
     sb.from('supervisor_convocatorias').select('*'),
     (async () => {
-      // Paginado (Supabase trae máx. 1000 por request) y sin archivo_cv (pesa cientos de MB).
-      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,experiencia,formacion,habilidades,disponibilidad,cbu,numero_cuenta,banco,antecedentes,beneficio_social,estado,conv_id,puesto_id,puesto_nombre,created_at,fecha_nacimiento,talla,permiso_trabajo,contacto_emergencia,observaciones,iban,titular_cuenta,acepta_privacidad,acepta_privacidad_at';
+      // Paginado (Supabase trae máx. 1000 por request) y sólo con lo que la lista
+      // usa: nombre, documento, área, puesto, localidad, fecha y estado, más lo
+      // que necesita el mail. Los textos largos (experiencia, formación,
+      // observaciones), los datos bancarios y el CV son la mayor parte del peso
+      // y sólo hacen falta al abrir una solicitud o al aprobarla, así que se
+      // buscan ahí, de a una fila (ver solCompleta).
+      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,estado,conv_id,puesto_id,puesto_nombre,created_at';
       let all = [], f = 0;
       while (true) {
         const { data, error } = await sb.from('solicitudes').select(cols).order('created_at', { ascending: false }).range(f, f + 999);
@@ -4229,14 +4234,23 @@ function solToggleAll() { const v = document.getElementById('solSelAll')?.checke
 function solToggleSel(id) { if(solSelIds.has(id)) solSelIds.delete(id); else solSelIds.add(id); updateSolBulkBar(); }
 function updateSolBulkBar() { const bar=document.getElementById('solBulk'); bar.classList.toggle('on',solSelIds.size>0); document.getElementById('solBulkCnt').textContent=solSelIds.size+' seleccionadas'; }
 
+// La lista trae trece columnas; el resto (textos largos, datos bancarios, CV)
+// se busca acá, una sola vez por fila, cuando de verdad hace falta.
+async function solCompleta(id) {
+  const s = solicitudes.find(x => x.id === id); if (!s) return null;
+  if (s._completa) return s;
+  try {
+    const { data } = await sb.from('solicitudes').select('*').eq('id', id).single();
+    if (data) Object.assign(s, data);
+  } catch (_) {}
+  if (s.archivo_cv === undefined) s.archivo_cv = null;
+  s._completa = true;
+  return s;
+}
+
 async function openSolView(id) {
   solViewId = id;
-  const s = solicitudes.find(x => x.id === id); if (!s) return;
-  // El CV (archivo_cv) no se carga en la lista porque pesa mucho; se trae acá, por fila, bajo demanda.
-  if (s.archivo_cv === undefined) {
-    try { const { data } = await sb.from('solicitudes').select('archivo_cv').eq('id', id).single(); s.archivo_cv = data?.archivo_cv || null; }
-    catch (_) { s.archivo_cv = null; }
-  }
+  const s = await solCompleta(id); if (!s) return;
   document.getElementById('mSolTitle').textContent = `Solicitud — ${s.nombre}`;
   const fld = (l,v) => v !== null && v !== undefined && v !== '' ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div class="cv-viewer-value">${e(String(v))}</div></div>` : '';
   const bool = (l,v) => v !== null && v !== undefined ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;${v?'background:#fee2e2;color:#991b1b':'background:#d1fae5;color:#065f46'}">${v?'✓ Sí':'✗ No'}</div></div>` : '';
@@ -4317,11 +4331,9 @@ async function singleSolSt(id, estado) {
   }
   s.estado = estado;
   if (estado === 'aprobado') {
-    // Traer el CV de esta fila (no viene en la lista) para copiarlo a la nómina.
-    if (s.archivo_cv === undefined) {
-      try { const { data } = await sb.from('solicitudes').select('archivo_cv').eq('id', id).single(); s.archivo_cv = data?.archivo_cv || null; }
-      catch (_) { s.archivo_cv = null; }
-    }
+    // La lista no trae el CV ni los textos largos: se buscan acá para copiarlos
+    // a la nómina.
+    await solCompleta(id);
     // Antes se buscaba sólo por nombre: dos personas distintas que se llaman
     // igual quedaban fusionadas en una sola, y la segunda no entraba nunca a la
     // nómina aunque su solicitud figurara aprobada. Lo que identifica a alguien
