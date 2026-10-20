@@ -565,7 +565,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
     <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
     <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
-    <button class="btn btn-sec" onclick="exportNom()" title="Baja la lista en Excel (.xlsx)">↓ Exportar</button>
+    <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">↓ Exportar</button>
     <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter()"><i class="ic ic-doc"></i> Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
     <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
     <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
@@ -2515,14 +2515,40 @@ function descargarExcel(nombreArchivo, filas, nombreHoja) {
   toast('Descargado: ' + nombreArchivo);
 }
 
-function exportNom() {
+// Los datos bancarios no vienen en la lista de solicitudes: son cinco columnas
+// que casi nunca se miran y que, por 7.900 filas, hacían lenta la carga del
+// panel. Se buscan acá, una sola vez por sesión, cuando hace falta exportarlos.
+let datosBancarios = null;
+async function cargarDatosBancarios() {
+  if (datosBancarios) return datosBancarios;
+  const mapa = new Map();
+  let desde = 0;
+  while (true) {
+    const { data, error } = await sb.from('solicitudes')
+      .select('cuit,cbu,banco,numero_cuenta,iban,titular_cuenta')
+      .order('created_at').range(desde, desde + 999);
+    if (error || !data || !data.length) break;
+    data.forEach(x => { const d = normDoc(x.cuit); if (d && !mapa.has(d)) mapa.set(d, x); });
+    if (data.length < 1000) break;
+    desde += 1000;
+  }
+  datosBancarios = mapa;
+  return mapa;
+}
+
+async function exportNom() {
   // Si hay gente de España en lo exportado, se agregan sus columnas bancarias propias.
   const conEs = nomFiltered.some(p => p.area === 'espana');
   const hdrs = ['nombre', 'area', 'estado', 'cuit', 'email', 'telefono', 'notas', 'cbu', 'banco', 'numero_cuenta', ...(conEs ? ['iban', 'titular_cuenta'] : [])];
+  const btn = document.getElementById('btnExportNom');
+  if (btn) { btn.disabled = true; btn.textContent = 'Buscando datos...'; }
+  const banco = await cargarDatosBancarios();
+  if (btn) { btn.disabled = false; btn.innerHTML = '↓ Exportar'; }
   const rows = nomFiltered.map(p => {
-    // Los datos bancarios viven en la solicitud (registro); se matchea por CUIL.
+    // Los datos bancarios viven en la solicitud (el registro), no en la ficha;
+    // se cruzan por documento.
     const cuil = normDoc(p.cuit);
-    const sol = cuil ? solicitudes.find(s => normDoc(s.cuit) === cuil) : null;
+    const sol = cuil ? banco.get(cuil) : null;
     return [p.nombre, p.area, p.estado, p.cuit, p.email, p.tel, p.notas, sol && sol.cbu, sol && sol.banco, sol && sol.numero_cuenta, ...(conEs ? [sol && sol.iban, sol && sol.titular_cuenta] : [])];
   });
   descargarExcel(`nomina-${new Date().toISOString().slice(0, 10)}.xlsx`, [hdrs, ...rows], 'Nómina');
