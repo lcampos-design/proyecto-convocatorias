@@ -329,7 +329,7 @@ tr:hover td{background:#fafafa}
 .ic-recargar{--ic:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6'/%3E%3C/svg%3E")}
 
 /* ── Distintivo de área ───────────────────────────────────── */
-.a-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;
+.a-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;white-space:nowrap;
          font-size:11px;font-weight:600;letter-spacing:.01em;border:1px solid transparent;line-height:1.5}
 .a-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
 .a-mv{background:var(--arena-sv);color:var(--arena);border-color:color-mix(in srgb,var(--arena) 22%,transparent)}
@@ -453,6 +453,13 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .ct-aviso-falta{color:#92400e}
 .lbl-auto{font-weight:500;text-transform:none;letter-spacing:0;color:#9ca3af;font-size:10.5px;margin-left:5px}
 
+
+/* Vista previa del CV dentro de la ficha */
+.cv-prev{margin-top:9px;border:1px solid var(--r-line);border-radius:10px;overflow:hidden;background:#fafafa}
+.cv-prev img{display:block;width:100%;height:auto}
+.cv-prev iframe{display:block;width:100%;height:58vh;min-height:320px;border:0;background:#fff}
+.cv-prev-msg{padding:16px;font-size:12px;color:var(--r-faint);text-align:center}
+
 </style>
 </head>
 <body>
@@ -527,7 +534,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="atab atab-out" data-area="out" onclick="setNomTab('out')"><i class="ic ic-prohibido"></i> OUT <span class="tc" id="tcOut">0</span></div>
   </div>
   <div class="ctrlbar">
-    <input type="text" class="srch" id="nomSrch" placeholder="Buscar por nombre..." oninput="nomSearch()">
+    <input type="text" class="srch" id="nomSrch" placeholder="Buscar por nombre, CUIL, email o teléfono..." oninput="nomSearch()">
     <select class="filt" id="nomStFilter" onchange="nomFilter()">
       <option value="">Todos los estados</option>
       <option value="pendiente">Pendiente</option><option value="contactado">Contactado</option>
@@ -543,6 +550,12 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <option value="">Toda la nómina</option>
       <option value="rot">⚠ En rotación</option>
       <option value="libre">✓ Disponibles</option>
+    </select>
+    <select class="filt" id="nomDecFilter" onchange="nomFilter()" title="Filtrar por lo declarado al inscribirse">
+      <option value="">Declaración jurada</option>
+      <option value="antec">Con antecedentes penales</option>
+      <option value="benef">Cobra beneficio social</option>
+      <option value="ambos">Con antecedentes o beneficio</option>
     </select>
     <select class="filt" id="nomTagFilter" onchange="nomFilter()" title="Filtrar por etiqueta">
       <option value="">Todas las etiquetas</option>
@@ -569,6 +582,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <span style="color:#c4b5fd">|</span> Etiqueta:
     <select class="filt" id="bulkTag" style="font-size:12px;padding:4px 8px"><option value="">— etiqueta —</option></select>
     <button class="btn btn-sm btn-primary" onclick="applyBulkTag()">+ Etiquetar</button>
+    <span style="color:#c4b5fd">|</span>
+    <button class="btn btn-sm btn-danger" onclick="openOutBulk()"><i class="ic ic-prohibido"></i> Marcar OUT</button>
   </div>
   <div class="tbl-wrap"><table>
     <thead><tr>
@@ -1000,7 +1015,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 
 <!-- Modal: Disponibilidad (admin) -->
 <div class="modal-bg" id="mDispAdmin" style="display:none" onclick="bgClose('mDispAdmin',event)">
-  <div class="modal" style="max-width:840px">
+  <div class="modal" style="max-width:1120px">
     <div class="modal-title"><span id="mDispTitle">Disponibilidad</span><button class="mclose" onclick="closeM('mDispAdmin')">✕</button></div>
     <div id="dispBody"></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mDispAdmin')">Cerrar</button></div>
@@ -1607,7 +1622,7 @@ async function loadAll() {
       // observaciones), los datos bancarios y el CV son la mayor parte del peso
       // y sólo hacen falta al abrir una solicitud o al aprobarla, así que se
       // buscan ahí, de a una fila (ver solCompleta).
-      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,estado,conv_id,puesto_id,puesto_nombre,created_at';
+      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,estado,conv_id,puesto_id,puesto_nombre,created_at,antecedentes,beneficio_social';
       let all = [], f = 0;
       while (true) {
         const { data, error } = await sb.from('solicitudes').select(cols).order('created_at', { ascending: false }).range(f, f + 999);
@@ -1636,6 +1651,7 @@ async function loadAll() {
   userProfiles = upData || [];
   supConvLinks = scData || [];
   solicitudes = solData || [];
+  indexarSolicitudes();
   notificaciones = notifData || [];
   respuestas = respData || [];
   contratos = ctData || [];
@@ -1910,17 +1926,35 @@ function nomApply() {
   const semF = document.getElementById('nomSemFilter').value;
   const rotF = document.getElementById('nomRotFilter').value;
   const tagF = document.getElementById('nomTagFilter') ? document.getElementById('nomTagFilter').value : '';
+  const decF = document.getElementById('nomDecFilter') ? document.getElementById('nomDecFilter').value : '';
   nomFiltered = people.filter(p => {
     // Los OUT tienen su propia pestaña: no se mezclan con el resto de la nómina.
     if (nomAreaTab === 'out') { if (!p.out_flag) return false; }
     else if (p.out_flag) return false;
     else if (nomAreaTab !== 'all' && p.area !== nomAreaTab) return false;
     if (st && p.estado !== st) return false;
-    if (q && !p.nombre.toLowerCase().includes(q)) return false;
+    if (q) {
+      // Antes sólo buscaba por nombre. Los números se comparan sin guiones ni
+      // puntos, así que "20-43318136-5" encuentra lo mismo que "20433181365".
+      const qd = q.replace(/\D/g, '');
+      const coincide = p.nombre.toLowerCase().includes(q)
+        || (p.email || '').toLowerCase().includes(q)
+        || (qd && normDoc(p.cuit).includes(qd))
+        || (qd && String(p.tel || '').replace(/\D/g, '').includes(qd));
+      if (!coincide) return false;
+    }
     if (cvFilterOn && !p.cv) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
     if (rotF) { const r = checkRotacion(p.id); if (rotF === 'rot' && !r.excede) return false; if (rotF === 'libre' && r.excede) return false; }
     if (tagF && !(p.etiquetas || []).some(t => String(t).toLowerCase() === tagF.toLowerCase())) return false;
+    if (decF) {
+      // Lo declarado vive en la solicitud, no en la ficha de la nómina.
+      const sol = solicitudDe(p);
+      const ant = !!(sol && sol.antecedentes), ben = !!(sol && sol.beneficio_social);
+      if (decF === 'antec' && !ant) return false;
+      if (decF === 'benef' && !ben) return false;
+      if (decF === 'ambos' && !ant && !ben) return false;
+    }
     return true;
   });
   const cvCount = people.filter(p => !!p.cv).length;
@@ -2450,6 +2484,134 @@ async function saveCvEntry() {
   try { await sbUpsert('personas', { id: d.id, nombre: d.nombre, area: d.area, estado: d.estado, email: d.email, tel: d.tel, notas: d.notas, cv: d.cv }); toast(`✓ CV de ${nom} registrado`); } catch (_) {}
 }
 
+
+// ── LA PLANILLA QUE COMPLETÓ LA PERSONA, EN LA NÓMINA ─────────
+// Al aprobar una solicitud se copiaban unos datos y otros no: quedaban afuera
+// los antecedentes, el beneficio social, los datos bancarios y la localidad.
+// La solicitud no se borra al aprobarla, así que en vez de copiar más datos
+// —lo que no arreglaría a los ya aprobados— se busca la solicitud de cada
+// persona por documento y se lee de ahí.
+let solPorDoc = new Map();
+function indexarSolicitudes() {
+  solPorDoc = new Map();
+  (solicitudes || []).forEach(s => {
+    const d = normDoc(s.cuit);
+    if (d && !solPorDoc.has(d)) solPorDoc.set(d, s);
+  });
+}
+function solicitudDe(p) {
+  const d = normDoc(p && p.cuit);
+  return d ? (solPorDoc.get(d) || null) : null;
+}
+
+// Lo que la ficha de la nómina no tenía. Se arma con la solicitud ya completa.
+function pintarPlanillaSol(contenedorId, sol) {
+  const cont = document.getElementById(contenedorId); if (!cont) return;
+  if (!sol) { cont.innerHTML = ''; return; }
+  const fld = (l, v) => (v !== null && v !== undefined && String(v).trim() !== '')
+    ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div class="cv-viewer-value">${e(String(v))}</div></div>` : '';
+  const bool = (l, v) => (v !== null && v !== undefined)
+    ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${l}</div><div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;${v ? 'background:#fee2e2;color:#991b1b' : 'background:#d1fae5;color:#065f46'}">${v ? '✓ Sí' : '✗ No'}</div></div>` : '';
+  const titulo = t => `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:10px">${t}</div>`;
+  let h = '';
+  if (sol.localidad) h += '<div class="cv-section-divider"></div>' + fld('Localidad', localidadLinda(sol.localidad) || sol.localidad);
+  const banco = sol.cbu || sol.banco || sol.numero_cuenta;
+  if (banco) {
+    h += '<div class="cv-section-divider"></div>' + titulo('Datos bancarios');
+    h += fld('CBU', sol.cbu) + fld('Número de cuenta', sol.numero_cuenta) + fld('Banco', sol.banco);
+  }
+  const hayDec = (sol.antecedentes !== null && sol.antecedentes !== undefined) ||
+                 (sol.beneficio_social !== null && sol.beneficio_social !== undefined);
+  if (hayDec) {
+    h += '<div class="cv-section-divider"></div>' + titulo('Declaración jurada');
+    h += bool('Antecedentes penales', sol.antecedentes);
+    h += bool('Cobra beneficio social / plan de gobierno / AUH', sol.beneficio_social);
+  }
+  if (sol.acepta_privacidad_at) h += fld('Protección de datos', 'Aceptada el ' + fechaDMA(sol.acepta_privacidad_at));
+  if (h) h = '<div style="font-size:11px;color:#9ca3af;margin-top:4px">De la planilla que completó al inscribirse</div>' + h;
+  cont.innerHTML = h;
+}
+
+// Busca la solicitud entera (tiene los campos que la lista no trae) y la pinta.
+async function cargarPlanillaSol(personaId) {
+  const p = people.find(x => x.id === personaId); if (!p) return;
+  const sol = solicitudDe(p); if (!sol) return;
+  pintarPlanillaSol('cvSolBox', sol);
+  const completa = await solCompleta(sol.id);
+  pintarPlanillaSol('cvSolBox', completa || sol);
+}
+
+// ── VER EL CV SIN DESCARGARLO ─────────────────────────────────
+// Hasta acá el panel sólo mostraba el nombre del archivo y un botón de bajar,
+// así que para mirar un CV había que descargarlo y abrirlo aparte.
+// Se muestra la imagen o el PDF dentro de la misma ventana.
+
+// Las direcciones "data:" no funcionan dentro de un marco en Chrome; se pasa a
+// blob, que sí. Se liberan al cerrar la ventana para no dejarlas colgadas.
+let cvBlobUrls = [];
+function dataUrlABlob(dataUrl) {
+  const partes = String(dataUrl || '').split(',');
+  if (partes.length < 2) return null;
+  const tipo = (partes[0].match(/data:([^;]+)/) || [])[1] || 'application/octet-stream';
+  try {
+    const bin = atob(partes[1]);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([buf], { type: tipo }));
+    cvBlobUrls.push(url);
+    return { url, tipo };
+  } catch (_) { return null; }
+}
+function soltarCvBlobs() { cvBlobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (_) {} }); cvBlobUrls = []; }
+
+function tipoDeArchivo(archivo) {
+  const t = String((archivo && archivo.tipo) || '').toLowerCase();
+  const n = String((archivo && archivo.nombre) || '').toLowerCase();
+  if (t.startsWith('image/') || /\.(jpe?g|png|gif|webp|avif|bmp)$/.test(n)) return 'imagen';
+  if (t === 'application/pdf' || /\.pdf$/.test(n)) return 'pdf';
+  return 'otro';
+}
+
+// Dibuja la vista previa dentro del contenedor indicado.
+function pintarVistaCv(contenedorId, archivo, alBajar) {
+  const cont = document.getElementById(contenedorId); if (!cont) return;
+  if (!archivo) { cont.innerHTML = ''; return; }
+  const clase = tipoDeArchivo(archivo);
+  const cabecera = `<div class="cv-file-box">
+      <span style="font-size:18px"><i class="ic ic-clip"></i></span>
+      <div style="flex:1"><div style="font-weight:500;font-size:13px">${e(archivo.nombre || 'Archivo')}</div>
+      <div style="font-size:11px;color:#9ca3af">${e(archivo.tipo || '')}</div></div>
+      ${alBajar ? `<button class="btn btn-sec btn-xs" onclick="${alBajar}">↓ Descargar</button>` : ''}
+    </div>`;
+  if (!archivo.datos) {
+    cont.innerHTML = cabecera + `<div class="cv-prev"><div class="cv-prev-msg">Cargando el archivo…</div></div>`;
+    return;
+  }
+  if (clase === 'otro') {
+    cont.innerHTML = cabecera + `<div class="cv-prev"><div class="cv-prev-msg">Este formato no se puede ver acá. Descargalo para abrirlo.</div></div>`;
+    return;
+  }
+  const b = dataUrlABlob(archivo.datos);
+  if (!b) { cont.innerHTML = cabecera + `<div class="cv-prev"><div class="cv-prev-msg">No se pudo abrir el archivo.</div></div>`; return; }
+  cont.innerHTML = cabecera + `<div class="cv-prev">${clase === 'imagen'
+    ? `<img src="${b.url}" alt="${e(archivo.nombre || 'CV')}">`
+    : `<iframe src="${b.url}#toolbar=1" title="${e(archivo.nombre || 'CV')}"></iframe>`}</div>`;
+}
+
+// El base64 de una persona no viene en la lista; se trae acá y después se pinta.
+async function cargarVistaCvPersona(id) {
+  const p = people.find(x => x.id === id); if (!p || !p.cv || !p.cv.archivo) return;
+  pintarVistaCv('cvPrevBox', p.cv.archivo, `downloadCvFileById('${id}')`);
+  if (!p.cv.archivo.datos) {
+    try {
+      const { data } = await sb.from('personas').select('cv').eq('id', id).single();
+      const datos = data && data.cv && data.cv.archivo && data.cv.archivo.datos;
+      if (datos) p.cv.archivo.datos = datos;
+    } catch (_) {}
+    pintarVistaCv('cvPrevBox', p.cv.archivo, `downloadCvFileById('${id}')`);
+  }
+}
+
 function viewCv(id) {
   const p = people.find(x => x.id === id); if (!p || !p.cv) return;
   const cv = p.cv;
@@ -2466,8 +2628,11 @@ function viewCv(id) {
     html += fld('Contacto de emergencia', cv.contactoEmergencia); html += fld('Observaciones', cv.observaciones);
     html += fld('IBAN', cv.iban); html += fld('Titular de la cuenta', cv.titularCuenta);
   }
-  if (cv.archivo) html += `<div class="cv-section-divider"></div><div class="cv-file-box"><span style="font-size:18px"><i class="ic ic-clip"></i></span><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(cv.archivo.nombre)}</div><div style="font-size:11px;color:#9ca3af">${cv.archivo.tipo}</div></div></div>`;
+  html += `<div id="cvSolBox"></div>`;
+  if (cv.archivo) html += `<div class="cv-section-divider"></div><div id="cvPrevBox"></div>`;
   document.getElementById('cvViewBody').innerHTML = html;
+  cargarPlanillaSol(id);
+  if (cv.archivo) cargarVistaCvPersona(id);
   const dlBtn = document.getElementById('cvDownloadBtn'); dlBtn.style.display = cv.archivo ? 'inline-flex' : 'none'; dlBtn.dataset.id = id;
   showM('mCvView');
 }
@@ -2851,7 +3016,8 @@ async function bulkCandDel() { if (!candSelIds.size) return; if (!confirm(`¿Eli
 
 // ── UTILS ──
 function showM(id) { document.getElementById(id).style.display = 'flex'; }
-function closeM(id) { document.getElementById(id).style.display = 'none'; }
+function closeM(id) {
+  if (id === 'mCvView' || id === 'mSolView') soltarCvBlobs(); document.getElementById(id).style.display = 'none'; }
 function bgClose(id, ev) { if (ev.target.classList.contains('modal-bg')) closeM(id); }
 function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2800); }
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') document.querySelectorAll('.modal-bg').forEach(m => m.style.display = 'none'); });
@@ -4309,8 +4475,9 @@ async function openSolView(id) {
     html += bool('Cobra beneficio social / plan de gobierno / AUH', s.beneficio_social);
   }
 
-  if (s.archivo_cv) html += `<div class="cv-section-divider"></div><div class="cv-file-box"><span style="font-size:18px"><i class="ic ic-clip"></i></span><div style="flex:1"><div style="font-weight:500;font-size:13px">${e(s.archivo_cv.nombre)}</div></div><button class="btn btn-sec btn-xs" onclick="downloadSolFile('${s.id}')">↓ Descargar</button></div>`;
+  if (s.archivo_cv) html += `<div class="cv-section-divider"></div><div id="solPrevBox"></div>`;
   document.getElementById('mSolBody').innerHTML = html;
+  if (s.archivo_cv) pintarVistaCv('solPrevBox', s.archivo_cv, `downloadSolFile('${s.id}')`);
   showM('mSolView');
 }
 function downloadSolFile(id) { const s = solicitudes.find(x => x.id === id); if(!s?.archivo_cv) return; const a=document.createElement('a'); a.href=s.archivo_cv.datos; a.download=s.archivo_cv.nombre; a.click(); }
@@ -4827,7 +4994,20 @@ async function keepAsMaster(masterId, cuit) {
 }
 
 // ── OUTS ──
+// Marcar OUT a todos los seleccionados, con la misma categoría y nota.
+let outBulkIds = null;
+function openOutBulk() {
+  const ids = selIds();
+  if (!ids.length) { toast('No hay nadie seleccionado'); return; }
+  outBulkIds = ids; outTargetId = null;
+  document.getElementById('mOutTitle').textContent = `Marcar como OUT — ${ids.length} persona${ids.length === 1 ? '' : 's'}`;
+  document.getElementById('outCat').value = 'comportamiento';
+  document.getElementById('outNota').value = '';
+  showM('mOut');
+}
+
 function openOutModal(id) {
+  outBulkIds = null;
   outTargetId = id;
   const p = people.find(x => x.id === id);
   document.getElementById('mOutTitle').textContent = `Marcar como OUT — ${p?.nombre || ''}`;
@@ -4836,6 +5016,15 @@ function openOutModal(id) {
   showM('mOut');
 }
 async function saveOut() {
+  const cat = document.getElementById('outCat').value;
+  const nota = document.getElementById('outNota').value.trim();
+  if (outBulkIds) {
+    const ids = outBulkIds; outBulkIds = null;
+    ids.forEach(id => { const x = people.find(y => y.id === id); if (x) { x.out_flag = true; x.out_categoria = cat; x.out_nota = nota; } });
+    nomRefresh(); closeM('mOut');
+    try { await sbUpdateIn('personas', ids, { out_flag: true, out_categoria: cat, out_nota: nota }); toast(`${ids.length} persona(s) marcadas como OUT`); } catch (_) {}
+    return;
+  }
   const p = people.find(x => x.id === outTargetId); if (!p) return;
   p.out_flag = true; p.out_categoria = document.getElementById('outCat').value; p.out_nota = document.getElementById('outNota').value.trim();
   nomRefresh(); closeM('mOut');
