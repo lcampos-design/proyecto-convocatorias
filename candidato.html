@@ -161,6 +161,10 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
         <label><span class="solo-ar">Localidad</span><span class="solo-es">Ciudad / zona de residencia</span> <span class="req">*</span></label>
         <input type="text" class="fi" id="fLocalidad" placeholder="Ej: Villa Crespo (CABA) / La Plata (Bs. As.)">
       </div>
+      <div class="fg">
+        <label>Instagram</label>
+        <input type="text" class="fi" id="fInstagram" placeholder="@tuusuario" autocapitalize="off" autocorrect="off" spellcheck="false">
+      </div>
     </div>
 
     <!-- Área de interés -->
@@ -636,6 +640,7 @@ async function submitForm() {
     email,
     tel,
     localidad,
+    instagram:      document.getElementById('fInstagram').value.trim() || null,
     cuit:           document.getElementById('fCuit').value.trim() || null,
     puesto_interes: puesto,
     experiencia:    exp,
@@ -735,6 +740,7 @@ async function submitFormEs() {
     email,
     tel,
     localidad:            ciudad,
+    instagram:            val('fInstagram') || null,
     cuit:                 dni,
     puesto_interes:       posiciones.join(', '),
     experiencia:          experiencia || null,
