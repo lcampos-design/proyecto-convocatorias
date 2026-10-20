@@ -469,7 +469,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <input type="password" id="loginPass" class="l-in" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     <div class="l-err" id="loginErr"></div>
     <button class="l-btn" id="loginBtn" onclick="doLogin()">Ingresar</button>
-    <div style="text-align:center;font-size:12px;color:#4b5563;margin-top:16px">Contactá al admin si no tenés acceso</div>
+    <div style="text-align:center;margin-top:14px"><a href="#" id="olvideLink" onclick="event.preventDefault();mandarRecupero()" style="font-size:12px;color:#534AB7;text-decoration:none">Olvidé mi contraseña</a></div>
+    <div style="text-align:center;font-size:12px;color:#4b5563;margin-top:10px">Contactá al admin si no tenés acceso</div>
   </div>
 </div>
 
@@ -1401,14 +1402,51 @@ async function initAuth() {
     document.getElementById('loginErr').style.display = 'block';
     return;
   }
+  // Supabase deja el tipo en el fragmento de la dirección (#...&type=recovery).
+  // Se guarda antes de mostrar nada, porque la biblioteca lo limpia al leerlo.
+  const vieneDeRecupero = /[#&]type=recovery/.test(location.hash || '');
   const { data: { session } } = await sb.auth.getSession();
-  if (session) showApp(session.user);
+  if (session) {
+    showApp(session.user);
+    if (vieneDeRecupero) {
+      history.replaceState(null, '', location.pathname);
+      setTimeout(() => { openClave(); toast('Elegí tu contraseña nueva'); }, 400);
+    }
+  }
   else showLogin();
 }
 
 function showLogin() {
   document.getElementById('loginWrap').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
+}
+
+// Manda el mail con el link para elegir una contraseña nueva. El link vuelve
+// a esta misma página: al abrirse con sesión de recupero, se abre sola la
+// ventana para escribirla (ver checkAuth).
+async function mandarRecupero() {
+  const err = document.getElementById('loginErr');
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email) {
+    err.textContent = 'Escribí tu email arriba y volvé a tocar acá.';
+    err.style.display = 'block';
+    document.getElementById('loginEmail').focus();
+    return;
+  }
+  const link = document.getElementById('olvideLink');
+  link.textContent = 'Enviando...';
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/admin' });
+    if (error) throw error;
+    err.style.color = '#0f6e56';
+    err.textContent = 'Listo. Si esa cuenta existe, te llega un mail con el link para cambiarla. Puede tardar unos minutos y a veces cae en correo no deseado.';
+    err.style.display = 'block';
+  } catch (ex) {
+    err.style.color = '';
+    err.textContent = (ex && ex.message) ? ex.message : 'No se pudo enviar el mail.';
+    err.style.display = 'block';
+  }
+  link.textContent = 'Olvidé mi contraseña';
 }
 
 async function doLogin() {
