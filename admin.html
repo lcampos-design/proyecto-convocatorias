@@ -1415,6 +1415,30 @@ function areaCorto(a) { const x = normArea(a); return x === 'movistar_arena' ? '
 function areaLargo(a) { const x = normArea(a); return x === 'movistar_arena' ? 'Movistar Arena' : x === 'espana' ? 'España' : x === 'ambas' ? 'Ambas áreas' : 'Externos'; }
 function areaMini(a) { const x = normArea(a); return x === 'movistar_arena' ? 'M. Arena' : x === 'espana' ? 'Esp.' : x === 'ambas' ? 'Ambas' : 'Ext.'; }
 function etiquetaDoc(a) { return normArea(a) === 'espana' ? 'DNI/NIE' : 'CUIT'; }
+// El CUIL tiene dígito verificador: con mirar que sean 11 números no alcanza.
+// En la nómina hay 61 documentos que no pueden existir, cargados desde acá, y
+// cada uno termina siendo una persona duplicada o un contrato con el CUIL mal.
+// Los dos primeros dígitos sólo pueden ser 20, 23, 24, 27 (personas) o
+// 30, 33, 34 (empresas).
+const CUIL_PESOS = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+const CUIL_PREFIJOS = ['20', '23', '24', '27', '30', '33', '34'];
+function cuilValido(v) {
+  const t = String(v || '').replace(/\D/g, '');
+  if (t.length !== 11) return false;
+  if (!CUIL_PREFIJOS.includes(t.slice(0, 2))) return false;
+  const suma = CUIL_PESOS.reduce((s, p, i) => s + p * +t[i], 0);
+  let d = 11 - (suma % 11);
+  if (d === 11) d = 0;
+  // Cuando el cálculo da 10, el CUIL se emite con prefijo 23 y verificador 9 o 4.
+  if (d === 10) return t.slice(0, 2) === '23' && (t[10] === '9' || t[10] === '4');
+  return d === +t[10];
+}
+function cuilMotivo(v) {
+  const t = String(v || '').replace(/\D/g, '');
+  if (t.length !== 11) return 'Tiene que tener 11 números.';
+  if (!CUIL_PREFIJOS.includes(t.slice(0, 2))) return 'No puede empezar con ' + t.slice(0, 2) + '. Los CUIL empiezan con 20, 23, 24 o 27.';
+  return 'Revisá los números: no es un CUIL válido.';
+}
 // Documento para comparar personas: DNI/NIE español completo (con letras); cualquier otro (CUIL), solo los números como siempre.
 function normDoc(v) { const t = String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, ''); return /^[XYZ]?\d{7,8}[A-Z]$/.test(t) ? t : String(v || '').replace(/\D/g, ''); }
 // La gente lo escribe de tres formas: "@user", "user" o la dirección entera.
@@ -2443,6 +2467,12 @@ function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) r
 async function savePerson() {
   const nom = document.getElementById('pNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
   const cuit = document.getElementById('pCuit').value.trim() || null;
+  // Un CUIL imposible termina en una persona duplicada o un contrato mal hecho.
+  // Espana usa DNI/NIE con letra, que tiene su propio control.
+  const esEs = document.getElementById('pArea').value === 'espana';
+  if (cuit && !esEs && !/[A-Za-z]/.test(cuit) && !cuilValido(cuit)) {
+    if (!confirm(cuilMotivo(cuit) + '\n\nCUIL: ' + cuit + '\n\n¿Guardar igual?')) return;
+  }
   if (cuit && !editPersonId) {
     const dup = people.find(p => p.cuit && p.cuit === cuit && p.id !== editPersonId);
     if (dup && !confirm(`⚠ El CUIT ${cuit} ya existe para "${dup.nombre}". ¿Continuar de todas formas?`)) return;
