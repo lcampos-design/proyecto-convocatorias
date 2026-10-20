@@ -565,7 +565,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
     <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
     <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
-    <button class="btn btn-sec" onclick="exportNom()">↓ Exportar</button>
+    <button class="btn btn-sec" onclick="exportNom()" title="Baja la lista en Excel (.xlsx)">↓ Exportar</button>
     <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter()"><i class="ic ic-doc"></i> Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
     <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
     <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
@@ -2495,18 +2495,37 @@ async function doImport() {
   setLoad(false);
 }
 
+// ── EXPORTAR A EXCEL ──────────────────────────────────────────
+// Antes se bajaba un .csv separado por comas. Excel en español espera punto y
+// coma, así que abría todo apelotonado en la columna A. Se exporta .xlsx de
+// verdad: abre en columnas en cualquier Excel y no depende del separador.
+// Todo va como texto a propósito: si Excel toma un CUIL o un teléfono como
+// número, lo pasa a notación científica y le come los ceros de adelante.
+function descargarExcel(nombreArchivo, filas, nombreHoja) {
+  if (!filas || filas.length < 2) { toast('No hay nada para exportar'); return; }
+  const texto = filas.map(f => (f || []).map(v => (v === null || v === undefined) ? '' : String(v)));
+  const hoja = XLSX.utils.aoa_to_sheet(texto);
+  // Cada columna al ancho de su contenido más largo, con un tope para que una
+  // nota larga no haga una columna de medio metro.
+  hoja['!cols'] = (texto[0] || []).map((_, i) =>
+    ({ wch: Math.min(44, Math.max(10, ...texto.map(f => (f[i] || '').length + 2))) }));
+  const libro = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(libro, hoja, (nombreHoja || 'Datos').slice(0, 31));
+  XLSX.writeFile(libro, nombreArchivo);
+  toast('Descargado: ' + nombreArchivo);
+}
+
 function exportNom() {
   // Si hay gente de España en lo exportado, se agregan sus columnas bancarias propias.
   const conEs = nomFiltered.some(p => p.area === 'espana');
   const hdrs = ['nombre', 'area', 'estado', 'cuit', 'email', 'telefono', 'notas', 'cbu', 'banco', 'numero_cuenta', ...(conEs ? ['iban', 'titular_cuenta'] : [])];
-  const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const rows = nomFiltered.map(p => {
     // Los datos bancarios viven en la solicitud (registro); se matchea por CUIL.
     const cuil = normDoc(p.cuit);
     const sol = cuil ? solicitudes.find(s => normDoc(s.cuit) === cuil) : null;
-    return [p.nombre, p.area, p.estado, p.cuit, p.email, p.tel, p.notas, sol && sol.cbu, sol && sol.banco, sol && sol.numero_cuenta, ...(conEs ? [sol && sol.iban, sol && sol.titular_cuenta] : [])].map(esc).join(',');
+    return [p.nombre, p.area, p.estado, p.cuit, p.email, p.tel, p.notas, sol && sol.cbu, sol && sol.banco, sol && sol.numero_cuenta, ...(conEs ? [sol && sol.iban, sol && sol.titular_cuenta] : [])];
   });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + [hdrs.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = `nomina-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  descargarExcel(`nomina-${new Date().toISOString().slice(0, 10)}.xlsx`, [hdrs, ...rows], 'Nómina');
 }
 
 // ── CV ──
@@ -4892,8 +4911,7 @@ function exportReporte() {
       rows.push([c.nombre, c.fecha||'', p.nombre, post.nombre, pers?.area||'', post.estado, pers?.semaforo||1, pers?.out_flag?'SI':'NO']);
     });
   });
-  const csv = rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'})); a.download = `reporte-${c.nombre.slice(0,30).replace(/\s/g,'-')}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  descargarExcel(`reporte-${c.nombre.slice(0,30).replace(/\s/g,'-')}-${new Date().toISOString().slice(0,10)}.xlsx`, rows, 'Reporte');
 }
 
 // ── RONDA DE DISPONIBILIDAD (admin) ──
@@ -4975,7 +4993,6 @@ function exportarDisponibilidad() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   if (!dispRows.length) { toast('Todavía no hay respuestas para exportar'); return; }
   const slots = slotsDe(c);
-  const esc = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
   const colLabel = s => (fmtFechaCorta(s.fecha) + (s.horario ? ' ' + s.horario : '')).trim();
   const hdrs = ['Persona', 'CUIT', 'Email', ...slots.map(colLabel), 'Turnos disponibles'];
   const rows = dispRows.map(r => {
@@ -4986,15 +5003,11 @@ function exportarDisponibilidad() {
     const email = per?.email || sol?.email || '';
     const marks = slots.map(s => rf.includes(s.id) ? 'SÍ' : '');
     const total = slots.filter(s => rf.includes(s.id)).length;
-    return [r.nombre || '', r.cuit || '', email, ...marks, total].map(esc).join(',');
+    return [r.nombre || '', r.cuit || '', email, ...marks, total];
   });
   const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
-  const footer = ['Disponibles', '', '', ...counts, ''].map(esc).join(',');
-  const csv = [hdrs.map(esc).join(','), ...rows, footer].join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = `disponibilidad-${String(c.nombre || '').slice(0, 30).replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
+  const footer = ['Disponibles', '', '', ...counts, ''];
+  descargarExcel(`disponibilidad-${String(c.nombre || '').slice(0, 30).replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`, [hdrs, ...rows, footer], 'Disponibilidad');
 }
 function confirmarDisponibilidad(cuit, nombre) {
   const cn = normDoc(cuit);
