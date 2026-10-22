@@ -204,9 +204,12 @@ async function loadConvocatorias() {
     if (!convs.length) { renderEmpty(); return; }
 
     const { data: puestos } = await sb.from('puestos').select('*').in('conv_id', convs.map(c => c.id));
-    const { data: posts } = await sb.from('postulaciones').select('puesto_id, estado').in('conv_id', convs.map(c => c.id));
+    // Cuántos lugares están tomados en cada puesto. Viene un número por
+    // puesto y nada más: la página no necesita saber quién se anotó, y así
+    // tampoco se puede pedir la lista de inscriptos desde afuera.
+    const { data: ocupados } = await sb.rpc('cupos_ocupados');
 
-    renderConvs(convs, puestos || [], posts || []);
+    renderConvs(convs, puestos || [], ocupados || {});
   } catch (err) {
     document.getElementById('mainContent').innerHTML = `<div class="empty"><div class="empty-icon">⚠</div><div class="empty-title">No se pudieron cargar las convocatorias</div></div>`;
   }
@@ -216,7 +219,7 @@ function renderEmpty() {
   document.getElementById('mainContent').innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No hay convocatorias abiertas por el momento</div><div style="font-size:13px;color:#9ca3af;margin-top:6px">Volvé a revisar próximamente</div></div>`;
 }
 
-function renderConvs(convs, puestos, posts) {
+function renderConvs(convs, puestos, ocupados) {
   const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' };
   const areaClass = { movistar_arena: 'b-mv', externos: 'b-ex', ambas: 'b-ambas' };
 
@@ -236,7 +239,7 @@ function renderConvs(convs, puestos, posts) {
         </div>
       </div>
       ${cPuestos.map(p => {
-        const usados = posts.filter(x => x.puesto_id === p.id && x.estado !== 'rechazado').length;
+        const usados = ocupados[p.id] || 0;
         const libres = Math.max(0, p.cupos - usados);
         const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0;
         const lleno = libres === 0;
@@ -322,7 +325,7 @@ async function submitPostulacion() {
 
   // No anotarse a varios puestos de las convocatorias ABIERTAS ahora (las viejas/pasadas no cuentan).
   try {
-    const { data: previas } = await sb.from('postulaciones').select('id,estado,puesto_id,conv_id').eq('cuit', cuil);
+    const { data: previas } = await sb.rpc('mis_postulaciones', { p_cuit: cuil });
     const activas = (previas || []).filter(p => p.estado !== 'rechazado' && openConvIds.has(p.conv_id));
     if (activas.some(p => p.puesto_id === selectedPuestoId && p.conv_id === selectedConvId)) {
       btn.disabled = false; btn.textContent = 'Enviar postulación →';
@@ -340,8 +343,9 @@ async function submitPostulacion() {
   // Tope de cupos: no anotarse si el puesto ya se llenó.
   try {
     const { data: pu } = await sb.from('puestos').select('cupos').eq('id', selectedPuestoId).single();
-    const { count: ocupados } = await sb.from('postulaciones').select('id', { count: 'exact', head: true }).eq('puesto_id', selectedPuestoId).neq('estado', 'rechazado');
-    if (pu && Number.isFinite(pu.cupos) && ocupados != null && ocupados >= pu.cupos) {
+    const { data: tomados } = await sb.rpc('cupos_ocupados');
+    const ocupados = (tomados || {})[selectedPuestoId] || 0;
+    if (pu && Number.isFinite(pu.cupos) && ocupados >= pu.cupos) {
       btn.disabled = false; btn.textContent = 'Enviar postulación →';
       err.textContent = 'Este puesto ya se llenó. Elegí otro o volvé a revisar más adelante.'; err.style.display = 'block';
       return;
@@ -407,17 +411,16 @@ async function buscarMisInscripciones() {
   if (cuil.length !== 11) { err.textContent = 'Ingresá tu CUIL (11 dígitos).'; err.style.display = 'block'; return; }
   list.innerHTML = '<div class="loading">Buscando...</div>';
   try {
-    const { data: mine } = await sb.from('postulaciones').select('id,conv_id,puesto_id,estado').eq('cuit', cuil);
+    // La función trae las inscripciones de ese CUIL con el nombre de la
+    // convocatoria y del puesto adentro. Antes había que ir a buscarlos
+    // aparte, y si la convocatoria ya no estaba publicada el nombre salía
+    // en blanco.
+    const { data: mine } = await sb.rpc('mis_postulaciones', { p_cuit: cuil });
     if (!mine || !mine.length) { list.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:14px;padding:16px">No encontramos inscripciones con ese CUIL.</div>'; return; }
-    const convIds = [...new Set(mine.map(p => p.conv_id).filter(Boolean))];
-    const { data: cvs } = await sb.from('convocatorias').select('id,nombre,fecha').in('id', convIds);
-    const { data: pus } = await sb.from('puestos').select('id,nombre').in('conv_id', convIds);
-    const cById = {}; (cvs || []).forEach(c => cById[c.id] = c);
-    const pById = {}; (pus || []).forEach(p => pById[p.id] = p);
     const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
     list.innerHTML = mine.map(p => {
-      const c = cById[p.conv_id] || {};
-      const puesto = (pById[p.puesto_id] || {}).nombre || 'Puesto';
+      const c = { nombre: p.conv_nombre, fecha: p.conv_fecha };
+      const puesto = p.puesto_nombre || 'Puesto';
       const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
       const first = fechas.length ? new Date(fechas[0] + 'T00:00:00') : null;
       const deadline = first ? new Date(first.getTime() - bajaDiasPublico * 86400000) : null;
