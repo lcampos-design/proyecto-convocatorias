@@ -741,6 +741,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0">
         <button class="btn btn-sm" id="btnPublicada" onclick="togglePublicada(currentConvId)">○ Publicar</button>
         <button class="btn btn-primary btn-sm" onclick="openPasarLista()"><i class="ic ic-tilde-circ"></i> Pasar lista</button>
+        <button class="btn btn-sec btn-sm" onclick="exportPresentes()" title="La planilla que se reparte a los supervisores: una hoja por turno, una tabla por sector, con lo ya marcado">↓ Planilla supervisores</button>
         <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()"><i class="ic ic-planilla"></i> Importar asistencia</button>
         <button class="btn btn-success btn-sm" onclick="exportPostuladosExcel()">↓ Planilla Excel</button>
         <button class="btn btn-sec btn-sm" onclick="openReporte()"><i class="ic ic-grafico"></i> Reporte</button>
@@ -3654,8 +3655,11 @@ function openPasarLista() {
   showM('mLista');
 }
 
+// Convocado es todo el que no fue rechazado: es el mismo criterio con el que
+// se cuentan los cupos. En la práctica la gente queda "en revisión" hasta el
+// día del show, y la planilla de los supervisores tiene que llevarlos igual.
 function listaConvocados() {
-  return posts.filter(x => x.convId === currentConvId && x.estado === 'aprobado');
+  return posts.filter(x => x.convId === currentConvId && x.estado !== 'rechazado');
 }
 
 function renderLista() {
@@ -3669,13 +3673,13 @@ function renderLista() {
   const pres = todos.filter(x => presentesDe(x)[listaSlotId] === 'presente').length;
   const aus = todos.filter(x => presentesDe(x)[listaSlotId] === 'ausente').length;
   const sin = todos.length - pres - aus;
-  const pend = posts.filter(x => x.convId === currentConvId && x.estado === 'pendiente').length;
+  const sinAprobar = todos.filter(x => x.estado !== 'aprobado').length;
   document.getElementById('listaResumen').innerHTML =
     `<span>Convocados <strong>${todos.length}</strong></span>
      <span class="lr-p">Presentes <strong>${pres}</strong></span>
      <span class="lr-a">Faltaron <strong>${aus}</strong></span>
      <span class="lr-s">Sin marcar <strong>${sin}</strong></span>` +
-    (pend ? `<span class="lr-n">${pend} pendiente${pend !== 1 ? 's' : ''} de aprobar, que no entran en la lista</span>` : '');
+    (sinAprobar ? `<span class="lr-n">${sinAprobar} todavía sin aprobar, pero convocado${sinAprobar !== 1 ? 's' : ''}</span>` : '');
 
   const q = (document.getElementById('listaSrch').value || '').toLowerCase().trim();
   const qd = q.replace(/\D/g, '');
