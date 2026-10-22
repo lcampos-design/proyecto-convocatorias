@@ -143,6 +143,12 @@ async function enviar(){
     if (data && data.motivo === 'no_registrado') {
       err.innerHTML = 'No encontramos tu registro con ese CUIL. Primero tenés que <a class="link" href="candidato.html">registrarte acá</a>.';
       err.style.display = 'block';
+    } else if (data && data.motivo === 'convocado') {
+      // Ya está convocada otro día que marcó: la base no guardó nada. Se le
+      // dice cuáles son para que las desmarque y vuelva a enviar.
+      const lista = (data.choques || []).map(ch => `<li><strong>${esc(fmtFecha(ch.fecha))}</strong> — ya estás convocado/a en <strong>${esc(ch.conv)}</strong></li>`).join('');
+      err.innerHTML = `No se guardó: hay fecha(s) en las que ya estás convocado/a para otro servicio.<ul style="margin:8px 0 0 18px;padding:0">${lista}</ul><div style="margin-top:8px">Desmarcá esa(s) fecha(s) y volvé a enviar.</div>`;
+      err.style.display = 'block';
     } else if (data && data.motivo === 'cerrada') {
       err.textContent = 'La ronda de disponibilidad se cerró.'; err.style.display = 'block';
     } else {
