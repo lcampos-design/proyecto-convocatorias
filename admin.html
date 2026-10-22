@@ -460,6 +460,10 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .cv-prev iframe{display:block;width:100%;height:58vh;min-height:320px;border:0;background:#fff}
 .cv-prev-msg{padding:16px;font-size:12px;color:var(--r-faint);text-align:center}
 
+
+/* Documento que no puede existir: se marca, no se corrige solo */
+.doc-mal{color:#9a3412;cursor:help;display:inline-flex;vertical-align:-.15em}
+
 </style>
 </head>
 <body>
@@ -566,6 +570,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
     <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
     <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">↓ Exportar</button>
+    <button class="btn btn-sec" id="docFilterBtn" onclick="toggleDocFilter()" title="Ver sólo a quienes tienen el documento mal cargado"><i class="ic ic-aviso"></i> Documento <span id="docFilterCount" style="font-size:10px;background:#fed7aa;color:#9a3412;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
     <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter()"><i class="ic ic-doc"></i> Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
     <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
     <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
@@ -1464,6 +1469,14 @@ function chipInstagram(v) {
 // persona cargada con el CUIL completo tienen que dar lo mismo; si no, el panel
 // la ve dos veces y se duplica.
 // En España no aplica: el DNI/NIE con letra ya es el documento completo.
+// Marca a quien tiene un documento que no puede existir, para que se vea en la
+// nómina y alguien se lo pida. No se corrige solo: cuál es el bueno sólo lo
+// sabe la persona.
+function docDudoso(p) {
+  if (!p || !p.cuit) return false;
+  if (p.area === 'espana' || /[A-Za-z]/.test(String(p.cuit))) return false;  // España tiene su propio control
+  return !cuilValido(p.cuit);
+}
 function docNucleo(v) {
   const t = normDoc(v);
   if (!t || /[A-Z]/.test(t)) return t;
@@ -2025,6 +2038,7 @@ function nomApply() {
       if (!coincide) return false;
     }
     if (cvFilterOn && !p.cv) return false;
+    if (docFilterOn && !docDudoso(p)) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
     if (rotF) { const r = checkRotacion(p.id); if (rotF === 'rot' && !r.excede) return false; if (rotF === 'libre' && r.excede) return false; }
     if (tagF && !(p.etiquetas || []).some(t => String(t).toLowerCase() === tagF.toLowerCase())) return false;
@@ -2040,7 +2054,18 @@ function nomApply() {
   });
   const cvCount = people.filter(p => !!p.cv).length;
   document.getElementById('cvFilterCount').textContent = cvCount;
+  const docCount = people.filter(docDudoso).length;
+  const dc = document.getElementById('docFilterCount');
+  if (dc) { dc.textContent = docCount; dc.style.display = docCount ? '' : 'none'; }
   renderNomTable(); renderNomPag();
+}
+let docFilterOn = false;
+function toggleDocFilter() {
+  docFilterOn = !docFilterOn;
+  const btn = document.getElementById('docFilterBtn');
+  btn.style.background = docFilterOn ? '#9a3412' : '';
+  btn.style.color = docFilterOn ? '#fff' : '';
+  nomPage = 1; nomApply();
 }
 function toggleCvFilter() { cvFilterOn = !cvFilterOn; const btn = document.getElementById('cvFilterBtn'); btn.style.background = cvFilterOn ? '#0369a1' : ''; btn.style.color = cvFilterOn ? '#fff' : ''; nomPage = 1; nomApply(); }
 function nomStats() {
@@ -2084,7 +2109,7 @@ function renderNomTable() {
   <option value="confirmado" ${p.estado==='confirmado'?'selected':''}>Confirmado</option>
   <option value="no_asiste" ${p.estado==='no_asiste'?'selected':''}>No asiste</option>
 </select></td>
-<td class="cm">${e(p.cuit||'')}</td><td class="cm">${e(p.email||'')}</td><td class="cm">${e(p.tel||'')}</td>
+<td class="cm">${e(p.cuit||'')}${docDudoso(p) ? ` <span class="doc-mal" title="${e(cuilMotivo(p.cuit))} Hay que pedirle el documento correcto."><i class="ic ic-aviso"></i></span>` : ''}</td><td class="cm">${e(p.email||'')}</td><td class="cm">${e(p.tel||'')}</td>
 <td class="cm" title="${e(p.notas||'')}">${e(p.notas||'')}</td>
 <td style="white-space:nowrap">
   <button class="btn btn-sec btn-xs" onclick="openEditPerson('${p.id}')"><i class="ic ic-lapiz"></i></button>
@@ -4704,7 +4729,7 @@ function renderSolicitudes() {
   const sel = solSelIds.has(s.id);
   return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel?'#f0eeff':''}">
   <td style="padding:9px 14px"><input type="checkbox" class="cb sol-cb" data-id="${s.id}" ${sel?'checked':''} onchange="solToggleSel('${s.id}')"></td>
-  <td style="padding:9px 14px;font-weight:500;color:#111827">${eN(s.nombre)}${s.cuit?`<div style="font-size:11px;color:#9ca3af">${etiquetaDoc(s.area)}: ${e(s.cuit)}</div>`:''}${s.cuit && dupCuits.has(s.cuit)?`<span style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:4px">⚠ Duplicado</span>`:''}</td>
+  <td style="padding:9px 14px;font-weight:500;color:#111827">${eN(s.nombre)}${s.cuit?`<div style="font-size:11px;color:${docDudoso(s) ? '#9a3412' : '#9ca3af'}">${etiquetaDoc(s.area)}: ${e(s.cuit)}${docDudoso(s) ? ` <span title="${e(cuilMotivo(s.cuit))}"><i class="ic ic-aviso"></i></span>` : ''}</div>`:''}${s.cuit && dupCuits.has(s.cuit)?`<span style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:4px">⚠ Duplicado</span>`:''}</td>
   <td style="padding:9px 14px"><span class="a-badge ${areaClase(s.area)}">${areaCorto(s.area)}</span></td>
   <td style="padding:9px 14px;font-size:12px;color:#6b7280">${e(s.puesto_interes||'—')}</td>
   <td style="padding:9px 14px;font-size:12px;color:#6b7280" title="${e(s.localidad||'')}">${s.localidad ? e(localidadLinda(s.localidad) || nombrePropio(s.localidad, true)) : '—'}</td>
