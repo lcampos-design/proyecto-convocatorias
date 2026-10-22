@@ -30,7 +30,7 @@ Primera: La empresa contrata al trabajador para desempeñar tareas de {{puesto}}
 
 Segunda: El presente contrato se celebra los días {{fecha_inicio}} al {{fecha_fin}} de {{anio}}, fecha en que de hecho y de derecho, quedará extinguida la relación laboral entre las partes, dejando aclarado que en el caso en que las necesidades de la actividad transitoria así lo requieran, deberá notificarse a el trabajador por escrito, pudiendo la empresa optar por una prórroga si la modalidad de la tarea o la actividad así lo justifica.
 
-Tercera: El trabajador percibirá por dicho período una remuneración neta diaria por JORNADA EFECTIVAMENTE TRABAJADA de {{monto_letras}} (\${{monto_numero}}) por todo concepto. - Durante las jornadas extendidas, el valor de la JORNADA EFECTIVAMENTE TRABAJADA será el INDICADO EN LA CONVOCATORIA OFICIAL.
+Tercera: El trabajador percibirá por dicho período una remuneración neta diaria por JORNADA EFECTIVAMENTE TRABAJADA de {{monto_letras}} (${{monto_numero}}) por todo concepto. - Durante las jornadas extendidas, el valor de la JORNADA EFECTIVAMENTE TRABAJADA será el INDICADO EN LA CONVOCATORIA OFICIAL.
 
 Cuarta: Se deja expresa constancia y de común acuerdo se ratifica el vencimiento del presente contrato el día {{fecha_fin}} de {{anio}} sirviendo la presente de suficiente preaviso legal conforme al Art. 90 y concordantes LCT.
 
@@ -47,12 +47,23 @@ En expresión de conformidad y previa lectura de ratificación de las partes fir
 ))
 on conflict (key) do nothing;
 
+-- ── CORRECCIÓN ──
+--  La primera versión de este archivo guardó una barra de más antes del
+--  signo pesos, en la cláusula Tercera: "(\$100000)". Era un escape del
+--  código que se copió tal cual. Esto la saca si quedó; si no está, no hace
+--  nada.
+update public.config
+   set value = jsonb_set(value, '{ar}', to_jsonb(replace(value->>'ar', E'\\$', '$')))
+ where key = 'contrato_plantilla'
+   and value->>'ar' like E'%\\$%';
+
 -- ── CÓMO QUEDÓ ──
-select length(value->>'ar')     as largo_del_modelo_argentino,
-       length(value->>'espana') as largo_del_de_espana
+select length(value->>'ar')                         as largo_del_modelo_argentino,
+       length(value->>'espana')                     as largo_del_de_espana,
+       position(E'\\' in value->>'ar') > 0           as tiene_barra_de_mas
 from public.config where key = 'contrato_plantilla';
 --  El argentino tiene que dar unos 3.700 caracteres; el de España, 0, hasta
---  que lo carguen desde el panel.
+--  que lo carguen desde el panel. Y "tiene_barra_de_mas" tiene que ser false.
 
 -- ── PARA VOLVER ATRÁS ──
 --  (el panel vuelve a usar el texto que trae el código)
