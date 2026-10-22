@@ -486,6 +486,15 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .fb-desglose b{color:var(--r-ink);font-weight:600}
 .fb-desglose .fb-prom{color:var(--r-faint)}
 
+
+/* Posiciones de cada persona */
+.pos-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
+.pos-chip{font-size:10.5px;font-weight:600;background:var(--r-bg);border:1px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:1px 8px;white-space:nowrap}
+.pos-prom{font-size:10.5px;font-weight:700;color:var(--r-ink2);font-variant-numeric:tabular-nums}
+.pos-elegir{font-size:12px;font-weight:500;background:#fff;border:1.5px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit;transition:all .12s}
+.pos-elegir:hover{border-color:#a1a1aa}
+.pos-elegir.on{background:var(--r-ink);border-color:var(--r-ink);color:#fff}
+
 </style>
 </head>
 <body>
@@ -576,6 +585,20 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <option value="">Toda la nómina</option>
       <option value="rot">⚠ En rotación</option>
       <option value="libre">✓ Disponibles</option>
+    </select>
+    <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por posición">
+      <option value="">Todas las posiciones</option>
+      <option value="Supervisor">Supervisores</option>
+      <option value="Equipo operaciones">Equipo operaciones</option>
+      <option value="Operador acreditaciones">Operadores de acreditaciones</option>
+      <option value="Orientador">Orientadores</option>
+      <option value="Acomodador">Acomodadores</option>
+      <option value="Hidratación">Hidratación</option>
+      <option value="_sin">Sin posición cargada</option>
+    </select>
+    <select class="filt" id="nomOrden" onchange="nomFilter()" title="Cómo se ordena la lista">
+      <option value="">Orden por defecto</option>
+      <option value="semaforo">Mejor evaluados primero</option>
     </select>
     <select class="filt" id="nomDecFilter" onchange="nomFilter()" title="Filtrar por lo declarado al inscribirse">
       <option value="">Declaración jurada</option>
@@ -783,6 +806,9 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div class="fg"><label>Teléfono</label><input type="text" class="fi" id="pTel" placeholder="+54 11..."></div>
     </div>
     <div class="fg"><label>CUIT / CUIL</label><input type="text" class="fi" id="pCuit" placeholder="20-12345678-9"></div>
+    <div class="fg"><label>Posiciones</label>
+      <div id="pPosChips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
     <div class="fg"><label>Notas</label><input type="text" class="fi" id="pNotas" placeholder="Info adicional..."></div>
     <div class="fg"><label>Etiquetas</label>
       <div id="pEtqChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
@@ -1694,7 +1720,7 @@ async function loadAll() {
       people = data;
     } else {
       // Fallback (si la función personas_lista aún no está creada): columnas livianas, sin cv.
-      const cols = 'id,nombre,area,estado,email,tel,notas,cuit,semaforo,out_flag,etiquetas,created_at';
+      const cols = 'id,nombre,area,estado,email,tel,notas,cuit,semaforo,out_flag,etiquetas,posiciones,created_at';
       let from = 0;
       while (true) {
         const r = await sb.from('personas').select(cols).range(from, from + 999).order('created_at');
@@ -2039,6 +2065,8 @@ function nomApply() {
   const rotF = document.getElementById('nomRotFilter').value;
   const tagF = document.getElementById('nomTagFilter') ? document.getElementById('nomTagFilter').value : '';
   const decF = document.getElementById('nomDecFilter') ? document.getElementById('nomDecFilter').value : '';
+  const posF = document.getElementById('nomPosFilter') ? document.getElementById('nomPosFilter').value : '';
+  const orden = document.getElementById('nomOrden') ? document.getElementById('nomOrden').value : '';
   nomFiltered = people.filter(p => {
     // Los OUT tienen su propia pestaña: no se mezclan con el resto de la nómina.
     if (nomAreaTab === 'out') { if (!p.out_flag) return false; }
@@ -2057,6 +2085,8 @@ function nomApply() {
     }
     if (cvFilterOn && !p.cv) return false;
     if (docFilterOn && !docDudoso(p)) return false;
+    if (posF === '_sin' && posicionesDe(p).length) return false;
+    if (posF && posF !== '_sin' && !posicionesDe(p).includes(posF)) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
     if (rotF) { const r = checkRotacion(p.id); if (rotF === 'rot' && !r.excede) return false; if (rotF === 'libre' && r.excede) return false; }
     if (tagF && !(p.etiquetas || []).some(t => String(t).toLowerCase() === tagF.toLowerCase())) return false;
@@ -2070,6 +2100,7 @@ function nomApply() {
     }
     return true;
   });
+  nomFiltered = ordenarNomina(nomFiltered, orden);
   const cvCount = people.filter(p => !!p.cv).length;
   document.getElementById('cvFilterCount').textContent = cvCount;
   const docCount = people.filter(docDudoso).length;
@@ -2097,6 +2128,33 @@ function nomTabCounts() { const act = people.filter(p => !p.out_flag); n('tcAll'
 function n(id, v) { const el = document.getElementById(id); if (el) el.textContent = v.toLocaleString('es-AR'); }
 function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado === 'pendiente').length; const b = document.getElementById('candNavBadge'); if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; } }
 
+// ── POSICIONES ────────────────────────────────────────────────
+// Supervisor, Operador y Acomodador no son áreas: son posiciones dentro de la
+// misma nómina, y una persona puede tener más de una. Por eso es una lista.
+const POSICIONES = ['Supervisor', 'Equipo operaciones', 'Operador acreditaciones', 'Orientador', 'Acomodador', 'Hidratación'];
+function posicionesDe(p) { return Array.isArray(p && p.posiciones) ? p.posiciones.filter(Boolean) : []; }
+// Cuántos feedbacks tiene y con qué promedio: es lo que ordena la lista.
+function promedioDe(personaId) {
+  const con = feedbacks.filter(f => f.persona_id === personaId).map(promedioFb).filter(x => x != null);
+  return con.length ? con.reduce((a, b) => a + b, 0) / con.length : null;
+}
+function cuantosFb(personaId) { return feedbacks.filter(f => f.persona_id === personaId).length; }
+// Verde primero, y dentro de cada color el de mejor promedio. Quien no tiene
+// feedback va al final: no está mal evaluado, está sin evaluar.
+function ordenarNomina(lista, modo) {
+  if (modo !== 'semaforo') return lista;
+  return lista.slice().sort((a, b) => {
+    const fa = cuantosFb(a.id), fb2 = cuantosFb(b.id);
+    if (!fa !== !fb2) return fa ? -1 : 1;
+    const sa = a.semaforo || 1, sb = b.semaforo || 1;
+    if (sa !== sb) return sa - sb;
+    const pa = promedioDe(a.id), pb = promedioDe(b.id);
+    if (pa != null && pb != null && pa !== pb) return pb - pa;
+    if (pa != null !== (pb != null)) return pa != null ? -1 : 1;
+    return (a.nombre || '').localeCompare(b.nombre || '', 'es');
+  });
+}
+
 function renderNomTable() {
   const tbody = document.getElementById('nomTbody');
   // Las etiquetas sólo las tiene una parte de la gente y dejaban la lista despareja.
@@ -2118,6 +2176,7 @@ function renderNomTable() {
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
   ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')"><i class="ic ic-doc"></i> CV</button>` : ''}
+  ${posicionesDe(p).length ? `<div class="pos-chips">${posicionesDe(p).map(x => `<span class="pos-chip">${e(x)}</span>`).join('')}${(() => { const pr = promedioDe(p.id); return pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">${pr.toFixed(2)}</span>` : ''; })()}</div>` : ''}
   ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
 <td><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td>
@@ -2516,8 +2575,18 @@ function renderNomPag() {
 }
 function nomGoPage(p) { nomPage = p; renderNomTable(); renderNomPag(); }
 
-function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); document.getElementById('pContratosBlock').style.display = 'none'; showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
-function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); renderPersonContratos(p); showM('mPerson'); }
+let formPosiciones = [];
+function renderFormPos() {
+  const c = document.getElementById('pPosChips'); if (!c) return;
+  c.innerHTML = POSICIONES.map(x => `<button type="button" class="pos-elegir${formPosiciones.includes(x) ? ' on' : ''}" onclick="togglePos('${x}')">${e(x)}</button>`).join('');
+}
+function togglePos(x) {
+  formPosiciones = formPosiciones.includes(x) ? formPosiciones.filter(y => y !== x) : formPosiciones.concat(x);
+  renderFormPos();
+}
+
+function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); formPosiciones = []; renderFormPos(); document.getElementById('pContratosBlock').style.display = 'none'; showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
+function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); formPosiciones = posicionesDe(p).slice(); renderFormPos(); renderPersonContratos(p); showM('mPerson'); }
 
 async function savePerson() {
   const nom = document.getElementById('pNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
@@ -2532,7 +2601,7 @@ async function savePerson() {
     const dup = people.find(p => p.cuit && p.cuit === cuit && p.id !== editPersonId);
     if (dup && !confirm(`⚠ El CUIT ${cuit} ya existe para "${dup.nombre}". ¿Continuar de todas formas?`)) return;
   }
-  const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null, etiquetas: formEtiquetas.slice() };
+  const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null, etiquetas: formEtiquetas.slice(), posiciones: formPosiciones.slice() };
   if (editPersonId) { const i = people.findIndex(x => x.id === editPersonId); if (i >= 0) people[i] = { ...people[i], ...d }; }
   else people.push(d);
   nomRefresh(); closeM('mPerson');
