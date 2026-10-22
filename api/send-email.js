@@ -175,15 +175,26 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     if (!response.ok) {
-      // "API key is invalid" sin más contexto no le dice a nadie dónde mirar.
-      if (response.status === 401 || response.status === 403) {
-        res.status(response.status).json({
-          error: 'Resend rechazó la clave: hay que generar una nueva y cargarla en Vercel como RESEND_API_KEY. Probá el diagnóstico desde el Dashboard.',
-          resend: data
-        });
-        return;
+      // Resend devuelve 401/403 para cosas muy distintas: clave inválida,
+      // dominio sin verificar, remitente no permitido. Antes se decía
+      // "rechazó la clave" para todas, y se mandaba a cambiar una clave que
+      // estaba bien. Se traduce cada caso y, si no se reconoce, se muestra
+      // lo que dijo Resend tal cual.
+      const nombre = String(data && data.name || '').toLowerCase();
+      const mensaje = String(data && data.message || '');
+      let explicacion;
+      if (/domain is not verified|not verified/i.test(mensaje)) {
+        explicacion = 'El dominio show-bs.com no está verificado en la cuenta de Resend de esa clave. Hay que verificarlo en Resend → Domains (registros DNS), o usar una clave de la cuenta donde ya está verificado.';
+      } else if (/domain|not found/i.test(mensaje) && response.status === 403) {
+        explicacion = 'La cuenta de Resend de esa clave no tiene dado de alta el dominio show-bs.com. La clave tiene que ser de la cuenta donde está el dominio.';
+      } else if (nombre === 'invalid_api_key' || /api key is invalid/i.test(mensaje)) {
+        explicacion = 'Resend no reconoce la clave: hay que generar una nueva en Resend → API Keys y cargarla en Vercel como RESEND_API_KEY.';
+      } else if (nombre === 'restricted_api_key' || /restricted/i.test(mensaje)) {
+        explicacion = 'La clave está restringida a otro dominio o a otro permiso. En Resend → API Keys, generá una con "Sending access" y dominio show-bs.com.';
+      } else {
+        explicacion = 'Resend no aceptó el envío' + (mensaje ? ': ' + mensaje : '') + '.';
       }
-      res.status(response.status).json(data);
+      res.status(response.status).json({ error: explicacion, resend: data });
       return;
     }
     res.status(200).json(data);
