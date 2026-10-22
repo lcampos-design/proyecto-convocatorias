@@ -499,6 +499,14 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 /* Zona, calculada desde la localidad */
 .zona-chip{font-size:10.5px;font-weight:600;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:999px;padding:1px 8px;white-space:nowrap}
 
+
+/* Recomendados: el apartado de a quién llamar primero */
+.atab-rec.active{color:#b45309;border-bottom-color:#b45309}
+.atab-rec.active .tc{background:#fef3c7;border-color:#fde68a;color:#b45309}
+.rec-star{background:none;border:none;cursor:pointer;font-size:13px;line-height:1;color:#d4d4d8;padding:0 2px;margin-left:2px;vertical-align:middle}
+.rec-star:hover{color:#f59e0b}
+.rec-star.on{color:#f59e0b}
+
 </style>
 </head>
 <body>
@@ -570,6 +578,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="atab" data-area="movistar_arena" onclick="setNomTab('movistar_arena')">Movistar Arena <span class="tc" id="tcMv">0</span></div>
     <div class="atab" data-area="externos" onclick="setNomTab('externos')">Externos <span class="tc" id="tcEx">0</span></div>
     <div class="atab" data-area="espana" onclick="setNomTab('espana')">España <span class="tc" id="tcEs">0</span></div>
+    <div class="atab atab-rec" data-area="rec" onclick="setNomTab('rec')">★ Recomendados <span class="tc" id="tcRec">0</span></div>
     <div class="atab atab-out" data-area="out" onclick="setNomTab('out')"><i class="ic ic-prohibido"></i> OUT <span class="tc" id="tcOut">0</span></div>
   </div>
   <div class="ctrlbar">
@@ -646,6 +655,9 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <span style="color:#c4b5fd">|</span> Etiqueta:
     <select class="filt" id="bulkTag" style="font-size:12px;padding:4px 8px"><option value="">— etiqueta —</option></select>
     <button class="btn btn-sm btn-primary" onclick="applyBulkTag()">+ Etiquetar</button>
+    <span style="color:#c4b5fd">|</span>
+    <button class="btn btn-sm btn-sec" onclick="recomendarBulk(true)">★ Recomendar</button>
+    <button class="btn btn-sm btn-sec" onclick="recomendarBulk(false)">Sacar de Recomendados</button>
     <span style="color:#c4b5fd">|</span>
     <button class="btn btn-sm btn-danger" onclick="openOutBulk()"><i class="ic ic-prohibido"></i> Marcar OUT</button>
   </div>
@@ -823,6 +835,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="fg"><label>Posiciones</label>
       <div id="pPosChips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
+    <div class="fg"><label>Localidad</label><input type="text" class="fi" id="pLocalidad" placeholder="Dónde vive — de ahí sale la zona"></div>
+    <div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="cb" id="pRecom"> Está en Recomendados (a llamar primero)</label></div>
     <div class="fg"><label>Notas</label><input type="text" class="fi" id="pNotas" placeholder="Info adicional..."></div>
     <div class="fg"><label>Etiquetas</label>
       <div id="pEtqChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
@@ -2086,6 +2100,9 @@ function nomApply() {
     // Los OUT tienen su propia pestaña: no se mezclan con el resto de la nómina.
     if (nomAreaTab === 'out') { if (!p.out_flag) return false; }
     else if (p.out_flag) return false;
+    // Recomendados no es un área: es el apartado de a quién llamar primero, y
+    // se cruza con los filtros de zona y posición igual que el resto.
+    else if (nomAreaTab === 'rec') { if (!p.recomendado) return false; }
     else if (nomAreaTab !== 'all' && p.area !== nomAreaTab) return false;
     if (st && p.estado !== st) return false;
     if (q) {
@@ -2141,7 +2158,7 @@ function nomStats() {
   n('sCont', src.filter(p => p.estado === 'contactado').length); n('sPend', src.filter(p => p.estado === 'pendiente').length);
   n('sNo', src.filter(p => p.estado === 'no_asiste').length);
 }
-function nomTabCounts() { const act = people.filter(p => !p.out_flag); n('tcAll', act.length); n('tcMv', act.filter(p => p.area === 'movistar_arena').length); n('tcEx', act.filter(p => p.area === 'externos').length); n('tcEs', act.filter(p => p.area === 'espana').length); n('tcOut', people.filter(p => p.out_flag).length); }
+function nomTabCounts() { const act = people.filter(p => !p.out_flag); n('tcAll', act.length); n('tcMv', act.filter(p => p.area === 'movistar_arena').length); n('tcEx', act.filter(p => p.area === 'externos').length); n('tcEs', act.filter(p => p.area === 'espana').length); n('tcOut', people.filter(p => p.out_flag).length); n('tcRec', act.filter(p => p.recomendado).length); }
 function n(id, v) { const el = document.getElementById(id); if (el) el.textContent = v.toLocaleString('es-AR'); }
 function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado === 'pendiente').length; const b = document.getElementById('candNavBadge'); if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; } }
 
@@ -2151,9 +2168,11 @@ function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado ==
 const POSICIONES = ['Supervisor', 'Equipo operaciones', 'Operador acreditaciones', 'Orientador', 'Acomodador', 'Hidratación'];
 // La localidad la cargó la persona al inscribirse, así que vive en la
 // solicitud. Se la busca por documento, igual que el resto de la planilla.
+// A quien se dio de alta a mano no le queda solicitud, así que la localidad
+// puede estar en su ficha. Vale primero lo que declaró la persona.
 function zonaDe(p) {
   const sol = solicitudDe(p);
-  return sol ? zonaDeLocalidad(sol.localidad) : '';
+  return zonaDeLocalidad((sol && sol.localidad) || (p && p.localidad) || '');
 }
 function posicionesDe(p) { return Array.isArray(p && p.posiciones) ? p.posiciones.filter(Boolean) : []; }
 // Cuántos feedbacks tiene y con qué promedio: es lo que ordena la lista.
@@ -2195,6 +2214,7 @@ function renderNomTable() {
 <td class="cn">
   ${eN(p.nombre)}
   <button class="sem sem-${sem}" onclick="openSemModal('${p.id}')" title="Semáforo ${sem}">${sem}</button>
+  <button class="rec-star${p.recomendado ? ' on' : ''}" onclick="toggleRecomendado('${p.id}',event)" title="${p.recomendado ? 'Está en Recomendados. Clic para sacarla.' : 'Ponerla en Recomendados, para tenerla a mano al convocar.'}">★</button>
   ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_nota||p.out_categoria||'')}"><i class="ic ic-prohibido"></i> ${nomAreaTab === 'out' && p.out_categoria ? e(frase(p.out_categoria)) : 'OUT'}</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
@@ -2353,6 +2373,9 @@ function localidadCanonica(v) {
     base = corto;
   }
   base = base.replace(/\s+/g, ' ').trim();
+  // Al sacarle el final queda colgada la preposición que lo ataba:
+  // "Ciudad Autónoma de Buenos Aires" terminaba en "ciudad autonoma de".
+  base = base.replace(/\s+(de|del|la|las|los|el|y)$/, '');
   return LOC_SINONIMOS[base] || base;
 }
 
@@ -2574,7 +2597,16 @@ const ZONA_POR_LOCALIDAD = {
 const ZONAS = ['CABA', 'Norte', 'Noroeste', 'Oeste', 'Sur', 'Otra'];
 function zonaDeLocalidad(v) {
   const k = localidadCanonica(v);
-  return (k && ZONA_POR_LOCALIDAD[k]) || (k ? 'Otra' : '');
+  if (!k) return '';
+  if (ZONA_POR_LOCALIDAD[k]) return ZONA_POR_LOCALIDAD[k];
+  // "CABA, Colegiales" o "Avellaneda, José Ignacio Rucci 250": el lugar está,
+  // pero viene con el barrio o la calle pegados. Se prueba parte por parte.
+  const partes = String(v == null ? '' : v).split(/[,;/()\-\u2013]+/);
+  for (let i = 0; i < partes.length; i++) {
+    const p = localidadCanonica(partes[i]);
+    if (p && ZONA_POR_LOCALIDAD[p]) return ZONA_POR_LOCALIDAD[p];
+  }
+  return 'Otra';
 }
 
 // Cómo se escribe cada localidad en pantalla. Se prefiere una forma que alguien
@@ -2819,6 +2851,25 @@ function renderNomPag() {
 }
 function nomGoPage(p) { nomPage = p; renderNomTable(); renderNomPag(); }
 
+// Recomendados es la lista de a quién se llama primero. Se marca desde la
+// misma fila porque se arma mirando la nómina, no entrando a cada ficha.
+async function toggleRecomendado(id, ev) {
+  if (ev) ev.stopPropagation();
+  const p = people.find(x => x.id === id); if (!p) return;
+  if (p.out_flag) { toast('Está en OUT: no se recomienda'); return; }
+  p.recomendado = !p.recomendado;
+  nomRefresh();
+  try { await sbUpdate('personas', id, { recomendado: p.recomendado }); } catch (_) { p.recomendado = !p.recomendado; nomRefresh(); }
+}
+async function recomendarBulk(valor) {
+  const ids = [...document.querySelectorAll('.rcb:checked')].map(c => c.dataset.id)
+    .filter(id => { const p = people.find(x => x.id === id); return p && !p.out_flag; });
+  if (!ids.length) { toast('No hay nadie seleccionado (los OUT no cuentan)'); return; }
+  ids.forEach(id => { const p = people.find(x => x.id === id); if (p) p.recomendado = valor; });
+  nomRefresh(); document.getElementById('selAll').checked = false; document.getElementById('nomBulk').classList.remove('on');
+  try { await sbUpdateIn('personas', ids, { recomendado: valor }); toast(ids.length + (valor ? ' en Recomendados' : ' fuera de Recomendados')); } catch (_) {}
+}
+
 let formPosiciones = [];
 function renderFormPos() {
   const c = document.getElementById('pPosChips'); if (!c) return;
@@ -2829,8 +2880,8 @@ function togglePos(x) {
   renderFormPos();
 }
 
-function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); formPosiciones = []; renderFormPos(); document.getElementById('pContratosBlock').style.display = 'none'; showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
-function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); formPosiciones = posicionesDe(p).slice(); renderFormPos(); renderPersonContratos(p); showM('mPerson'); }
+function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); formPosiciones = []; renderFormPos(); document.getElementById('pLocalidad').value = ''; document.getElementById('pRecom').checked = false; document.getElementById('pContratosBlock').style.display = 'none'; showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
+function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); formPosiciones = posicionesDe(p).slice(); renderFormPos(); document.getElementById('pLocalidad').value = p.localidad || ''; document.getElementById('pRecom').checked = !!p.recomendado; renderPersonContratos(p); showM('mPerson'); }
 
 async function savePerson() {
   const nom = document.getElementById('pNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
@@ -2845,7 +2896,7 @@ async function savePerson() {
     const dup = people.find(p => p.cuit && p.cuit === cuit && p.id !== editPersonId);
     if (dup && !confirm(`⚠ El CUIT ${cuit} ya existe para "${dup.nombre}". ¿Continuar de todas formas?`)) return;
   }
-  const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null, etiquetas: formEtiquetas.slice(), posiciones: formPosiciones.slice() };
+  const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null, etiquetas: formEtiquetas.slice(), posiciones: formPosiciones.slice(), localidad: document.getElementById('pLocalidad').value.trim() || null, recomendado: document.getElementById('pRecom').checked };
   if (editPersonId) { const i = people.findIndex(x => x.id === editPersonId); if (i >= 0) people[i] = { ...people[i], ...d }; }
   else people.push(d);
   nomRefresh(); closeM('mPerson');
@@ -2937,7 +2988,7 @@ async function cargarDatosBancarios() {
 async function exportNom() {
   // Si hay gente de España en lo exportado, se agregan sus columnas bancarias propias.
   const conEs = nomFiltered.some(p => p.area === 'espana');
-  const hdrs = ['nombre', 'area', 'estado', 'cuit', 'email', 'telefono', 'notas', 'cbu', 'banco', 'numero_cuenta', ...(conEs ? ['iban', 'titular_cuenta'] : [])];
+  const hdrs = ['nombre', 'area', 'estado', 'recomendado', 'zona', 'posiciones', 'cuit', 'email', 'telefono', 'notas', 'cbu', 'banco', 'numero_cuenta', ...(conEs ? ['iban', 'titular_cuenta'] : [])];
   const btn = document.getElementById('btnExportNom');
   if (btn) { btn.disabled = true; btn.textContent = 'Buscando datos...'; }
   const banco = await cargarDatosBancarios();
@@ -2947,7 +2998,7 @@ async function exportNom() {
     // se cruzan por documento.
     const cuil = docNucleo(p.cuit);
     const sol = cuil ? banco.get(cuil) : null;
-    return [p.nombre, p.area, p.estado, p.cuit, p.email, p.tel, p.notas, sol && sol.cbu, sol && sol.banco, sol && sol.numero_cuenta, ...(conEs ? [sol && sol.iban, sol && sol.titular_cuenta] : [])];
+    return [p.nombre, p.area, p.estado, p.recomendado ? 'sí' : '', zonaDe(p), posicionesDe(p).join(', '), p.cuit, p.email, p.tel, p.notas, sol && sol.cbu, sol && sol.banco, sol && sol.numero_cuenta, ...(conEs ? [sol && sol.iban, sol && sol.titular_cuenta] : [])];
   });
   descargarExcel(`nomina-${new Date().toISOString().slice(0, 10)}.xlsx`, [hdrs, ...rows], 'Nómina');
 }
