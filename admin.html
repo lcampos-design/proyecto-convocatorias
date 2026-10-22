@@ -830,6 +830,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <option value="pendiente">Pendiente</option><option value="enviado">Enviado</option>
       <option value="visto">Visto</option><option value="firmado">Firmado</option>
     </select>
+    <button class="btn btn-sec btn-sm" onclick="openPlantilla()"><i class="ic ic-doc"></i> Modelo de contrato</button>
     <button class="btn btn-sec btn-sm" id="btnCtZip" onclick="bajarContratosZip()" title="Baja en un solo archivo los contratos firmados que estás viendo">↓ Bajar los firmados</button>
   </div>
   <div style="padding:20px 24px" id="ctContent"><div class="empty">Cargando...</div></div>
@@ -1270,6 +1271,40 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   </div>
 </div>
 
+<!-- Modal: el modelo de contrato -->
+<div class="modal-bg" id="mPlantilla" style="display:none" onclick="bgClose('mPlantilla',event)">
+  <div class="modal modal-xl">
+    <div class="modal-title">
+      <span>Modelo de contrato</span>
+      <button class="mclose" onclick="closeM('mPlantilla')">✕</button>
+    </div>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">
+      Esto es el texto legal del contrato que firma cada persona. Lo que cambies acá vale para los contratos que se generen de ahora en más; los ya firmados quedan con el texto que tenían.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-sec btn-sm" id="plTabAr" onclick="setPlantillaPais('ar')">Argentina</button>
+      <button class="btn btn-sec btn-sm" id="plTabEs" onclick="setPlantillaPais('espana')">España</button>
+    </div>
+    <div id="plAvisoEs" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:12px">
+      Todavía no hay modelo cargado para España. Hasta que lo haya, no se pueden generar contratos para convocatorias de ese país. Pegá acá el texto que redacte quien corresponda.
+    </div>
+    <div class="fg">
+      <label>Texto del contrato</label>
+      <textarea class="fi" id="plTexto" style="height:300px;font-size:12.5px;line-height:1.55;font-family:ui-monospace,Menlo,Consolas,monospace" oninput="plantillaCambio()"></textarea>
+    </div>
+    <div class="fg">
+      <label>Campos que se reemplazan solos</label>
+      <div id="plCampos" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      <div style="font-size:11.5px;color:#9ca3af;margin-top:6px">Tocá uno para insertarlo donde está el cursor. Lo que escribas entre llaves y no esté en esta lista se reemplaza por nada.</div>
+    </div>
+    <div id="plAviso" style="font-size:12px;margin-bottom:8px"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mPlantilla')">Cancelar</button>
+      <button class="btn btn-primary" id="plGuardarBtn" onclick="guardarPlantilla()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Pasar lista -->
 <div class="modal-bg" id="mLista" style="display:none" onclick="bgClose('mLista',event)">
   <div class="modal modal-xl">
@@ -1642,6 +1677,9 @@ let cvFileData = null;
 let currentUserRole = 'admin', currentUserId = null, currentUserName = '';
 let outTargetId = null, fbTargetId = null, fbTargetConvId = null;
 let rotacionConfig = { max_eventos: 3, dias_periodo: 30, modo: 'advertencia' };
+// El modelo de contrato, uno por país. Vive en la configuración y no en el
+// código, para que se pueda editar desde el panel.
+let contratoPlantillas = {};
 let etiquetasPaleta = [], formEtiquetas = [];
 let bajaDiasLimite = 3;
 let ausenciaConfig = { dias: 30, modo: 'advertencia' };
@@ -1910,6 +1948,8 @@ async function loadAll() {
   const archCfg = (cfgData || []).find(c => c.key === 'archivadas');
   const archSet = new Set(Array.isArray(archCfg && archCfg.value) ? archCfg.value : []);
   convs.forEach(c => { c.archivada = archSet.has(c.id); });
+  const plCfg = (cfgData || []).find(c => c.key === 'contrato_plantilla');
+  if (plCfg && plCfg.value && typeof plCfg.value === 'object') contratoPlantillas = plCfg.value;
   const bajaCfg = (cfgData || []).find(c => c.key === 'baja');
   bajaDiasLimite = (bajaCfg && bajaCfg.value && Number.isFinite(+bajaCfg.value.dias)) ? +bajaCfg.value.dias : 3;
   const ausCfg = (cfgData || []).find(c => c.key === 'ausencia');
@@ -4670,13 +4710,42 @@ Octava: El trabajador autoriza a la empresa a captar, reproducir y difundir su i
 
 En expresión de conformidad y previa lectura de ratificación de las partes firman el presente ejemplar los días {{fecha_firma_doc}} de {{anio}}.`;
 
-function buildTextoContrato(d) {
+// Los campos que se reemplazan. Los nombres son los que ve quien edita el
+// modelo desde el panel, así que valen como documentación.
+const CONTRATO_CAMPOS = [
+  ['nombre',          'Nombre y apellido de la persona'],
+  ['cuil',            'CUIL (o documento, en España)'],
+  ['puesto',          'Puesto para el que se la contrata'],
+  ['venue',           'Lugar del evento'],
+  ['fecha_inicio',    'Día en que empieza'],
+  ['fecha_fin',       'Día en que termina'],
+  ['anio',            'Año'],
+  ['monto_letras',    'Lo que cobra, en letras'],
+  ['monto_numero',    'Lo que cobra, en números'],
+  ['fecha_firma_doc', 'Fecha que va al pie, donde firman']
+];
+
+// El modelo vive en la configuración, no en el código: así se edita desde el
+// panel sin tener que publicar la página de nuevo. Si todavía no está
+// cargado, se usa el que trae el código, para no dejar de funcionar.
+function plantillaContrato(area) {
+  const guardadas = contratoPlantillas;
+  const pais = area === 'espana' ? 'espana' : 'ar';
+  const t = String(guardadas[pais] || '').trim();
+  if (t) return t;
+  // España no tiene respaldo: su contrato es otra ley, y un modelo argentino
+  // con otro nombre arriba sería peor que no tener ninguno.
+  return pais === 'ar' ? CONTRATO_TEMPLATE : '';
+}
+
+function buildTextoContrato(d, area) {
+  const plantilla = plantillaContrato(area);
   const map = {
     nombre: d.nombre || '', cuil: d.cuil || '', puesto: d.puesto || '', venue: d.venue || '',
     fecha_inicio: d.fecha_inicio || '', fecha_fin: d.fecha_fin || '', anio: d.anio || '',
     monto_letras: d.monto_letras || '', monto_numero: d.monto_numero || '', fecha_firma_doc: d.fecha_firma_doc || ''
   };
-  return CONTRATO_TEMPLATE.replace(/\{\{(\w+)\}\}/g, (_, k) => (map[k] != null ? map[k] : ''));
+  return plantilla.replace(/\{\{(\w+)\}\}/g, (_, k) => (map[k] != null ? map[k] : ''));
 }
 
 // ── Generación de PDF (pdf-lib) ──
@@ -4918,7 +4987,15 @@ async function generarContratoPDF(texto, opts) {
 
 // ── Alta y estado de contratos ──
 async function crearContrato(datos, convId, personaId, email, postulacionId, puestoId, area) {
-  const texto = buildTextoContrato(datos);
+  // El modelo lo decide el área de la convocatoria, que es la que sabe si el
+  // show es en España. El parámetro "area" de acá es para el remitente del
+  // mail y no distingue país.
+  const conv = convs.find(c => c.id === convId);
+  const texto = buildTextoContrato(datos, conv && conv.area);
+  if (!texto.trim()) {
+    toast('Falta cargar el modelo de contrato de España. Está en Contratos → Modelo de contrato.');
+    throw new Error('sin plantilla');
+  }
   const row = {
     conv_id: convId || null, persona_id: personaId || null, postulacion_id: postulacionId || null, puesto_id: puestoId || null,
     nombre: datos.nombre, cuil: datos.cuil, email: email || null, puesto: datos.puesto, venue: datos.venue,
@@ -4945,6 +5022,82 @@ async function marcarContratoEnviado(id) {
 }
 
 // ── Sección Contratos ──
+// ── EL MODELO DE CONTRATO ────────────────────────────────────
+let plPais = 'ar', plBorradores = {};
+
+function openPlantilla() {
+  const guardadas = contratoPlantillas;
+  plBorradores = { ar: String(guardadas.ar || CONTRATO_TEMPLATE), espana: String(guardadas.espana || '') };
+  document.getElementById('plCampos').innerHTML = CONTRATO_CAMPOS.map(([k, ayuda]) =>
+    `<button type="button" class="pos-elegir" title="${e(ayuda)}" onclick="insertarCampo('${k}')">{{${k}}}</button>`).join('');
+  setPlantillaPais('ar');
+  showM('mPlantilla');
+}
+
+function setPlantillaPais(pais) {
+  // Lo escrito en el otro no se pierde al cambiar de solapa.
+  const ta = document.getElementById('plTexto');
+  if (plBorradores[plPais] !== undefined) plBorradores[plPais] = ta.value;
+  plPais = pais;
+  ta.value = plBorradores[pais] || '';
+  document.getElementById('plTabAr').className = 'btn btn-sm ' + (pais === 'ar' ? 'btn-primary' : 'btn-sec');
+  document.getElementById('plTabEs').className = 'btn btn-sm ' + (pais === 'espana' ? 'btn-primary' : 'btn-sec');
+  document.getElementById('plAvisoEs').style.display = (pais === 'espana' && !ta.value.trim()) ? 'block' : 'none';
+  plantillaCambio();
+}
+
+function insertarCampo(k) {
+  const ta = document.getElementById('plTexto');
+  const i = ta.selectionStart, j = ta.selectionEnd;
+  ta.value = ta.value.slice(0, i) + '{{' + k + '}}' + ta.value.slice(j);
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = i + k.length + 4;
+  plantillaCambio();
+}
+
+// Avisa si el texto quedó con llaves que no se van a reemplazar por nada:
+// es el error fácil de cometer y sólo se nota cuando el contrato ya salió.
+function plantillaCambio() {
+  const t = document.getElementById('plTexto').value;
+  const validos = CONTRATO_CAMPOS.map(c => c[0]);
+  const usados = [...new Set((t.match(/\{\{(\w+)\}\}/g) || []).map(x => x.slice(2, -2)))];
+  const raros = usados.filter(k => !validos.includes(k));
+  const faltan = ['nombre', 'cuil'].filter(k => !usados.includes(k));
+  const av = document.getElementById('plAviso');
+  if (raros.length) {
+    av.style.color = 'var(--alerta)';
+    av.textContent = '⚠ Esto no existe y va a salir en blanco: ' + raros.map(k => '{{' + k + '}}').join(', ');
+  } else if (faltan.length) {
+    av.style.color = '#92400e';
+    av.textContent = '⚠ Falta poner ' + faltan.map(k => '{{' + k + '}}').join(' y ') + ' en el texto.';
+  } else if (!t.trim()) {
+    av.style.color = '#9ca3af';
+    av.textContent = 'Sin texto, no se pueden generar contratos de este país.';
+  } else {
+    av.style.color = '#0f6e56';
+    av.textContent = '✓ ' + t.trim().split(/\n\s*\n/).length + ' párrafos · ' + usados.length + ' campos';
+  }
+}
+
+async function guardarPlantilla() {
+  const ta = document.getElementById('plTexto');
+  plBorradores[plPais] = ta.value;
+  const btn = document.getElementById('plGuardarBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const valor = { ar: String(plBorradores.ar || '').trim(), espana: String(plBorradores.espana || '').trim() };
+    if (!valor.ar) { toast('El modelo argentino no puede quedar vacío'); return; }
+    await sb.from('config').upsert({ key: 'contrato_plantilla', value: valor, updated_at: new Date().toISOString() });
+    contratoPlantillas = valor;
+    closeM('mPlantilla');
+    toast('Modelo guardado — vale para los contratos que se generen de ahora en más');
+  } catch (err) {
+    toast('No se pudo guardar: ' + (err.message || err));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar';
+  }
+}
+
 // ── BAJAR LOS CONTRATOS FIRMADOS EN UN SOLO ARCHIVO ──────────
 // Un PDF ya viene comprimido, así que el .zip sólo los guarda uno al lado
 // del otro ("store"). Comprimirlos no ahorraría nada y obligaría a traer una
