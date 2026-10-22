@@ -3786,6 +3786,21 @@ function togglePickerSol() {
   renderPicker();
 }
 // Inscripciones sin aprobar que todavía no tienen ficha en la nómina.
+// El aviso que le llega a quien se aprueba. A España, en el castellano de
+// allá: "eventos" y no "recitales", tuteo y no voseo. Si se aprueba de a uno
+// o en lote tiene que salir el mismo texto, por eso está en un solo lugar.
+function avisoAprobacion(s) {
+  const nombre = s.nombre ? ' ' + s.nombre.split(' ')[0] : '';
+  if (s.area === 'espana') return {
+    asunto: `Tu solicitud ha sido aprobada — ${s.nombre}`,
+    texto: `¡Hola${nombre}!\n\nHemos revisado y aprobado tu solicitud para unirte al equipo de nuestros eventos. En breve nos pondremos en contacto contigo con más detalles sobre los próximos eventos.\n\n¡Gracias por tu interés!`
+  };
+  return {
+    asunto: `Tu solicitud fue aprobada — ${s.nombre}`,
+    texto: `Hola${nombre}!\n\nTu solicitud para sumarte al equipo de recitales fue revisada y aprobada. En breve nos contactamos con más detalles sobre los próximos recitales disponibles.\n\n¡Gracias por tu interés!`
+  };
+}
+
 function solicitudesSinAprobar(area, q) {
   const enNomina = new Set(people.map(p => docNucleo(p.cuit)).filter(Boolean));
   return (solicitudes || []).filter(s => {
@@ -4574,8 +4589,13 @@ async function sendBulkMail() {
   if (!fail) closeM('mBulkMail');
 }
 // ── CONTRATOS ──
+// Ojo: acá había una segunda normDoc() que sólo dejaba los números. Al ser una
+// declaración de función pisaba a la de más arriba en TODO el archivo, también
+// en las líneas anteriores a esta. Resultado: dos NIE distintos (X1234567L e
+// Y1234567X) se tomaban como la misma persona, y encima coincidían con el CUIL
+// 20-01234567-8. Hay una sola normDoc, y es la que entiende los documentos
+// españoles. Para un CUIL devuelve exactamente lo mismo que devolvía esta.
 let contratos = [], mailContratoCtx = null, ctTraceId = null, ctTraceRow = null;
-function normDoc(v) { return String(v || '').replace(/\D/g, ''); }
 function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
 
 // Un contrato con huecos no se manda: es un documento legal. Devuelve qué falta.
@@ -5807,14 +5827,10 @@ async function singleSolSt(id, estado) {
         if (currentConvId === s.conv_id) { renderPuestos(); renderDetStats(); }
       }
     }
-    // Cola de notificación para el candidato
-    await queueNotif(
-      'aprobacion',
-      `Tu solicitud fue aprobada — ${s.nombre}`,
-      `Hola${s.nombre?' '+s.nombre.split(' ')[0]:''}!\n\nTu solicitud para sumarte al equipo de recitales fue revisada y aprobada. En breve nos contactamos con más detalles sobre los próximos recitales disponibles.\n\n¡Gracias por tu interés!`,
-      s.email || null,
-      s.nombre
-    );
+    // Cola de notificación para el candidato. A España se le escribe como se
+    // habla allá: ni "recitales" ni el voseo.
+    const aviso = avisoAprobacion(s);
+    await queueNotif('aprobacion', aviso.asunto, aviso.texto, s.email || null, s.nombre);
     // Decía siempre "agregada a la nómina", incluso cuando no se agregaba nada.
     const alPuesto = s.conv_id && s.puesto_id ? ' y al puesto' : '';
     toast(existe
