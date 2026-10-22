@@ -14,7 +14,7 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .sbs-bg span{font-size:clamp(400px,75vw,1100px);font-weight:900;font-family:'Poppins',sans-serif;font-weight:900;letter-spacing:-.02em;line-height:1;color:#f0eeea;opacity:.9;user-select:none}
 .page-header{background:#0f1117;padding:28px 24px;text-align:center;position:relative;z-index:1}
 .page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
-.page-sub{font-size:13px;color:#6b7280;margin-top:4px}
+.page-sub{font-size:13px;color:#d1d5db;margin-top:4px}
 .container{max-width:640px;margin:32px auto;padding:0 16px 60px;position:relative;z-index:1}
 .card{background:rgba(255,255,255,.92);backdrop-filter:blur(4px);border-radius:12px;padding:28px;margin-bottom:16px;border:1px solid #e5e7eb}
 .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;margin-bottom:16px;display:flex;align-items:center;gap:8px}
@@ -51,7 +51,7 @@ textarea.fi{height:90px;resize:vertical}
 .err-msg{background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
 .progress-bar{height:3px;background:#ede9fe;border-radius:999px;overflow:hidden;margin-top:8px;display:none}
 .progress-fill{height:100%;background:#534AB7;border-radius:999px;transition:width .3s;width:0%}
-.required-note{font-size:12px;color:#9ca3af;margin-bottom:20px}
+.required-note{font-size:12px;color:#4b5563;margin-bottom:20px;background:rgba(255,255,255,.94);border:1px solid #e5e7eb;border-radius:8px;padding:8px 14px;display:inline-block}
 .radio-group{display:flex;flex-direction:column;gap:10px;margin-top:6px}
 .radio-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all .15s}
 .radio-opt:hover{border-color:#a5b4fc;background:#f5f3ff}
@@ -121,6 +121,44 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div style="font-size:13px;color:#4b5563;line-height:1.6">¿Resides en España? ¿Quieres trabajar en nuestros eventos? Rellena este formulario para apuntarte. Recopilamos tus datos para valorar tu candidatura y asignarte una posición. Apuntarte no garantiza la plaza: te contactaremos para confirmar.</div>
     </div>
 
+    <!-- Área de interés -->
+    <div class="card">
+      <div class="section-title">Área de interés</div>
+      <div class="area-btns">
+        <div class="area-btn active" id="btnMv" onclick="setArea('movistar_arena')">
+          <div class="area-btn-title">Movistar Arena</div>
+          <div class="area-btn-sub">Acomodadores, stagehands</div>
+        </div>
+        <div class="area-btn" id="btnEx" onclick="setArea('externos')">
+          <div class="area-btn-title">Externos</div>
+          <div class="area-btn-sub">Acomodadores, acreditaciones, producción</div>
+        </div>
+        <div class="area-btn" id="btnEs" onclick="setArea('espana')">
+          <div class="area-btn-title">España</div>
+          <div class="area-btn-sub">Si resides en España</div>
+        </div>
+      </div>
+      <div class="fg solo-ar" style="margin-top:14px">
+        <label>Puesto de interés <span class="req">*</span></label>
+        <input type="text" class="fi" id="fPuesto" placeholder="Ej: Acomodadores, Stagehands, Acreditaciones, Producción...">
+      </div>
+      <div class="fg solo-es" style="margin-top:14px">
+        <label>¿A qué posición(es) te quieres apuntar? <span class="req">*</span></label>
+        <div class="radio-group" id="posicionesEs">
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Orientadores"> <span class="radio-label">Orientadores<span class="opt-desc">Guían al público e informan sobre accesos, sectores y salidas</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Acomodadores"> <span class="radio-label">Acomodadores<span class="opt-desc">Asignan y gestionan las ubicaciones de los asistentes</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Host / Azafatos"> <span class="radio-label">Host / Azafatos<span class="opt-desc">Atienden espacios VIP y zonas exclusivas</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Hidratadores"> <span class="radio-label">Hidratadores<span class="opt-desc">Distribuyen agua y cuidan el bienestar del público</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Etiquetadores"> <span class="radio-label">Etiquetadores<span class="opt-desc">Numeran y organizan butacas y sillas</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Personal de carga"> <span class="radio-label">Personal de carga<span class="opt-desc">Carga y descarga de equipos, backline y escenografía (montaje y desmontaje)</span></span></label>
+        </div>
+      </div>
+      <div class="fg solo-es">
+        <label>¿Tienes experiencia previa en alguna de estas posiciones? Cuéntanos cuál y dónde</label>
+        <textarea class="fi" id="fExpEs" placeholder="Opcional"></textarea>
+      </div>
+    </div>
+
     <!-- Datos personales -->
     <div class="card">
       <div class="section-title">Datos personales</div>
@@ -164,44 +202,6 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div class="fg">
         <label>Instagram</label>
         <input type="text" class="fi" id="fInstagram" placeholder="@tuusuario" autocapitalize="off" autocorrect="off" spellcheck="false">
-      </div>
-    </div>
-
-    <!-- Área de interés -->
-    <div class="card">
-      <div class="section-title">Área de interés</div>
-      <div class="area-btns">
-        <div class="area-btn active" id="btnMv" onclick="setArea('movistar_arena')">
-          <div class="area-btn-title">Movistar Arena</div>
-          <div class="area-btn-sub">Acomodadores, stagehands</div>
-        </div>
-        <div class="area-btn" id="btnEx" onclick="setArea('externos')">
-          <div class="area-btn-title">Externos</div>
-          <div class="area-btn-sub">Acomodadores, acreditaciones, producción</div>
-        </div>
-        <div class="area-btn" id="btnEs" onclick="setArea('espana')">
-          <div class="area-btn-title">España</div>
-          <div class="area-btn-sub">Si resides en España</div>
-        </div>
-      </div>
-      <div class="fg solo-ar" style="margin-top:14px">
-        <label>Puesto de interés <span class="req">*</span></label>
-        <input type="text" class="fi" id="fPuesto" placeholder="Ej: Acomodadores, Stagehands, Acreditaciones, Producción...">
-      </div>
-      <div class="fg solo-es" style="margin-top:14px">
-        <label>¿A qué posición(es) te quieres apuntar? <span class="req">*</span></label>
-        <div class="radio-group" id="posicionesEs">
-          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Orientadores"> <span class="radio-label">Orientadores<span class="opt-desc">Guían al público e informan sobre accesos, sectores y salidas</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Acomodadores"> <span class="radio-label">Acomodadores<span class="opt-desc">Asignan y gestionan las ubicaciones de los asistentes</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Host / Azafatos"> <span class="radio-label">Host / Azafatos<span class="opt-desc">Atienden espacios VIP y zonas exclusivas</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Hidratadores"> <span class="radio-label">Hidratadores<span class="opt-desc">Distribuyen agua y cuidan el bienestar del público</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Etiquetadores"> <span class="radio-label">Etiquetadores<span class="opt-desc">Numeran y organizan butacas y sillas</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Personal de carga"> <span class="radio-label">Personal de carga<span class="opt-desc">Carga y descarga de equipos, backline y escenografía (montaje y desmontaje)</span></span></label>
-        </div>
-      </div>
-      <div class="fg solo-es">
-        <label>¿Tienes experiencia previa en alguna de estas posiciones? Cuéntanos cuál y dónde</label>
-        <textarea class="fi" id="fExpEs" placeholder="Opcional"></textarea>
       </div>
     </div>
 
