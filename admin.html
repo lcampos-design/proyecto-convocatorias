@@ -1857,7 +1857,10 @@ async function loadAll() {
       people = data;
     } else {
       // Fallback (si la función personas_lista aún no está creada): columnas livianas, sin cv.
-      const cols = 'id,nombre,area,estado,email,tel,notas,cuit,semaforo,out_flag,etiquetas,posiciones,created_at';
+      // Si se agrega una columna a la ficha, va acá también: si no, cuando
+      // la nómina entra por este camino esa columna llega vacía y, por
+      // ejemplo, la pestaña Recomendados muestra 0 con 66 marcados.
+      const cols = 'id,nombre,area,estado,email,tel,notas,cuit,semaforo,out_flag,out_categoria,out_nota,etiquetas,posiciones,recomendado,localidad,created_at';
       let from = 0;
       while (true) {
         const r = await sb.from('personas').select(cols).range(from, from + 999).order('created_at');
@@ -2083,6 +2086,18 @@ function renderDashboard() {
 
   // ── Próximos shows: fecha más cercana todavía por delante y cómo va el cupo ──
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  // Shows que son hoy y donde todavía nadie pasó lista: es lo que se olvida
+  // el día del evento y después hay que reconstruir de memoria.
+  const hoyISO = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+  const sinLista = (convs || []).filter(c => {
+    if (c.archivada) return false;
+    const turnosHoy = slotsDe(c).filter(t => t.fecha === hoyISO);
+    if (!turnosHoy.length) return false;
+    const aprobados = (posts || []).filter(p => p.convId === c.id && p.estado === 'aprobado');
+    if (!aprobados.length) return false;   // sin gente convocada no hay lista que pasar
+    return !turnosHoy.some(t => aprobados.some(p => presentesDe(p)[t.id]));
+  });
+  const irALista = sinLista.length === 1 ? `goSec('convs');openDetail('${sinLista[0].id}')` : "goSec('convs')";
   const prox = (convs || []).filter(c => !c.archivada).map(c => {
     const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
     const porVenir = fechas.filter(f => { const d = new Date(f + 'T00:00:00'); return !isNaN(d) && d >= hoy; });
@@ -2130,6 +2145,7 @@ function renderDashboard() {
       ${tarea(ctPend,   'Contratos sin firmar',      'Enviados o sin enviar',    "goSec('contratos')")}
       ${tarea(respPend, 'Respuestas sin leer',       'Mails que contestaron',    "goSec('respuestas')")}
       ${tarea(outs,     'Personas en OUT',           'Apartadas de la nómina',   "goSec('nomina');setNomTab('out')")}
+      ${tarea(sinLista.length, sinLista.length === 1 ? 'Show hoy sin pasar lista' : 'Shows hoy sin pasar lista', 'Nadie marcó presentes todavía', irALista)}
     </div>
 
     <div class="d-tit" style="margin-top:26px">Próximos shows</div>
