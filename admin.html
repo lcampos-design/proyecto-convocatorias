@@ -1238,7 +1238,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 <div class="modal-bg" id="mAddSup" style="display:none" onclick="bgClose('mAddSup',event)">
   <div class="modal" style="max-width:480px">
     <div class="modal-title"><span>Agregar supervisor</span><button class="mclose" onclick="closeM('mAddSup')">✕</button></div>
-    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">El supervisor debe existir como usuario en Supabase Auth. Podés crearlo en Dashboard → Authentication → Users.</div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">Se le crea la cuenta acá mismo. Al guardar vas a ver la contraseña <strong>una sola vez</strong>, para pasársela.</div>
     <div class="fg"><label>Email del supervisor *</label><input type="email" class="fi" id="supEmail" placeholder="supervisor@empresa.com"></div>
     <div class="fg"><label>Nombre para mostrar *</label><input type="text" class="fi" id="supNombre" placeholder="Ej: Carlos Díaz"></div>
     <div class="fg"><label>Asignar convocatoria</label>
@@ -1248,7 +1248,24 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     </div>
     <div class="ma">
       <button class="btn btn-sec" onclick="closeM('mAddSup')">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveSupProfile()">Guardar</button>
+      <button class="btn btn-primary" id="btnGuardarSup" onclick="saveSupProfile()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Supervisor creado (la contraseña se muestra una sola vez) -->
+<div class="modal-bg" id="mSupClave" style="display:none" onclick="bgClose('mSupClave',event)">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title"><span>Supervisor creado</span><button class="mclose" onclick="closeM('mSupClave')">✕</button></div>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">
+      Esta contraseña no se guarda en ningún lado y no se puede volver a ver. Pasásela ahora.
+    </div>
+    <div class="fg"><label>Entra desde</label><input type="text" class="fi" id="supClaveUrl" readonly onclick="this.select()"></div>
+    <div class="fg"><label>Usuario</label><input type="text" class="fi" id="supClaveMail" readonly onclick="this.select()"></div>
+    <div class="fg"><label>Contraseña</label><input type="text" class="fi" id="supClavePass" readonly onclick="this.select()" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:17px;letter-spacing:1px"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mSupClave')">Listo</button>
+      <button class="btn btn-primary" onclick="copiarAccesoSup()"><i class="ic ic-planilla"></i> Copiar para mandar</button>
     </div>
   </div>
 </div>
@@ -6264,19 +6281,50 @@ function openAddSup() {
   const sel = document.getElementById('supConvAsign'); sel.innerHTML = '<option value="">— sin asignar todavía —</option>' + convs.map(c=>`<option value="${c.id}">${e(c.nombre)}</option>`).join('');
   showM('mAddSup');
 }
+// Crear una cuenta necesita la clave de servidor, que no puede estar acá: el
+// panel se descarga entero en el navegador de quien lo abre. Por eso el alta
+// pasa por /api/supervisor, que valida que quien la pide sea admin.
+let supAccesoTexto = '';
 async function saveSupProfile() {
   const email = document.getElementById('supEmail').value.trim(); const nombre = document.getElementById('supNombre').value.trim();
   if (!email || !nombre) { toast('Email y nombre son obligatorios'); return; }
   const convId = document.getElementById('supConvAsign').value;
+  const btn = document.getElementById('btnGuardarSup');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creando...'; }
   try {
-    const { data: userData, error: uErr } = await sb.auth.admin.createUser({ email, password: Math.random().toString(36).slice(2) + 'Aa1!', email_confirm: true });
-    if (uErr) { toast('Error: ' + uErr.message); return; }
-    const uid2 = userData.user.id;
-    await sbInsert('user_profiles', [{ id: uid2, nombre, rol: 'supervisor' }]);
-    userProfiles.push({ id: uid2, nombre, rol: 'supervisor' });
-    if (convId) { await sbInsert('supervisor_convocatorias', [{ supervisor_id: uid2, conv_id: convId }]); supConvLinks.push({ supervisor_id: uid2, conv_id: convId }); }
-    closeM('mAddSup'); renderSupList(); toast('Supervisor creado — recordale que tiene que cambiar la contraseña');
-  } catch (err) { toast('Error creando supervisor: ' + err.message); }
+    const res = await fetch('/api/supervisor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+      body: JSON.stringify({ email, nombre })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast(data.error || 'No se pudo crear el supervisor'); return; }
+
+    userProfiles.push({ id: data.id, nombre, rol: 'supervisor' });
+    if (convId) {
+      try { await sbInsert('supervisor_convocatorias', [{ supervisor_id: data.id, conv_id: convId }]); supConvLinks.push({ supervisor_id: data.id, conv_id: convId }); } catch (_) {}
+    }
+    closeM('mAddSup'); renderSupList();
+    mostrarAccesoSup(data.email, data.password);
+  } catch (err) {
+    toast('Error creando supervisor: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar'; }
+  }
+}
+
+// La contraseña no se guarda en ningún lado: se muestra una vez y listo.
+function mostrarAccesoSup(email, password) {
+  const url = location.origin + '/supervisor-mobile';
+  document.getElementById('supClaveUrl').value = url;
+  document.getElementById('supClaveMail').value = email;
+  document.getElementById('supClavePass').value = password;
+  supAccesoTexto = 'Para cargar los feedbacks:\n' + url + '\n\nUsuario: ' + email + '\nContraseña: ' + password;
+  showM('mSupClave');
+}
+async function copiarAccesoSup() {
+  const ok = await copiarAlPortapapeles(supAccesoTexto);
+  toast(ok ? 'Copiado: pegalo en el WhatsApp' : 'No se pudo copiar: copialo a mano');
 }
 async function addSupConv(supId) {
   const convId = document.getElementById(`addConvSel-${supId}`)?.value; if (!convId) { toast('Seleccioná una convocatoria'); return; }
@@ -6288,10 +6336,23 @@ async function removeSupConv(supId, convId) {
   supConvLinks = supConvLinks.filter(l => !(l.supervisor_id === supId && l.conv_id === convId));
   try { await sb.from('supervisor_convocatorias').delete().eq('supervisor_id', supId).eq('conv_id', convId); renderSupList(); toast('Asignación removida'); } catch (_) {}
 }
+// Antes esto borraba sólo la ficha, y la cuenta quedaba viva. Para la base,
+// una cuenta sin ficha es un admin: el supervisor dado de baja terminaba
+// con más permisos que antes de darlo de baja. Ahora se borra la cuenta.
 async function delSup(id) {
-  if (!confirm('¿Eliminar este supervisor?')) return;
-  userProfiles = userProfiles.filter(p => p.id !== id); supConvLinks = supConvLinks.filter(l => l.supervisor_id !== id);
-  try { await sbDelete('user_profiles', id); renderSupList(); toast('Supervisor eliminado'); } catch (_) {}
+  if (!confirm('¿Eliminar este supervisor? Se le borra la cuenta y no va a poder entrar más.')) return;
+  try {
+    const res = await fetch('/api/supervisor', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+      body: JSON.stringify({ id })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast(data.error || 'No se pudo eliminar'); return; }
+    userProfiles = userProfiles.filter(p => p.id !== id);
+    supConvLinks = supConvLinks.filter(l => l.supervisor_id !== id);
+    renderSupList(); toast('Supervisor eliminado');
+  } catch (err) { toast('Error al eliminar: ' + err.message); }
 }
 
 // ── VISTA SUPERVISOR ──
