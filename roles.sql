@@ -45,13 +45,15 @@ $$;
 --  cargada, sigue entrando al panel como hasta ahora. Lo que importa es
 --  dejar afuera a los supervisores, y eso sí queda cerrado.
 --
---  ⚠ CONTRACARA: si en Supabase está abierto el registro libre
---    (Authentication → Providers → Email → "Enable signups"), cualquiera que
---    se registre entraría como admin. Si está abierto, apagalo.
+--  Esto se apoya en que nadie puede crearse una cuenta solo. Verificado el
+--  22/10/2026 en Authentication → Sign In / Providers → User Signups:
+--  "Allow new users to sign up" y "Allow anonymous sign-ins" están apagados,
+--  así que los únicos usuarios son los que crea el equipo. Si algún día se
+--  prende el registro libre, hay que pasar a la versión estricta de abajo
+--  ANTES, porque si no cualquiera que se registre entra como admin.
 --
---  Una vez que confirmes con la consulta de arriba que todos los del panel
---  tienen rol 'admin', conviene pasar a la versión estricta: cambiar el
---  cuerpo de abajo por
+--  La versión estricta: con la consulta de arriba confirmá que todos los del
+--  panel tengan rol 'admin' (nadie en "(sin rol)"), y cambiá el cuerpo por
 --     select exists (select 1 from public.user_profiles up
 --                    where up.id = auth.uid() and coalesce(up.rol,'') like 'admin%');
 create or replace function public.es_admin()
