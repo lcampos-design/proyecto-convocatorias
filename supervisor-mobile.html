@@ -297,7 +297,7 @@ function openConv(convId) {
       <div class="person-avatar" style="${avatarBg}">${initials}</div>
       <div style="flex:1;min-width:0">
         <div class="person-name">${esc(p.nombre)}</div>
-        <div class="person-meta">${p.area==='movistar_arena'?'Movistar Arena':'Externos'}${fb?` · <span style="color:#0369a1">✓ Feedback dado</span>':' · Sin feedback todavía'}</div>
+        <div class="person-meta">${p.area==='movistar_arena'?'Movistar Arena':'Externos'}${fb?' · <span style="color:#0369a1">✓ Feedback dado</span>':' · Sin feedback todavía'}</div>
       </div>
       <span class="sem sem-${sem}">${sem}</span>
       <span class="chevron">›</span>
