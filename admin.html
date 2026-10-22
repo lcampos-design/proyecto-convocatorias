@@ -617,34 +617,75 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   <div class="ctrlbar">
     <input type="text" class="srch" id="nomSrch" placeholder="Buscar por nombre, CUIL, email o teléfono..." oninput="nomSearch()">
     <select class="filt" id="nomStFilter" onchange="nomFilter()">
+      <option value="">Todos los estados</option>
+      <option value="pendiente">Pendiente</option><option value="contactado">Contactado</option>
+      <option value="confirmado">Confirmado</option><option value="no_asiste">No asiste</option>
+    </select>
     <select class="filt" id="nomSemFilter" onchange="nomFilter()" title="Filtrar por semáforo">
+      <option value="">Todos los semáforos</option>
+      <option value="1">🟢 1 — OK</option>
+      <option value="2">🟡 2 — Revisar</option>
+      <option value="3">🔴 3 — No llamar</option>
+    </select>
     <select class="filt" id="nomZonaFilter" onchange="nomFilter()" title="Filtrar por zona, para convocar por cercanía">
+      <option value="">Todas las zonas</option>
+      <option value="CABA">CABA</option>
+      <option value="Norte">Zona Norte</option>
+      <option value="Noroeste">Zona Noroeste</option>
+      <option value="Oeste">Zona Oeste</option>
+      <option value="Sur">Zona Sur</option>
+      <option value="Otra">Otra</option>
+      <option value="_sin">Sin localidad cargada</option>
+    </select>
     <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por posición">
+      <option value="">Todas las posiciones</option>
+      <option value="Supervisor">Supervisores</option>
+      <option value="Equipo operaciones">Equipo operaciones</option>
+      <option value="Operador acreditaciones">Operadores de acreditaciones</option>
+      <option value="Orientador">Orientadores</option>
+      <option value="Acomodador">Acomodadores</option>
+      <option value="Hidratación">Hidratación</option>
+      <option value="_sin">Sin posición cargada</option>
+    </select>
     <button class="btn btn-sec" id="nomFiltrosBtn" onclick="toggleFiltrosNom()" title="Orden, declaración jurada, etiquetas, rotación, documento y CV"><i class="ic ic-ajustes"></i> Más filtros <span class="tc" id="nomFiltrosBadge" style="display:none"></span></button>
     <span style="flex:1"></span>
-    <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">
+    <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">↓ Exportar</button>
     <div class="nom-mas">
       <button class="btn btn-sec" onclick="toggleMasNom(event)" title="Deduplicar, etiquetas, rotación, conflictos, importar">⋯ Herramientas</button>
       <div class="nom-mas-menu" id="nomMasMenu">
-        <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT">
-        <button class="btn btn-sec btn-sm" onclick="openEtiquetas()" title="Renombrar, unir o borrar etiquetas">
-        <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación">
-        <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">
-        <button class="btn btn-sec" onclick="openImport()">
+        <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT"><i class="ic ic-lupa"></i> Deduplicar</button>
+        <button class="btn btn-sec btn-sm" onclick="openEtiquetas()" title="Renombrar, unir o borrar etiquetas"><i class="ic ic-etiqueta"></i> Etiquetas</button>
+        <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
+        <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
+        <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
       </div>
     </div>
-    <button class="btn btn-primary" onclick="openCvForm()">
-    <button class="btn btn-primary" onclick="openAddPerson()">
+    <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
+    <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
   </div>
   <!-- Lo que se usa cada tanto: plegado, con contador de cuántos están puestos. -->
   <div class="ctrlbar nom-filtros" id="nomFiltros">
     <span class="nom-filtros-lbl">Más filtros</span>
     <select class="filt" id="nomOrden" onchange="nomFilter()" title="Cómo se ordena la lista">
+      <option value="">Orden por defecto</option>
+      <option value="semaforo">Mejor evaluados primero</option>
+    </select>
     <select class="filt" id="nomDecFilter" onchange="nomFilter()" title="Filtrar por lo declarado al inscribirse">
+      <option value="">Declaración jurada</option>
+      <option value="antec">Con antecedentes penales</option>
+      <option value="benef">Cobra beneficio social</option>
+      <option value="ambos">Con antecedentes o beneficio</option>
+    </select>
     <select class="filt" id="nomTagFilter" onchange="nomFilter()" title="Filtrar por etiqueta">
+      <option value="">Todas las etiquetas</option>
+    </select>
     <select class="filt" id="nomRotFilter" onchange="nomFilter()" title="Filtrar por rotación">
-    <button class="btn btn-sec" id="docFilterBtn" onclick="toggleDocFilter();contarFiltrosNom()" title="Ver sólo a quienes tienen el documento mal cargado">
-    <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter();contarFiltrosNom()">
+      <option value="">Toda la nómina</option>
+      <option value="rot">⚠ En rotación</option>
+      <option value="libre">✓ Disponibles</option>
+    </select>
+    <button class="btn btn-sec" id="docFilterBtn" onclick="toggleDocFilter();contarFiltrosNom()" title="Ver sólo a quienes tienen el documento mal cargado"><i class="ic ic-aviso"></i> Documento <span id="docFilterCount" style="font-size:10px;background:#fed7aa;color:#9a3412;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
+    <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter();contarFiltrosNom()"><i class="ic ic-doc"></i> Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
     <button class="btn btn-sec btn-sm" onclick="limpiarFiltrosNom()" title="Vuelve todos los filtros a cero">Limpiar filtros</button>
   </div>
   <div class="bulk-bar" id="nomBulk">
