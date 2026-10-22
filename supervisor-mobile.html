@@ -16,8 +16,7 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a1a;color:#1a1a1a;font-size:15px;min-height:100vh;-webkit-tap-highlight-color:transparent}
-.sbs-bg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden}
-.sbs-bg span{font-size:clamp(300px,110vw,700px);font-weight:900;font-family:'Poppins',sans-serif;letter-spacing:-.02em;line-height:1;color:#f0eeea;opacity:.9;user-select:none}
+.sbs-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:#2b2b2b url('fondo-sbs.jpg') center/cover no-repeat}
 .screen,.app-bar,.install-banner,.fb-sheet,.site-footer{position:relative;z-index:1}
 .app-bar{background:#0f1117;color:#fff;padding:env(safe-area-inset-top,0) 16px 0;position:sticky;top:0;z-index:50}
 .app-bar-inner{display:flex;align-items:center;gap:12px;padding:14px 0}
@@ -100,14 +99,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 <div class="load-bar" id="loadBar"></div>
 
 <!-- Install banner -->
-<div class="sbs-bg">
-  <div style="position:relative;display:inline-block">
-    <span>SBS</span>
-    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
-      <div style="font-size:clamp(9px,2.6vw,16px);font-weight:700;color:#1a1a1a;letter-spacing:.15em;line-height:1.3;font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;white-space:nowrap">HANDS ON<br>EVERYTHING</div>
-    </div>
-  </div>
-</div>
+<div class="sbs-bg"></div>
 
 <div class="install-banner" id="installBanner" style="display:none" onclick="doInstall()">
   <span style="flex:1">📱 Agregá esta app a tu pantalla de inicio para acceder más rápido</span>
