@@ -99,12 +99,17 @@ textarea.fi{height:64px;resize:vertical}
 .toast.on{opacity:1;transform:translateY(0)}
 .prog-wrap{flex:1;min-width:60px;height:6px;background:#f3f4f6;border-radius:999px;overflow:hidden}
 .prog-fill{height:100%;border-radius:999px;transition:width .3s}
-.cv-grid{padding:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
-.cv-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:18px;transition:border-color .15s,box-shadow .15s}
-.cv-card:hover{border-color:#a5b4fc;box-shadow:0 2px 8px rgba(83,74,183,.08)}
-.cv-card-title{font-size:15px;font-weight:600;color:#111827;margin-bottom:3px}
-.cv-card-meta{font-size:12px;color:#9ca3af;margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap}
-.cv-puestos{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.cv-list{padding:16px 24px;display:flex;flex-direction:column;gap:8px}
+.cv-row{display:flex;align-items:center;gap:18px;background:#fff;border:1px solid var(--r-line);border-radius:12px;padding:12px 16px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.cv-row:hover{border-color:#d4d4d8;box-shadow:0 4px 16px rgba(24,24,27,.07)}
+.cv-row.archivada{background:#fafafa;opacity:.7}
+.cv-row-main{flex:1;min-width:0}
+.cv-row-title{font-size:14px;font-weight:600;color:var(--r-ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cv-row-meta{font-size:12px;color:#9ca3af;margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.cv-row-cupo{display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;flex:0 0 220px}
+.cv-row-cupo .prog-wrap{flex:1}
+.cv-row-acts{display:flex;gap:6px;flex-shrink:0;align-items:center}
+@media (max-width:900px){.cv-row{flex-wrap:wrap}.cv-row-cupo{flex:1 1 100%}.cv-row-acts{flex:1 1 100%;justify-content:flex-end}}
 .cv-prow{display:flex;align-items:center;gap:8px;font-size:12px}
 .cv-pname{flex:1;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cv-cupo{font-size:11px;color:#9ca3af;white-space:nowrap}
@@ -249,9 +254,8 @@ td{padding:13px 16px;border-bottom:1px solid var(--r-line2);color:var(--r-ink2)}
 tr:hover td{background:#fafafa}
 .cn{color:var(--r-ink)}
 /* Tarjetas */
-.cv-card,.cand-card{border:1px solid var(--r-line);border-radius:14px}
-.cv-card:hover,.cand-card:hover{border-color:#d4d4d8;box-shadow:0 4px 16px rgba(24,24,27,.07)}
-.cv-card-title{color:var(--r-ink)}
+.cand-card{border:1px solid var(--r-line);border-radius:14px}
+.cand-card:hover{border-color:#d4d4d8;box-shadow:0 4px 16px rgba(24,24,27,.07)}
 /* Modales + paginación */
 .modal{border-radius:14px}
 .pb.active{background:var(--r-ink);border-color:var(--r-ink)}
@@ -524,6 +528,18 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .pl-p.on{background:#d1fae5;border-color:#6ee7b7;color:#065f46}
 .pl-a.on{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
 
+
+/* La barra de la nómina: filtros plegados y menú de herramientas */
+.nom-filtros{display:none;background:#fafafa;border-top:1px dashed #e5e7eb}
+.nom-filtros.on{display:flex}
+.nom-filtros-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-right:4px}
+#nomFiltrosBadge{background:var(--r-ink);color:#fff;border-color:var(--r-ink)}
+.nom-mas{position:relative}
+.nom-mas-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:30;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(24,24,27,.10);padding:6px;min-width:200px;flex-direction:column;gap:2px}
+.nom-mas-menu.on{display:flex}
+.nom-mas-menu .btn{justify-content:flex-start;width:100%;border:none;background:none;font-size:13px;padding:8px 10px;border-radius:7px}
+.nom-mas-menu .btn:hover{background:#f4f4f5}
+
 </style>
 </head>
 <body>
@@ -601,64 +617,35 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   <div class="ctrlbar">
     <input type="text" class="srch" id="nomSrch" placeholder="Buscar por nombre, CUIL, email o teléfono..." oninput="nomSearch()">
     <select class="filt" id="nomStFilter" onchange="nomFilter()">
-      <option value="">Todos los estados</option>
-      <option value="pendiente">Pendiente</option><option value="contactado">Contactado</option>
-      <option value="confirmado">Confirmado</option><option value="no_asiste">No asiste</option>
-    </select>
     <select class="filt" id="nomSemFilter" onchange="nomFilter()" title="Filtrar por semáforo">
-      <option value="">Todos los semáforos</option>
-      <option value="1">🟢 1 — OK</option>
-      <option value="2">🟡 2 — Revisar</option>
-      <option value="3">🔴 3 — No llamar</option>
-    </select>
-    <select class="filt" id="nomRotFilter" onchange="nomFilter()" title="Filtrar por rotación">
-      <option value="">Toda la nómina</option>
-      <option value="rot">⚠ En rotación</option>
-      <option value="libre">✓ Disponibles</option>
-    </select>
     <select class="filt" id="nomZonaFilter" onchange="nomFilter()" title="Filtrar por zona, para convocar por cercanía">
-      <option value="">Todas las zonas</option>
-      <option value="CABA">CABA</option>
-      <option value="Norte">Zona Norte</option>
-      <option value="Noroeste">Zona Noroeste</option>
-      <option value="Oeste">Zona Oeste</option>
-      <option value="Sur">Zona Sur</option>
-      <option value="Otra">Otra</option>
-      <option value="_sin">Sin localidad cargada</option>
-    </select>
     <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por posición">
-      <option value="">Todas las posiciones</option>
-      <option value="Supervisor">Supervisores</option>
-      <option value="Equipo operaciones">Equipo operaciones</option>
-      <option value="Operador acreditaciones">Operadores de acreditaciones</option>
-      <option value="Orientador">Orientadores</option>
-      <option value="Acomodador">Acomodadores</option>
-      <option value="Hidratación">Hidratación</option>
-      <option value="_sin">Sin posición cargada</option>
-    </select>
+    <button class="btn btn-sec" id="nomFiltrosBtn" onclick="toggleFiltrosNom()" title="Orden, declaración jurada, etiquetas, rotación, documento y CV"><i class="ic ic-ajustes"></i> Más filtros <span class="tc" id="nomFiltrosBadge" style="display:none"></span></button>
+    <span style="flex:1"></span>
+    <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">
+    <div class="nom-mas">
+      <button class="btn btn-sec" onclick="toggleMasNom(event)" title="Deduplicar, etiquetas, rotación, conflictos, importar">⋯ Herramientas</button>
+      <div class="nom-mas-menu" id="nomMasMenu">
+        <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT">
+        <button class="btn btn-sec btn-sm" onclick="openEtiquetas()" title="Renombrar, unir o borrar etiquetas">
+        <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación">
+        <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">
+        <button class="btn btn-sec" onclick="openImport()">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="openCvForm()">
+    <button class="btn btn-primary" onclick="openAddPerson()">
+  </div>
+  <!-- Lo que se usa cada tanto: plegado, con contador de cuántos están puestos. -->
+  <div class="ctrlbar nom-filtros" id="nomFiltros">
+    <span class="nom-filtros-lbl">Más filtros</span>
     <select class="filt" id="nomOrden" onchange="nomFilter()" title="Cómo se ordena la lista">
-      <option value="">Orden por defecto</option>
-      <option value="semaforo">Mejor evaluados primero</option>
-    </select>
     <select class="filt" id="nomDecFilter" onchange="nomFilter()" title="Filtrar por lo declarado al inscribirse">
-      <option value="">Declaración jurada</option>
-      <option value="antec">Con antecedentes penales</option>
-      <option value="benef">Cobra beneficio social</option>
-      <option value="ambos">Con antecedentes o beneficio</option>
-    </select>
     <select class="filt" id="nomTagFilter" onchange="nomFilter()" title="Filtrar por etiqueta">
-      <option value="">Todas las etiquetas</option>
-    </select>
-    <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT"><i class="ic ic-lupa"></i> Deduplicar</button>
-    <button class="btn btn-sec btn-sm" onclick="openEtiquetas()" title="Renombrar, unir o borrar etiquetas"><i class="ic ic-etiqueta"></i> Etiquetas</button>
-    <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
-    <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
-    <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
-    <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">↓ Exportar</button>
-    <button class="btn btn-sec" id="docFilterBtn" onclick="toggleDocFilter()" title="Ver sólo a quienes tienen el documento mal cargado"><i class="ic ic-aviso"></i> Documento <span id="docFilterCount" style="font-size:10px;background:#fed7aa;color:#9a3412;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
-    <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter()"><i class="ic ic-doc"></i> Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
-    <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
-    <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
+    <select class="filt" id="nomRotFilter" onchange="nomFilter()" title="Filtrar por rotación">
+    <button class="btn btn-sec" id="docFilterBtn" onclick="toggleDocFilter();contarFiltrosNom()" title="Ver sólo a quienes tienen el documento mal cargado">
+    <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter();contarFiltrosNom()">
+    <button class="btn btn-sec btn-sm" onclick="limpiarFiltrosNom()" title="Vuelve todos los filtros a cero">Limpiar filtros</button>
   </div>
   <div class="bulk-bar" id="nomBulk">
     <span id="nomBulkCnt">0 seleccionados</span><span style="color:#c4b5fd">|</span>
@@ -2210,8 +2197,8 @@ function verSolicitudesDe(area) {
 }
 
 function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('#sec-nomina .atab').forEach(t => t.classList.toggle('active', t.dataset.area === a)); nomPage = 1; nomRefresh(); }
-function nomSearch() { nomPage = 1; nomApply(); }
-function nomFilter() { nomPage = 1; nomApply(); }
+function nomSearch() { nomPage = 1; nomApply(); contarFiltrosNom(); }
+function nomFilter() { nomPage = 1; nomApply(); contarFiltrosNom(); }
 function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge(); refreshTagUI(); }
 function nomApply() {
   const q = document.getElementById('nomSrch').value.toLowerCase().trim();
@@ -3037,6 +3024,39 @@ async function delPerson(id) {
   try { await sbDelete('personas', id); toast('Eliminada'); } catch (_) {}
 }
 
+
+// ── LA BARRA DE LA NÓMINA ─────────────────────────────────────
+// Lo que se usa siempre está a la vista; lo demás queda plegado en "Más
+// filtros" y en "Herramientas". El contador dice cuántos filtros de los
+// plegados están puestos, para que no quede uno activo sin verse.
+let nomFiltrosAbierto = false;
+function toggleFiltrosNom() {
+  nomFiltrosAbierto = !nomFiltrosAbierto;
+  const p = document.getElementById('nomFiltros'); if (p) p.classList.toggle('on', nomFiltrosAbierto);
+}
+function contarFiltrosNom() {
+  const puesto = id => { const el = document.getElementById(id); return el && el.value ? 1 : 0; };
+  const n = puesto('nomOrden') + puesto('nomDecFilter') + puesto('nomTagFilter') + puesto('nomRotFilter')
+          + (docFilterOn ? 1 : 0) + (cvFilterOn ? 1 : 0);
+  const b = document.getElementById('nomFiltrosBadge'); if (!b) return;
+  b.textContent = n; b.style.display = n ? '' : 'none';
+}
+function limpiarFiltrosNom() {
+  ['nomSrch', 'nomStFilter', 'nomSemFilter', 'nomZonaFilter', 'nomPosFilter', 'nomOrden', 'nomDecFilter', 'nomTagFilter', 'nomRotFilter']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  if (docFilterOn) toggleDocFilter();
+  if (cvFilterOn) toggleCvFilter();
+  nomFilter();
+}
+function toggleMasNom(ev) {
+  if (ev) ev.stopPropagation();
+  const m = document.getElementById('nomMasMenu'); if (m) m.classList.toggle('on');
+}
+// Tocar en cualquier otro lado cierra el menú.
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('click', () => { const m = document.getElementById('nomMasMenu'); if (m) m.classList.remove('on'); });
+}
+
 // ── IMPORT ──
 function openImport() { document.getElementById('csvTxt').value = ''; document.getElementById('csvPrev').textContent = ''; document.getElementById('iArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; showM('mImport'); }
 function loadCsvFile() { const f = document.getElementById('csvFile').files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => { document.getElementById('csvTxt').value = ev.target.result; prevCsv(); }; r.readAsText(f, 'UTF-8'); }
@@ -3331,16 +3351,38 @@ function renderCvList() {
   });
   const cont = document.getElementById('cvCards');
   if (!filtered.length) { cont.innerHTML = `<div class="no-convs"><div class="no-convs-title">${convs.length === 0 ? 'Todavía no hay convocatorias' : 'Sin resultados'}</div><div class="no-convs-sub">${convs.length === 0 ? 'Creá una para cargar puestos y cupos.' : 'Probá con otro filtro.'}</div>${convs.length === 0 ? `<button class="btn btn-primary" onclick="openAddConv()">+ Crear primera convocatoria</button>` : ''}</div>`; return; }
-  cont.innerHTML = `<div class="cv-grid">${filtered.map(c => cvCardHTML(c)).join('')}</div>`;
+  cont.innerHTML = `<div class="cv-list">${filtered.map(c => cvRowHTML(c)).join('')}</div>`;
 }
-function cvCardHTML(c) {
-  const cPosts = posts.filter(p => p.convId === c.id); const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0); const usados = cPosts.filter(p => p.estado !== 'rechazado').length; const pct = totalCupos > 0 ? Math.min(100, Math.round(usados / totalCupos * 100)) : 0;
+function cvRowHTML(c) {
+  const cPosts = posts.filter(p => p.convId === c.id);
+  const totalCupos = (c.puestos || []).reduce((t, p) => t + p.cupos, 0);
+  const usados = cPosts.filter(p => p.estado !== 'rechazado').length;
+  const pct = totalCupos > 0 ? Math.min(100, Math.round(usados / totalCupos * 100)) : 0;
   const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : '#34d399';
-  return `<div class="cv-card"><div class="cv-card-title">${e(c.nombre)}</div>
-<div class="cv-card-meta">${c.archivada ? '<span class="a-badge" style="background:#e5e7eb;color:#6b7280"><i class="ic ic-caja"></i> Archivada</span>' : ''}<span class="a-badge ${areaClase(c.area)}">${areaLargo(c.area)}</span>${resumenFechas(c.fecha)}<span>${(c.puestos || []).length} puesto${(c.puestos || []).length !== 1 ? 's' : ''}</span></div>
-<div class="cv-puestos">${(c.puestos || []).slice(0, 4).map(p => { const pu = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado').length; const pp = p.cupos > 0 ? Math.min(100, Math.round(pu / p.cupos * 100)) : 0; const pc = pp < 50 ? '#e5e7eb' : pp < 80 ? '#fbbf24' : '#34d399'; return `<div class="cv-prow"><span class="cv-pname">${eN(p.nombre)}</span><div class="prog-wrap"><div class="prog-fill" style="background:${pc};width:${pp}%"></div></div><span class="cv-cupo">${pu}/${p.cupos}</span></div>`; }).join('')}${(c.puestos || []).length > 4 ? `<div style="font-size:11px;color:#9ca3af">+${(c.puestos || []).length - 4} puestos más</div>` : ''}</div>
-<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280;margin-bottom:12px"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span>${usados}/${totalCupos} cupos · ${pct}%</span></div>
-<div class="cv-foot"><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delConv('${c.id}')">Eliminar</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();archivarConv('${c.id}',${c.archivada ? 'false' : 'true'})">${c.archivada ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar'}</button><button class="btn btn-sec btn-sm" onclick="event.stopPropagation();openEditConv('${c.id}')"><i class="ic ic-lapiz"></i> Editar</button><button class="btn btn-sm ${c.publicada?'btn-success':'btn-sec'}" onclick="event.stopPropagation();togglePublicada('${c.id}')" title="${c.publicada?'Quitar de página pública':'Publicar en página pública'}">${c.publicada?'<i class="ic ic-globo"></i> Publicada':'○ Publicar'}</button><button class="btn btn-primary btn-sm" onclick="openDetail('${c.id}')">Gestionar →</button></div></div>`;
+  const nPuestos = (c.puestos || []).length;
+  // El detalle por puesto no va en el renglón: queda en el globo del mouse,
+  // y completo en "Gestionar".
+  const detallePuestos = (c.puestos || []).map(p => {
+    const pu = posts.filter(x => x.convId === c.id && x.puestoId === p.id && x.estado !== 'rechazado').length;
+    return p.nombre + ': ' + pu + '/' + p.cupos;
+  }).join('\n');
+  return `<div class="cv-row${c.archivada ? ' archivada' : ''}" onclick="openDetail('${c.id}')">
+  <div class="cv-row-main">
+    <div class="cv-row-title">${e(c.nombre)}${c.archivada ? ' <span class="a-badge" style="background:#e5e7eb;color:#6b7280"><i class="ic ic-caja"></i> Archivada</span>' : ''} <span class="a-badge ${areaClase(c.area)}">${areaLargo(c.area)}</span>${c.publicada ? ' <span class="a-badge" style="background:#ecfdf5;color:#0f6e56" title="Se ve en la página pública"><i class="ic ic-globo"></i> Publicada</span>' : ''}</div>
+    <div class="cv-row-meta">${resumenFechas(c.fecha)}<span title="${e(detallePuestos)}">${nPuestos} puesto${nPuestos !== 1 ? 's' : ''}</span></div>
+  </div>
+  <div class="cv-row-cupo" title="${e(detallePuestos)}">
+    <div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div>
+    <span>${usados}/${totalCupos} · ${pct}%</span>
+  </div>
+  <div class="cv-row-acts" onclick="event.stopPropagation()">
+    <button class="btn btn-primary btn-sm" onclick="openDetail('${c.id}')">Gestionar →</button>
+    <button class="btn btn-sec btn-xs" onclick="togglePublicada('${c.id}')" title="${c.publicada ? 'Quitar de la página pública' : 'Publicar en la página pública'}">${c.publicada ? '<i class="ic ic-globo"></i>' : '○'}</button>
+    <button class="btn btn-sec btn-xs" onclick="openEditConv('${c.id}')" title="Editar"><i class="ic ic-lapiz"></i></button>
+    <button class="btn btn-sec btn-xs" onclick="archivarConv('${c.id}',${c.archivada ? 'false' : 'true'})" title="${c.archivada ? 'Desarchivar' : 'Archivar'}"><i class="ic ${c.archivada ? 'ic-caja-abrir' : 'ic-caja'}"></i></button>
+    <button class="btn btn-danger btn-xs" onclick="delConv('${c.id}')" title="Eliminar">✕</button>
+  </div>
+</div>`;
 }
 // Diecisiete fechas apiladas no se leen. Se muestra el período y cuántas son;
 // el detalle completo queda en el globo de ayuda al pasar el mouse.
