@@ -63,14 +63,18 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .fb-handle{width:36px;height:4px;background:#e5e7eb;border-radius:999px;margin:0 auto 18px}
 .fb-title{font-size:17px;font-weight:700;color:#111827;margin-bottom:4px}
 .fb-sub{font-size:13px;color:#9ca3af;margin-bottom:20px}
-.sem-options{display:flex;gap:10px;margin-bottom:18px}
-.sem-opt{flex:1;padding:12px 8px;border:2px solid #e5e7eb;border-radius:10px;cursor:pointer;text-align:center;transition:all .15s}
-.sem-opt:active{transform:scale(.97)}
-.sem-opt.sel-1{border-color:#10b981;background:#f0fdf4}
-.sem-opt.sel-2{border-color:#f59e0b;background:#fffbeb}
-.sem-opt.sel-3{border-color:#ef4444;background:#fff7f7}
-.sem-opt .icon{font-size:22px;margin-bottom:4px}
-.sem-opt .label{font-size:11px;font-weight:600;color:#374151}
+.fb-crit{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6}
+.fb-crit-txt{flex:1;min-width:0}
+.fb-crit-nom{font-size:13.5px;font-weight:600;color:#111827}
+.fb-crit-ayuda{font-size:11px;color:#9ca3af;margin-top:1px;line-height:1.35}
+.fb-crit-nums{display:flex;gap:5px;flex:0 0 auto}
+.fb-n{width:34px;height:34px;border-radius:9px;border:1.5px solid #d1d5db;background:#fff;color:#6b7280;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fb-n:active{transform:scale(.94)}
+.fb-n.on{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.fb-res{margin:14px 0 4px;padding:10px 13px;border-radius:9px;font-size:12.5px;background:#fafafa;border:1px solid #e5e7eb;color:#6b7280;text-align:center}
+.fb-res-1{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+.fb-res-2{background:#fffbeb;border-color:#fde68a;color:#92400e}
+.fb-res-3{background:#fef2f2;border-color:#fecaca;color:#991b1b}
 .fb-ta{width:100%;padding:12px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;outline:none;resize:none;height:90px;font-family:inherit}
 .fb-ta:focus{border-color:#534AB7}
 .fb-send{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px}
@@ -159,18 +163,9 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   <div class="fb-card">
     <div class="fb-handle"></div>
     <div class="fb-title" id="fbPersonName">Persona</div>
-    <div class="fb-sub">¿Cómo evaluás su desempeño en este recital?</div>
-    <div class="sem-options">
-      <div class="sem-opt" id="semOpt1" onclick="selectSem(1)">
-        <div class="icon">🟢</div><div class="label">Sin problemas</div><div style="font-size:18px;font-weight:700;color:#065f46">1</div>
-      </div>
-      <div class="sem-opt" id="semOpt2" onclick="selectSem(2)">
-        <div class="icon">🟡</div><div class="label">Revisar</div><div style="font-size:18px;font-weight:700;color:#92400e">2</div>
-      </div>
-      <div class="sem-opt" id="semOpt3" onclick="selectSem(3)">
-        <div class="icon">🔴</div><div class="label">No llamar</div><div style="font-size:18px;font-weight:700;color:#991b1b">3</div>
-      </div>
-    </div>
+    <div class="fb-sub">Puntuá del 1 al 5 en cada cosa. El color sale solo.</div>
+    <div id="fbCriterios"></div>
+    <div class="fb-res" id="fbResultado"></div>
     <textarea class="fb-ta" id="fbComentario" placeholder="Comentario (opcional)..."></textarea>
     <button class="fb-send" id="fbSendBtn" onclick="sendFeedback()">Enviar feedback</button>
     <div class="fb-prev" id="fbPrevSection" style="display:none">
@@ -194,7 +189,7 @@ let currentUser = null, currentUserId = null, currentUserName = '';
 // "people" guarda solo la gente del recital abierto. posts, feedbacks y
 // myConvIds ya no existen: esa informacion no sale de ninguna tabla.
 let convs = [], people = [];
-let currentConvId = null, fbPersonId = null, fbConvId = null, selectedSem = 0;
+let currentConvId = null, fbPersonId = null, fbConvId = null;
 let deferredInstall = null;
 
 // ── PWA Manifest ──
@@ -313,37 +308,86 @@ function goHome() { showScreen('screenHome'); renderHome(); }
 
 // ── Feedback sheet ──
 function openFbSheet(personaId, convId) {
-  fbPersonId = personaId; fbConvId = convId; selectedSem = 0;
+  fbPersonId = personaId; fbConvId = convId; fbValores = {};
   const p = people.find(x => x.id === personaId);
   document.getElementById('fbPersonName').textContent = p?.nombre || '';
   document.getElementById('fbComentario').value = '';
   document.getElementById('fbSendBtn').disabled = true;
-  [1,2,3].forEach(n => document.getElementById(`semOpt${n}`).className = 'sem-opt');
+  renderFbCriterios();
   const myFbs = (p && p.mis_feedbacks) || [];
   const prev = document.getElementById('fbPrevSection');
   if (myFbs.length) {
     prev.style.display = 'block';
-    document.getElementById('fbPrevList').innerHTML = myFbs.map(f => `<div class="fb-prev-item"><span class="sem sem-${f.puntaje}">${f.puntaje}</span><div><div style="font-size:12px;color:#374151">${esc(f.comentario||'Sin comentario')}</div><div style="font-size:11px;color:#9ca3af">${f.created_at?new Date(f.created_at).toLocaleDateString('es-AR'):''}</div></div></div>`).join('');
+    document.getElementById('fbPrevList').innerHTML = myFbs.map(f => `<div class="fb-prev-item"><span class="sem sem-${f.puntaje}">${f.puntaje}</span><div><div style="font-size:12px;color:#374151">${f.promedio != null ? '<strong>' + f.promedio + ' de 5</strong> · ' : ''}${esc(f.comentario||'Sin comentario')}</div><div style="font-size:11px;color:#9ca3af">${f.created_at?new Date(f.created_at).toLocaleDateString('es-AR'):''}</div></div></div>`).join('');
   } else { prev.style.display = 'none'; }
   document.getElementById('fbSheet').classList.remove('hidden');
   setTimeout(() => document.getElementById('fbComentario').blur(), 10);
 }
 function closeFbSheet() { document.getElementById('fbSheet').classList.add('hidden'); }
-function selectSem(n) {
-  selectedSem = n;
-  [1,2,3].forEach(i => { const el = document.getElementById(`semOpt${i}`); el.className = `sem-opt${i===n?' sel-'+n:''}`; });
+
+// Los mismos cuatro criterios que usa el panel. Si cambian allá, cambian acá.
+const FB_CRITERIOS = [
+  { id: 'actitud',    titulo: 'Actitud de servicio', ayuda: 'Trato con el público y predisposición' },
+  { id: 'consignas',  titulo: 'Cumple consignas',    ayuda: 'Hace lo que se le pide, respeta horarios y puesto' },
+  { id: 'presencia',  titulo: 'Buena presencia',     ayuda: 'Uniforme, prolijidad, imagen' },
+  { id: 'iniciativa', titulo: 'Iniciativa',          ayuda: 'Resuelve sin que se lo pidan, ayuda a los demás' }
+];
+// La misma regla del semáforo: 3,5 o más verde; 2 o menos rojo; en el medio
+// amarillo. La base hace esta misma cuenta al guardar; acá es para mostrarla
+// mientras puntúa.
+const NOMBRE_COLOR = { 1: 'Verde', 2: 'Amarillo', 3: 'Rojo' };
+function colorDePromedio(prom) {
+  if (!(prom > 0)) return 1;
+  if (prom >= 3.5) return 1;
+  if (prom > 2) return 2;
+  return 3;
+}
+let fbValores = {};
+function renderFbCriterios() {
+  document.getElementById('fbCriterios').innerHTML = FB_CRITERIOS.map(c => `<div class="fb-crit">
+      <div class="fb-crit-txt">
+        <div class="fb-crit-nom">${c.titulo}</div>
+        <div class="fb-crit-ayuda">${c.ayuda}</div>
+      </div>
+      <div class="fb-crit-nums">${[1,2,3,4,5].map(n =>
+        `<button type="button" class="fb-n" data-c="${c.id}" data-n="${n}" onclick="elegirFb('${c.id}',${n})">${n}</button>`).join('')}</div>
+    </div>`).join('');
+  pintarFbElegidos();
+}
+function elegirFb(criterio, n) { fbValores[criterio] = n; pintarFbElegidos(); }
+function pintarFbElegidos() {
+  document.querySelectorAll('#fbCriterios .fb-n').forEach(b => {
+    b.classList.toggle('on', fbValores[b.dataset.c] === +b.dataset.n);
+  });
+  const puestos = FB_CRITERIOS.filter(c => fbValores[c.id]).length;
+  const res = document.getElementById('fbResultado');
+  if (puestos < FB_CRITERIOS.length) {
+    res.className = 'fb-res';
+    res.textContent = `Faltan ${FB_CRITERIOS.length - puestos} de ${FB_CRITERIOS.length}`;
+    document.getElementById('fbSendBtn').disabled = true;
+    return;
+  }
+  const prom = FB_CRITERIOS.reduce((t, c) => t + fbValores[c.id], 0) / FB_CRITERIOS.length;
+  const col = colorDePromedio(prom);
+  res.className = 'fb-res fb-res-' + col;
+  res.innerHTML = `Promedio <strong>${prom.toFixed(2)}</strong> de 5 → <strong>${NOMBRE_COLOR[col]}</strong>`;
   document.getElementById('fbSendBtn').disabled = false;
 }
 async function sendFeedback() {
-  if (!selectedSem) { toast('Elegí un semáforo'); return; }
+  const faltan = FB_CRITERIOS.filter(c => !fbValores[c.id]);
+  if (faltan.length) { toast('Falta puntuar: ' + faltan.map(c => c.titulo).join(', ')); return; }
   const btn = document.getElementById('fbSendBtn'); btn.disabled = true; btn.textContent = 'Enviando...';
   const comentario = document.getElementById('fbComentario').value.trim();
   try {
-    // El promedio lo recalcula la base. Antes lo hacía el teléfono con la
-    // lista que tenía cargada, y dos supervisores a la vez se pisaban.
+    // El color y el semáforo los calcula la base, con la misma cuenta que el
+    // panel. Antes el color se elegía a ojo y el promedio lo hacía el
+    // teléfono con la lista que tenía cargada: dos supervisores a la vez se
+    // pisaban.
     const { data, error } = await sb.rpc('sup_feedback', {
       p_persona_id: fbPersonId, p_conv_id: fbConvId,
-      p_puntaje: selectedSem, p_comentario: comentario || null
+      p_actitud: fbValores.actitud, p_consignas: fbValores.consignas,
+      p_presencia: fbValores.presencia, p_iniciativa: fbValores.iniciativa,
+      p_comentario: comentario || null
     });
     if (error) throw error;
     if (!data || !data.ok) { toast(data && data.error ? data.error : 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Enviar feedback'; return; }
