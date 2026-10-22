@@ -1459,6 +1459,18 @@ function chipInstagram(v) {
   if (!u) return '';
   return `<a href="https://instagram.com/${encodeURIComponent(u)}" target="_blank" rel="noopener noreferrer" style="color:#a21caf;text-decoration:none">@${e(u)}</a>`;
 }
+// Para comparar si dos documentos son de la misma persona. El CUIL lleva el DNI
+// adentro (27-46990788-4), así que alguien cargado con el DNI suelto y esa misma
+// persona cargada con el CUIL completo tienen que dar lo mismo; si no, el panel
+// la ve dos veces y se duplica.
+// En España no aplica: el DNI/NIE con letra ya es el documento completo.
+function docNucleo(v) {
+  const t = normDoc(v);
+  if (!t || /[A-Z]/.test(t)) return t;
+  if (t.length === 11) return t.slice(2, 10).replace(/^0+/, '');
+  if (t.length === 7 || t.length === 8) return t.replace(/^0+/, '');
+  return t;
+}
 function fechaDMA(iso) { const [y, m, d] = String(iso || '').slice(0, 10).split('-'); return d ? `${d}/${m}/${y}` : ''; }
 
 // ── Estado global ──
@@ -2558,7 +2570,7 @@ async function cargarDatosBancarios() {
       .select('cuit,cbu,banco,numero_cuenta,iban,titular_cuenta')
       .order('created_at').range(desde, desde + 999);
     if (error || !data || !data.length) break;
-    data.forEach(x => { const d = normDoc(x.cuit); if (d && !mapa.has(d)) mapa.set(d, x); });
+    data.forEach(x => { const d = docNucleo(x.cuit); if (d && !mapa.has(d)) mapa.set(d, x); });
     if (data.length < 1000) break;
     desde += 1000;
   }
@@ -2577,7 +2589,7 @@ async function exportNom() {
   const rows = nomFiltered.map(p => {
     // Los datos bancarios viven en la solicitud (el registro), no en la ficha;
     // se cruzan por documento.
-    const cuil = normDoc(p.cuit);
+    const cuil = docNucleo(p.cuit);
     const sol = cuil ? banco.get(cuil) : null;
     return [p.nombre, p.area, p.estado, p.cuit, p.email, p.tel, p.notas, sol && sol.cbu, sol && sol.banco, sol && sol.numero_cuenta, ...(conEs ? [sol && sol.iban, sol && sol.titular_cuenta] : [])];
   });
@@ -2615,12 +2627,12 @@ let solPorDoc = new Map();
 function indexarSolicitudes() {
   solPorDoc = new Map();
   (solicitudes || []).forEach(s => {
-    const d = normDoc(s.cuit);
+    const d = docNucleo(s.cuit);
     if (d && !solPorDoc.has(d)) solPorDoc.set(d, s);
   });
 }
 function solicitudDe(p) {
-  const d = normDoc(p && p.cuit);
+  const d = docNucleo(p && p.cuit);
   return d ? (solPorDoc.get(d) || null) : null;
 }
 
@@ -2988,7 +3000,7 @@ function parseAsistenciaCsv(txt) {
   const data = hasH ? lines.slice(1) : lines;
   return data.map(line => {
     const cols = line.split(/[,;]/).map(c => c.trim().replace(/^"|"$/g, ''));
-    const cuil = normDoc(cols[0]);
+    const cuil = docNucleo(cols[0]);
     const marca = (cols[1] || '').toUpperCase().trim();
     if (!cuil) return null;
     return { cuil, asistio: marca === 'P' };
@@ -3003,13 +3015,13 @@ async function doImportAsistencia() {
   for (const row of rows) {
     const nuevaAsist = row.asistio ? 'presente' : 'ausente';
     // Intento 1: cruzar por persona en nómina que tiene ese CUIL
-    const pers = people.find(p => normDoc(p.cuit) === row.cuil);
+    const pers = people.find(p => docNucleo(p.cuit) === row.cuil);
     if (pers) {
       const post = myPosts.find(x => x.personaId === pers.id);
       if (post) { post.asistencia = nuevaAsist; try { await sbUpdate('postulaciones', post.id, { asistencia: nuevaAsist }); updated++; } catch (_) {} continue; }
     }
     // Intento 2: cruzar por CUIL guardado directamente en la postulación
-    const postByCuil = myPosts.find(x => normDoc(x.cuit) === row.cuil);
+    const postByCuil = myPosts.find(x => docNucleo(x.cuit) === row.cuil);
     if (postByCuil) { postByCuil.asistencia = nuevaAsist; try { await sbUpdate('postulaciones', postByCuil.id, { asistencia: nuevaAsist }); updated++; } catch (_) {} }
   }
   renderGestList(); renderPuestos(); closeM('mAsistencia');
@@ -3055,13 +3067,13 @@ function togglePickerSel(id) { if (pickerSel.has(id)) pickerSel.delete(id); else
 function choquesDeFecha(persona, convDestino, puestoDestino) {
   const fechas = new Set(convFechasArr(convDestino));
   if (!fechas.size) return [];
-  const doc = normDoc(persona && persona.cuit);
+  const doc = docNucleo(persona && persona.cuit);
   const choques = [];
   posts.forEach(x => {
     if (x.estado === 'rechazado') return;
     // La misma persona, por id o por documento.
     const otra = people.find(y => y.id === x.personaId);
-    const mismo = x.personaId === persona.id || (doc && normDoc(x.cuit || (otra && otra.cuit)) === doc);
+    const mismo = x.personaId === persona.id || (doc && docNucleo(x.cuit || (otra && otra.cuit)) === doc);
     if (!mismo) return;
     if (x.convId === convDestino.id && x.puestoId === puestoDestino.id) return;   // ya está en este puesto
     const conv = convs.find(c => c.id === x.convId); if (!conv) return;
@@ -3089,11 +3101,11 @@ function togglePickerSol() {
 }
 // Inscripciones sin aprobar que todavía no tienen ficha en la nómina.
 function solicitudesSinAprobar(area, q) {
-  const enNomina = new Set(people.map(p => normDoc(p.cuit)).filter(Boolean));
+  const enNomina = new Set(people.map(p => docNucleo(p.cuit)).filter(Boolean));
   return (solicitudes || []).filter(s => {
     if (s.estado !== 'pendiente' && s.estado !== 'en_revision') return false;
     if (area && s.area !== area) return false;
-    const d = normDoc(s.cuit);
+    const d = docNucleo(s.cuit);
     if (d && enNomina.has(d)) return false;
     const qd = q ? q.replace(/\D/g, '') : '';
     if (q && !(s.nombre || '').toLowerCase().includes(q) && !(qd && normDoc(s.cuit).includes(qd))) return false;
@@ -3107,8 +3119,8 @@ async function aprobarElegidas(claves) {
     const solId = k.slice(4);
     const sol = solicitudes.find(x => x.id === solId); if (!sol) continue;
     await singleSolSt(solId, 'aprobado');
-    const d = normDoc(sol.cuit);
-    const pers = d ? people.find(p => normDoc(p.cuit) === d) : people.find(p => p.nombre === sol.nombre);
+    const d = docNucleo(sol.cuit);
+    const pers = d ? people.find(p => docNucleo(p.cuit) === d) : people.find(p => p.nombre === sol.nombre);
     if (pers) ids.push(pers.id);
   }
   return ids;
@@ -3346,9 +3358,9 @@ async function checkCupoLleno(convId, puestoId) {
 // Busca la solicitud (registro) de una postulación: por CUIL, o por nombre+convocatoria.
 function solDePost(post) {
   if (!post) return null;
-  const cn = normDoc(post.cuit);
+  const cn = docNucleo(post.cuit);
   let sol = null;
-  if (cn) sol = solicitudes.find(s => normDoc(s.cuit) === cn);
+  if (cn) sol = solicitudes.find(s => docNucleo(s.cuit) === cn);
   if (!sol) sol = solicitudes.find(s => (s.nombre || '').toLowerCase().trim() === (post.nombre || '').toLowerCase().trim() && s.conv_id === post.convId);
   return sol || null;
 }
@@ -3488,7 +3500,7 @@ function prepMailTemplate(area) {
   } else {
     const s = solicitudes.find(x => x.id === mailSolId); if (!s) return;
     solEmail = s.email; solNombre = s.nombre; solConvId = s.conv_id; solPuesto = s.puesto_nombre || s.puesto_interes || ''; solCuit = s.cuit || '';
-    const per = people.find(p => normDoc(p.cuit) && normDoc(p.cuit) === normDoc(s.cuit));
+    const per = people.find(p => docNucleo(p.cuit) && docNucleo(p.cuit) === docNucleo(s.cuit));
     solPersonaId = per ? per.id : null;
   }
   mailConfirmCuit = String(solCuit || '').replace(/\D/g, '');
@@ -4601,7 +4613,7 @@ async function reenviarContrato() {
 function renderPersonContratos(p) {
   const block = document.getElementById('pContratosBlock');
   const list = document.getElementById('pContratosList');
-  const mios = contratos.filter(c => c.persona_id === p.id || (p.cuit && normDoc(c.cuil) === normDoc(p.cuit)));
+  const mios = contratos.filter(c => c.persona_id === p.id || (p.cuit && docNucleo(c.cuil) === docNucleo(p.cuit)));
   if (!mios.length) { block.style.display = 'none'; return; }
   block.style.display = 'block';
   list.innerHTML = mios.sort((a, b) => (b.fecha_creacion || '').localeCompare(a.fecha_creacion || '')).map(c => {
@@ -4818,9 +4830,9 @@ async function singleSolSt(id, estado) {
     // nómina aunque su solicitud figurara aprobada. Lo que identifica a alguien
     // es el documento; el nombre, no. Sin documento se cae al nombre, pero sólo
     // dentro de la misma área.
-    const docSol = normDoc(s.cuit);
+    const docSol = docNucleo(s.cuit);
     const existe = docSol
-      ? people.find(p => normDoc(p.cuit) === docSol)
+      ? people.find(p => docNucleo(p.cuit) === docSol)
       : people.find(p => p.area === s.area && (p.nombre || '').toLowerCase().trim() === (s.nombre || '').toLowerCase().trim());
     let personaId;
     if (!existe) {
@@ -4932,8 +4944,8 @@ function exportPostuladosExcel() {
     aoa.push([String(p.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'ESTADO', '', 'CUIL', 'DNI', 'TELEFONO', 'EMAIL', 'VIANDA', ...fechaCols, 'OBSERVACIONES', 'CANT. DE DÍAS', 'CAT', 'ART y SVO', 'CONTRATO']);
     asignados.forEach((post, i) => {
       const pers = people.find(x => x.id === post.personaId);
-      const cuil = normDoc(pers?.cuit || post.cuit);
-      const sol  = cuil ? solicitudes.find(s => normDoc(s.cuit) === cuil) : null;
+      const cuil = docNucleo(pers?.cuit || post.cuit);
+      const sol  = cuil ? solicitudes.find(s => docNucleo(s.cuit) === cuil) : null;
       const cuil9 = cuil.length === 11 ? cuil.slice(2) : '';       // CUIL sin prefijo (9)
       const dni   = cuil.length === 11 ? cuil.slice(2, 10) : '';   // DNI (8)
       const nm  = splitNombre(post.nombre || pers?.nombre || sol?.nombre || '');
@@ -5017,9 +5029,9 @@ function renderDispBody() {
   const thDates = slots.map(s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center;vertical-align:bottom" title="${e(s.horario || '')}">${fmtFechaCorta(s.fecha)}${s.horario ? `<div style="font-size:9px;font-weight:400;color:#8b8fa3;text-transform:none;max-width:100px;margin:2px auto 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(s.horario)}</div>` : ''}</th>`).join('');
   const rows = dispRows.map(r => {
     const rf = Array.isArray(r.fechas) ? r.fechas : [];
-    const cn = normDoc(r.cuit);
-    const per = people.find(p => normDoc(p.cuit) === cn);
-    const sol = solicitudes.find(s => normDoc(s.cuit) === cn);
+    const cn = docNucleo(r.cuit);
+    const per = people.find(p => docNucleo(p.cuit) === cn);
+    const sol = solicitudes.find(s => docNucleo(s.cuit) === cn);
     const email = per?.email || sol?.email || '';
     const tel = per?.tel || sol?.tel || '';
     const cells = slots.map(s => `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${rf.includes(s.id) ? '<span style="color:#16a34a;font-weight:700">✓</span>' : '<span style="color:#d1d5db">·</span>'}</td>`).join('');
@@ -5053,9 +5065,9 @@ function exportarDisponibilidad() {
   const hdrs = ['Persona', 'CUIT', 'Email', ...slots.map(colLabel), 'Turnos disponibles'];
   const rows = dispRows.map(r => {
     const rf = Array.isArray(r.fechas) ? r.fechas : [];
-    const cn = normDoc(r.cuit);
-    const per = people.find(p => normDoc(p.cuit) === cn);
-    const sol = solicitudes.find(s => normDoc(s.cuit) === cn);
+    const cn = docNucleo(r.cuit);
+    const per = people.find(p => docNucleo(p.cuit) === cn);
+    const sol = solicitudes.find(s => docNucleo(s.cuit) === cn);
     const email = per?.email || sol?.email || '';
     const marks = slots.map(s => rf.includes(s.id) ? 'SÍ' : '');
     const total = slots.filter(s => rf.includes(s.id)).length;
@@ -5066,9 +5078,9 @@ function exportarDisponibilidad() {
   descargarExcel(`disponibilidad-${String(c.nombre || '').slice(0, 30).replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`, [hdrs, ...rows, footer], 'Disponibilidad');
 }
 function confirmarDisponibilidad(cuit, nombre) {
-  const cn = normDoc(cuit);
-  const per = people.find(p => normDoc(p.cuit) === cn);
-  const sol = solicitudes.find(s => normDoc(s.cuit) === cn);
+  const cn = docNucleo(cuit);
+  const per = people.find(p => docNucleo(p.cuit) === cn);
+  const sol = solicitudes.find(s => docNucleo(s.cuit) === cn);
   const email = per?.email || sol?.email;
   if (!email) { toast('Esta persona no tiene email cargado'); return; }
   closeM('mDispAdmin');
@@ -5096,11 +5108,11 @@ function checkRotacion(personaId) {
 // Seguimiento de ausentes: cuenta faltas y si está "en penalidad" (no reconvocar hasta X días después de la última falta).
 function checkAusencia(persona) {
   if (!persona) return { ausencias: 0, penalizado: false, hasta: null, ultima: null };
-  const pid = persona.id, pcuit = normDoc(persona.cuit);
+  const pid = persona.id, pcuit = docNucleo(persona.cuit);
   const ausentes = posts.filter(p => {
     if (p.asistencia !== 'ausente') return false;
     if (p.personaId && p.personaId === pid) return true;
-    return !!pcuit && normDoc(p.cuit) === pcuit;
+    return !!pcuit && docNucleo(p.cuit) === pcuit;
   });
   if (!ausentes.length) return { ausencias: 0, penalizado: false, hasta: null, ultima: null };
   const fechas = ausentes.map(p => { const c = convs.find(cv => cv.id === p.convId); const fs = String(c?.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort(); return fs[0] || null; }).filter(Boolean).sort();
@@ -5191,7 +5203,7 @@ function agendaPorCuit() {
   const map = {};
   posts.forEach(p => {
     if (p.estado === 'rechazado') return;
-    const cuit = normDoc(p.cuit); if (!cuit) return;
+    const cuit = docNucleo(p.cuit); if (!cuit) return;
     const conv = convs.find(c => c.id === p.convId); if (!conv) return;
     const puesto = (conv.puestos || []).find(pu => pu.id === p.puestoId)?.nombre || 'Puesto';
     if (!map[cuit]) map[cuit] = { nombre: p.nombre || '', items: [] };
@@ -5236,7 +5248,7 @@ function openConflictos() {
 }
 
 function buscarConflictoCuit() {
-  const raw = normDoc(document.getElementById('confCuit').value);
+  const raw = docNucleo(document.getElementById('confCuit').value);
   const cont = document.getElementById('confBusca');
   if (raw.length < 6) { cont.innerHTML = ''; return; }
   const rec = agendaPorCuit()[raw];
