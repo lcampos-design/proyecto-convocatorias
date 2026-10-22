@@ -830,6 +830,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <option value="pendiente">Pendiente</option><option value="enviado">Enviado</option>
       <option value="visto">Visto</option><option value="firmado">Firmado</option>
     </select>
+    <button class="btn btn-sec btn-sm" id="btnCtZip" onclick="bajarContratosZip()" title="Baja en un solo archivo los contratos firmados que estás viendo">↓ Bajar los firmados</button>
   </div>
   <div style="padding:20px 24px" id="ctContent"><div class="empty">Cargando...</div></div>
 </div>
@@ -4926,6 +4927,118 @@ async function marcarContratoEnviado(id) {
 }
 
 // ── Sección Contratos ──
+// ── BAJAR LOS CONTRATOS FIRMADOS EN UN SOLO ARCHIVO ──────────
+// Un PDF ya viene comprimido, así que el .zip sólo los guarda uno al lado
+// del otro ("store"). Comprimirlos no ahorraría nada y obligaría a traer una
+// librería más para el panel.
+let CRC_TABLA = null;
+function crc32(bytes) {
+  if (!CRC_TABLA) {
+    CRC_TABLA = new Int32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      CRC_TABLA[i] = c;
+    }
+  }
+  let c = -1;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLA[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+
+function base64ABytes(b64) {
+  const bin = atob(String(b64 || '').replace(/^data:[^,]*,/, ''));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function armarZip(archivos) {
+  const enc = new TextEncoder();
+  const num = (v, n) => { const b = new Uint8Array(n); for (let i = 0; i < n; i++) b[i] = (v >>> (i * 8)) & 0xFF; return b; };
+  // La fecha va en el formato viejo de DOS, que es el que entiende cualquier
+  // descompresor, incluido el que trae Windows.
+  const d = new Date();
+  const hora = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF;
+  const fecha = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+  const partes = [], central = [];
+  let offset = 0;
+  archivos.forEach(a => {
+    const nombre = enc.encode(a.nombre);
+    const crc = crc32(a.datos), tam = a.datos.length;
+    // El bit 11 avisa que el nombre está en UTF-8: sin eso se rompen las tildes.
+    const cab = [num(0x04034b50, 4), num(20, 2), num(0x0800, 2), num(0, 2), num(hora, 2), num(fecha, 2),
+                 num(crc, 4), num(tam, 4), num(tam, 4), num(nombre.length, 2), num(0, 2), nombre];
+    cab.forEach(x => partes.push(x));
+    partes.push(a.datos);
+    central.push([num(0x02014b50, 4), num(20, 2), num(20, 2), num(0x0800, 2), num(0, 2), num(hora, 2), num(fecha, 2),
+                  num(crc, 4), num(tam, 4), num(tam, 4), num(nombre.length, 2), num(0, 2), num(0, 2), num(0, 2),
+                  num(0, 2), num(0, 4), num(offset, 4), nombre]);
+    offset += cab.reduce((t, x) => t + x.length, 0) + tam;
+  });
+  const indice = [];
+  central.forEach(c => c.forEach(x => indice.push(x)));
+  const tamIndice = indice.reduce((t, x) => t + x.length, 0);
+  const fin = [num(0x06054b50, 4), num(0, 2), num(0, 2), num(archivos.length, 2), num(archivos.length, 2),
+               num(tamIndice, 4), num(offset, 4), num(0, 2)];
+  const todo = partes.concat(indice, fin);
+  const out = new Uint8Array(todo.reduce((t, x) => t + x.length, 0));
+  let p = 0;
+  todo.forEach(x => { out.set(x, p); p += x.length; });
+  return out;
+}
+
+// Dos personas pueden llamarse igual: el nombre del archivo lleva el documento,
+// y si aun así se repite se le agrega un número para que no se pise ninguno.
+function nombresDeArchivo(filas) {
+  const usados = {};
+  return filas.map(r => {
+    const limpio = String(r.nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Za-z0-9 ]/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'sin-nombre';
+    let base = 'contrato-' + limpio + (r.cuil ? '-' + normDoc(r.cuil) : '');
+    usados[base] = (usados[base] || 0) + 1;
+    if (usados[base] > 1) base += '-' + usados[base];
+    return base + '.pdf';
+  });
+}
+
+async function bajarContratosZip() {
+  const firmados = contratosFiltrados().filter(c => c.estado === 'firmado');
+  if (!firmados.length) { toast('No hay contratos firmados en lo que estás viendo'); return; }
+  if (firmados.length > 150 && !confirm(firmados.length + ' contratos firmados. Puede tardar un rato y es un archivo pesado. ¿Seguir?')) return;
+  const btn = document.getElementById('btnCtZip');
+  const volver = () => { if (btn) { btn.disabled = false; btn.textContent = '↓ Bajar los firmados'; } };
+  if (btn) { btn.disabled = true; btn.textContent = 'Buscando...'; }
+  try {
+    // El PDF firmado pesa, así que se trae de a tandas en vez de todo junto.
+    const filas = [];
+    for (let i = 0; i < firmados.length; i += 20) {
+      const ids = firmados.slice(i, i + 20).map(c => c.id);
+      const { data, error } = await sb.from('contratos').select('id,nombre,cuil,pdf_firmado').in('id', ids);
+      if (error) throw error;
+      (data || []).forEach(r => filas.push(r));
+      if (btn) btn.textContent = 'Buscando ' + Math.min(i + 20, firmados.length) + '/' + firmados.length + '...';
+    }
+    const conPdf = filas.filter(r => r.pdf_firmado);
+    if (!conPdf.length) { toast('Ninguno tiene el PDF firmado guardado'); volver(); return; }
+    if (btn) btn.textContent = 'Armando el archivo...';
+    const nombres = nombresDeArchivo(conPdf);
+    const zip = armarZip(conPdf.map((r, i) => ({ nombre: nombres[i], datos: base64ABytes(r.pdf_firmado) })));
+    const url = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'contratos-firmados-' + new Date().toISOString().slice(0, 10) + '.zip';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    const sinPdf = filas.length - conPdf.length;
+    toast('✓ ' + conPdf.length + ' contratos' + (sinPdf ? ' (' + sinPdf + ' sin PDF guardado quedaron afuera)' : ''));
+  } catch (err) {
+    toast('Error al armar el archivo: ' + (err.message || err));
+  } finally {
+    volver();
+  }
+}
+
 function estadoBadge(estado) {
   const map = {
     pendiente: ['#f3f4f6', '#6b7280', 'Pendiente'], enviado: ['#e0f2fe', '#0369a1', 'Enviado'],
@@ -5089,22 +5202,28 @@ function descargarPdfBorrado() {
   a.click();
 }
 
-function renderContratos() {
-  ctTabCounts();
-  if (ctTab === 'borrados') { renderContratosBorrados(); return; }
-  const cont = document.getElementById('ctContent'); if (!cont) return;
+// Lo que se está viendo en la lista. Lo usan la tabla y el botón de bajar
+// todos, para que el archivo tenga exactamente lo que está en pantalla.
+function contratosFiltrados() {
   const q = (document.getElementById('ctSrch')?.value || '').toLowerCase().trim();
   const convF = document.getElementById('ctConvFilter')?.value || '';
   const perF = document.getElementById('ctPeriodoFilter')?.value || '';
   const estF = document.getElementById('ctEstadoFilter')?.value || '';
-  const list = contratos.filter(c => {
+  const qd = q.replace(/\D/g, '');
+  return contratos.filter(c => {
     if (convF && c.conv_id !== convF) return false;
     if (perF && periodoDe(c) !== perF) return false;
     if (estF && c.estado !== estF) return false;
-    const qd = q.replace(/\D/g, '');
     if (q && !((c.nombre || '').toLowerCase().includes(q) || (qd && normDoc(c.cuil).includes(qd)))) return false;
     return true;
   }).sort((a, b) => (b.fecha_creacion || '').localeCompare(a.fecha_creacion || ''));
+}
+
+function renderContratos() {
+  ctTabCounts();
+  if (ctTab === 'borrados') { renderContratosBorrados(); return; }
+  const cont = document.getElementById('ctContent'); if (!cont) return;
+  const list = contratosFiltrados();
   if (!list.length) { cont.innerHTML = `<div class="empty">${contratos.length === 0 ? 'Todavía no se generó ningún contrato.' : 'Sin resultados para este filtro.'}</div>`; return; }
   cont.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>CUIL</th><th>Puesto</th><th>Convocatoria</th><th>Estado</th><th>Creado</th><th></th></tr></thead><tbody>${list.map(c => {
     const conv = convs.find(x => x.id === c.conv_id);
