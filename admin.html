@@ -3138,18 +3138,40 @@ async function doImport() {
 // verdad: abre en columnas en cualquier Excel y no depende del separador.
 // Todo va como texto a propósito: si Excel toma un CUIL o un teléfono como
 // número, lo pasa a notación científica y le come los ceros de adelante.
-function descargarExcel(nombreArchivo, filas, nombreHoja) {
-  if (!filas || filas.length < 2) { toast('No hay nada para exportar'); return; }
-  const texto = filas.map(f => (f || []).map(v => (v === null || v === undefined) ? '' : String(v)));
-  const hoja = XLSX.utils.aoa_to_sheet(texto);
-  // Cada columna al ancho de su contenido más largo, con un tope para que una
-  // nota larga no haga una columna de medio metro.
-  hoja['!cols'] = (texto[0] || []).map((_, i) =>
-    ({ wch: Math.min(44, Math.max(10, ...texto.map(f => (f[i] || '').length + 2))) }));
+// Varias hojas en un archivo: [{ nombre, filas }]. Cada columna al ancho de su
+// contenido más largo, con un tope para que una nota larga no haga una
+// columna de medio metro. Excel acepta nombres de hoja de hasta 31 letras y
+// sin estos caracteres: \ / ? * [ ] :
+function descargarLibro(nombreArchivo, hojas) {
+  const conDatos = (hojas || []).filter(h => h && h.filas && h.filas.length);
+  if (!conDatos.length) { toast('No hay nada para exportar'); return; }
   const libro = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(libro, hoja, (nombreHoja || 'Datos').slice(0, 31));
+  const usados = {};
+  conDatos.forEach(h => {
+    const texto = h.filas.map(f => (f || []).map(v => (v === null || v === undefined) ? '' : String(v)));
+    const hoja = XLSX.utils.aoa_to_sheet(texto);
+    const ancho = Math.max(...texto.map(f => f.length));
+    hoja['!cols'] = Array.from({ length: ancho }, (_, i) =>
+      ({ wch: Math.min(44, Math.max(10, ...texto.map(f => (f[i] || '').length + 2))) }));
+    let nombre = String(h.nombre || 'Datos').replace(/[\\/?*\[\]:]/g, ' ').trim().slice(0, 31) || 'Datos';
+    // Dos turnos el mismo día sin horario darían dos hojas con el mismo nombre.
+    if (usados[nombre]) nombre = (nombre.slice(0, 28) + ' ' + (++usados[nombre])).slice(0, 31); else usados[nombre] = 1;
+    XLSX.utils.book_append_sheet(libro, hoja, nombre);
+  });
   XLSX.writeFile(libro, nombreArchivo);
   toast('Descargado: ' + nombreArchivo);
+}
+function descargarExcel(nombreArchivo, filas, nombreHoja) {
+  if (!filas || filas.length < 2) { toast('No hay nada para exportar'); return; }
+  descargarLibro(nombreArchivo, [{ nombre: nombreHoja || 'Datos', filas }]);
+}
+
+// Como lo hace la planilla del Arena: la última palabra es el apellido. Es el
+// mejor esfuerzo posible sin tener los dos campos separados.
+function apellidoYNombre(full) {
+  const t = String(full || '').trim().split(/\s+/).filter(Boolean);
+  if (t.length <= 1) return { apellido: '', nombre: t[0] || '' };
+  return { apellido: t[t.length - 1], nombre: t.slice(0, -1).join(' ') };
 }
 
 // Los datos bancarios no vienen en la lista de solicitudes: son cinco columnas
@@ -3728,20 +3750,62 @@ async function exportPresentes() {
   if (!todos.length) { toast('No hay nadie aprobado para exportar'); return; }
   const slots = slotsDe(c);
   const puestoDe = id => ((c.puestos || []).filter(p => p.id === id)[0] || {}).nombre || '';
+  const personaDe = x => people.filter(p => p.id === x.personaId)[0];
   const banco = await cargarDatosBancarios();
+
+  // Con el mismo armado que la planilla del Arena, para que les sirva tal cual:
+  //   PEDIDO      lo que se pidió: la suma de cupos de los puestos
+  //   ASISTENCIAS cuántos se marcaron presentes en ese turno
+  //   EXTRAS      los que vinieron por encima del pedido, si pasó
+  //   AUSENTES    cuántos se marcaron como que faltaron
+  // Lo que nadie marcó no se cuenta en ningún lado: no se inventa.
+  const pedido = (c.puestos || []).reduce((t, p) => t + (p.cupos || 0), 0);
+  const fechaLinda = f => { const d = new Date(f + 'T00:00:00'); return isNaN(d) ? f : String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear(); };
+
+  const hojas = slots.map(sl => {
+    const marca = x => ({ presente: 'P', ausente: 'A' })[presentesDe(x)[sl.id]] || '';
+    const asistencias = todos.filter(x => marca(x) === 'P').length;
+    const ausentes = todos.filter(x => marca(x) === 'A').length;
+    const filas = [
+      ['PLANILLA DE PRESENTES', c.nombre || '', c.venue || '', fechaLinda(sl.fecha) + (sl.horario ? ' · ' + sl.horario : '')],
+      [],
+      ['PEDIDO', 'ASISTENCIAS', 'EXTRAS', 'AUSENTES'],
+      [pedido, asistencias, Math.max(0, asistencias - pedido), ausentes],
+      []
+    ];
+    // Una tabla por sector, en el orden en que están cargados los puestos.
+    // Quien está aprobado sin puesto va al final, en "SIN PUESTO".
+    const sectores = (c.puestos || []).map(p => ({ id: p.id, nombre: p.nombre }));
+    if (todos.some(x => !sectores.some(p => p.id === x.puestoId))) sectores.push({ id: null, nombre: 'Sin puesto' });
+    sectores.forEach(sec => {
+      const gente = todos.filter(x => sec.id ? x.puestoId === sec.id : !sectores.some(p => p.id && p.id === x.puestoId))
+        .sort((a, b) => apellidoYNombre(a.nombre).apellido.localeCompare(apellidoYNombre(b.nombre).apellido, 'es'));
+      if (!gente.length) return;
+      filas.push([String(sec.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'CUIL', 'TELEFONO', 'PRESENTES', 'HORARIO', 'OBSERVACIÓN', 'BREAK']);
+      gente.forEach((x, i) => {
+        const pers = personaDe(x);
+        const nm = apellidoYNombre(x.nombre || (pers && pers.nombre) || '');
+        filas.push([i + 1, nm.apellido, nm.nombre, (pers && pers.cuit) || x.cuit || '', (pers && pers.tel) || '',
+                    marca(x), sl.horario || '', x.notas || '', '']);
+      });
+      filas.push([]);
+    });
+    return { nombre: fechaLinda(sl.fecha).slice(0, 5) + (sl.horario ? ' ' + sl.horario : ''), filas };
+  });
+
+  // Y la lista plana con el CBU, que es con lo que se liquida la jornada.
   const rotuloMarca = { presente: 'Presente', ausente: 'Faltó' };
-  // Una fila por persona y turno: así se cuenta la jornada, que es como se paga.
-  const rows = [];
+  const liquidacion = [['cuil', 'nombre', 'cbu', 'lugar', 'fecha', 'horario', 'puesto', 'asistencia']];
   slots.forEach(sl => todos.forEach(x => {
-    const pers = people.filter(p => p.id === x.personaId)[0];
+    const pers = personaDe(x);
     const cuil = docNucleo((pers && pers.cuit) || x.cuit);
     const sol = cuil ? banco.get(cuil) : null;
-    rows.push([(pers && pers.cuit) || x.cuit || '', x.nombre || (pers && pers.nombre) || '', sol ? sol.cbu : '',
-      c.venue || '', sl.fecha, sl.horario || '', puestoDe(x.puestoId),
-      rotuloMarca[presentesDe(x)[sl.id]] || 'Sin marcar']);
+    liquidacion.push([(pers && pers.cuit) || x.cuit || '', x.nombre || (pers && pers.nombre) || '', sol ? sol.cbu : '',
+      c.venue || '', sl.fecha, sl.horario || '', puestoDe(x.puestoId), rotuloMarca[presentesDe(x)[sl.id]] || 'Sin marcar']);
   }));
-  descargarExcel(`presentes-${(c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase()}.xlsx`,
-    [['cuil', 'nombre', 'cbu', 'lugar', 'fecha', 'horario', 'puesto', 'asistencia'], ...rows], 'Presentes');
+  hojas.push({ nombre: 'Liquidación', filas: liquidacion });
+
+  descargarLibro(`presentes-${(c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase()}.xlsx`, hojas);
 }
 
 // ── ASISTENCIA ──
