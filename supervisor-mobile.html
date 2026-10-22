@@ -77,6 +77,19 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .fb-res-3{background:#fef2f2;border-color:#fecaca;color:#991b1b}
 .fb-ta{width:100%;padding:12px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;outline:none;resize:none;height:90px;font-family:inherit}
 .fb-ta:focus{border-color:#534AB7}
+.lista-top{padding:12px 16px 0}
+.lista-turnos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.turno-chip{font-size:12px;font-weight:600;background:rgba(255,255,255,.96);border:1.5px solid #d1d5db;color:#6b7280;border-radius:999px;padding:7px 13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.turno-chip.on{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.lista-sector{width:100%;padding:10px 12px;background:rgba(255,255,255,.96);border:1px solid #d1d5db;border-radius:10px;font-size:14px;font-family:inherit;color:#1a1a1a;margin-bottom:10px}
+.lista-resumen{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:#6b7280;background:rgba(255,255,255,.96);border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px;margin-bottom:4px}
+.lista-resumen strong{color:#111827;font-size:14px}
+.lista-resumen .lr-p strong{color:#0f6e56}.lista-resumen .lr-a strong{color:#991b1b}.lista-resumen .lr-s strong{color:#854F0B}
+.pl-btn{font-size:13px;font-weight:600;background:#fff;border:1.5px solid #d1d5db;color:#6b7280;border-radius:8px;padding:9px 12px;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pl-btn:active{transform:scale(.96)}
+.pl-p.on{background:#d1fae5;border-color:#6ee7b7;color:#065f46}
+.pl-a.on{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.pl-acts{display:flex;gap:6px;flex-shrink:0;margin-left:auto}
 .fb-send{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px}
 .fb-send:disabled{opacity:.5}
 .fb-prev{margin-top:14px;border-top:1px solid #f3f4f6;padding-top:14px}
@@ -154,7 +167,29 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       </div>
     </div>
   </div>
+  <div style="padding:16px 16px 0">
+    <button class="fb-send" onclick="openLista()"><i class="ic ic-tilde-circ"></i> ✓ Pasar lista</button>
+  </div>
   <div id="convPersonList" class="persona-lista"></div>
+</div>
+
+<!-- Pasar lista: un turno, una persona por fila, Vino / Faltó -->
+<div id="screenLista" class="screen">
+  <div class="app-bar">
+    <div class="app-bar-inner">
+      <button class="back-btn" onclick="cerrarLista()">←</button>
+      <div style="flex:1">
+        <div class="app-bar-title">Pasar lista</div>
+        <div class="app-bar-sub" id="listaSub"></div>
+      </div>
+    </div>
+  </div>
+  <div class="lista-top">
+    <div class="lista-turnos" id="listaTurnos"></div>
+    <select class="lista-sector" id="listaSector" onchange="renderLista()"></select>
+    <div class="lista-resumen" id="listaResumen"></div>
+  </div>
+  <div id="listaBody" class="persona-lista"></div>
 </div>
 
 <!-- Bottom sheet: dar feedback -->
@@ -395,6 +430,83 @@ async function sendFeedback() {
     await openConv(currentConvId);
     toast('✓ Feedback guardado');
   } catch (err) { toast('Error al guardar'); btn.disabled = false; btn.textContent = 'Enviar feedback'; }
+}
+
+// ── Pasar lista ──
+// Los turnos se resuelven igual que en el panel (slotsDe): si la convocatoria
+// tiene "turnos" cargados se usan esos; si no, cada fecha es un turno con su
+// fecha como id. Así lo que marca el supervisor y lo que marca RRHH caen en
+// la misma casilla.
+function slotsDe(c) {
+  if (Array.isArray(c.turnos) && c.turnos.length) return c.turnos.map(t => ({ id: t.id, fecha: t.fecha, horario: t.horario || c.horario || '' })).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+  const fs = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+  const hpf = (c.horarios_por_fecha && typeof c.horarios_por_fecha === 'object') ? c.horarios_por_fecha : {};
+  return fs.map(f => ({ id: f, fecha: f, horario: hpf[f] || c.horario || '' }));
+}
+let lista = [], listaSlotId = null;
+
+async function openLista() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const slots = slotsDe(c);
+  if (!slots.length) { toast('Este recital no tiene fechas cargadas'); return; }
+  // Arranca en el turno de hoy; si no hay, en el próximo; si ya pasaron todos, en el último.
+  const hoy = new Date(); const hoyISO = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+  listaSlotId = (slots.filter(x => x.fecha === hoyISO)[0] || slots.filter(x => x.fecha >= hoyISO)[0] || slots[slots.length - 1]).id;
+  document.getElementById('listaSub').textContent = c.nombre;
+  document.getElementById('listaSector').innerHTML = '<option value="">Todos los sectores</option>' +
+    (c.puestos || []).map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join('');
+  document.getElementById('listaBody').innerHTML = '<div class="empty-state"><div class="empty-title">Cargando...</div></div>';
+  showScreen('screenLista');
+  const { data, error } = await sb.rpc('sup_lista', { p_conv_id: currentConvId });
+  lista = (!error && data) || [];
+  renderLista();
+}
+function cerrarLista() { openConv(currentConvId); }
+function elegirTurno(id) { listaSlotId = id; renderLista(); }
+
+function renderLista() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const slots = slotsDe(c);
+  document.getElementById('listaTurnos').innerHTML = slots.map(sl =>
+    `<button class="turno-chip${sl.id === listaSlotId ? ' on' : ''}" onclick="elegirTurno('${esc(sl.id)}')">${fmtFecha(sl.fecha)}${sl.horario ? ' · ' + esc(sl.horario) : ''}</button>`).join('');
+  const marca = x => (x.presentes || {})[listaSlotId] || '';
+  const pres = lista.filter(x => marca(x) === 'presente').length;
+  const aus = lista.filter(x => marca(x) === 'ausente').length;
+  document.getElementById('listaResumen').innerHTML =
+    `<span>Convocados <strong>${lista.length}</strong></span><span class="lr-p">Vinieron <strong>${pres}</strong></span><span class="lr-a">Faltaron <strong>${aus}</strong></span><span class="lr-s">Sin marcar <strong>${lista.length - pres - aus}</strong></span>`;
+  const sector = document.getElementById('listaSector').value;
+  const filas = lista.filter(x => !sector || x.puesto_id === sector);
+  const body = document.getElementById('listaBody');
+  if (!filas.length) { body.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">${lista.length ? 'Nadie en este sector' : 'Nadie convocado todavía'}</div></div>`; return; }
+  body.innerHTML = filas.map(x => {
+    const m = marca(x);
+    const initials = String(x.nombre || '').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+    return `<div class="person-row" style="cursor:default">
+      <div class="person-avatar" style="background:#f4f4f5;color:#52525b">${esc(initials)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="person-name">${esc(x.nombre)}</div>
+        <div class="person-meta">${esc(x.puesto || 'Sin sector')}${x.estado !== 'aprobado' ? ' · sin aprobar' : ''}</div>
+      </div>
+      <div class="pl-acts">
+        <button class="pl-btn pl-p${m === 'presente' ? ' on' : ''}" onclick="marcar('${x.post_id}','presente')">Vino</button>
+        <button class="pl-btn pl-a${m === 'ausente' ? ' on' : ''}" onclick="marcar('${x.post_id}','ausente')">Faltó</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function marcar(postId, valor) {
+  const x = lista.find(p => p.post_id === postId); if (!x || !listaSlotId) return;
+  // Volver a tocar el mismo botón lo deja sin marcar: equivocarse tiene vuelta atrás.
+  const actual = (x.presentes || {})[listaSlotId];
+  const nuevo = actual === valor ? null : valor;
+  const antes = Object.assign({}, x.presentes || {});
+  if (nuevo) x.presentes = Object.assign({}, antes, { [listaSlotId]: nuevo }); else { x.presentes = Object.assign({}, antes); delete x.presentes[listaSlotId]; }
+  renderLista();
+  // La base valida que el recital sea de este supervisor y que la persona
+  // esté convocada; el teléfono no decide nada.
+  const { data, error } = await sb.rpc('sup_presente', { p_post_id: postId, p_conv_id: currentConvId, p_slot_id: listaSlotId, p_valor: nuevo });
+  if (error || !data || !data.ok) { x.presentes = antes; renderLista(); toast((data && data.error) || 'No se pudo guardar'); }
 }
 
 // ── Utils ──
