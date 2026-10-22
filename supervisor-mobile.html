@@ -183,7 +183,9 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 const sb = supabase.createClient(SB_URL, SB_KEY);
 let currentUser = null, currentUserId = null, currentUserName = '';
-let myConvIds = [], convs = [], posts = [], people = [], feedbacks = [];
+// "people" guarda solo la gente del recital abierto. posts, feedbacks y
+// myConvIds ya no existen: esa informacion no sale de ninguna tabla.
+let convs = [], people = [];
 let currentConvId = null, fbPersonId = null, fbConvId = null, selectedSem = 0;
 let deferredInstall = null;
 
@@ -228,24 +230,16 @@ async function doLogout() { await sb.auth.signOut(); location.reload(); }
 async function loadData() {
   setLoad(true, 20);
   try {
-    const { data: profile } = await sb.from('user_profiles').select('*').eq('id', currentUserId).single().catch(() => ({ data: null }));
-    currentUserName = profile?.nombre || currentUser?.email?.split('@')[0] || 'Supervisor';
+    // Nada de esto sale de una tabla: el supervisor no lee ninguna. Las tres
+    // funciones le devuelven sus recitales y su gente, y nada más. De las
+    // personas no viene ni el documento, ni el mail, ni el teléfono.
+    currentUserName = currentUser?.user_metadata?.nombre || currentUser?.email?.split('@')[0] || 'Supervisor';
     document.getElementById('homeSubtitle').textContent = currentUserName;
 
-    setLoad(true, 40);
-    const [{ data: scData }, { data: cData }, { data: pData }, { data: postData }, { data: fbData }] = await Promise.all([
-      sb.from('supervisor_convocatorias').select('*').eq('supervisor_id', currentUserId),
-      sb.from('convocatorias').select('*'),
-      sb.from('personas').select('id,nombre,area,semaforo,out_flag'),
-      sb.from('postulaciones').select('*').eq('estado', 'aprobado').neq('estado', 'rechazado'),
-      sb.from('feedbacks').select('*').eq('supervisor_id', currentUserId)
-    ]);
-
-    myConvIds = (scData || []).map(l => l.conv_id);
-    convs = (cData || []).filter(c => myConvIds.includes(c.id));
-    posts = postData || [];
-    people = pData || [];
-    feedbacks = fbData || [];
+    setLoad(true, 50);
+    const { data: misConvs, error: cErr } = await sb.rpc('sup_convocatorias');
+    if (cErr) throw cErr;
+    convs = misConvs || [];
 
     setLoad(true, 90);
     renderHome();
@@ -259,38 +253,40 @@ function renderHome() {
   const cont = document.getElementById('homeContent');
   if (!convs.length) { cont.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Sin convocatorias asignadas</div><div style="font-size:13px;color:#9ca3af">El admin todavía no te asignó ningún recital</div></div>`; return; }
   cont.innerHTML = convs.map(c => {
-    const myPosts = posts.filter(p => p.conv_id === c.id);
-    const withFb = new Set(feedbacks.filter(f => f.conv_id === c.id).map(f => f.persona_id));
-    const pct = myPosts.length > 0 ? Math.round(withFb.size / myPosts.length * 100) : 0;
+    const total = c.personas || 0, hechos = c.con_feedback || 0;
+    const pct = total > 0 ? Math.round(hechos / total * 100) : 0;
     const pc = pct < 50 ? '#e5e7eb' : pct < 100 ? '#fbbf24' : '#10b981';
     return `<div class="conv-card" onclick="openConv('${c.id}')">
       <div class="conv-title">${esc(c.nombre)}</div>
       <div class="conv-meta">
         <span class="badge ${c.area==='movistar_arena'?'b-mv':'b-ex'}">${c.area==='movistar_arena'?'Movistar Arena':'Externos'}</span>
         ${c.fecha ? `<span>📅 ${fmtFecha(c.fecha)}</span>` : ''}
-        <span>${myPosts.length} persona${myPosts.length!==1?'s':''}</span>
+        <span>${total} persona${total!==1?'s':''}</span>
       </div>
       <div class="conv-prog">
         <div class="prog-track"><div class="prog-fill" style="background:${pc};width:${pct}%"></div></div>
-        <span>${withFb.size}/${myPosts.length} feedbacks</span>
+        <span>${hechos}/${total} feedbacks</span>
       </div>
     </div>`;
   }).join('');
 }
 
 // ── Convocatoria detail ──
-function openConv(convId) {
+async function openConv(convId) {
   currentConvId = convId;
   const c = convs.find(x => x.id === convId); if (!c) return;
   document.getElementById('convScreenTitle').textContent = c.nombre;
   document.getElementById('convScreenSub').textContent = c.fecha ? fmtFecha(c.fecha) : '';
-  const myPostPersonIds = posts.filter(p => p.conv_id === convId && p.persona_id).map(p => p.persona_id);
-  const myPeople = myPostPersonIds.map(id => people.find(p => p.id === id)).filter(Boolean);
-  if (!myPeople.length) { document.getElementById('convPersonList').innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Sin personas asignadas</div></div>`; showScreen('screenConv'); return; }
-  const hasFb = id => feedbacks.find(f => f.persona_id === id && f.conv_id === convId);
+  document.getElementById('convPersonList').innerHTML = '<div class="empty-state"><div class="empty-title">Cargando...</div></div>';
+  showScreen('screenConv');
+  // La base decide qué gente es de este recital y si es de este supervisor.
+  const { data, error } = await sb.rpc('sup_equipo', { p_conv_id: convId });
+  people = (!error && data) || [];
+  const myPeople = people;
+  if (!myPeople.length) { document.getElementById('convPersonList').innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Sin personas asignadas</div></div>`; return; }
   document.getElementById('convPersonList').innerHTML = myPeople.map(p => {
     const sem = p.semaforo || 1;
-    const fb = hasFb(p.id);
+    const fb = (p.mis_feedbacks || []).length;
     const initials = p.nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
     const avatarBg = p.area==='movistar_arena'?'background:#e0f2fe;color:#0369a1':'background:#f0fdf4;color:#166534';
     return `<div class="person-row" onclick="openFbSheet('${p.id}','${c.id}')">
@@ -303,7 +299,6 @@ function openConv(convId) {
       <span class="chevron">›</span>
     </div>`;
   }).join('');
-  showScreen('screenConv');
 }
 
 function goHome() { showScreen('screenHome'); renderHome(); }
@@ -316,7 +311,7 @@ function openFbSheet(personaId, convId) {
   document.getElementById('fbComentario').value = '';
   document.getElementById('fbSendBtn').disabled = true;
   [1,2,3].forEach(n => document.getElementById(`semOpt${n}`).className = 'sem-opt');
-  const myFbs = feedbacks.filter(f => f.persona_id === personaId && f.conv_id === convId);
+  const myFbs = (p && p.mis_feedbacks) || [];
   const prev = document.getElementById('fbPrevSection');
   if (myFbs.length) {
     prev.style.display = 'block';
@@ -335,17 +330,17 @@ async function sendFeedback() {
   if (!selectedSem) { toast('Elegí un semáforo'); return; }
   const btn = document.getElementById('fbSendBtn'); btn.disabled = true; btn.textContent = 'Enviando...';
   const comentario = document.getElementById('fbComentario').value.trim();
-  const fb = { id: crypto.randomUUID(), persona_id: fbPersonId, conv_id: fbConvId, supervisor_id: currentUserId, supervisor_nombre: currentUserName, puntaje: selectedSem, comentario: comentario || null };
   try {
-    await sb.from('feedbacks').insert([fb]);
-    const pers = people.find(x => x.id === fbPersonId);
-    const allFbs = [...feedbacks.filter(f => f.persona_id === fbPersonId), fb];
-    const avg = Math.min(3, Math.max(1, Math.round(allFbs.reduce((s,f)=>s+f.puntaje,0)/allFbs.length)));
-    await sb.from('personas').update({ semaforo: avg }).eq('id', fbPersonId);
-    if (pers) pers.semaforo = avg;
-    feedbacks.push(fb);
+    // El promedio lo recalcula la base. Antes lo hacía el teléfono con la
+    // lista que tenía cargada, y dos supervisores a la vez se pisaban.
+    const { data, error } = await sb.rpc('sup_feedback', {
+      p_persona_id: fbPersonId, p_conv_id: fbConvId,
+      p_puntaje: selectedSem, p_comentario: comentario || null
+    });
+    if (error) throw error;
+    if (!data || !data.ok) { toast(data && data.error ? data.error : 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Enviar feedback'; return; }
     closeFbSheet();
-    openConv(currentConvId);
+    await openConv(currentConvId);
     toast('✓ Feedback guardado');
   } catch (err) { toast('Error al guardar'); btn.disabled = false; btn.textContent = 'Enviar feedback'; }
 }
