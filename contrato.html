@@ -66,8 +66,25 @@ async function init() {
   const { data, error } = await sb.rpc('contrato_ver', { p_token: TOKEN });
   if (error || !data) { show('<div class="card"><div class="center">No encontramos este contrato. Puede que el link esté vencido o mal copiado.</div></div>'); return; }
   contrato = data;
+  // Firmado no vence: el link le sigue sirviendo para bajar su PDF.
   if (contrato.estado === 'firmado') { renderFirmado(); return; }
+  if (contrato.vencido) { renderVencido(); return; }
   renderForm();
+}
+
+// El link dura unos días. Pasado ese plazo no se firma, y hay que pedir uno
+// nuevo: así un mail reenviado o que quedó en un celular prestado no sirve
+// para firmar en nombre de otro.
+function renderVencido() {
+  const cuando = contrato.vence_el
+    ? new Date(contrato.vence_el).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
+    : null;
+  show(`<div class="card">
+    <div style="font-size:46px;text-align:center;margin-bottom:10px">⏳</div>
+    <div class="conv-name" style="text-align:center">Este link ya no sirve</div>
+    <div class="center" style="padding:12px 0 0">${contrato.nombre ? esc(String(contrato.nombre).split(' ')[0]) + ', e' : 'E'}l link para firmar tu contrato venció${cuando ? ' el ' + cuando : ''}, así que no se puede firmar desde acá.</div>
+    <div class="center" style="padding:10px 0 0">Escribile a la coordinación y te mandan uno nuevo. Tu contrato sigue estando: lo único que venció es el link.</div>
+  </div>`);
 }
 
 function renderFirmado() {
@@ -473,6 +490,12 @@ async function firmar() {
   try {
     const firmaDataUrl = signaturePad.toDataURL('image/png');
     const { data, error } = await sb.rpc('contrato_firmar', { p_token: TOKEN, p_firma_png: firmaDataUrl });
+    // Si venció mientras tenía la pantalla abierta, se le explica en vez de
+    // tirarle un error suelto.
+    if (data && data.ok === false && data.motivo === 'vencido') {
+      contrato.vencido = true; contrato.vence_el = data.vence_el;
+      renderVencido(); return;
+    }
     if (error || !data?.ok) throw new Error(data?.motivo === 'ya_firmado' ? 'Este contrato ya fue firmado.' : 'No se pudo registrar la firma.');
 
     const pdfBase64 = await generarContratoPDF(data.texto_contrato, {
