@@ -3789,6 +3789,22 @@ function togglePickerSol() {
 // El aviso que le llega a quien se aprueba. A España, en el castellano de
 // allá: "eventos" y no "recitales", tuteo y no voseo. Si se aprueba de a uno
 // o en lote tiene que salir el mismo texto, por eso está en un solo lugar.
+// Lo que pidió Mercedes: quien declaró antecedentes penales o beneficio
+// social puede pasar a la nómina, pero marcado OUT con el motivo escrito,
+// para que quien lo convoque lo vea y lo decida con eso a la vista. Si no
+// declaró nada, no agrega nada.
+function outPorDeclaracion(s) {
+  const ant = !!(s && s.antecedentes), ben = !!(s && s.beneficio_social);
+  if (!ant && !ben) return {};
+  return {
+    out_flag: true,
+    out_categoria: ant ? 'legal' : 'situacion',
+    out_nota: ant && ben ? 'Declaró antecedentes penales y que cobra un beneficio social, al inscribirse'
+            : ant ? 'Declaró antecedentes penales al inscribirse'
+            : 'Declaró que cobra un beneficio social, al inscribirse'
+  };
+}
+
 function avisoAprobacion(s) {
   const nombre = s.nombre ? ' ' + s.nombre.split(' ')[0] : '';
   if (s.area === 'espana') return {
@@ -3834,7 +3850,15 @@ async function confirmPicker() {
   // y desde ahí siguen el mismo camino que el resto.
   const aAprobar = [...pickerSel].filter(k => String(k).startsWith('sol:'));
   if (aAprobar.length) {
-    if (!confirm(`${aAprobar.length} de las seleccionadas todavía no están aprobadas. Se van a aprobar y pasar a la nómina. ¿Seguir?`)) return;
+    // Si alguna declaró antecedentes o beneficio social, se dice ANTES de
+    // aprobarla, no después: así se decide con eso a la vista.
+    const declararon = aAprobar.map(k => solicitudes.find(x => x.id === String(k).slice(4))).filter(Boolean)
+      .map(s => ({ s, out: outPorDeclaracion(s) })).filter(x => x.out.out_flag);
+    const avisoDecl = declararon.length
+      ? `\n\n⚠ ${declararon.length === 1 ? 'Una declaró' : declararon.length + ' declararon'} algo al inscribirse y van a quedar en OUT:\n` +
+        declararon.map(x => `• ${x.s.nombre}: ${x.out.out_nota.replace(', al inscribirse', '').replace(' al inscribirse', '')}`).join('\n')
+      : '';
+    if (!confirm(`${aAprobar.length} de las seleccionadas todavía no están aprobadas. Se van a aprobar y pasar a la nómina.${avisoDecl}\n\n¿Seguir?`)) return;
     const nuevos = await aprobarElegidas(aAprobar);
     aAprobar.forEach(k => pickerSel.delete(k));
     nuevos.forEach(id => pickerSel.add(id));
@@ -5808,11 +5832,15 @@ async function singleSolSt(id, estado) {
       : people.find(p => p.area === s.area && (p.nombre || '').toLowerCase().trim() === (s.nombre || '').toLowerCase().trim());
     let personaId;
     if (!existe) {
-      const np = { id: uid(), nombre: s.nombre, area: s.area, estado: 'confirmado', email: s.email||null, tel: s.tel||null, cuit: s.cuit||null, notas: s.puesto_interes?`Interés: ${s.puesto_interes}`:null, cv: { puestoInteres: s.puesto_interes||'', experiencia: s.experiencia||'', formacion: s.formacion||'', habilidades: s.habilidades||'', disponibilidad: s.disponibilidad||'', fechaEnvio: s.created_at?.slice(0,10)||'', archivo: s.archivo_cv||null } };
+      // La regla de Mercedes: quien declaró antecedentes penales o beneficio
+      // social entra igual, pero en OUT con el motivo escrito. Antes se
+      // aprobaba sin ninguna marca y nadie se enteraba.
+      const out = outPorDeclaracion(s);
+      const np = { id: uid(), nombre: s.nombre, area: s.area, estado: 'confirmado', email: s.email||null, tel: s.tel||null, cuit: s.cuit||null, notas: s.puesto_interes?`Interés: ${s.puesto_interes}`:null, cv: { puestoInteres: s.puesto_interes||'', experiencia: s.experiencia||'', formacion: s.formacion||'', habilidades: s.habilidades||'', disponibilidad: s.disponibilidad||'', fechaEnvio: s.created_at?.slice(0,10)||'', archivo: s.archivo_cv||null }, ...out };
       if (s.area === 'espana') Object.assign(np.cv, { fechaNacimiento: s.fecha_nacimiento || '', talla: s.talla || '', permisoTrabajo: s.permiso_trabajo, contactoEmergencia: s.contacto_emergencia || '', observaciones: s.observaciones || '', iban: s.iban || '', titularCuenta: s.titular_cuenta || '', aceptaPrivacidadAt: s.acepta_privacidad_at || '' });
       people.push(np);
       personaId = np.id;
-      try { await sbUpsert('personas', { id: np.id, nombre: np.nombre, area: np.area, estado: np.estado, email: np.email, tel: np.tel, cuit: np.cuit, notas: np.notas, cv: np.cv }); } catch(_) {}
+      try { await sbUpsert('personas', { id: np.id, nombre: np.nombre, area: np.area, estado: np.estado, email: np.email, tel: np.tel, cuit: np.cuit, notas: np.notas, cv: np.cv, ...out }); } catch(_) {}
     } else {
       personaId = existe.id;
     }
