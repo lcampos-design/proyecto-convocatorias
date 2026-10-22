@@ -507,6 +507,23 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .rec-star:hover{color:#f59e0b}
 .rec-star.on{color:#f59e0b}
 
+
+/* Pasar lista */
+.lista-turnos{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0 2px}
+.turno-chip{font-size:12px;font-weight:600;background:#fff;border:1.5px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.turno-chip:hover{border-color:#a1a1aa}
+.turno-chip.on{background:var(--r-ink);border-color:var(--r-ink);color:#fff}
+.lista-resumen{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:12px;color:#6b7280;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;padding:9px 0;margin-top:10px}
+.lista-resumen strong{font-size:14px;color:#111827}
+.lista-resumen .lr-p strong{color:#0f6e56}
+.lista-resumen .lr-a strong{color:#991b1b}
+.lista-resumen .lr-s strong{color:#854F0B}
+.lista-resumen .lr-n{color:#854F0B}
+.pl-btn{font-size:12px;font-weight:600;background:#fff;border:1.5px solid var(--r-line);color:var(--r-muted);border-radius:6px;padding:5px 14px;cursor:pointer;font-family:inherit;margin-right:6px}
+.pl-btn:hover{border-color:#a1a1aa}
+.pl-p.on{background:#d1fae5;border-color:#6ee7b7;color:#065f46}
+.pl-a.on{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+
 </style>
 </head>
 <body>
@@ -695,7 +712,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div><div class="det-title" id="detTitle"></div><div class="det-meta" id="detMeta"></div><div class="det-stats" id="detStats"></div></div>
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0">
         <button class="btn btn-sm" id="btnPublicada" onclick="togglePublicada(currentConvId)">○ Publicar</button>
-        <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()"><i class="ic ic-planilla"></i> Asistencia</button>
+        <button class="btn btn-primary btn-sm" onclick="openPasarLista()"><i class="ic ic-tilde-circ"></i> Pasar lista</button>
+        <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()"><i class="ic ic-planilla"></i> Importar asistencia</button>
         <button class="btn btn-success btn-sm" onclick="exportPostuladosExcel()">↓ Planilla Excel</button>
         <button class="btn btn-sec btn-sm" onclick="openReporte()"><i class="ic ic-grafico"></i> Reporte</button>
         <button class="btn btn-sec btn-sm" onclick="openDispAdmin()"><i class="ic ic-calendario"></i> Disponibilidad</button>
@@ -1234,6 +1252,36 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   </div>
 </div>
 
+<!-- Modal: Pasar lista -->
+<div class="modal-bg" id="mLista" style="display:none" onclick="bgClose('mLista',event)">
+  <div class="modal modal-xl">
+    <div class="modal-title">
+      <span id="listaTitle">Pasar lista</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn btn-sec btn-sm" onclick="exportPresentes()">↓ Bajar presentes</button>
+        <button class="mclose" onclick="closeM('mLista')">✕</button>
+      </div>
+    </div>
+    <div id="listaTurnos" class="lista-turnos"></div>
+    <div id="listaResumen" class="lista-resumen"></div>
+    <div style="padding:10px 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" class="srch" id="listaSrch" placeholder="Buscar por nombre o documento..." oninput="renderLista()" style="flex:1;min-width:160px">
+      <select class="filt" id="listaPuestoFilter" onchange="renderLista()" style="font-size:12px;padding:5px 8px"></select>
+      <select class="filt" id="listaEstadoFilter" onchange="renderLista()" style="font-size:12px;padding:5px 8px">
+        <option value="">Todos</option>
+        <option value="_sin">Sin marcar</option>
+        <option value="presente">Presentes</option>
+        <option value="ausente">Faltaron</option>
+      </select>
+      <button class="btn btn-sec btn-sm" onclick="listaTodosPresentes()">✓ Los que faltan marcar, presentes</button>
+    </div>
+    <div class="post-table-wrap"><table>
+      <thead><tr><th>Nombre</th><th style="width:150px">Puesto</th><th style="width:210px">En este turno</th></tr></thead>
+      <tbody id="listaTbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
 <!-- Modal: Importar asistencia -->
 <div class="modal-bg" id="mAsistencia" style="display:none" onclick="bgClose('mAsistencia',event)">
   <div class="modal" style="max-width:520px">
@@ -1244,6 +1292,10 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px 14px;font-size:12px;color:#374151;margin-bottom:14px">
       <div style="font-weight:600;margin-bottom:4px">Formato del CSV:</div>
       <code style="font-size:11px;color:#534AB7;font-family:inherit;font-variant-numeric:tabular-nums">cuil,asistencia<br>27445130368,P<br>20123456789,P<br>30987654321,</code>
+    </div>
+    <div class="fg">
+      <label>¿De qué turno es esta planilla?</label>
+      <select class="fi" id="asistenciaSlot"></select>
     </div>
     <div class="fg">
       <label>Pegá el contenido o cargá el archivo</label>
@@ -1811,7 +1863,7 @@ async function loadAll() {
   }));
   posts = (postData || []).map(p => {
     const persona = (people || []).find(x => x.id === p.persona_id);
-    return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, cuit: persona?.cuit || p.cuit || null, confirmacion: p.confirmacion || null };
+    return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, presentes: (p.presentes && typeof p.presentes === 'object') ? p.presentes : {}, cuit: persona?.cuit || p.cuit || null, confirmacion: p.confirmacion || null };
   });
   feedbacks = fbData || [];
   userProfiles = upData || [];
@@ -3263,7 +3315,9 @@ function migrarTurnos(c) {
   if (Array.isArray(c.turnos) && c.turnos.length) return c.turnos.map(t => ({ id: t.id || uid(), fecha: t.fecha, horario: t.horario || '' }));
   const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean);
   const hpf = (c.horarios_por_fecha && typeof c.horarios_por_fecha === 'object') ? c.horarios_por_fecha : {};
-  return fechas.map(f => ({ id: uid(), fecha: f, horario: hpf[f] || '' }));
+  // El id es la fecha, no uno nuevo: es el mismo que usa slotsDe para las
+  // convocatorias viejas, y si cambiara se perderían los presentes ya tomados.
+  return fechas.map(f => ({ id: f, fecha: f, horario: hpf[f] || '' }));
 }
 function renderFechasList() {
   const el = document.getElementById('fechasList'); if (!el) return;
@@ -3373,17 +3427,178 @@ function renderGestList() {
   if (!shown.length) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty">Sin postulaciones todavía.</div></td></tr>`; document.getElementById('gBulkBar').style.display = 'none'; return; }
   tbody.innerHTML = shown.map(x => {
     const pers = people.find(pp => pp.id === x.personaId);
-    const asistBadge = x.asistencia === 'presente'
-      ? `<span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✓ P</span>`
-      : x.asistencia === 'ausente'
-      ? `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600">✗ A</span>`
-      : `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px">—</span>`;
+    // Con varias fechas interesa a cuántas vino, no un sí o un no.
+    const marcas = Object.values(presentesDe(x));
+    const vino = marcas.filter(m => m === 'presente').length;
+    const falto = marcas.filter(m => m === 'ausente').length;
+    const totalTurnos = slotsDe(c).length;
+    const asistBadge = !marcas.length
+      ? `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px" title="Todavía no se pasó lista">—</span>`
+      : `<span style="background:${vino ? '#d1fae5' : '#fee2e2'};color:${vino ? '#065f46' : '#991b1b'};border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600" title="${vino} presente(s)${falto ? ', ' + falto + ' falta(s)' : ''} de ${totalTurnos} turno(s)">${vino}/${totalTurnos}</span>`;
     return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${eN(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}${x.confirmacion === 'si' ? ` <span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600"><i class="ic ic-tilde-circ"></i> Confirmó</span>` : x.confirmacion === 'no' ? ` <span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✕ No viene</span>` : ''}</td><td><select class="ssp ${rotulo(x.estado)}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación"><i class="ic ic-sobre"></i></button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
   }).join('');
 }
 
+// ── PASAR LISTA ──
+// El presente se guarda por turno, no por convocatoria: un show de varias
+// fechas se paga por jornada, así que marcar una sola vez "vino" no alcanza.
+// La clave es el id del turno, el mismo que ya usa la ronda de disponibilidad.
+let listaSlotId = null;
+
+function presentesDe(post) { return (post && post.presentes && typeof post.presentes === 'object') ? post.presentes : {}; }
+
+// El campo asistencia sigue existiendo como resumen de los turnos: es lo que
+// miran la penalización por faltar y el badge de la pantalla de postulaciones.
+// Quien vino a alguna fecha cuenta como presente aunque haya faltado a otra.
+function resumenAsistencia(pr) {
+  const v = Object.values(pr || {});
+  if (v.indexOf('presente') >= 0) return 'presente';
+  if (v.indexOf('ausente') >= 0) return 'ausente';
+  return null;
+}
+
+function openPasarLista() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const slots = slotsDe(c);
+  if (!slots.length) { toast('La convocatoria no tiene fechas cargadas'); return; }
+  // Arranca en el turno de hoy; si no hay, en el próximo; si ya pasaron todos, en el último.
+  const hoy = new Date().toISOString().slice(0, 10);
+  const elegido = slots.filter(x => x.fecha === hoy)[0] || slots.filter(x => x.fecha >= hoy)[0] || slots[slots.length - 1];
+  listaSlotId = elegido.id;
+  document.getElementById('listaSrch').value = '';
+  document.getElementById('listaEstadoFilter').value = '';
+  document.getElementById('listaTitle').textContent = 'Pasar lista — ' + c.nombre;
+  const pf = document.getElementById('listaPuestoFilter');
+  pf.innerHTML = '<option value="">Todos los puestos</option>' + (c.puestos || []).map(p => `<option value="${e(p.id)}">${e(p.nombre)}</option>`).join('');
+  renderLista();
+  showM('mLista');
+}
+
+function listaConvocados() {
+  return posts.filter(x => x.convId === currentConvId && x.estado === 'aprobado');
+}
+
+function renderLista() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const slots = slotsDe(c);
+  const puestoDe = id => ((c.puestos || []).filter(p => p.id === id)[0] || {}).nombre || '';
+
+  document.getElementById('listaTurnos').innerHTML = slots.map(sl => `<button class="turno-chip${sl.id === listaSlotId ? ' on' : ''}" onclick="elegirTurno('${e(sl.id)}')">${fmtFecha(sl.fecha)}${sl.horario ? ' · ' + e(sl.horario) : ''}</button>`).join('');
+
+  const todos = listaConvocados();
+  const pres = todos.filter(x => presentesDe(x)[listaSlotId] === 'presente').length;
+  const aus = todos.filter(x => presentesDe(x)[listaSlotId] === 'ausente').length;
+  const sin = todos.length - pres - aus;
+  const pend = posts.filter(x => x.convId === currentConvId && x.estado === 'pendiente').length;
+  document.getElementById('listaResumen').innerHTML =
+    `<span>Convocados <strong>${todos.length}</strong></span>
+     <span class="lr-p">Presentes <strong>${pres}</strong></span>
+     <span class="lr-a">Faltaron <strong>${aus}</strong></span>
+     <span class="lr-s">Sin marcar <strong>${sin}</strong></span>` +
+    (pend ? `<span class="lr-n">${pend} pendiente${pend !== 1 ? 's' : ''} de aprobar, que no entran en la lista</span>` : '');
+
+  const q = (document.getElementById('listaSrch').value || '').toLowerCase().trim();
+  const qd = q.replace(/\D/g, '');
+  const puF = document.getElementById('listaPuestoFilter').value;
+  const stF = document.getElementById('listaEstadoFilter').value;
+  const filas = todos.filter(x => {
+    if (puF && x.puestoId !== puF) return false;
+    const marca = presentesDe(x)[listaSlotId] || '';
+    if (stF === '_sin' && marca) return false;
+    if (stF && stF !== '_sin' && marca !== stF) return false;
+    if (q) {
+      const pers = people.filter(p => p.id === x.personaId)[0];
+      const doc = normDoc((pers && pers.cuit) || x.cuit);
+      if (!(String(x.nombre || '').toLowerCase().indexOf(q) >= 0 || (qd && doc.indexOf(qd) >= 0))) return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    const pa = puestoDe(a.puestoId), pb = puestoDe(b.puestoId);
+    if (pa !== pb) return pa.localeCompare(pb, 'es');
+    return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es');
+  });
+
+  const tbody = document.getElementById('listaTbody');
+  if (!filas.length) { tbody.innerHTML = `<tr><td colspan="3"><div class="empty">${todos.length ? 'Sin resultados para este filtro.' : 'Todavía no hay nadie aprobado en esta convocatoria.'}</div></td></tr>`; return; }
+  tbody.innerHTML = filas.map(x => {
+    const pers = people.filter(p => p.id === x.personaId)[0];
+    const marca = presentesDe(x)[listaSlotId] || '';
+    return `<tr>
+<td class="cn">${eN(x.nombre)}${pers && pers.out_flag ? ` <span class="out-badge"><i class="ic ic-prohibido"></i> OUT</span>` : ''}${x.confirmacion === 'no' ? ' <span class="lr-n" style="font-size:10px">avisó que no venía</span>' : ''}</td>
+<td class="cm">${e(puestoDe(x.puestoId))}</td>
+<td style="white-space:nowrap">
+  <button class="pl-btn pl-p${marca === 'presente' ? ' on' : ''}" onclick="setPresente('${x.id}','presente')">Vino</button>
+  <button class="pl-btn pl-a${marca === 'ausente' ? ' on' : ''}" onclick="setPresente('${x.id}','ausente')">Faltó</button>
+</td></tr>`;
+  }).join('');
+}
+
+function elegirTurno(id) { listaSlotId = id; renderLista(); }
+
+async function setPresente(postId, valor) {
+  const post = posts.filter(x => x.id === postId)[0];
+  if (!post || !listaSlotId) return;
+  const pr = Object.assign({}, presentesDe(post));
+  // Volver a tocar el mismo botón lo deja sin marcar: equivocarse tiene vuelta atrás.
+  if (pr[listaSlotId] === valor) delete pr[listaSlotId]; else pr[listaSlotId] = valor;
+  post.presentes = pr;
+  post.asistencia = resumenAsistencia(pr);
+  renderLista();
+  try { await sbUpdate('postulaciones', postId, { presentes: pr, asistencia: post.asistencia }); } catch (_) {}
+}
+
+async function listaTodosPresentes() {
+  if (!listaSlotId) return;
+  // Sólo los que todavía no tienen marca: no pisa a quien ya marcaron que faltó.
+  const sinMarcar = listaConvocados().filter(x => !presentesDe(x)[listaSlotId]);
+  if (!sinMarcar.length) { toast('En este turno ya están todos marcados'); return; }
+  if (!confirm(`¿Marcar presentes a ${sinMarcar.length} que todavía no tienen marca en este turno?`)) return;
+  const filas = sinMarcar.map(x => {
+    const pr = Object.assign({}, presentesDe(x));
+    pr[listaSlotId] = 'presente';
+    x.presentes = pr;
+    x.asistencia = resumenAsistencia(pr);
+    return { id: x.id, presentes: pr, asistencia: x.asistencia };
+  });
+  renderLista();
+  try { await sbUpsert('postulaciones', filas); toast(filas.length + ' marcados presentes'); } catch (_) {}
+}
+
+async function exportPresentes() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const todos = listaConvocados();
+  if (!todos.length) { toast('No hay nadie aprobado para exportar'); return; }
+  const slots = slotsDe(c);
+  const puestoDe = id => ((c.puestos || []).filter(p => p.id === id)[0] || {}).nombre || '';
+  const banco = await cargarDatosBancarios();
+  const rotuloMarca = { presente: 'Presente', ausente: 'Faltó' };
+  // Una fila por persona y turno: así se cuenta la jornada, que es como se paga.
+  const rows = [];
+  slots.forEach(sl => todos.forEach(x => {
+    const pers = people.filter(p => p.id === x.personaId)[0];
+    const cuil = docNucleo((pers && pers.cuit) || x.cuit);
+    const sol = cuil ? banco.get(cuil) : null;
+    rows.push([(pers && pers.cuit) || x.cuit || '', x.nombre || (pers && pers.nombre) || '', sol ? sol.cbu : '',
+      c.venue || '', sl.fecha, sl.horario || '', puestoDe(x.puestoId),
+      rotuloMarca[presentesDe(x)[sl.id]] || 'Sin marcar']);
+  }));
+  descargarExcel(`presentes-${(c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase()}.xlsx`,
+    [['cuil', 'nombre', 'cbu', 'lugar', 'fecha', 'horario', 'puesto', 'asistencia'], ...rows], 'Presentes');
+}
+
 // ── ASISTENCIA ──
 function openImportAsistencia() {
+  // La planilla que completan a mano es de un turno: hay que decir cuál, o
+  // termina pisando el presente de todas las fechas con un mismo valor.
+  const c = convs.find(x => x.id === currentConvId);
+  const slots = c ? slotsDe(c) : [];
+  const sel = document.getElementById('asistenciaSlot');
+  if (sel) {
+    sel.innerHTML = slots.map(sl => `<option value="${e(sl.id)}">${fmtFecha(sl.fecha)}${sl.horario ? ' · ' + e(sl.horario) : ''}</option>`).join('');
+    const hoy = new Date().toISOString().slice(0, 10);
+    const elegido = slots.filter(x => x.fecha === hoy)[0] || slots.filter(x => x.fecha >= hoy)[0] || slots[slots.length - 1];
+    if (elegido) sel.value = elegido.id;
+  }
   document.getElementById('asistenciaCsv').value = '';
   document.getElementById('asistenciaPrev').textContent = '';
   document.getElementById('asistenciaFile').value = '';
@@ -3417,22 +3632,27 @@ async function doImportAsistencia() {
   const rows = parseAsistenciaCsv(document.getElementById('asistenciaCsv').value);
   if (!rows.length) { toast('Sin datos para importar'); return; }
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  // La planilla es de un turno: entra al mismo lugar que lo marcado a mano,
+  // así una cosa no borra la otra.
+  const sel = document.getElementById('asistenciaSlot');
+  const slotId = sel && sel.value;
+  if (!slotId) { toast('Elegí de qué turno es la planilla'); return; }
   const myPosts = posts.filter(x => x.convId === currentConvId);
-  let updated = 0;
+  const cambios = [];
   for (const row of rows) {
-    const nuevaAsist = row.asistio ? 'presente' : 'ausente';
-    // Intento 1: cruzar por persona en nómina que tiene ese CUIL
     const pers = people.find(p => docNucleo(p.cuit) === row.cuil);
-    if (pers) {
-      const post = myPosts.find(x => x.personaId === pers.id);
-      if (post) { post.asistencia = nuevaAsist; try { await sbUpdate('postulaciones', post.id, { asistencia: nuevaAsist }); updated++; } catch (_) {} continue; }
-    }
-    // Intento 2: cruzar por CUIL guardado directamente en la postulación
-    const postByCuil = myPosts.find(x => docNucleo(x.cuit) === row.cuil);
-    if (postByCuil) { postByCuil.asistencia = nuevaAsist; try { await sbUpdate('postulaciones', postByCuil.id, { asistencia: nuevaAsist }); updated++; } catch (_) {} }
+    const post = (pers && myPosts.find(x => x.personaId === pers.id)) || myPosts.find(x => docNucleo(x.cuit) === row.cuil);
+    if (!post) continue;
+    const pr = Object.assign({}, presentesDe(post));
+    pr[slotId] = row.asistio ? 'presente' : 'ausente';
+    post.presentes = pr;
+    post.asistencia = resumenAsistencia(pr);
+    cambios.push({ id: post.id, presentes: pr, asistencia: post.asistencia });
   }
   renderGestList(); renderPuestos(); closeM('mAsistencia');
-  toast(`✓ ${updated} asistencias actualizadas`);
+  if (!cambios.length) { toast('Ninguno de esos documentos está convocado acá'); return; }
+  try { await sbUpsert('postulaciones', cambios); } catch (_) {}
+  toast(`✓ ${cambios.length} asistencias actualizadas`);
 }
 
 async function changePostSt(id, sel) { const p = posts.find(x => x.id === id); if (p) { p.estado = sel.value; sel.className = 'ssp ' + sel.value; renderGestList(); renderPuestos(); renderDetStats(); try { await sbUpdate('postulaciones', id, { estado: sel.value }); } catch (_) {} } }
@@ -5328,8 +5548,11 @@ function exportPostuladosExcel() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
 
   // Una columna por cada fecha del show (dd/MM)
-  const fechas = (c.fecha || '').split(',').map(f => f.trim()).filter(Boolean);
-  const fechaCols = fechas.map(f => { const d = new Date(f + 'T00:00:00'); return isNaN(d) ? f : (String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')); });
+  // Una columna por turno, con lo que ya se marcó al pasar lista. Lo que no
+  // se marcó va vacío, para completarlo a mano como se hacía antes.
+  const slots = slotsDe(c);
+  const fechaCols = slots.map(sl => { const d = new Date(sl.fecha + 'T00:00:00'); const dia = isNaN(d) ? sl.fecha : (String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')); return sl.horario ? dia + ' ' + sl.horario : dia; });
+  const marcaDe = (post, sl) => ({ presente: 'P', ausente: 'A' })[presentesDe(post)[sl.id]] || '';
 
   // Separar Apellido / Nombre (mejor esfuerzo: último token = apellido)
   const splitNombre = (full) => {
@@ -5359,7 +5582,7 @@ function exportPostuladosExcel() {
       const tel = pers?.tel || sol?.tel || '';
       const email = pers?.email || sol?.email || '';
       const obs = post.notas || pers?.notas || '';
-      aoa.push([i + 1, nm.apellido, nm.nombre, estadoLabel[post.estado] || post.estado || '', cuil9, cuil, dni, tel, email, '', ...fechaCols.map(() => ''), obs, '', '', '', '']);
+      aoa.push([i + 1, nm.apellido, nm.nombre, estadoLabel[post.estado] || post.estado || '', cuil9, cuil, dni, tel, email, '', ...slots.map(sl => marcaDe(post, sl)), obs, '', '', '', '']);
     });
     aoa.push([]); // separación entre sectores
   });
