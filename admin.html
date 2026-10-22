@@ -123,15 +123,15 @@ textarea.fi{height:64px;resize:vertical}
 .dstat{font-size:12px;color:#6b7280}.dstat strong{font-weight:600;color:#111827}
 .puestos-sec{padding:20px 24px}
 .puestos-sec-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
-.puesto-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:10px;overflow:hidden}
-.puesto-card-head{padding:12px 16px;display:flex;align-items:center;gap:12px}
-.puesto-info{flex:1}.puesto-name{font-size:14px;font-weight:600;color:#111827}
-.puesto-desc{font-size:12px;color:#9ca3af;margin-top:1px}
-.puesto-cupo{text-align:right;white-space:nowrap}
-.cupo-num{font-size:18px;font-weight:600;color:#111827;line-height:1}
-.cupo-label{font-size:11px;color:#9ca3af}
-.puesto-prog{padding:0 16px 12px;display:flex;align-items:center;gap:10px;font-size:12px}
-.puesto-acts{padding:0 16px 12px;display:flex;gap:8px}
+.puesto-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;padding:10px 14px;display:flex;align-items:center;gap:16px}
+.puesto-info{flex:1;min-width:0}.puesto-name{font-size:14px;font-weight:600;color:#111827;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.puesto-desc{font-size:12px;color:#9ca3af;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.puesto-cupo{display:flex;align-items:center;gap:8px;flex:0 0 260px;white-space:nowrap}
+.puesto-cupo .prog-wrap{flex:1}
+.cupo-num{font-size:14px;font-weight:600;color:#111827;font-variant-numeric:tabular-nums}
+.cupo-label{font-size:11px;font-weight:500}
+.puesto-acts{display:flex;gap:6px;flex-shrink:0;align-items:center}
+@media (max-width:900px){.puesto-card{flex-wrap:wrap}.puesto-cupo{flex:1 1 100%}.puesto-acts{flex:1 1 100%;justify-content:flex-end}}
 .picker-srch{padding:7px 11px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none;width:100%;margin-bottom:8px}
 .picker-srch:focus{border-color:#534AB7}
 .picker-list{max-height:220px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px}
@@ -502,6 +502,9 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 
 /* Zona, calculada desde la localidad */
 .zona-chip{font-size:10.5px;font-weight:600;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:999px;padding:1px 8px;white-space:nowrap}
+/* Dónde está convocada: se toca y abre esa convocatoria */
+.conv-chip{font-size:10.5px;font-weight:600;background:#fdf4ff;border:1px solid #f0abfc;color:#86198f;border-radius:999px;padding:1px 8px;white-space:nowrap;cursor:pointer}
+.conv-chip:hover{background:#fae8ff}
 
 
 /* Recomendados: el apartado de a quién llamar primero */
@@ -2331,6 +2334,25 @@ function zonaDe(p) {
   return zonaDeLocalidad((sol && sol.localidad) || (p && p.localidad) || '');
 }
 function posicionesDe(p) { return Array.isArray(p && p.posiciones) ? p.posiciones.filter(Boolean) : []; }
+// Dónde está convocada hoy o más adelante: para verlo en la nómina sin tener
+// que entrar a cada convocatoria. La misma persona por id o por documento,
+// igual que el chequeo de choques. Lo pasado no se muestra.
+function dondeEsta(p) {
+  const hoy = new Date(); const hoyISO = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+  const doc = docNucleo(p && p.cuit);
+  const salida = [];
+  (posts || []).forEach(x => {
+    if (x.estado === 'rechazado') return;
+    const otra = (people || []).find(y => y.id === x.personaId);
+    if (!(x.personaId === p.id || (doc && docNucleo(x.cuit || (otra && otra.cuit)) === doc))) return;
+    const conv = (convs || []).find(c => c.id === x.convId); if (!conv || conv.archivada) return;
+    const porVenir = convFechasArr(conv).filter(f => f >= hoyISO).sort();
+    if (!porVenir.length) return;
+    const puesto = (conv.puestos || []).find(q => q.id === x.puestoId);
+    salida.push({ conv: conv.nombre, convId: conv.id, fecha: porVenir[0], fechas: porVenir, puesto: (puesto && puesto.nombre) || '' });
+  });
+  return salida.sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
 // Cuántos feedbacks tiene y con qué promedio: es lo que ordena la lista.
 function promedioDe(personaId) {
   const con = feedbacks.filter(f => f.persona_id === personaId).map(promedioFb).filter(x => x != null);
@@ -2374,8 +2396,9 @@ function renderNomTable() {
   ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_nota||p.out_categoria||'')}"><i class="ic ic-prohibido"></i> ${nomAreaTab === 'out' && p.out_categoria ? e(frase(p.out_categoria)) : 'OUT'}</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
-  ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')"><i class="ic ic-doc"></i> CV</button>` : ''}
+  ${(p.cv || solicitudDe(p)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv ? 'CV' : 'Ficha'}</button>` : ''}
   ${(posicionesDe(p).length || zonaDe(p)) ? `<div class="pos-chips">${zonaDe(p) ? `<span class="zona-chip" title="Sale de la localidad que cargó al inscribirse">${e(zonaDe(p))}</span>` : ''}${posicionesDe(p).map(x => `<span class="pos-chip">${e(x)}</span>`).join('')}${(() => { const pr = promedioDe(p.id); return pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">${pr.toFixed(2)}</span>` : ''; })()}</div>` : ''}
+  ${(() => { const d = dondeEsta(p); return d.length ? `<div class="pos-chips">${d.slice(0, 3).map(x => `<span class="conv-chip" title="${e(x.fechas.map(f => fechaDMA ? fechaDMA(f) : f).join(', '))}${x.puesto ? ' · ' + e(x.puesto) : ''}" onclick="event.stopPropagation();goSec('convs');openDetail('${x.convId}')"><i class="ic ic-calendario"></i> ${e(x.conv)} · ${e(fechaDMA ? fechaDMA(x.fecha) : x.fecha)}</span>`).join('')}${d.length > 3 ? `<span class="conv-chip" style="opacity:.7">+${d.length - 3}</span>` : ''}</div>` : ''; })()}
   ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
 <td><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td>
@@ -3364,9 +3387,11 @@ async function cargarVistaCvPersona(id) {
   }
 }
 
+// Se abre también para quien no tiene CV cargado pero sí inscripción: ahí
+// está la planilla con el CBU, que antes sólo se veía yendo a Solicitudes.
 function viewCv(id) {
-  const p = people.find(x => x.id === id); if (!p || !p.cv) return;
-  const cv = p.cv;
+  const p = people.find(x => x.id === id); if (!p || !(p.cv || solicitudDe(p))) return;
+  const cv = p.cv || {};
   document.getElementById('cvViewTitle').textContent = `CV — ${p.nombre}`;
   const fld = (label, val) => val ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${label}</div><div class="cv-viewer-value">${e(val)}</div></div>` : '';
   let html = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px"><span class="a-badge ${areaClase(p.area)}">${areaLargo(p.area)}</span>${p.email ? `<span style="font-size:12px;color:#6b7280"><i class="ic ic-sobre"></i> ${e(p.email)}</span>` : ''}${p.tel ? `<span style="font-size:12px;color:#6b7280"><i class="ic ic-telefono"></i> ${e(p.tel)}</span>` : ''}<span style="font-size:12px;color:#9ca3af">Enviado: ${cv.fechaEnvio || '—'}</span></div>`;
@@ -3488,7 +3513,31 @@ async function togglePublicada(id) {
 function closeDetail() { document.getElementById('cv-list').style.display = 'block'; document.getElementById('cv-detail').style.display = 'none'; currentConvId = null; renderCvList(); }
 function renderDetStats() { const c = convs.find(x => x.id === currentConvId); if (!c) return; const cPosts = posts.filter(p => p.convId === currentConvId); const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0); const usados = cPosts.filter(p => p.estado !== 'rechazado').length; document.getElementById('detStats').innerHTML = `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span><span class="dstat">Aprobados: <strong style="color:#0f6e56">${cPosts.filter(p => p.estado === 'aprobado').length}</strong></span><span class="dstat">Pendientes: <strong style="color:#854F0B">${cPosts.filter(p => p.estado === 'pendiente').length}</strong></span>`; }
 function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if (!c) { document.getElementById('puestosContainer').innerHTML = ''; return; } if (!(c.puestos || []).length) { document.getElementById('puestosContainer').innerHTML = '<div class="empty">No hay puestos. Agregá el primero.</div>'; return; } document.getElementById('puestosContainer').innerHTML = (c.puestos || []).map(p => puestoCardHTML(p, c)).join(''); }
-function puestoCardHTML(p, c) { const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id); const usados = cPosts.filter(x => x.estado !== 'rechazado').length; const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0; const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7'; const libres = Math.max(0, p.cupos - usados); return `<div class="puesto-card"><div class="puesto-card-head"><div class="puesto-info"><div class="puesto-name">${eN(p.nombre)}</div>${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}${p.area ? `<span class="a-badge ${areaClase(p.area)}" style="margin-top:4px;display:inline-block">${areaLargo(p.area)}</span>` : ''}</div><div class="puesto-cupo"><div class="cupo-num">${usados}/${p.cupos}</div><div class="cupo-label">cupos</div><div style="font-size:11px;color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'};margin-top:2px;font-weight:500">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</div></div></div><div class="puesto-prog"><div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div><span style="font-size:12px;color:#6b7280;white-space:nowrap">${pct}%</span></div><div class="puesto-acts"><button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar postulaciones (${cPosts.length})</button><button class="btn btn-sec btn-sm" onclick="openEditPuesto('${p.id}')"><i class="ic ic-lapiz"></i></button><button class="btn btn-danger btn-sm" onclick="delPuesto('${p.id}')">✕</button></div></div>`; }
+// Cada puesto en un renglón: nombre y etiquetas a la izquierda, cupos y avance
+// en el medio, acciones a la derecha. Antes era una tarjeta de tres pisos.
+function puestoCardHTML(p, c) {
+  const cPosts = posts.filter(x => x.convId === c.id && x.puestoId === p.id);
+  const usados = cPosts.filter(x => x.estado !== 'rechazado').length;
+  const pct = p.cupos > 0 ? Math.min(100, Math.round(usados / p.cupos * 100)) : 0;
+  const progColor = pct < 50 ? '#e5e7eb' : pct < 80 ? '#fbbf24' : pct < 100 ? '#34d399' : '#534AB7';
+  const libres = Math.max(0, p.cupos - usados);
+  return `<div class="puesto-card">
+    <div class="puesto-info">
+      <div class="puesto-name">${eN(p.nombre)}${p.area ? ` <span class="a-badge ${areaClase(p.area)}">${areaLargo(p.area)}</span>` : ''}</div>
+      ${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}
+    </div>
+    <div class="puesto-cupo" title="${pct}% ocupado">
+      <div class="prog-wrap"><div class="prog-fill" style="background:${progColor};width:${pct}%"></div></div>
+      <span class="cupo-num">${usados}/${p.cupos}</span>
+      <span class="cupo-label" style="color:${libres === 0 ? '#991b1b' : libres < 5 ? '#92400e' : '#065f46'}">${libres === 0 ? 'Completo' : libres + ' libre' + (libres !== 1 ? 's' : '')}</span>
+    </div>
+    <div class="puesto-acts">
+      <button class="btn btn-primary btn-sm" onclick="openGestionar('${p.id}')">Gestionar (${cPosts.length})</button>
+      <button class="btn btn-sec btn-xs" onclick="openEditPuesto('${p.id}')" title="Editar"><i class="ic ic-lapiz"></i></button>
+      <button class="btn btn-danger btn-xs" onclick="delPuesto('${p.id}')" title="Eliminar">✕</button>
+    </div>
+  </div>`;
+}
 
 // ── FECHAS MÚLTIPLES ──
 let convTurnos = [];  // [{id, fecha, horario}] — la misma fecha puede repetirse (turnos)
@@ -4083,7 +4132,17 @@ async function doMasiva() {
   const alreadyIn = new Set(posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId).map(x => x.personaId).filter(Boolean));
   const match = people.filter(x => { if (alreadyIn.has(x.id)) return false; if (af && x.area !== af) return false; if (sf && x.estado !== sf) return false; if (q && !x.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, libres);
   if (!match.length) { toast('Ninguna persona coincide'); return; }
-  const newPosts = match.map(pers => ({ id: uid(), convId: currentConvId, puestoId: currentPuestoId, personaId: pers.id, nombre: pers.nombre, estado: 'pendiente', notas: '' }));
+  // El mismo bloqueo que al agregar de a uno: un documento en dos puestos el
+  // mismo día es un problema real el día del show. Acá se los deja afuera y
+  // se dice quiénes, en vez de meterlos igual.
+  const chocan = match.filter(pers => choquesDeFecha(pers, c, p).length);
+  if (chocan.length) {
+    const nombres = chocan.slice(0, 6).map(x => x.nombre).join(', ') + (chocan.length > 6 ? ' y ' + (chocan.length - 6) + ' más' : '');
+    if (chocan.length === match.length) { toast('Ninguna se puede asignar: ' + (chocan.length === 1 ? 'ya está' : 'ya están') + ' en otro puesto ese día (' + nombres + ')'); return; }
+    if (!confirm(`${chocan.length} de las ${match.length} ya están en otro puesto ese mismo día y quedan afuera:\n${nombres}\n\n¿Asignar a las otras ${match.length - chocan.length}?`)) return;
+  }
+  const sinChoque = match.filter(pers => !chocan.includes(pers));
+  const newPosts = sinChoque.map(pers => ({ id: uid(), convId: currentConvId, puestoId: currentPuestoId, personaId: pers.id, nombre: pers.nombre, estado: 'pendiente', notas: '' }));
   posts.push(...newPosts); renderGestList(); renderPuestos(); renderDetStats(); closeM('mMasiva');
   try {
     await sbInsert('postulaciones', newPosts.map(x => ({ id: x.id, conv_id: x.convId, puesto_id: x.puestoId, persona_id: x.personaId, nombre: x.nombre, estado: x.estado, notas: null })));
@@ -4942,7 +5001,9 @@ const CONTRATO_CAMPOS = [
 function plantillaContrato(area) {
   const guardadas = contratoPlantillas;
   const pais = area === 'espana' ? 'espana' : 'ar';
-  const t = String(guardadas[pais] || '').trim();
+  // Si el modelo se pegó desde Windows trae \r\n; se normaliza acá para que
+  // los párrafos corten bien en el PDF.
+  const t = String(guardadas[pais] || '').replace(/\r\n?/g, '\n').trim();
   if (t) return t;
   // España no tiene respaldo: su contrato es otra ley, y un modelo argentino
   // con otro nombre arriba sería peor que no tener ninguno.
@@ -5121,7 +5182,9 @@ async function generarContratoPDF(texto, opts) {
   y -= 74;
 
   // Cuerpo (la primera línea del texto es el título: no se repite).
-  const parrafos = String(texto).split(/\n\n+/)
+  // Los finales de línea de Windows (\r\n) no cortaban párrafo: el contrato
+  // entero salía en un solo bloque. Se normalizan antes de partir.
+  const parrafos = String(texto).replace(/\r\n?/g, '\n').split(/\n[ \t]*\n+/)
     .filter((p, i) => !(i === 0 && p.trim().toUpperCase() === TITULO));
   for (const par of parrafos) {
     const lineas = armarLineas(par.trim(), fuentes, size, maxWidth, opts.destacar);

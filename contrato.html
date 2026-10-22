@@ -403,7 +403,9 @@ async function generarContratoPDF(texto, opts) {
   y -= 74;
 
   // Cuerpo (la primera línea del texto es el título: no se repite).
-  const parrafos = String(texto).split(/\n\n+/)
+  // Igual que en el panel: los finales de línea de Windows no cortaban
+  // párrafo y el contrato salía en un solo bloque.
+  const parrafos = String(texto).replace(/\r\n?/g, '\n').split(/\n[ \t]*\n+/)
     .filter((p, i) => !(i === 0 && p.trim().toUpperCase() === TITULO));
   for (const par of parrafos) {
     const lineas = armarLineas(par.trim(), fuentes, size, maxWidth, opts.destacar);
