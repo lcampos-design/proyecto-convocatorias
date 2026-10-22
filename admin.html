@@ -495,6 +495,10 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .pos-elegir:hover{border-color:#a1a1aa}
 .pos-elegir.on{background:var(--r-ink);border-color:var(--r-ink);color:#fff}
 
+
+/* Zona, calculada desde la localidad */
+.zona-chip{font-size:10.5px;font-weight:600;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:999px;padding:1px 8px;white-space:nowrap}
+
 </style>
 </head>
 <body>
@@ -585,6 +589,16 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <option value="">Toda la nómina</option>
       <option value="rot">⚠ En rotación</option>
       <option value="libre">✓ Disponibles</option>
+    </select>
+    <select class="filt" id="nomZonaFilter" onchange="nomFilter()" title="Filtrar por zona, para convocar por cercanía">
+      <option value="">Todas las zonas</option>
+      <option value="CABA">CABA</option>
+      <option value="Norte">Zona Norte</option>
+      <option value="Noroeste">Zona Noroeste</option>
+      <option value="Oeste">Zona Oeste</option>
+      <option value="Sur">Zona Sur</option>
+      <option value="Otra">Otra</option>
+      <option value="_sin">Sin localidad cargada</option>
     </select>
     <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por posición">
       <option value="">Todas las posiciones</option>
@@ -2066,6 +2080,7 @@ function nomApply() {
   const tagF = document.getElementById('nomTagFilter') ? document.getElementById('nomTagFilter').value : '';
   const decF = document.getElementById('nomDecFilter') ? document.getElementById('nomDecFilter').value : '';
   const posF = document.getElementById('nomPosFilter') ? document.getElementById('nomPosFilter').value : '';
+  const zonaF = document.getElementById('nomZonaFilter') ? document.getElementById('nomZonaFilter').value : '';
   const orden = document.getElementById('nomOrden') ? document.getElementById('nomOrden').value : '';
   nomFiltered = people.filter(p => {
     // Los OUT tienen su propia pestaña: no se mezclan con el resto de la nómina.
@@ -2085,6 +2100,8 @@ function nomApply() {
     }
     if (cvFilterOn && !p.cv) return false;
     if (docFilterOn && !docDudoso(p)) return false;
+    if (zonaF === '_sin' && zonaDe(p)) return false;
+    if (zonaF && zonaF !== '_sin' && zonaDe(p) !== zonaF) return false;
     if (posF === '_sin' && posicionesDe(p).length) return false;
     if (posF && posF !== '_sin' && !posicionesDe(p).includes(posF)) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
@@ -2132,6 +2149,12 @@ function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado ==
 // Supervisor, Operador y Acomodador no son áreas: son posiciones dentro de la
 // misma nómina, y una persona puede tener más de una. Por eso es una lista.
 const POSICIONES = ['Supervisor', 'Equipo operaciones', 'Operador acreditaciones', 'Orientador', 'Acomodador', 'Hidratación'];
+// La localidad la cargó la persona al inscribirse, así que vive en la
+// solicitud. Se la busca por documento, igual que el resto de la planilla.
+function zonaDe(p) {
+  const sol = solicitudDe(p);
+  return sol ? zonaDeLocalidad(sol.localidad) : '';
+}
 function posicionesDe(p) { return Array.isArray(p && p.posiciones) ? p.posiciones.filter(Boolean) : []; }
 // Cuántos feedbacks tiene y con qué promedio: es lo que ordena la lista.
 function promedioDe(personaId) {
@@ -2176,7 +2199,7 @@ function renderNomTable() {
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
   ${p.cv ? `<button class="cv-tag" onclick="viewCv('${p.id}')"><i class="ic ic-doc"></i> CV</button>` : ''}
-  ${posicionesDe(p).length ? `<div class="pos-chips">${posicionesDe(p).map(x => `<span class="pos-chip">${e(x)}</span>`).join('')}${(() => { const pr = promedioDe(p.id); return pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">${pr.toFixed(2)}</span>` : ''; })()}</div>` : ''}
+  ${(posicionesDe(p).length || zonaDe(p)) ? `<div class="pos-chips">${zonaDe(p) ? `<span class="zona-chip" title="Sale de la localidad que cargó al inscribirse">${e(zonaDe(p))}</span>` : ''}${posicionesDe(p).map(x => `<span class="pos-chip">${e(x)}</span>`).join('')}${(() => { const pr = promedioDe(p.id); return pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">${pr.toFixed(2)}</span>` : ''; })()}</div>` : ''}
   ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
 <td><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td>
@@ -2331,6 +2354,227 @@ function localidadCanonica(v) {
   }
   base = base.replace(/\s+/g, ' ').trim();
   return LOC_SINONIMOS[base] || base;
+}
+
+// ── ZONA DE CADA LOCALIDAD ────────────────────────────────────
+// Para convocar por cercanía. Los seis grupos son los que ya usa RRHH, y la
+// tabla arranca de su propia planilla: 83 localidades salen de cómo las
+// clasificaron ellos, el resto son localidades del AMBA puestas en la zona de
+// su partido con el mismo criterio.
+// Lo que no está en la tabla queda como "Otra", que es honesto: no se inventa
+// una zona que después haga convocar a alguien que vive lejos.
+const ZONA_POR_LOCALIDAD = {
+  '3 de febrero': 'Noroeste',
+  'acassuso': 'Norte',
+  'adrogue': 'Sur',
+  'agronomia': 'CABA',
+  'aldo bonzi': 'Oeste',
+  'alejandro korn': 'Sur',
+  'alem 1254 banfield': 'Sur',
+  'almagro': 'CABA',
+  'almagro comuna 5': 'CABA',
+  'almirante brown': 'Sur',
+  'altos de podesta': 'Noroeste',
+  'avellaneda': 'Sur',
+  'balvanera': 'CABA',
+  'banfield': 'Sur',
+  'barracas': 'CABA',
+  'beccar': 'Norte',
+  'belgrano': 'CABA',
+  'belgrano comuna 13': 'CABA',
+  'bella vista': 'Noroeste',
+  'benavidez': 'Norte',
+  'berazategui': 'Sur',
+  'bernal': 'Sur',
+  'boedo': 'CABA',
+  'bosques': 'Sur',
+  'boulogne': 'Norte',
+  'burzaco': 'Sur',
+  'caba': 'CABA',
+  'caba comuna 13': 'CABA',
+  'caba comuna 14': 'CABA',
+  'caba comuna 15': 'CABA',
+  'caba comuna 3': 'CABA',
+  'caba comuna 4': 'CABA',
+  'caba comuna 5': 'CABA',
+  'caba comuna 6': 'CABA',
+  'caballito': 'CABA',
+  'caballito comuna 6': 'CABA',
+  'campana': 'Norte',
+  'canning': 'Sur',
+  'canuelas': 'Sur',
+  'caseros': 'Noroeste',
+  'castelar': 'Oeste',
+  'chacarita': 'CABA',
+  'ciudad evita': 'Oeste',
+  'ciudadela': 'Noroeste',
+  'claypole': 'Sur',
+  'coghlan': 'CABA',
+  'colegiales': 'CABA',
+  'colegiales comuna 13': 'CABA',
+  'comuna 14': 'CABA',
+  'comuna 4': 'CABA',
+  'comuna 6': 'CABA',
+  'comuna 8': 'CABA',
+  'constitucion': 'CABA',
+  'del viso': 'Noroeste',
+  'don bosco': 'Sur',
+  'don torcuato': 'Norte',
+  'el jaguel': 'Sur',
+  'el palomar': 'Noroeste',
+  'escobar': 'Norte',
+  'esteban echeverria': 'Sur',
+  'ezeiza': 'Sur',
+  'ezpeleta': 'Sur',
+  'florencio varela': 'Sur',
+  'flores': 'CABA',
+  'flores comuna 7': 'CABA',
+  'floresta': 'CABA',
+  'floresta comuna 10': 'CABA',
+  'florida': 'Norte',
+  'garin': 'Norte',
+  'general pacheco': 'Norte',
+  'general rodriguez': 'Oeste',
+  'general san martin': 'Noroeste',
+  'gerli': 'Sur',
+  'glew': 'Sur',
+  'gonzalez catan': 'Oeste',
+  'grand bourg': 'Noroeste',
+  'gregorio de laferrere': 'Oeste',
+  'guernica': 'Sur',
+  'haedo': 'Oeste',
+  'hudson': 'Sur',
+  'hurlingham': 'Oeste',
+  'isidro casanova': 'Oeste',
+  'ituzaingo': 'Oeste',
+  'jose c paz': 'Noroeste',
+  'jose leon suarez': 'Noroeste',
+  'jose marmol': 'Sur',
+  'la boca': 'CABA',
+  'la lucila': 'Norte',
+  'la matanza': 'Oeste',
+  'lanus': 'Sur',
+  'lanus oeste': 'Sur',
+  'liniers': 'CABA',
+  'liniers comuna 9': 'CABA',
+  'llavallol': 'Sur',
+  'lomas de zamora': 'Sur',
+  'lomas del mirador': 'Oeste',
+  'longchamps': 'Sur',
+  'los polvorines': 'Noroeste',
+  'luis guillon': 'Sur',
+  'lujan': 'Oeste',
+  'malvinas argentinas': 'Noroeste',
+  'marcos paz': 'Oeste',
+  'martinez': 'Norte',
+  'maschwitz': 'Norte',
+  'mataderos': 'CABA',
+  'merlo': 'Oeste',
+  'monserrat': 'CABA',
+  'monte castro': 'CABA',
+  'monte chingolo': 'Sur',
+  'monte grande': 'Sur',
+  'moreno': 'Oeste',
+  'moron': 'Oeste',
+  'muniz': 'Noroeste',
+  'munro': 'Norte',
+  'nordelta': 'Norte',
+  'nueva pompeya': 'CABA',
+  'nunez': 'CABA',
+  'nunez comuna 13': 'CABA',
+  'olivos': 'Norte',
+  'once': 'CABA',
+  'pablo nogues': 'Noroeste',
+  'padua': 'Oeste',
+  'palermo': 'CABA',
+  'palermo comuna 14': 'CABA',
+  'parque': 'CABA',
+  'parque avellaneda comuna 9': 'CABA',
+  'parque chacabuco': 'CABA',
+  'parque chacabuco comuna 7': 'CABA',
+  'parque patricios': 'CABA',
+  'parque patricios comuna 4': 'CABA',
+  'paso del rey': 'Oeste',
+  'paternal': 'CABA',
+  'pilar': 'Noroeste',
+  'puerto madero': 'CABA',
+  'quilmes': 'Sur',
+  'quilmes oeste': 'Sur',
+  'rafael calzada': 'Sur',
+  'rafael castillo': 'Oeste',
+  'ramos mejia': 'Oeste',
+  'ranelagh': 'Sur',
+  'recoleta': 'CABA',
+  'recoleta comuna 2': 'CABA',
+  'remedios de escalada': 'Sur',
+  'retiro': 'CABA',
+  'saavedra': 'CABA',
+  'saenz pena': 'Noroeste',
+  'san andres': 'Noroeste',
+  'san cristobal': 'CABA',
+  'san cristobal comuna 3': 'CABA',
+  'san fernando': 'Norte',
+  'san francisco solano': 'Sur',
+  'san isidro': 'Norte',
+  'san justo': 'Oeste',
+  'san martin': 'Noroeste',
+  'san miguel': 'Noroeste',
+  'san telmo': 'CABA',
+  'san vicente': 'Sur',
+  'santos lugares': 'Noroeste',
+  'sarandi': 'Sur',
+  'solano': 'Sur',
+  'tablada': 'Oeste',
+  'tapiales': 'Oeste',
+  'temperley': 'Sur',
+  'tigre': 'Norte',
+  'tigre gba norte': 'Norte',
+  'tortuguitas': 'Noroeste',
+  'tres de febrero': 'Noroeste',
+  'tristan suarez': 'Sur',
+  'turdera': 'Sur',
+  'valentin alsina': 'Sur',
+  'velez sarsfield': 'CABA',
+  'velez sarsfield comuna 10': 'CABA',
+  'versalles': 'CABA',
+  'vicente lopez': 'Norte',
+  'villa adelina': 'Norte',
+  'villa ballester': 'Noroeste',
+  'villa bosch': 'Noroeste',
+  'villa celina': 'Oeste',
+  'villa crespo': 'CABA',
+  'villa crespo comuna 15': 'CABA',
+  'villa de mayo': 'Noroeste',
+  'villa del parque': 'CABA',
+  'villa del parque comuna 11': 'CABA',
+  'villa devoto': 'CABA',
+  'villa dominico': 'Sur',
+  'villa fiorito': 'Sur',
+  'villa general mitre': 'CABA',
+  'villa lugano': 'CABA',
+  'villa lugano comuna 8': 'CABA',
+  'villa luro': 'CABA',
+  'villa luzuriaga': 'Oeste',
+  'villa madero': 'Oeste',
+  'villa martelli': 'Norte',
+  'villa mitre': 'CABA',
+  'villa ortuzar': 'CABA',
+  'villa pueyrredon': 'CABA',
+  'villa real': 'CABA',
+  'villa riachuelo': 'CABA',
+  'villa santa rita': 'CABA',
+  'villa soldati': 'CABA',
+  'villa tesei': 'Oeste',
+  'villa urquiza': 'CABA',
+  'virreyes': 'Norte',
+  'wilde': 'Sur',
+  'william morris': 'Oeste',
+  'zarate': 'Norte'
+};
+const ZONAS = ['CABA', 'Norte', 'Noroeste', 'Oeste', 'Sur', 'Otra'];
+function zonaDeLocalidad(v) {
+  const k = localidadCanonica(v);
+  return (k && ZONA_POR_LOCALIDAD[k]) || (k ? 'Otra' : '');
 }
 
 // Cómo se escribe cada localidad en pantalla. Se prefiere una forma que alguien
