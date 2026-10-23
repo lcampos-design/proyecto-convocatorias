@@ -45,7 +45,7 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .prog-track{flex:1;height:5px;background:#f3f4f6;border-radius:999px;overflow:hidden}
 .prog-fill{height:100%;border-radius:999px}
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
-.b-mv{background:#e0f2fe;color:#0369a1}.b-ex{background:#f0fdf4;color:#166534}
+.b-mv{background:#e0f2fe;color:#0369a1}.b-ex{background:#f0fdf4;color:#166534}.b-es{background:#fef3c7;color:#92400e}
 .persona-lista{background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin:16px}
 .person-row{border-bottom:1px solid #f3f4f6;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
 .person-row:last-child{border-bottom:none}
@@ -297,7 +297,7 @@ function renderHome() {
     return `<div class="conv-card" onclick="openConv('${c.id}')">
       <div class="conv-title">${esc(c.nombre)}</div>
       <div class="conv-meta">
-        <span class="badge ${c.area==='movistar_arena'?'b-mv':'b-ex'}">${c.area==='movistar_arena'?'Movistar Arena':'Externos'}</span>
+        <span class="badge ${areaClase(c.area)}">${areaNombre(c.area)}</span>
         ${c.fecha ? `<span>📅 ${fmtFecha(c.fecha)}</span>` : ''}
         <span>${total} persona${total!==1?'s':''}</span>
       </div>
@@ -326,12 +326,12 @@ async function openConv(convId) {
     const sem = p.semaforo || 1;
     const fb = (p.mis_feedbacks || []).length;
     const initials = p.nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-    const avatarBg = p.area==='movistar_arena'?'background:#e0f2fe;color:#0369a1':'background:#f0fdf4;color:#166534';
+    const avatarBg = p.area==='movistar_arena'?'background:#e0f2fe;color:#0369a1':p.area==='espana'?'background:#fef3c7;color:#92400e':'background:#f0fdf4;color:#166534';
     return `<div class="person-row" onclick="openFbSheet('${p.id}','${c.id}')">
       <div class="person-avatar" style="${avatarBg}">${initials}</div>
       <div style="flex:1;min-width:0">
         <div class="person-name">${esc(p.nombre)}</div>
-        <div class="person-meta">${p.area==='movistar_arena'?'Movistar Arena':'Externos'}${fb?' · <span style="color:#0369a1">✓ Feedback dado</span>':' · Sin feedback todavía'}</div>
+        <div class="person-meta">${areaNombre(p.area)}${fb?' · <span style="color:#0369a1">✓ Feedback dado</span>':' · Sin feedback todavía'}</div>
       </div>
       <span class="sem sem-${sem}">${sem}</span>
       <span class="chevron">›</span>
@@ -511,6 +511,9 @@ async function marcar(postId, valor) {
 
 // ── Utils ──
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Las tres áreas: Movistar Arena, Externos y España (y 'ambas' para las que suman las dos de acá).
+function areaNombre(a) { return { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' }[a] || 'Externos'; }
+function areaClase(a) { return { movistar_arena: 'b-mv', espana: 'b-es' }[a] || 'b-ex'; }
 function fmtFecha(f) { try { return new Date(f+'T00:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e) { return f; } }
 
 initAuth();

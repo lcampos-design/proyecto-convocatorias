@@ -35,7 +35,7 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .conv-name{font-size:17px;font-weight:700;color:#111827;margin-bottom:4px}
 .conv-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:#9ca3af;align-items:center}
 .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
-.b-mv{background:#e0f2fe;color:#0369a1}.b-ex{background:#f0fdf4;color:#166534}.b-ambas{background:#f3e8ff;color:#7e22ce}
+.b-mv{background:#e0f2fe;color:#0369a1}.b-ex{background:#f0fdf4;color:#166534}.b-es{background:#fef3c7;color:#92400e}.b-ambas{background:#f3e8ff;color:#7e22ce}
 .puesto-row{background:#fff;border:1px solid #e5e7eb;border-top:1px solid #f3f4f6;padding:14px 20px;display:flex;align-items:center;gap:14px;transition:background .15s}
 .puesto-row:last-child{border-radius:0 0 12px 12px}
 .puesto-row:hover{background:#fafaf8}
@@ -163,9 +163,9 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 let selectedConvId = null, selectedPuestoId = null, selectedPuestoNombre = '', selectedConvNombre = '';
 let openConvIds = new Set(); // convocatorias publicadas/abiertas ahora (para no anotarse a varias a la vez)
 
-// Área desde el link: ?area=arena o ?area=externos
-const AREA_MAP = { arena: 'movistar_arena', externos: 'externos' };
-const AREA_LABEL = { movistar_arena: 'Movistar Arena', externos: 'Externos' };
+// Área desde el link: ?area=arena, ?area=externos o ?area=espana
+const AREA_MAP = { arena: 'movistar_arena', movistar_arena: 'movistar_arena', externos: 'externos', espana: 'espana', 'españa': 'espana' };
+const AREA_LABEL = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España' };
 const AREA = AREA_MAP[(new URLSearchParams(location.search).get('area') || '').toLowerCase()] || null;
 
 function setHeader() {
@@ -184,6 +184,7 @@ function renderChooser() {
      <div style="display:flex;gap:16px;flex-wrap:wrap;max-width:540px;margin:0 auto">
        ${card('?area=arena', '🏟️', 'Movistar Arena', 'Convocatorias del Movistar Arena')}
        ${card('?area=externos', '🎤', 'Externos', 'Eventos externos y giras')}
+       ${card('?area=espana', '🇪🇸', 'España', 'Eventos en España')}
      </div>`;
 }
 
@@ -214,8 +215,8 @@ function renderEmpty() {
 }
 
 function renderConvs(convs, puestos, ocupados) {
-  const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' };
-  const areaClass = { movistar_arena: 'b-mv', externos: 'b-ex', ambas: 'b-ambas' };
+  const areaLabel = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' };
+  const areaClass = { movistar_arena: 'b-mv', externos: 'b-ex', espana: 'b-es', ambas: 'b-ambas' };
 
   const html = convs.map(c => {
     const cPuestos = puestos.filter(p => p.conv_id === c.id && (!p.area || p.area === AREA));
