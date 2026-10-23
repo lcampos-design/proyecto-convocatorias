@@ -3192,8 +3192,9 @@ async function doImport() {
 // Todo va como texto a propósito: si Excel toma un CUIL o un teléfono como
 // número, lo pasa a notación científica y le come los ceros de adelante.
 // Con ExcelJS, que escribe formato (SheetJS gratis no): Poppins en todo, los
-// encabezados en negrita blanca sobre el morado de SBS, el logo y el título
-// arriba, filas con borde fino, la primera cabecera fija y con filtro.
+// encabezados en negrita blanca sobre negro, el logo y el título (sólo blanco
+// y negro, como pidió Thomas), filas con borde fino, la primera cabecera
+// fija y con filtro.
 // Varias hojas en un archivo: [{ nombre, filas, titulo, subtitulo, cabeceras,
 // negritas, anchos }]. "cabeceras" son los índices de las filas de encabezado
 // (si no se dice, la primera); "negritas", filas en negrita sin fondo (un
@@ -3202,7 +3203,7 @@ async function doImport() {
 // nota larga no haga una columna de medio metro. Excel acepta nombres de hoja
 // de hasta 31 letras y sin estos caracteres: \ / ? * [ ] :
 const EXCEL_FUENTE = 'Poppins';
-const EXCEL_MORADO = '534AB7';
+const EXCEL_NEGRO = '000000';
 const EXCEL_ARRIBA = 4; // filas que ocupan el logo y el título; la tabla arranca en la 5
 let logoExcel = null;
 async function logoParaExcel() {
@@ -3223,13 +3224,13 @@ function armarHoja(libro, h, nombre, idLogo) {
   const texto = h.filas.map(f => (f || []).map(v => (v === null || v === undefined) ? '' : String(v)));
   const ancho = Math.max(...texto.map(f => f.length));
   const hoja = libro.addWorksheet(nombre, { views: [{ showGridLines: false }] });
-  const fuente = extra => Object.assign({ name: EXCEL_FUENTE, size: 10, color: { argb: 'FF1F2937' } }, extra || {});
+  const fuente = extra => Object.assign({ name: EXCEL_FUENTE, size: 10, color: { argb: 'FF000000' } }, extra || {});
   const borde = { style: 'thin', color: { argb: 'FFE5E7EB' } };
 
   // Arriba: el logo, el título y de dónde salió.
   hoja.getRow(1).height = 26; hoja.getRow(2).height = 18; hoja.getRow(3).height = 8; hoja.getRow(4).height = 8;
   if (idLogo !== null) hoja.addImage(idLogo, { tl: { col: 0.15, row: 0.1 }, ext: { width: 46, height: 46 } });
-  const t = hoja.getCell(1, 2); t.value = h.titulo || nombre; t.font = fuente({ size: 14, bold: true, color: { argb: 'FF' + EXCEL_MORADO } }); t.alignment = { vertical: 'middle' };
+  const t = hoja.getCell(1, 2); t.value = h.titulo || nombre; t.font = fuente({ size: 14, bold: true, color: { argb: 'FF' + EXCEL_NEGRO } }); t.alignment = { vertical: 'middle' };
   const hoy = new Date();
   const st = hoja.getCell(2, 2); st.value = (h.subtitulo ? h.subtitulo + ' · ' : '') + 'Show Business Solutions · ' + String(hoy.getDate()).padStart(2, '0') + '/' + String(hoy.getMonth() + 1).padStart(2, '0') + '/' + hoy.getFullYear();
   st.font = fuente({ size: 9, color: { argb: 'FF6B7280' } }); st.alignment = { vertical: 'top' };
@@ -3247,12 +3248,11 @@ function armarHoja(libro, h, nombre, idLogo) {
       c.value = f[j] === undefined ? '' : f[j];
       if (esCab) {
         c.font = fuente({ bold: true, color: { argb: 'FFFFFFFF' } });
-        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + EXCEL_MORADO } };
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + EXCEL_NEGRO } };
         c.alignment = { vertical: 'middle', wrapText: true };
       } else {
         c.font = fuente({ bold: negritas.has(i) });
         c.alignment = { vertical: 'middle' };
-        if (i % 2 === 1) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F6FD' } };
       }
       c.border = { top: borde, bottom: borde, left: borde, right: borde };
     }
