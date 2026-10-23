@@ -32,8 +32,7 @@ textarea.fi{height:90px;resize:vertical}
 .area-btn{flex:1;padding:10px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:center;transition:all .15s;background:#fff}
 .area-btn:hover{border-color:#a5b4fc;background:#f5f3ff}
 .area-btn.active{border-color:#534AB7;background:#f0eeff}
-.area-btn-title{font-size:14px;font-weight:600;color:#111827;margin-bottom:2px}
-.area-btn-sub{font-size:11px;color:#9ca3af}
+.area-btn-title{font-size:14px;font-weight:600;color:#111827}
 .file-area{border:2px dashed #d1d5db;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
 .file-area:hover,.file-area.dragover{border-color:#534AB7;background:#f5f3ff}
 .file-area input{position:absolute;inset:0;opacity:0;cursor:pointer}
@@ -121,15 +120,12 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div class="area-btns">
         <div class="area-btn active" id="btnMv" onclick="setArea('movistar_arena')">
           <div class="area-btn-title">Movistar Arena</div>
-          <div class="area-btn-sub">Acomodadores, stagehands</div>
         </div>
         <div class="area-btn" id="btnEx" onclick="setArea('externos')">
           <div class="area-btn-title">Externos</div>
-          <div class="area-btn-sub">Acomodadores, acreditaciones, producción</div>
         </div>
         <div class="area-btn" id="btnEs" onclick="setArea('espana')">
           <div class="area-btn-title">España</div>
-          <div class="area-btn-sub">Si resides en España</div>
         </div>
       </div>
       <!-- Antes era un campo libre ("Ej: Acomodadores, Stagehands…"). Mercedes
@@ -139,13 +135,13 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div class="fg solo-ar" style="margin-top:14px">
         <label>¿En qué querés trabajar? <span class="req">*</span> <span style="font-weight:400;color:#9ca3af;font-size:11px">Podés marcar más de uno</span></label>
         <div class="radio-group" id="posicionesAr">
-          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Acomodador" onchange="syncPuestoAr()"> <span class="radio-label">Acomodador<span class="opt-desc">Ubica al público en su lugar y cuida el sector durante el show</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Orientador" onchange="syncPuestoAr()"> <span class="radio-label">Orientador<span class="opt-desc">Guía al público: accesos, sectores y salidas</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Operador de acreditaciones" onchange="syncPuestoAr()"> <span class="radio-label">Operador de acreditaciones<span class="opt-desc">Entrega credenciales y controla las listas de acceso</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Hidratación" onchange="syncPuestoAr()"> <span class="radio-label">Hidratación<span class="opt-desc">Reparte agua y cuida el bienestar del público</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Stagehand / cargas" onchange="syncPuestoAr()"> <span class="radio-label">Stagehand / cargas<span class="opt-desc">Carga y descarga de equipos, montaje y desmontaje</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Producción" onchange="syncPuestoAr()"> <span class="radio-label">Producción<span class="opt-desc">Apoyo al equipo de producción el día del evento</span></span></label>
-          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Supervisor" onchange="syncPuestoAr()"> <span class="radio-label">Supervisor<span class="opt-desc">Coordina un sector y su equipo; con experiencia previa</span></span></label>
+          <label class="radio-opt" data-areas="movistar_arena externos"><input type="checkbox" name="posicionAr" value="Acomodador" onchange="syncPuestoAr()"> <span class="radio-label">Acomodador<span class="opt-desc">Ubica al público en su lugar y cuida el sector durante el show</span></span></label>
+          <label class="radio-opt" data-areas="movistar_arena externos"><input type="checkbox" name="posicionAr" value="Orientador" onchange="syncPuestoAr()"> <span class="radio-label">Orientador<span class="opt-desc">Guía al público: accesos, sectores y salidas</span></span></label>
+          <label class="radio-opt" data-areas="externos"><input type="checkbox" name="posicionAr" value="Operador de acreditaciones" onchange="syncPuestoAr()"> <span class="radio-label">Operador de acreditaciones<span class="opt-desc">Entrega credenciales y controla las listas de acceso</span></span></label>
+          <label class="radio-opt" data-areas="externos"><input type="checkbox" name="posicionAr" value="Hidratación" onchange="syncPuestoAr()"> <span class="radio-label">Hidratación<span class="opt-desc">Reparte agua y cuida el bienestar del público</span></span></label>
+          <label class="radio-opt" data-areas="movistar_arena externos"><input type="checkbox" name="posicionAr" value="Stagehand / cargas" onchange="syncPuestoAr()"> <span class="radio-label">Stagehand / cargas<span class="opt-desc">Carga y descarga de equipos, montaje y desmontaje</span></span></label>
+          <label class="radio-opt" data-areas="externos"><input type="checkbox" name="posicionAr" value="Producción" onchange="syncPuestoAr()"> <span class="radio-label">Producción<span class="opt-desc">Apoyo al equipo de producción el día del evento</span></span></label>
+          <label class="radio-opt" data-areas="movistar_arena externos"><input type="checkbox" name="posicionAr" value="Supervisor" onchange="syncPuestoAr()"> <span class="radio-label">Supervisor<span class="opt-desc">Coordina un sector y su equipo; con experiencia previa</span></span></label>
         </div>
         <input type="hidden" id="fPuesto">
       </div>
@@ -153,6 +149,16 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
         // Lo marcado va al campo de siempre, unido por comas.
         function syncPuestoAr() {
           document.getElementById('fPuesto').value = [...document.querySelectorAll('input[name="posicionAr"]:checked')].map(c => c.value).join(', ');
+        }
+        // Cada área ofrece distintos servicios (data-areas): se muestran los
+        // del área elegida y se desmarca lo que ya no corresponde.
+        function filtrarPuestosAr(area) {
+          document.querySelectorAll('#posicionesAr .radio-opt').forEach(l => {
+            const va = l.dataset.areas.split(' ').includes(area);
+            l.style.display = va ? '' : 'none';
+            if (!va) l.querySelector('input').checked = false;
+          });
+          syncPuestoAr();
         }
       </script>
       <div class="fg solo-es" style="margin-top:14px">
@@ -450,6 +456,7 @@ function setArea(a) {
   selectedArea = a;
   document.getElementById('btnMv').classList.toggle('active', a === 'movistar_arena');
   document.getElementById('btnEx').classList.toggle('active', a === 'externos');
+  filtrarPuestosAr(a);
   // España cambia campos y textos (clases .solo-es / .solo-ar)
   const es = a === 'espana';
   document.getElementById('btnEs').classList.toggle('active', es);
@@ -464,8 +471,8 @@ function setArea(a) {
 (function () {
   const a = (new URLSearchParams(location.search).get('area') || '').toLowerCase();
   if (a === 'externos') setArea('externos');
-  else if (a === 'arena' || a === 'movistar_arena') setArea('movistar_arena');
   else if (a === 'espana' || a === 'españa') setArea('espana');
+  else setArea('movistar_arena'); // también acomoda la lista de servicios del área inicial
 })();
 
 function dragOver(e) { e.preventDefault(); document.getElementById('fileArea').classList.add('dragover'); }
