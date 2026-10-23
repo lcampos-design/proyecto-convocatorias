@@ -5290,40 +5290,43 @@ async function generarContratoPDF(texto, opts) {
   const pdfDoc = await PDFDocument.create();
   const fuentes = await cargarFuentes(pdfDoc);
 
-  const W = 595.28, H = 841.89, M = 52;
+  const W = 595.28, H = 841.89, M = 46;
   const maxWidth = W - M * 2;
-  const size = 9, lineH = 12.6, parGap = 7;
   const tinta = rgb(0.11, 0.11, 0.13);
-  const azul = rgb(0.17, 0.27, 0.50);
+  const gris = rgb(0.35, 0.35, 0.35);
   const TITULO = 'CONTRATO DE TRABAJO A PLAZO FIJO';
 
   let page = pdfDoc.addPage([W, H]);
   let y = H - M;
 
-  // Encabezado: logo a la izquierda, título centrado y subrayado.
-  try {
-    if (opts.logoUrl) {
-      const img = await incrustarImagen(pdfDoc, opts.logoUrl);
-      const d = img.scale(50 / img.width);
-      page.drawImage(img, { x: M, y: y - d.height, width: d.width, height: d.height });
-    }
-  } catch (_) {}
+  // Encabezado: logo a la izquierda, título centrado y subrayado. El logo se
+  // incrusta una sola vez y se reutiliza en el pie y en el informe de auditoría.
+  let logo = null;
+  try { if (opts.logoUrl) logo = await incrustarImagen(pdfDoc, opts.logoUrl); } catch (_) {}
+  if (logo) { const d = logo.scale(44 / logo.width); page.drawImage(logo, { x: M, y: y - d.height, width: d.width, height: d.height }); }
   const titSize = 11;
   const titAncho = fuentes.negrita.widthOfTextAtSize(TITULO, titSize);
   const titX = (W - titAncho) / 2, titY = y - 26;
   page.drawText(TITULO, { x: titX, y: titY, size: titSize, font: fuentes.negrita, color: tinta });
   page.drawLine({ start: { x: titX, y: titY - 2.5 }, end: { x: titX + titAncho, y: titY - 2.5 },
                   thickness: 0.8, color: tinta });
-  y -= 74;
+  y -= 62;
 
   // Cuerpo (la primera línea del texto es el título: no se repite).
   // Los finales de línea de Windows (\r\n) no cortaban párrafo: el contrato
   // entero salía en un solo bloque. Se normalizan antes de partir.
   const parrafos = String(texto).replace(/\r\n?/g, '\n').split(/\n[ \t]*\n+/)
     .filter((p, i) => !(i === 0 && p.trim().toUpperCase() === TITULO));
+  // Todo en una hoja (cuerpo, firmas y pie), que es como se firma un contrato
+  // de una jornada: se arma con la letra normal y, si no entra, se achica de a
+  // poco. Si ni con la más chica entra, sigue en otra hoja como antes.
+  const ZONA_FIRMAS = 150;
+  const MEDIDAS = [[9, 12.6, 7], [8.5, 11.6, 6], [8, 10.8, 5], [7.5, 10, 4.5]];
+  const altoDe = ([s, lh, pg]) => parrafos.reduce((t, par) => t + armarLineas(par.trim(), fuentes, s, maxWidth, opts.destacar).length * lh + pg, 0);
+  const [size, lineH, parGap] = MEDIDAS.find(m => altoDe(m) <= y - (M + ZONA_FIRMAS)) || MEDIDAS[MEDIDAS.length - 1];
   for (const par of parrafos) {
     const lineas = armarLineas(par.trim(), fuentes, size, maxWidth, opts.destacar);
-    if (y - (lineas.length * lineH + parGap) < M + 150) { page = pdfDoc.addPage([W, H]); y = H - M; }
+    if (y - (lineas.length * lineH + parGap) < M + ZONA_FIRMAS) { page = pdfDoc.addPage([W, H]); y = H - M; }
     lineas.forEach((ln, i) => {
       dibujarLinea(page, ln, M, y, size, fuentes, tinta, maxWidth, i < lineas.length - 1);
       y -= lineH;
@@ -5332,11 +5335,11 @@ async function generarContratoPDF(texto, opts) {
   }
 
   // Firmas
-  if (y < M + 150) { page = pdfDoc.addPage([W, H]); y = H - M; }
-  y -= 30;
+  if (y < M + ZONA_FIRMAS) { page = pdfDoc.addPage([W, H]); y = H - M; }
+  y -= 18;
   const colAncho = (maxWidth - 40) / 2;
   const xEmp = M, xTra = M + colAncho + 40;
-  const altoFirma = 52;
+  const altoFirma = 44;
 
   const firmar = async (url, bytes, x) => {
     try {
@@ -5359,18 +5362,12 @@ async function generarContratoPDF(texto, opts) {
   page.drawText(etiqTra, { x: centrado(etiqTra, xTra, 8, fuentes.normal), y, size: 8, font: fuentes.normal, color: rgb(0.35, 0.35, 0.35) });
 
   // Pie: logo y domicilio de la empresa, abajo a la derecha.
-  try {
-    if (opts.logoUrl) {
-      const img = await incrustarImagen(pdfDoc, opts.logoUrl);
-      const d = img.scale(24 / img.width);
-      page.drawImage(img, { x: W - M - d.width, y: M + 26, width: d.width, height: d.height });
-    }
-  } catch (_) {}
+  if (logo) { const d = logo.scale(24 / logo.width); page.drawImage(logo, { x: W - M - d.width, y: M + 26, width: d.width, height: d.height }); }
   const pie = ['Ramallo 4608, CABA', 'BUENOS AIRES, ARGENTINA'];
   let yPie = M + 14;
   pie.forEach(t => {
     const w = fuentes.normal.widthOfTextAtSize(t, 6.5);
-    page.drawText(t, { x: W - M - w, y: yPie, size: 6.5, font: fuentes.normal, color: azul });
+    page.drawText(t, { x: W - M - w, y: yPie, size: 6.5, font: fuentes.normal, color: gris });
     yPie -= 8.5;
   });
 
@@ -5388,7 +5385,7 @@ async function generarContratoPDF(texto, opts) {
   }
   // El informe de auditoría sólo se arma en la página de firma.
   if (opts.certificado && typeof agregarCertificado === 'function') {
-    agregarCertificado(pdfDoc, fuentes.normal, fuentes.negrita, rgb, opts.certificado);
+    agregarCertificado(pdfDoc, fuentes.normal, fuentes.negrita, rgb, opts.certificado, logo);
   }
 
   return await pdfDoc.saveAsBase64({ dataUri: false });
