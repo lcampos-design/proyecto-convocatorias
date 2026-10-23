@@ -2067,18 +2067,26 @@ async function sbDelete(table, id) {
   if (error) { setSaveStatus('error'); toast('Error al eliminar: ' + error.message); console.error(table, error); throw error; }
   setSaveStatus('ok');
 }
+// Los ids viajan en la dirección de la petición. Con muchos —"Descartar
+// todas" con 99+ notificaciones— la dirección se pasa del largo permitido y
+// el servidor contesta "Bad Request" sin más. Se manda de a tandas.
+const TANDA_IDS = 100;
 async function sbUpdateIn(table, ids, data) {
   if (!ids.length) return;
   setSaveStatus('saving');
-  const { error } = await sb.from(table).update(data).in('id', ids);
-  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
+  for (let i = 0; i < ids.length; i += TANDA_IDS) {
+    const { error } = await sb.from(table).update(data).in('id', ids.slice(i, i + TANDA_IDS));
+    if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
+  }
   setSaveStatus('ok');
 }
 async function sbDeleteIn(table, ids) {
   if (!ids.length) return;
   setSaveStatus('saving');
-  const { error } = await sb.from(table).delete().in('id', ids);
-  if (error) { setSaveStatus('error'); toast('Error al eliminar: ' + error.message); console.error(table, error); throw error; }
+  for (let i = 0; i < ids.length; i += TANDA_IDS) {
+    const { error } = await sb.from(table).delete().in('id', ids.slice(i, i + TANDA_IDS));
+    if (error) { setSaveStatus('error'); toast('Error al eliminar: ' + detalleError(error)); console.error(table, error); throw error; }
+  }
   setSaveStatus('ok');
 }
 
