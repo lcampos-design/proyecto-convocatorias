@@ -132,10 +132,29 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
           <div class="area-btn-sub">Si resides en España</div>
         </div>
       </div>
+      <!-- Antes era un campo libre ("Ej: Acomodadores, Stagehands…"). Mercedes
+           pidió que se elija de una lista, con una línea que explique cada
+           servicio. Lo elegido se guarda en el mismo campo de siempre, unido
+           por comas, así el panel no cambia. -->
       <div class="fg solo-ar" style="margin-top:14px">
-        <label>Puesto de interés <span class="req">*</span></label>
-        <input type="text" class="fi" id="fPuesto" placeholder="Ej: Acomodadores, Stagehands, Acreditaciones, Producción...">
+        <label>¿En qué querés trabajar? <span class="req">*</span> <span style="font-weight:400;color:#9ca3af;font-size:11px">Podés marcar más de uno</span></label>
+        <div class="radio-group" id="posicionesAr">
+          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Acomodador" onchange="syncPuestoAr()"> <span class="radio-label">Acomodador<span class="opt-desc">Ubica al público en su lugar y cuida el sector durante el show</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Orientador" onchange="syncPuestoAr()"> <span class="radio-label">Orientador<span class="opt-desc">Guía al público: accesos, sectores y salidas</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Operador de acreditaciones" onchange="syncPuestoAr()"> <span class="radio-label">Operador de acreditaciones<span class="opt-desc">Entrega credenciales y controla las listas de acceso</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Hidratación" onchange="syncPuestoAr()"> <span class="radio-label">Hidratación<span class="opt-desc">Reparte agua y cuida el bienestar del público</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Stagehand / cargas" onchange="syncPuestoAr()"> <span class="radio-label">Stagehand / cargas<span class="opt-desc">Carga y descarga de equipos, montaje y desmontaje</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Producción" onchange="syncPuestoAr()"> <span class="radio-label">Producción<span class="opt-desc">Apoyo al equipo de producción el día del evento</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionAr" value="Supervisor" onchange="syncPuestoAr()"> <span class="radio-label">Supervisor<span class="opt-desc">Coordina un sector y su equipo; con experiencia previa</span></span></label>
+        </div>
+        <input type="hidden" id="fPuesto">
       </div>
+      <script>
+        // Lo marcado va al campo de siempre, unido por comas.
+        function syncPuestoAr() {
+          document.getElementById('fPuesto').value = [...document.querySelectorAll('input[name="posicionAr"]:checked')].map(c => c.value).join(', ');
+        }
+      </script>
       <div class="fg solo-es" style="margin-top:14px">
         <label>¿A qué posición(es) te quieres apuntar? <span class="req">*</span></label>
         <div class="radio-group" id="posicionesEs">
@@ -807,6 +826,7 @@ function resetForm() {
   document.getElementById('successScreen').style.display = 'none';
   document.getElementById('formScreen').style.display = 'block';
   ['fNombre','fEmail','fTel','fCuit','fPuesto','fExp','fForm','fSkills','fDisp','fCbu','fNroCuenta','fBanco'].forEach(id => document.getElementById(id).value = '');
+  document.querySelectorAll('input[name="posicionAr"]').forEach(c => { c.checked = false; });
   document.getElementById('fFile').value = '';
   document.getElementById('fileName').textContent = '';
   document.getElementById('progressBar').style.display = 'none';

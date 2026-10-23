@@ -118,7 +118,7 @@ textarea.fi{height:64px;resize:vertical}
 .back-btn{background:none;border:1px solid #d1d5db;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;color:#6b7280;display:flex;align-items:center;gap:4px;white-space:nowrap;flex-shrink:0}
 .back-btn:hover{background:#f3f4f6}
 .det-title{font-size:16px;font-weight:600;color:#111827}
-.det-meta{font-size:12px;color:#9ca3af;margin-top:3px}
+.det-meta{font-size:12px;color:#9ca3af;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .det-stats{display:flex;gap:20px;margin-top:8px;flex-wrap:wrap}
 .dstat{font-size:12px;color:#6b7280}.dstat strong{font-weight:600;color:#111827}
 .puestos-sec{padding:20px 24px}
@@ -741,17 +741,25 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="det-hdr">
       <button class="back-btn" onclick="closeDetail()">← Volver</button>
       <div><div class="det-title" id="detTitle"></div><div class="det-meta" id="detMeta"></div><div class="det-stats" id="detStats"></div></div>
-      <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0">
-        <button class="btn btn-sm" id="btnPublicada" onclick="togglePublicada(currentConvId)">○ Publicar</button>
+      <!-- Lo del día del show a la vista; lo demás, en un menú. Editar y
+           archivar aparte, para que no se confundan con el trabajo diario. -->
+      <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end">
         <button class="btn btn-primary btn-sm" onclick="openPasarLista()"><i class="ic ic-tilde-circ"></i> Pasar lista</button>
         <button class="btn btn-sec btn-sm" onclick="exportPresentes()" title="La planilla que se reparte a los supervisores: una hoja por turno, una tabla por sector, con lo ya marcado">↓ Planilla supervisores</button>
-        <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()"><i class="ic ic-planilla"></i> Importar asistencia</button>
-        <button class="btn btn-success btn-sm" onclick="exportPostuladosExcel()">↓ Planilla Excel</button>
-        <button class="btn btn-sec btn-sm" onclick="openReporte()"><i class="ic ic-grafico"></i> Reporte</button>
-        <button class="btn btn-sec btn-sm" onclick="openDispAdmin()"><i class="ic ic-calendario"></i> Disponibilidad</button>
-        <button class="btn btn-sec btn-sm" onclick="editCurrentConv()"><i class="ic ic-lapiz"></i> Editar</button>
-        <button class="btn btn-sec btn-sm" id="btnArchivar" onclick="toggleArchivar(currentConvId)"><i class="ic ic-caja"></i> Archivar</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteCurrentConv()">Eliminar</button>
+        <button class="btn btn-sec btn-sm" onclick="exportPostuladosExcel()" title="La planilla completa por puesto, con datos de contacto">↓ Planilla Excel</button>
+        <div class="nom-mas">
+          <button class="btn btn-sec btn-sm" onclick="toggleDetMas(event)" title="Publicar, importar asistencia, reporte, disponibilidad">⋯ Más</button>
+          <div class="nom-mas-menu" id="detMasMenu">
+            <button class="btn btn-sm" id="btnPublicada" onclick="togglePublicada(currentConvId)">○ Publicar</button>
+            <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()"><i class="ic ic-planilla"></i> Importar asistencia</button>
+            <button class="btn btn-sec btn-sm" onclick="openReporte()"><i class="ic ic-grafico"></i> Reporte</button>
+            <button class="btn btn-sec btn-sm" onclick="openDispAdmin()"><i class="ic ic-calendario"></i> Disponibilidad</button>
+          </div>
+        </div>
+        <span style="width:1px;height:22px;background:#e5e7eb;margin:0 2px"></span>
+        <button class="btn btn-sec btn-xs" onclick="editCurrentConv()" title="Editar"><i class="ic ic-lapiz"></i></button>
+        <button class="btn btn-sec btn-xs" id="btnArchivar" onclick="toggleArchivar(currentConvId)" title="Archivar"><i class="ic ic-caja"></i></button>
+        <button class="btn btn-danger btn-xs" onclick="deleteCurrentConv()" title="Eliminar">✕</button>
       </div>
     </div>
     <div class="puestos-sec">
@@ -2027,22 +2035,30 @@ async function authHeader() {
   return session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {};
 }
 
+// "Bad Request" solo no le dice a nadie qué pasó. Supabase manda el detalle
+// (qué restricción, qué columna) en otros campos: se muestran.
+function detalleError(error) {
+  if (!error) return 'error desconocido';
+  const partes = [error.message, error.details, error.hint].filter(Boolean);
+  const texto = partes.join(' — ');
+  return (error.code ? '[' + error.code + '] ' : '') + (texto || String(error));
+}
 async function sbUpsert(table, data) {
   setSaveStatus('saving');
   const { error } = await sb.from(table).upsert(data);
-  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + error.message); console.error(table, error); throw error; }
+  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
   setSaveStatus('ok');
 }
 async function sbInsert(table, data) {
   setSaveStatus('saving');
   const { error } = await sb.from(table).insert(data);
-  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + error.message); console.error(table, error); throw error; }
+  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
   setSaveStatus('ok');
 }
 async function sbUpdate(table, id, data) {
   setSaveStatus('saving');
   const { error } = await sb.from(table).update(data).eq('id', id);
-  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + error.message); console.error(table, error); throw error; }
+  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
   setSaveStatus('ok');
 }
 async function sbDelete(table, id) {
@@ -2055,7 +2071,7 @@ async function sbUpdateIn(table, ids, data) {
   if (!ids.length) return;
   setSaveStatus('saving');
   const { error } = await sb.from(table).update(data).in('id', ids);
-  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + error.message); console.error(table, error); throw error; }
+  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
   setSaveStatus('ok');
 }
 async function sbDeleteIn(table, ids) {
@@ -3117,9 +3133,14 @@ function toggleMasNom(ev) {
   if (ev) ev.stopPropagation();
   const m = document.getElementById('nomMasMenu'); if (m) m.classList.toggle('on');
 }
-// Tocar en cualquier otro lado cierra el menú.
+// El mismo menú en la cabecera de una convocatoria.
+function toggleDetMas(ev) {
+  if (ev) ev.stopPropagation();
+  const m = document.getElementById('detMasMenu'); if (m) m.classList.toggle('on');
+}
+// Tocar en cualquier otro lado cierra los menús.
 if (typeof document !== 'undefined' && document.addEventListener) {
-  document.addEventListener('click', () => { const m = document.getElementById('nomMasMenu'); if (m) m.classList.remove('on'); });
+  document.addEventListener('click', () => { ['nomMasMenu', 'detMasMenu'].forEach(id => { const m = document.getElementById(id); if (m) m.classList.remove('on'); }); });
 }
 
 // ── IMPORT ──
@@ -3491,7 +3512,7 @@ function openDetail(id) {
   document.getElementById('cv-list').style.display = 'none';
   document.getElementById('cv-detail').style.display = 'block';
   document.getElementById('detTitle').textContent = c.nombre;
-  document.getElementById('detMeta').textContent = `${{ movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' }[c.area] || c.area}${c.fecha ? ' · ' + c.fecha.split(',').map(f => fmtFecha(f.trim())).join(' · ') : ''}${c.descripcion ? ' · ' + c.descripcion.slice(0, 60) : ''}`;
+  document.getElementById('detMeta').innerHTML = `<span class="a-badge ${areaClase(c.area)}">${areaLargo(c.area)}</span>${resumenFechas(c.fecha)}${c.venue ? `<span>📍 ${e(c.venue)}</span>` : ''}${c.descripcion ? `<span title="${e(c.descripcion)}">${e(c.descripcion.slice(0, 60))}${c.descripcion.length > 60 ? '…' : ''}</span>` : ''}`;
   syncPublicadaBtn(c);
   const ab = document.getElementById('btnArchivar'); if (ab) ab.innerHTML = c.archivada ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar';
   renderDetStats(); renderPuestos();
@@ -3511,7 +3532,21 @@ async function togglePublicada(id) {
   try { await sbUpdate('convocatorias', id, { publicada: c.publicada }); toast(c.publicada ? '<i class="ic ic-globo"></i> Convocatoria publicada' : 'Convocatoria despublicada'); } catch (_) {}
 }
 function closeDetail() { document.getElementById('cv-list').style.display = 'block'; document.getElementById('cv-detail').style.display = 'none'; currentConvId = null; renderCvList(); }
-function renderDetStats() { const c = convs.find(x => x.id === currentConvId); if (!c) return; const cPosts = posts.filter(p => p.convId === currentConvId); const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0); const usados = cPosts.filter(p => p.estado !== 'rechazado').length; document.getElementById('detStats').innerHTML = `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span><span class="dstat">Aprobados: <strong style="color:#0f6e56">${cPosts.filter(p => p.estado === 'aprobado').length}</strong></span><span class="dstat">Pendientes: <strong style="color:#854F0B">${cPosts.filter(p => p.estado === 'pendiente').length}</strong></span>`; }
+// Los números de arriba. "En revisión" faltaba: una convocatoria con 61
+// personas en revisión decía "Aprobados 0" y parecía vacía.
+function renderDetStats() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const cPosts = posts.filter(p => p.convId === currentConvId);
+  const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0);
+  const n = est => cPosts.filter(p => p.estado === est).length;
+  const usados = cPosts.filter(p => p.estado !== 'rechazado').length;
+  document.getElementById('detStats').innerHTML =
+    `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span>` +
+    `<span class="dstat">Aprobados: <strong style="color:#0f6e56">${n('aprobado')}</strong></span>` +
+    `<span class="dstat">En revisión: <strong style="color:#1e40af">${n('en_revision')}</strong></span>` +
+    `<span class="dstat">Pendientes: <strong style="color:#854F0B">${n('pendiente')}</strong></span>` +
+    (n('rechazado') ? `<span class="dstat">Rechazados: <strong style="color:#991b1b">${n('rechazado')}</strong></span>` : '');
+}
 function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if (!c) { document.getElementById('puestosContainer').innerHTML = ''; return; } if (!(c.puestos || []).length) { document.getElementById('puestosContainer').innerHTML = '<div class="empty">No hay puestos. Agregá el primero.</div>'; return; } document.getElementById('puestosContainer').innerHTML = (c.puestos || []).map(p => puestoCardHTML(p, c)).join(''); }
 // Cada puesto en un renglón: nombre y etiquetas a la izquierda, cupos y avance
 // en el medio, acciones a la derecha. Antes era una tarjeta de tres pisos.
