@@ -52,7 +52,7 @@ const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const CONV = new URLSearchParams(location.search).get('conv');
-const AREA_LABEL = { movistar_arena: 'Movistar Arena', externos: 'Externos', ambas: 'Ambas áreas' };
+const AREA_LABEL = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' };
 let conv = null, slots = [];
 
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }

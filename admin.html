@@ -728,7 +728,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <input type="text" class="srch" id="cvSrch" placeholder="Buscar convocatoria..." oninput="renderCvList()">
       <select class="filt" id="cvAreaF" onchange="renderCvList()">
         <option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option>
-        <option value="externos">Externos</option><option value="ambas">Ambas</option>
+        <option value="externos">Externos</option><option value="espana">España</option><option value="ambas">Ambas</option>
       </select>
       <select class="filt" id="cvArchF" onchange="renderCvList()">
         <option value="activas">Activas</option><option value="archivadas">Archivadas</option><option value="todas">Todas</option>
@@ -988,7 +988,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
           <button type="button" class="btn btn-sec btn-sm" onclick="aplicarTurnosATodas()" style="margin-top:6px"><i class="ic ic-bajar"></i> Aplicar estos turnos a todas las fechas</button>
         </div>
       </div>
-      <div class="fg"><label>Área</label><select class="fi" id="cArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="ambas">Ambas áreas</option></select></div>
+      <div class="fg"><label>Área</label><select class="fi" id="cArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option><option value="ambas">Ambas áreas</option></select></div>
     </div>
     <div class="fg"><label>Descripción</label><textarea class="fi" id="cDesc" placeholder="Detalles..."></textarea></div>
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:8px 0 12px">Datos para email de confirmación</div>
@@ -1012,7 +1012,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="fg"><label>Nombre del puesto *</label><input type="text" class="fi" id="puNombre" placeholder="Personal de piso, Seguridad, Producción..."></div>
     <div class="frow">
       <div class="fg"><label>Cupos *</label><input type="number" class="fi" id="puCupos" min="1" placeholder="0"></div>
-      <div class="fg"><label>Área</label><select class="fi" id="puArea"><option value="">Sin especificar</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select></div>
+      <div class="fg"><label>Área</label><select class="fi" id="puArea"><option value="">Sin especificar</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select></div>
     </div>
     <div class="fg"><label>Descripción</label><textarea class="fi" id="puDesc" placeholder="Requisitos, horarios..."></textarea></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mPuesto')">Cancelar</button><button class="btn btn-primary" onclick="savePuesto()">Guardar</button></div>
@@ -4076,7 +4076,7 @@ async function applyGestBulk() { const st = document.getElementById('gBulkSt').v
 async function delGestBulk() { const ids = gSelIds(); if (!ids.length) return; if (!confirm(`¿Quitar ${ids.length} personas del puesto?`)) return; posts = posts.filter(x => !ids.includes(x.id)); renderGestList(); renderPuestos(); renderDetStats(); try { await sbDeleteIn('postulaciones', ids); toast(`${ids.length} quitados`); } catch (_) {} }
 
 // ── PICKER ──
-function openPickerModal() { pickerSel = new Set(); document.getElementById('pickerSrch').value = ''; document.getElementById('pickerAreaF').value = ''; document.getElementById('pickerStF').value = ''; const tf = document.getElementById('pickerTagF'); if (tf) { tf.innerHTML = '<option value="">Todas las etiquetas</option>' + etiquetasPaleta.map(t => `<option value="${e(t.nombre)}">${e(t.nombre)}</option>`).join(''); tf.value = ''; } renderPicker(); showM('mPicker'); }
+function openPickerModal() { pickerSel = new Set(); document.getElementById('pickerSrch').value = ''; document.getElementById('pickerAreaF').value = (convs.find(x => x.id === currentConvId) || {}).area === 'espana' ? 'espana' : ''; document.getElementById('pickerStF').value = ''; const tf = document.getElementById('pickerTagF'); if (tf) { tf.innerHTML = '<option value="">Todas las etiquetas</option>' + etiquetasPaleta.map(t => `<option value="${e(t.nombre)}">${e(t.nombre)}</option>`).join(''); tf.value = ''; } renderPicker(); showM('mPicker'); }
 function renderPicker() {
   const q = document.getElementById('pickerSrch').value.toLowerCase().trim(); const af = document.getElementById('pickerAreaF').value; const sf = document.getElementById('pickerStF').value; const tgf = document.getElementById('pickerTagF') ? document.getElementById('pickerTagF').value : '';
   const alreadyIn = new Set(posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId).map(x => x.personaId).filter(Boolean));
