@@ -78,6 +78,21 @@ tr:hover td{background:#fafaf8}
 .empty{text-align:center;padding:48px;color:#9ca3af;font-size:13px}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
 .modal{background:#fff;border-radius:10px;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+/* El calendario para elegir las fechas de la convocatoria tocando los días. */
+.cal{border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px 10px;background:#fff;user-select:none}
+.cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.cal-top b{font-size:13px;color:#111827;text-transform:capitalize}
+.cal-nav{background:none;border:1px solid #e5e7eb;border-radius:6px;width:26px;height:26px;cursor:pointer;color:#374151;font-size:13px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{font-size:10px;color:#9ca3af;text-align:center;text-transform:uppercase;padding:2px 0}
+.cal-d{border:1px solid transparent;border-radius:6px;background:none;height:30px;font-size:12px;color:#374151;cursor:pointer;font-family:inherit;position:relative}
+.cal-d:hover{background:#f3f4f6}
+.cal-d.otro{color:#d1d5db}
+.cal-d.hoy{border-color:#9ca3af}
+.cal-d.sel{background:#0f1117;color:#fff;font-weight:600}
+.cal-d.sel .n{position:absolute;top:1px;right:4px;font-size:9px;font-weight:400;opacity:.8}
+.cal-pie{display:flex;gap:6px;align-items:center;margin-top:8px;font-size:12px;color:#6b7280;flex-wrap:wrap}
+.cal-pie input[type=date]{flex:1;min-width:120px;font-size:12px;padding:5px 8px}
 .modal-xl{max-width:760px}
 .modal-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
 .mclose{background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0 4px;line-height:1}
@@ -978,11 +993,9 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="frow">
       <div class="fg" style="flex:2">
         <label>Fechas y turnos <span style="font-weight:400;color:#9ca3af;font-size:11px">(podés repetir una fecha para varios turnos)</span></label>
-        <div id="fechasList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:6px"></div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input type="date" class="fi" id="cFechaInput" style="flex:1">
-          <button type="button" class="btn btn-sec btn-sm" onclick="addFecha()" style="white-space:nowrap;flex-shrink:0">+ Agregar</button>
-        </div>
+        <div class="cal" id="calFechas"></div>
+        <div class="cal-pie">Del <input type="date" class="fi" id="cRangoDesde"> al <input type="date" class="fi" id="cRangoHasta"> <button type="button" class="btn btn-sec btn-sm" onclick="addRango()" style="white-space:nowrap">+ Todos los días</button></div>
+        <div id="fechasList" style="display:flex;flex-direction:column;gap:6px;margin:8px 0 6px"></div>
         <div style="margin-top:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
           <div style="font-size:11px;color:#6b7280;margin-bottom:6px">Turnos (uno por línea) — se generan en <strong>todas</strong> las fechas de arriba. Ej: <em>TM: 07.00 a 16.00</em></div>
           <textarea id="cTurnosMultiples" placeholder="TM: 07.00 a 16.00&#10;TC: 07.00 a 13.00&#10;TN: 22.30 a 07.30" style="width:100%;height:72px;font-size:12px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;font-family:inherit"></textarea>
@@ -3694,6 +3707,7 @@ function migrarTurnos(c) {
   return fechas.map(f => ({ id: f, fecha: f, horario: hpf[f] || '' }));
 }
 function renderFechasList() {
+  renderCal();
   const el = document.getElementById('fechasList'); if (!el) return;
   const sorted = [...convTurnos].sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   el.innerHTML = sorted.length ? sorted.map(t => `
@@ -3704,12 +3718,48 @@ function renderFechasList() {
     </div>`).join('') : '<div style="font-size:12px;color:#9ca3af">Agregá una o más fechas. Podés repetir la misma fecha para cargar varios turnos (cada uno con su horario).</div>';
 }
 function setTurnoHorario(id, val) { const t = convTurnos.find(x => x.id === id); if (t) t.horario = val; }
-function addFecha() {
-  const val = document.getElementById('cFechaInput').value;
-  if (!val) return;
-  convTurnos.push({ id: uid(), fecha: val, horario: '' });
+// ── El calendario: se tocan los días ──
+let calMes = null;   // el primer día del mes que se muestra
+const isoDe = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+function renderCal() {
+  const el = document.getElementById('calFechas'); if (!el) return;
+  if (!calMes) { const h = new Date(); calMes = new Date(h.getFullYear(), h.getMonth(), 1); }
+  const hoy = isoDe(new Date());
+  const porFecha = {};
+  convTurnos.forEach(t => { if (t.fecha) porFecha[t.fecha] = (porFecha[t.fecha] || 0) + 1; });
+  // La grilla arranca el lunes de la semana del 1.
+  const primero = new Date(calMes.getFullYear(), calMes.getMonth(), 1);
+  const desde = new Date(primero); desde.setDate(1 - ((primero.getDay() + 6) % 7));
+  const dias = [];
+  for (let i = 0; i < 42; i++) { const d = new Date(desde); d.setDate(desde.getDate() + i); dias.push(d); }
+  const titulo = calMes.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  el.innerHTML = `<div class="cal-top"><button type="button" class="cal-nav" onclick="calNav(-1)" title="Mes anterior">‹</button><b>${e(titulo)}</b><button type="button" class="cal-nav" onclick="calNav(1)" title="Mes siguiente">›</button></div>
+    <div class="cal-grid">${['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'].map(d => '<div class="cal-dow">' + d + '</div>').join('')}${dias.map(d => {
+      const iso = isoDe(d), n = porFecha[iso] || 0;
+      return `<button type="button" class="cal-d${d.getMonth() !== calMes.getMonth() ? ' otro' : ''}${iso === hoy ? ' hoy' : ''}${n ? ' sel' : ''}" onclick="toggleDia('${iso}')" title="${n ? n + ' turno' + (n > 1 ? 's' : '') + ' — tocá para sacar' : 'Tocá para agregar'}">${d.getDate()}${n > 1 ? '<span class="n">×' + n + '</span>' : ''}</button>`;
+    }).join('')}</div>`;
+}
+function calNav(delta) { if (!calMes) renderCal(); calMes = new Date(calMes.getFullYear(), calMes.getMonth() + delta, 1); renderCal(); }
+// Tocar un día lo agrega; tocarlo de nuevo saca ese día con todos sus turnos.
+function toggleDia(iso) {
+  if (convTurnos.some(t => t.fecha === iso)) convTurnos = convTurnos.filter(t => t.fecha !== iso);
+  else convTurnos.push({ id: uid(), fecha: iso, horario: '' });
   renderFechasList();
-  document.getElementById('cFechaInput').value = '';
+}
+// "Del … al …": todos los días del rango que todavía no estén.
+function addRango() {
+  const a = document.getElementById('cRangoDesde').value, b = document.getElementById('cRangoHasta').value;
+  if (!a || !b) { toast('Elegí desde y hasta'); return; }
+  if (b < a) { toast('"Hasta" tiene que ser después de "desde"'); return; }
+  const d = new Date(a + 'T00:00:00'), fin = new Date(b + 'T00:00:00');
+  let nuevas = 0;
+  for (; d <= fin; d.setDate(d.getDate() + 1)) {
+    const iso = isoDe(d);
+    if (!convTurnos.some(t => t.fecha === iso)) { convTurnos.push({ id: uid(), fecha: iso, horario: '' }); nuevas++; }
+  }
+  calMes = new Date(a + 'T00:00:00'); calMes.setDate(1);
+  renderFechasList();
+  toast(nuevas ? nuevas + ' día' + (nuevas > 1 ? 's' : '') + ' agregado' + (nuevas > 1 ? 's' : '') : 'Esos días ya estaban');
 }
 function removeTurno(id) { convTurnos = convTurnos.filter(x => x.id !== id); renderFechasList(); }
 function aplicarTurnosATodas() {
@@ -3723,8 +3773,8 @@ function aplicarTurnosATodas() {
   toast(convTurnos.length + ' turnos generados (' + fechasUnicas.length + ' fechas × ' + lines.length + ')');
 }
 
-function openAddConv() { editConvId = null; convTurnos = []; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cFechaInput', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = (document.getElementById('cvAreaF') || {}).value || 'movistar_arena'; /* el área que está filtrada en la lista */ document.getElementById('cContratosHab').checked = false; renderFechasList(); showM('mConv'); }
-function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cFechaInput').value = ''; document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cContratosHab').checked = !!c.contratos_habilitados; document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
+function openAddConv() { editConvId = null; convTurnos = []; calMes = null; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cRangoDesde', 'cRangoHasta', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = (document.getElementById('cvAreaF') || {}).value || 'movistar_arena'; /* el área que está filtrada en la lista */ document.getElementById('cContratosHab').checked = false; renderFechasList(); showM('mConv'); }
+function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cRangoDesde').value = ''; document.getElementById('cRangoHasta').value = ''; { const f = [...convTurnos].map(t => t.fecha).filter(Boolean).sort()[0]; calMes = f ? new Date(f.slice(0, 4), Number(f.slice(5, 7)) - 1, 1) : null; } document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cContratosHab').checked = !!c.contratos_habilitados; document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
 function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
 
 async function saveConv() {
