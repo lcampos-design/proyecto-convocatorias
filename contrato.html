@@ -22,6 +22,10 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .conv-name{font-size:18px;font-weight:700;color:#111827}
 .conv-meta{font-size:13px;color:#9ca3af;margin-top:4px}
 .lbl{display:block;font-size:12px;font-weight:600;color:#374151;margin:18px 0 6px}
+.fi{width:100%;padding:11px 12px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;color:#111827;background:#fff}
+.fi:focus{outline:none;border-color:#0f1117}
+.ayuda{font-size:11px;color:#9ca3af;margin-top:5px}
+.dom{background:#fef9c3;border-radius:3px;padding:0 3px}
 .contrato-texto{white-space:pre-wrap;font-size:13px;line-height:1.6;color:#374151;background:#fafafa;border:1px solid #eee;border-radius:10px;padding:16px;max-height:380px;overflow-y:auto}
 .sig-wrap{border:1.5px dashed #d1d5db;border-radius:10px;margin-top:8px;position:relative;background:#fff}
 #sigCanvas{width:100%;height:180px;display:block;touch-action:none;border-radius:10px}
@@ -68,6 +72,23 @@ const ICONO_RELOJ = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30"
 
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function show(html) { document.getElementById('content').innerHTML = html; }
+// La línea para completar el domicilio: cinco o más guiones bajos seguidos
+// (la misma regla que usa el servidor al firmar).
+const LINEA_DOMICILIO = /_{5,}/;
+function tieneLineaDomicilio() { return LINEA_DOMICILIO.test(String(contrato?.texto_contrato || '')); }
+// El texto del contrato con el domicilio escrito en el lugar de la línea
+// (resaltado), o la línea tal cual si todavía no escribió nada.
+function textoConDomicilio(dom) {
+  const texto = String(contrato?.texto_contrato || '');
+  const d = String(dom || '').replace(/\s+/g, ' ').trim();
+  if (!d || !LINEA_DOMICILIO.test(texto)) return esc(texto);
+  const i = texto.search(LINEA_DOMICILIO), fin = i + texto.match(LINEA_DOMICILIO)[0].length;
+  return esc(texto.slice(0, i)) + '<span class="dom">' + esc(d) + '</span>' + esc(texto.slice(fin));
+}
+function pintarDomicilio() {
+  const el = document.getElementById('textoContrato'); if (!el) return;
+  el.innerHTML = textoConDomicilio(document.getElementById('domicilio')?.value);
+}
 
 async function init() {
   if (!TOKEN) { show('<div class="card"><div class="center">Link inválido. Pedile el link a la coordinación.</div></div>'); return; }
@@ -116,8 +137,11 @@ function renderForm() {
   show(`<div class="card">
     <div class="conv-name">${esc(contrato.nombre || '')}</div>
     <div class="conv-meta">${esc(contrato.puesto || '')}${contrato.venue ? ' · ' + esc(contrato.venue) : ''}</div>
+    ${tieneLineaDomicilio() ? `<div class="lbl">Tu domicilio <span style="color:#dc2626">*</span></div>
+    <input class="fi" id="domicilio" placeholder="Calle y número, piso/depto, localidad" autocomplete="street-address" oninput="pintarDomicilio()">
+    <div class="ayuda">Va en el contrato, en el lugar de la línea para completar.</div>` : ''}
     <div class="lbl">Contrato de trabajo</div>
-    <div class="contrato-texto">${esc(contrato.texto_contrato || '')}</div>
+    <div class="contrato-texto" id="textoContrato">${textoConDomicilio('')}</div>
     <div class="lbl">Tu firma (dibujá con el dedo o el mouse)</div>
     <div class="sig-wrap">
       <canvas id="sigCanvas"></canvas>
@@ -494,23 +518,25 @@ async function firmar() {
   const err = document.getElementById('err'); err.style.display = 'none';
   if (!document.getElementById('consentChk')?.checked) { err.textContent = 'Tenés que aceptar la declaración para poder firmar.'; err.style.display = 'block'; return; }
   if (!signaturePad || signaturePad.isEmpty()) { err.textContent = 'Dibujá tu firma antes de continuar.'; err.style.display = 'block'; return; }
+  const domicilio = String(document.getElementById('domicilio')?.value || '').replace(/\s+/g, ' ').trim();
+  if (tieneLineaDomicilio() && domicilio.length < 5) { err.textContent = 'Completá tu domicilio: va en el contrato.'; err.style.display = 'block'; document.getElementById('domicilio')?.focus(); return; }
   const btn = document.getElementById('firmarBtn'); btn.disabled = true; btn.textContent = 'Firmando…';
   try {
     const firmaDataUrl = signaturePad.toDataURL('image/png');
-    const { data, error } = await sb.rpc('contrato_firmar', { p_token: TOKEN, p_firma_png: firmaDataUrl });
+    const { data, error } = await sb.rpc('contrato_firmar', { p_token: TOKEN, p_firma_png: firmaDataUrl, p_domicilio: domicilio || null });
     // Si venció mientras tenía la pantalla abierta, se le explica en vez de
     // tirarle un error suelto.
     if (data && data.ok === false && data.motivo === 'vencido') {
       contrato.vencido = true; contrato.vence_el = data.vence_el;
       renderVencido(); return;
     }
-    if (error || !data?.ok) throw new Error(data?.motivo === 'ya_firmado' ? 'Este contrato ya fue firmado.' : 'No se pudo registrar la firma.');
+    if (error || !data?.ok) throw new Error(data?.motivo === 'ya_firmado' ? 'Este contrato ya fue firmado.' : data?.motivo === 'domicilio' ? 'Completá tu domicilio: va en el contrato.' : 'No se pudo registrar la firma.');
 
     const pdfBase64 = await generarContratoPDF(data.texto_contrato, {
       logoUrl: location.origin + '/logo-sbs.png',
       firmaEmpleadorUrl: data.firma_empleador_img ? (location.origin + '/' + data.firma_empleador_img) : null,
       firmaTrabajadorBytes: dataUrlToBytes(firmaDataUrl),
-      destacar: [data.nombre, data.cuil, data.puesto, data.fecha_inicio, data.fecha_fin, data.monto_letras, data.monto_numero, data.fecha_firma_doc],
+      destacar: [data.nombre, data.cuil, data.domicilio, data.puesto, data.fecha_inicio, data.fecha_fin, data.monto_letras, data.monto_numero, data.fecha_firma_doc],
       certificado: data
     });
     await sb.rpc('contrato_guardar_pdf', { p_token: TOKEN, p_pdf_firmado: pdfBase64 });
