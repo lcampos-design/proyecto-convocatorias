@@ -48,7 +48,7 @@ const q = new URLSearchParams(location.search);
 const CUIT = q.get('c'), CONV = q.get('v'), RESP = (q.get('r') || '').toLowerCase();
 
 // Íconos dibujados, en blanco y negro: iguales en cualquier equipo.
-const ICONO_SI = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#0f1117"/><path d="M18 31l8 8 16-17" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICONO_SI = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#16a34a"/><path d="M18 31l8 8 16-17" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ICONO_NO = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#fff" stroke="#0f1117" stroke-width="2.5"/><path d="M21 21l18 18M39 21L21 39" fill="none" stroke="#0f1117" stroke-width="4.5" stroke-linecap="round"/></svg>';
 function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function show(html){ document.getElementById('content').innerHTML = '<div class="card">' + html + '</div>'; }
