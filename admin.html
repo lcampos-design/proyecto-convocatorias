@@ -2144,7 +2144,7 @@ function renderDashboard() {
   const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
   // Shows que son hoy y donde todavía nadie pasó lista: es lo que se olvida
   // el día del evento y después hay que reconstruir de memoria.
-  const hoyISO = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+  const hoyISO = hoyLocalISO();
   const sinLista = (convs || []).filter(c => {
     if (c.archivada) return false;
     const turnosHoy = slotsDe(c).filter(t => t.fecha === hoyISO);
@@ -3603,6 +3603,9 @@ function resumenFechas(fechaCsv) {
   return chip(fmtFechaCorta(fs[0]) + ' al ' + fmtFecha(fs[fs.length - 1]), todas) +
          `<span title="${e(todas)}">${fs.length} fechas</span>`;
 }
+// La fecha de hoy (AAAA-MM-DD) con la hora de acá. new Date().toISOString() da
+// la fecha UTC, y después de las 21 ya es mañana: elegía el turno equivocado.
+function hoyLocalISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function fmtFecha(f) { if (!f) return ''; try { const d = new Date(f + 'T00:00:00'); return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (e) { return f; } }
 function openDetail(id) {
   currentConvId = id; const c = convs.find(x => x.id === id); if (!c) return;
@@ -3637,12 +3640,16 @@ function renderDetStats() {
   const totalCupos = (c.puestos || []).reduce((s, p) => s + p.cupos, 0);
   const n = est => cPosts.filter(p => p.estado === est).length;
   const usados = cPosts.filter(p => p.estado !== 'rechazado').length;
+  const conf = r => cPosts.filter(p => p.estado !== 'rechazado' && p.confirmacion === r).length;
   document.getElementById('detStats').innerHTML =
     `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span>` +
     `<span class="dstat">Aprobados: <strong style="color:#0f6e56">${n('aprobado')}</strong></span>` +
     `<span class="dstat">En revisión: <strong style="color:#1e40af">${n('en_revision')}</strong></span>` +
     `<span class="dstat">Pendientes: <strong style="color:#854F0B">${n('pendiente')}</strong></span>` +
-    (n('rechazado') ? `<span class="dstat">Rechazados: <strong style="color:#991b1b">${n('rechazado')}</strong></span>` : '');
+    (n('rechazado') ? `<span class="dstat">Rechazados: <strong style="color:#991b1b">${n('rechazado')}</strong></span>` : '') +
+    // Lo que contestaron desde los botones del mail (CONFIRMO / NO CONFIRMO).
+    `<span class="dstat">Confirmaron: <strong style="color:#065f46">${conf('si')}</strong></span>` +
+    (conf('no') ? `<span class="dstat">No vienen: <strong style="color:#991b1b">${conf('no')}</strong></span>` : '');
 }
 function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if (!c) { document.getElementById('puestosContainer').innerHTML = ''; return; } if (!(c.puestos || []).length) { document.getElementById('puestosContainer').innerHTML = '<div class="empty">No hay puestos. Agregá el primero.</div>'; return; } document.getElementById('puestosContainer').innerHTML = (c.puestos || []).map(p => puestoCardHTML(p, c)).join(''); }
 // Cada puesto en un renglón: nombre y etiquetas a la izquierda, cupos y avance
@@ -3824,7 +3831,7 @@ function openPasarLista() {
   const slots = slotsDe(c);
   if (!slots.length) { toast('La convocatoria no tiene fechas cargadas'); return; }
   // Arranca en el turno de hoy; si no hay, en el próximo; si ya pasaron todos, en el último.
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = hoyLocalISO();
   const elegido = slots.filter(x => x.fecha === hoy)[0] || slots.filter(x => x.fecha >= hoy)[0] || slots[slots.length - 1];
   listaSlotId = elegido.id;
   document.getElementById('listaSrch').value = '';
@@ -4005,7 +4012,7 @@ function openImportAsistencia() {
   const sel = document.getElementById('asistenciaSlot');
   if (sel) {
     sel.innerHTML = slots.map(sl => `<option value="${e(sl.id)}">${fmtFecha(sl.fecha)}${sl.horario ? ' · ' + e(sl.horario) : ''}</option>`).join('');
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocalISO();
     const elegido = slots.filter(x => x.fecha === hoy)[0] || slots.filter(x => x.fecha >= hoy)[0] || slots[slots.length - 1];
     if (elegido) sel.value = elegido.id;
   }
