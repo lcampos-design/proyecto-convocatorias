@@ -13,14 +13,12 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 /* El mismo fondo, cabecera y pie que las demás páginas públicas (postulate, candidato). */
 .sbs-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:#2b2b2b url('fondo-sbs.jpg') center/cover no-repeat}
 .page-header{background:#0f1117;padding:24px 24px 26px;text-align:center;position:relative;z-index:1}
-.page-logo{width:54px;height:54px;border-radius:50%;display:block;margin:0 auto 12px}
+.page-logo{width:52px;height:52px;display:block;margin:0 auto 12px;filter:invert(1)}
 .page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
 .page-sub{font-size:13px;color:#d1d5db;margin-top:5px}
 .wrap{max-width:520px;margin:32px auto 0;padding:0 16px;position:relative;z-index:1}
 .card{background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-radius:14px;padding:34px 26px;text-align:center}
-.site-footer{max-width:520px;width:calc(100% - 32px);margin:28px auto 60px;border:1px solid #e5e7eb;border-radius:12px;padding:28px 16px;text-align:center;background:rgba(255,255,255,.95);position:relative;z-index:1}
-.site-footer a{display:inline-flex;align-items:center;gap:8px;color:#111827;text-decoration:none;font-size:14px;font-weight:500}
-.site-footer .rotulo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af}
+.pie{position:relative;z-index:1;text-align:center;margin:22px auto 60px;font-size:12px;color:#e5e7eb;text-shadow:0 1px 2px rgba(0,0,0,.6)}.pie a{color:#fff;text-decoration:none;font-weight:600}
 .ic{display:flex;justify-content:center;margin-bottom:14px}.ic svg{width:60px;height:60px}
 .t{font-size:20px;font-weight:700;color:#111827;margin-bottom:10px}
 .center{color:#4b5563;line-height:1.6}
@@ -39,26 +37,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 </div>
 <div class="wrap"><div id="content"><div class="card"><div class="center">Registrando tu respuesta…</div></div></div></div>
 
-<footer class="site-footer">
-  <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:14px">¿Tenés alguna consulta?</div>
-  <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;align-items:center">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-      <span class="rotulo">Movistar Arena</span>
-      <a href="mailto:convocatorias.arena@show-bs.com"><span style="font-size:18px">✉</span> convocatorias.arena@show-bs.com</a>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-      <span class="rotulo">Externos</span>
-      <a href="mailto:convocatorias.externos@show-bs.com"><span style="font-size:18px">✉</span> convocatorias.externos@show-bs.com</a>
-    </div>
-  </div>
-  <div style="margin-top:16px">
-    <a href="https://www.instagram.com/showbs/" target="_blank" rel="noopener">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#111827" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#111827" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#111827"/></svg>
-      @showbs
-    </a>
-  </div>
-  <div style="margin-top:18px;font-size:11px;color:#9ca3af">Show Business Solutions © 2026</div>
-</footer>
+<div class="pie">Show Business Solutions · <a href="https://www.instagram.com/showbs/" target="_blank" rel="noopener">@showbs</a></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
