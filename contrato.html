@@ -9,12 +9,16 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f5;color:#1a1a1a;font-size:15px;min-height:100vh}
-.page-header{background:#0f1117;padding:26px 24px;text-align:center}
-.page-title{font-size:20px;font-weight:700;color:#fff;letter-spacing:-.3px}
-.page-sub{font-size:13px;color:#9ca3af;margin-top:5px}
-.wrap{max-width:640px;margin:26px auto;padding:0 16px 60px}
-.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:22px}
+body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a1a;color:#1a1a1a;font-size:15px;min-height:100vh;position:relative}
+/* El mismo fondo, cabecera y tarjeta que la página de confirmación. */
+.sbs-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:#2b2b2b url('fondo-sbs.jpg') center/cover no-repeat}
+.page-header{background:#0f1117;padding:24px 24px 26px;text-align:center;position:relative;z-index:1}
+.page-logo{width:52px;height:52px;display:block;margin:0 auto 12px;filter:brightness(0) invert(1)}
+.page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.page-sub{font-size:13px;color:#fff;font-weight:600;margin-top:5px}
+.wrap{max-width:640px;margin:32px auto 60px;padding:0 16px;position:relative;z-index:1}
+.card{background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-radius:14px;padding:24px}
+.ic{display:flex;justify-content:center;margin-bottom:14px}.ic svg{width:60px;height:60px}
 .conv-name{font-size:18px;font-weight:700;color:#111827}
 .conv-meta{font-size:13px;color:#9ca3af;margin-top:4px}
 .lbl{display:block;font-size:12px;font-weight:600;color:#374151;margin:18px 0 6px}
@@ -22,26 +26,28 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .sig-wrap{border:1.5px dashed #d1d5db;border-radius:10px;margin-top:8px;position:relative;background:#fff}
 #sigCanvas{width:100%;height:180px;display:block;touch-action:none;border-radius:10px}
 .sig-placeholder{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#c7c9d1;font-size:13px;pointer-events:none}
-.btn{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px;font-family:inherit}
+.btn{width:100%;padding:14px;background:#0f1117;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px;font-family:inherit}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-sec{background:#f3f4f6;color:#374151}
 .btnrow{display:flex;gap:10px;margin-top:14px}
 .btnrow .btn{margin-top:0}
 .consent{display:flex;gap:10px;align-items:flex-start;margin-top:16px;font-size:12px;color:#4b5563;line-height:1.5;cursor:pointer}
-.consent input{width:18px;height:18px;flex-shrink:0;accent-color:#534AB7;margin-top:1px}
+.consent input{width:18px;height:18px;flex-shrink:0;accent-color:#0f1117;margin-top:1px}
 .legal{font-size:11px;color:#9ca3af;line-height:1.5;margin-top:14px}
 .msg{border-radius:10px;padding:12px 14px;font-size:13px;margin-top:12px;display:none}
 .msg.err{background:#fee2e2;color:#991b1b}
 .msg.ok{background:#dcfce7;color:#166534}
-.center{text-align:center;color:#6b7280;padding:40px 10px}
-.link{color:#534AB7;font-weight:600;text-decoration:none}
+.center{text-align:center;color:#4b5563;padding:40px 10px;line-height:1.6}
+.link{color:#111827;font-weight:600;text-decoration:underline}
 
 /* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
 button,input,select,textarea,optgroup,option{font-family:inherit}
 </style>
 </head>
 <body>
+<div class="sbs-bg"></div>
 <div class="page-header">
+  <img class="page-logo" src="logo-sbs.png" alt="SBS">
   <div class="page-title">Contrato de trabajo</div>
   <div class="page-sub">Show Business Solutions</div>
 </div>
@@ -57,6 +63,9 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const TOKEN = new URLSearchParams(location.search).get('t');
 let contrato = null, signaturePad = null;
+// Íconos dibujados (los emojis del sistema se ven distintos en cada equipo).
+const ICONO_OK = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#16a34a"/><path d="M18 31l8 8 16-17" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICONO_RELOJ = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#fff" stroke="#0f1117" stroke-width="2.5"/><path d="M30 16v15l10 6" fill="none" stroke="#0f1117" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function show(html) { document.getElementById('content').innerHTML = html; }
@@ -80,7 +89,7 @@ function renderVencido() {
     ? new Date(contrato.vence_el).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
     : null;
   show(`<div class="card">
-    <div style="font-size:46px;text-align:center;margin-bottom:10px">⏳</div>
+    <div class="ic">${ICONO_RELOJ}</div>
     <div class="conv-name" style="text-align:center">Este link ya no sirve</div>
     <div class="center" style="padding:12px 0 0">${contrato.nombre ? esc(String(contrato.nombre).split(' ')[0]) + ', e' : 'E'}l link para firmar tu contrato venció${cuando ? ' el ' + cuando : ''}, así que no se puede firmar desde acá.</div>
     <div class="center" style="padding:10px 0 0">Escribile a la coordinación y te mandan uno nuevo. Tu contrato sigue estando: lo único que venció es el link.</div>
@@ -89,7 +98,7 @@ function renderVencido() {
 
 function renderFirmado() {
   show(`<div class="card">
-    <div style="font-size:46px;text-align:center;margin-bottom:10px">✅</div>
+    <div class="ic">${ICONO_OK}</div>
     <div class="conv-name" style="text-align:center">Contrato firmado</div>
     <div class="center" style="padding:12px 0 0">Ya firmaste este contrato${contrato.fecha_firma ? ', el ' + new Date(contrato.fecha_firma).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' }) : ''}. Gracias.</div>
     ${contrato.pdf_firmado ? `<button class="btn" onclick="descargarPdfFirmado()">↓ Descargar mi contrato firmado</button>` : ''}

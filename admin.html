@@ -2245,7 +2245,10 @@ function pintarEstadoMail() {
   const el = document.getElementById('dashMail'); if (!el) return;
   const m = mailEstado || { estado: 'probando', titulo: 'Probando el envío de mails…' };
   const bien = m.estado === 'ok', probando = m.estado === 'probando';
-  el.className = 'd-mail ' + (probando ? 'neutro' : bien ? 'ok' : 'mal');
+  // Si los mails salen, no hay nada que decir: el aviso aparece sólo cuando algo falla.
+  el.style.display = (bien || probando) ? 'none' : '';
+  if (bien || probando) return;
+  el.className = 'd-mail mal';
   el.innerHTML = `<span class="d-mail-ic">${probando ? '…' : bien ? '<i class="ic ic-tilde-circ"></i>' : '<i class="ic ic-prohibido"></i>'}</span>
     <div class="d-mail-txt">
       <b>${e(m.titulo || '')}</b>
