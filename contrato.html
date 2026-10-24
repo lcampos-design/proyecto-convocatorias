@@ -11,14 +11,13 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f5;color:#1a1a1a;font-size:15px;min-height:100vh;position:relative}
 /* El mismo fondo, cabecera y tarjeta que la página de confirmación. */
-.sbs-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:#f4f4f5 url('fondo-trama.jpg') center/cover no-repeat}
-.page-header{background:rgba(255,255,255,.96);border-bottom:1px solid #e5e7eb;padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:12px;position:relative;z-index:1}
-.page-logo{width:34px;height:34px;display:block}
-.page-title{font-size:16px;font-weight:700;color:#111827;letter-spacing:-.2px}
-.page-sub{font-size:13px;color:#111827;font-weight:600}
-.page-sub::before{content:'·';margin-right:12px;color:#9ca3af}
+.page-header{background:#0f1117;padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:12px;position:relative;z-index:1}
+.page-logo{width:34px;height:34px;display:block;filter:brightness(0) invert(1)}
+.page-title{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.2px}
+.page-sub{font-size:13px;color:#fff;font-weight:600}
+.page-sub::before{content:'·';margin-right:12px;color:#6b7280}
 .wrap{max-width:640px;margin:32px auto 60px;padding:0 16px;position:relative;z-index:1}
-.card{background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-radius:14px;padding:24px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px}
 .ic{display:flex;justify-content:center;margin-bottom:14px}.ic svg{width:60px;height:60px}
 .conv-name{font-size:18px;font-weight:700;color:#111827}
 .conv-meta{font-size:13px;color:#9ca3af;margin-top:4px}
@@ -46,7 +45,6 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 </style>
 </head>
 <body>
-<div class="sbs-bg"></div>
 <div class="page-header">
   <img class="page-logo" src="logo-sbs.png" alt="SBS">
   <div class="page-title">Contrato de trabajo</div>
