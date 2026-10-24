@@ -14,7 +14,7 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
 .wrap{max-width:520px;margin:30px auto;padding:0 16px 60px}
 .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:30px 24px;text-align:center}
-.ic{font-size:52px;margin-bottom:12px}
+.ic{display:flex;justify-content:center;margin-bottom:14px}.ic svg{width:60px;height:60px}
 .t{font-size:20px;font-weight:700;color:#111827;margin-bottom:10px}
 .center{color:#4b5563;line-height:1.6}
 .note{font-size:12px;color:#9ca3af;margin-top:18px}
@@ -35,6 +35,9 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 const q = new URLSearchParams(location.search);
 const CUIT = q.get('c'), CONV = q.get('v'), RESP = (q.get('r') || '').toLowerCase();
 
+// Íconos dibujados, en blanco y negro: iguales en cualquier equipo.
+const ICONO_SI = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#0f1117"/><path d="M18 31l8 8 16-17" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICONO_NO = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#fff" stroke="#0f1117" stroke-width="2.5"/><path d="M21 21l18 18M39 21L21 39" fill="none" stroke="#0f1117" stroke-width="4.5" stroke-linecap="round"/></svg>';
 function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function show(html){ document.getElementById('content').innerHTML = '<div class="card">' + html + '</div>'; }
 
@@ -49,11 +52,11 @@ async function go(){
       const nombre = data.nombre ? (', ' + String(data.nombre).split(' ')[0]) : '';
       const conv = data.convocatoria ? (' para <strong>' + esc(data.convocatoria) + '</strong>') : '';
       if (RESP === 'si') {
-        show('<div class="ic">✅</div><div class="t">¡Gracias' + esc(nombre) + '!</div>'
+        show('<div class="ic">' + ICONO_SI + '</div><div class="t">¡Gracias' + esc(nombre) + '!</div>'
           + '<div class="center">Registramos que <strong>CONFIRMÁS</strong> tu asistencia' + conv + '. ¡Nos vemos!</div>'
           + '<div class="note">¿Te equivocaste? Volvé al mail y tocá el otro botón.</div>');
       } else {
-        show('<div class="ic">✖️</div><div class="t">Listo' + esc(nombre) + '</div>'
+        show('<div class="ic">' + ICONO_NO + '</div><div class="t">Listo' + esc(nombre) + '</div>'
           + '<div class="center">Registramos que <strong>NO vas a asistir</strong>' + conv + '. Gracias por avisar.</div>'
           + '<div class="note">¿Te equivocaste? Volvé al mail y tocá el otro botón.</div>');
       }
