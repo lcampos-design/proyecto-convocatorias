@@ -61,7 +61,9 @@ async function go(){
     }
     show('<div class="center">No pudimos registrar tu respuesta (el link puede no corresponder a una convocatoria activa). Escribinos a la coordinación.</div>');
   } catch (e) {
-    show('<div class="center">Hubo un error al registrar tu respuesta. Probá de nuevo en un rato.</div>');
+    // Con el detalle: si falla, que se pueda saber qué pasó sin adivinar.
+    const det = e && (e.message || e.details) ? ' <span style="color:#9ca3af;font-size:12px">(' + esc((e.code ? '[' + e.code + '] ' : '') + (e.message || '') + (e.details ? ' — ' + e.details : '')) + ')</span>' : '';
+    show('<div class="center">Hubo un error al registrar tu respuesta. Probá de nuevo en un rato.' + det + '</div>');
   }
 }
 go();
