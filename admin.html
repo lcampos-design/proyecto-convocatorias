@@ -754,6 +754,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
             <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()"><i class="ic ic-planilla"></i> Importar asistencia</button>
             <button class="btn btn-sec btn-sm" onclick="openReporte()"><i class="ic ic-grafico"></i> Reporte</button>
             <button class="btn btn-sec btn-sm" onclick="openDispAdmin()"><i class="ic ic-calendario"></i> Disponibilidad</button>
+            <button class="btn btn-sec btn-sm" onclick="openBulkMailConv()" title="Manda la confirmación con el contrato a todos los aprobados que todavía no lo tienen, con el puesto y el monto de cada uno"><i class="ic ic-doc"></i> Contratos a todos</button>
           </div>
         </div>
         <span style="width:1px;height:22px;background:#e5e7eb;margin:0 2px"></span>
@@ -1014,6 +1015,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div class="fg"><label>Cupos *</label><input type="number" class="fi" id="puCupos" min="1" placeholder="0"></div>
       <div class="fg"><label>Área</label><select class="fi" id="puArea"><option value="">Sin especificar</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select></div>
     </div>
+    <div class="fg"><label>Remuneración por jornada</label><input type="text" class="fi" id="puRemu" placeholder="Ej: $47.682 — si queda vacío, vale la de la convocatoria"></div>
     <div class="fg"><label>Descripción</label><textarea class="fi" id="puDesc" placeholder="Requisitos, horarios..."></textarea></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mPuesto')">Cancelar</button><button class="btn btn-primary" onclick="savePuesto()">Guardar</button></div>
   </div>
@@ -1959,7 +1961,7 @@ async function loadAll() {
   ]);
   convs = (cData || []).map(c => ({
     ...c,
-    puestos: (pData || []).filter(p => p.conv_id === c.id).map(p => ({ id: p.id, nombre: p.nombre, cupos: p.cupos, area: p.area || '', desc: p.descripcion || '' }))
+    puestos: (pData || []).filter(p => p.conv_id === c.id).map(p => ({ id: p.id, nombre: p.nombre, cupos: p.cupos, area: p.area || '', desc: p.descripcion || '', remuneracion: p.remuneracion || '' }))
   }));
   posts = (postData || []).map(p => {
     const persona = (people || []).find(x => x.id === p.persona_id);
@@ -3763,15 +3765,15 @@ async function archivarConv(id, val) {
 }
 function toggleArchivar(id) { const c = convs.find(x => x.id === id); if (c) archivarConv(id, !c.archivada); }
 
-function openAddPuesto() { editPuestoId = null; document.getElementById('mPuestoTitle').textContent = 'Agregar puesto'; ['puNombre', 'puDesc'].forEach(i => document.getElementById(i).value = ''); document.getElementById('puCupos').value = ''; document.getElementById('puArea').value = ''; showM('mPuesto'); }
-function openEditPuesto(pid) { const c = convs.find(x => x.id === currentConvId); if (!c) return; const p = (c.puestos || []).find(x => x.id === pid); if (!p) return; editPuestoId = pid; document.getElementById('mPuestoTitle').textContent = 'Editar puesto'; document.getElementById('puNombre').value = p.nombre; document.getElementById('puCupos').value = p.cupos; document.getElementById('puArea').value = p.area || ''; document.getElementById('puDesc').value = p.desc || ''; showM('mPuesto'); }
+function openAddPuesto() { editPuestoId = null; document.getElementById('mPuestoTitle').textContent = 'Agregar puesto'; ['puNombre', 'puDesc', 'puRemu'].forEach(i => document.getElementById(i).value = ''); document.getElementById('puCupos').value = ''; document.getElementById('puArea').value = ''; showM('mPuesto'); }
+function openEditPuesto(pid) { const c = convs.find(x => x.id === currentConvId); if (!c) return; const p = (c.puestos || []).find(x => x.id === pid); if (!p) return; editPuestoId = pid; document.getElementById('mPuestoTitle').textContent = 'Editar puesto'; document.getElementById('puNombre').value = p.nombre; document.getElementById('puCupos').value = p.cupos; document.getElementById('puArea').value = p.area || ''; document.getElementById('puDesc').value = p.desc || ''; document.getElementById('puRemu').value = p.remuneracion || ''; showM('mPuesto'); }
 
 async function savePuesto() {
   const nom = document.getElementById('puNombre').value.trim(), cupos = parseInt(document.getElementById('puCupos').value); if (!nom) { toast('El nombre es obligatorio'); return; } if (!cupos || cupos < 1) { toast('Los cupos deben ser mayor a 0'); return; }
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
-  const d = { id: editPuestoId || uid(), conv_id: currentConvId, nombre: nom, cupos, area: document.getElementById('puArea').value || null, descripcion: document.getElementById('puDesc').value.trim() || null };
-  if (editPuestoId) { const p = (c.puestos || []).find(x => x.id === editPuestoId); if (p) { p.nombre = nom; p.cupos = cupos; p.area = d.area || ''; p.desc = d.descripcion || ''; } }
-  else { if (!c.puestos) c.puestos = []; c.puestos.push({ id: d.id, nombre: nom, cupos, area: d.area || '', desc: d.descripcion || '' }); }
+  const d = { id: editPuestoId || uid(), conv_id: currentConvId, nombre: nom, cupos, area: document.getElementById('puArea').value || null, descripcion: document.getElementById('puDesc').value.trim() || null, remuneracion: document.getElementById('puRemu').value.trim() || null };
+  if (editPuestoId) { const p = (c.puestos || []).find(x => x.id === editPuestoId); if (p) { p.nombre = nom; p.cupos = cupos; p.area = d.area || ''; p.desc = d.descripcion || ''; p.remuneracion = d.remuneracion || ''; } }
+  else { if (!c.puestos) c.puestos = []; c.puestos.push({ id: d.id, nombre: nom, cupos, area: d.area || '', desc: d.descripcion || '', remuneracion: d.remuneracion || '' }); }
   renderPuestos(); renderDetStats(); closeM('mPuesto');
   try { await sbUpsert('puestos', d); toast(editPuestoId ? 'Puesto actualizado' : 'Puesto agregado'); } catch (_) {}
 }
@@ -4867,7 +4869,7 @@ let bulkMailRecipients = [], bmFromArea = null, bmSinEmail = 0;
 function openBulkMail() {
   const ids = gSelIds();
   if (!ids.length) { toast('Seleccioná al menos una persona'); return; }
-  bulkMailRecipients = []; bmSinEmail = 0;
+  bulkMailRecipients = []; bmSinEmail = 0; bmModoConv = false;
   ids.forEach(id => {
     const post = posts.find(x => x.id === id); if (!post) return;
     const email = getPersonaEmail(post);
@@ -4880,6 +4882,56 @@ function openBulkMail() {
   showM('mBulkMail');
 }
 
+// La remuneración que corresponde a un puesto: la suya o, si no tiene, la de
+// la convocatoria.
+function remuneracionDe(conv, puestoId) {
+  const p = (conv?.puestos || []).find(x => x.id === puestoId);
+  return String((p && p.remuneracion) || (conv && conv.remuneracion) || '').trim();
+}
+// ¿Esta postulación ya tiene contrato en la convocatoria? (uno anulado no cuenta)
+function tieneContrato(post) {
+  return (contratos || []).some(ct => ct.conv_id === post.convId && !/anulad|borrad/.test(String(ct.estado || ''))
+    && ((ct.postulacion_id && ct.postulacion_id === post.id) || (post.personaId && ct.persona_id === post.personaId)));
+}
+// "Contratos a todos": los aprobados de todos los puestos que todavía no tienen
+// contrato, con el puesto y el monto de cada uno. Después sigue el mismo
+// envío masivo, con el contrato ya tildado.
+let bmModoConv = false;
+function openBulkMailConv() {
+  const conv = convs.find(c => c.id === currentConvId); if (!conv) return;
+  if (!conv.contratos_habilitados) { toast('Primero habilitá los contratos en esta convocatoria (editar → "Contratos habilitados")'); return; }
+  const aprobados = posts.filter(x => x.convId === conv.id && x.estado === 'aprobado');
+  if (!aprobados.length) { toast('No hay aprobados en esta convocatoria'); return; }
+  const yaTienen = aprobados.filter(tieneContrato);
+  const pendientes = aprobados.filter(x => !tieneContrato(x));
+  bulkMailRecipients = []; bmSinEmail = 0; bmModoConv = true; currentPuestoId = null;
+  pendientes.forEach(post => {
+    const email = getPersonaEmail(post);
+    if (email) bulkMailRecipients.push({ email, nombre: post.nombre, cuit: String(post.cuit || '').replace(/\D/g, ''), personaId: post.personaId || null, postulacionId: post.id || null, puestoId: post.puestoId || null });
+    else bmSinEmail++;
+  });
+  if (!bulkMailRecipients.length) {
+    toast(yaTienen.length === aprobados.length ? 'Todos los aprobados ya tienen contrato' : 'Ninguno de los que faltan tiene email cargado');
+    bmModoConv = false; return;
+  }
+  const partes = [bulkMailRecipients.length + ' para enviar'];
+  if (yaTienen.length) partes.push(yaTienen.length + ' ya con contrato');
+  if (bmSinEmail) partes.push(bmSinEmail + ' sin email');
+  toast(partes.join(' · '));
+  document.getElementById('bmStep1').style.display = 'block';
+  document.getElementById('bmStep2').style.display = 'none';
+  showM('mBulkMail');
+}
+// Resumen por puesto para el aviso del envío: cuántos van y con qué monto.
+function resumenPuestosEnvio(conv) {
+  const porPuesto = {};
+  bulkMailRecipients.forEach(r => { porPuesto[r.puestoId || ''] = (porPuesto[r.puestoId || ''] || 0) + 1; });
+  return Object.keys(porPuesto).map(pid => {
+    const p = (conv.puestos || []).find(x => x.id === pid);
+    const monto = remuneracionDe(conv, pid);
+    return `<b>${e(p ? p.nombre : 'Sin puesto')}</b>: ${porPuesto[pid]} · ${monto ? e(monto) : '<span style="color:#9a3412">sin remuneración</span>'}`;
+  }).join('<br>');
+}
 function prepBulkTemplate(area) {
   bmFromArea = area;
   const conv = convs.find(c => c.id === currentConvId);
@@ -4899,22 +4951,31 @@ function prepBulkTemplate(area) {
     document.getElementById('bmcAnio').value = rango.anio;
     llenarMontoYAvisos('bmc', conv);
     document.getElementById('bmcFechaFirmaDoc').value = fechaHoyTexto();
+    if (bmModoConv) {
+      document.getElementById('bmAdjContrato').checked = true;
+      document.getElementById('bmContratoFields').style.display = 'block';
+      document.getElementById('bmcPuesto').value = '';
+      document.getElementById('bmcPuesto').placeholder = 'El de cada persona';
+      const av = document.getElementById('bmcAviso');
+      if (av) av.innerHTML = '<i class="ic ic-doc"></i> Cada contrato lleva el puesto y la remuneración de esa persona:<br>' + resumenPuestosEnvio(conv)
+        + (av.innerHTML ? '<br>' + av.innerHTML : '');
+    }
   }
   const bmFields = document.getElementById('bmMvFields');
   const bmExtra = document.getElementById('bmExtraFields');
   bmFields.style.display = 'block';
   document.getElementById('bmFFecha').value = fechas;
-  document.getElementById('bmFSector').value = puesto || (area === 'movistar' ? 'STAFF' : '[COMPLETAR PUESTO]');
+  document.getElementById('bmFSector').value = bmModoConv ? '{puesto}' : (puesto || (area === 'movistar' ? 'STAFF' : '[COMPLETAR PUESTO]'));
   if (area === 'movistar') {
     document.getElementById('bmSubject').value = `Confirmación - ${convNombre} - Movistar Arena`;
     bmFechaLimiteCtx = conv?.fecha_limite || '[COMPLETAR FECHA LÍMITE]';
     document.getElementById('bmFHorario').value = conv?.horario || '13:00 HS a 22hs.';
-    document.getElementById('bmFMonto').value = conv?.remuneracion || '$47.682 por jornada efectivamente realizada.';
+    document.getElementById('bmFMonto').value = bmModoConv ? '{monto}' : (conv?.remuneracion || '$47.682 por jornada efectivamente realizada.');
     bmExtra.style.display = 'none';
   } else {
     document.getElementById('bmSubject').value = `Confirmación - ${convNombre}`;
     document.getElementById('bmFHorario').value = conv?.horario || '[COMPLETAR HORARIO]';
-    document.getElementById('bmFMonto').value = conv?.remuneracion || '[COMPLETAR REMUNERACIÓN]';
+    document.getElementById('bmFMonto').value = bmModoConv ? '{monto}' : (conv?.remuneracion || '[COMPLETAR REMUNERACIÓN]');
     document.getElementById('bmFVenue').value = conv?.venue || '[COMPLETAR VENUE]';
     document.getElementById('bmFWhatsapp').value = conv?.link_whatsapp || '[COMPLETAR LINK WHATSAPP]';
     bmExtra.style.display = 'flex';
@@ -4940,12 +5001,23 @@ async function sendBulkMail() {
     venue: conv?.venue || '', puesto: v('bmcPuesto'), fecha_inicio: v('bmcFechaInicio'), fecha_fin: v('bmcFechaFin'),
     anio: v('bmcAnio'), monto_letras: v('bmcMontoLetras'), monto_numero: v('bmcMontoNumero'), fecha_firma_doc: v('bmcFechaFirmaDoc')
   } : null;
-  // En el masivo se valida una sola vez, antes de empezar: los datos del contrato
-  // son los mismos para todos salvo el nombre y el CUIL de cada persona.
+  // Los datos del contrato de cada persona: los comunes más su puesto y, si el
+  // puesto tiene remuneración propia, su monto (en letras y en número).
+  const datosDe = r => {
+    const d = { ...datosComunes, nombre: r.nombre || '', cuil: r.cuit || '' };
+    const p = (conv?.puestos || []).find(x => x.id === r.puestoId);
+    if (p && !v('bmcPuesto')) d.puesto = p.nombre || '';
+    const n = montoANumero(p && p.remuneracion);
+    if (n) { d.monto_numero = montoFormateado(n); d.monto_letras = numeroALetras(n); }
+    return d;
+  };
+  // Se valida todo antes de empezar, para no mandar la mitad y frenar.
   if (adjContrato) {
-    const faltan = faltanDatosContrato({ ...datosComunes, nombre: 'x', cuil: 'x' });
-    if (faltan.length) {
-      toast('No se envió: al contrato le falta ' + faltan.join(', '));
+    const faltan = new Set();
+    bulkMailRecipients.forEach(r => faltanDatosContrato(datosDe(r)).forEach(f => faltan.add(f)));
+    faltan.delete('nombre'); faltan.delete('CUIL');
+    if (faltan.size) {
+      toast('No se envió: al contrato le falta ' + [...faltan].join(', '));
       btn.disabled = false; prog.style.display = 'none';
       return;
     }
@@ -4960,11 +5032,14 @@ async function sendBulkMail() {
   for (let i = 0; i < bulkMailRecipients.length; i++) {
     const r = bulkMailRecipients[i];
     prog.textContent = `Enviando ${i + 1} de ${bulkMailRecipients.length}...`;
-    let body = bodyTpl.replace(/\{nombre\}/g, r.nombre || '');
+    const puestoDeR = (conv?.puestos || []).find(x => x.id === r.puestoId);
+    let body = bodyTpl.replace(/\{nombre\}/g, r.nombre || '')
+      .replace(/\{puesto\}/g, (puestoDeR && puestoDeR.nombre) || v('bmcPuesto') || 'STAFF')
+      .replace(/\{monto\}/g, remuneracionDe(conv, r.puestoId) || v('bmFMonto'));
     try {
       let attachments, contratoRow;
       if (adjContrato) {
-        const datos = { ...datosComunes, nombre: r.nombre || '', cuil: r.cuit || '' };
+        const datos = datosDe(r);
         contratoRow = await crearContrato(datos, currentConvId, r.personaId, r.email, r.postulacionId, r.puestoId, bmFromArea);
         const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(contratoRow.texto_contrato), destacar: destacarDe(datos) });
         attachments = [{ filename: 'contrato.pdf', content: pdfBase64 }];
