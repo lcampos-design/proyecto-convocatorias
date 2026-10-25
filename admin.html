@@ -1212,15 +1212,14 @@ tr:hover td{background:#f9f9fb}
     <div class="modal-title">
       <span><i class="ic ic-campana"></i> Notificaciones</span>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-sec btn-xs" onclick="discardAllNotifs()">Descartar todas</button>
+        <button class="btn btn-sec btn-xs" id="btnNotifTodas" onclick="discardAllNotifs()">Marcar todas como leídas</button>
         <button class="mclose" onclick="closeM('mNotifs')">✕</button>
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:14px">
-      <button class="btn btn-xs" id="nfiltAll" style="background:#534AB7;color:#fff;border:none" onclick="setNotifFilter('')">Todas</button>
-      <button class="btn btn-sec btn-xs" id="nfiltPend" onclick="setNotifFilter('pendiente')">Pendientes</button>
-      <button class="btn btn-sec btn-xs" id="nfiltApro" onclick="setNotifFilter('aprobacion')">Aprobaciones</button>
-      <button class="btn btn-sec btn-xs" id="nfiltCupo" onclick="setNotifFilter('cupo_lleno')">Cupos llenos</button>
+      <button class="btn btn-sec btn-xs" id="nfiltPend" onclick="setNotifFilter('pendiente')">Sin leer</button>
+      <button class="btn btn-sec btn-xs" id="nfiltLeidas" onclick="setNotifFilter('leidas')">Leídas</button>
+      <button class="btn btn-sec btn-xs" id="nfiltAll" onclick="setNotifFilter('')">Todas</button>
     </div>
     <div id="notifsBody" style="max-height:460px;overflow-y:auto"></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mNotifs')">Cerrar</button></div>
@@ -4512,33 +4511,43 @@ async function queueNotif(tipo, titulo, cuerpo, email = null, nombre = null) {
   try { await sbInsert('notificaciones', [{ id: notif.id, tipo, titulo, cuerpo, destinatario_email: notif.destinatario_email, destinatario_nombre: notif.destinatario_nombre, estado: 'pendiente' }]); } catch (_) {}
 }
 
+// Sin leer = 'pendiente'; leída = 'descartada' o 'enviada' (lo que ya se atendió).
+const sinLeer = n => n.estado === 'pendiente';
 function setNotifFilter(f) {
   notifFilter = f;
-  ['All','Pend','Apro','Cupo'].forEach(k => {
-    const el = document.getElementById('nfilt' + k);
-    if (el) { el.style.background = ''; el.style.color = ''; el.className = 'btn btn-sec btn-xs'; }
+  const sl = notificaciones.filter(sinLeer).length, le = notificaciones.length - sl;
+  const rotulos = { Pend: 'Sin leer' + (sl ? ' (' + sl + ')' : ''), Leidas: 'Leídas' + (le ? ' (' + le + ')' : ''), All: 'Todas' };
+  const map = { '': 'All', 'pendiente': 'Pend', 'leidas': 'Leidas' };
+  ['Pend', 'Leidas', 'All'].forEach(k => {
+    const el = document.getElementById('nfilt' + k); if (!el) return;
+    el.textContent = rotulos[k];
+    el.className = 'btn btn-xs ' + (map[f] === k ? 'btn-primary' : 'btn-sec');
   });
-  const map = { '': 'All', 'pendiente': 'Pend', 'aprobacion': 'Apro', 'cupo_lleno': 'Cupo' };
-  const activeEl = document.getElementById('nfilt' + (map[f] || 'All'));
-  if (activeEl) { activeEl.style.background = '#534AB7'; activeEl.style.color = '#fff'; activeEl.style.border = 'none'; }
+  const bt = document.getElementById('btnNotifTodas'); if (bt) bt.style.display = sl ? '' : 'none';
   renderNotifs();
 }
 
-function openNotifs() { setNotifFilter(''); renderNotifs(); showM('mNotifs'); }
+// Se abre en las sin leer; si no hay, en todas.
+function openNotifs() { setNotifFilter(notificaciones.some(sinLeer) ? 'pendiente' : ''); showM('mNotifs'); }
 
 function renderNotifs() {
-  let src = notifFilter === 'pendiente'
-    ? notificaciones.filter(n => n.estado === 'pendiente')
-    : notifFilter
-      ? notificaciones.filter(n => n.tipo === notifFilter)
-      : notificaciones;
+  // Las sin leer primero, después las leídas; dentro de cada grupo, las más nuevas arriba.
+  const orden = (a, b) => (sinLeer(b) - sinLeer(a)) || String(b.created_at || '').localeCompare(String(a.created_at || ''));
+  const src = (notifFilter === 'pendiente' ? notificaciones.filter(sinLeer)
+    : notifFilter === 'leidas' ? notificaciones.filter(n => !sinLeer(n))
+    : notificaciones.slice()).sort(orden);
   const cont = document.getElementById('notifsBody');
-  if (!src.length) { cont.innerHTML = `<div class="empty">${notificaciones.length === 0 ? 'Sin notificaciones todavía. Se generan automáticamente al aprobar candidatos o llenar cupos.' : 'Sin resultados para este filtro.'}</div>`; return; }
+  if (!src.length) {
+    cont.innerHTML = `<div class="empty">${notificaciones.length === 0 ? 'Sin notificaciones todavía. Llegan cuando alguien confirma desde el mail, se aprueba a alguien o se llena un cupo.'
+      : notifFilter === 'pendiente' ? 'No tenés notificaciones sin leer.' : 'Nada por acá.'}</div>`;
+    return;
+  }
   const tipoIcon = { aprobacion: '<i class="ic ic-tilde-circ"></i>', cupo_lleno: '<i class="ic ic-diana"></i>', rotacion: '⚠', confirmacion: '<i class="ic ic-bandeja"></i>', otro: '<i class="ic ic-chincheta"></i>' };
   const tipoLabel = { aprobacion: 'Aprobación', cupo_lleno: 'Cupo lleno', rotacion: 'Rotación', confirmacion: 'Confirmación', otro: 'General' };
-  const stColors = { pendiente: '#fef3c7;color:#92400e', enviada: '#d1fae5;color:#065f46', descartada: '#f3f4f6;color:#9ca3af' };
+  const stColors = { pendiente: 'var(--espera-sv);color:var(--espera)', enviada: 'var(--ok-sv);color:var(--ok)', descartada: 'var(--neutro-sv);color:var(--neutro)' };
+  const stLabel = { pendiente: 'Sin leer', enviada: 'Enviada', descartada: 'Leída' };
   cont.innerHTML = src.map(n => `
-    <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:10px;background:${n.estado==='descartada'?'#fafafa':'#fff'}">
+    <div style="border:1px solid var(--mac-linea);border-radius:10px;padding:14px;margin-bottom:10px;background:${sinLeer(n) ? '#fff' : '#fafafa'};opacity:${sinLeer(n) ? 1 : .75};${sinLeer(n) ? 'box-shadow:inset 3px 0 0 var(--espera)' : ''}">
       <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px">
         <span style="font-size:18px;flex-shrink:0">${tipoIcon[n.tipo]||'<i class="ic ic-chincheta"></i>'}</span>
         <div style="flex:1;min-width:0">
@@ -4546,14 +4555,14 @@ function renderNotifs() {
           <div style="font-size:12px;color:#6b7280;margin-top:2px">${e(n.cuerpo)}</div>
           ${n.destinatario_nombre || n.destinatario_email ? `<div style="font-size:11px;color:#9ca3af;margin-top:4px">Para: ${e(n.destinatario_nombre||'')} ${n.destinatario_email?`&lt;${e(n.destinatario_email)}&gt;`:''}</div>` : ''}
         </div>
-        <span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500;flex-shrink:0;background:${stColors[n.estado]||'#f3f4f6'}">${rotulo(n.estado)}</span>
+        <span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500;flex-shrink:0;background:${stColors[n.estado]||'#f3f4f6'}">${stLabel[n.estado] || rotulo(n.estado)}</span>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <span style="font-size:11px;color:#9ca3af;flex:1">${n.created_at?new Date(n.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span>
-        <button class="btn btn-sec btn-xs" onclick="copyNotif('${n.id}')" title="Copiar texto"><i class="ic ic-planilla"></i> Copiar</button>
-        ${n.destinatario_email && n.estado === 'pendiente' ? `<button class="btn btn-sec btn-xs" onclick="mailtoNotif('${n.id}')" title="Abrir en cliente de email"><i class="ic ic-sobre"></i> Email</button>` : ''}
-        ${n.estado === 'pendiente' ? `<button class="btn btn-success btn-xs" onclick="markNotifSent('${n.id}')">✓ Enviada</button>` : ''}
-        ${n.estado !== 'descartada' ? `<button class="btn btn-danger btn-xs" onclick="discardNotif('${n.id}')">✕</button>` : ''}
+        ${sinLeer(n) ? `<button class="btn btn-sec btn-xs" onclick="copyNotif('${n.id}')" title="Copiar texto"><i class="ic ic-planilla"></i> Copiar</button>` : ''}
+        ${n.destinatario_email && sinLeer(n) && n.tipo === 'aprobacion' ? `<button class="btn btn-sec btn-xs" onclick="mailtoNotif('${n.id}')" title="Abrir en cliente de email"><i class="ic ic-sobre"></i> Email</button>` : ''}
+        ${sinLeer(n) && n.tipo === 'aprobacion' ? `<button class="btn btn-success btn-xs" onclick="markNotifSent('${n.id}')">✓ Enviada</button>` : ''}
+        ${sinLeer(n) ? `<button class="btn btn-primary btn-xs" onclick="discardNotif('${n.id}')" title="Marcar como leída">✓ Leída</button>` : ''}
       </div>
     </div>`).join('');
 }
@@ -4572,21 +4581,23 @@ function mailtoNotif(id) {
 
 async function markNotifSent(id) {
   const n = notificaciones.find(x => x.id === id); if (!n) return;
-  n.estado = 'enviada'; renderNotifs(); refreshNotifBadge();
+  n.estado = 'enviada'; setNotifFilter(notifFilter); refreshNotifBadge();
   try { await sbUpdate('notificaciones', id, { estado: 'enviada' }); } catch (_) {}
 }
 
+// Marcar leída. Se guarda como 'descartada', el estado que siempre existió para "ya la vi".
 async function discardNotif(id) {
   const n = notificaciones.find(x => x.id === id); if (!n) return;
-  n.estado = 'descartada'; renderNotifs(); refreshNotifBadge();
+  n.estado = 'descartada'; setNotifFilter(notifFilter); refreshNotifBadge();
   try { await sbUpdate('notificaciones', id, { estado: 'descartada' }); } catch (_) {}
 }
 
 async function discardAllNotifs() {
-  if (!confirm('¿Descartar todas las notificaciones pendientes?')) return;
-  const ids = notificaciones.filter(n => n.estado === 'pendiente').map(n => n.id);
-  notificaciones.forEach(n => { if (n.estado === 'pendiente') n.estado = 'descartada'; });
-  renderNotifs(); refreshNotifBadge();
+  const ids = notificaciones.filter(sinLeer).map(n => n.id);
+  if (!ids.length) return;
+  if (!confirm('¿Marcar las ' + ids.length + ' notificaciones sin leer como leídas?')) return;
+  notificaciones.forEach(n => { if (sinLeer(n)) n.estado = 'descartada'; });
+  setNotifFilter(notifFilter); refreshNotifBadge();
   try { await sbUpdateIn('notificaciones', ids, { estado: 'descartada' }); } catch (_) {}
 }
 
