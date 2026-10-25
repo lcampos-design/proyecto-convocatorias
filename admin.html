@@ -564,6 +564,80 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .nom-mas-menu .btn{justify-content:flex-start;width:100%;border:none;background:none;font-size:13px;padding:8px 10px;border-radius:7px}
 .nom-mas-menu .btn:hover{background:#f4f4f5}
 
+
+/* ── TEMA GLASS ──────────────────────────────────────────────
+   Superficies traslúcidas con desenfoque sobre un fondo pastel. Los únicos
+   colores son los de las áreas (celeste, violeta, naranja) y los de estado
+   (verde, ámbar, rojo). El violeta de marca desaparece del panel. */
+:root{
+  --arena:#1d7fb8;    --arena-sv:#dceffb;    /* celeste pastel  */
+  --externos:#6b4fc8; --externos-sv:#ebe6fb; /* violeta pastel  */
+  --espana:#d8771e;   --espana-sv:#fdeadb;   /* naranja pastel  */
+  --ambas:#5b6472;    --ambas-sv:#eceff3;
+  --r-accent:#18181b;
+  --vidrio:rgba(255,255,255,.58);
+  --vidrio-borde:rgba(255,255,255,.75);
+  --vidrio-sombra:0 8px 28px rgba(40,50,80,.07);
+  --vidrio-blur:blur(16px) saturate(150%);
+}
+html{background:#f3f4f8}
+body{
+  background:#f3f4f8;
+  background-image:
+    radial-gradient(900px 600px at 8% -10%, rgba(29,127,184,.16), transparent 60%),
+    radial-gradient(800px 600px at 95% 10%, rgba(107,79,200,.14), transparent 60%),
+    radial-gradient(900px 700px at 55% 110%, rgba(216,119,30,.12), transparent 60%);
+  background-attachment:fixed;
+}
+/* Vidrio: cabecera, barras, tarjetas, tablas, modales. */
+.app-hdr,.stats-bar,.ctrlbar,.det-hdr,.tbl-wrap,.cv-row,.puesto-card,.d-tarea,.resp,.modal,.stat{
+  background:var(--vidrio);border-color:var(--vidrio-borde);
+  -webkit-backdrop-filter:var(--vidrio-blur);backdrop-filter:var(--vidrio-blur);
+}
+.app-hdr{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.7)}
+.tbl-wrap,.cv-row,.puesto-card,.d-tarea,.resp,.stat{box-shadow:var(--vidrio-sombra)}
+table{background:transparent}
+th{background:rgba(255,255,255,.45)}
+td{background:transparent}
+tr:hover td{background:rgba(255,255,255,.35)}
+.stats-bar,.ctrlbar,.det-hdr{border-bottom:1px solid rgba(255,255,255,.8);box-shadow:0 1px 0 rgba(40,50,80,.05)}
+.stat{background:rgba(255,255,255,.5)}
+/* Modales: vidrio más opaco (hay que leer), fondo desenfocado. */
+.modal-bg{background:rgba(35,38,52,.32);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.modal{background:rgba(255,255,255,.82);border:1px solid var(--vidrio-borde);box-shadow:0 24px 60px rgba(40,50,80,.18)}
+/* Controles. */
+.fi,.srch,select.filt{background:rgba(255,255,255,.72)}
+.srch:focus,select.filt:focus,.fi:focus{border-color:var(--r-ink);box-shadow:0 0 0 3px rgba(24,24,27,.08)}
+.btn-sec{background:rgba(255,255,255,.6);border:1px solid var(--vidrio-borde)}
+.btn-sec:hover{background:rgba(255,255,255,.9)}
+.btn-primary{background:var(--r-ink)}
+.btn{transition:transform .12s,background .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.mnav-btn.active{border-bottom-color:var(--r-ink)}
+/* Un poco de vida: las tarjetas se levantan al pasar. */
+.cv-row,.puesto-card,.d-tarea,.resp{transition:transform .15s,box-shadow .15s,border-color .15s}
+.cv-row:hover,.puesto-card:hover,.d-tarea:hover,.resp:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(40,50,80,.11);border-color:rgba(255,255,255,.95)}
+/* Cada área con su color: la etiqueta, y una línea de color en la tarjeta que la lleva. */
+.a-mv{background:var(--arena-sv);color:var(--arena);border-color:transparent}
+.a-ex{background:var(--externos-sv);color:var(--externos);border-color:transparent}
+.a-es{background:var(--espana-sv);color:var(--espana);border-color:transparent}
+.a-ambas{background:var(--ambas-sv);color:var(--ambas);border-color:transparent}
+.cv-row:has(.a-mv),.puesto-card:has(.a-mv),.d-show:has(.a-mv){box-shadow:inset 4px 0 0 var(--arena),var(--vidrio-sombra)}
+.cv-row:has(.a-ex),.puesto-card:has(.a-ex),.d-show:has(.a-ex){box-shadow:inset 4px 0 0 var(--externos),var(--vidrio-sombra)}
+.cv-row:has(.a-es),.puesto-card:has(.a-es),.d-show:has(.a-es){box-shadow:inset 4px 0 0 var(--espana),var(--vidrio-sombra)}
+.cv-row:has(.a-ambas),.puesto-card:has(.a-ambas){box-shadow:inset 4px 0 0 var(--ambas),var(--vidrio-sombra)}
+/* El violeta de marca que quedó en estilos sueltos pasa a tinta. */
+[style*="background:#534AB7"]{background:var(--r-ink) !important}
+[style*="color:#534AB7"]{color:var(--r-ink) !important}
+[style*="border-color:#534AB7"],[style*="border:1px solid #534AB7"]{border-color:var(--r-line) !important}
+[style*="accent-color:#534AB7"]{accent-color:var(--r-ink) !important}
+.badge-fromnom{background:var(--neutro-sv);color:var(--neutro)}
+/* Los celestes decorativos sueltos (botones de mail) también quedan neutros:
+   el celeste es de Movistar Arena, no de "enviar". */
+.btn[style*="background:#e0f2fe"]{background:rgba(255,255,255,.6) !important;color:var(--r-ink2) !important;border:1px solid var(--vidrio-borde) !important}
+.btn[style*="background:#dcfce7"],.btn[style*="background:#fee2e2"]{border:1px solid transparent}
+
 </style>
 </head>
 <body>
