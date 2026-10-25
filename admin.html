@@ -100,6 +100,18 @@ tr:hover td{background:#fafaf8}
 .cal-pie{display:flex;gap:6px;align-items:center;margin-top:8px;font-size:12px;color:#6b7280;flex-wrap:wrap}
 .cal-pie input[type=date]{flex:1;min-width:120px;font-size:12px;padding:5px 8px}
 .modal-xl{max-width:760px}
+/* Disponibilidad: la tabla se arrastra con el mouse; nombre y cabecera fijos. */
+.disp-scroll{overflow:auto;max-height:65vh;cursor:grab;border:1px solid var(--r-line);border-radius:10px;user-select:none}
+.disp-scroll.arrastrando{cursor:grabbing}
+.disp-scroll table{border-collapse:separate;border-spacing:0}
+.disp-scroll thead th{position:sticky;top:0;background:#fff;z-index:2}
+.disp-scroll td:first-child,.disp-scroll th:first-child{position:sticky;left:0;background:#fff;z-index:1;box-shadow:1px 0 0 var(--r-line)}
+.disp-scroll thead th:first-child{z-index:3}
+/* Abierta en su propia pestaña: ocupa toda la pantalla. */
+body.solo-disp .app-hdr,body.solo-disp .sec{display:none !important}
+body.solo-disp #mDispAdmin{padding:0;background:#f5f5f7;backdrop-filter:none}
+body.solo-disp #mDispAdmin .modal{max-width:none;width:100%;max-height:100vh;height:100vh;border-radius:0;border:none;box-shadow:none}
+body.solo-disp .disp-scroll{max-height:calc(100vh - 230px)}
 .modal-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
 .mclose{background:none;border:none;font-size:18px;cursor:pointer;color:#9ca3af;padding:0 4px;line-height:1}
 .mclose:hover{color:#374151}
@@ -542,6 +554,14 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .turno-chip{font-size:12px;font-weight:600;background:#fff;border:1.5px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .turno-chip:hover{border-color:#a1a1aa}
 .turno-chip.on{background:var(--r-ink);border-color:var(--r-ink);color:#fff}
+/* Pasar lista por posición: una pestaña por puesto, con su cuenta. */
+.lista-puestos{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0 2px;border-top:1px solid var(--r-line2);margin-top:6px}
+.puesto-chip{font-size:12px;font-weight:600;background:#fff;border:1.5px solid var(--r-line);color:var(--r-ink2);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:inherit;white-space:nowrap;display:inline-flex;gap:6px;align-items:center}
+.puesto-chip:hover{border-color:#a1a1aa}
+.puesto-chip.on{background:var(--r-ink);border-color:var(--r-ink);color:#fff}
+.puesto-chip .pc-n{font-weight:500;opacity:.75;font-variant-numeric:tabular-nums}
+.puesto-chip.listo .pc-n{color:var(--ok)}.puesto-chip.on.listo .pc-n{color:#86efac}
+.pl-btn{padding:7px 16px;font-size:13px}
 .lista-resumen{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:12px;color:#6b7280;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;padding:9px 0;margin-top:10px}
 .lista-resumen strong{font-size:14px;color:#111827}
 .lista-resumen .lr-p strong{color:#0f6e56}
@@ -1475,17 +1495,17 @@ tr:hover td{background:#f9f9fb}
       </div>
     </div>
     <div id="listaTurnos" class="lista-turnos"></div>
+    <div id="listaPuestos" class="lista-puestos"></div>
     <div id="listaResumen" class="lista-resumen"></div>
     <div style="padding:10px 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <input type="text" class="srch" id="listaSrch" placeholder="Buscar por nombre o documento..." oninput="renderLista()" style="flex:1;min-width:160px">
-      <select class="filt" id="listaPuestoFilter" onchange="renderLista()" style="font-size:12px;padding:5px 8px"></select>
       <select class="filt" id="listaEstadoFilter" onchange="renderLista()" style="font-size:12px;padding:5px 8px">
         <option value="">Todos</option>
         <option value="_sin">Sin marcar</option>
         <option value="presente">Presentes</option>
         <option value="ausente">Faltaron</option>
       </select>
-      <button class="btn btn-sec btn-sm" onclick="listaTodosPresentes()">✓ Los que faltan marcar, presentes</button>
+      <button class="btn btn-primary btn-sm" id="listaBtnTodos" onclick="listaTodosPresentes()">✓ Los que faltan marcar, presentes</button>
     </div>
     <div class="post-table-wrap"><table>
       <thead><tr><th>Nombre</th><th style="width:150px">Puesto</th><th style="width:210px">En este turno</th></tr></thead>
@@ -2129,6 +2149,12 @@ async function loadAll() {
     refreshSolBadge();
     refreshNotifBadge();
     refreshRespBadge();
+    // admin?disp=<convocatoria>: la disponibilidad sola, en su propia pestaña.
+    const dispId = new URLSearchParams(location.search).get('disp');
+    if (dispId && convs.some(c => c.id === dispId)) {
+      document.body.classList.add('solo-disp');
+      goSec('convs'); openDetail(dispId); openDispAdmin();
+    }
   }
 }
 
@@ -4075,8 +4101,7 @@ function openPasarLista() {
   document.getElementById('listaSrch').value = '';
   document.getElementById('listaEstadoFilter').value = '';
   document.getElementById('listaTitle').textContent = 'Pasar lista — ' + c.nombre;
-  const pf = document.getElementById('listaPuestoFilter');
-  pf.innerHTML = '<option value="">Todos los puestos</option>' + (c.puestos || []).map(p => `<option value="${e(p.id)}">${e(p.nombre)}</option>`).join('');
+  listaPuestoId = '';
   renderLista();
   showM('mLista');
 }
@@ -4088,6 +4113,16 @@ function listaConvocados() {
   return posts.filter(x => x.convId === currentConvId && x.estado !== 'rechazado');
 }
 
+let listaPuestoId = '';   // '' = todos los puestos; '_sin' = sin puesto
+function elegirPuestoLista(id) { listaPuestoId = id; renderLista(); }
+// Los convocados del puesto elegido en la lista (todos si no hay elegido).
+function listaDelPuesto() {
+  const todos = listaConvocados();
+  if (!listaPuestoId) return todos;
+  const c = convs.find(x => x.id === currentConvId);
+  if (listaPuestoId === '_sin') return todos.filter(x => !(c?.puestos || []).some(p => p.id === x.puestoId));
+  return todos.filter(x => x.puestoId === listaPuestoId);
+}
 function renderLista() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   const slots = slotsDe(c);
@@ -4095,13 +4130,24 @@ function renderLista() {
 
   document.getElementById('listaTurnos').innerHTML = slots.map(sl => `<button class="turno-chip${sl.id === listaSlotId ? ' on' : ''}" onclick="elegirTurno('${e(sl.id)}')">${fmtFecha(sl.fecha)}${sl.horario ? ' · ' + e(sl.horario) : ''}</button>`).join('');
 
-  const todos = listaConvocados();
+  // Las pestañas por puesto, con presentes/total en este turno.
+  const convocados = listaConvocados();
+  const cuenta = lista => { const p = lista.filter(x => presentesDe(x)[listaSlotId] === 'presente').length; return { p, t: lista.length, marcados: lista.filter(x => presentesDe(x)[listaSlotId]).length }; };
+  const chip = (id, nombre, lista) => { const n = cuenta(lista); return `<button class="puesto-chip${listaPuestoId === id ? ' on' : ''}${n.t && n.marcados === n.t ? ' listo' : ''}" onclick="elegirPuestoLista('${e(id)}')" title="${n.p} presentes de ${n.t} en este turno">${e(nombre)} <span class="pc-n">${n.p}/${n.t}</span></button>`; };
+  const sinPuesto = convocados.filter(x => !(c.puestos || []).some(p => p.id === x.puestoId));
+  document.getElementById('listaPuestos').innerHTML = chip('', 'Todos', convocados)
+    + (c.puestos || []).map(p => chip(p.id, p.nombre, convocados.filter(x => x.puestoId === p.id))).join('')
+    + (sinPuesto.length ? chip('_sin', 'Sin puesto', sinPuesto) : '');
+
+  const todos = listaDelPuesto();
   const pres = todos.filter(x => presentesDe(x)[listaSlotId] === 'presente').length;
   const aus = todos.filter(x => presentesDe(x)[listaSlotId] === 'ausente').length;
   const sin = todos.length - pres - aus;
   const sinAprobar = todos.filter(x => !esAprobado(x)).length;
+  const bt = document.getElementById('listaBtnTodos');
+  if (bt) bt.textContent = '✓ ' + (sin ? sin + ' sin marcar → presentes' : 'Todos marcados') + (listaPuestoId ? ' (' + (listaPuestoId === '_sin' ? 'sin puesto' : puestoDe(listaPuestoId)) + ')' : '');
   document.getElementById('listaResumen').innerHTML =
-    `<span>Convocados <strong>${todos.length}</strong></span>
+    `<span>${listaPuestoId ? e(listaPuestoId === '_sin' ? 'Sin puesto' : puestoDe(listaPuestoId)) : 'Convocados'} <strong>${todos.length}</strong></span>
      <span class="lr-p">Presentes <strong>${pres}</strong></span>
      <span class="lr-a">Faltaron <strong>${aus}</strong></span>
      <span class="lr-s">Sin marcar <strong>${sin}</strong></span>` +
@@ -4109,10 +4155,8 @@ function renderLista() {
 
   const q = (document.getElementById('listaSrch').value || '').toLowerCase().trim();
   const qd = q.replace(/\D/g, '');
-  const puF = document.getElementById('listaPuestoFilter').value;
   const stF = document.getElementById('listaEstadoFilter').value;
   const filas = todos.filter(x => {
-    if (puF && x.puestoId !== puF) return false;
     const marca = presentesDe(x)[listaSlotId] || '';
     if (stF === '_sin' && marca) return false;
     if (stF && stF !== '_sin' && marca !== stF) return false;
@@ -4129,7 +4173,7 @@ function renderLista() {
   });
 
   const tbody = document.getElementById('listaTbody');
-  if (!filas.length) { tbody.innerHTML = `<tr><td colspan="3"><div class="empty">${todos.length ? 'Sin resultados para este filtro.' : 'Todavía no hay nadie aprobado en esta convocatoria.'}</div></td></tr>`; return; }
+  if (!filas.length) { tbody.innerHTML = `<tr><td colspan="3"><div class="empty">${todos.length ? 'Sin resultados para este filtro.' : listaPuestoId ? 'No hay nadie convocado en este puesto.' : 'Todavía no hay nadie aprobado en esta convocatoria.'}</div></td></tr>`; return; }
   tbody.innerHTML = filas.map(x => {
     const pers = people.filter(p => p.id === x.personaId)[0];
     const marca = presentesDe(x)[listaSlotId] || '';
@@ -4159,10 +4203,13 @@ async function setPresente(postId, valor) {
 
 async function listaTodosPresentes() {
   if (!listaSlotId) return;
-  // Sólo los que todavía no tienen marca: no pisa a quien ya marcaron que faltó.
-  const sinMarcar = listaConvocados().filter(x => !presentesDe(x)[listaSlotId]);
+  // Sólo los que todavía no tienen marca, del puesto elegido (o de todos):
+  // no pisa a quien ya marcaron que faltó.
+  const sinMarcar = listaDelPuesto().filter(x => !presentesDe(x)[listaSlotId]);
   if (!sinMarcar.length) { toast('En este turno ya están todos marcados'); return; }
-  if (!confirm(`¿Marcar presentes a ${sinMarcar.length} que todavía no tienen marca en este turno?`)) return;
+  const c = convs.find(x => x.id === currentConvId);
+  const donde = listaPuestoId ? ' de ' + (listaPuestoId === '_sin' ? 'sin puesto' : (((c?.puestos || []).find(p => p.id === listaPuestoId) || {}).nombre || '')) : '';
+  if (!confirm(`¿Marcar presentes a ${sinMarcar.length}${donde} que todavía no tienen marca en este turno?`)) return;
   const filas = sinMarcar.map(x => {
     const pr = Object.assign({}, presentesDe(x));
     pr[listaSlotId] = 'presente';
@@ -4224,6 +4271,26 @@ async function exportPresentes() {
     });
     return { nombre: fechaLinda(sl.fecha).slice(0, 5) + (sl.horario ? ' ' + sl.horario : ''), filas, cabeceras, negritas: [0],
              titulo: 'Planilla de presentes · ' + (c.nombre || ''), subtitulo: fechaLinda(sl.fecha) + (sl.horario ? ' · ' + sl.horario : '') + (c.venue ? ' · ' + c.venue : '') };
+  });
+
+  // Una hoja por puesto (acreditaciones, orientadores…): la gente del puesto
+  // con una columna por turno, para ver de un vistazo quién vino cada día.
+  const sectoresHoja = (c.puestos || []).map(p => ({ id: p.id, nombre: p.nombre }));
+  if (todos.some(x => !sectoresHoja.some(p => p.id === x.puestoId))) sectoresHoja.push({ id: null, nombre: 'Sin puesto' });
+  const colTurno = sl => fechaLinda(sl.fecha).slice(0, 5) + (sl.horario ? ' ' + sl.horario : '');
+  sectoresHoja.forEach(sec => {
+    const gente = todos.filter(x => sec.id ? x.puestoId === sec.id : !sectoresHoja.some(p => p.id && p.id === x.puestoId))
+      .sort((a, b) => apellidoYNombre(a.nombre).apellido.localeCompare(apellidoYNombre(b.nombre).apellido, 'es'));
+    if (!gente.length) return;
+    const filas = [['#', 'APELLIDO', 'NOMBRE', 'CUIL', 'TELEFONO', ...slots.map(colTurno), 'PRESENTES', 'FALTAS']];
+    gente.forEach((x, i) => {
+      const pers = personaDe(x);
+      const nm = apellidoYNombre(x.nombre || (pers && pers.nombre) || '');
+      const marcas = slots.map(sl => ({ presente: 'P', ausente: 'A' })[presentesDe(x)[sl.id]] || '');
+      filas.push([i + 1, nm.apellido, nm.nombre, (pers && pers.cuit) || x.cuit || '', (pers && pers.tel) || '', ...marcas,
+                  marcas.filter(m => m === 'P').length, marcas.filter(m => m === 'A').length]);
+    });
+    hojas.push({ nombre: sec.nombre, filas, titulo: (sec.nombre || '') + ' · ' + (c.nombre || ''), subtitulo: gente.length + ' persona' + (gente.length === 1 ? '' : 's') + ' · P presente · A faltó' });
   });
 
   // Y la lista plana con el CBU, que es con lo que se liquida la jornada.
@@ -6715,6 +6782,7 @@ async function openDispAdmin() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   document.getElementById('mDispTitle').textContent = `Disponibilidad — ${c.nombre}`;
   document.getElementById('dispBody').innerHTML = '<div class="empty">Cargando…</div>';
+  dispBusqueda = '';
   showM('mDispAdmin');
   try {
     const { data } = await sb.from('disponibilidad').select('*').eq('conv_id', currentConvId).order('updated_at', { ascending: false });
@@ -6738,13 +6806,21 @@ function renderDispBody() {
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="checkbox" ${abierta ? 'checked' : ''} onchange="toggleDispAbierta(this.checked)" style="width:18px;height:18px;accent-color:#534AB7"> Ronda abierta</label>
     <span style="flex:1;min-width:200px;font-size:12px;color:#6b7280;word-break:break-all">${e(link)}</span>
     <button class="btn btn-sec btn-sm" onclick="copiarDispLink('${e(link)}')"><i class="ic ic-planilla"></i> Copiar link</button>
-    ${dispRows.length ? `<button class="btn btn-sec btn-sm" onclick="exportarDisponibilidad()">↓ Exportar CSV</button>` : ''}
+    ${dispRows.length ? `<button class="btn btn-sec btn-sm" onclick="exportarDisponibilidad()">↓ Excel</button>` : ''}
+    ${document.body.classList.contains('solo-disp') ? '' : `<button class="btn btn-sec btn-sm" onclick="window.open(location.pathname + '?disp=' + currentConvId, '_blank')" title="La tabla sola, a pantalla completa, en otra pestaña">↗ Abrir en pestaña nueva</button>`}
+  </div>`;
+  if (dispRows.length) html += `<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+    <input type="text" class="srch" id="dispSrch" placeholder="Buscar por nombre, apellido o CUIL…" value="${e(dispBusqueda)}" oninput="dispBusqueda=this.value;renderDispBody();document.getElementById('dispSrch').focus()" style="flex:1;min-width:200px">
+    <span style="font-size:12px;color:#6b7280;white-space:nowrap">Arrastrá la tabla con el mouse para moverte</span>
   </div>`;
   if (!abierta) html += `<div style="font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;margin-bottom:12px">La ronda está <strong>cerrada</strong>: el link no acepta respuestas. Activá "Ronda abierta" para recibir disponibilidad.</div>`;
   if (!dispRows.length) { html += '<div class="empty">Todavía nadie respondió. Compartí el link con tu grupo.</div>'; document.getElementById('dispBody').innerHTML = html; return; }
   const th = s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center">${s}</th>`;
   const thDates = slots.map(s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center;vertical-align:bottom" title="${e(s.horario || '')}">${fmtFechaCorta(s.fecha)}${s.horario ? `<div style="font-size:9px;font-weight:400;color:#8b8fa3;text-transform:none;max-width:100px;margin:2px auto 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(s.horario)}</div>` : ''}</th>`).join('');
-  const rows = dispRows.map(r => {
+  const q = String(dispBusqueda || '').toLowerCase().trim(), qd = q.replace(/\D/g, '');
+  const visibles = dispRows.filter(r => !q || String(r.nombre || '').toLowerCase().includes(q) || (qd && normDoc(r.cuit).includes(qd)))
+    .sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es'));
+  const rows = visibles.map(r => {
     const rf = Array.isArray(r.fechas) ? r.fechas : [];
     const cn = docNucleo(r.cuit);
     const per = people.find(p => docNucleo(p.cuit) === cn);
@@ -6760,12 +6836,27 @@ function renderDispBody() {
   }).join('');
   const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
   const foot = counts.map(n => `<td style="text-align:center;padding:6px 8px;font-weight:700;color:#534AB7">${n}</td>`).join('');
-  html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
-    <thead><tr>${th('Persona (' + dispRows.length + ')')}${thDates}<th style="border-bottom:1px solid #e5e7eb"></th></tr></thead>
+  html += `<div class="disp-scroll" id="dispScroll"><table style="width:100%;font-size:13px">
+    <thead><tr>${th('Persona (' + (q ? visibles.length + ' de ' + dispRows.length : dispRows.length) + ')')}${thDates}<th style="border-bottom:1px solid #e5e7eb"></th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td style="padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">Disponibles</td>${foot}<td></td></tr></tfoot>
   </table></div>`;
   document.getElementById('dispBody').innerHTML = html;
+  arrastrable(document.getElementById('dispScroll'));
+}
+let dispBusqueda = '';
+// Arrastrar para moverse por la tabla: la barra de abajo quedaba lejos.
+function arrastrable(el) {
+  if (!el) return;
+  let x0 = 0, y0 = 0, sx = 0, sy = 0, movio = false;
+  el.addEventListener('mousedown', ev => {
+    if (ev.button !== 0 || ev.target.closest('button,a,input')) return;
+    x0 = ev.clientX; y0 = ev.clientY; sx = el.scrollLeft; sy = el.scrollTop; movio = false;
+    el.classList.add('arrastrando');
+    const mover = e => { const dx = e.clientX - x0, dy = e.clientY - y0; if (Math.abs(dx) + Math.abs(dy) > 3) movio = true; el.scrollLeft = sx - dx; el.scrollTop = sy - dy; };
+    const soltar = () => { el.classList.remove('arrastrando'); window.removeEventListener('mousemove', mover); window.removeEventListener('mouseup', soltar); };
+    window.addEventListener('mousemove', mover); window.addEventListener('mouseup', soltar);
+  });
 }
 
 async function toggleDispAbierta(val) {
