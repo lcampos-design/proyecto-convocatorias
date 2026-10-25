@@ -81,7 +81,13 @@ tr:hover td{background:#fafaf8}
 /* El calendario para elegir las fechas de la convocatoria tocando los días. */
 .cal{border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px 10px;background:#fff;user-select:none}
 .cal-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.cal-top b{font-size:13px;color:#111827;text-transform:capitalize}
+.cal-top b{font-size:13px;color:#111827}
+/* El formulario de la convocatoria: más ancho, y las fechas en dos columnas. */
+.modal-ancho{max-width:840px}
+.fechas-2col{display:grid;grid-template-columns:310px 1fr;gap:16px;align-items:start}
+.fechas-2col .ayuda{font-size:11px;color:#9ca3af;margin:6px 0 0}
+#fechasList{max-height:300px;overflow-y:auto}
+@media(max-width:720px){.fechas-2col{grid-template-columns:1fr}}
 .cal-nav{background:none;border:1px solid #e5e7eb;border-radius:6px;width:26px;height:26px;cursor:pointer;color:#374151;font-size:13px}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .cal-dow{font-size:10px;color:#9ca3af;text-align:center;text-transform:uppercase;padding:2px 0}
@@ -987,22 +993,29 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 </div>
 
 <div class="modal-bg" id="mConv" style="display:none" onclick="bgClose('mConv',event)">
-  <div class="modal">
+  <div class="modal modal-ancho">
     <div class="modal-title"><span id="mConvTitle">Nueva convocatoria</span><button class="mclose" onclick="closeM('mConv')">✕</button></div>
-    <div class="fg"><label>Nombre del recital / evento *</label><input type="text" class="fi" id="cNombre" placeholder="Ej: Recital Soda Stereo — Oct 2024"></div>
     <div class="frow">
-      <div class="fg" style="flex:2">
-        <label>Fechas y turnos <span style="font-weight:400;color:#9ca3af;font-size:11px">(podés repetir una fecha para varios turnos)</span></label>
-        <div class="cal" id="calFechas"></div>
-        <div class="cal-pie">Del <input type="date" class="fi" id="cRangoDesde"> al <input type="date" class="fi" id="cRangoHasta"> <button type="button" class="btn btn-sec btn-sm" onclick="addRango()" style="white-space:nowrap">+ Todos los días</button></div>
-        <div id="fechasList" style="display:flex;flex-direction:column;gap:6px;margin:8px 0 6px"></div>
-        <div style="margin-top:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
-          <div style="font-size:11px;color:#6b7280;margin-bottom:6px">Turnos (uno por línea) — se generan en <strong>todas</strong> las fechas de arriba. Ej: <em>TM: 07.00 a 16.00</em></div>
-          <textarea id="cTurnosMultiples" placeholder="TM: 07.00 a 16.00&#10;TC: 07.00 a 13.00&#10;TN: 22.30 a 07.30" style="width:100%;height:72px;font-size:12px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;font-family:inherit"></textarea>
-          <button type="button" class="btn btn-sec btn-sm" onclick="aplicarTurnosATodas()" style="margin-top:6px"><i class="ic ic-bajar"></i> Aplicar estos turnos a todas las fechas</button>
+      <div class="fg" style="flex:2"><label>Nombre del recital / evento *</label><input type="text" class="fi" id="cNombre" placeholder="Ej: Recital Soda Stereo — Oct 2024"></div>
+      <div class="fg"><label>Área</label><select class="fi" id="cArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option><option value="ambas">Ambas áreas</option></select></div>
+    </div>
+    <div class="fg">
+      <label>Fechas y turnos</label>
+      <div class="fechas-2col">
+        <div>
+          <div class="cal" id="calFechas"></div>
+          <div class="cal-pie">Del <input type="date" class="fi" id="cRangoDesde"> al <input type="date" class="fi" id="cRangoHasta"> <button type="button" class="btn btn-sec btn-sm" onclick="addRango()" style="white-space:nowrap">+ Todos los días</button></div>
+          <div class="ayuda">Tocá los días del show; tocá uno de nuevo para sacarlo. Con "Del … al …" cargás todos los días de un rango de una vez.</div>
+        </div>
+        <div>
+          <div id="fechasList" style="display:flex;flex-direction:column;gap:6px"></div>
+          <div style="margin-top:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+            <div style="font-size:11px;color:#6b7280;margin-bottom:6px">Turnos (uno por línea) — se generan en <strong>todas</strong> las fechas. Ej: <em>TM: 07.00 a 16.00</em></div>
+            <textarea id="cTurnosMultiples" placeholder="TM: 07.00 a 16.00&#10;TC: 07.00 a 13.00&#10;TN: 22.30 a 07.30" style="width:100%;height:64px;font-size:12px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;font-family:inherit"></textarea>
+            <button type="button" class="btn btn-sec btn-sm" onclick="aplicarTurnosATodas()" style="margin-top:6px"><i class="ic ic-bajar"></i> Aplicar estos turnos a todas las fechas</button>
+          </div>
         </div>
       </div>
-      <div class="fg"><label>Área</label><select class="fi" id="cArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option><option value="ambas">Ambas áreas</option></select></div>
     </div>
     <div class="fg"><label>Descripción</label><textarea class="fi" id="cDesc" placeholder="Detalles..."></textarea></div>
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:8px 0 12px">Datos para email de confirmación</div>
@@ -3715,7 +3728,7 @@ function renderFechasList() {
       <span style="font-size:13px;color:#374151;min-width:140px"><i class="ic ic-calendario"></i> ${fmtFecha(t.fecha)}</span>
       <input type="text" value="${(t.horario || '').replace(/"/g, '&quot;')}" oninput="setTurnoHorario('${t.id}', this.value)" placeholder="Horario / turno (opcional)" style="flex:1;font-size:12px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px">
       <button type="button" onclick="removeTurno('${t.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0">✕</button>
-    </div>`).join('') : '<div style="font-size:12px;color:#9ca3af">Agregá una o más fechas. Podés repetir la misma fecha para cargar varios turnos (cada uno con su horario).</div>';
+    </div>`).join('') : '<div style="font-size:12px;color:#9ca3af;padding:10px;border:1px dashed #e5e7eb;border-radius:8px">Todavía no hay fechas. Tocá los días en el calendario y acá aparece cada turno con su horario. Un mismo día puede tener varios turnos: cargalos abajo y aplicalos a todas las fechas.</div>';
 }
 function setTurnoHorario(id, val) { const t = convTurnos.find(x => x.id === id); if (t) t.horario = val; }
 // ── El calendario: se tocan los días ──
@@ -3732,7 +3745,8 @@ function renderCal() {
   const desde = new Date(primero); desde.setDate(1 - ((primero.getDay() + 6) % 7));
   const dias = [];
   for (let i = 0; i < 42; i++) { const d = new Date(desde); d.setDate(desde.getDate() + i); dias.push(d); }
-  const titulo = calMes.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  const t0 = calMes.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+  const titulo = t0.charAt(0).toUpperCase() + t0.slice(1);   // "Octubre de 2026"
   el.innerHTML = `<div class="cal-top"><button type="button" class="cal-nav" onclick="calNav(-1)" title="Mes anterior">‹</button><b>${e(titulo)}</b><button type="button" class="cal-nav" onclick="calNav(1)" title="Mes siguiente">›</button></div>
     <div class="cal-grid">${['lu', 'ma', 'mi', 'ju', 'vi', 'sá', 'do'].map(d => '<div class="cal-dow">' + d + '</div>').join('')}${dias.map(d => {
       const iso = isoDe(d), n = porFecha[iso] || 0;
