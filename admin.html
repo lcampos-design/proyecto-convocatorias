@@ -142,6 +142,7 @@ textarea.fi{height:64px;resize:vertical}
 .det-meta{font-size:12px;color:#9ca3af;margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .det-stats{display:flex;gap:20px;margin-top:8px;flex-wrap:wrap}
 .dstat{font-size:12px;color:#6b7280}.dstat strong{font-weight:600;color:#111827}
+.dstat-link{cursor:pointer;border-bottom:1px dashed #d1d5db}.dstat-link:hover{color:#111827;border-bottom-color:#111827}
 .puestos-sec{padding:20px 24px}
 .puestos-sec-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
 .puesto-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;padding:10px 14px;display:flex;align-items:center;gap:16px}
@@ -1109,6 +1110,21 @@ tr:hover td{background:#f9f9fb}
   </div>
 </div>
 
+<div class="modal-bg" id="mConfirmaciones" style="display:none" onclick="bgClose('mConfirmaciones',event)">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-title">
+      <span><i class="ic ic-bandeja"></i> Confirmaciones <span id="cfTitulo" style="font-weight:400;color:#6b7280"></span></span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sec btn-xs" onclick="exportConfirmaciones()" title="Baja la lista que estás viendo en Excel">↓ Excel</button>
+        <button class="mclose" onclick="closeM('mConfirmaciones')">✕</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="cfTabs"></div>
+    <div id="cfBody" style="max-height:60vh;overflow-y:auto"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mConfirmaciones')">Cerrar</button></div>
+  </div>
+</div>
+
 <div class="modal-bg" id="mPuesto" style="display:none" onclick="bgClose('mPuesto',event)">
   <div class="modal">
     <div class="modal-title"><span id="mPuestoTitle">Agregar puesto</span><button class="mclose" onclick="closeM('mPuesto')">✕</button></div>
@@ -2066,7 +2082,7 @@ async function loadAll() {
   }));
   posts = (postData || []).map(p => {
     const persona = (people || []).find(x => x.id === p.persona_id);
-    return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, presentes: (p.presentes && typeof p.presentes === 'object') ? p.presentes : {}, cuit: persona?.cuit || p.cuit || null, confirmacion: p.confirmacion || null };
+    return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, presentes: (p.presentes && typeof p.presentes === 'object') ? p.presentes : {}, cuit: persona?.cuit || p.cuit || null, confirmacion: p.confirmacion || null, confirmacion_at: p.confirmacion_at || null };
   });
   feedbacks = fbData || [];
   userProfiles = upData || [];
@@ -3755,6 +3771,64 @@ async function togglePublicada(id) {
 function closeDetail() { document.getElementById('cv-list').style.display = 'block'; document.getElementById('cv-detail').style.display = 'none'; currentConvId = null; renderCvList(); }
 // Los números de arriba. "En revisión" faltaba: una convocatoria con 61
 // personas en revisión decía "Aprobados 0" y parecía vacía.
+// ── Confirmaciones: quién confirmó, quién no viene y quién no contestó ──
+// Se cuenta a los que no están rechazados. "Sin respuesta" son los aprobados
+// (los que recibieron el mail) que todavía no tocaron ningún botón.
+let cfFiltro = 'si';
+function confirmacionesDe(convId) {
+  return posts.filter(p => p.convId === convId && p.estado !== 'rechazado').map(p => ({
+    post: p,
+    grupo: p.confirmacion === 'si' ? 'si' : p.confirmacion === 'no' ? 'no' : (p.estado === 'aprobado' ? 'sin' : 'otros'),
+  }));
+}
+function openConfirmaciones(filtro) {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  cfFiltro = filtro || 'si';
+  document.getElementById('cfTitulo').textContent = '· ' + (c.nombre || '');
+  renderConfirmaciones();
+  showM('mConfirmaciones');
+}
+function renderConfirmaciones() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const todas = confirmacionesDe(c.id);
+  const n = g => todas.filter(x => x.grupo === g).length;
+  const pestanas = [['si', 'Confirmaron', n('si')], ['no', 'No vienen', n('no')], ['sin', 'Sin respuesta', n('sin')], ['todos', 'Todos', todas.length]];
+  document.getElementById('cfTabs').innerHTML = pestanas.map(([k, t, cnt]) =>
+    `<button class="btn btn-xs ${cfFiltro === k ? 'btn-primary' : 'btn-sec'}" onclick="cfFiltro='${k}';renderConfirmaciones()">${t} (${cnt})</button>`).join('');
+  const lista = cfFiltro === 'todos' ? todas : todas.filter(x => x.grupo === cfFiltro);
+  const cont = document.getElementById('cfBody');
+  if (!lista.length) {
+    cont.innerHTML = '<div class="empty">' + ({ si: 'Todavía nadie confirmó.', no: 'Nadie avisó que no viene.', sin: 'Todos los aprobados contestaron.', todos: 'No hay gente convocada.' })[cfFiltro] + '</div>';
+    return;
+  }
+  const etiqueta = { si: '<span class="a-badge" style="background:var(--ok-sv);color:var(--ok)">Confirmó</span>', no: '<span class="a-badge" style="background:var(--alerta-sv);color:var(--alerta)">No viene</span>',
+                     sin: '<span class="a-badge" style="background:var(--espera-sv);color:var(--espera)">Sin respuesta</span>', otros: '<span class="a-badge" style="background:var(--neutro-sv);color:var(--neutro)">Sin mail todavía</span>' };
+  const cuando = x => x.post.confirmacion_at ? new Date(x.post.confirmacion_at).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  // Agrupada por puesto, en el orden de los puestos; dentro, por nombre.
+  const puestos = (c.puestos || []).map(p => ({ id: p.id, nombre: p.nombre })).concat([{ id: null, nombre: 'Sin puesto' }]);
+  cont.innerHTML = puestos.map(pu => {
+    const gente = lista.filter(x => pu.id ? x.post.puestoId === pu.id : !(c.puestos || []).some(p => p.id === x.post.puestoId))
+      .sort((a, b) => String(a.post.nombre || '').localeCompare(String(b.post.nombre || ''), 'es'));
+    if (!gente.length) return '';
+    return `<div class="puestos-sec-title" style="margin:10px 0 6px">${e(pu.nombre)} <span style="font-weight:400;text-transform:none;letter-spacing:0">· ${gente.length}</span></div>
+      <div class="tbl-wrap" style="margin:0 0 8px"><table><tbody>${gente.map(x => {
+        const email = getPersonaEmail(x.post) || '';
+        return `<tr><td style="font-weight:500">${eN(x.post.nombre || '')}</td><td>${etiqueta[x.grupo]}</td><td style="color:#6b7280;font-size:12px">${cuando(x)}</td><td style="color:#6b7280;font-size:12px">${e(email)}</td></tr>`;
+      }).join('')}</tbody></table></div>`;
+  }).join('');
+}
+function exportConfirmaciones() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const todas = confirmacionesDe(c.id);
+  const lista = cfFiltro === 'todos' ? todas : todas.filter(x => x.grupo === cfFiltro);
+  const rotulo = { si: 'Confirmó', no: 'No viene', sin: 'Sin respuesta', otros: 'Sin mail todavía' };
+  const filas = [['nombre', 'puesto', 'respuesta', 'cuándo', 'email', 'estado']].concat(lista.map(x => {
+    const pu = (c.puestos || []).find(p => p.id === x.post.puestoId);
+    return [x.post.nombre || '', pu ? pu.nombre : '', rotulo[x.grupo], x.post.confirmacion_at ? new Date(x.post.confirmacion_at).toLocaleString('es-AR') : '', getPersonaEmail(x.post) || '', x.post.estado || ''];
+  }));
+  descargarExcel(`confirmaciones-${String(c.nombre || '').slice(0, 30).replace(/\s+/g, '-')}-${hoyLocalISO()}.xlsx`, filas, 'Confirmaciones',
+    { titulo: 'Confirmaciones · ' + (c.nombre || ''), subtitulo: ({ si: 'Confirmaron', no: 'No vienen', sin: 'Sin respuesta', todos: 'Todos' })[cfFiltro] + ' · ' + lista.length });
+}
 function renderDetStats() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   const cPosts = posts.filter(p => p.convId === currentConvId);
@@ -3762,6 +3836,7 @@ function renderDetStats() {
   const n = est => cPosts.filter(p => p.estado === est).length;
   const usados = cPosts.filter(p => p.estado !== 'rechazado').length;
   const conf = r => cPosts.filter(p => p.estado !== 'rechazado' && p.confirmacion === r).length;
+  const sinResp = () => cPosts.filter(p => p.estado === 'aprobado' && !p.confirmacion).length;
   document.getElementById('detStats').innerHTML =
     `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span>` +
     `<span class="dstat">Aprobados: <strong style="color:#0f6e56">${n('aprobado')}</strong></span>` +
@@ -3769,8 +3844,9 @@ function renderDetStats() {
     `<span class="dstat">Pendientes: <strong style="color:#854F0B">${n('pendiente')}</strong></span>` +
     (n('rechazado') ? `<span class="dstat">Rechazados: <strong style="color:#991b1b">${n('rechazado')}</strong></span>` : '') +
     // Lo que contestaron desde los botones del mail (CONFIRMO / NO CONFIRMO).
-    `<span class="dstat">Confirmaron: <strong style="color:#065f46">${conf('si')}</strong></span>` +
-    (conf('no') ? `<span class="dstat">No vienen: <strong style="color:#991b1b">${conf('no')}</strong></span>` : '');
+    `<span class="dstat dstat-link" onclick="openConfirmaciones('si')" title="Ver quiénes confirmaron, quiénes no y quiénes no contestaron">Confirmaron: <strong style="color:#065f46">${conf('si')}</strong></span>` +
+    (conf('no') ? `<span class="dstat dstat-link" onclick="openConfirmaciones('no')" title="Ver quiénes avisaron que no vienen">No vienen: <strong style="color:#991b1b">${conf('no')}</strong></span>` : '') +
+    (sinResp() ? `<span class="dstat dstat-link" onclick="openConfirmaciones('sin')" title="Ver quiénes todavía no contestaron el mail">Sin respuesta: <strong>${sinResp()}</strong></span>` : '');
 }
 function renderPuestos() { const c = convs.find(x => x.id === currentConvId); if (!c) { document.getElementById('puestosContainer').innerHTML = ''; return; } if (!(c.puestos || []).length) { document.getElementById('puestosContainer').innerHTML = '<div class="empty">No hay puestos. Agregá el primero.</div>'; return; } document.getElementById('puestosContainer').innerHTML = (c.puestos || []).map(p => puestoCardHTML(p, c)).join(''); }
 // Cada puesto en un renglón: nombre y etiquetas a la izquierda, cupos y avance
