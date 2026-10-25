@@ -759,6 +759,7 @@ tr:hover td{background:#f9f9fb}
       <option value="Otra">Otra (sin reconocer)</option>
       <option value="_sin">Sin localidad cargada</option>
     </select>
+    <input type="text" class="filt" id="nomLocFilter" list="nomLocLista" placeholder="Localidad (ej: Rosario)" oninput="nomFilter()" title="Escribí una localidad: filtra a quienes viven ahí, aunque no tenga zona" style="min-width:150px"><datalist id="nomLocLista"></datalist>
     <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por posición">
       <option value="">Todas las posiciones</option>
       <option value="Supervisor">Supervisores</option>
@@ -2416,6 +2417,18 @@ function verSolicitudesDe(area) {
 function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('#sec-nomina .atab').forEach(t => t.classList.toggle('active', t.dataset.area === a)); nomPage = 1; nomRefresh(); }
 function nomSearch() { nomPage = 1; nomApply(); contarFiltrosNom(); }
 function nomFilter() { nomPage = 1; nomApply(); contarFiltrosNom(); }
+// Texto sin tildes ni mayúsculas, para comparar localidades escritas de cualquier forma.
+function pelarTexto(v) { return String(v == null ? '' : v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
+// Las localidades que hay en la nómina, como sugerencia del campo (una vez por carga).
+let locSugeridasListas = false;
+function llenarLocalidadesSugeridas() {
+  if (locSugeridasListas) return;
+  const dl = document.getElementById('nomLocLista'); if (!dl) return;
+  const vistas = new Map();
+  people.forEach(p => { const k = pelarTexto(p.localidad); if (k && !vistas.has(k)) vistas.set(k, String(p.localidad).trim()); });
+  dl.innerHTML = [...vistas.values()].sort((a, b) => a.localeCompare(b, 'es')).map(l => '<option value="' + e(l) + '">').join('');
+  locSugeridasListas = true;
+}
 function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge(); refreshTagUI(); }
 function nomApply() {
   const q = document.getElementById('nomSrch').value.toLowerCase().trim();
@@ -2426,6 +2439,9 @@ function nomApply() {
   const decF = document.getElementById('nomDecFilter') ? document.getElementById('nomDecFilter').value : '';
   const posF = document.getElementById('nomPosFilter') ? document.getElementById('nomPosFilter').value : '';
   const zonaF = document.getElementById('nomZonaFilter') ? document.getElementById('nomZonaFilter').value : '';
+  // Localidad escrita a mano ("rosario"): sirve para lo que no tiene zona propia.
+  const locF = pelarTexto(document.getElementById('nomLocFilter') ? document.getElementById('nomLocFilter').value : '');
+  if (locF) llenarLocalidadesSugeridas();
   const orden = document.getElementById('nomOrden') ? document.getElementById('nomOrden').value : '';
   nomFiltered = people.filter(p => {
     // Los OUT tienen su propia pestaña: no se mezclan con el resto de la nómina.
@@ -2450,6 +2466,7 @@ function nomApply() {
     if (docFilterOn && !docDudoso(p)) return false;
     if (zonaF === '_sin' && zonaDe(p)) return false;
     if (zonaF && zonaF !== '_sin' && zonaDe(p) !== zonaF) return false;
+    if (locF && !pelarTexto(p.localidad).includes(locF)) return false;
     if (posF === '_sin' && posicionesDe(p).length) return false;
     if (posF && posF !== '_sin' && !posicionesDe(p).includes(posF)) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
@@ -3296,7 +3313,7 @@ function contarFiltrosNom() {
   b.textContent = n; b.style.display = n ? '' : 'none';
 }
 function limpiarFiltrosNom() {
-  ['nomSrch', 'nomStFilter', 'nomSemFilter', 'nomZonaFilter', 'nomPosFilter', 'nomOrden', 'nomDecFilter', 'nomTagFilter', 'nomRotFilter']
+  ['nomSrch', 'nomStFilter', 'nomSemFilter', 'nomZonaFilter', 'nomLocFilter', 'nomPosFilter', 'nomOrden', 'nomDecFilter', 'nomTagFilter', 'nomRotFilter']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   if (docFilterOn) toggleDocFilter();
   if (cvFilterOn) toggleCvFilter();
