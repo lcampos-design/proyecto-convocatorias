@@ -5715,6 +5715,24 @@ function armarZip(archivos) {
 
 // Dos personas pueden llamarse igual: el nombre del archivo lleva el documento,
 // y si aun así se repite se le agrega un número para que no se pise ninguno.
+// ── Elegir cuáles bajar ──
+function ctSelIds() { return [...document.querySelectorAll('.ctcb:checked')].map(c => c.dataset.id); }
+function toggleCtAll() {
+  const todos = document.getElementById('ctSelAll');
+  document.querySelectorAll('.ctcb').forEach(c => { c.checked = !!(todos && todos.checked); });
+  ctSelCambio();
+}
+// El botón dice qué va a bajar: lo seleccionado o todos los firmados a la vista.
+function etiquetaBtnZip() {
+  const n = ctSelIds().length;
+  return n ? '↓ Bajar ' + (n === 1 ? 'el seleccionado' : 'los ' + n + ' seleccionados') : '↓ Bajar los firmados';
+}
+function ctSelCambio() {
+  const btn = document.getElementById('btnCtZip');
+  if (btn && !btn.disabled) btn.textContent = etiquetaBtnZip();
+  const todos = document.getElementById('ctSelAll');
+  if (todos) { const cajas = [...document.querySelectorAll('.ctcb')]; todos.checked = cajas.length > 0 && cajas.every(c => c.checked); }
+}
 function nombresDeArchivo(filas) {
   const usados = {};
   return filas.map(r => {
@@ -5728,11 +5746,15 @@ function nombresDeArchivo(filas) {
 }
 
 async function bajarContratosZip() {
-  const firmados = contratosFiltrados().filter(c => c.estado === 'firmado');
-  if (!firmados.length) { toast('No hay contratos firmados en lo que estás viendo'); return; }
+  const sel = ctSelIds();
+  const base = sel.length ? contratos.filter(c => sel.includes(c.id)) : contratosFiltrados();
+  const firmados = base.filter(c => c.estado === 'firmado');
+  if (!firmados.length) { toast(sel.length ? 'Ninguno de los seleccionados está firmado: no hay PDF para bajar' : 'No hay contratos firmados en lo que estás viendo'); return; }
+  const sinFirmar = base.length - firmados.length;
+  if (sel.length && sinFirmar) toast(sinFirmar + ' de los seleccionados todavía no firmó: queda' + (sinFirmar > 1 ? 'n' : '') + ' afuera');
   if (firmados.length > 150 && !confirm(firmados.length + ' contratos firmados. Puede tardar un rato y es un archivo pesado. ¿Seguir?')) return;
   const btn = document.getElementById('btnCtZip');
-  const volver = () => { if (btn) { btn.disabled = false; btn.textContent = '↓ Bajar los firmados'; } };
+  const volver = () => { if (btn) { btn.disabled = false; btn.textContent = etiquetaBtnZip(); } };
   if (btn) { btn.disabled = true; btn.textContent = 'Buscando...'; }
   try {
     // El PDF firmado pesa, así que se trae de a tandas en vez de todo junto.
@@ -5748,15 +5770,20 @@ async function bajarContratosZip() {
     if (!conPdf.length) { toast('Ninguno tiene el PDF firmado guardado'); volver(); return; }
     if (btn) btn.textContent = 'Armando el archivo...';
     const nombres = nombresDeArchivo(conPdf);
-    const zip = armarZip(conPdf.map((r, i) => ({ nombre: nombres[i], datos: base64ABytes(r.pdf_firmado) })));
-    const url = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'contratos-firmados-' + new Date().toISOString().slice(0, 10) + '.zip';
+    if (conPdf.length === 1) {
+      // Uno solo: el PDF directo, sin ZIP.
+      a.href = URL.createObjectURL(new Blob([base64ABytes(conPdf[0].pdf_firmado)], { type: 'application/pdf' }));
+      a.download = nombres[0];
+    } else {
+      const zip = armarZip(conPdf.map((r, i) => ({ nombre: nombres[i], datos: base64ABytes(r.pdf_firmado) })));
+      a.href = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
+      a.download = 'contratos-firmados-' + new Date().toISOString().slice(0, 10) + '.zip';
+    }
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     const sinPdf = filas.length - conPdf.length;
-    toast('✓ ' + conPdf.length + ' contratos' + (sinPdf ? ' (' + sinPdf + ' sin PDF guardado quedaron afuera)' : ''));
+    toast('✓ ' + conPdf.length + ' contrato' + (conPdf.length === 1 ? '' : 's') + (sinPdf ? ' (' + sinPdf + ' sin PDF guardado quedaron afuera)' : ''));
   } catch (err) {
     toast('Error al armar el archivo: ' + (err.message || err));
   } finally {
@@ -5950,10 +5977,11 @@ function renderContratos() {
   const cont = document.getElementById('ctContent'); if (!cont) return;
   const list = contratosFiltrados();
   if (!list.length) { cont.innerHTML = `<div class="empty">${contratos.length === 0 ? 'Todavía no se generó ningún contrato.' : 'Sin resultados para este filtro.'}</div>`; return; }
-  cont.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>CUIL</th><th>Puesto</th><th>Convocatoria</th><th>Estado</th><th>Creado</th><th></th></tr></thead><tbody>${list.map(c => {
+  cont.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th style="width:36px"><input type="checkbox" class="cb" id="ctSelAll" onchange="toggleCtAll()" title="Seleccionar todos los que se ven"></th><th>Nombre</th><th>CUIL</th><th>Puesto</th><th>Convocatoria</th><th>Estado</th><th>Creado</th><th></th></tr></thead><tbody>${list.map(c => {
     const conv = convs.find(x => x.id === c.conv_id);
     const fecha = c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
     return `<tr>
+      <td><input type="checkbox" class="cb ctcb" data-id="${c.id}" onchange="ctSelCambio()"></td>
       <td>${e(c.nombre || '')}</td>
       <td>${e(c.cuil || '')}</td>
       <td>${e(c.puesto || '')}</td>
@@ -5963,6 +5991,7 @@ function renderContratos() {
       <td><button class="btn btn-sec btn-xs" onclick="verContratoTrace('${c.id}')">Ver</button></td>
     </tr>`;
   }).join('')}</tbody></table></div>`;
+  ctSelCambio();
 }
 
 // El link de firma dura unos días. Un contrato ya firmado no vence: el link
