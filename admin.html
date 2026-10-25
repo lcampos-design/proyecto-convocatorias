@@ -565,77 +565,79 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .nom-mas-menu .btn:hover{background:#f4f4f5}
 
 
-/* ── TEMA GLASS ──────────────────────────────────────────────
-   Superficies traslúcidas con desenfoque sobre un fondo pastel. Los únicos
-   colores son los de las áreas (celeste, violeta, naranja) y los de estado
-   (verde, ámbar, rojo). El violeta de marca desaparece del panel. */
+/* ── ESTILO MAC ──────────────────────────────────────────────
+   Fondo gris muy claro y plano; la cabecera como barra de herramientas
+   traslúcida con una línea fina; tarjetas blancas con borde de un pelo y
+   sombra apenas; esquinas de 12 px; botones como los de macOS. Los únicos
+   colores son los de las áreas (celeste, violeta, naranja) y los de estado. */
 :root{
-  --arena:#1d7fb8;    --arena-sv:#dceffb;    /* celeste pastel  */
-  --externos:#6b4fc8; --externos-sv:#ebe6fb; /* violeta pastel  */
-  --espana:#d8771e;   --espana-sv:#fdeadb;   /* naranja pastel  */
+  --arena:#1d7fb8;    --arena-sv:#dceffb;    /* celeste  */
+  --externos:#6b4fc8; --externos-sv:#ebe6fb; /* violeta  */
+  --espana:#d8771e;   --espana-sv:#fdeadb;   /* naranja  */
   --ambas:#5b6472;    --ambas-sv:#eceff3;
   --r-accent:#18181b;
-  --vidrio:rgba(255,255,255,.58);
-  --vidrio-borde:rgba(255,255,255,.75);
-  --vidrio-sombra:0 8px 28px rgba(0,0,0,.05);
-  --vidrio-blur:blur(16px) saturate(150%);
+  --mac-bg:#f5f5f7;
+  --mac-panel:#ffffff;
+  --mac-linea:rgba(0,0,0,.09);
+  --mac-sombra:0 1px 2px rgba(0,0,0,.04),0 4px 14px rgba(0,0,0,.04);
+  --mac-radio:12px;
 }
-html{background:#f2f2f4}
-body{
-  background:#f2f2f4;
-  background-image:
-    radial-gradient(900px 600px at 10% -10%, rgba(255,255,255,.9), transparent 60%),
-    radial-gradient(900px 700px at 90% 110%, rgba(214,216,222,.55), transparent 60%);
-  background-attachment:fixed;
-}
-/* Vidrio: cabecera, barras, tarjetas, tablas, modales. */
-.app-hdr,.stats-bar,.ctrlbar,.det-hdr,.tbl-wrap,.cv-row,.puesto-card,.d-tarea,.resp,.modal,.stat{
-  background:var(--vidrio);border-color:var(--vidrio-borde);
-  -webkit-backdrop-filter:var(--vidrio-blur);backdrop-filter:var(--vidrio-blur);
-}
-.app-hdr{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.7)}
-.tbl-wrap,.cv-row,.puesto-card,.d-tarea,.resp,.stat{box-shadow:var(--vidrio-sombra)}
-table{background:transparent}
-th{background:rgba(255,255,255,.45)}
-td{background:transparent}
-tr:hover td{background:rgba(255,255,255,.35)}
-.stats-bar,.ctrlbar,.det-hdr{border-bottom:1px solid rgba(255,255,255,.8);box-shadow:0 1px 0 rgba(40,50,80,.05)}
-.stat{background:rgba(255,255,255,.5)}
-/* Modales: vidrio más opaco (hay que leer), fondo desenfocado. */
-.modal-bg{background:rgba(35,38,52,.32);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.modal{background:rgba(255,255,255,.82);border:1px solid var(--vidrio-borde);box-shadow:0 24px 60px rgba(40,50,80,.18)}
-/* Controles. */
-.fi,.srch,select.filt{background:rgba(255,255,255,.72)}
-.srch:focus,select.filt:focus,.fi:focus{border-color:var(--r-ink);box-shadow:0 0 0 3px rgba(24,24,27,.08)}
-.btn-sec{background:rgba(255,255,255,.6);border:1px solid var(--vidrio-borde)}
-.btn-sec:hover{background:rgba(255,255,255,.9)}
-.btn-primary{background:var(--r-ink)}
-.btn{transition:transform .12s,background .15s,box-shadow .15s}
-.btn:hover{transform:translateY(-1px)}
-.btn:active{transform:translateY(0)}
+html,body{background:var(--mac-bg)}
+body{background-image:none}
+/* Barra de herramientas: traslúcida, con línea fina abajo, fija arriba. */
+.app-hdr{position:sticky;top:0;z-index:40;background:rgba(246,246,248,.85);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--mac-linea)}
 .mnav-btn.active{border-bottom-color:var(--r-ink)}
-/* Un poco de vida: las tarjetas se levantan al pasar. */
-.cv-row,.puesto-card,.d-tarea,.resp{transition:transform .15s,box-shadow .15s,border-color .15s}
-.cv-row:hover,.puesto-card:hover,.d-tarea:hover,.resp:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(40,50,80,.11);border-color:rgba(255,255,255,.95)}
+/* Paneles y tarjetas: blanco, borde de un pelo, sombra apenas, 12 px. */
+.stats-bar,.ctrlbar,.det-hdr{background:rgba(255,255,255,.7);border-bottom:1px solid var(--mac-linea)}
+.tbl-wrap,.cv-row,.puesto-card,.d-tarea,.resp,.stat{background:var(--mac-panel);border:1px solid var(--mac-linea);border-radius:var(--mac-radio);box-shadow:var(--mac-sombra)}
+table{background:transparent}
+th{background:#fafafa;border-bottom:1px solid var(--mac-linea)}
+td{background:transparent}
+tr:hover td{background:#f9f9fb}
+/* Modales: como una ventana, con el fondo desenfocado. */
+.modal-bg{background:rgba(0,0,0,.28);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.modal{background:var(--mac-panel);border:1px solid var(--mac-linea);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.18),0 0 0 .5px rgba(0,0,0,.05)}
+/* Controles: campos blancos con borde fino; foco en tinta. */
+.fi,.srch,select.filt{background:#fff;border:1px solid var(--mac-linea);border-radius:8px}
+.srch:focus,select.filt:focus,.fi:focus{border-color:var(--r-ink);box-shadow:0 0 0 3px rgba(24,24,27,.08)}
+.btn{border-radius:8px;transition:background .12s,box-shadow .12s,transform .08s}
+.btn-sec{background:#fff;color:var(--r-ink);border:1px solid var(--mac-linea);box-shadow:0 1px 1px rgba(0,0,0,.04)}
+.btn-sec:hover{background:#f7f7f9}
+.btn-primary{background:var(--r-ink);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.btn-primary:hover{background:#000}
+.btn:active{transform:scale(.98)}
+.cv-row,.puesto-card,.d-tarea,.resp{transition:box-shadow .15s,border-color .15s}
+.cv-row:hover,.puesto-card:hover,.d-tarea:hover,.resp:hover{border-color:rgba(0,0,0,.16);box-shadow:0 1px 2px rgba(0,0,0,.05),0 8px 22px rgba(0,0,0,.07)}
 /* Cada área con su color: la etiqueta, y una línea de color en la tarjeta que la lleva. */
 .a-mv{background:var(--arena-sv);color:var(--arena);border-color:transparent}
 .a-ex{background:var(--externos-sv);color:var(--externos);border-color:transparent}
 .a-es{background:var(--espana-sv);color:var(--espana);border-color:transparent}
 .a-ambas{background:var(--ambas-sv);color:var(--ambas);border-color:transparent}
-.cv-row:has(.a-mv),.puesto-card:has(.a-mv),.d-show:has(.a-mv){box-shadow:inset 4px 0 0 var(--arena),var(--vidrio-sombra)}
-.cv-row:has(.a-ex),.puesto-card:has(.a-ex),.d-show:has(.a-ex){box-shadow:inset 4px 0 0 var(--externos),var(--vidrio-sombra)}
-.cv-row:has(.a-es),.puesto-card:has(.a-es),.d-show:has(.a-es){box-shadow:inset 4px 0 0 var(--espana),var(--vidrio-sombra)}
-.cv-row:has(.a-ambas),.puesto-card:has(.a-ambas){box-shadow:inset 4px 0 0 var(--ambas),var(--vidrio-sombra)}
+.cv-row:has(.a-mv),.puesto-card:has(.a-mv),.d-show:has(.a-mv){box-shadow:inset 4px 0 0 var(--arena),var(--mac-sombra)}
+.cv-row:has(.a-ex),.puesto-card:has(.a-ex),.d-show:has(.a-ex){box-shadow:inset 4px 0 0 var(--externos),var(--mac-sombra)}
+.cv-row:has(.a-es),.puesto-card:has(.a-es),.d-show:has(.a-es){box-shadow:inset 4px 0 0 var(--espana),var(--mac-sombra)}
+.cv-row:has(.a-ambas),.puesto-card:has(.a-ambas){box-shadow:inset 4px 0 0 var(--ambas),var(--mac-sombra)}
 /* El violeta de marca que quedó en estilos sueltos pasa a tinta. */
 [style*="background:#534AB7"]{background:var(--r-ink) !important}
 [style*="color:#534AB7"]{color:var(--r-ink) !important}
-[style*="border-color:#534AB7"],[style*="border:1px solid #534AB7"]{border-color:var(--r-line) !important}
+[style*="border-color:#534AB7"],[style*="border:1px solid #534AB7"]{border-color:var(--mac-linea) !important}
 [style*="accent-color:#534AB7"]{accent-color:var(--r-ink) !important}
 .badge-fromnom{background:var(--neutro-sv);color:var(--neutro)}
-/* Los celestes decorativos sueltos (botones de mail) también quedan neutros:
+/* Los celestes decorativos sueltos (botones de mail) quedan neutros:
    el celeste es de Movistar Arena, no de "enviar". */
-.btn[style*="background:#e0f2fe"]{background:rgba(255,255,255,.6) !important;color:var(--r-ink2) !important;border:1px solid var(--vidrio-borde) !important}
-.btn[style*="background:#dcfce7"],.btn[style*="background:#fee2e2"]{border:1px solid transparent}
+.btn[style*="background:#e0f2fe"]{background:#fff !important;color:var(--r-ink) !important;border:1px solid var(--mac-linea) !important}
+/* "Ver CV" / "Ver datos": un botoncito neutro, no una etiqueta celeste. */
+.cv-tag{background:#fff;color:var(--r-ink2);border:1px solid var(--mac-linea);border-radius:6px;font-size:11px;padding:3px 8px;font-weight:500}
+.cv-tag:hover{background:#f7f7f9;color:var(--r-ink)}
+
+/* Dashboard: los cuadrados por área llevan su color (fondo pastel, número en color). */
+.d-tile{background:#fff;border:1px solid var(--mac-linea);border-radius:12px;padding:18px 20px;flex:1;min-width:150px;box-shadow:var(--mac-sombra);transition:box-shadow .15s}
+.d-tile[onclick]:hover{box-shadow:0 1px 2px rgba(0,0,0,.05),0 8px 22px rgba(0,0,0,.08)}
+.d-tile-n{font-size:30px;font-weight:700;color:var(--r-ink);line-height:1;font-variant-numeric:tabular-nums}
+.d-tile.a-mv,.d-tile.a-ex,.d-tile.a-es{border-color:transparent}
+.d-tile.a-mv .d-tile-n{color:var(--arena)}
+.d-tile.a-ex .d-tile-n{color:var(--externos)}
+.d-tile.a-es .d-tile-n{color:var(--espana)}
 
 </style>
 </head>
@@ -2285,7 +2287,7 @@ function renderDashboard() {
     </div>`;
   };
 
-  const tile = (n, lbl, sub, area) => `<div ${area ? `onclick="verSolicitudesDe('${area}')" title="Ver estas inscripciones" style="cursor:pointer;` : 'style="'}background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;flex:1;min-width:150px"><div style="font-size:30px;font-weight:700;color:#18181b;line-height:1">${Number(n).toLocaleString('es-AR')}</div><div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500">${lbl}</div>${sub ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px">${sub}</div>` : ''}</div>`;
+  const tile = (n, lbl, sub, area) => `<div class="d-tile${area ? ' ' + areaClase(area) : ''}" ${area ? `onclick="verSolicitudesDe('${area}')" title="Ver estas inscripciones" style="cursor:pointer"` : ''}><div class="d-tile-n">${Number(n).toLocaleString('es-AR')}</div><div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500">${lbl}</div>${sub ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px">${sub}</div>` : ''}</div>`;
   // Cuántas de cada área están esperando aprobación: explica por qué un área
   // puede tener inscripciones acá y todavía nadie en la Nómina.
   const sinAprobar = a => sols.filter(s => s.area === a && s.estado === 'pendiente').length;
@@ -2523,7 +2525,7 @@ function renderNomTable() {
   ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_nota||p.out_categoria||'')}"><i class="ic ic-prohibido"></i> ${nomAreaTab === 'out' && p.out_categoria ? e(frase(p.out_categoria)) : 'OUT'}</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
-  ${(p.cv || solicitudDe(p)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv ? 'CV' : 'Ficha'}</button>` : ''}
+  ${(p.cv || solicitudDe(p)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv ? 'Ver CV' : 'Ver datos'}</button>` : ''}
   ${(posicionesDe(p).length || zonaDe(p)) ? `<div class="pos-chips">${zonaDe(p) ? `<span class="zona-chip" title="Sale de la localidad que cargó al inscribirse">${e(zonaDe(p))}</span>` : ''}${posicionesDe(p).map(x => `<span class="pos-chip">${e(x)}</span>`).join('')}${(() => { const pr = promedioDe(p.id); return pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">${pr.toFixed(2)}</span>` : ''; })()}</div>` : ''}
   ${(() => { const d = dondeEsta(p); return d.length ? `<div class="pos-chips">${d.slice(0, 3).map(x => `<span class="conv-chip" title="${e(x.fechas.map(f => fechaDMA ? fechaDMA(f) : f).join(', '))}${x.puesto ? ' · ' + e(x.puesto) : ''}" onclick="event.stopPropagation();goSec('convs');openDetail('${x.convId}')"><i class="ic ic-calendario"></i> ${e(x.conv)} · ${e(fechaDMA ? fechaDMA(x.fecha) : x.fecha)}</span>`).join('')}${d.length > 3 ? `<span class="conv-chip" style="opacity:.7">+${d.length - 3}</span>` : ''}</div>` : ''; })()}
   ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
