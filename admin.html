@@ -673,12 +673,12 @@ tr:hover td{background:#f9f9fb}
   <nav class="main-nav">
     <button class="mnav-btn" data-s="dashboard" onclick="goSec('dashboard')">Dashboard</button>
     <button class="mnav-btn active" data-s="nomina" onclick="goSec('nomina')">Nómina</button>
+    <button class="mnav-btn" data-s="solicitudes" onclick="goSec('solicitudes')">Postulantes <span id="solNavBadge" style="background:#dc2626;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
     <button class="mnav-btn" data-s="convs" onclick="goSec('convs')">Convocatorias</button>
-    <button class="mnav-btn" data-s="candidatos" onclick="goSec('candidatos')">Candidatos <span id="candNavBadge" style="background:#1d4ed8;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
-    <button class="mnav-btn" data-s="solicitudes" onclick="goSec('solicitudes')">Solicitudes <span id="solNavBadge" style="background:#dc2626;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
-    <button class="mnav-btn" data-s="respuestas" onclick="goSec('respuestas')">Respuestas <span id="respNavBadge" style="background:#0369a1;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
     <button class="mnav-btn" data-s="contratos" onclick="goSec('contratos')">Contratos</button>
     <button class="mnav-btn" data-s="supervisores" id="navSupervisores" onclick="goSec('supervisores')" style="display:none">Supervisores</button>
+    <button class="mnav-btn" style="display:none" data-s="candidatos" onclick="goSec('candidatos')">Candidatos <span id="candNavBadge" style="background:#1d4ed8;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
+    <button class="mnav-btn" style="display:none" data-s="respuestas" onclick="goSec('respuestas')">Respuestas <span id="respNavBadge" style="background:#0369a1;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
   </nav>
   <div class="hdr-actions">
     <span id="saveStatus" style="font-size:11px;padding:3px 8px;border-radius:4px;display:none;margin-right:4px"></span>
@@ -733,7 +733,9 @@ tr:hover td{background:#f9f9fb}
       <option value="Noroeste">Zona Noroeste</option>
       <option value="Oeste">Zona Oeste</option>
       <option value="Sur">Zona Sur</option>
-      <option value="Otra">Otra</option>
+      <option value="La Plata">La Plata</option>
+      <option value="Lejos">Lejos (interior / otras provincias)</option>
+      <option value="Otra">Otra (sin reconocer)</option>
       <option value="_sin">Sin localidad cargada</option>
     </select>
     <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por posición">
@@ -2298,10 +2300,8 @@ function renderDashboard() {
     <div class="d-tit">Para resolver</div>
     <div class="d-sub">Lo que está esperando que alguien lo mire. Tocá cualquiera para ir ahí.</div>
     <div class="d-tareas">
-      ${tarea(solPend,  'Inscripciones sin aprobar', 'Esperando en Solicitudes', "goSec('solicitudes')")}
-      ${tarea(cvPend,   'CV sin revisar',            'Esperando en Candidatos',  "goSec('candidatos')")}
+      ${tarea(solPend,  'Inscripciones sin aprobar', 'Esperando en Postulantes', "goSec('solicitudes')")}
       ${tarea(ctPend,   'Contratos sin firmar',      'Enviados o sin enviar',    "goSec('contratos')")}
-      ${tarea(respPend, 'Respuestas sin leer',       'Mails que contestaron',    "goSec('respuestas')")}
       ${tarea(outs,     'Personas en OUT',           'Apartadas de la nómina',   "goSec('nomina');setNomTab('out')")}
       ${tarea(sinLista.length, sinLista.length === 1 ? 'Show hoy sin pasar lista' : 'Shows hoy sin pasar lista', 'Nadie marcó presentes todavía', irALista)}
     </div>
@@ -2313,7 +2313,7 @@ function renderDashboard() {
     </div>
 
     <div class="d-tit" style="margin-top:26px">Inscripciones recibidas</div>
-    <div class="d-sub">Lo que llegó por el formulario público. Pasan a la Nómina recién cuando se aprueban en Solicitudes.</div>
+    <div class="d-sub">Lo que llegó por el formulario público. Pasan a la Nómina recién cuando se aprueban en Postulantes.</div>
     <div style="display:flex;gap:14px;flex-wrap:wrap">
       ${tile(unicas, 'Personas inscriptas', 'CUIL/CUIT únicos')}
       ${tile(total, 'Inscripciones totales', 'incluye repetidos entre áreas')}
@@ -2900,9 +2900,24 @@ const ZONA_POR_LOCALIDAD = {
   'virreyes': 'Norte',
   'wilde': 'Sur',
   'william morris': 'Oeste',
-  'zarate': 'Norte'
+  'zarate': 'Norte',
+  // Gran La Plata: lejos, pero se convoca.
+  'la plata': 'La Plata', 'berisso': 'La Plata', 'ensenada': 'La Plata', 'city bell': 'La Plata', 'gonnet': 'La Plata',
+  'manuel b gonnet': 'La Plata', 'tolosa': 'La Plata', 'villa elisa': 'La Plata', 'los hornos': 'La Plata', 'ringuelet': 'La Plata',
+  'san carlos': 'La Plata', 'abasto': 'La Plata', 'melchor romero': 'La Plata', 'lisandro olmos': 'La Plata', 'olmos': 'La Plata',
+  'altos de san lorenzo': 'La Plata', 'villa elvira': 'La Plata', 'arturo segui': 'La Plata', 'joaquin gorina': 'La Plata', 'gorina': 'La Plata',
+  // Interior de Buenos Aires y capitales de otras provincias: lejos.
+  'mar del plata': 'Lejos', 'bahia blanca': 'Lejos', 'tandil': 'Lejos', 'olavarria': 'Lejos', 'azul': 'Lejos', 'junin': 'Lejos',
+  'pergamino': 'Lejos', 'chivilcoy': 'Lejos', 'necochea': 'Lejos', 'pinamar': 'Lejos', 'villa gesell': 'Lejos', 'san nicolas': 'Lejos',
+  'san nicolas de los arroyos': 'Lejos', 'chascomus': 'Lejos', 'dolores': 'Lejos', 'tres arroyos': 'Lejos', 'nueve de julio': 'Lejos',
+  'rosario': 'Lejos', 'cordoba': 'Lejos', 'mendoza': 'Lejos', 'santa fe': 'Lejos', 'tucuman': 'Lejos', 'san miguel de tucuman': 'Lejos',
+  'salta': 'Lejos', 'neuquen': 'Lejos', 'parana': 'Lejos', 'corrientes': 'Lejos', 'posadas': 'Lejos', 'san juan': 'Lejos',
+  'san luis': 'Lejos', 'jujuy': 'Lejos', 'san salvador de jujuy': 'Lejos', 'resistencia': 'Lejos', 'formosa': 'Lejos',
+  'rio cuarto': 'Lejos', 'villa maria': 'Lejos', 'santa rosa': 'Lejos', 'rio gallegos': 'Lejos', 'ushuaia': 'Lejos',
+  'comodoro rivadavia': 'Lejos', 'trelew': 'Lejos', 'puerto madryn': 'Lejos', 'bariloche': 'Lejos', 'san carlos de bariloche': 'Lejos',
+  'la rioja': 'Lejos', 'catamarca': 'Lejos', 'santiago del estero': 'Lejos', 'rafaela': 'Lejos', 'concordia': 'Lejos', 'gualeguaychu': 'Lejos'
 };
-const ZONAS = ['CABA', 'Norte', 'Noroeste', 'Oeste', 'Sur', 'Otra'];
+const ZONAS = ['CABA', 'Norte', 'Noroeste', 'Oeste', 'Sur', 'La Plata', 'Lejos', 'Otra'];
 function zonaDeLocalidad(v) {
   const k = localidadCanonica(v);
   if (!k) return '';
@@ -2914,6 +2929,8 @@ function zonaDeLocalidad(v) {
     const p = localidadCanonica(partes[i]);
     if (p && ZONA_POR_LOCALIDAD[p]) return ZONA_POR_LOCALIDAD[p];
   }
+  const pelado = String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (new RegExp('(^|[^a-z])(' + LOC_PROVINCIAS + ')([^a-z]|$)').test(pelado)) return 'Lejos';
   return 'Otra';
 }
 
@@ -6487,7 +6504,7 @@ async function bulkSolSt(estado) {
   if (estado === 'aprobado' && !confirm(`¿Aprobar ${solSelIds.size} solicitudes y pasarlas a la nómina?`)) return;
   if (estado === 'rechazado' && !confirm(`¿Rechazar y ELIMINAR ${solSelIds.size} solicitudes? Las personas van a poder registrarse de nuevo.`)) return;
   for (const id of [...solSelIds]) await singleSolSt(id, estado);
-  solSelIds.clear(); updateSolBulkBar(); toast(`${solSelIds.size || 'Solicitudes'} actualizadas`);
+  solSelIds.clear(); updateSolBulkBar(); toast(`${solSelIds.size || 'Postulantes'} actualizados`);
 }
 
 // ── REPORTE DE CONVOCATORIA ──
