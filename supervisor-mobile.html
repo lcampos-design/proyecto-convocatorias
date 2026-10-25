@@ -485,7 +485,7 @@ function renderLista() {
       <div class="person-avatar" style="background:#f4f4f5;color:#52525b">${esc(initials)}</div>
       <div style="flex:1;min-width:0">
         <div class="person-name">${esc(x.nombre)}</div>
-        <div class="person-meta">${esc(x.puesto || 'Sin sector')}${x.estado !== 'aprobado' ? ' · sin aprobar' : ''}</div>
+        <div class="person-meta">${esc(x.puesto || 'Sin sector')}${x.estado === 'aprobado' || x.estado === 'confirmado' ? '' : ' · sin aprobar'}</div>
       </div>
       <div class="pl-acts">
         <button class="pl-btn pl-p${m === 'presente' ? ' on' : ''}" onclick="marcar('${x.post_id}','presente')">Vino</button>

@@ -376,7 +376,7 @@ tr:hover td{background:#fafafa}
 .st-sel.pendiente,.ssp.pendiente,.cand-st-sel.pendiente{background:var(--espera-sv);color:var(--espera);border-color:color-mix(in srgb,var(--espera) 20%,transparent)}
 .st-sel.contactado,.cand-st-sel.contactado{background:var(--arena-sv);color:var(--arena);border-color:color-mix(in srgb,var(--arena) 20%,transparent)}
 .ssp.en_revision{background:var(--arena-sv);color:var(--arena);border-color:color-mix(in srgb,var(--arena) 20%,transparent)}
-.st-sel.confirmado,.ssp.aprobado,.cand-st-sel.confirmado{background:var(--ok-sv);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 20%,transparent)}
+.st-sel.confirmado,.ssp.aprobado,.ssp.confirmado,.cand-st-sel.confirmado{background:var(--ok-sv);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 20%,transparent)}
 .st-sel.no_asiste,.ssp.rechazado,.cand-st-sel.no_asiste{background:var(--alerta-sv);color:var(--alerta);border-color:color-mix(in srgb,var(--alerta) 20%,transparent)}
 
 /* ── Botones con ícono ────────────────────────────────────── */
@@ -1158,7 +1158,7 @@ tr:hover td{background:#f9f9fb}
       <input type="text" class="srch" id="gSrch" placeholder="Buscar..." oninput="renderGestList()" style="flex:1;min-width:140px">
       <select class="filt" id="gStFilter" onchange="renderGestList()" style="font-size:12px;padding:5px 8px">
         <option value="">Todos</option><option value="pendiente">Pendiente</option><option value="en_revision">En revisión</option>
-        <option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option>
+        <option value="aprobado">Aprobado</option><option value="confirmado">Confirmado</option><option value="rechazado">Rechazado</option>
       </select>
       <select class="filt" id="gOutFilter" onchange="renderGestList()" title="Filtrar por OUT" style="font-size:12px;padding:5px 8px"><option value="">Todos</option><option value="out">Solo OUTS</option><option value="no_out">Sin OUTS</option></select>
       <button class="btn btn-primary btn-sm" onclick="openPickerModal()">+ Agregar desde nómina</button>
@@ -1174,7 +1174,7 @@ tr:hover td{background:#f9f9fb}
       <span id="gBulkCnt" style="font-size:13px;color:#5b21b6"></span>
       <select class="filt" id="gBulkSt" style="font-size:12px;padding:4px 8px">
         <option value="">Cambiar estado...</option><option value="pendiente">Pendiente</option>
-        <option value="en_revision">En revisión</option><option value="aprobado">Aprobado</option><option value="rechazado">Rechazado</option>
+        <option value="en_revision">En revisión</option><option value="aprobado">Aprobado</option><option value="confirmado">Confirmado</option><option value="rechazado">Rechazado</option>
       </select>
       <button class="btn btn-sm btn-primary" onclick="applyGestBulk()">Aplicar</button>
       <button class="btn btn-sm" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd" onclick="openBulkMail()"><i class="ic ic-sobre"></i> Enviar confirmación</button>
@@ -2268,7 +2268,7 @@ function renderDashboard() {
     if (c.archivada) return false;
     const turnosHoy = slotsDe(c).filter(t => t.fecha === hoyISO);
     if (!turnosHoy.length) return false;
-    const aprobados = (posts || []).filter(p => p.convId === c.id && p.estado === 'aprobado');
+    const aprobados = (posts || []).filter(p => p.convId === c.id && esAprobado(p));
     if (!aprobados.length) return false;   // sin gente convocada no hay lista que pasar
     return !turnosHoy.some(t => aprobados.some(p => presentesDe(p)[t.id]));
   });
@@ -3771,6 +3771,9 @@ async function togglePublicada(id) {
 function closeDetail() { document.getElementById('cv-list').style.display = 'block'; document.getElementById('cv-detail').style.display = 'none'; currentConvId = null; renderCvList(); }
 // Los números de arriba. "En revisión" faltaba: una convocatoria con 61
 // personas en revisión decía "Aprobados 0" y parecía vacía.
+// Aprobado o confirmado: los dos son gente que va al show. "Confirmado" es el
+// aprobado que tocó CONFIRMO en el mail; lo pone la base, no el panel.
+function esAprobado(p) { return !!p && (p.estado === 'aprobado' || p.estado === 'confirmado'); }
 // ── Confirmaciones: quién confirmó, quién no viene y quién no contestó ──
 // Se cuenta a los que no están rechazados. "Sin respuesta" son los aprobados
 // (los que recibieron el mail) que todavía no tocaron ningún botón.
@@ -3778,7 +3781,7 @@ let cfFiltro = 'si';
 function confirmacionesDe(convId) {
   return posts.filter(p => p.convId === convId && p.estado !== 'rechazado').map(p => ({
     post: p,
-    grupo: p.confirmacion === 'si' ? 'si' : p.confirmacion === 'no' ? 'no' : (p.estado === 'aprobado' ? 'sin' : 'otros'),
+    grupo: p.confirmacion === 'si' ? 'si' : p.confirmacion === 'no' ? 'no' : (esAprobado(p) ? 'sin' : 'otros'),
   }));
 }
 function openConfirmaciones(filtro) {
@@ -3836,10 +3839,10 @@ function renderDetStats() {
   const n = est => cPosts.filter(p => p.estado === est).length;
   const usados = cPosts.filter(p => p.estado !== 'rechazado').length;
   const conf = r => cPosts.filter(p => p.estado !== 'rechazado' && p.confirmacion === r).length;
-  const sinResp = () => cPosts.filter(p => p.estado === 'aprobado' && !p.confirmacion).length;
+  const sinResp = () => cPosts.filter(p => esAprobado(p) && !p.confirmacion).length;
   document.getElementById('detStats').innerHTML =
     `<span class="dstat">Cupos: <strong>${usados}/${totalCupos}</strong></span>` +
-    `<span class="dstat">Aprobados: <strong style="color:#0f6e56">${n('aprobado')}</strong></span>` +
+    `<span class="dstat" title="Aprobados, con los que ya confirmaron">Aprobados: <strong style="color:#0f6e56">${n('aprobado') + n('confirmado')}</strong></span>` +
     `<span class="dstat">En revisión: <strong style="color:#1e40af">${n('en_revision')}</strong></span>` +
     `<span class="dstat">Pendientes: <strong style="color:#854F0B">${n('pendiente')}</strong></span>` +
     (n('rechazado') ? `<span class="dstat">Rechazados: <strong style="color:#991b1b">${n('rechazado')}</strong></span>` : '') +
@@ -4039,7 +4042,7 @@ function renderGestList() {
     const asistBadge = !marcas.length
       ? `<span style="background:#f3f4f6;color:#9ca3af;border-radius:4px;font-size:11px;padding:2px 8px" title="Todavía no se pasó lista">—</span>`
       : `<span style="background:${vino ? '#d1fae5' : '#fee2e2'};color:${vino ? '#065f46' : '#991b1b'};border-radius:4px;font-size:11px;padding:2px 8px;font-weight:600" title="${vino} presente(s)${falto ? ', ' + falto + ' falta(s)' : ''} de ${totalTurnos} turno(s)">${vino}/${totalTurnos}</span>`;
-    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${eN(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}${x.confirmacion === 'si' ? ` <span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600"><i class="ic ic-tilde-circ"></i> Confirmó</span>` : x.confirmacion === 'no' ? ` <span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✕ No viene</span>` : ''}</td><td><select class="ssp ${rotulo(x.estado)}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación"><i class="ic ic-sobre"></i></button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
+    return `<tr><td><input type="checkbox" class="cb gcb" data-id="${x.id}" onchange="checkGestBulk()"></td><td class="cn">${eN(x.nombre)}${pers?.out_flag ? ` <button class="out-badge" onclick="openOutModal('${pers.id}')" title="${e(pers.out_categoria || '')}"><i class="ic ic-prohibido"></i> OUT</button>` : ''}${x.confirmacion === 'si' ? ` <span style="background:#d1fae5;color:#065f46;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600"><i class="ic ic-tilde-circ"></i> Confirmó</span>` : x.confirmacion === 'no' ? ` <span style="background:#fee2e2;color:#991b1b;border-radius:4px;font-size:10px;padding:2px 6px;font-weight:600">✕ No viene</span>` : ''}</td><td><select class="ssp ${rotulo(x.estado)}" data-id="${x.id}" onchange="changePostSt('${x.id}',this)"><option value="pendiente" ${x.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option><option value="en_revision" ${x.estado === 'en_revision' ? 'selected' : ''}>En revisión</option><option value="aprobado" ${x.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option><option value="confirmado" ${x.estado === 'confirmado' ? 'selected' : ''}>Confirmado</option><option value="rechazado" ${x.estado === 'rechazado' ? 'selected' : ''}>${x.confirmacion === 'no' ? 'No viene' : 'Rechazado'}</option></select></td><td>${x.personaId ? '<span class="badge-fromnom">Nómina</span>' : '<span style="font-size:11px;color:#9ca3af">Externo</span>'}</td><td>${asistBadge}</td><td class="cm" title="${e(x.notas || '')}">${e(x.notas || '')}</td><td style="white-space:nowrap">${getPersonaEmail(x) ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="openMailModalFromPost('${x.id}')" title="Enviar confirmación"><i class="ic ic-sobre"></i></button> ` : ''}<button class="btn btn-danger btn-xs" onclick="delPost('${x.id}')">✕</button></td></tr>`;
   }).join('');
 }
 
@@ -4096,7 +4099,7 @@ function renderLista() {
   const pres = todos.filter(x => presentesDe(x)[listaSlotId] === 'presente').length;
   const aus = todos.filter(x => presentesDe(x)[listaSlotId] === 'ausente').length;
   const sin = todos.length - pres - aus;
-  const sinAprobar = todos.filter(x => x.estado !== 'aprobado').length;
+  const sinAprobar = todos.filter(x => !esAprobado(x)).length;
   document.getElementById('listaResumen').innerHTML =
     `<span>Convocados <strong>${todos.length}</strong></span>
      <span class="lr-p">Presentes <strong>${pres}</strong></span>
@@ -5142,7 +5145,7 @@ let bmModoConv = false;
 function openBulkMailConv() {
   const conv = convs.find(c => c.id === currentConvId); if (!conv) return;
   if (!conv.contratos_habilitados) { toast('Primero habilitá los contratos en esta convocatoria (editar → "Contratos habilitados")'); return; }
-  const aprobados = posts.filter(x => x.convId === conv.id && x.estado === 'aprobado');
+  const aprobados = posts.filter(x => x.convId === conv.id && esAprobado(x));
   if (!aprobados.length) { toast('No hay aprobados en esta convocatoria'); return; }
   const yaTienen = aprobados.filter(tieneContrato);
   const pendientes = aprobados.filter(x => !tieneContrato(x));
@@ -6413,7 +6416,7 @@ function renderSolicitudes() {
   <th style="padding:9px 14px;font-size:10px;font-weight:600;text-transform:uppercase;color:#9ca3af;background:#fafafa;border-bottom:1px solid #e5e7eb;width:140px">Acciones</th>
 </tr></thead>
 <tbody>${pageRows.map(s => {
-  const stColors = { pendiente:'#fef3c7;color:#92400e', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
+  const stColors = { pendiente:'#fef3c7;color:#92400e', aprobado:'#d1fae5;color:#065f46', confirmado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
   const stLabels = { pendiente:'Pendiente', aprobado:'Aprobada', rechazado:'Rechazada' };
   const sel = solSelIds.has(s.id);
   return `<tr style="border-bottom:1px solid #f3f4f6;background:${sel?'#f0eeff':''}">
@@ -6601,7 +6604,7 @@ function openReporte() {
   const cPosts = posts.filter(p => p.convId === c.id);
   const totalCupos = (c.puestos||[]).reduce((s,p) => s+p.cupos, 0);
   const usados = cPosts.filter(p => p.estado !== 'rechazado').length;
-  const aprobados = cPosts.filter(p => p.estado === 'aprobado').length;
+  const aprobados = cPosts.filter(esAprobado).length;
   const pct = totalCupos > 0 ? Math.round(usados/totalCupos*100) : 0;
   let html = `<div style="background:#f9fafb;border-radius:8px;padding:14px 16px;margin-bottom:16px">
     <div style="display:flex;gap:20px;flex-wrap:wrap">
@@ -6620,7 +6623,7 @@ function openReporte() {
       pp.forEach(post => {
         const pers = people.find(x => x.id === post.personaId);
         const sem = pers?.semaforo || 1;
-        const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
+        const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', confirmado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
         html += `<tr style="border-bottom:1px solid #f9fafb"><td style="padding:6px 10px;font-weight:500">${eN(post.nombre)}${pers?.out_flag?'<span class="out-badge" style="margin-left:4px;cursor:default"><i class="ic ic-prohibido"></i> OUT</span>':''}</td><td style="padding:6px 10px"><span class="a-badge ${areaClase(pers?.area)}" style="font-size:10px">${areaMini(pers?.area)}</span></td><td style="padding:6px 10px"><span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${rotulo(post.estado)}</span></td><td style="padding:6px 10px"><span class="sem sem-${sem}" style="cursor:default">${sem}</span></td></tr>`;
       });
       html += '</tbody></table>';
@@ -6652,8 +6655,8 @@ function exportPostuladosExcel() {
   const cabeceras = [];
   let hay = false;
   (c.puestos || []).forEach(p => {
-    const ordenEstado = { aprobado: 0, en_revision: 1, pendiente: 2, rechazado: 3 };
-    const estadoLabel = { pendiente: 'Pendiente', en_revision: 'En revisión', aprobado: 'Aprobado', rechazado: 'Rechazado' };
+    const ordenEstado = { confirmado: 0, aprobado: 1, en_revision: 2, pendiente: 3, rechazado: 4 };
+    const estadoLabel = { pendiente: 'Pendiente', en_revision: 'En revisión', aprobado: 'Aprobado', confirmado: 'Confirmado', rechazado: 'Rechazado' };
     const asignados = posts.filter(x => x.convId === c.id && x.puestoId === p.id)
       .sort((a, b) => ((ordenEstado[a.estado] ?? 9) - (ordenEstado[b.estado] ?? 9))
                    || splitNombre(a.nombre).apellido.localeCompare(splitNombre(b.nombre).apellido, 'es'));
@@ -6672,7 +6675,7 @@ function exportPostuladosExcel() {
       const tel = pers?.tel || sol?.tel || '';
       const email = pers?.email || sol?.email || '';
       const obs = post.notas || pers?.notas || '';
-      aoa.push([i + 1, nm.apellido, nm.nombre, estadoLabel[post.estado] || post.estado || '', cuil9, cuil, dni, tel, email, '', ...slots.map(sl => marcaDe(post, sl)), obs, '', '', '', '']);
+      aoa.push([i + 1, nm.apellido, nm.nombre, (post.estado === 'rechazado' && post.confirmacion === 'no') ? 'No viene' : (estadoLabel[post.estado] || post.estado || ''), cuil9, cuil, dni, tel, email, '', ...slots.map(sl => marcaDe(post, sl)), obs, '', '', '', '']);
     });
     aoa.push([]); // separación entre sectores
   });
@@ -6891,7 +6894,7 @@ function openHistorial(personaId) {
   const grouped = {};
   myPosts.forEach(post => { if (!grouped[post.convId]) grouped[post.convId] = []; grouped[post.convId].push(post); });
   const sorted = Object.entries(grouped).map(([cid, pp]) => ({ conv: convs.find(c => c.id === cid), posts: pp })).sort((a, b) => (b.conv?.fecha||'').localeCompare(a.conv?.fecha||''));
-  const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
+  const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', confirmado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
   const asistBadge = a => a === 'ausente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b">✗ Ausente</span>` : a === 'presente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#d1fae5;color:#065f46">✓ Presente</span>` : '';
   const penalBanner = aus.penalizado ? `<div style="background:#fff7f7;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#991b1b"><i class="ic ic-prohibido"></i> <strong>Penalizado por ausencia</strong> — no reconvocar hasta el ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} (${aus.ausencias} ausencia/s).</div>` : '';
   document.getElementById('mHistBody').innerHTML = penalBanner + sorted.map(({ conv, posts: pp }) => `
