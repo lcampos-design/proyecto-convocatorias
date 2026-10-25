@@ -3385,8 +3385,17 @@ function nombreDeHoja(nombre, usados) {
   if (usados[n]) n = (n.slice(0, 28) + ' ' + (++usados[n])).slice(0, 31); else usados[n] = 1;
   return n;
 }
+// Un número corto (cuentas, totales, el #) va como número; uno largo (CUIL,
+// teléfono, CBU) va como texto, que es lo que evita la notación científica
+// y los ceros comidos.
+function valorCelda(v) {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'number' && Number.isFinite(v) && String(Math.trunc(Math.abs(v))).length <= 6) return v;
+  return String(v);
+}
 function armarHoja(libro, h, nombre, idLogo) {
-  const texto = h.filas.map(f => (f || []).map(v => (v === null || v === undefined) ? '' : String(v)));
+  const filas = h.filas.map(f => (f || []).map(valorCelda));
+  const texto = filas.map(f => f.map(v => String(v)));
   const ancho = Math.max(...texto.map(f => f.length));
   const hoja = libro.addWorksheet(nombre, { views: [{ showGridLines: false }] });
   const fuente = extra => Object.assign({ name: EXCEL_FUENTE, size: 10, color: { argb: 'FF000000' } }, extra || {});
@@ -3403,18 +3412,20 @@ function armarHoja(libro, h, nombre, idLogo) {
   // Los datos.
   const cabeceras = new Set(h.cabeceras || [0]);
   const negritas = new Set(h.negritas || []);
-  texto.forEach((f, i) => {
+  filas.forEach((f, i) => {
     const fila = hoja.getRow(EXCEL_ARRIBA + 1 + i);
     const vacia = !f.some(v => v !== '');
     if (vacia) { fila.height = 8; return; }
     const esCab = cabeceras.has(i);
-    for (let j = 0; j < ancho; j++) {
+    // Hasta donde llega la fila: una cabecera de cuatro columnas no sigue en
+    // negro hasta la última columna de la hoja.
+    for (let j = 0; j < f.length; j++) {
       const c = fila.getCell(j + 1);
-      c.value = f[j] === undefined ? '' : f[j];
+      c.value = f[j];
       if (esCab) {
         c.font = fuente({ bold: true, color: { argb: 'FFFFFFFF' } });
         c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + EXCEL_NEGRO } };
-        c.alignment = { vertical: 'middle', wrapText: true };
+        c.alignment = { vertical: 'middle' };
       } else {
         c.font = fuente({ bold: negritas.has(i) });
         c.alignment = { vertical: 'middle' };
@@ -3424,9 +3435,11 @@ function armarHoja(libro, h, nombre, idLogo) {
     fila.height = esCab ? 22 : 18;
   });
 
-  // Anchos: los que diga la hoja o los del contenido.
+  // Anchos: los que diga la hoja o los del contenido. La cabecera va en
+  // negrita (cuenta un poco más) y el rótulo de la planilla no cuenta.
+  const largo = (f, i, esCab) => esCab ? (f[i] || '').length + 4 : (f[i] || '').length + 2;
   hoja.columns = Array.from({ length: ancho }, (_, i) =>
-    ({ width: (h.anchos && h.anchos[i]) || Math.min(44, Math.max(10, ...texto.map(f => (f[i] || '').length + 2))) }));
+    ({ width: (h.anchos && h.anchos[i]) || Math.min(44, Math.max(12, ...texto.map((f, k) => negritas.has(k) ? 0 : largo(f, i, cabeceras.has(k))))) }));
 
   // La primera cabecera queda fija al bajar y con filtro, si es la primera fila
   // (en las planillas por sector hay varias y ahí no tiene sentido).
