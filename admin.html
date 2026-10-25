@@ -892,7 +892,6 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <option value="pendiente">Pendiente</option><option value="enviado">Enviado</option>
       <option value="visto">Visto</option><option value="firmado">Firmado</option>
     </select>
-    <button class="btn btn-sec btn-sm" onclick="openPlantilla()"><i class="ic ic-doc"></i> Modelo de contrato</button>
     <button class="btn btn-sec btn-sm" id="btnCtZip" onclick="bajarContratosZip()" title="Baja en un solo archivo los contratos firmados que estás viendo">↓ Bajar los firmados</button>
   </div>
   <div style="padding:20px 24px" id="ctContent"><div class="empty">Cargando...</div></div>
@@ -5548,7 +5547,7 @@ async function crearContrato(datos, convId, personaId, email, postulacionId, pue
   const conv = convs.find(c => c.id === convId);
   const texto = buildTextoContrato(datos, conv && conv.area);
   if (!texto.trim()) {
-    toast('Falta cargar el modelo de contrato de España. Está en Contratos → Modelo de contrato.');
+    toast('Falta cargar el modelo de contrato de España (el texto legal de allá todavía no está).');
     throw new Error('sin plantilla');
   }
   const row = {
