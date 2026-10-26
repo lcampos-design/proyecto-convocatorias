@@ -759,7 +759,7 @@ tr:hover td{background:#f9f9fb}
       <option value="Otra">Otra (sin reconocer)</option>
       <option value="_sin">Sin localidad cargada</option>
     </select>
-    <input type="text" class="filt" id="nomLocFilter" list="nomLocLista" placeholder="Localidad: Rosario, Banfield…" oninput="nomFilter()" title="Escribí una localidad: filtra a quienes viven ahí, aunque no tenga zona" style="min-width:210px"><datalist id="nomLocLista"></datalist>
+    <input type="text" class="filt" id="nomLocFilter" list="nomLocLista" placeholder="Localidad (ej: Rosario)" oninput="nomFilter()" title="Escribí una localidad: filtra a quienes viven ahí, aunque no tenga zona" style="min-width:150px"><datalist id="nomLocLista"></datalist>
     <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por posición">
       <option value="">Todas las posiciones</option>
       <option value="Supervisor">Supervisores</option>
@@ -2425,7 +2425,7 @@ function llenarLocalidadesSugeridas() {
   if (locSugeridasListas) return;
   const dl = document.getElementById('nomLocLista'); if (!dl) return;
   const vistas = new Map();
-  people.forEach(p => { const k = localidadCanonica(p.localidad); if (k && !vistas.has(k)) vistas.set(k, localidadLinda(p.localidad)); });
+  people.forEach(p => { const k = pelarTexto(p.localidad); if (k && !vistas.has(k)) vistas.set(k, String(p.localidad).trim()); });
   dl.innerHTML = [...vistas.values()].sort((a, b) => a.localeCompare(b, 'es')).map(l => '<option value="' + e(l) + '">').join('');
   locSugeridasListas = true;
 }
@@ -2466,7 +2466,7 @@ function nomApply() {
     if (docFilterOn && !docDudoso(p)) return false;
     if (zonaF === '_sin' && zonaDe(p)) return false;
     if (zonaF && zonaF !== '_sin' && zonaDe(p) !== zonaF) return false;
-    if (locF && !(pelarTexto(p.localidad).includes(locF) || pelarTexto(localidadCanonica(p.localidad)).includes(locF) || pelarTexto(localidadLinda(p.localidad)).includes(locF))) return false;
+    if (locF && !pelarTexto(p.localidad).includes(locF)) return false;
     if (posF === '_sin' && posicionesDe(p).length) return false;
     if (posF && posF !== '_sin' && !posicionesDe(p).includes(posF)) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
