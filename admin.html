@@ -747,7 +747,19 @@ tr:hover td{background:#f9f9fb}
       <option value="2">🟡 2 — Revisar</option>
       <option value="3">🔴 3 — No llamar</option>
     </select>
-    <input type="text" class="filt" id="nomZonaFilter" list="nomZonaLista" placeholder="Zona o localidad…" oninput="nomZonaInput()" onfocus="llenarZonasSugeridas()" title="Elegí una zona (CABA, Zona Norte…) o escribí una localidad (Rosario, Banfield…)" style="min-width:200px"><datalist id="nomZonaLista"></datalist>
+    <select class="filt" id="nomZonaFilter" onchange="nomFilter()" title="Filtrar por zona, para convocar por cercanía">
+      <option value="">Todas las zonas</option>
+      <option value="CABA">CABA</option>
+      <option value="Norte">Zona Norte</option>
+      <option value="Noroeste">Zona Noroeste</option>
+      <option value="Oeste">Zona Oeste</option>
+      <option value="Sur">Zona Sur</option>
+      <option value="La Plata">La Plata</option>
+      <option value="Lejos">Lejos (interior / otras provincias)</option>
+      <option value="Otra">Otra (sin reconocer)</option>
+      <option value="_sin">Sin localidad cargada</option>
+    </select>
+    <input type="text" class="filt" id="nomLocFilter" list="nomLocLista" placeholder="Localidad: Rosario, Banfield…" oninput="nomFilter()" title="Escribí una localidad: filtra a quienes viven ahí, aunque no tenga zona" style="min-width:210px"><datalist id="nomLocLista"></datalist>
     <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por posición">
       <option value="">Todas las posiciones</option>
       <option value="Supervisor">Supervisores</option>
@@ -2407,44 +2419,15 @@ function nomSearch() { nomPage = 1; nomApply(); contarFiltrosNom(); }
 function nomFilter() { nomPage = 1; nomApply(); contarFiltrosNom(); }
 // Texto sin tildes ni mayúsculas, para comparar localidades escritas de cualquier forma.
 function pelarTexto(v) { return String(v == null ? '' : v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim(); }
-// Lo que se puede escribir en el campo de zona, y a qué zona corresponde.
-const ZONA_ROTULOS = [['CABA', 'CABA'], ['Zona Norte', 'Norte'], ['Zona Noroeste', 'Noroeste'], ['Zona Oeste', 'Oeste'], ['Zona Sur', 'Sur'],
-  ['La Plata', 'La Plata'], ['Lejos (interior / otras provincias)', 'Lejos'], ['Otra (sin reconocer)', 'Otra'], ['Sin localidad cargada', '_sin']];
-const ZONA_POR_ROTULO = {};
-ZONA_ROTULOS.forEach(([r, z]) => { ZONA_POR_ROTULO[pelarTexto(r)] = z; ZONA_POR_ROTULO[pelarTexto(z)] = z; });
-ZONA_POR_ROTULO['norte'] = 'Norte'; ZONA_POR_ROTULO['noroeste'] = 'Noroeste'; ZONA_POR_ROTULO['oeste'] = 'Oeste'; ZONA_POR_ROTULO['sur'] = 'Sur';
-ZONA_POR_ROTULO['lejos'] = 'Lejos'; ZONA_POR_ROTULO['otra'] = 'Otra'; ZONA_POR_ROTULO['sin localidad'] = '_sin';
-// El texto por el que se busca la localidad de una persona (lo escrito, la
-// agrupada y la limpia), calculado una vez por localidad: con 1.700 personas
-// hacerlo en cada tecla era lo que lo volvía lento.
-const locBuscableCache = new Map();
-function locBuscable(p) {
-  const raw = String(p.localidad || '');
-  let t = locBuscableCache.get(raw);
-  if (t === undefined) {
-    t = pelarTexto(raw) + ' | ' + pelarTexto(localidadCanonica(raw)) + ' | ' + pelarTexto(localidadLinda(raw));
-    locBuscableCache.set(raw, t);
-  }
-  return t;
-}
-// Las sugerencias del campo: las zonas y, abajo, las localidades limpias de la nómina (una vez por carga).
-let zonasSugeridasListas = false;
-function llenarZonasSugeridas() {
-  if (zonasSugeridasListas) return;
-  const dl = document.getElementById('nomZonaLista'); if (!dl) return;
+// Las localidades que hay en la nómina, como sugerencia del campo (una vez por carga).
+let locSugeridasListas = false;
+function llenarLocalidadesSugeridas() {
+  if (locSugeridasListas) return;
+  const dl = document.getElementById('nomLocLista'); if (!dl) return;
   const vistas = new Map();
   people.forEach(p => { const k = localidadCanonica(p.localidad); if (k && !vistas.has(k)) vistas.set(k, localidadLinda(p.localidad)); });
-  const locs = [...vistas.values()].sort((a, b) => a.localeCompare(b, 'es'));
-  dl.innerHTML = ZONA_ROTULOS.map(([r]) => '<option value="' + e(r) + '">').join('') + locs.map(l => '<option value="' + e(l) + '">').join('');
-  zonasSugeridasListas = true;
-}
-// Al escribir, se espera a que termine (una zona elegida de la lista entra al toque).
-let nomZonaTimer = null;
-function nomZonaInput() {
-  clearTimeout(nomZonaTimer);
-  const v = pelarTexto(document.getElementById('nomZonaFilter').value);
-  if (!v || ZONA_POR_ROTULO[v]) { nomFilter(); return; }
-  nomZonaTimer = setTimeout(nomFilter, 180);
+  dl.innerHTML = [...vistas.values()].sort((a, b) => a.localeCompare(b, 'es')).map(l => '<option value="' + e(l) + '">').join('');
+  locSugeridasListas = true;
 }
 function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge(); refreshTagUI(); }
 function nomApply() {
@@ -2455,10 +2438,10 @@ function nomApply() {
   const tagF = document.getElementById('nomTagFilter') ? document.getElementById('nomTagFilter').value : '';
   const decF = document.getElementById('nomDecFilter') ? document.getElementById('nomDecFilter').value : '';
   const posF = document.getElementById('nomPosFilter') ? document.getElementById('nomPosFilter').value : '';
-  // Un solo campo para zona o localidad: "Zona Sur" filtra por zona; "rosario", por localidad.
-  const zonaTxt = pelarTexto(document.getElementById('nomZonaFilter') ? document.getElementById('nomZonaFilter').value : '');
-  const zonaF = ZONA_POR_ROTULO[zonaTxt] || '';
-  const locF = zonaF ? '' : zonaTxt;
+  const zonaF = document.getElementById('nomZonaFilter') ? document.getElementById('nomZonaFilter').value : '';
+  // Localidad escrita a mano ("rosario"): sirve para lo que no tiene zona propia.
+  const locF = pelarTexto(document.getElementById('nomLocFilter') ? document.getElementById('nomLocFilter').value : '');
+  if (locF) llenarLocalidadesSugeridas();
   const orden = document.getElementById('nomOrden') ? document.getElementById('nomOrden').value : '';
   nomFiltered = people.filter(p => {
     // Los OUT tienen su propia pestaña: no se mezclan con el resto de la nómina.
@@ -2483,7 +2466,7 @@ function nomApply() {
     if (docFilterOn && !docDudoso(p)) return false;
     if (zonaF === '_sin' && zonaDe(p)) return false;
     if (zonaF && zonaF !== '_sin' && zonaDe(p) !== zonaF) return false;
-    if (locF && !locBuscable(p).includes(locF)) return false;
+    if (locF && !(pelarTexto(p.localidad).includes(locF) || pelarTexto(localidadCanonica(p.localidad)).includes(locF) || pelarTexto(localidadLinda(p.localidad)).includes(locF))) return false;
     if (posF === '_sin' && posicionesDe(p).length) return false;
     if (posF && posF !== '_sin' && !posicionesDe(p).includes(posF)) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
@@ -3330,7 +3313,7 @@ function contarFiltrosNom() {
   b.textContent = n; b.style.display = n ? '' : 'none';
 }
 function limpiarFiltrosNom() {
-  ['nomSrch', 'nomStFilter', 'nomSemFilter', 'nomZonaFilter', 'nomPosFilter', 'nomOrden', 'nomDecFilter', 'nomTagFilter', 'nomRotFilter']
+  ['nomSrch', 'nomStFilter', 'nomSemFilter', 'nomZonaFilter', 'nomLocFilter', 'nomPosFilter', 'nomOrden', 'nomDecFilter', 'nomTagFilter', 'nomRotFilter']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   if (docFilterOn) toggleDocFilter();
   if (cvFilterOn) toggleCvFilter();
