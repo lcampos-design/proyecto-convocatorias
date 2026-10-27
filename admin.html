@@ -100,6 +100,29 @@ tr:hover td{background:#fafaf8}
 .cal-pie{display:flex;gap:6px;align-items:center;margin-top:8px;font-size:12px;color:#6b7280;flex-wrap:wrap}
 .cal-pie input[type=date]{flex:1;min-width:120px;font-size:12px;padding:5px 8px}
 .modal-xl{max-width:760px}
+/* Incidencias en vivo: plano a la izquierda, lista a la derecha. */
+.inc-adm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:900px){.inc-adm{grid-template-columns:1fr}}
+.inc-adm-plano{border:1px solid var(--r-line);border-radius:12px;padding:10px;background:#fff}
+.inc-resumen{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}
+.inc-cuenta{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--neutro-sv);color:var(--neutro)}
+.inc-cuenta strong{font-size:14px;margin-right:3px}
+.inc-lugares{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.inc-lugar{font-size:11.5px;font-weight:600;background:#fff;border:1.5px solid var(--r-line);color:var(--r-ink2);border-radius:8px;padding:5px 9px;cursor:pointer;font-family:inherit}
+.inc-card{border:1px solid var(--r-line);border-left:4px solid #d1d5db;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.inc-card.resuelta{opacity:.72}
+.inc-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.inc-tipo{font-size:13.5px;font-weight:600;color:var(--r-ink);flex:1;min-width:0}
+.inc-hora{font-size:12px;color:var(--r-muted);font-variant-numeric:tabular-nums}
+.inc-donde{font-size:12px;color:var(--r-muted);margin-top:3px}
+.inc-acc{display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:5px;font-size:12px;color:var(--ok)}
+.inc-nota{font-size:12.5px;color:var(--r-ink2);margin-top:5px;white-space:pre-wrap}
+.inc-res{font-size:12px;color:var(--r-ink2);margin-top:6px;background:#f6f6f8;border-radius:8px;padding:6px 9px}
+.inc-card-acts{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+.inc-vivo{font-size:11px;color:var(--ok);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.inc-vivo::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;animation:incLatido 1.6s infinite}
+.inc-vivo.mal{color:var(--alerta)}
+@keyframes incLatido{0%,100%{opacity:1}50%{opacity:.25}}
 /* Disponibilidad: la tabla se arrastra con el mouse; nombre y cabecera fijos. */
 .disp-scroll{overflow:auto;max-height:65vh;cursor:grab;border:1px solid var(--r-line);border-radius:10px;user-select:none}
 .disp-scroll.arrastrando{cursor:grabbing}
@@ -864,6 +887,7 @@ tr:hover td{background:#f9f9fb}
            archivar aparte, para que no se confundan con el trabajo diario. -->
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end">
         <button class="btn btn-primary btn-sm" onclick="openPasarLista()"><i class="ic ic-tilde-circ"></i> Pasar lista</button>
+        <button class="btn btn-sec btn-sm" id="btnIncid" onclick="openIncid()" style="display:none" title="Lo que reportan los supervisores durante el show, en vivo"><i class="ic ic-aviso"></i> Incidencias</button>
         <button class="btn btn-sec btn-sm" onclick="exportPresentes()" title="La planilla que se reparte a los supervisores: una hoja por turno, una tabla por sector, con lo ya marcado">↓ Planilla supervisores</button>
         <button class="btn btn-sec btn-sm" onclick="exportPostuladosExcel()" title="La planilla completa por puesto, con datos de contacto">↓ Planilla Excel</button>
         <div class="nom-mas">
@@ -1485,6 +1509,33 @@ tr:hover td{background:#f9f9fb}
 </div>
 
 <!-- Modal: Pasar lista -->
+<!-- Incidencias en vivo (Movistar Arena) -->
+<div class="modal-bg" id="mIncid" style="display:none" onclick="bgClose('mIncid',event)">
+  <div class="modal" style="max-width:1180px">
+    <div class="modal-title">
+      <span><i class="ic ic-aviso"></i> Incidencias <span id="incTitulo" style="font-weight:400;color:#6b7280"></span></span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="inc-vivo" id="incVivo">En vivo</span>
+        <button class="btn btn-sec btn-xs" onclick="cargarIncidAdm()" title="Actualizar ahora">↻</button>
+        <button class="btn btn-sec btn-xs" onclick="exportIncidencias()" title="El informe del show: resumen por gravedad, categoría y sector, y el detalle con la línea de tiempo">↓ Informe Excel</button>
+        <button class="mclose" onclick="closeM('mIncid')">✕</button>
+      </div>
+    </div>
+    <div class="inc-resumen" id="incResumenAdm"></div>
+    <div class="inc-adm">
+      <div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap" id="incArmadoAdm"></div>
+        <div class="inc-adm-plano" id="incPlanoAdm"></div>
+        <div class="inc-lugares" id="incLugaresAdm"></div>
+      </div>
+      <div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center" id="incFiltrosAdm"></div>
+        <div id="incListaAdm" style="max-height:62vh;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="mLista" style="display:none" onclick="bgClose('mLista',event)">
   <div class="modal modal-xl">
     <div class="modal-title">
@@ -3792,6 +3843,7 @@ function openDetail(id) {
   document.getElementById('detTitle').textContent = c.nombre;
   document.getElementById('detMeta').innerHTML = `<span class="a-badge ${areaClase(c.area)}">${areaLargo(c.area)}</span>${resumenFechas(c.fecha)}${c.venue ? `<span>📍 ${e(c.venue)}</span>` : ''}${c.descripcion ? `<span title="${e(c.descripcion)}">${e(c.descripcion.slice(0, 60))}${c.descripcion.length > 60 ? '…' : ''}</span>` : ''}`;
   syncPublicadaBtn(c);
+  const bi = document.getElementById('btnIncid'); if (bi) bi.style.display = incEsArena(c.area) ? '' : 'none';
   const ab = document.getElementById('btnArchivar'); if (ab) ab.innerHTML = c.archivada ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar';
   renderDetStats(); renderPuestos();
 }
@@ -3815,6 +3867,295 @@ function closeDetail() { document.getElementById('cv-list').style.display = 'blo
 // Aprobado o confirmado: los dos son gente que va al show. "Confirmado" es el
 // aprobado que tocó CONFIRMO en el mail; lo pone la base, no el panel.
 function esAprobado(p) { return !!p && (p.estado === 'aprobado' || p.estado === 'confirmado'); }
+// ── INCIDENCIAS: catálogo, semáforo y plano ─────────────────────
+// Este bloque es idéntico en admin.html y supervisor-mobile.html (una prueba
+// lo vigila): lo que carga el supervisor en la tablet y lo que ve el panel
+// tienen que hablar el mismo idioma. Sin datos del público: sólo qué pasó,
+// dónde y qué se hizo.
+const INC_NIVELES = {
+  1: { nombre: 'Leve',     ayuda: 'Se resuelve en el lugar',                   color: '#15803d', fondo: '#dcfce7', plano: '#86efac' },
+  2: { nombre: 'Moderado', ayuda: 'Hace falta otra área',                      color: '#a16207', fondo: '#fef6da', plano: '#fcd34d' },
+  3: { nombre: 'Grave',    ayuda: 'Interviene alguien de afuera o hay riesgo', color: '#9f1239', fondo: '#ffe9ee', plano: '#fb7185' }
+};
+// Cada categoría: sus tipos (con el nivel que traen por defecto) y el
+// check-list de lo que corresponde hacer. Es una propuesta para arrancar:
+// se ajusta con la gente del Arena.
+const INC_CATALOGO = [
+  { cat: 'Médica', tipos: [['Desmayo / descompensación', 2], ['Lesión o caída', 2], ['Persona alcoholizada o intoxicada', 2], ['Emergencia médica grave', 3]],
+    acciones: ['Se llamó a socorrismo', 'Se asistió en el lugar', 'Se trasladó a enfermería', 'Se derivó en ambulancia (SAME)'] },
+  { cat: 'Seguridad', tipos: [['Pelea o agresión', 3], ['Persona agresiva o molesta', 2], ['Ingreso indebido / sin entrada', 2], ['Objeto prohibido', 1], ['Robo o hurto', 2]],
+    acciones: ['Se avisó a seguridad', 'Se retiró a la persona del sector', 'Se retuvo el objeto', 'Se dio aviso a la policía'] },
+  { cat: 'Ubicación', tipos: [['Cambio de ubicación', 1], ['Ubicación ocupada', 1], ['Entrada duplicada', 2], ['Persona fuera de su sector', 1]],
+    acciones: ['Se reubicó a la persona', 'Se verificó la entrada', 'Se consultó a boletería', 'Se acompañó a su ubicación'] },
+  { cat: 'Infraestructura', tipos: [['Derrame / piso resbaladizo', 1], ['Butaca o baranda rota', 1], ['Baño fuera de servicio', 1], ['Falla eléctrica o de iluminación', 2], ['Salida obstruida', 3]],
+    acciones: ['Se avisó a mantenimiento', 'Se señalizó o se cerró el paso', 'Se limpió', 'Se liberó el paso'] },
+  { cat: 'Personal', tipos: [['Falta personal en el sector', 2], ['Personal descompuesto', 2], ['Problema de conducta o uniforme', 1]],
+    acciones: ['Se cubrió con otra persona', 'Se avisó a coordinación', 'Se relevó a la persona'] },
+  { cat: 'Otro', tipos: [['Otra incidencia', 1]],
+    acciones: ['Se avisó a coordinación', 'Se resolvió en el lugar'] }
+];
+function incCategoria(cat) { return INC_CATALOGO.find(c => c.cat === cat) || INC_CATALOGO[INC_CATALOGO.length - 1]; }
+function incNivelDe(cat, tipo) { const t = incCategoria(cat).tipos.find(x => x[0] === tipo); return t ? t[1] : 1; }
+// Lugares que no están en el plano.
+const INC_LUGARES = ['Accesos y puertas', 'Pasillos y escaleras', 'Baños', 'Barras y gastronomía', 'Backstage', 'Exterior / filas de ingreso', 'Otro lugar'];
+// Las incidencias son sólo de los shows del Movistar Arena.
+function incEsArena(area) { return /arena|movistar/i.test(String(area || '')); }
+function incEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function incHora(iso) { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+// El día (AAAA-MM-DD, hora de acá): una convocatoria del Arena puede tener
+// muchas fechas, y cada fecha es un show.
+function incDia(iso) { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+// "21:34" si es de hoy; "24/10 21:34" si es de otro día.
+function incCuando(iso) {
+  const dia = incDia(iso); if (!dia) return '';
+  return (dia === incDia(new Date().toISOString()) ? '' : dia.slice(8, 10) + '/' + dia.slice(5, 7) + ' ') + incHora(iso);
+}
+function incNivelChip(n) {
+  const v = INC_NIVELES[n] || INC_NIVELES[1];
+  return '<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;background:' + v.fondo + ';color:' + v.color + '"><span style="width:7px;height:7px;border-radius:50%;background:' + v.color + '"></span>' + v.nombre + '</span>';
+}
+// Primero las abiertas, de la más grave a la más leve; dentro, las más nuevas
+// arriba. Después las resueltas, también de la más nueva a la más vieja.
+function incOrdenar(lista) {
+  return (lista || []).slice().sort((a, b) => {
+    const ra = a.estado === 'resuelta' ? 1 : 0, rb = b.estado === 'resuelta' ? 1 : 0;
+    if (ra !== rb) return ra - rb;
+    if (!ra && (b.nivel || 1) !== (a.nivel || 1)) return (b.nivel || 1) - (a.nivel || 1);
+    return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+  });
+}
+// Lo abierto en cada sector: cuántas hay y cuál es la más grave.
+function incResumenSectores(lista) {
+  const niveles = {}, cuentas = {};
+  (lista || []).filter(i => i.estado !== 'resuelta').forEach(i => {
+    cuentas[i.sector] = (cuentas[i.sector] || 0) + 1;
+    niveles[i.sector] = Math.max(niveles[i.sector] || 0, i.nivel || 1);
+  });
+  return { niveles, cuentas };
+}
+
+// El plano del Movistar Arena por sectores, visto desde arriba con el
+// escenario arriba. El campo se arma de dos maneras: de pie (delantero y
+// trasero) o con asientos (sectores A a N). Las medidas son aproximadas:
+// alcanza para ubicarse y para que cada sector se toque fácil.
+const INC_PLANO_TRIBUNAS = [
+  // Platea baja, izquierda (101 junto al escenario)
+  { id: 'Platea 101', txt: '101', t: 'baja', r: [100, 8, 40, 18] },
+  { id: 'Platea 102', txt: '102', t: 'baja', r: [100, 30, 40, 26] },
+  { id: 'Platea 103', txt: '103', t: 'baja', r: [100, 60, 40, 14] },
+  { id: 'Platea 104', txt: '104', t: 'baja', r: [100, 78, 40, 46] },
+  { id: 'Platea 105', txt: '105', t: 'baja', r: [100, 128, 40, 14] },
+  { id: 'Platea 106', txt: '106', t: 'baja', r: [100, 146, 40, 26] },
+  { id: 'Platea 107', txt: '107', t: 'baja', p: '100,176 140,176 146,204 146,246 124,246 100,208', lx: 122, ly: 212 },
+  // Platea baja, fondo
+  { id: 'Platea 108', txt: '108', t: 'baja', r: [150, 206, 16, 40] },
+  { id: 'Platea 109', txt: '109', t: 'baja', r: [170, 206, 22, 40] },
+  { id: 'Platea 110', txt: '110', t: 'baja', r: [196, 206, 28, 40] },
+  { id: 'Platea 111', txt: '111', t: 'baja', r: [228, 206, 22, 40] },
+  { id: 'Platea 112', txt: '112', t: 'baja', r: [254, 206, 16, 40] },
+  // Platea baja, derecha
+  { id: 'Platea 113', txt: '113', t: 'baja', p: '320,176 280,176 274,204 274,246 296,246 320,208', lx: 298, ly: 212 },
+  { id: 'Platea 114', txt: '114', t: 'baja', r: [280, 146, 40, 26] },
+  { id: 'Platea 115', txt: '115', t: 'baja', r: [280, 128, 40, 14] },
+  { id: 'Platea 116', txt: '116', t: 'baja', r: [280, 78, 40, 46] },
+  { id: 'Platea 117', txt: '117', t: 'baja', r: [280, 60, 40, 14] },
+  { id: 'Platea 118', txt: '118', t: 'baja', r: [280, 30, 40, 26] },
+  { id: 'Platea 119', txt: '119', t: 'baja', r: [280, 8, 40, 18] },
+  // Platea alta, izquierda
+  { id: 'Platea 301', txt: '301', t: 'alta', r: [56, 30, 36, 32] },
+  { id: 'Platea 302', txt: '302', t: 'alta', r: [56, 66, 36, 22] },
+  { id: 'Platea 303', txt: '303', t: 'alta', r: [56, 92, 36, 48] },
+  { id: 'Platea 304', txt: '304', t: 'alta', r: [56, 144, 36, 20] },
+  { id: 'Platea 305', txt: '305', t: 'alta', r: [56, 168, 36, 38] },
+  { id: 'Platea 306', txt: '306', t: 'alta', p: '56,210 92,210 116,252 116,284 86,284 56,248', lx: 86, ly: 252 },
+  // Platea alta, fondo
+  { id: 'Platea 307', txt: '307', t: 'alta', r: [120, 254, 40, 30] },
+  { id: 'Platea 308', txt: '308', t: 'alta', r: [164, 254, 26, 30] },
+  { id: 'Platea 309', txt: '309', t: 'alta', r: [194, 254, 32, 30] },
+  { id: 'Platea 310', txt: '310', t: 'alta', r: [230, 254, 26, 30] },
+  { id: 'Platea 311', txt: '311', t: 'alta', r: [260, 254, 40, 30] },
+  // Platea alta, derecha
+  { id: 'Platea 312', txt: '312', t: 'alta', p: '364,210 328,210 304,252 304,284 334,284 364,248', lx: 334, ly: 252 },
+  { id: 'Platea 313', txt: '313', t: 'alta', r: [328, 168, 36, 38] },
+  { id: 'Platea 314', txt: '314', t: 'alta', r: [328, 144, 36, 20] },
+  { id: 'Platea 315', txt: '315', t: 'alta', r: [328, 92, 36, 48] },
+  { id: 'Platea 316', txt: '316', t: 'alta', r: [328, 66, 36, 22] },
+  { id: 'Platea 317', txt: '317', t: 'alta', r: [328, 30, 36, 32] }
+];
+const INC_PLANO_CAMPO = {
+  campos: [
+    { id: 'Campo delantero', txt: 'CAMPO DELANTERO', t: 'campo', r: [150, 36, 120, 78] },
+    { id: 'Campo trasero',   txt: 'CAMPO TRASERO',   t: 'campo', r: [150, 118, 120, 82] }
+  ],
+  // Con asientos: A–D junto al escenario, F–J en el medio, K–N al fondo.
+  asientos: [['A', 'B', 'C', 'D'], ['F', 'G', 'H', 'J'], ['K', 'L', 'M', 'N']].flatMap((fila, i) =>
+    fila.map((l, j) => ({ id: 'Campo ' + l, txt: l, t: 'campo', r: [150 + j * 31, 36 + i * 56, 27, 52] })))
+};
+function incSectoresPlano(armado) { return INC_PLANO_TRIBUNAS.concat(INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
+// Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
+function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
+// El plano en SVG. op: { armado, niveles, cuentas, sel, onclick }. Cada
+// sector se pinta con el color de su incidencia abierta más grave y muestra
+// cuántas tiene abiertas.
+function incPlanoSVG(op) {
+  op = op || {};
+  const niveles = op.niveles || {}, cuentas = op.cuentas || {};
+  const BASE = { baja: '#e4e7eb', alta: '#f1f2f4', campo: '#dde3ea' };
+  const partes = incSectoresPlano(op.armado).map(s => {
+    const nv = niveles[s.id], n = cuentas[s.id] || 0, sel = op.sel === s.id;
+    const fill = nv ? INC_NIVELES[nv].plano : BASE[s.t];
+    const stroke = sel ? '#0f1117' : (nv ? INC_NIVELES[nv].color : '#b8bec6');
+    const sw = sel ? 2.4 : (nv ? 1.4 : 0.8);
+    // bx, by: dónde va el numerito de abiertas, en la esquina, sin tapar el nombre.
+    let forma, cx, cy, chico, bx, by;
+    if (s.r) { const [x, y, w, h] = s.r; forma = '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3"'; cx = x + w / 2; cy = y + h / 2; chico = h <= 18 || w <= 18; bx = x + w - 3; by = y + 3; }
+    else { forma = '<polygon points="' + s.p + '"'; cx = s.lx; cy = s.ly; chico = false; bx = cx + 13; by = cy - 13; }
+    const fs = chico ? 7 : (s.txt.length > 3 ? 8 : 9);
+    const click = op.onclick ? ' onclick="' + op.onclick + '(\'' + incEsc(s.id) + '\')" style="cursor:pointer"' : '';
+    const badge = n ? '<circle cx="' + bx + '" cy="' + by + '" r="6" fill="#0f1117" stroke="#fff" stroke-width="1" pointer-events="none"/><text x="' + bx + '" y="' + (by + 2.4) + '" font-size="7" font-weight="700" fill="#fff" text-anchor="middle" pointer-events="none">' + n + '</text>' : '';
+    return '<g' + click + '><title>' + incEsc(s.id) + (n ? ' · ' + n + ' abierta' + (n > 1 ? 's' : '') : '') + '</title>'
+      + forma + ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>'
+      + '<text x="' + cx + '" y="' + (cy + fs * 0.35) + '" font-size="' + fs + '" font-weight="600" fill="#1f2937" text-anchor="middle" pointer-events="none">' + incEsc(s.txt) + '</text>'
+      + badge + '</g>';
+  }).join('');
+  return '<svg viewBox="50 2 320 288" xmlns="http://www.w3.org/2000/svg" font-family="Poppins, sans-serif" style="width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none">'
+    + '<rect x="150" y="8" width="120" height="22" rx="4" fill="#0f1117"/><text x="210" y="22.5" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1">ESCENARIO</text>'
+    + partes + '</svg>';
+}
+// ── fin INCIDENCIAS compartido ──
+
+// ── Incidencias en vivo, en el panel ──
+// Mientras el tablero está abierto se actualiza solo cada 15 segundos. Se
+// filtra por día (una convocatoria del Arena puede tener muchas fechas), por
+// estado y por sector (tocando el plano).
+let incListaAdm = [], incTimerAdm = null, incFiltroAdm = 'abiertas', incSectorAdm = '', incArmadoAdm = '', incDiaAdm = '';
+async function openIncid() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  document.getElementById('incTitulo').textContent = '· ' + (c.nombre || '');
+  incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = null;
+  try { incArmadoAdm = localStorage.getItem('incArmado:' + c.id) || ''; } catch (_) { incArmadoAdm = ''; }
+  renderIncidAdm();
+  showM('mIncid');
+  await cargarIncidAdm();
+  clearInterval(incTimerAdm);
+  incTimerAdm = setInterval(() => {
+    if (document.getElementById('mIncid').style.display === 'none') { clearInterval(incTimerAdm); return; }
+    cargarIncidAdm();
+  }, 15000);
+}
+async function cargarIncidAdm() {
+  const vivo = document.getElementById('incVivo');
+  const { data, error } = await sb.from('incidencias').select('*').eq('conv_id', currentConvId).order('created_at', { ascending: false });
+  if (error) { if (vivo) { vivo.textContent = 'Sin conexión'; vivo.className = 'inc-vivo mal'; } console.error('incidencias', error); return; }
+  if (vivo) { vivo.textContent = 'En vivo · ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo'; }
+  incListaAdm = data || [];
+  // La primera vez arranca en el día de hoy si hubo algo hoy; si no, en todos.
+  if (incDiaAdm === null) { const hoy = hoyLocalISO(); incDiaAdm = incListaAdm.some(i => incDia(i.created_at) === hoy) ? hoy : ''; }
+  renderIncidAdm();
+}
+// Las del día elegido ('' = todos los días).
+function incDelDiaAdm() { return incDiaAdm ? incListaAdm.filter(i => incDia(i.created_at) === incDiaAdm) : incListaAdm; }
+function incElegirArmadoAdm(a) { incArmadoAdm = a; try { localStorage.setItem('incArmado:' + currentConvId, a); } catch (_) {} renderIncidAdm(); }
+function incTocarSectorAdm(sector) { incSectorAdm = incSectorAdm === sector ? '' : sector; renderIncidAdm(); }
+function incFiltrarAdm(k, v) { if (k === 'estado') incFiltroAdm = v; if (k === 'dia') incDiaAdm = v; if (k === 'sector') incSectorAdm = v; renderIncidAdm(); }
+function renderIncidAdm() {
+  const delDia = incDelDiaAdm();
+  const armado = incArmadoAdm || incArmadoDe(incListaAdm);
+  const res = incResumenSectores(delDia);
+  const abiertas = delDia.filter(i => i.estado !== 'resuelta');
+  const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
+  document.getElementById('incResumenAdm').innerHTML = '<span style="font-size:12px;color:var(--r-muted);margin-right:2px">Abiertas:</span>' + [3, 2, 1].map(nv =>
+    '<span class="inc-cuenta" style="background:' + INC_NIVELES[nv].fondo + ';color:' + INC_NIVELES[nv].color + '"><strong>' + n(nv) + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('')
+    + '<span class="inc-cuenta"><strong>' + (delDia.length - abiertas.length) + '</strong>resueltas</span>'
+    + '<span class="inc-cuenta"><strong>' + delDia.length + '</strong>en total</span>';
+  document.getElementById('incArmadoAdm').innerHTML = [['campos', 'Campo de pie'], ['asientos', 'Campo con asientos']].map(([k, t]) =>
+    '<button class="btn btn-xs ' + (armado === k ? 'btn-primary' : 'btn-sec') + '" onclick="incElegirArmadoAdm(\'' + k + '\')">' + t + '</button>').join('');
+  document.getElementById('incPlanoAdm').innerHTML = incPlanoSVG({ armado, niveles: res.niveles, cuentas: res.cuentas, sel: incSectorAdm, onclick: 'incTocarSectorAdm' });
+  document.getElementById('incLugaresAdm').innerHTML = INC_LUGARES.map(l => {
+    const nv = res.niveles[l], c = res.cuentas[l] || 0, sel = incSectorAdm === l;
+    return '<button class="inc-lugar" style="' + (nv ? 'background:' + INC_NIVELES[nv].fondo + ';border-color:' + INC_NIVELES[nv].color + ';color:' + INC_NIVELES[nv].color + ';' : '') + (sel ? 'outline:2px solid var(--r-ink);' : '')
+      + '" onclick="incTocarSectorAdm(\'' + incEsc(l) + '\')">' + incEsc(l) + (c ? ' <strong>' + c + '</strong>' : '') + '</button>';
+  }).join('');
+  // Filtros: día, estado y, si se tocó el plano, el sector.
+  const dias = [...new Set(incListaAdm.map(i => incDia(i.created_at)).filter(Boolean))].sort().reverse();
+  const chip = (k, v, t, on) => '<button class="btn btn-xs ' + (on ? 'btn-primary' : 'btn-sec') + '" onclick="incFiltrarAdm(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
+  document.getElementById('incFiltrosAdm').innerHTML =
+    [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => chip('estado', v, t, incFiltroAdm === v)).join('')
+    + (dias.length > 1 || (dias.length === 1 && incDiaAdm !== dias[0]) ? '<span style="width:1px;height:18px;background:var(--r-line);margin:0 2px"></span>' + chip('dia', '', 'Todos los días', !incDiaAdm)
+        + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), incDiaAdm === d)).join('') : '')
+    + (incSectorAdm ? '<span class="inc-cuenta" style="background:var(--r-ink);color:#fff">' + incEsc(incSectorAdm) + ' <button onclick="incFiltrarAdm(\'sector\',\'\')" style="background:none;border:none;color:#fff;cursor:pointer;margin-left:4px">✕</button></span>' : '');
+  const lista = incOrdenar(delDia).filter(i => incFiltroAdm === 'todas' || (incFiltroAdm === 'abiertas') === (i.estado !== 'resuelta'))
+    .filter(i => !incSectorAdm || i.sector === incSectorAdm);
+  const cont = document.getElementById('incListaAdm');
+  if (!lista.length) {
+    cont.innerHTML = '<div class="empty">' + (!incListaAdm.length ? 'Todavía no hay incidencias en este show. Las cargan los supervisores desde la tablet.'
+      : incFiltroAdm === 'abiertas' ? 'No hay incidencias abiertas' + (incSectorAdm ? ' en ' + incEsc(incSectorAdm) : '') + '.' : 'Nada por acá.') + '</div>';
+    return;
+  }
+  cont.innerHTML = lista.map(i => {
+    const v = INC_NIVELES[i.nivel] || INC_NIVELES[1], resuelta = i.estado === 'resuelta';
+    return '<div class="inc-card' + (resuelta ? ' resuelta' : '') + '" style="border-left-color:' + v.color + '">'
+      + '<div class="inc-card-top">' + incNivelChip(i.nivel) + '<span class="inc-tipo">' + incEsc(i.tipo) + '</span><span class="inc-hora">' + incCuando(i.created_at) + '</span></div>'
+      + '<div class="inc-donde">' + incEsc(i.sector) + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '') + '</div>'
+      + ((i.acciones || []).length ? '<div class="inc-acc">' + i.acciones.map(a => '<span>✓ ' + incEsc(a) + '</span>').join('') + '</div>' : '')
+      + (i.nota ? '<div class="inc-nota">' + incEsc(i.nota) + '</div>' : '')
+      + (resuelta ? '<div class="inc-res"><strong>Resuelta ' + incCuando(i.resuelta_at) + '</strong>' + (i.resuelta_por_nombre ? ' por ' + incEsc(i.resuelta_por_nombre) : '') + ' · ' + incEsc(i.resolucion || '') + '</div>' : '')
+      + '<div class="inc-card-acts">'
+      + (resuelta ? '<button class="btn btn-sec btn-xs" onclick="incReabrirAdm(\'' + i.id + '\')">Reabrir</button>' : '<button class="btn btn-primary btn-xs" onclick="incResolverAdm(\'' + i.id + '\')">Resolver</button>')
+      + '<button class="btn btn-sec btn-xs" onclick="incBorrarAdm(\'' + i.id + '\')" title="Borrarla (si se cargó por error)">Borrar</button>'
+      + '</div></div>';
+  }).join('');
+}
+async function incResolverAdm(id) {
+  const i = incListaAdm.find(x => x.id === id); if (!i) return;
+  const txt = prompt('¿Cómo se resolvió?', '');
+  if (txt == null) return;
+  if (txt.trim().length < 3) { toast('Contá en una línea cómo se resolvió'); return; }
+  const ahora = new Date().toISOString();
+  const cambios = { estado: 'resuelta', resolucion: txt.trim(), resuelta_at: ahora, resuelta_por_nombre: 'Panel · ' + ((document.getElementById('userEmail') || {}).textContent || '').trim(), updated_at: ahora };
+  Object.assign(i, cambios); renderIncidAdm();
+  try { await sbUpdate('incidencias', id, cambios); toast('✓ Resuelta'); } catch (_) { cargarIncidAdm(); }
+}
+async function incReabrirAdm(id) {
+  const i = incListaAdm.find(x => x.id === id); if (!i) return;
+  const cambios = { estado: 'abierta', resolucion: null, resuelta_at: null, resuelta_por_nombre: null, updated_at: new Date().toISOString() };
+  Object.assign(i, cambios); renderIncidAdm();
+  try { await sbUpdate('incidencias', id, cambios); } catch (_) { cargarIncidAdm(); }
+}
+async function incBorrarAdm(id) {
+  const i = incListaAdm.find(x => x.id === id); if (!i) return;
+  if (!confirm('¿Borrar "' + i.tipo + '" en ' + i.sector + '? Es para las cargadas por error: no se puede deshacer.')) return;
+  incListaAdm = incListaAdm.filter(x => x.id !== id); renderIncidAdm();
+  try { await sbDelete('incidencias', id); toast('Borrada'); } catch (_) { cargarIncidAdm(); }
+}
+// El informe del show: el resumen (gravedad, estado, categoría, sector, qué
+// pasó) y el detalle con la línea de tiempo. Respeta el día elegido.
+function exportIncidencias() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const lista = incDelDiaAdm();
+  if (!lista.length) { toast('Todavía no hay incidencias para el informe'); return; }
+  const cuenta = clave => { const m = {}; lista.forEach(i => { const k = clave(i) || '—'; m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
+  const abiertas = lista.filter(i => i.estado !== 'resuelta').length;
+  const filas = [], cabeceras = [];
+  const bloque = (titulo, pares) => { cabeceras.push(filas.length); filas.push([titulo, 'Cantidad']); pares.forEach(p => filas.push([p[0], p[1]])); filas.push([]); };
+  bloque('Gravedad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, lista.filter(i => (i.nivel || 1) === nv).length]));
+  bloque('Estado', [['Resueltas', lista.length - abiertas], ['Abiertas', abiertas]]);
+  bloque('Categoría', cuenta(i => i.categoria));
+  bloque('Sector', cuenta(i => i.sector));
+  bloque('Qué pasó', cuenta(i => i.tipo));
+  const fh = iso => { const d = incDia(iso); return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + ' ' + incHora(iso) : ''; };
+  const detalle = [['cuándo', 'sector', 'referencia', 'categoría', 'qué pasó', 'gravedad', 'qué se hizo', 'nota', 'estado', 'cómo se resolvió', 'resuelta', 'cargó']].concat(
+    lista.slice().sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || ''))).map(i => [
+      fh(i.created_at), i.sector || '', i.ubicacion || '', i.categoria || '', i.tipo || '', (INC_NIVELES[i.nivel] || {}).nombre || '',
+      (i.acciones || []).join(' · '), i.nota || '', i.estado === 'resuelta' ? 'Resuelta' : 'Abierta', i.resolucion || '', fh(i.resuelta_at), i.creada_por_nombre || '']));
+  const cuando = incDiaAdm ? incDiaAdm.slice(8, 10) + '/' + incDiaAdm.slice(5, 7) + '/' + incDiaAdm.slice(0, 4) : 'Todas las fechas';
+  const slug = String(c.nombre || 'show').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase();
+  descargarLibro('incidencias-' + slug + '-' + (incDiaAdm || hoyLocalISO()) + '.xlsx', [
+    { nombre: 'Resumen', filas, cabeceras, titulo: 'Incidencias · ' + (c.nombre || ''), subtitulo: cuando + ' · ' + lista.length + ' incidencia' + (lista.length === 1 ? '' : 's') },
+    { nombre: 'Detalle', filas: detalle, titulo: 'Incidencias · ' + (c.nombre || ''), subtitulo: cuando + ' · línea de tiempo' }
+  ]);
+}
+
 // ── Confirmaciones: quién confirmó, quién no viene y quién no contestó ──
 // Se cuenta a los que no están rechazados. "Sin respuesta" son los aprobados
 // (los que recibieron el mail) que todavía no tocaron ningún botón.
