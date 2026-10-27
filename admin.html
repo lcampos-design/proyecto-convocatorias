@@ -112,6 +112,42 @@ tr:hover td{background:#fafaf8}
 .cc-show:hover{border-color:#c7c7cc}
 .cc-sumar{width:100%;justify-content:center;margin-bottom:4px}
 .cc-sumar-fila{display:flex;gap:10px;align-items:center;border:1px solid var(--r-line);border-radius:10px;padding:9px 12px;background:#fff}
+/* Editor del plano del Arena */
+.cc-plano{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;padding:18px 22px;align-items:start}
+@media(max-width:1000px){.cc-plano{grid-template-columns:minmax(0,1fr)}}
+.cc-plano-izq,.cc-plano-der{background:#fff;border:1px solid var(--r-line);border-radius:14px;padding:14px}
+.cc-plano-der{position:sticky;top:12px;display:flex;flex-direction:column;gap:14px}
+.cc-plano-barra{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.cc-plano-t{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--r-muted);margin-right:2px}
+.cc-plano-lienzo{outline:none;border-radius:12px}
+.cc-plano-lienzo:focus-visible{box-shadow:0 0 0 3px rgba(37,99,235,.35)}
+.cc-plano-lienzo [data-lugar]:hover polygon{stroke:#fff}
+.cc-plano-ayuda{font-size:11.5px;color:var(--r-muted);margin:8px 2px 14px}
+.cc-plano-previa-t{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--r-ink)}
+.cc-plano-previa-t label{font-size:12px;font-weight:500;color:var(--r-muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+.cc-plano-f{display:flex;flex-direction:column;gap:10px}
+.cc-plano-f h4{margin:0;font-size:14px;color:var(--r-ink)}
+.cc-plano-f label{font-size:11.5px;color:var(--r-muted);display:block;margin-bottom:3px}
+.cc-plano-f .fila{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cc-plano-f input[type=range]{width:100%}
+.cc-plano-f .val{font-size:11.5px;color:var(--r-ink);font-weight:600;float:right}
+.cc-plano-giros{display:flex;gap:6px;margin-top:6px}
+.cc-plano-botones{display:flex;gap:6px;flex-wrap:wrap}
+.cc-plano-lista{display:flex;flex-direction:column;gap:4px;max-height:46vh;overflow-y:auto}
+.cc-plano-lista button{display:flex;gap:8px;align-items:center;text-align:left;background:#f7f7f9;border:1px solid transparent;border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;color:var(--r-ink);cursor:pointer}
+.cc-plano-lista button:hover{border-color:var(--r-line);background:#fff}
+.cc-plano-lista small{color:var(--r-muted);margin-left:auto}
+.cc-plano-acc{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--r-line);padding-top:12px}
+.cc-plano-estado{font-size:12px;color:var(--r-muted)}
+.cc-plano-estado.pend{color:#a16207;font-weight:600}
+.cc-plano-nota{font-size:11px;color:var(--r-muted);line-height:1.45;margin-top:4px}
+/* Cargar una incidencia desde el panel */
+.inc-n-aviso{background:#fef6da;border:1px solid #f5dc8a;color:#7a5b06;border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:12px}
+.inc-n-niveles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.inc-n-nivel{border:1px solid var(--r-line);background:#fff;border-radius:9px;padding:8px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;text-align:left;color:var(--r-ink);display:flex;flex-direction:column;justify-content:flex-start}
+.inc-n-nivel small{display:block;font-weight:400;font-size:11px;color:var(--r-muted);margin-top:2px}
+.inc-n-acc{display:flex;flex-direction:column;gap:5px}
+.fg label.inc-n-check{display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:400;color:var(--r-ink);text-transform:none;letter-spacing:0;margin:0;cursor:pointer}
 .cc-show.on{border-color:var(--r-ink);box-shadow:0 0 0 1px var(--r-ink)}
 .cc-show-n{font-size:13px;font-weight:600;color:var(--r-ink);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .cc-show-f{font-size:11.5px;color:var(--r-muted);margin-top:2px}
@@ -1008,6 +1044,7 @@ tr:hover td{background:#f9f9fb}
       <div style="font-size:12px;color:var(--r-muted)">Lo que reportan los supervisores durante cada show, en vivo</div>
     </div>
     <button class="btn btn-sm btn-primary" id="ccTabShows" onclick="ccTab('shows')">Shows</button>
+    <button class="btn btn-sm btn-sec" id="ccTabPlano" onclick="ccTab('plano')">Plano del Arena</button>
     <button class="btn btn-sm btn-sec" id="ccTabAccesos" onclick="ccTab('accesos')">Accesos de la gerencia</button>
     <a class="btn btn-sm btn-sec" style="text-decoration:none" href="/centro-control" target="_blank" rel="noopener" title="Abre lo que ve la gerencia del Arena, en otra pestaña">↗ Vista de la gerencia</a>
   </div>
@@ -1018,6 +1055,7 @@ tr:hover td{background:#f9f9fb}
         <div style="flex:1;min-width:0"><div class="cc-show-t" id="incTitulo">—</div><div class="cc-show-s" id="incSubtitulo"></div></div>
         <div style="display:flex;gap:8px;align-items:center">
           <span class="inc-vivo" id="incVivo">En vivo</span>
+          <button class="btn btn-primary btn-xs" onclick="incAbrirNuevaAdm()" title="Cargar una incidencia desde el panel (la ven también la gerencia y los supervisores)">+ Cargar incidencia</button>
           <button class="btn btn-sec btn-xs" onclick="cargarIncidAdm()" title="Actualizar ahora">↻</button>
           <button class="btn btn-sec btn-xs" onclick="exportIncidencias()" title="El informe del show: resumen por gravedad, categoría y sector, y el detalle con la línea de tiempo">↓ Informe Excel</button>
           <button class="btn btn-sec btn-xs" id="ccQuitar" onclick="ccQuitarShow()" title="La gerencia deja de verlo y los supervisores ya no cargan incidencias en este show">Quitar del Centro</button>
@@ -1039,12 +1077,62 @@ tr:hover td{background:#f9f9fb}
       <div id="incMetricasAdm"></div>
     </div>
   </div>
+  <!-- El plano del anillo: puertas, gastronomía, baños… se mueven, se agregan y se borran -->
+  <div id="ccPlano" class="cc-plano" style="display:none">
+    <div class="cc-plano-izq">
+      <div class="cc-plano-barra">
+        <span class="cc-plano-t">Agregar</span>
+        <button class="btn btn-xs btn-sec" onclick="ccPlanoAgregar('gastro')">+ Gastronomía</button>
+        <button class="btn btn-xs btn-sec" onclick="ccPlanoAgregar('banio')">+ Baños</button>
+        <button class="btn btn-xs btn-sec" onclick="ccPlanoAgregar('puerta')">+ Puerta</button>
+        <button class="btn btn-xs btn-sec" onclick="ccPlanoAgregar('enfermeria')">+ Enfermería</button>
+        <button class="btn btn-xs btn-sec" onclick="ccPlanoAgregar('servicio')">+ Otro punto</button>
+      </div>
+      <div id="ccPlanoLienzo" class="cc-plano-lienzo" tabindex="0" aria-label="Plano del Arena para editar: arrastrá un puesto para moverlo; con uno elegido, las flechas lo mueven"></div>
+      <div class="cc-plano-ayuda">Arrastrá un puesto para moverlo. Con uno elegido, las flechas del teclado lo mueven de a poco (con Shift, más).</div>
+      <div class="cc-plano-previa-t">
+        <span>Vista previa</span>
+        <label><input type="checkbox" id="ccPlanoSim" onchange="ccPlanoPrevia()"> Con incidencias de ejemplo</label>
+      </div>
+      <div id="ccPlanoPrevia" class="inc-adm-plano"></div>
+    </div>
+    <div class="cc-plano-der">
+      <div id="ccPlanoForm"></div>
+      <div class="cc-plano-acc">
+        <div id="ccPlanoEstado" class="cc-plano-estado"></div>
+        <button class="btn btn-primary btn-sm" id="ccPlanoGuardarBtn" onclick="ccPlanoGuardar()">Guardar cambios</button>
+        <button class="btn btn-sec btn-sm" onclick="ccPlanoDescartar()">Descartar cambios</button>
+        <button class="btn btn-sec btn-sm" onclick="ccPlanoOriginal()">Volver al plano original</button>
+        <div class="cc-plano-nota">Al guardar, el plano nuevo lo ven la tablet de los supervisores y la gerencia. Si le cambiás el nombre a un puesto que ya tiene incidencias, esas quedan con el nombre viejo (aparecen como botón abajo del plano).</div>
+      </div>
+    </div>
+  </div>
   <div id="ccAccesos" style="display:none;padding:18px 22px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
       <div style="flex:1;min-width:240px;font-size:12.5px;color:var(--r-muted)">La gerencia del Arena entra desde el celular a <strong>/centro-control</strong> y ve <strong>sólo</strong> las incidencias de los shows del Arena: el plano, la lista y el informe. No ve nada más del panel ni puede cambiar nada.</div>
       <button class="btn btn-primary btn-sm" onclick="openAddGerencia()">+ Agregar acceso</button>
     </div>
     <div id="ccAccesosLista"></div>
+  </div>
+</div>
+
+<!-- Modal: cargar una incidencia desde el panel -->
+<div class="modal-bg" id="mIncNueva" style="display:none" onclick="bgClose('mIncNueva',event)">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-title"><span>Cargar una incidencia</span><button class="mclose" onclick="closeM('mIncNueva')">✕</button></div>
+    <div class="inc-n-aviso">Se carga en el show abierto y la ven también la gerencia y los supervisores. Si es para probar cómo se ve, borrala después (o probá en "Plano del Arena", con incidencias de ejemplo que no se guardan).</div>
+    <div class="frow">
+      <div class="fg"><label>Dónde *</label><select class="fi" id="incNLugar"></select></div>
+      <div class="fg"><label>Referencia</label><input type="text" class="fi" id="incNRef" maxlength="80" placeholder="Fila 12, butaca 8…"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Categoría *</label><select class="fi" id="incNCat" onchange="incNuevaCat()"></select></div>
+      <div class="fg"><label>Qué pasó *</label><select class="fi" id="incNTipo" onchange="incNuevaTipo()"></select></div>
+    </div>
+    <div class="fg"><label>Gravedad</label><div id="incNNivel" class="inc-n-niveles"></div></div>
+    <div class="fg"><label>Qué se hizo</label><div id="incNAcc" class="inc-n-acc"></div></div>
+    <div class="fg"><label>Nota</label><textarea class="fi" id="incNNota" maxlength="1000" placeholder="Opcional"></textarea></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mIncNueva')">Cancelar</button><button class="btn btn-primary" id="incNGuardar" onclick="incGuardarNuevaAdm()">Cargar incidencia</button></div>
   </div>
 </div>
 
@@ -4074,51 +4162,95 @@ const INC_PLANO_CAMPO = {
   asientos: [['A', 'B', 'C', 'D'], ['F', 'G', 'H', 'J'], ['K', 'L', 'M', 'N']].flatMap((fila, i) =>
     fila.map((l, j) => ({ id: 'Campo ' + l, txt: l, t: 'campo', r: [150 + j * 31, 36 + i * 56, 27, 52] })))
 };
-// El anillo de afuera: el hall que rodea las plateas, con las puertas de
-// ingreso, la gastronomía y los baños, y el backstage detrás del escenario.
-// Las posiciones y los números son una primera versión, para ajustar con el
-// plano del hall del Arena: cada lugar es una línea de esta lista.
+// El anillo de afuera: el hall que rodea las plateas. Lo fijo es el piso del
+// pasillo (en tres tramos) y el backstage detrás del escenario; lo que hay
+// adentro (puertas, gastronomía, baños, enfermería, otros puntos) se arma
+// desde el panel y se guarda en la base.
 function incRectRot(cx, cy, w, d, ang) {
   const c = Math.cos(ang), s = Math.sin(ang), r = v => Math.round(v * 10) / 10;
   return [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]].map(([x, y]) => r(cx + x * c - y * s) + ',' + r(cy + x * s + y * c)).join(' ');
 }
 function incEspejo(p) { return p.split(' ').map(par => { const xy = par.split(',').map(Number); return (420 - xy[0]) + ',' + xy[1]; }).join(' '); }
 const INC_ANILLO_LADO = '50,-32 50,250 83,290 120,290 120,318 70,318 22,260 22,-32';
-const INC_DIAGONAL = Math.atan2(58, 48);
-const INC_PLANO_ANILLO = [
-  // El piso del anillo, en tres tramos, y el backstage.
+const INC_PLANO_ZONAS = [
   { id: 'Anillo izquierdo', txt: 'ANILLO', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 70, rot: -90 },
   { id: 'Anillo fondo', txt: 'ANILLO', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
   { id: 'Anillo derecho', txt: 'ANILLO', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 70, rot: 90 },
-  { id: 'Backstage', txt: 'BACKSTAGE', t: 'back', r: [50, -32, 320, 28] },
-  // Lo que hay en el anillo, de arriba a la izquierda y en el sentido del reloj.
-  { id: 'Baños 1', txt: '1', t: 'banio', ico: 'banio', r: [28, -26, 17, 22] },
-  { id: 'Puerta 1', txt: 'P1', t: 'puerta', p: incRectRot(22, 44, 22, 12, Math.PI / 2), lx: 22, ly: 44 },
-  { id: 'Gastronomía 1', txt: '1', t: 'gastro', ico: 'gastro', r: [28, 92, 17, 40] },
-  { id: 'Puerta 2', txt: 'P2', t: 'puerta', p: incRectRot(22, 168, 22, 12, Math.PI / 2), lx: 22, ly: 168 },
-  { id: 'Baños 2', txt: '2', t: 'banio', ico: 'banio', r: [28, 196, 17, 26] },
-  { id: 'Puerta 3', txt: 'P3', t: 'puerta', p: incRectRot(46, 289, 22, 12, INC_DIAGONAL), lx: 46, ly: 289 },
-  { id: 'Gastronomía 2', txt: '2', t: 'gastro', ico: 'gastro', r: [128, 296, 44, 16] },
-  { id: 'Puerta 4', txt: 'P4', t: 'puerta', p: incRectRot(210, 318, 24, 12, 0), lx: 210, ly: 318 },
-  { id: 'Gastronomía 3', txt: '3', t: 'gastro', ico: 'gastro', r: [248, 296, 44, 16] },
-  { id: 'Puerta 5', txt: 'P5', t: 'puerta', p: incRectRot(374, 289, 22, 12, -INC_DIAGONAL), lx: 374, ly: 289 },
-  { id: 'Baños 3', txt: '3', t: 'banio', ico: 'banio', r: [375, 196, 17, 26] },
-  { id: 'Puerta 6', txt: 'P6', t: 'puerta', p: incRectRot(398, 168, 22, 12, Math.PI / 2), lx: 398, ly: 168 },
-  { id: 'Gastronomía 4', txt: '4', t: 'gastro', ico: 'gastro', r: [375, 92, 17, 40] },
-  { id: 'Puerta 7', txt: 'P7', t: 'puerta', p: incRectRot(398, 44, 22, 12, Math.PI / 2), lx: 398, ly: 44 },
-  { id: 'Baños 4', txt: '4', t: 'banio', ico: 'banio', r: [375, -26, 17, 22] }
+  { id: 'Backstage', txt: 'BACKSTAGE', t: 'back', r: [50, -32, 320, 28] }
 ];
+// Los tipos de puesto: nombre, ícono y tamaño con el que nace uno nuevo.
+const INC_TIPOS_LUGAR = {
+  puerta: { nombre: 'Puerta', w: 22, h: 12 },
+  gastro: { nombre: 'Gastronomía', ico: 'gastro', w: 17, h: 30 },
+  banio: { nombre: 'Baños', ico: 'banio', w: 17, h: 22 },
+  enfermeria: { nombre: 'Enfermería', ico: 'enfermeria', w: 17, h: 20 },
+  servicio: { nombre: 'Punto de servicio', ico: 'servicio', w: 17, h: 20 }
+};
+// Los puestos de siempre (si todavía no se guardó otro plano). cx, cy: el
+// centro; w: el largo (en las puertas, a lo largo de la fachada); h: el
+// ancho; ang: el giro, en grados. Una primera versión, para ajustar.
+const INC_LUGARES_BASE = [
+  { id: 'Baños 1', t: 'banio', txt: '1', cx: 36.5, cy: -15, w: 17, h: 22, ang: 0 },
+  { id: 'Puerta 1', t: 'puerta', txt: 'P1', cx: 22, cy: 44, w: 22, h: 12, ang: 90 },
+  { id: 'Gastronomía 1', t: 'gastro', txt: '1', cx: 36.5, cy: 112, w: 17, h: 40, ang: 0 },
+  { id: 'Puerta 2', t: 'puerta', txt: 'P2', cx: 22, cy: 168, w: 22, h: 12, ang: 90 },
+  { id: 'Baños 2', t: 'banio', txt: '2', cx: 36.5, cy: 209, w: 17, h: 26, ang: 0 },
+  { id: 'Puerta 3', t: 'puerta', txt: 'P3', cx: 46, cy: 289, w: 22, h: 12, ang: 50.4 },
+  { id: 'Gastronomía 2', t: 'gastro', txt: '2', cx: 150, cy: 304, w: 44, h: 16, ang: 0 },
+  { id: 'Puerta 4', t: 'puerta', txt: 'P4', cx: 210, cy: 318, w: 24, h: 12, ang: 0 },
+  { id: 'Gastronomía 3', t: 'gastro', txt: '3', cx: 270, cy: 304, w: 44, h: 16, ang: 0 },
+  { id: 'Puerta 5', t: 'puerta', txt: 'P5', cx: 374, cy: 289, w: 22, h: 12, ang: -50.4 },
+  { id: 'Baños 3', t: 'banio', txt: '3', cx: 383.5, cy: 209, w: 17, h: 26, ang: 0 },
+  { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 398, cy: 168, w: 22, h: 12, ang: 90 },
+  { id: 'Gastronomía 4', t: 'gastro', txt: '4', cx: 383.5, cy: 112, w: 17, h: 40, ang: 0 },
+  { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 44, w: 22, h: 12, ang: 90 },
+  { id: 'Baños 4', t: 'banio', txt: '4', cx: 383.5, cy: -15, w: 17, h: 22, ang: 0 }
+];
+// Deja una lista de puestos en condiciones: tipos conocidos, nombres únicos
+// (y que no choquen con un sector), medidas dentro del plano.
+function incNormalizarLugares(lista) {
+  const fijos = new Set(INC_PLANO_ZONAS.concat(INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO.campos, INC_PLANO_CAMPO.asientos).map(s => s.id).concat(INC_LUGARES).map(x => x.toLowerCase()));
+  const vistos = new Set(), num = (v, a, b, d) => { const n = Number(v); return v !== null && v !== '' && isFinite(n) ? Math.min(b, Math.max(a, Math.round(n * 10) / 10)) : d; };
+  return (Array.isArray(lista) ? lista : []).map(l => {
+    const tipo = l && INC_TIPOS_LUGAR[l.t]; if (!tipo) return null;
+    const id = String(l.id == null ? '' : l.id).trim().slice(0, 60), k = id.toLowerCase();
+    if (!id || fijos.has(k) || vistos.has(k)) return null;
+    vistos.add(k);
+    return { id, t: l.t, txt: String(l.txt == null ? '' : l.txt).trim().slice(0, 6), cx: num(l.cx, 8, 412, 210), cy: num(l.cy, -40, 328, 304), w: num(l.w, 6, 80, tipo.w), h: num(l.h, 6, 80, tipo.h), ang: num(l.ang, -180, 180, 0) };
+  }).filter(Boolean).slice(0, 80);
+}
+let incLugaresArena = incNormalizarLugares(INC_LUGARES_BASE), incVersionPlano = 0;
+function incPonerLugares(lista) { incLugaresArena = incNormalizarLugares(lista); incVersionPlano++; }
+// El plano guardado desde el panel. Si no hay nada guardado (o la base
+// todavía no lo tiene), queda el de siempre. Devuelve si cambió algo.
+async function incCargarPlanoArena() {
+  try {
+    const { data, error } = await sb.rpc('plano_arena');
+    if (error || !data || !Array.isArray(data.lugares)) return false;
+    const nuevos = incNormalizarLugares(data.lugares);
+    if (JSON.stringify(nuevos) === JSON.stringify(incLugaresArena)) return false;
+    incLugaresArena = nuevos; incVersionPlano++;
+    return true;
+  } catch (_) { return false; }
+}
+// Un puesto como forma del plano (un rectángulo girado).
+function incLugarForma(l) {
+  return { id: l.id, txt: l.txt, t: l.t, ico: INC_TIPOS_LUGAR[l.t].ico, p: incRectRot(l.cx, l.cy, l.w, l.h, l.ang * Math.PI / 180), lx: l.cx, ly: l.cy, w: l.w, h: l.h, ang: l.ang, lugar: true };
+}
 // La fachada de vidrio que cierra el anillo, y la cinta LED que da la vuelta
 // entre la platea baja y la alta.
 const INC_FACHADA = [[20, -34], [20, 261], [69, 320], [351, 320], [400, 261], [400, -34]];
 const INC_CINTA = [[96, 28], [96, 210], [120, 250], [300, 250], [324, 210], [324, 28]];
-// Íconos (24×24) de la gastronomía y los baños.
+// Íconos (24×24) de los puestos.
 const INC_ICONOS = {
   gastro: 'M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z',
-  banio: 'M5.5 22v-7.5H4V9c0-1.1.9-2 2-2h3c1.1 0 2 .9 2 2v5.5H9.5V22h-4zM18 22v-6h3l-2.54-7.63C18.18 7.55 17.42 7 16.56 7h-.12c-.86 0-1.63.55-1.9 1.37L12 16h3v6h3zM7.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm9 0c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2z'
+  banio: 'M5.5 22v-7.5H4V9c0-1.1.9-2 2-2h3c1.1 0 2 .9 2 2v5.5H9.5V22h-4zM18 22v-6h3l-2.54-7.63C18.18 7.55 17.42 7 16.56 7h-.12c-.86 0-1.63.55-1.9 1.37L12 16h3v6h3zM7.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm9 0c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2z',
+  enfermeria: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z',
+  servicio: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'
 };
-// Todo lo que se toca en el plano: el anillo primero (queda abajo), las plateas y el campo.
-function incSectoresPlano(armado) { return INC_PLANO_ANILLO.concat(INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
+// Todo lo que se toca en el plano: el anillo primero (queda abajo), los
+// puestos, las plateas y el campo.
+function incSectoresPlano(armado) { return INC_PLANO_ZONAS.concat(incLugaresArena.map(incLugarForma), INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
 // Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
 function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
 // Los botones de abajo del plano: los lugares que no están dibujados, y
@@ -4129,16 +4261,25 @@ function incLugaresSueltos(lista, armado) {
   const otros = [...new Set((lista || []).map(i => i.sector).filter(s => s && !enPlano.has(s) && !INC_LUGARES.includes(s)))].sort();
   return INC_LUGARES.concat(otros);
 }
-// Los colores del plano, relleno y borde de cada tipo de lugar: los azules
-// del Movistar Arena, como un tablero de control de noche.
+// Los colores del plano, relleno y borde de cada tipo de lugar. Cada zona
+// tiene su color (la baja en azul, la alta en violeta, el campo en turquesa,
+// el anillo en un azul apagado), siempre lejos de los del semáforo, que son
+// los únicos que se encienden. Probados para daltonismo; además cada sector
+// lleva su número y hay leyenda.
 const INC_PLANO_COLOR = {
-  baja: ['#0f4dc2', '#5aa2ff'], alta: ['#0b3a94', '#4a8dff'], campo: ['#0a3274', '#00c2ff'],
-  anillo: ['#0a1a3e', '#2a63c9'], back: ['#081633', '#2a63c9'],
-  puerta: ['#053b73', '#00d1ff'], gastro: ['#0d2c66', '#00c2ff'], banio: ['#0d2c66', '#00c2ff']
+  baja: ['#1c4fb4', '#5b8ff0'], alta: ['#4d3ba6', '#a68cf2'], campo: ['#0b6a7e', '#3fc2d6'],
+  anillo: ['#101c38', '#2b4a80'], back: ['#0c1529', '#2b4a80'],
+  puerta: ['#0b3b4d', '#3fc2d6'], gastro: ['#17284d', '#6f9be6'], banio: ['#17284d', '#6f9be6'],
+  enfermeria: ['#17284d', '#6f9be6'], servicio: ['#17284d', '#6f9be6']
 };
-// El plano en SVG. op: { armado, niveles, cuentas, sel, onclick }. Cada
-// lugar se pinta con el color de su incidencia abierta más grave y muestra
-// cuántas tiene abiertas.
+const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['campo', 'Campo'], ['anillo', 'Anillo y puestos']];
+function incLeyendaHTML(clase) {
+  return '<div class="' + (clase || 'inc-plano-ley') + '">' + INC_LEYENDA.map(([t, n]) => '<span><i style="background:' + INC_PLANO_COLOR[t][0] + ';border-color:' + INC_PLANO_COLOR[t][1] + '"></i>' + n + '</span>').join('') + '</div>';
+}
+// El plano en SVG. op: { armado, niveles, cuentas, sel, onclick, editor }.
+// Cada lugar se pinta con el color de su incidencia abierta más grave y
+// muestra cuántas tiene abiertas. Con editor, los puestos se marcan para
+// poder arrastrarlos (lo maneja el panel).
 function incPlanoSVG(op) {
   op = op || {};
   const niveles = op.niveles || {}, cuentas = op.cuentas || {};
@@ -4152,38 +4293,44 @@ function incPlanoSVG(op) {
     // bx, by: dónde va el numerito de abiertas, en la esquina, sin tapar el nombre.
     let forma, cx, cy, w, h, chico, bx, by;
     if (s.r) { const [x, y] = s.r; w = s.r[2]; h = s.r[3]; forma = '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3"'; cx = x + w / 2; cy = y + h / 2; chico = h <= 18 || w <= 18; bx = x + w - 3; by = y + 3; }
-    else { forma = '<polygon points="' + s.p + '"'; cx = s.lx; cy = s.ly; w = h = 30; chico = false; const k = s.t === 'puerta' ? 8 : 13; bx = cx + k; by = cy - k; }
+    else {
+      forma = '<polygon points="' + s.p + '"'; cx = s.lx; cy = s.ly; chico = false;
+      // Un puesto girado: su caja de frente, para acomodar el ícono y el número.
+      if (s.lugar) { const a = s.ang * Math.PI / 180, c = Math.abs(Math.cos(a)), sn = Math.abs(Math.sin(a)); w = s.w * c + s.h * sn; h = s.w * sn + s.h * c; } else w = h = 30;
+      const k = s.t === 'puerta' ? 8 : 13; bx = cx + k; by = cy - k;
+    }
     if (s.lx !== undefined) { cx = s.lx; cy = s.ly; }
-    // El halo de luz de cada contorno (va debajo, desenfocado).
-    halo.push(forma + ' fill="none" stroke="' + stroke + '" stroke-width="' + (sel || nv ? 3.2 : (piso ? 1 : 1.6)) + '"/>');
-    const tinta = nv ? '#0f1117' : (piso ? '#7fa6e8' : '#eaf2ff');
+    // El halo de luz de cada contorno (va debajo, desenfocado y suave).
+    halo.push(forma + ' fill="none" stroke="' + stroke + '" stroke-width="' + (sel || nv ? 2.6 : (piso ? 0.8 : 1.2)) + '"/>');
+    const tinta = nv ? '#0f1117' : (piso ? '#7f9ccc' : '#f1f5ff');
     let etq;
     if (s.ico) {
       const ancho = w >= h, tam = ancho ? 11 : 10, ix = ancho ? cx - 8 : cx, iy = ancho ? cy : cy - 5;
       etq = '<path d="' + INC_ICONOS[s.ico] + '" transform="translate(' + (ix - tam / 2) + ' ' + (iy - tam / 2) + ') scale(' + (tam / 24) + ')" fill="' + tinta + '" pointer-events="none"/>'
-        + '<text x="' + (ancho ? cx + 9 : cx) + '" y="' + (ancho ? cy + 2.4 : cy + 9.5) + '" font-size="7" font-weight="700" fill="' + tinta + '" text-anchor="middle" pointer-events="none">' + incEsc(s.txt) + '</text>';
+        + (s.txt ? '<text x="' + (ancho ? cx + 9 : cx) + '" y="' + (ancho ? cy + 2.4 : cy + 9.5) + '" font-size="7" font-weight="700" fill="' + tinta + '" text-anchor="middle" pointer-events="none">' + incEsc(s.txt) + '</text>' : '');
     } else {
       const fs = s.t === 'anillo' ? 6 : s.t === 'puerta' ? 6.5 : s.t === 'back' ? 7 : chico ? 7 : (s.txt.length > 3 ? 8 : 9);
       etq = '<text x="' + cx + '" y="' + (cy + fs * 0.35) + '" font-size="' + fs + '" font-weight="' + (piso ? 600 : 700) + '" fill="' + tinta + '" text-anchor="middle"'
         + (piso ? ' letter-spacing="1.2"' : '') + (s.rot ? ' transform="rotate(' + s.rot + ' ' + cx + ' ' + cy + ')"' : '') + ' pointer-events="none">' + incEsc(s.txt) + '</text>';
     }
-    const click = op.onclick ? ' onclick="' + op.onclick + '(\'' + incEsc(s.id) + '\')" style="cursor:pointer"' : '';
+    const click = op.editor ? (s.lugar ? ' data-lugar="' + incEsc(s.id) + '" style="cursor:move"' : '')
+      : op.onclick ? ' onclick="' + op.onclick + '(\'' + incEsc(s.id) + '\')" style="cursor:pointer"' : '';
     const badge = n ? '<circle cx="' + bx + '" cy="' + by + '" r="6" fill="#ffffff" stroke="#0f1117" stroke-width="1" pointer-events="none"/><text x="' + bx + '" y="' + (by + 2.4) + '" font-size="7" font-weight="700" fill="#0f1117" text-anchor="middle" pointer-events="none">' + n + '</text>' : '';
     return '<g' + click + '><title>' + incEsc(s.id) + (n ? ' · ' + n + ' abierta' + (n > 1 ? 's' : '') : '') + '</title>'
       + forma + ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>'
       + etq + badge + '</g>';
   }).join('');
   const pts = a => a.map(p => p.join(',')).join(' ');
-  return '<svg viewBox="6 -42 408 372" xmlns="http://www.w3.org/2000/svg" font-family="Poppins, sans-serif" style="width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;border-radius:12px">'
-    + '<defs><radialGradient id="incFondoG" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#0b2d6e"/><stop offset=".6" stop-color="#051636"/><stop offset="1" stop-color="#020814"/></radialGradient>'
-    + '<pattern id="incGrillaP" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0H0V12" fill="none" stroke="#14408f" stroke-width=".35"/></pattern>'
-    + '<filter id="incHaloF" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2"/></filter></defs>'
-    + '<rect x="6" y="-42" width="408" height="372" rx="14" fill="url(#incFondoG)"/><rect x="6" y="-42" width="408" height="372" rx="14" fill="url(#incGrillaP)" opacity=".55"/>'
-    + '<g filter="url(#incHaloF)" opacity=".85" pointer-events="none"><polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="#0066ff" stroke-width="3"/><polyline points="' + pts(INC_CINTA) + '" fill="none" stroke="#00c2ff" stroke-width="3"/>' + halo.join('') + '</g>'
-    + '<polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="#2f86ff" stroke-width="1.2" pointer-events="none"/>'
+  return '<svg viewBox="6 -42 408 372" xmlns="http://www.w3.org/2000/svg" font-family="Poppins, sans-serif" style="width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;border-radius:12px' + (op.editor ? ';touch-action:none' : '') + '">'
+    + '<defs><radialGradient id="incFondoG" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#0b2350"/><stop offset=".6" stop-color="#06122c"/><stop offset="1" stop-color="#020814"/></radialGradient>'
+    + '<pattern id="incGrillaP" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0H0V12" fill="none" stroke="#163a7a" stroke-width=".35"/></pattern>'
+    + '<filter id="incHaloF" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="1.4"/></filter></defs>'
+    + '<rect x="6" y="-42" width="408" height="372" rx="14" fill="url(#incFondoG)"/><rect x="6" y="-42" width="408" height="372" rx="14" fill="url(#incGrillaP)" opacity=".35"/>'
+    + '<g filter="url(#incHaloF)" opacity=".4" pointer-events="none"><polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="#2a5fc0" stroke-width="2.4"/><polyline points="' + pts(INC_CINTA) + '" fill="none" stroke="#2a8fd0" stroke-width="2.4"/>' + halo.join('') + '</g>'
+    + '<polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="#3a6fc0" stroke-width="1" pointer-events="none"/>'
     + partes
-    + '<polyline points="' + pts(INC_CINTA) + '" fill="none" stroke="#7fe0ff" stroke-width="1.1" stroke-linejoin="round" pointer-events="none"/>'
-    + '<rect x="150" y="8" width="120" height="22" rx="4" fill="#020814" stroke="#00c2ff" stroke-width="1"/><text x="210" y="22.5" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1">ESCENARIO</text>'
+    + '<polyline points="' + pts(INC_CINTA) + '" fill="none" stroke="#5fb0dd" stroke-width=".9" stroke-linejoin="round" opacity=".85" pointer-events="none"/>'
+    + '<rect x="150" y="8" width="120" height="22" rx="4" fill="#020814" stroke="#3f8fd0" stroke-width="1"/><text x="210" y="22.5" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1">ESCENARIO</text>'
     + '</svg>';
 }
 // ── El estadio en 3D ──
@@ -4199,13 +4346,14 @@ function incPlanoSVG(op) {
 // LED (bloom) es un extra: si no carga, se ve igual, sin el halo. Si el
 // aparato no tiene WebGL o el 3D falla, queda el plano en 2D: nunca se queda
 // sin plano.
-const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], anillo: 0.8, back: 1.2, gastro: 6, banio: 6, puerta: 13 };
+const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13 };
+// Arriba y costado de cada tipo: los mismos colores por zona que el plano.
 const INC_3D_COLOR = {
-  baja: [0x2a6be0, 0x0b2c70], alta: [0x1f57c4, 0x09245c], campo: [0x1546a0, 0x061d48],
-  anillo: [0x0e2452, 0x071431], back: [0x0b1a3c, 0x060f25],
-  gastro: [0x123f8c, 0x0a2250], banio: [0x123f8c, 0x0a2250], puerta: [0x00d1ff, 0x00d1ff]
+  baja: [0x2a5fd0, 0x0f2a66], alta: [0x6650c8, 0x261c62], campo: [0x0d6f80, 0x073640],
+  anillo: [0x16264a, 0x0a1430], back: [0x101c38, 0x080f22],
+  gastro: [0x1d3f7a, 0x0f2247], banio: [0x1d3f7a, 0x0f2247], enfermeria: [0x1d3f7a, 0x0f2247], servicio: [0x1d3f7a, 0x0f2247], puerta: [0x4cc3ea, 0x4cc3ea]
 };
-const INC_3D_BORDE = { baja: 0x5aa2ff, alta: 0x4a8dff, campo: 0x00c2ff, anillo: 0x2a6fe0, back: 0x2a6fe0, gastro: 0x00d1ff, banio: 0x00d1ff, puerta: 0x00d1ff };
+const INC_3D_BORDE = { baja: 0x6f9cf0, alta: 0xb39cf5, campo: 0x5cc8dc, anillo: 0x2f5a9e, back: 0x2f5a9e, gastro: 0x7aa6ea, banio: 0x7aa6ea, enfermeria: 0x7aa6ea, servicio: 0x7aa6ea, puerta: 0x4cc3ea };
 let incCarga3D = null, incSin3D = false, incConBrillo = false, incListo3D = false;
 function incCargar3D() {
   if (incCarga3D) return incCarga3D;
@@ -4234,10 +4382,11 @@ function incGuardarVista(v) { try { localStorage.setItem('incVista', v); } catch
 function incMontarPlano(cont, op) {
   if (!cont) return;
   cont._incOp = op;
-  const quiere3D = incVistaPreferida() === '3d' && incHayWebGL();
+  incEstiloPlano();
+  const quiere3D = (op.vista || incVistaPreferida()) === '3d' && incHayWebGL();
   if (quiere3D && window.THREE && (incListo3D || !incCarga3D)) {
     try {
-      if (cont._inc3d && cont._inc3d.armado !== op.armado) { cont._inc3d.destruir(); cont._inc3d = null; }
+      if (cont._inc3d && (cont._inc3d.armado !== op.armado || cont._inc3d.version !== incVersionPlano)) { cont._inc3d.destruir(); cont._inc3d = null; }
       if (!cont._inc3d) { cont.innerHTML = ''; cont._inc3d = incPlano3D(cont, op); }
       cont._inc3d.poner(op);
       return;
@@ -4248,8 +4397,18 @@ function incMontarPlano(cont, op) {
     }
   }
   if (cont._inc3d) { cont._inc3d.destruir(); cont._inc3d = null; }
-  cont.innerHTML = incPlanoSVG(op);
-  if (quiere3D && !incSin3D) incCargar3D().then(ok => { if (ok && cont._incOp && incVistaPreferida() === '3d') incMontarPlano(cont, cont._incOp); });
+  cont.innerHTML = incPlanoSVG(op) + incLeyendaHTML();
+  if (quiere3D && !incSin3D) incCargar3D().then(ok => { if (ok && cont._incOp && (cont._incOp.vista || incVistaPreferida()) === '3d') incMontarPlano(cont, cont._incOp); });
+}
+// La leyenda de colores de abajo del plano 2D (y la del 3D, encima).
+function incEstiloPlano() {
+  if (document.getElementById('incEstiloPlano')) return;
+  const st = document.createElement('style'); st.id = 'incEstiloPlano';
+  st.textContent = '.inc-plano-ley{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font:500 11px Poppins,sans-serif;color:#4b5563}'
+    + '.inc-plano-ley span,.inc-3d-ley span{display:inline-flex;align-items:center;gap:5px}'
+    + '.inc-plano-ley i,.inc-3d-ley i{width:10px;height:10px;border-radius:3px;border:1px solid;display:inline-block}'
+    + '.inc-3d-ley{position:absolute;left:8px;top:8px;z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 120px);font:500 10.5px Poppins,sans-serif;color:rgba(255,255,255,.82);background:rgba(2,10,30,.45);padding:5px 9px;border-radius:8px;pointer-events:none}';
+  document.head.appendChild(st);
 }
 function incEstilo3D() {
   if (document.getElementById('incEstilo3D')) return;
@@ -4274,7 +4433,7 @@ function incPlano3D(cont, op0) {
   const escena = new T.Scene();
   {
     const g = lienzoDe(2, 256), x = g.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 256);
-    gr.addColorStop(0, '#0a2a66'); gr.addColorStop(0.45, '#04143a'); gr.addColorStop(1, '#01040e');
+    gr.addColorStop(0, '#0b2350'); gr.addColorStop(0.45, '#05102a'); gr.addColorStop(1, '#01040e');
     x.fillStyle = gr; x.fillRect(0, 0, 2, 256);
     escena.background = textura(g);
   }
@@ -4294,25 +4453,27 @@ function incPlano3D(cont, op0) {
   const ayuda = document.createElement('div'); ayuda.className = 'inc-3d-ayuda'; ayuda.textContent = 'Arrastrá para girar · tocá un lugar';
   cont.appendChild(ayuda);
   const tip = document.createElement('div'); tip.className = 'inc-3d-tip'; cont.appendChild(tip);
+  const ley = document.createElement('div'); ley.innerHTML = incLeyendaHTML('inc-3d-ley'); if (ley.firstChild) cont.appendChild(ley.firstChild);
+  const version = incVersionPlano;
   // Dos capas: la 0 es el estadio (con brillo); la 1, los carteles, que se
   // dibujan después, nítidos y siempre a la vista.
   const ETQ = 1;
 
   // Luces: cielo azul y suelo oscuro, una luz blanca de frente, un contraluz
   // celeste desde atrás y una luz azul desde el escenario.
-  escena.add(new T.HemisphereLight(0xa9cfff, 0x020814, 0.7));
-  const clave = new T.DirectionalLight(0xffffff, 0.55); clave.position.set(180, 380, 300); escena.add(clave);
+  escena.add(new T.HemisphereLight(0xa9cfff, 0x020814, 0.55));
+  const clave = new T.DirectionalLight(0xffffff, 0.45); clave.position.set(180, 380, 300); escena.add(clave);
   const contra = new T.DirectionalLight(0x00c2ff, 0.55); contra.position.set(-220, 180, -340); escena.add(contra);
-  const luzEscenario = new T.PointLight(0x4d94ff, 1.2, 420); luzEscenario.position.set(0, 60, -110); escena.add(luzEscenario);
+  const luzEscenario = new T.PointLight(0x4d94ff, 0.45, 420); luzEscenario.position.set(0, 60, -110); escena.add(luzEscenario);
 
   // El piso: oscuro, con grilla, y un resplandor azul debajo del estadio.
   const piso = new T.Mesh(new T.PlaneGeometry(1800, 1800), new T.MeshStandardMaterial({ color: 0x020a1c, roughness: 0.92, metalness: 0.1 }));
   piso.rotation.x = -Math.PI / 2; piso.position.y = -0.1; escena.add(piso);
   const grilla = new T.GridHelper(1100, 110, 0x0b3d91, 0x072657);
-  grilla.material.transparent = true; grilla.material.opacity = 0.32; escena.add(grilla);
+  grilla.material.transparent = true; grilla.material.opacity = 0.18; escena.add(grilla);
   {
     const c = lienzoDe(256, 256), x = c.getContext('2d'), gr = x.createRadialGradient(128, 128, 0, 128, 128, 128);
-    gr.addColorStop(0, 'rgba(0,102,255,.55)'); gr.addColorStop(0.55, 'rgba(0,102,255,.16)'); gr.addColorStop(1, 'rgba(0,102,255,0)');
+    gr.addColorStop(0, 'rgba(0,102,255,.3)'); gr.addColorStop(0.55, 'rgba(0,102,255,.1)'); gr.addColorStop(1, 'rgba(0,102,255,0)');
     x.fillStyle = gr; x.fillRect(0, 0, 256, 256);
     const m = new T.Mesh(new T.PlaneGeometry(760, 700), new T.MeshBasicMaterial({ map: textura(c), transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
     m.rotation.x = -Math.PI / 2; m.position.y = 0.05; escena.add(m);
@@ -4354,7 +4515,7 @@ function incPlano3D(cont, op0) {
 
   // Las butacas (una por baldosa, con el pasillo de la fila más oscuro) y el piso del campo.
   const lienzoButacas = lienzoDe(32, 32);
-  { const x = lienzoButacas.getContext('2d'); x.fillStyle = '#6f7fa3'; x.fillRect(0, 0, 32, 32); x.fillStyle = '#ffffff'; x.fillRect(3, 3, 26, 19); x.fillStyle = '#c9d3ea'; x.fillRect(3, 18, 26, 4); }
+  { const x = lienzoButacas.getContext('2d'); x.fillStyle = '#8a97b5'; x.fillRect(0, 0, 32, 32); x.fillStyle = '#ffffff'; x.fillRect(3, 3, 26, 19); x.fillStyle = '#d5dcee'; x.fillRect(3, 18, 26, 4); }
   const texButacas = {};
   const butacas = rot => {
     const k = String(rot);
@@ -4363,7 +4524,7 @@ function incPlano3D(cont, op0) {
   };
   const texCampo = (() => {
     const c = lienzoDe(64, 64), x = c.getContext('2d');
-    x.fillStyle = '#d7e3fa'; x.fillRect(0, 0, 64, 64); x.fillStyle = '#ffffff'; x.fillRect(0, 0, 64, 2); x.fillRect(0, 0, 2, 64);
+    x.fillStyle = '#b9c7e2'; x.fillRect(0, 0, 64, 64); x.fillStyle = '#ffffff'; x.fillRect(0, 0, 64, 2); x.fillRect(0, 0, 2, 64);
     const t = textura(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(1 / 12, 1 / 12); t.anisotropy = anis; return t;
   })();
 
@@ -4449,7 +4610,7 @@ function incPlano3D(cont, op0) {
       const zona = new T.Mesh(extruir(pts.map(q => q.clone().sub(c0).multiplyScalar(1.6).add(c0)), h + 2), new T.MeshBasicMaterial());
       zona.visible = false; grupo.add(zona); tocable(zona);
       p.pintar = (v, sel) => { matMarco.color.set(sel ? 0xffffff : v ? v.plano : bordeBase); matHuella.color.set(v ? v.plano : bordeBase); };
-      p.latir = k => { matHuella.opacity = 0.2 + k * 0.7; };
+      p.latir = k => { matHuella.opacity = 0.12 + k * 0.5; };
       p.hBase = h; p.hEt = h + 6; p.et = cartelIco(null, s.txt, 6.5);
     } else {
       let geo, rot = 0;
@@ -4467,14 +4628,14 @@ function incPlano3D(cont, op0) {
       const matLado = new T.MeshStandardMaterial({ color: base[1], roughness: 0.5, metalness: 0.35 });
       const malla = new T.Mesh(geo, [matTop, matLado]); grupo.add(malla); tocable(malla);
       // El contorno en luz LED (cada fila de la platea tiene el suyo).
-      const opB = { baja: 0.8, alta: 0.8, campo: 0.9, anillo: 0.55, back: 0.55 }[s.t] || 0.95;
+      const opB = { baja: 0.38, alta: 0.38, campo: 0.5, anillo: 0.35, back: 0.35 }[s.t] || 0.55;
       const matBorde = new T.LineBasicMaterial({ color: bordeBase, transparent: true, opacity: opB });
       grupo.add(new T.LineSegments(new T.EdgesGeometry(geo, 25), matBorde));
       // Con una incidencia: el color fuerte del semáforo y la luz del color claro,
       // así el brillo no lo lava a blanco.
       p.pintar = (v, sel) => {
         matTop.color.set(v ? v.color : base[0]); matLado.color.set(v ? v.color : base[1]); if (v) matLado.color.multiplyScalar(0.55);
-        matTop.emissive.set(v ? v.plano : 0x3d8bff);
+        matTop.emissive.set(v ? v.plano : 0xffffff);
         matBorde.color.set(sel ? 0xffffff : v ? v.plano : bordeBase); matBorde.opacity = v || sel ? 1 : opB;
       };
       p.latir = k => { matTop.emissiveIntensity = k; };
@@ -4498,13 +4659,13 @@ function incPlano3D(cont, op0) {
   // (con los equipos que brillan) y la pantalla LED con el nombre del show.
   const escenario = new T.Mesh(new T.BoxGeometry(120, 7, 22), new T.MeshStandardMaterial({ color: 0x060b18, roughness: 0.35, metalness: 0.5 }));
   escenario.position.set(0, 3.5, -127); escena.add(escenario);
-  const tira = new T.Mesh(new T.BoxGeometry(118, 0.8, 0.8), new T.MeshBasicMaterial({ color: 0x00c2ff }));
+  const tira = new T.Mesh(new T.BoxGeometry(118, 0.8, 0.8), new T.MeshBasicMaterial({ color: 0x2a9fd6 }));
   tira.position.set(0, 6.6, -116); escena.add(tira);
   const cEsc = cartel('ESCENARIO', 9, '#ffffff'); cEsc.position.set(0, 14, -122); escena.add(cEsc);
   const matTruss = new T.MeshStandardMaterial({ color: 0x3a4e72, roughness: 0.4, metalness: 0.8 });
   [[-63, -114], [63, -114], [-63, -141], [63, -141]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(2.4, 54, 2.4), matTruss); t.position.set(x, 27, z); escena.add(t); });
   [[0, -114, 128, 0], [0, -141, 128, 0], [-63, -127.5, 27, Math.PI / 2], [63, -127.5, 27, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 2.4, 2.4), matTruss); t.position.set(x, 54, z); t.rotation.y = r; escena.add(t); });
-  const matFoco = new T.MeshBasicMaterial({ color: 0xcfeaff }), geoFoco = new T.SphereGeometry(1.3, 12, 8);
+  const matFoco = new T.MeshBasicMaterial({ color: 0xa9d4f5 }), geoFoco = new T.SphereGeometry(1.3, 12, 8);
   for (let i = 0; i < 9; i++) { const f = new T.Mesh(geoFoco, matFoco); f.position.set(-56 + i * 14, 51.5, -114); escena.add(f); }
   const lienzoLed = lienzoDe(1024, 256), texLed = textura(lienzoLed);
   let tituloLed = null;
@@ -4536,15 +4697,15 @@ function incPlano3D(cont, op0) {
   const pintarCinta = titulo => {
     if (titulo === tituloCinta) return; tituloCinta = titulo;
     const x = lienzoCinta.getContext('2d');
-    x.fillStyle = '#01102e'; x.fillRect(0, 0, 2048, 64);
-    x.fillStyle = '#00c2ff'; x.fillRect(0, 0, 2048, 3); x.fillRect(0, 61, 2048, 3);
+    x.fillStyle = '#020b22'; x.fillRect(0, 0, 2048, 64);
+    x.fillStyle = '#2a8fd0'; x.fillRect(0, 0, 2048, 2); x.fillRect(0, 62, 2048, 2);
     const t = String(titulo || '').toUpperCase();
     const frase = (t ? (/MOVISTAR ARENA/.test(t) ? t : 'MOVISTAR ARENA   •   ' + t) : 'MOVISTAR ARENA') + '   •   ';
     let fs = 36; x.font = '700 ' + fs + 'px Poppins, sans-serif';
     while (x.measureText(frase).width > 2000 && fs > 18) { fs -= 2; x.font = '700 ' + fs + 'px Poppins, sans-serif'; }
     // Un número entero de frases, para que la vuelta no se note.
     const n = Math.max(1, Math.round(2048 / x.measureText(frase).width)), paso = 2048 / n;
-    x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillStyle = '#cfe0ff'; x.textAlign = 'center'; x.textBaseline = 'middle';
     for (let i = 0; i < n; i++) x.fillText(frase, paso * (i + 0.5), 34);
     texCinta.needsUpdate = true;
   };
@@ -4554,26 +4715,26 @@ function incPlano3D(cont, op0) {
 
   // La fachada de vidrio que cierra el anillo, con una línea de luz arriba y otra abajo.
   const fach = INC_FACHADA.map(([x, y]) => new T.Vector3(x - 210, 0, y - 146));
-  escena.add(new T.Mesh(pared(fach, 0, 10, true, 1), new T.MeshBasicMaterial({ color: 0x0a4bc0, transparent: true, opacity: 0.13, side: T.DoubleSide, depthWrite: false })));
-  [[10, 0x2f86ff, 1], [0.4, 0x0066ff, 0.9]].forEach(([y, color, op]) => escena.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(fach.map(q => q.clone().setY(y))), new T.LineBasicMaterial({ color, transparent: true, opacity: op }))));
+  escena.add(new T.Mesh(pared(fach, 0, 10, true, 1), new T.MeshBasicMaterial({ color: 0x0a4bc0, transparent: true, opacity: 0.07, side: T.DoubleSide, depthWrite: false })));
+  [[10, 0x3a78d8, 0.55], [0.4, 0x2a5fc0, 0.5]].forEach(([y, color, op]) => escena.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(fach.map(q => q.clone().setY(y))), new T.LineBasicMaterial({ color, transparent: true, opacity: op }))));
   {
     const v = [];
     fach.forEach((a, i) => { const b = fach[(i + 1) % fach.length], n = Math.floor(a.distanceTo(b) / 16); for (let k = 1; k < n; k++) { const q = a.clone().lerp(b, k / n); v.push(q.x, 0, q.z, q.x, 10, q.z); } });
     const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(v, 3));
-    escena.add(new T.LineSegments(g, new T.LineBasicMaterial({ color: 0x1d5fd0, transparent: true, opacity: 0.45 })));
+    escena.add(new T.LineSegments(g, new T.LineBasicMaterial({ color: 0x1d5fd0, transparent: true, opacity: 0.25 })));
   }
 
   // Haces de luz desde la estructura que barren el campo, y partículas en el aire.
   const haces = [-48, -16, 16, 48].map((x0, k) => {
-    const h = new T.Mesh(new T.ConeGeometry(22, 150, 32, 1, true), new T.MeshBasicMaterial({ color: k % 2 ? 0x00c2ff : 0x2f7bff, transparent: true, opacity: 0.06, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide }));
+    const h = new T.Mesh(new T.ConeGeometry(22, 150, 32, 1, true), new T.MeshBasicMaterial({ color: k % 2 ? 0x00c2ff : 0x2f7bff, transparent: true, opacity: 0.03, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide }));
     h.geometry.translate(0, -75, 0);           // gira desde la punta, colgada de la estructura
     h.position.set(x0, 52, -114); h.userData.k = k; escena.add(h);
     return h;
   });
-  const nPart = 180, posPart = new Float32Array(nPart * 3);
+  const nPart = 90, posPart = new Float32Array(nPart * 3);
   for (let i = 0; i < nPart; i++) { posPart[i * 3] = (Math.random() - 0.5) * 340; posPart[i * 3 + 1] = 10 + Math.random() * 110; posPart[i * 3 + 2] = (Math.random() - 0.5) * 320; }
   const geoPart = new T.BufferGeometry(); geoPart.setAttribute('position', new T.BufferAttribute(posPart, 3));
-  const particulas = new T.Points(geoPart, new T.PointsMaterial({ color: 0x7cc4ff, size: 1.5, transparent: true, opacity: 0.5, blending: T.AdditiveBlending, depthWrite: false }));
+  const particulas = new T.Points(geoPart, new T.PointsMaterial({ color: 0x7cc4ff, size: 1.3, transparent: true, opacity: 0.3, blending: T.AdditiveBlending, depthWrite: false }));
   escena.add(particulas);
 
   // La baliza de un lugar con incidencias: columna de luz, onda en la base y el número.
@@ -4594,7 +4755,7 @@ function incPlano3D(cont, op0) {
     try {
       comp = new T.EffectComposer(motor, new T.WebGLMultisampleRenderTarget(8, 8, { format: T.RGBAFormat }));
       comp.addPass(new T.RenderPass(escena, camara));
-      pasoBrillo = new T.UnrealBloomPass(new T.Vector2(8, 8), 0.62, 0.45, 0.52);
+      pasoBrillo = new T.UnrealBloomPass(new T.Vector2(8, 8), 0.38, 0.35, 0.72);
       comp.addPass(pasoBrillo);
     } catch (err) { console.warn('plano 3D sin brillo', err); comp = null; }
   }
@@ -4695,10 +4856,10 @@ function incPlano3D(cont, op0) {
     }
     Object.values(piezas).forEach(p => {
       const brillo = p.id === sobre;
-      if (!p.nivel) { p.latir(p.sel ? 0.35 : (brillo ? 0.25 : 0)); return; }
+      if (!p.nivel) { p.latir(p.sel ? 0.2 : (brillo ? 0.12 : 0)); return; }
       const vel = [0, 2, 3.4, 5.5][p.nivel];
       const latido = 0.5 + 0.5 * Math.sin(t * vel);
-      p.latir(0.2 + 0.28 * latido + (brillo ? 0.12 : 0));
+      p.latir(0.22 + 0.24 * latido + (brillo ? 0.08 : 0));
       if (p.baliza) {
         const u = p.baliza.userData;
         if (u.nace === null) u.nace = t;
@@ -4710,7 +4871,7 @@ function incPlano3D(cont, op0) {
         u.chapa.position.y = 72 + Math.sin(t * 2.2) * 1.8;
       }
     });
-    haces.forEach(h => { const k = h.userData.k; h.rotation.z = Math.sin(t * 0.5 + k * 1.7) * 0.42; h.rotation.x = 0.35 + Math.sin(t * 0.37 + k) * 0.18; h.material.opacity = 0.04 + 0.03 * (0.5 + 0.5 * Math.sin(t * 1.3 + k)); });
+    haces.forEach(h => { const k = h.userData.k; h.rotation.z = Math.sin(t * 0.5 + k * 1.7) * 0.42; h.rotation.x = 0.35 + Math.sin(t * 0.37 + k) * 0.18; h.material.opacity = 0.02 + 0.02 * (0.5 + 0.5 * Math.sin(t * 1.3 + k)); });
     particulas.rotation.y = t * 0.02; particulas.position.y = Math.sin(t * 0.4) * 2;
     texCinta.offset.x = (t * 0.06) % 1;
     // Después de 20 segundos sin que nadie lo toque, gira solo, despacio.
@@ -4725,7 +4886,7 @@ function incPlano3D(cont, op0) {
     if (o.material) [].concat(o.material).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
   });
   return {
-    armado: op0.armado,
+    armado: op0.armado, version,
     // Pinta los lugares según lo abierto y pone, saca o renueva las balizas.
     poner(op) {
       onclick = op.onclick;
@@ -4960,14 +5121,18 @@ let incVistosAdm = null, incNuevosAdm = new Set();
 let ccConvId = null, ccShows = [], ccTabActual = 'shows';
 function ccTab(t) {
   ccTabActual = t;
-  document.getElementById('ccShows').style.display = t === 'shows' ? '' : 'none';
-  document.getElementById('ccAccesos').style.display = t === 'accesos' ? '' : 'none';
-  document.getElementById('ccTabShows').className = 'btn btn-sm ' + (t === 'shows' ? 'btn-primary' : 'btn-sec');
-  document.getElementById('ccTabAccesos').className = 'btn btn-sm ' + (t === 'accesos' ? 'btn-primary' : 'btn-sec');
+  [['shows', 'ccShows', 'ccTabShows'], ['plano', 'ccPlano', 'ccTabPlano'], ['accesos', 'ccAccesos', 'ccTabAccesos']].forEach(([k, sec, btn]) => {
+    const s = document.getElementById(sec); if (s) s.style.display = t === k ? '' : 'none';
+    const b = document.getElementById(btn); if (b) b.className = 'btn btn-sm ' + (t === k ? 'btn-primary' : 'btn-sec');
+  });
   if (t === 'accesos') renderAccesosGerencia();
+  if (t === 'plano') { renderCcPlano(); return; }
+  // Fuera del editor, el tablero muestra el plano guardado (no el borrador).
+  if (ccPlanoGuardado && JSON.stringify(incLugaresArena) !== JSON.stringify(ccPlanoGuardado)) { incPonerLugares(ccPlanoGuardado); if (t === 'shows' && ccConvId) renderIncidAdm(); }
 }
 async function renderCentroControl() {
   ccTab(ccTabActual);
+  await ccCargarPlanoGuardado();
   await ccCargarShows();
   if (!ccConvId) { const s0 = ccElegirInicial(); if (s0) await ccAbrirShow(s0.id); else ccSinShows(); }
   else { renderIncidAdm(); cargarIncidAdm(); }
@@ -5024,6 +5189,208 @@ async function ccQuitarShow() {
   ccConvId = null; toast('Quitado del Centro de Control');
   await ccCargarShows();
   const s0 = ccElegirInicial(); if (s0) await ccAbrirShow(s0.id); else ccSinShows();
+}
+
+// ── El plano del Arena: los puestos del anillo ──
+// Se arma un borrador que se ve en vivo (en el editor y en la vista previa
+// 3D); recién al guardar lo ven la tablet y la gerencia. Los puestos se
+// mueven arrastrándolos (o con las flechas), y se les cambia el tipo, el
+// nombre, la etiqueta, el tamaño y el giro.
+let ccPlanoGuardado = null, ccPlanoBorrador = null, ccPlanoSel = '', ccPlanoArrastre = null, ccPlanoTimer = null;
+const ccClon = x => JSON.parse(JSON.stringify(x));
+// El plano guardado en la base (puede haber cambiado desde otra compu).
+async function ccCargarPlanoGuardado() {
+  if (ccTabActual === 'plano') return;   // en el editor manda el borrador
+  await incCargarPlanoArena();
+  const pendiente = ccPlanoBorrador && ccPlanoGuardado && ccPlanoPendiente();
+  ccPlanoGuardado = ccClon(incLugaresArena);
+  if (!pendiente) ccPlanoBorrador = ccClon(incLugaresArena);
+}
+async function renderCcPlano() {
+  if (!ccPlanoBorrador) { await incCargarPlanoArena(); ccPlanoGuardado = ccClon(incLugaresArena); ccPlanoBorrador = ccClon(incLugaresArena); }
+  ccPlanoActivar();
+  ccPlanoPintar();
+}
+function ccPlanoPendiente() { return JSON.stringify(incNormalizarLugares(ccPlanoBorrador)) !== JSON.stringify(ccPlanoGuardado); }
+// Lo que se ve: el editor, el formulario (si conForm) y, un ratito después, la vista previa.
+function ccPlanoPintar(conForm) {
+  incPonerLugares(ccPlanoBorrador);
+  const lienzo = document.getElementById('ccPlanoLienzo');
+  if (lienzo) lienzo.innerHTML = incPlanoSVG({ armado: 'campos', editor: true, sel: ccPlanoSel });
+  if (conForm !== false) ccPlanoFormPintar();
+  const est = document.getElementById('ccPlanoEstado');
+  if (est) { const p = ccPlanoPendiente(); est.textContent = p ? 'Hay cambios sin guardar' : 'Todo guardado'; est.className = 'cc-plano-estado' + (p ? ' pend' : ''); }
+  clearTimeout(ccPlanoTimer); ccPlanoTimer = setTimeout(ccPlanoPrevia, 350);
+}
+// Unas incidencias de mentira para ver cómo se ve (no se guardan en ningún lado).
+function ccPlanoEjemplo() {
+  const de = t => (incLugaresArena.find(x => x.t === t) || {}).id;
+  const niveles = { 'Campo delantero': 3, 'Platea 313': 3, 'Platea 104': 2, 'Platea 110': 1 };
+  [[de('gastro'), 2], [de('puerta'), 1], [de('banio'), 2], [de('enfermeria'), 3]].forEach(([id, nv]) => { if (id) niveles[id] = nv; });
+  const cuentas = {}; Object.keys(niveles).forEach((k, i) => { cuentas[k] = 1 + (i % 2); });
+  return { niveles, cuentas };
+}
+function ccPlanoPrevia() {
+  const cont = document.getElementById('ccPlanoPrevia'); if (!cont || ccTabActual !== 'plano') return;
+  const ej = (document.getElementById('ccPlanoSim') || {}).checked ? ccPlanoEjemplo() : { niveles: {}, cuentas: {} };
+  incMontarPlano(cont, { armado: 'campos', niveles: ej.niveles, cuentas: ej.cuentas, sel: ccPlanoSel, onclick: 'ccPlanoTocar', titulo: 'Vista previa', vista: '3d' });
+}
+function ccPlanoTocar(id) { if (ccPlanoBorrador.some(l => l.id === id)) { ccPlanoSel = id; ccPlanoPintar(); } }
+function ccPlanoElegirN(i) { ccPlanoSel = i >= 0 && ccPlanoBorrador[i] ? ccPlanoBorrador[i].id : ''; ccPlanoPintar(); }
+function ccPlanoFormPintar() {
+  const cont = document.getElementById('ccPlanoForm'); if (!cont) return;
+  const i = ccPlanoBorrador.findIndex(x => x.id === ccPlanoSel), l = ccPlanoBorrador[i];
+  if (!l) {
+    cont.innerHTML = '<div class="cc-plano-f"><h4>Puestos del anillo</h4><div style="font-size:12px;color:var(--r-muted)">' + ccPlanoBorrador.length + ' en el plano. Tocá uno, acá o en el plano, para moverlo o cambiarle el nombre, el tamaño o el giro.</div>'
+      + '<div class="cc-plano-lista">' + Object.keys(INC_TIPOS_LUGAR).map(t => ccPlanoBorrador.map((x, k) => x.t !== t ? '' : '<button onclick="ccPlanoElegirN(' + k + ')">' + e(x.id) + '<small>' + e(INC_TIPOS_LUGAR[t].nombre) + '</small></button>').join('')).join('') + '</div></div>';
+    return;
+  }
+  const opTipo = Object.keys(INC_TIPOS_LUGAR).map(t => '<option value="' + t + '"' + (t === l.t ? ' selected' : '') + '>' + e(INC_TIPOS_LUGAR[t].nombre) + '</option>').join('');
+  const rango = (k, etq, min, max, paso) => '<div><label>' + etq + ' <span class="val" id="ccPv_' + k + '">' + l[k] + '</span></label><input type="range" min="' + min + '" max="' + max + '" step="' + paso + '" value="' + l[k] + '" oninput="ccPlanoCampo(\'' + k + '\', this.value)"></div>';
+  cont.innerHTML = '<div class="cc-plano-f"><h4>' + e(l.id) + '</h4>'
+    + '<div><label>Tipo</label><select class="fi" onchange="ccPlanoCampo(\'t\', this.value)">' + opTipo + '</select></div>'
+    + '<div><label>Nombre (así aparece en las incidencias)</label><input type="text" class="fi" maxlength="60" value="' + e(l.id) + '" onchange="ccPlanoCampo(\'id\', this.value)"></div>'
+    + '<div><label>Etiqueta en el plano (corta)</label><input type="text" class="fi" maxlength="6" value="' + e(l.txt) + '" oninput="ccPlanoCampo(\'txt\', this.value)"></div>'
+    + '<div class="fila">' + rango('w', l.t === 'puerta' ? 'Largo' : 'Ancho', 6, 80, 1) + rango('h', l.t === 'puerta' ? 'Fondo' : 'Alto', 6, 60, 1) + '</div>'
+    + rango('ang', 'Giro (grados)', -90, 90, 5)
+    + '<div class="cc-plano-giros"><button class="btn btn-xs btn-sec" onclick="ccPlanoGiro(0)">Horizontal</button><button class="btn btn-xs btn-sec" onclick="ccPlanoGiro(90)">Vertical</button></div>'
+    + '<div class="cc-plano-botones"><button class="btn btn-xs btn-sec" onclick="ccPlanoDuplicar()">Duplicar</button><button class="btn btn-xs btn-danger" onclick="ccPlanoBorrar()">Borrar del plano</button><button class="btn btn-xs btn-sec" onclick="ccPlanoElegirN(-1)">Listo</button></div></div>';
+}
+// Cambiar un dato del puesto elegido. Los deslizadores y la etiqueta redibujan
+// sólo el plano (si no, se pierde el deslizador o el cursor mientras se usa).
+function ccPlanoCampo(k, v) {
+  const l = ccPlanoBorrador.find(x => x.id === ccPlanoSel); if (!l) return;
+  if (k === 'id') {
+    const nuevo = String(v == null ? '' : v).trim().slice(0, 60);
+    const repetido = ccPlanoBorrador.some(x => x !== l && x.id.toLowerCase() === nuevo.toLowerCase());
+    if (!nuevo || repetido || !incNormalizarLugares([{ id: nuevo, t: l.t }]).length) {
+      toast(!nuevo ? 'Ponele un nombre' : repetido ? 'Ya hay un puesto con ese nombre' : 'Ese nombre ya es de un sector del plano');
+      ccPlanoFormPintar(); return;
+    }
+    l.id = nuevo; ccPlanoSel = nuevo; ccPlanoPintar(); return;
+  }
+  if (k === 't') { if (INC_TIPOS_LUGAR[v]) l.t = v; ccPlanoPintar(); return; }
+  if (k === 'txt') l.txt = String(v == null ? '' : v).slice(0, 6);
+  else { const n = Number(v); if (!isFinite(n)) return; l[k] = n; const val = document.getElementById('ccPv_' + k); if (val) val.textContent = n; }
+  ccPlanoPintar(false);
+}
+function ccPlanoGiro(g) { const l = ccPlanoBorrador.find(x => x.id === ccPlanoSel); if (l) { l.ang = g; ccPlanoPintar(); } }
+function ccPlanoNombreLibre(base) { let n = 1; while (ccPlanoBorrador.some(x => x.id.toLowerCase() === (base + ' ' + n).toLowerCase())) n++; return n; }
+// Un puesto nuevo aparece en el medio del campo, elegido, para arrastrarlo a su lugar.
+function ccPlanoAgregar(t) {
+  const tipo = INC_TIPOS_LUGAR[t]; if (!tipo) return;
+  const n = ccPlanoNombreLibre(tipo.nombre);
+  const l = { id: tipo.nombre + ' ' + n, t, txt: (t === 'puerta' ? 'P' : '') + n, cx: 210, cy: 150, w: tipo.w, h: tipo.h, ang: 0 };
+  ccPlanoBorrador.push(l); ccPlanoSel = l.id; ccPlanoPintar();
+  toast('Arrastralo a su lugar en el anillo');
+}
+function ccPlanoDuplicar() {
+  const l = ccPlanoBorrador.find(x => x.id === ccPlanoSel); if (!l) return;
+  const tipo = INC_TIPOS_LUGAR[l.t], n = ccPlanoNombreLibre(tipo.nombre);
+  const c = Object.assign({}, l, { id: tipo.nombre + ' ' + n, txt: (l.t === 'puerta' ? 'P' : '') + n, cx: Math.min(412, l.cx + 8), cy: Math.min(328, l.cy + 8) });
+  ccPlanoBorrador.push(c); ccPlanoSel = c.id; ccPlanoPintar();
+}
+function ccPlanoBorrar() {
+  const l = ccPlanoBorrador.find(x => x.id === ccPlanoSel); if (!l) return;
+  if (!confirm('¿Sacar "' + l.id + '" del plano?\n\nLas incidencias que ya tenga quedan guardadas (aparecen como botón abajo del plano).')) return;
+  ccPlanoBorrador = ccPlanoBorrador.filter(x => x !== l); ccPlanoSel = ''; ccPlanoPintar();
+}
+async function ccPlanoGuardar() {
+  const lista = incNormalizarLugares(ccPlanoBorrador);
+  if (lista.length !== ccPlanoBorrador.length) { toast('Hay puestos con el nombre vacío o repetido: revisalos antes de guardar'); return; }
+  const btn = document.getElementById('ccPlanoGuardarBtn'); if (btn) btn.disabled = true;
+  try {
+    const { error } = await sb.from('arena_plano').upsert({ id: 1, lugares: lista, updated_at: new Date().toISOString(), updated_por: ((document.getElementById('userEmail') || {}).textContent || '').trim() || null });
+    if (error) { toast(/arena_plano/.test(error.message || '') ? 'Primero hay que correr plano-arena.sql en Supabase' : 'No se pudo guardar: ' + error.message); return; }
+    ccPlanoGuardado = ccClon(lista); ccPlanoBorrador = ccClon(lista);
+    toast('✓ Plano guardado: ya lo ven la tablet y la gerencia');
+    ccPlanoPintar();
+  } finally { if (btn) btn.disabled = false; }
+}
+function ccPlanoDescartar() { ccPlanoBorrador = ccClon(ccPlanoGuardado || []); ccPlanoSel = ''; ccPlanoPintar(); }
+function ccPlanoOriginal() {
+  if (!confirm('¿Volver a los puestos de la primera versión?\n\nSe reemplaza lo que hay en el editor; no se guarda hasta que toques "Guardar cambios".')) return;
+  ccPlanoBorrador = ccClon(incNormalizarLugares(INC_LUGARES_BASE)); ccPlanoSel = ''; ccPlanoPintar();
+}
+// Arrastrar con el mouse o el dedo: mientras se arrastra se corre sólo ese
+// puesto; al soltar se guarda en el borrador y se redibuja todo.
+function ccPlanoActivar() {
+  const cont = document.getElementById('ccPlanoLienzo'); if (!cont || cont._ccOn) return; cont._ccOn = true;
+  const aPlano = (svg, ev) => { const m = svg.getScreenCTM && svg.getScreenCTM(); if (!m) return null; const p = svg.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; return p.matrixTransform(m.inverse()); };
+  const limitar = (v, a, b) => Math.round(Math.min(b, Math.max(a, v)) * 2) / 2;
+  cont.addEventListener('pointerdown', ev => {
+    const svg = cont.querySelector('svg'), g = ev.target && ev.target.closest ? ev.target.closest('[data-lugar]') : null;
+    if (!svg) return;
+    if (!g) { if (ccPlanoSel) { ccPlanoSel = ''; ccPlanoPintar(); } return; }
+    const l = ccPlanoBorrador.find(x => x.id === g.getAttribute('data-lugar')), p = aPlano(svg, ev); if (!l || !p) return;
+    ccPlanoArrastre = { l, g, svg, x0: p.x, y0: p.y, cx: l.cx, cy: l.cy, movio: false };
+    try { cont.setPointerCapture(ev.pointerId); } catch (_) {}
+    ev.preventDefault();
+  });
+  cont.addEventListener('pointermove', ev => {
+    const a = ccPlanoArrastre; if (!a) return;
+    const p = aPlano(a.svg, ev); if (!p) return;
+    const dx = p.x - a.x0, dy = p.y - a.y0;
+    if (Math.abs(dx) + Math.abs(dy) > 0.8) a.movio = true;
+    a.g.setAttribute('transform', 'translate(' + dx + ' ' + dy + ')');
+  });
+  cont.addEventListener('pointerup', ev => {
+    const a = ccPlanoArrastre; if (!a) return; ccPlanoArrastre = null;
+    const p = aPlano(a.svg, ev);
+    if (a.movio && p) { a.l.cx = limitar(a.cx + p.x - a.x0, 8, 412); a.l.cy = limitar(a.cy + p.y - a.y0, -40, 328); }
+    ccPlanoSel = a.l.id; ccPlanoPintar();
+    try { cont.focus({ preventScroll: true }); } catch (_) {}
+  });
+  cont.addEventListener('pointercancel', () => { ccPlanoArrastre = null; ccPlanoPintar(); });
+  cont.addEventListener('keydown', ev => {
+    const l = ccPlanoBorrador.find(x => x.id === ccPlanoSel); if (!l) return;
+    const paso = ev.shiftKey ? 5 : 1, mov = { ArrowLeft: [-paso, 0], ArrowRight: [paso, 0], ArrowUp: [0, -paso], ArrowDown: [0, paso] }[ev.key];
+    if (mov) { ev.preventDefault(); l.cx = limitar(l.cx + mov[0], 8, 412); l.cy = limitar(l.cy + mov[1], -40, 328); ccPlanoPintar(); }
+    else if (ev.key === 'Escape') { ccPlanoSel = ''; ccPlanoPintar(); }
+  });
+}
+
+// ── Cargar una incidencia desde el panel ──
+// Misma lógica que la tablet: lugar, categoría, qué pasó (trae su gravedad),
+// lo que se hizo, una referencia y una nota. Se guarda en el show abierto.
+let incNuevaNivelAdm = 1;
+function incAbrirNuevaAdm(sector) {
+  if (!ccConvId) { toast('Primero elegí un show'); return; }
+  const armado = incArmadoAdm || incArmadoDe(incListaAdm);
+  const grupos = [['Plateas', INC_PLANO_TRIBUNAS], ['Campo', INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos], ['Anillo', INC_PLANO_ZONAS.concat(incLugaresArena)], ['Otros lugares', INC_LUGARES.map(id => ({ id }))]];
+  const elegido = sector || incSectorAdm || '';
+  document.getElementById('incNLugar').innerHTML = '<option value="">Elegí dónde pasó…</option>' + grupos.map(([g, l]) => '<optgroup label="' + g + '">' + l.map(s => '<option value="' + e(s.id) + '"' + (s.id === elegido ? ' selected' : '') + '>' + e(s.id) + '</option>').join('') + '</optgroup>').join('');
+  document.getElementById('incNCat').innerHTML = INC_CATALOGO.map((c, i) => '<option value="' + i + '">' + e(c.cat) + '</option>').join('');
+  document.getElementById('incNRef').value = ''; document.getElementById('incNNota').value = '';
+  incNuevaCat();
+  showM('mIncNueva');
+}
+function incNuevaCategoria() { return INC_CATALOGO[+document.getElementById('incNCat').value || 0] || INC_CATALOGO[0]; }
+function incNuevaCat() {
+  const c = incNuevaCategoria();
+  document.getElementById('incNTipo').innerHTML = c.tipos.map((t, i) => '<option value="' + i + '">' + e(t[0]) + '</option>').join('');
+  document.getElementById('incNAcc').innerHTML = c.acciones.map((a, i) => '<label class="inc-n-check"><input type="checkbox" value="' + i + '"> ' + e(a) + '</label>').join('');
+  incNuevaTipo();
+}
+function incNuevaTipo() { const t = incNuevaCategoria().tipos[+document.getElementById('incNTipo').value || 0]; incNuevaNivel(t ? t[1] : 1); }
+function incNuevaNivel(nv) {
+  incNuevaNivelAdm = nv;
+  document.getElementById('incNNivel').innerHTML = [1, 2, 3].map(k => '<button type="button" class="inc-n-nivel" style="' + (k === nv ? 'background:' + INC_NIVELES[k].fondo + ';border-color:' + INC_NIVELES[k].color + ';color:' + INC_NIVELES[k].color : '') + '" aria-pressed="' + (k === nv) + '" onclick="incNuevaNivel(' + k + ')">' + INC_NIVELES[k].nombre + '<small>' + INC_NIVELES[k].ayuda + '</small></button>').join('');
+}
+async function incGuardarNuevaAdm() {
+  const sector = document.getElementById('incNLugar').value;
+  if (!sector) { toast('Elegí dónde pasó'); return; }
+  const c = incNuevaCategoria(), t = c.tipos[+document.getElementById('incNTipo').value || 0] || c.tipos[0];
+  const acciones = [...document.querySelectorAll('#incNAcc input:checked')].map(x => c.acciones[+x.value]).filter(Boolean);
+  const fila = { conv_id: ccConvId, sector, ubicacion: document.getElementById('incNRef').value.trim() || null, categoria: c.cat, tipo: t[0], nivel: incNuevaNivelAdm, acciones,
+    nota: document.getElementById('incNNota').value.trim() || null, estado: 'abierta', creada_por_nombre: 'Panel · ' + ((document.getElementById('userEmail') || {}).textContent || '').trim() };
+  const btn = document.getElementById('incNGuardar'); btn.disabled = true;
+  try {
+    const { error } = await sb.from('incidencias').insert(fila);
+    if (error) { toast('No se pudo cargar: ' + error.message); return; }
+    closeM('mIncNueva'); toast('✓ Incidencia cargada');
+    await cargarIncidAdm();
+  } finally { btn.disabled = false; }
 }
 function ccFechas(x) { return String((x && x.fecha) || '').split(',').map(f => f.trim()).filter(Boolean).sort(); }
 function ccGrupo(x) { const fs = ccFechas(x), hoy = hoyLocalISO(); return fs.includes(hoy) ? 'hoy' : (fs.length && fs[0] > hoy) ? 'proximos' : 'anteriores'; }
@@ -5165,7 +5532,8 @@ function renderIncidAdm() {
     [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => chip('estado', v, t, incFiltroAdm === v)).join('')
     + (dias.length > 1 || (dias.length === 1 && incDiaAdm !== dias[0]) ? '<span style="width:1px;height:18px;background:var(--r-line);margin:0 2px"></span>' + chip('dia', '', 'Todos los días', !incDiaAdm)
         + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), incDiaAdm === d)).join('') : '')
-    + (incSectorAdm ? '<span class="inc-cuenta" style="background:var(--r-ink);color:#fff">' + incEsc(incSectorAdm) + ' <button onclick="incFiltrarAdm(\'sector\',\'\')" style="background:none;border:none;color:#fff;cursor:pointer;margin-left:4px">✕</button></span>' : '');
+    + (incSectorAdm ? '<span class="inc-cuenta" style="background:var(--r-ink);color:#fff">' + incEsc(incSectorAdm) + ' <button onclick="incFiltrarAdm(\'sector\',\'\')" style="background:none;border:none;color:#fff;cursor:pointer;margin-left:4px">✕</button></span>'
+      + '<button class="btn btn-primary btn-xs" onclick="incAbrirNuevaAdm(incSectorAdm)">+ Cargar acá</button>' : '');
   const lista = incOrdenar(delDia).filter(i => incFiltroAdm === 'todas' || (incFiltroAdm === 'abiertas') === (i.estado !== 'resuelta'))
     .filter(i => !incSectorAdm || i.sector === incSectorAdm);
   const cont = document.getElementById('incListaAdm');
