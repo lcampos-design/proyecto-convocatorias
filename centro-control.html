@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#2b2b2b">
+<meta name="theme-color" content="#4a4b50">
 <title>Centro de Control — Movistar Arena</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,15 +16,15 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;bac
 body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 80% at 50% 0%,rgba(255,255,255,.55),rgba(236,238,241,0) 70%)}
 .bar,.pantalla{position:relative;z-index:1}
 button,input,select,textarea{font-family:inherit}
-/* La barra de arriba: gris oscuro de SBS, como el panel (marca, separador, lo que se está viendo) */
-.bar{background:#2b2b2b;color:#fff;position:sticky;top:0;z-index:30;min-height:62px;padding:calc(env(safe-area-inset-top,0px) + 8px) 18px 8px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 0 rgba(255,255,255,.05),0 8px 22px rgba(0,0,0,.16)}
-.marca{display:flex;align-items:center;gap:11px;padding-right:16px;border-right:1px solid rgba(255,255,255,.12);min-height:38px;flex-shrink:0}
-.bar-logo{width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.95);flex-shrink:0;display:block}
+/* La barra de arriba: gris SBS, armada como el panel (marca, separador, lo que se está viendo) */
+.bar{background:#4a4b50;color:#fff;position:sticky;top:0;z-index:30;min-height:62px;padding:calc(env(safe-area-inset-top,0px) + 8px) 18px 8px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 0 rgba(255,255,255,.05),0 8px 22px rgba(0,0,0,.16)}
+.marca{display:flex;align-items:center;gap:11px;padding-right:16px;border-right:1px solid rgba(255,255,255,.18);min-height:38px;flex-shrink:0}
+.bar-logo{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle closest-side,#fff 0 90%,transparent 92%);flex-shrink:0;display:block}
 .marca-n{font-size:14.5px;font-weight:600;letter-spacing:-.2px;line-height:1.2}
-.marca-s{font-size:10.5px;color:#a8a8a8;line-height:1.3}
+.marca-s{font-size:10.5px;color:#d0d0d3;line-height:1.3}
 .bar-txt{flex:1;min-width:0}
 .bar-t{font-size:15px;font-weight:600;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar-s{font-size:11.5px;color:#b8b8b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-s{font-size:11.5px;color:#d6d6d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar-acc{display:flex;gap:8px;align-items:center;flex-shrink:0}
 .bar-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#f3f3f3;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;transition:background .15s}
 .bar-btn:hover{background:rgba(255,255,255,.16)}
@@ -67,7 +67,10 @@ button,input,select,textarea{font-family:inherit}
 .tablero{max-width:1880px;margin:0 auto;padding:16px 20px 28px}
 .t-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .stats{display:flex;gap:8px;flex-wrap:wrap}
-.stat{background:rgba(255,255,255,.96);border:1px solid rgba(0,0,0,.06);border-radius:13px;padding:8px 14px 8px 12px;display:flex;align-items:center;gap:10px;min-width:112px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+.stat{background:rgba(255,255,255,.96);border:1px solid rgba(0,0,0,.06);border-radius:13px;padding:8px 14px 8px 12px;display:flex;align-items:center;gap:10px;min-width:112px;box-shadow:0 1px 2px rgba(16,24,40,.05);font:inherit;color:inherit;text-align:left;cursor:pointer;transition:box-shadow .15s,transform .15s,border-color .15s}
+.stat:hover{box-shadow:0 6px 16px rgba(16,24,40,.1);transform:translateY(-1px)}
+.stat.on{border-color:#2b2b2b;box-shadow:0 0 0 1.5px #2b2b2b,0 6px 16px rgba(16,24,40,.1)}
+.stat:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
 .stat i{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .stat b{display:block;font-size:20px;line-height:1.05;font-weight:700;font-variant-numeric:tabular-nums}
 .stat span{display:block;font-size:11px;color:#6b7280;line-height:1.2}
@@ -110,6 +113,7 @@ button,input,select,textarea{font-family:inherit}
 .inc-tipo{font-size:14px;font-weight:600;flex:1;min-width:0}
 .inc-hora{font-size:12px;color:#6b7280;font-variant-numeric:tabular-nums}
 .inc-donde{font-size:12px;color:#6b7280;margin-top:3px}
+.inc-donde b{color:#374151;font-weight:600}
 .inc-acc{display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:5px;font-size:12px;color:#15803d}
 .inc-nota{font-size:13px;color:#374151;margin-top:5px;white-space:pre-wrap}
 .inc-res{font-size:12.5px;color:#374151;margin-top:7px;background:#f6f6f8;border-radius:8px;padding:6px 9px}
@@ -420,6 +424,13 @@ const INC_ICONOS = {
 function incSectoresPlano(armado) { return INC_PLANO_ZONAS.concat(incLugaresArena.map(incLugarForma), INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
 // Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
 function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
+// La zona de un lugar, para decir dónde queda: "Platea alta", "Platea baja"
+// o "Anillo" (los puestos). Para el campo y el pasillo, el nombre ya lo dice.
+function incZona(sector) {
+  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
+  if (!s) return '';
+  return s.t === 'baja' ? 'Platea baja' : s.t === 'alta' ? 'Platea alta' : s.lugar ? 'Anillo' : '';
+}
 // Los botones de abajo del plano: los lugares que no están dibujados, y
 // cualquier lugar con incidencias que el plano no tenga (por ejemplo, las
 // cargadas antes de que existiera el anillo, como "Baños").
@@ -428,47 +439,27 @@ function incLugaresSueltos(lista, armado) {
   const otros = [...new Set((lista || []).map(i => i.sector).filter(s => s && !enPlano.has(s) && !INC_LUGARES.includes(s)))].sort();
   return INC_LUGARES.concat(otros);
 }
-// Los dos fondos del plano: claro (el de siempre) y noche. En los dos, cada
-// zona y cada tipo de puesto tiene su color (relleno y borde), siempre lejos
-// de los del semáforo, que son los únicos que se encienden: la platea baja
-// en azul, la alta en violeta, el campo en turquesa; las puertas en celeste,
-// la gastronomía en fucsia, los baños en gris azulado, la enfermería en
-// blanco y los otros puntos en gris oscuro. Además cada lugar lleva su número
-// o su ícono, y hay leyenda.
-const INC_TEMAS = {
-  claro: {
-    color: {
-      baja: ['#2f63d4', '#1d4aa8'], alta: ['#7a4fd6', '#5a35b0'], campo: ['#0d7f7b', '#0a5f5c'],
-      anillo: ['#dfe5ee', '#bcc7d6'], back: ['#d5dce6', '#bcc7d6'],
-      puerta: ['#0e86b4', '#08597a'], gastro: ['#a8329a', '#7a1f70'], banio: ['#5a6b85', '#3e4c63'], enfermeria: ['#ffffff', '#8f9cb0'], servicio: ['#374151', '#1f2937']
-    },
-    tinta: '#ffffff', tintaPiso: '#64748b', tintaTipo: { enfermeria: '#334155' },
-    fondo: ['#f7f9fc', '#edf2f8', '#e1e8f1'], grilla: '#d6dee9', grillaOp: 0.7, fachada: '#a3b3c9', cinta: '#5b8fd0', halo: 0,
-    escenario: ['#111827', '#111827'], sel: '#0f1117', badge: ['#0f1117', '#ffffff'], borde: 'color', marca: '#475569'
+// Los colores del plano: un solo fondo, intermedio (un gris azulado, ni muy
+// blanco ni muy oscuro), sin cuadrícula. Cada zona y cada tipo de puesto
+// tiene su color (relleno y borde), siempre lejos de los del semáforo, que
+// son los únicos que se encienden: la platea baja en azul, la alta en
+// violeta, el campo en turquesa; las puertas en celeste, la gastronomía en
+// fucsia, los baños en gris azulado, la enfermería en blanco y los otros
+// puntos en gris oscuro. Además cada lugar lleva su número o su ícono, y hay
+// leyenda.
+const INC_TEMA = {
+  color: {
+    baja: ['#2f63d4', '#1d4aa8'], alta: ['#7a4fd6', '#5a35b0'], campo: ['#0d7f7b', '#0a5f5c'],
+    anillo: ['#d2d8e0', '#97a3b3'], back: ['#c4cbd5', '#97a3b3'],
+    puerta: ['#0e86b4', '#08597a'], gastro: ['#a8329a', '#7a1f70'], banio: ['#5a6b85', '#3e4c63'], enfermeria: ['#ffffff', '#8f9cb0'], servicio: ['#374151', '#1f2937']
   },
-  noche: {
-    color: {
-      baja: ['#1c4fb4', '#5b8ff0'], alta: ['#4d3ba6', '#a68cf2'], campo: ['#0b6a7e', '#3fc2d6'],
-      anillo: ['#101c38', '#2b4a80'], back: ['#0c1529', '#2b4a80'],
-      puerta: ['#0b4a63', '#38c4ec'], gastro: ['#6d2a7f', '#e08af5'], banio: ['#3a4a6b', '#c3cfe6'], enfermeria: ['#e8edf5', '#ffffff'], servicio: ['#3a414d', '#a3acb9']
-    },
-    tinta: '#f1f5ff', tintaPiso: '#7f9ccc', tintaTipo: { enfermeria: '#334155' },
-    fondo: ['#0b2350', '#06122c', '#020814'], grilla: '#163a7a', grillaOp: 0.35, fachada: '#3a6fc0', cinta: '#5fb0dd', halo: 0.4,
-    escenario: ['#020814', '#3f8fd0'], sel: '#ffffff', badge: ['#ffffff', '#0f1117'], borde: 'plano', marca: '#8fa8d0'
-  }
+  tinta: '#ffffff', tintaPiso: '#4b5768', tintaTipo: { enfermeria: '#334155' },
+  fondo: ['#bcc5d0', '#aab4c1', '#9ba6b5'], fachada: '#7c8aa0', cinta: '#3f78c2',
+  escenario: ['#111827', '#111827'], sel: '#0f1117', badge: ['#0f1117', '#ffffff'], marca: '#3b4555'
 };
-function incTema() { try { return localStorage.getItem('incTema') === 'noche' ? 'noche' : 'claro'; } catch (_) { return 'claro'; } }
-function incGuardarTema(t) { try { localStorage.setItem('incTema', t); } catch (_) {} }
-// Los planos que hay en la página, para redibujarlos al cambiar el fondo.
-const incPlanos = new Set();
-function incCambiarTema() {
-  incGuardarTema(incTema() === 'claro' ? 'noche' : 'claro');
-  incPlanos.forEach(c => { if (!c.isConnected) { incPlanos.delete(c); return; } if (c._incOp) incMontarPlano(c, c._incOp); });
-  if (typeof window !== 'undefined' && typeof window.incTemaCambiado === 'function') window.incTemaCambiado();
-}
 const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['campo', 'Campo'], ['puerta', 'Puertas'], ['gastro', 'Gastronomía'], ['banio', 'Baños'], ['enfermeria', 'Enfermería'], ['servicio', 'Otros puntos']];
 function incLeyendaHTML(clase, soloZonas) {
-  const col = INC_TEMAS[incTema()].color;
+  const col = INC_TEMA.color;
   return '<div class="' + (clase || 'inc-plano-ley') + '">' + INC_LEYENDA.slice(0, soloZonas ? 3 : 99).map(([t, n]) => '<span><i style="background:' + col[t][0] + ';border-color:' + col[t][1] + '"></i>' + n + '</span>').join('') + '</div>';
 }
 // El plano en SVG. op: { armado, niveles, cuentas, sel, onclick, editor }.
@@ -477,13 +468,12 @@ function incLeyendaHTML(clase, soloZonas) {
 // poder arrastrarlos (lo maneja el panel).
 function incPlanoSVG(op) {
   op = op || {};
-  const TM = INC_TEMAS[incTema()], niveles = op.niveles || {}, cuentas = op.cuentas || {};
-  const halo = [];
+  const TM = INC_TEMA, niveles = op.niveles || {}, cuentas = op.cuentas || {};
   const partes = incSectoresPlano(op.armado).map(s => {
     const nv = niveles[s.id], n = cuentas[s.id] || 0, sel = op.sel === s.id, col = TM.color[s.t], v = nv ? INC_NIVELES[nv] : null;
     const piso = s.t === 'anillo' || s.t === 'back';
     const fill = v ? v.plano : col[0];
-    const stroke = sel ? TM.sel : (v ? v[TM.borde] : col[1]);
+    const stroke = sel ? TM.sel : (v ? v.color : col[1]);
     const sw = sel ? 2.2 : (v ? 1.3 : (piso ? 0.6 : 0.7));
     // bx, by: dónde va el numerito de abiertas, en la esquina, sin tapar el nombre.
     let forma, cx, cy, w, h, chico, bx, by;
@@ -495,8 +485,6 @@ function incPlanoSVG(op) {
       const k = s.t === 'puerta' ? 7 : 12; bx = cx + k; by = cy - k;
     }
     if (s.lx !== undefined) { cx = s.lx; cy = s.ly; }
-    // El halo de luz de cada contorno (sólo de noche: va debajo, desenfocado y suave).
-    if (TM.halo) halo.push(forma + ' fill="none" stroke="' + stroke + '" stroke-width="' + (sel || nv ? 2.6 : (piso ? 0.8 : 1.2)) + '"/>');
     const tinta = v ? '#0f1117' : (piso ? TM.tintaPiso : (TM.tintaTipo[s.t] || TM.tinta));
     let etq;
     if (s.ico) {
@@ -518,17 +506,14 @@ function incPlanoSVG(op) {
   }).join('');
   const pts = a => a.map(p => p.join(',')).join(' ');
   return '<svg viewBox="6 -42 408 384" xmlns="http://www.w3.org/2000/svg" font-family="Poppins, sans-serif" style="width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;border-radius:12px' + (op.editor ? ';touch-action:none' : '') + '">'
-    + '<defs><radialGradient id="incFondoG" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="' + TM.fondo[0] + '"/><stop offset=".6" stop-color="' + TM.fondo[1] + '"/><stop offset="1" stop-color="' + TM.fondo[2] + '"/></radialGradient>'
-    + '<pattern id="incGrillaP" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0H0V12" fill="none" stroke="' + TM.grilla + '" stroke-width=".35"/></pattern>'
-    + '<filter id="incHaloF" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="1.4"/></filter></defs>'
-    + '<rect x="6" y="-42" width="408" height="384" rx="14" fill="url(#incFondoG)"/><rect x="6" y="-42" width="408" height="384" rx="14" fill="url(#incGrillaP)" opacity="' + TM.grillaOp + '"/>'
-    + (TM.halo ? '<g filter="url(#incHaloF)" opacity="' + TM.halo + '" pointer-events="none"><polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="#2a5fc0" stroke-width="2.4"/><polyline points="' + pts(INC_CINTA) + '" fill="none" stroke="#2a8fd0" stroke-width="2.4"/>' + halo.join('') + '</g>' : '')
+    + '<defs><radialGradient id="incFondoG" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="' + TM.fondo[0] + '"/><stop offset=".6" stop-color="' + TM.fondo[1] + '"/><stop offset="1" stop-color="' + TM.fondo[2] + '"/></radialGradient></defs>'
+    + '<rect x="6" y="-42" width="408" height="384" rx="14" fill="url(#incFondoG)"/>'
     + '<polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="' + TM.fachada + '" stroke-width="1" pointer-events="none"/>'
     + partes
     + '<polyline points="' + pts(INC_CINTA) + '" fill="none" stroke="' + TM.cinta + '" stroke-width=".9" stroke-linejoin="round" opacity=".85" pointer-events="none"/>'
     + '<rect x="150" y="8" width="120" height="22" rx="4" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width="1"/><text x="210" y="21.6" font-size="7" font-weight="600" fill="#fff" text-anchor="middle" letter-spacing="1.6">ESCENARIO</text>'
-    // La firma de SBS, abajo.
-    + '<g pointer-events="none" opacity=".9"><image href="logo-sbs.png" x="168" y="326" width="11" height="11"/><text x="182.5" y="333.6" font-size="5.6" font-weight="600" fill="' + TM.marca + '" letter-spacing=".3">Show Business Solutions</text></g>'
+    // La firma de SBS, abajo (el logo tiene las letras caladas: un disco blanco adentro las deja blancas).
+    + '<g pointer-events="none" opacity=".92"><circle cx="173.5" cy="331.5" r="5.1" fill="#fff"/><image href="logo-sbs.png" x="168" y="326" width="11" height="11"/><text x="182.5" y="333.6" font-size="5.6" font-weight="600" fill="' + TM.marca + '" letter-spacing=".3">Show Business Solutions</text></g>'
     + '</svg>';
 }
 // ── El estadio en 3D ──
@@ -536,57 +521,36 @@ function incPlanoSVG(op) {
 // puesto con su color; el campo, el escenario con su pantalla y la
 // estructura de luces, la cinta LED que da la vuelta entre la platea baja y
 // la alta, y afuera el anillo con las puertas, la gastronomía y los baños,
-// cerrado por una fachada de vidrio, con la marca de SBS en la entrada. Dos
-// fondos: claro (el de siempre) y noche (con el brillo de los LED). Cada
-// lugar con algo abierto se ilumina en su color y late (más rápido cuanto
-// más grave) y le sale una columna de luz con el número. Se gira
-// arrastrando, se acerca pellizcando y se toca el lugar igual que en el
-// plano; en pantalla completa, al costado queda el detalle de las
-// incidencias. three.js se carga recién cuando hace falta (pesa); el brillo
-// es un extra: si no carga, se ve igual, sin el halo. Si el aparato no tiene
-// WebGL o el 3D falla, queda el plano en 2D: nunca se queda sin plano.
+// cerrado por una fachada de vidrio, con la marca de SBS. Un solo fondo,
+// intermedio, sin cuadrícula. Cada lugar con algo abierto se ilumina en su
+// color y late (más rápido cuanto más grave) y le sale una columna con el
+// número. Se gira arrastrando, se acerca pellizcando y se toca el lugar
+// igual que en el plano; en pantalla completa, el detalle de las incidencias
+// va en su propia columna, al costado (o abajo, en el celular), sin tapar el
+// plano. three.js se carga recién cuando hace falta (pesa). Si el aparato no
+// tiene WebGL o el 3D falla, queda el plano en 2D: nunca se queda sin plano.
 const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13 };
-// Los colores del 3D en cada fondo: arriba y costado de cada tipo (los mismos
-// tonos que el plano), el borde, el piso, el cielo, las luces (casi blancas,
-// para que cada color se vea como es) y los efectos.
-const INC_TEMAS_3D = {
-  claro: {
-    cielo: ['#f7f9fc', '#e8eef6', '#d8e1ec'], niebla: 0xe3e9f1, piso: 0xe4e9f0, grilla: [0xc5d0dc, 0xd6dee8, 0.75], resplandor: false,
-    luces: { hemi: [0xffffff, 0x8f99ab, 0.78], clave: 0.55, contra: 0.22, escenario: 0.15 },
-    color: {
-      baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0xd6dde7, 0xb4c0cf], back: [0xc9d2dd, 0xaab6c5],
-      puerta: [0x0e86b4, 0x0e86b4], gastro: [0xb03aa2, 0x7a1f70], banio: [0x63748e, 0x3e4c63], enfermeria: [0xf6f8fb, 0xc6ced9], servicio: [0x414b5b, 0x262d38]
-    },
-    borde: { baja: 0xffffff, alta: 0xffffff, campo: 0xffffff, anillo: 0x98a6b8, back: 0x98a6b8, puerta: 0x08597a, gastro: 0xffffff, banio: 0xffffff, enfermeria: 0x8f9cb0, servicio: 0xffffff },
-    opBorde: { baja: 0.5, alta: 0.5, campo: 0.55, anillo: 0.7, back: 0.7 }, opBordeOtro: 0.75, sel: 0x0f1117, sevBorde: 'color',
-    etqPiso: '#64748b', vidrio: [0xa9bfdc, 0.18], fachada: [[10, 0x8ea3c0, 0.8], [0.4, 0x8ea3c0, 0.6]], parantes: [0xa3b3c9, 0.45],
-    brillo: false, aditivo: false, haces: false, particulas: false, marca: '#334155', marcaAro: false
+// Los colores del 3D: arriba y costado de cada tipo (los mismos tonos que el
+// plano), el borde, el piso, el cielo y las luces (casi blancas, para que
+// cada color se vea como es).
+const INC_TEMA_3D = {
+  cielo: ['#c3cbd6', '#b1bbc8', '#a0abba'], niebla: 0xadb7c3, piso: 0xaab4c0,
+  luces: { hemi: [0xffffff, 0x8f99ab, 0.78], clave: 0.55, contra: 0.22, escenario: 0.15 },
+  color: {
+    baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0xd0d7e0, 0xa9b4c2], back: [0xc3cbd6, 0xa0abba],
+    puerta: [0x0e86b4, 0x0e86b4], gastro: [0xb03aa2, 0x7a1f70], banio: [0x63748e, 0x3e4c63], enfermeria: [0xf6f8fb, 0xc6ced9], servicio: [0x414b5b, 0x262d38]
   },
-  noche: {
-    cielo: ['#0b2350', '#05102a', '#01040e'], niebla: 0x020a1e, piso: 0x020a1c, grilla: [0x0b3d91, 0x072657, 0.18], resplandor: true,
-    luces: { hemi: [0xffffff, 0x0a1020, 0.62], clave: 0.45, contra: 0.3, escenario: 0.3 },
-    color: {
-      baja: [0x2c66dc, 0x10306e], alta: [0x8656dc, 0x35206e], campo: [0x10928e, 0x084a48], anillo: [0x16264a, 0x0a1430], back: [0x101c38, 0x080f22],
-      puerta: [0x38c4ec, 0x38c4ec], gastro: [0x8a3aa0, 0x4a1a58], banio: [0x4a5b7d, 0x283550], enfermeria: [0xe8edf5, 0x9aa6b8], servicio: [0x3a414d, 0x22272f]
-    },
-    borde: { baja: 0x6f9cf0, alta: 0xb39cf5, campo: 0x5cc8dc, anillo: 0x2f5a9e, back: 0x2f5a9e, puerta: 0x38c4ec, gastro: 0xe08af5, banio: 0xc3cfe6, enfermeria: 0xffffff, servicio: 0xa3acb9 },
-    opBorde: { baja: 0.38, alta: 0.38, campo: 0.5, anillo: 0.35, back: 0.35 }, opBordeOtro: 0.55, sel: 0xffffff, sevBorde: 'plano',
-    etqPiso: '#8fb4ef', vidrio: [0x0a4bc0, 0.07], fachada: [[10, 0x3a78d8, 0.55], [0.4, 0x2a5fc0, 0.5]], parantes: [0x1d5fd0, 0.25],
-    brillo: true, aditivo: true, haces: true, particulas: true, marca: '#cfe0ff', marcaAro: true
-  }
+  borde: { baja: 0xffffff, alta: 0xffffff, campo: 0xffffff, anillo: 0x8d9aac, back: 0x8d9aac, puerta: 0x08597a, gastro: 0xffffff, banio: 0xffffff, enfermeria: 0x8f9cb0, servicio: 0xffffff },
+  opBorde: { baja: 0.5, alta: 0.5, campo: 0.55, anillo: 0.7, back: 0.7 }, opBordeOtro: 0.75, sel: 0x0f1117,
+  etqPiso: '#4b5768', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x7c8aa0, 0.8], [0.4, 0x7c8aa0, 0.6]], parantes: [0x8b98ab, 0.4], marca: '#2f3846'
 };
-let incCarga3D = null, incSin3D = false, incConBrillo = false, incListo3D = false;
+let incCarga3D = null, incSin3D = false, incListo3D = false;
 function incCargar3D() {
   if (incCarga3D) return incCarga3D;
   if (window.THREE) return Promise.resolve(true);
   const cargar = src => new Promise((ok, mal) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = mal; document.head.appendChild(s); });
-  const ej = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
   incCarga3D = cargar('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js')
     .then(() => cargar('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js').catch(() => null))
-    // El brillo de los LED, en orden (cada uno usa el anterior).
-    .then(() => ['shaders/CopyShader.js', 'shaders/LuminosityHighPassShader.js', 'postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js', 'postprocessing/ShaderPass.js', 'postprocessing/UnrealBloomPass.js']
-      .reduce((p, f) => p.then(() => cargar(ej + f)), Promise.resolve())
-      .then(() => { incConBrillo = !!(window.THREE.EffectComposer && window.THREE.UnrealBloomPass); }, () => null))
     .then(() => { incListo3D = true; return !!window.THREE; })
     .catch(() => { incSin3D = true; return false; });
   return incCarga3D;
@@ -600,20 +564,18 @@ function incVistaPreferida() { try { return localStorage.getItem('incVista') || 
 function incGuardarVista(v) { try { localStorage.setItem('incVista', v); } catch (_) {} }
 // Pone el plano en el contenedor: en 3D si se eligió y se puede; si no, en 2D.
 // La escena 3D se arma una sola vez y después sólo se actualiza (se rehace si
-// cambia el armado del campo, los puestos del anillo o el fondo).
+// cambia el armado del campo o los puestos del anillo).
 // op: { armado, niveles, cuentas, sel, onclick, titulo, vista, detalle (las
 // incidencias, para verlas en pantalla completa), accionPantalla ({ texto, fn }:
 // un botón en ese detalle, que sale de pantalla completa y llama a fn(lugar)) }.
 function incMontarPlano(cont, op) {
   if (!cont) return;
   cont._incOp = op;
-  incPlanos.add(cont);
   incEstiloPlano();
-  const tema = incTema();
   const quiere3D = (op.vista || incVistaPreferida()) === '3d' && incHayWebGL();
   if (quiere3D && window.THREE && (incListo3D || !incCarga3D)) {
     try {
-      if (cont._inc3d && (cont._inc3d.armado !== op.armado || cont._inc3d.version !== incVersionPlano || cont._inc3d.tema !== tema)) { cont._inc3d.destruir(); cont._inc3d = null; }
+      if (cont._inc3d && (cont._inc3d.armado !== op.armado || cont._inc3d.version !== incVersionPlano)) { cont._inc3d.destruir(); cont._inc3d = null; }
       if (!cont._inc3d) { cont.innerHTML = ''; cont._inc3d = incPlano3D(cont, op); }
       cont._inc3d.poner(op);
       return;
@@ -624,64 +586,54 @@ function incMontarPlano(cont, op) {
     }
   }
   if (cont._inc3d) { cont._inc3d.destruir(); cont._inc3d = null; }
-  cont.innerHTML = incPlanoSVG(op) + '<div class="inc-plano-pie">' + incLeyendaHTML() + '<button type="button" class="inc-tema-btn" onclick="incCambiarTema()" title="Cambiar el fondo del plano">' + (tema === 'claro' ? '☾ Fondo oscuro' : '☀ Fondo claro') + '</button></div>';
+  cont.innerHTML = incPlanoSVG(op) + '<div class="inc-plano-pie">' + incLeyendaHTML() + '</div>';
   if (quiere3D && !incSin3D) incCargar3D().then(ok => { if (ok && cont._incOp && (cont._incOp.vista || incVistaPreferida()) === '3d') incMontarPlano(cont, cont._incOp); });
 }
-// La leyenda de abajo del plano 2D (y la del 3D, encima), y el botón del fondo.
+// La leyenda de abajo del plano 2D (y la del 3D, encima).
 function incEstiloPlano() {
   if (document.getElementById('incEstiloPlano')) return;
   const st = document.createElement('style'); st.id = 'incEstiloPlano';
-  st.textContent = '.inc-plano-pie{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:8px}'
+  st.textContent = '.inc-plano-pie{display:flex;align-items:flex-start;gap:10px;margin-top:8px}'
     + '.inc-plano-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font:500 11px Poppins,sans-serif;color:#4b5563}'
     + '.inc-plano-ley span,.inc-3d-ley span{display:inline-flex;align-items:center;gap:5px}'
     + '.inc-plano-ley i,.inc-3d-ley i{width:10px;height:10px;border-radius:3px;border:1px solid;display:inline-block}'
-    + '.inc-tema-btn{flex-shrink:0;font:600 11px Poppins,sans-serif;background:#fff;border:1px solid #d6dae1;color:#374151;border-radius:999px;padding:4px 10px;cursor:pointer}'
-    + '.inc-tema-btn:hover{border-color:#9aa3b2}'
-    + '.inc-3d-ley{position:absolute;left:8px;top:8px;z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 170px);font:500 10.5px Poppins,sans-serif;color:rgba(255,255,255,.82);background:rgba(2,10,30,.45);padding:5px 9px;border-radius:8px;pointer-events:none}'
-    + '.inc-3d.claro .inc-3d-ley{background:rgba(255,255,255,.82);color:#334155;box-shadow:0 1px 3px rgba(15,23,42,.08)}';
+    + '.inc-3d-ley{position:absolute;left:8px;top:8px;z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 170px);font:500 10.5px Poppins,sans-serif;color:#334155;background:rgba(255,255,255,.78);padding:5px 9px;border-radius:8px;pointer-events:none;box-shadow:0 1px 3px rgba(15,23,42,.08)}';
   document.head.appendChild(st);
 }
 function incEstilo3D() {
   if (document.getElementById('incEstilo3D')) return;
   const st = document.createElement('style'); st.id = 'incEstilo3D';
-  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 90% at 50% 0%,#0a2a66 0%,#04143a 55%,#01040e 100%)}'
-    + '.inc-3d.claro{background:radial-gradient(120% 90% at 50% 0%,#ffffff 0%,#eef2f7 60%,#dfe6ef 100%)}'
+  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 90% at 50% 0%,#c8d0da 0%,#b3bdca 60%,#a1acbb 100%)}'
     + '.inc-3d:fullscreen{width:100vw;height:100vh;border-radius:0}'
     + '.inc-3d canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}'
     + '.inc-3d-btns{position:absolute;top:8px;right:8px;z-index:4;display:flex;gap:6px}'
-    + '.inc-3d-btn{background:rgba(0,40,110,.45);color:#fff;border:1px solid rgba(0,194,255,.45);border-radius:8px;padding:6px 10px;font:600 12px Poppins,sans-serif;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}'
-    + '.inc-3d-btn:hover{background:rgba(0,102,255,.55)}'
-    + '.inc-3d.claro .inc-3d-btn{background:rgba(255,255,255,.88);color:#111827;border-color:rgba(15,17,23,.14);box-shadow:0 1px 3px rgba(15,23,42,.1)}'
-    + '.inc-3d.claro .inc-3d-btn:hover{background:#fff;border-color:rgba(15,17,23,.3)}'
+    + '.inc-3d-btn{background:rgba(255,255,255,.88);color:#111827;border:1px solid rgba(15,17,23,.14);border-radius:8px;padding:6px 10px;font:600 12px Poppins,sans-serif;cursor:pointer;box-shadow:0 1px 3px rgba(15,23,42,.1);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}'
+    + '.inc-3d-btn:hover{background:#fff;border-color:rgba(15,17,23,.3)}'
     + '.inc-3d-btn-det{display:none}.inc-3d:fullscreen .inc-3d-btn-det{display:inline-block}'
-    + '.inc-3d-ayuda{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:2;color:rgba(255,255,255,.88);font:500 11px Poppins,sans-serif;background:rgba(1,10,30,.6);border:1px solid rgba(0,194,255,.25);padding:5px 12px;border-radius:999px;pointer-events:none;transition:opacity .8s;width:max-content;max-width:92%;text-align:center;line-height:1.35}'
-    + '.inc-3d.claro .inc-3d-ayuda{background:rgba(15,17,23,.72);border-color:transparent}'
-    + '.inc-3d-tip{position:absolute;z-index:3;pointer-events:none;background:#020c24;color:#fff;font:600 12px Poppins,sans-serif;padding:5px 10px;border-radius:7px;transform:translate(-50%,-140%);white-space:nowrap;opacity:0;transition:opacity .12s;border:1px solid rgba(0,194,255,.5)}'
-    // El detalle de las incidencias, en pantalla completa.
-    + '.inc-3d-det{position:absolute;z-index:3;top:52px;right:12px;bottom:12px;width:min(360px,38%);display:none;flex-direction:column;background:rgba(6,14,34,.9);color:#e5ecf8;border:1px solid rgba(255,255,255,.12);border-radius:14px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);overflow:hidden;font-family:Poppins,sans-serif}'
+    + '.inc-3d-ayuda{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:2;color:#fff;font:500 11px Poppins,sans-serif;background:rgba(15,17,23,.72);padding:5px 12px;border-radius:999px;pointer-events:none;transition:opacity .8s;width:max-content;max-width:92%;text-align:center;line-height:1.35}'
+    + '.inc-3d-tip{position:absolute;z-index:3;pointer-events:none;background:#111827;color:#fff;font:600 12px Poppins,sans-serif;padding:5px 10px;border-radius:7px;transform:translate(-50%,-140%);white-space:nowrap;opacity:0;transition:opacity .12s}'
+    // El detalle de las incidencias, en pantalla completa: su propia columna, sin tapar el plano.
+    + '.inc-3d-det{position:absolute;z-index:3;top:0;right:0;bottom:0;width:var(--inc-det-w,360px);display:none;flex-direction:column;background:#fff;color:#111827;border-left:1px solid rgba(15,17,23,.1);overflow:hidden;font-family:Poppins,sans-serif;box-shadow:-8px 0 24px rgba(15,23,42,.08)}'
     + '.inc-3d:fullscreen .inc-3d-det.abierto{display:flex}'
-    + '.inc-3d.claro .inc-3d-det{background:rgba(255,255,255,.96);color:#111827;border-color:rgba(15,17,23,.1);box-shadow:0 10px 30px rgba(15,23,42,.14)}'
-    + '.inc-3d-det-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(127,140,160,.25)}'
-    + '.inc-3d-det-cab strong{display:block;font-size:14px}.inc-3d-det-cab span{font-size:11.5px;opacity:.7}'
-    + '.inc-3d-det button{font:600 11.5px Poppins,sans-serif;border-radius:8px;padding:6px 10px;cursor:pointer;border:1px solid rgba(127,140,160,.45);background:transparent;color:inherit}'
-    + '.inc-3d-det .inc-3d-det-accion{margin:10px 14px 0;background:#2563eb;border-color:#2563eb;color:#fff}'
-    + '.inc-3d-det-lista{flex:1;overflow-y:auto;padding:10px 12px 14px;display:flex;flex-direction:column;gap:8px}'
-    + '.inc-3d-det-card{border-left:4px solid;border-radius:10px;padding:9px 11px;background:rgba(255,255,255,.07)}'
-    + '.inc-3d.claro .inc-3d-det-card{background:#f8fafc;border:1px solid #e5e7eb;border-left-width:4px}'
-    + '.inc-3d-det-card .t{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.inc-3d-det-card .t b{font-size:13px;flex:1;min-width:0}.inc-3d-det-card .t span{font-size:11px;opacity:.7}'
-    + '.inc-3d-det-card .d{font-size:11.5px;opacity:.75;margin-top:3px}'
-    + '.inc-3d-det-card .a{display:flex;flex-wrap:wrap;gap:2px 9px;margin-top:4px;font-size:11.5px;color:#4ade80}.inc-3d.claro .inc-3d-det-card .a{color:#15803d}'
+    + '.inc-3d-det-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border-bottom:1px solid #eef0f3}'
+    + '.inc-3d-det-cab strong{display:block;font-size:15px}.inc-3d-det-cab span{font-size:11.5px;color:#6b7280}'
+    + '.inc-3d-det button{font:600 11.5px Poppins,sans-serif;border-radius:8px;padding:6px 10px;cursor:pointer;border:1px solid #d6dae1;background:#fff;color:#111827}'
+    + '.inc-3d-det .inc-3d-det-accion{margin:12px 16px 0;background:#111827;border-color:#111827;color:#fff}'
+    + '.inc-3d-det-lista{flex:1;overflow-y:auto;padding:12px 14px 16px;display:flex;flex-direction:column;gap:8px;background:#f6f7f9}'
+    + '.inc-3d-det-card{background:#fff;border:1px solid #e5e7eb;border-left:4px solid;border-radius:10px;padding:9px 11px}'
+    + '.inc-3d-det-card .t{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.inc-3d-det-card .t b{font-size:13px;flex:1;min-width:0}.inc-3d-det-card .t span{font-size:11px;color:#6b7280}'
+    + '.inc-3d-det-card .d{font-size:11.5px;color:#6b7280;margin-top:3px}'
+    + '.inc-3d-det-card .a{display:flex;flex-wrap:wrap;gap:2px 9px;margin-top:4px;font-size:11.5px;color:#15803d}'
     + '.inc-3d-det-card .n{font-size:12px;margin-top:4px;white-space:pre-wrap}'
-    + '.inc-3d-det-vacio{font-size:12.5px;opacity:.7;text-align:center;padding:24px 10px}'
-    + '@media(max-width:640px){.inc-3d-det{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:46%}}';
+    + '.inc-3d-det-vacio{font-size:12.5px;color:#6b7280;text-align:center;padding:24px 10px}'
+    + '@media(max-width:640px){.inc-3d-det{left:0;top:auto;width:auto;height:var(--inc-det-h,44%);border-left:0;border-top:1px solid rgba(15,17,23,.1);border-radius:14px 14px 0 0}}';
   document.head.appendChild(st);
 }
 function incPlano3D(cont, op0) {
   const T = window.THREE;
   incEstilo3D();
   cont.classList.add('inc-3d');
-  const tema = incTema(), TM = INC_TEMAS_3D[tema], T2 = INC_TEMAS[tema];
-  if (tema === 'claro') cont.classList.add('claro'); else cont.classList.remove('claro');
+  const TM = INC_TEMA_3D, T2 = INC_TEMA;
   const desechar = [];
   const lienzoDe = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
   const textura = c => { const t = new T.CanvasTexture(c); desechar.push(t); return t; };
@@ -695,9 +647,7 @@ function incPlano3D(cont, op0) {
   escena.fog = new T.Fog(TM.niebla, 950, 1900);
   const camara = new T.PerspectiveCamera(38, 1.25, 1, 5000);
   const motor = new T.WebGLRenderer({ antialias: true });
-  // El brillo (sólo de noche) necesita WebGL 2, para suavizar los bordes; sin eso, se ve sin halo.
-  const conBrillo = TM.brillo && incConBrillo && !!(motor.capabilities && motor.capabilities.isWebGL2) && !!T.WebGLMultisampleRenderTarget;
-  motor.setPixelRatio(Math.min(window.devicePixelRatio || 1, conBrillo ? 1.5 : 2));
+  motor.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   const anis = Math.min(8, motor.capabilities && motor.capabilities.getMaxAnisotropy ? motor.capabilities.getMaxAnisotropy() : 1);
   const lienzo = motor.domElement;
   lienzo.style.cursor = 'grab';
@@ -705,7 +655,6 @@ function incPlano3D(cont, op0) {
   const btns = document.createElement('div'); btns.className = 'inc-3d-btns';
   btns.innerHTML = '<button type="button" class="inc-3d-btn inc-3d-btn-det" data-a="detalle" title="Ver u ocultar el detalle de las incidencias">☰ Incidencias</button>'
     + '<button type="button" class="inc-3d-btn" data-a="vista" title="Volver a la vista de entrada">⟲ Vista</button>'
-    + '<button type="button" class="inc-3d-btn" data-a="tema" title="' + (tema === 'claro' ? 'Fondo oscuro' : 'Fondo claro') + '">' + (tema === 'claro' ? '☾' : '☀') + '</button>'
     + '<button type="button" class="inc-3d-btn" data-a="pantalla" title="Pantalla completa">⛶</button>';
   cont.appendChild(btns);
   const btnDet = btns.querySelector('[data-a="detalle"]');
@@ -715,8 +664,8 @@ function incPlano3D(cont, op0) {
   const ley = document.createElement('div'); ley.innerHTML = incLeyendaHTML('inc-3d-ley', true); if (ley.firstChild) cont.appendChild(ley.firstChild);
   const panel = document.createElement('div'); panel.className = 'inc-3d-det'; cont.appendChild(panel);
   const version = incVersionPlano;
-  // Dos capas: la 0 es el estadio (con brillo); la 1, los carteles, que se
-  // dibujan después, nítidos y siempre a la vista.
+  // Dos capas: la 0 es el estadio; la 1, los carteles, que se dibujan
+  // después, siempre a la vista.
   const ETQ = 1;
 
   // Luces casi blancas: cielo y suelo, una de frente, un contraluz desde atrás
@@ -727,18 +676,9 @@ function incPlano3D(cont, op0) {
   const contra = new T.DirectionalLight(0xc9d8ff, TM.luces.contra); contra.position.set(-220, 180, -340); escena.add(contra);
   const luzEscenario = new T.PointLight(0xdfe8ff, TM.luces.escenario, 420); luzEscenario.position.set(0, 60, -110); escena.add(luzEscenario);
 
-  // El piso, con grilla (y de noche, un resplandor azul debajo del estadio).
+  // El piso, liso (sin cuadrícula).
   const piso = new T.Mesh(new T.PlaneGeometry(1800, 1800), new T.MeshStandardMaterial({ color: TM.piso, roughness: 0.92, metalness: 0.1 }));
   piso.rotation.x = -Math.PI / 2; piso.position.y = -0.1; escena.add(piso);
-  const grilla = new T.GridHelper(1100, 110, TM.grilla[0], TM.grilla[1]);
-  grilla.material.transparent = true; grilla.material.opacity = TM.grilla[2]; escena.add(grilla);
-  if (TM.resplandor) {
-    const c = lienzoDe(256, 256), x = c.getContext('2d'), gr = x.createRadialGradient(128, 128, 0, 128, 128, 128);
-    gr.addColorStop(0, 'rgba(0,102,255,.3)'); gr.addColorStop(0.55, 'rgba(0,102,255,.1)'); gr.addColorStop(1, 'rgba(0,102,255,0)');
-    x.fillStyle = gr; x.fillRect(0, 0, 256, 256);
-    const m = new T.Mesh(new T.PlaneGeometry(760, 700), new T.MeshBasicMaterial({ map: textura(c), transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
-    m.rotation.x = -Math.PI / 2; m.position.y = 0.05; escena.add(m);
-  }
 
   const aPlano = (x, y) => new T.Vector2(x - 210, 146 - y);   // del plano 2D a la forma (después se acuesta sobre el piso)
   const cartel = (txt, alto, color, fondo) => {
@@ -774,20 +714,15 @@ function incPlano3D(cont, op0) {
     return sp;
   };
 
-  // Las butacas (una por baldosa, con el pasillo de la fila más oscuro) y el piso del campo.
+  // Las butacas (una por baldosa, suaves: que se note la fila, sin cuadricular).
   const lienzoButacas = lienzoDe(32, 32);
-  { const x = lienzoButacas.getContext('2d'); x.fillStyle = '#8a97b5'; x.fillRect(0, 0, 32, 32); x.fillStyle = '#ffffff'; x.fillRect(3, 3, 26, 19); x.fillStyle = '#d5dcee'; x.fillRect(3, 18, 26, 4); }
+  { const x = lienzoButacas.getContext('2d'); x.fillStyle = '#dde3ec'; x.fillRect(0, 0, 32, 32); x.fillStyle = '#ffffff'; x.fillRect(3, 3, 26, 19); x.fillStyle = '#eef1f6'; x.fillRect(3, 18, 26, 4); }
   const texButacas = {};
   const butacas = rot => {
     const k = String(rot);
     if (!texButacas[k]) { const t = textura(lienzoButacas); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(1 / 3.2, 1 / 3.2); t.center.set(0.5, 0.5); t.rotation = rot; t.anisotropy = anis; texButacas[k] = t; }
     return texButacas[k];
   };
-  const texCampo = (() => {
-    const c = lienzoDe(64, 64), x = c.getContext('2d');
-    x.fillStyle = '#b9c7e2'; x.fillRect(0, 0, 64, 64); x.fillStyle = '#ffffff'; x.fillRect(0, 0, 64, 2); x.fillRect(0, 0, 2, 64);
-    const t = textura(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(1 / 12, 1 / 12); t.anisotropy = anis; return t;
-  })();
 
   // Formas: del plano al piso, levantadas a una altura.
   const forma2D = s => s.r
@@ -844,7 +779,7 @@ function incPlano3D(cont, op0) {
     const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
     return g;
   };
-  const sevColor = v => v[TM.sevBorde];   // el borde de un lugar con incidencia: oscuro de día, claro de noche
+  const sevColor = v => v.color;   // el borde de un lugar con incidencia: el color fuerte del semáforo
 
   // Cada lugar del plano: su forma, sus colores, cómo se pinta y cómo late.
   const piezas = {}, toques = [];
@@ -865,14 +800,14 @@ function incPlano3D(cont, op0) {
       const dintel = new T.Mesh(new T.BoxGeometry(largo + 1.8, 1.8, 1.8), matMarco);
       dintel.position.set((m0.x + m1.x) / 2, h, -(m0.y + m1.y) / 2); dintel.rotation.y = ang; grupo.add(dintel);
       const geoHuella = new T.ShapeGeometry(new T.Shape(pts)); geoHuella.rotateX(-Math.PI / 2);
-      const matHuella = new T.MeshBasicMaterial({ color: base[0], transparent: true, opacity: 0.2, blending: TM.aditivo ? T.AdditiveBlending : T.NormalBlending, depthWrite: false, side: T.DoubleSide });
+      const matHuella = new T.MeshBasicMaterial({ color: base[0], transparent: true, opacity: 0.2, blending: T.NormalBlending, depthWrite: false, side: T.DoubleSide });
       const huella = new T.Mesh(geoHuella, matHuella); huella.position.y = 0.95; grupo.add(huella);
       // Para tocarla fácil, una caja invisible más grande que la puerta.
       const c0 = pts.reduce((a, q) => a.add(q), new T.Vector2()).multiplyScalar(1 / pts.length);
       const zona = new T.Mesh(extruir(pts.map(q => q.clone().sub(c0).multiplyScalar(1.6).add(c0)), h + 2), new T.MeshBasicMaterial());
       zona.visible = false; grupo.add(zona); tocable(zona);
       p.pintar = (v, sel) => { matMarco.color.set(sel ? TM.sel : v ? sevColor(v) : base[0]); matHuella.color.set(v ? v.plano : base[0]); };
-      p.latir = k => { matHuella.opacity = (TM.aditivo ? 0.12 : 0.22) + k * 0.5; };
+      p.latir = k => { matHuella.opacity = 0.22 + k * 0.5; };
       p.hBase = h; p.hEt = h + 5; p.et = cartelIco(null, s.txt, 5, T2.color.puerta[0], '#ffffff');
     } else {
       let geo, rot = 0;
@@ -885,7 +820,7 @@ function incPlano3D(cont, op0) {
         geo = g.geo;
         p.hBase = (g.filas.find(f => dc >= f.a - 0.01 && dc <= f.b + 0.01) || g.filas[g.filas.length - 1]).h;
       } else { p.hBase = INC_3D_ALTURA[s.t]; geo = extruir(pts, p.hBase); }
-      const mapa = s.t === 'baja' || s.t === 'alta' ? butacas(rot) : s.t === 'campo' ? (/^Campo [A-N]$/.test(s.id) ? butacas(0) : texCampo) : null;
+      const mapa = s.t === 'baja' || s.t === 'alta' ? butacas(rot) : s.t === 'campo' && /^Campo [A-N]$/.test(s.id) ? butacas(0) : null;
       const matTop = new T.MeshStandardMaterial({ color: base[0], map: mapa, roughness: 0.55, metalness: 0.2, emissive: 0x000000 });
       const matLado = new T.MeshStandardMaterial({ color: base[1], roughness: 0.5, metalness: 0.35 });
       const malla = new T.Mesh(geo, [matTop, matLado]); grupo.add(malla); tocable(malla);
@@ -991,7 +926,8 @@ function incPlano3D(cont, op0) {
     const pintarMarca = img => {
       x.clearRect(0, 0, 1024, 280);
       if (img) {
-        if (TM.marcaAro) { x.fillStyle = 'rgba(255,255,255,.92)'; x.beginPath(); x.arc(140, 140, 124, 0, Math.PI * 2); x.fill(); }
+        // Las letras del logo son caladas: un disco blanco adentro las deja blancas (sin marco).
+        x.fillStyle = '#ffffff'; x.beginPath(); x.arc(140, 140, 107, 0, Math.PI * 2); x.fill();
         x.drawImage(img, 24, 24, 232, 232);
       }
       x.fillStyle = TM.marca; x.textBaseline = 'middle';
@@ -1001,67 +937,40 @@ function incPlano3D(cont, op0) {
     };
     pintarMarca(null);
     if (typeof Image !== 'undefined') { const img = new Image(); img.onload = () => pintarMarca(img); img.src = 'logo-sbs.png'; }
-    const m = new T.Mesh(new T.PlaneGeometry(150, 41), new T.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: tema === 'claro' ? 0.85 : 0.8 }));
+    const m = new T.Mesh(new T.PlaneGeometry(150, 41), new T.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.9 }));
     m.rotation.x = -Math.PI / 2; m.position.set(0, 0.12, -292); escena.add(m);
   }
 
-  // De noche: haces de luz desde la estructura que barren el campo, y partículas en el aire.
-  const haces = [-48, -16, 16, 48].map((x0, k) => {
-    const h = new T.Mesh(new T.ConeGeometry(22, 150, 32, 1, true), new T.MeshBasicMaterial({ color: k % 2 ? 0x00c2ff : 0x2f7bff, transparent: true, opacity: 0.03, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide }));
-    h.geometry.translate(0, -75, 0);           // gira desde la punta, colgada de la estructura
-    h.position.set(x0, 52, -114); h.userData.k = k; h.visible = TM.haces; escena.add(h);
-    return h;
-  });
-  const nPart = 90, posPart = new Float32Array(nPart * 3);
-  for (let i = 0; i < nPart; i++) { posPart[i * 3] = (Math.random() - 0.5) * 340; posPart[i * 3 + 1] = 10 + Math.random() * 110; posPart[i * 3 + 2] = (Math.random() - 0.5) * 320; }
-  const geoPart = new T.BufferGeometry(); geoPart.setAttribute('position', new T.BufferAttribute(posPart, 3));
-  const particulas = new T.Points(geoPart, new T.PointsMaterial({ color: 0x7cc4ff, size: 1.3, transparent: true, opacity: 0.3, blending: T.AdditiveBlending, depthWrite: false }));
-  particulas.visible = TM.particulas; escena.add(particulas);
-
   // La baliza de un lugar con incidencias: columna de luz, onda en la base y el número.
   const baliza = (nivel, n) => {
-    const v = INC_NIVELES[nivel], g = new T.Group(), col = new T.Color(v.plano), mezcla = TM.aditivo ? T.AdditiveBlending : T.NormalBlending;
-    const haz = new T.Mesh(new T.CylinderGeometry(3.2, 3.2, 64, 24, 1, true), new T.MeshBasicMaterial({ color: TM.aditivo ? col : new T.Color(v.color), transparent: true, opacity: 0.6, blending: mezcla, depthWrite: false, side: T.DoubleSide }));
+    const v = INC_NIVELES[nivel], g = new T.Group(), col = new T.Color(v.color);
+    const haz = new T.Mesh(new T.CylinderGeometry(3.2, 3.2, 64, 24, 1, true), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.5, depthWrite: false, side: T.DoubleSide }));
     haz.position.y = 32; g.add(haz);
-    const onda = new T.Mesh(new T.RingGeometry(3.2, 4.8, 48), new T.MeshBasicMaterial({ color: TM.aditivo ? col : new T.Color(v.color), transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false }));
+    const onda = new T.Mesh(new T.RingGeometry(3.2, 4.8, 48), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false }));
     onda.rotation.x = -Math.PI / 2; onda.position.y = 0.6; g.add(onda);
     const chapa = cartel(String(n), 10, '#ffffff', v.color); chapa.position.y = 70; g.add(chapa);
     g.userData = { haz, onda, chapa, nivel, nace: null };
     return g;
   };
 
-  // El brillo de los LED (de noche): la escena pasa por un filtro que hace brillar lo luminoso.
-  let comp = null, pasoBrillo = null;
-  if (conBrillo) {
-    try {
-      comp = new T.EffectComposer(motor, new T.WebGLMultisampleRenderTarget(8, 8, { format: T.RGBAFormat }));
-      comp.addPass(new T.RenderPass(escena, camara));
-      pasoBrillo = new T.UnrealBloomPass(new T.Vector2(8, 8), 0.38, 0.35, 0.72);
-      comp.addPass(pasoBrillo);
-    } catch (err) { console.warn('plano 3D sin brillo', err); comp = null; }
-  }
   const dibujar = () => {
-    if (comp) {
-      try {
-        camara.layers.set(0); comp.render();
-        // Los carteles, encima y sin brillo.
-        camara.layers.set(ETQ);
-        const fondo = escena.background; escena.background = null;
-        motor.setRenderTarget(null); motor.autoClear = false; motor.clearDepth(); motor.render(escena, camara); motor.autoClear = true;
-        escena.background = fondo;
-        return;
-      } catch (err) { console.warn('plano 3D sin brillo', err); comp = null; motor.autoClear = true; }
-    }
-    camara.layers.enableAll(); motor.render(escena, camara);
+    camara.layers.set(0); motor.render(escena, camara);
+    // Los carteles, encima: siempre a la vista.
+    camara.layers.set(ETQ);
+    const fondo = escena.background; escena.background = null;
+    motor.autoClear = false; motor.clearDepth(); motor.render(escena, camara); motor.autoClear = true;
+    escena.background = fondo;
   };
 
   // El detalle de las incidencias, para verlo sin salir de la pantalla
   // completa: lo abierto (de lo más grave a lo más leve) y, si se toca un
   // lugar, sólo lo de ese lugar.
-  let detLista = null, detSector = '', detAbierto = true, accion = null, selLocal = '', ultimoOp = op0;
+  let detLista = null, detSector = '', detAbierto = true, accion = null, selLocal = '', ultimoOp = op0, medirRef = null;
   const pintarDetalle = () => {
     btnDet.style.display = detLista ? '' : 'none';
+    const antes = panel.classList.contains('abierto');
     panel.classList.toggle('abierto', !!detLista && detAbierto);
+    if (medirRef && antes !== panel.classList.contains('abierto')) medirRef();   // el plano se achica o se agranda
     if (!detLista) { panel.innerHTML = ''; return; }
     const de = i => !detSector || i.sector === detSector;
     const abiertas = incOrdenar(detLista.filter(i => i.estado !== 'resuelta' && de(i))), resueltas = detLista.filter(i => i.estado === 'resuelta' && de(i)).length;
@@ -1073,7 +982,7 @@ function incPlano3D(cont, op0) {
       + '<div class="inc-3d-det-lista">' + (abiertas.length ? abiertas.map(i => {
         const v = INC_NIVELES[i.nivel] || INC_NIVELES[1];
         return '<div class="inc-3d-det-card" style="border-left-color:' + v.color + '"><div class="t">' + incNivelChip(i.nivel) + '<b>' + incEsc(i.tipo) + '</b><span>' + incCuando(i.created_at) + '</span></div>'
-          + '<div class="d">' + incEsc(i.sector) + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '') + '</div>'
+          + '<div class="d">' + incEsc(i.sector) + (incZona(i.sector) ? ' · ' + incZona(i.sector) : '') + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '') + '</div>'
           + ((i.acciones || []).length ? '<div class="a">' + i.acciones.map(a => '<span>✓ ' + incEsc(a) + '</span>').join('') + '</div>' : '')
           + (i.nota ? '<div class="n">' + incEsc(i.nota) + '</div>' : '') + '</div>';
       }).join('') : '<div class="inc-3d-det-vacio">' + (detSector ? 'No hay nada abierto en ' + incEsc(detSector) + '.' : 'No hay incidencias abiertas.') + '</div>') + '</div>';
@@ -1106,19 +1015,25 @@ function incPlano3D(cont, op0) {
 
   // Tamaño: el ancho del contenedor y un alto proporcionado; con
   // data-alto="pantalla" (en pantallas grandes), el alto que le da la página;
-  // o la pantalla entera.
+  // o la pantalla entera. En pantalla completa con el detalle abierto, el
+  // plano deja lugar a la columna del detalle (o a la franja de abajo, en el celular).
   const medir = () => {
     const full = document.fullscreenElement === cont;
     const fijo = !full && cont.dataset && cont.dataset.alto === 'pantalla' && window.innerWidth >= 960;
-    const w = full ? window.innerWidth : cont.clientWidth;
+    const conDet = full && panel.classList.contains('abierto'), angosto = window.innerWidth <= 640;
+    const detW = conDet && !angosto ? Math.min(400, Math.max(300, Math.round(window.innerWidth * 0.3))) : 0;
+    const detH = conDet && angosto ? Math.round(window.innerHeight * 0.44) : 0;
+    let w = full ? window.innerWidth - detW : cont.clientWidth, h;
     if (!w) return;
-    let h;
-    if (full) h = window.innerHeight;
+    if (full) h = window.innerHeight - detH;
     else if (fijo) { cont.style.height = ''; h = Math.max(320, cont.clientHeight); }
     else { h = Math.max(260, Math.min(Math.round(w * 0.82), 680)); cont.style.height = h + 'px'; }
+    cont.style.setProperty('--inc-det-w', detW + 'px'); cont.style.setProperty('--inc-det-h', detH + 'px');
+    lienzo.style.width = full ? w + 'px' : ''; lienzo.style.height = full ? h + 'px' : '';
+    btns.style.right = (detW + 8) + 'px'; ayuda.style.left = full ? (w / 2) + 'px' : ''; ayuda.style.bottom = (detH + 10) + 'px';
     motor.setSize(w, h, false); camara.aspect = w / h; camara.updateProjectionMatrix();
-    if (comp) { comp.setPixelRatio(motor.getPixelRatio()); comp.setSize(w, h); }
   };
+  medirRef = medir;
   const ro = window.ResizeObserver ? new ResizeObserver(medir) : null; if (ro) ro.observe(cont);
   // Al salir de pantalla completa se olvida lo elegido ahí.
   const alCambiarPantalla = () => { medir(); if (document.fullscreenElement !== cont && (selLocal || detSector)) { selLocal = ''; detSector = ''; api.poner(ultimoOp); } };
@@ -1128,7 +1043,6 @@ function incPlano3D(cont, op0) {
   btns.addEventListener('click', e => {
     const a = e.target.closest('button') && e.target.closest('button').dataset.a;
     if (a === 'vista') volver();
-    if (a === 'tema') incCambiarTema();
     if (a === 'detalle') { detAbierto = !detAbierto; pintarDetalle(); }
     if (a === 'pantalla') { if (document.fullscreenElement) document.exitFullscreen(); else if (cont.requestFullscreen) { detAbierto = true; pintarDetalle(); cont.requestFullscreen(); } }
   });
@@ -1193,12 +1107,10 @@ function incPlano3D(cont, op0) {
         p.baliza.scale.setScalar(Math.max(0.001, rebote));
         const fase = (t * (0.45 + p.nivel * 0.25)) % 1;
         u.onda.scale.setScalar(1 + fase * 3); u.onda.material.opacity = 0.85 * (1 - fase);
-        u.haz.material.opacity = TM.aditivo ? 0.28 + 0.3 * latido : 0.3 + 0.18 * latido;
+        u.haz.material.opacity = 0.3 + 0.18 * latido;
         u.chapa.position.y = 70 + Math.sin(t * 2.2) * 1.8;
       }
     });
-    if (TM.haces) haces.forEach(h => { const k = h.userData.k; h.rotation.z = Math.sin(t * 0.5 + k * 1.7) * 0.42; h.rotation.x = 0.35 + Math.sin(t * 0.37 + k) * 0.18; h.material.opacity = 0.02 + 0.02 * (0.5 + 0.5 * Math.sin(t * 1.3 + k)); });
-    if (TM.particulas) { particulas.rotation.y = t * 0.02; particulas.position.y = Math.sin(t * 0.4) * 2; }
     texCinta.offset.x = (t * 0.06) % 1;
     // Después de 20 segundos sin que nadie lo toque, gira solo, despacio.
     if (controles && controles.enabled && !controles.autoRotate && Date.now() - ultimoToque > 20000) controles.autoRotate = true;
@@ -1212,7 +1124,7 @@ function incPlano3D(cont, op0) {
     if (o.material) [].concat(o.material).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
   });
   const api = {
-    armado: op0.armado, version, tema,
+    armado: op0.armado, version,
     // Pinta los lugares según lo abierto y pone, saca o renueva las balizas.
     poner(op) {
       ultimoOp = op; onclick = op.onclick; accion = op.accionPantalla || null; detLista = Array.isArray(op.detalle) ? op.detalle : null;
@@ -1242,9 +1154,8 @@ function incPlano3D(cont, op0) {
       if (controles) controles.dispose();
       limpiar(escena);
       desechar.forEach(x => { try { x.dispose(); } catch (_) {} });
-      if (comp) { try { comp.renderTarget1.dispose(); comp.renderTarget2.dispose(); if (pasoBrillo) pasoBrillo.dispose(); } catch (_) {} }
       motor.dispose(); if (motor.forceContextLoss) motor.forceContextLoss();
-      cont.classList.remove('inc-3d'); cont.classList.remove('claro'); cont.style.height = ''; cont.innerHTML = '';
+      cont.classList.remove('inc-3d'); cont.style.height = ''; cont.innerHTML = '';
     }
   };
   return api;
@@ -1439,7 +1350,7 @@ function incEstiloMetricas() {
 // Sólo lectura. Todo sale de dos funciones de la base (ger_convocatorias y
 // ger_incidencias), que no devuelven nada a quien no es gerencia o admin.
 let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', dia = null, armadoSel = '', timer = null;
-let vistos = null, nuevos = new Set();
+let vistos = null, nuevos = new Set(), nivelSel = 0;
 const hoyISO = () => incDia(new Date().toISOString());
 function pantalla(id) {
   document.querySelectorAll('.pantalla').forEach(p => p.classList.toggle('on', p.id === id));
@@ -1507,7 +1418,7 @@ function renderShows() {
 }
 async function abrirShow(id) {
   const s = shows.find(x => x.id === id); if (!s) return;
-  showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = null; vistos = null; nuevos = new Set();
+  showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = null; vistos = null; nuevos = new Set(); nivelSel = 0;
   try { armadoSel = localStorage.getItem('incArmado:' + id) || ''; } catch (_) { armadoSel = ''; }
   document.getElementById('barT').textContent = s.nombre;
   document.getElementById('barS').textContent = resumenFechas(s) + (s.venue ? ' · ' + s.venue : '');
@@ -1541,7 +1452,15 @@ function delDia() { return dia ? lista.filter(i => incDia(i.created_at) === dia)
 function elegirVista(v) { incGuardarVista(v); render(); }
 function elegirArmado(a) { armadoSel = a; try { localStorage.setItem('incArmado:' + showId, a); } catch (_) {} render(); }
 function tocarSector(sector) { sectorSel = sectorSel === sector ? '' : sector; render(); }
-function filtrar(k, v) { if (k === 'estado') filtro = v; if (k === 'dia') dia = v; if (k === 'sector') sectorSel = v; render(); }
+function filtrar(k, v) { if (k === 'estado') { filtro = v; nivelSel = 0; } if (k === 'dia') dia = v; if (k === 'sector') sectorSel = v; if (k === 'nivel') nivelSel = 0; render(); }
+// Tocar un contador de arriba: el listado muestra esas (y en el celular, baja hasta el listado).
+function tocarStat(k) {
+  if (k === 'resueltas' || k === 'todas') { filtro = k; nivelSel = 0; }
+  else { const nv = Number(k); filtro = 'abiertas'; nivelSel = nivelSel === nv ? 0 : nv; }
+  render();
+  const l = document.getElementById('lista');
+  if (window.innerWidth < 960 && l && l.scrollIntoView) l.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 // Los íconos de la botonera.
 const ICO = {
   '3d': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5 3.5 7.2v9.6L12 21.5l8.5-4.7V7.2z"/><path d="M3.5 7.2 12 12l8.5-4.8M12 12v9.5"/></svg>',
@@ -1557,9 +1476,11 @@ function render() {
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
   // Arriba, los números: lo abierto por gravedad (el grave late), lo resuelto y el total.
   const nombres = { 3: 'Graves abiertas', 2: 'Moderadas abiertas', 1: 'Leves abiertas' };
-  const stat = (num, txt, color, late) => '<div class="stat' + (late ? ' pulso' : '') + '"><i style="background:' + color + '"></i><div><b>' + num + '</b><span>' + txt + '</span></div></div>';
-  document.getElementById('resumen').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], INC_NIVELES[nv].color, nv === 3 && n(3))).join('')
-    + stat(delD.length - abiertas.length, 'Resueltas', '#9ca3af') + stat(delD.length, 'En total', '#2b2b2b');
+  // Cada contador es un botón: muestra esas en el listado.
+  const elegido = nivelSel ? String(nivelSel) : (filtro === 'resueltas' || filtro === 'todas' ? filtro : '');
+  const stat = (num, txt, color, late, clave) => '<button type="button" class="stat' + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" onclick="tocarStat(\'' + clave + '\')" title="Ver ' + txt.toLowerCase() + ' en el listado"><i style="background:' + color + '"></i><div><b>' + num + '</b><span>' + txt + '</span></div></button>';
+  document.getElementById('resumen').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], INC_NIVELES[nv].color, nv === 3 && n(3), String(nv))).join('')
+    + stat(delD.length - abiertas.length, 'Resueltas', '#9ca3af', false, 'resueltas') + stat(delD.length, 'En total', '#2b2b2b', false, 'todas');
   // La botonera: 3D o plano, y cómo está armado el campo.
   const vista = incVistaPreferida();
   const seg = (items, actual, fn) => '<div class="seg">' + items.map(([k, t]) => '<button class="' + (actual === k ? 'on' : '') + '" onclick="' + fn + '(\'' + k + '\')">' + (ICO[k] || '') + t + '</button>').join('') + '</div>';
@@ -1578,17 +1499,18 @@ function render() {
   document.getElementById('listaT').innerHTML = 'Incidencias<small>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + ' · ' + delD.length + ' en total</small>';
   document.getElementById('filtros').innerHTML = '<div class="seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (filtro === v ? 'on' : '') + '" onclick="filtrar(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
     + (dias.length > 1 || (dias.length === 1 && dia !== dias[0]) ? chip('dia', '', 'Todos los días', !dia) + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), dia === d)).join('') : '')
+    + (nivelSel ? '<span class="chip on">' + INC_NIVELES[nivelSel].nombre + ' <span onclick="event.stopPropagation();filtrar(\'nivel\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
     + (sectorSel ? '<span class="chip on">' + incEsc(sectorSel) + ' <span onclick="event.stopPropagation();filtrar(\'sector\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '');
-  const visibles = incOrdenar(delD).filter(i => filtro === 'todas' || (filtro === 'abiertas') === (i.estado !== 'resuelta')).filter(i => !sectorSel || i.sector === sectorSel);
+  const visibles = incOrdenar(delD).filter(i => filtro === 'todas' || (filtro === 'abiertas') === (i.estado !== 'resuelta')).filter(i => !sectorSel || i.sector === sectorSel).filter(i => !nivelSel || (i.nivel || 1) === nivelSel);
   const cont = document.getElementById('lista');
   if (!visibles.length) {
-    cont.innerHTML = '<div class="vacio">' + (!lista.length ? 'Sin incidencias en este show.' : filtro === 'abiertas' ? 'No hay incidencias abiertas' + (sectorSel ? ' en ' + incEsc(sectorSel) : '') + '.' : 'Nada por acá.') + '</div>';
+    cont.innerHTML = '<div class="vacio">' + (!lista.length ? 'Sin incidencias en este show.' : filtro === 'abiertas' ? 'No hay incidencias ' + (nivelSel ? INC_NIVELES[nivelSel].nombre.toLowerCase().replace(/o$/, 'a') + 's ' : '') + 'abiertas' + (sectorSel ? ' en ' + incEsc(sectorSel) : '') + '.' : 'Nada por acá.') + '</div>';
   } else {
     cont.innerHTML = visibles.map(i => {
       const v = INC_NIVELES[i.nivel] || INC_NIVELES[1], resuelta = i.estado === 'resuelta';
       return '<div class="inc-card' + (resuelta ? ' resuelta' : '') + (nuevos.has(i.id) ? ' nueva' : '') + '" style="border-left-color:' + v.color + '">'
         + '<div class="inc-card-top">' + incNivelChip(i.nivel) + '<span class="inc-tipo">' + incEsc(i.tipo) + '</span><span class="inc-hora">' + incCuando(i.created_at) + '</span></div>'
-        + '<div class="inc-donde">' + incEsc(i.sector) + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + '</div>'
+        + '<div class="inc-donde"><b>' + incEsc(i.sector) + '</b>' + (incZona(i.sector) ? ' · ' + incZona(i.sector) : '') + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + '</div>'
         + ((i.acciones || []).length ? '<div class="inc-acc">' + i.acciones.map(a => '<span>✓ ' + incEsc(a) + '</span>').join('') + '</div>' : '')
         + (i.nota ? '<div class="inc-nota">' + incEsc(i.nota) + '</div>' : '')
         + (resuelta ? '<div class="inc-res"><strong>Resuelta ' + incCuando(i.resuelta_at) + '</strong> · ' + incEsc(i.resolucion || '') + '</div>' : '')
