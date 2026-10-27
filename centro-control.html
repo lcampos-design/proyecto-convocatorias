@@ -134,6 +134,8 @@ button,input,select,textarea{font-family:inherit}
         <div id="lista"></div>
       </div>
     </div>
+    <div class="grupo" style="margin-top:22px">Métricas del show</div>
+    <div id="metricas"></div>
   </div>
 </div>
 
@@ -278,11 +280,11 @@ function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.tes
 function incPlanoSVG(op) {
   op = op || {};
   const niveles = op.niveles || {}, cuentas = op.cuentas || {};
-  const BASE = { baja: '#e4e7eb', alta: '#f1f2f4', campo: '#dde3ea' };
+  const BASE = { baja: '#d6e6f8', alta: '#eaf3fc', campo: '#c3d9f2' };
   const partes = incSectoresPlano(op.armado).map(s => {
     const nv = niveles[s.id], n = cuentas[s.id] || 0, sel = op.sel === s.id;
     const fill = nv ? INC_NIVELES[nv].plano : BASE[s.t];
-    const stroke = sel ? '#0f1117' : (nv ? INC_NIVELES[nv].color : '#b8bec6');
+    const stroke = sel ? '#0f1117' : (nv ? INC_NIVELES[nv].color : '#93b8de');
     const sw = sel ? 2.4 : (nv ? 1.4 : 0.8);
     // bx, by: dónde va el numerito de abiertas, en la esquina, sin tapar el nombre.
     let forma, cx, cy, chico, bx, by;
@@ -297,7 +299,7 @@ function incPlanoSVG(op) {
       + badge + '</g>';
   }).join('');
   return '<svg viewBox="50 2 320 288" xmlns="http://www.w3.org/2000/svg" font-family="Poppins, sans-serif" style="width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none">'
-    + '<rect x="150" y="8" width="120" height="22" rx="4" fill="#0f1117"/><text x="210" y="22.5" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1">ESCENARIO</text>'
+    + '<rect x="150" y="8" width="120" height="22" rx="4" fill="#0b1f3a"/><text x="210" y="22.5" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1">ESCENARIO</text>'
     + partes + '</svg>';
 }
 // ── El estadio en 3D ──
@@ -369,11 +371,11 @@ function incPlano3D(cont, op0) {
   {
     const g = document.createElement('canvas'); g.width = 2; g.height = 256;
     const x = g.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 256);
-    gr.addColorStop(0, '#2f3747'); gr.addColorStop(0.55, '#171c26'); gr.addColorStop(1, '#0b0e14');
+    gr.addColorStop(0, '#12305a'); gr.addColorStop(0.5, '#0a1a33'); gr.addColorStop(1, '#040a16');
     x.fillStyle = gr; x.fillRect(0, 0, 2, 256);
     escena.background = new T.CanvasTexture(g);
   }
-  escena.fog = new T.Fog(0x12161e, 760, 1400);
+  escena.fog = new T.Fog(0x061226, 760, 1400);
   const camara = new T.PerspectiveCamera(38, 1.25, 1, 4000);
   const motor = new T.WebGLRenderer({ antialias: true });
   motor.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -388,8 +390,10 @@ function incPlano3D(cont, op0) {
   cont.appendChild(ayuda);
   const tip = document.createElement('div'); tip.className = 'inc-3d-tip'; cont.appendChild(tip);
 
-  // Luces: cielo y suelo, un sol con sombras y una luz cálida desde el escenario.
-  escena.add(new T.HemisphereLight(0xffffff, 0x3a3a3a, 0.5));
+  // Luces: cielo y suelo en azules, un sol con sombras, un contraluz celeste
+  // desde atrás y una luz cálida desde el escenario.
+  escena.add(new T.HemisphereLight(0xcfe8ff, 0x0a1a30, 0.6));
+  const contra = new T.DirectionalLight(0x4fb3ff, 0.45); contra.position.set(-200, 160, -320); escena.add(contra);
   const sol = new T.DirectionalLight(0xffffff, 0.5);
   sol.position.set(160, 360, 260); sol.castShadow = true; sol.shadow.mapSize.set(1024, 1024);
   Object.assign(sol.shadow.camera, { left: -260, right: 260, top: 260, bottom: -260, near: 50, far: 1000 });
@@ -397,8 +401,10 @@ function incPlano3D(cont, op0) {
   const luzEscenario = new T.PointLight(0xffe6c4, 0.9, 380); luzEscenario.position.set(0, 50, -120); escena.add(luzEscenario);
 
   // El piso del estadio.
-  const piso = new T.Mesh(new T.BoxGeometry(360, 4, 330), new T.MeshStandardMaterial({ color: 0x252c39, roughness: 0.95 }));
+  const piso = new T.Mesh(new T.BoxGeometry(360, 4, 330), new T.MeshStandardMaterial({ color: 0x0b1a30, roughness: 0.9 }));
   piso.position.set(0, -2.2, 0); piso.receiveShadow = true; escena.add(piso);
+  const grilla = new T.GridHelper(340, 34, 0x2b6cb0, 0x163a66);
+  grilla.position.y = 0.05; grilla.material.transparent = true; grilla.material.opacity = 0.45; escena.add(grilla);
 
   const aEsc = (x, y) => new T.Vector2(x - 210, 146 - y);   // del plano 2D al piso 3D
   const desechar = [];
@@ -421,12 +427,49 @@ function incPlano3D(cont, op0) {
   // El escenario, con una tira de luz al frente.
   const escenario = new T.Mesh(new T.BoxGeometry(120, 7, 22), new T.MeshStandardMaterial({ color: 0x0f1117, roughness: 0.4, metalness: 0.3 }));
   escenario.position.set(0, 3.5, -127); escenario.castShadow = true; escena.add(escenario);
-  const tira = new T.Mesh(new T.BoxGeometry(118, 0.8, 0.8), new T.MeshBasicMaterial({ color: 0xffffff }));
+  const tira = new T.Mesh(new T.BoxGeometry(118, 0.8, 0.8), new T.MeshBasicMaterial({ color: 0x38bdf8 }));
   tira.position.set(0, 6.6, -116); escena.add(tira);
   const cEsc = cartel('ESCENARIO', 10, '#ffffff'); cEsc.position.set(0, 15, -127); escena.add(cEsc);
+  // La pantalla LED detrás del escenario, con el nombre del show.
+  const lienzoLed = document.createElement('canvas'); lienzoLed.width = 1024; lienzoLed.height = 256;
+  const texLed = new T.CanvasTexture(lienzoLed);
+  let tituloLed = null;
+  const pintarLed = titulo => {
+    if (titulo === tituloLed) return; tituloLed = titulo;
+    const x = lienzoLed.getContext('2d'), g = x.createLinearGradient(0, 0, 1024, 256);
+    g.addColorStop(0, '#0b3a75'); g.addColorStop(0.5, '#0a6fd6'); g.addColorStop(1, '#0b3a75');
+    x.fillStyle = g; x.fillRect(0, 0, 1024, 256);
+    x.fillStyle = 'rgba(255,255,255,.06)'; for (let i = 0; i < 1024; i += 8) x.fillRect(i, 0, 2, 256);   // la trama de los LED
+    x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    let t = String(titulo || 'MOVISTAR ARENA').toUpperCase(), fs = 96;
+    x.font = '700 ' + fs + 'px Poppins, sans-serif';
+    while (x.measureText(t).width > 940 && fs > 40) { fs -= 6; x.font = '700 ' + fs + 'px Poppins, sans-serif'; }
+    x.fillText(t, 512, 132);
+    texLed.needsUpdate = true;
+  };
+  pintarLed(op0.titulo);
+  const pantallaLed = new T.Mesh(new T.PlaneGeometry(116, 29), new T.MeshBasicMaterial({ map: texLed }));
+  pantallaLed.position.set(0, 26, -139); escena.add(pantallaLed);
+  const marcoLed = new T.Mesh(new T.BoxGeometry(120, 33, 1.5), new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 }));
+  marcoLed.position.set(0, 26, -140.2); escena.add(marcoLed);
+  desechar.push(texLed, pantallaLed.geometry, pantallaLed.material, marcoLed.geometry, marcoLed.material);
+
+  // Haces de luz que barren el campo, y partículas en el aire.
+  const haces = [-48, -16, 16, 48].map((x0, k) => {
+    const h = new T.Mesh(new T.ConeGeometry(22, 150, 32, 1, true), new T.MeshBasicMaterial({ color: k % 2 ? 0x7dd3fc : 0x60a5fa, transparent: true, opacity: 0.07, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide }));
+    h.geometry.translate(0, -75, 0);           // gira desde la punta, colgada arriba del escenario
+    h.position.set(x0, 140, -118); h.userData.k = k; escena.add(h);
+    desechar.push(h.geometry, h.material);
+    return h;
+  });
+  const nPart = 260, posPart = new Float32Array(nPart * 3);
+  for (let i = 0; i < nPart; i++) { posPart[i * 3] = (Math.random() - 0.5) * 300; posPart[i * 3 + 1] = 10 + Math.random() * 110; posPart[i * 3 + 2] = (Math.random() - 0.5) * 260; }
+  const geoPart = new T.BufferGeometry(); geoPart.setAttribute('position', new T.BufferAttribute(posPart, 3));
+  const particulas = new T.Points(geoPart, new T.PointsMaterial({ color: 0x9bd3ff, size: 1.8, transparent: true, opacity: 0.55, blending: T.AdditiveBlending, depthWrite: false }));
+  escena.add(particulas); desechar.push(geoPart, particulas.material);
 
   // Los sectores, levantados según la tribuna.
-  const BASE = { baja: 0xb7bec8, alta: 0xd2d7de, campo: 0x9ba7b5 };
+  const BASE = { baja: 0x2f6db3, alta: 0x4a8fd6, campo: 0x1d4f8c };
   const piezas = {};
   incSectoresPlano(op0.armado).forEach(s => {
     const forma = s.r
@@ -435,21 +478,29 @@ function incPlano3D(cont, op0) {
     const alto = INC_3D_ALTURA[s.t];
     const geo = new T.ExtrudeGeometry(forma, { depth: alto, bevelEnabled: true, bevelThickness: 0.7, bevelSize: 0.7, bevelSegments: 2 });
     geo.rotateX(-Math.PI / 2);
-    const mat = new T.MeshStandardMaterial({ color: BASE[s.t], roughness: 0.55, metalness: 0.05, emissive: 0x000000 });
+    const mat = new T.MeshStandardMaterial({ color: BASE[s.t], roughness: 0.45, metalness: 0.15, emissive: 0x000000 });
     const malla = new T.Mesh(geo, mat); malla.castShadow = true; malla.receiveShadow = true; malla.userData.id = s.id;
     escena.add(malla); desechar.push(geo, mat);
+    // El borde luminoso, como un holograma.
+    const geoBorde = new T.EdgesGeometry(geo, 30);
+    const matBorde = new T.LineBasicMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.45 });
+    const borde = new T.LineSegments(geoBorde, matBorde); malla.add(borde);
+    desechar.push(geoBorde, matBorde);
     const cx = s.r ? s.r[0] + s.r[2] / 2 - 210 : s.lx - 210, cz = s.r ? s.r[1] + s.r[3] / 2 - 146 : s.ly - 146;
     const chico = s.r && (s.r[2] <= 18 || s.r[3] <= 18);
-    const et = cartel(s.txt, chico ? 7 : (s.txt.length > 3 ? 9 : 11), '#111827');
-    et.position.set(cx, alto + 4.5, cz); escena.add(et);
+    // El número: blanco sobre el azul; oscuro cuando el sector se pinta con una incidencia.
+    const tam = chico ? 7 : (s.txt.length > 3 ? 9 : 11);
+    const et = cartel(s.txt, tam, '#ffffff'), etOsc = cartel(s.txt, tam, '#111827');
+    et.position.set(cx, alto + 4.5, cz); etOsc.position.copy(et.position); etOsc.visible = false;
+    escena.add(et); escena.add(etOsc);
     const fondo = s.r ? Math.min(10, s.r[3] * 0.3) : 8;
-    piezas[s.id] = { id: s.id, malla, mat, alto, cx, cz, bz: cz - fondo, et, base: BASE[s.t], nivel: 0, sel: false, clave: '', baliza: null };
+    piezas[s.id] = { id: s.id, malla, mat, matBorde, alto, cx, cz, bz: cz - fondo, et, etOsc, base: BASE[s.t], nivel: 0, sel: false, clave: '', baliza: null };
   });
 
   // La baliza de un sector con incidencias: columna de luz, onda en la base y el número.
   const baliza = (nivel, n) => {
     const v = INC_NIVELES[nivel], g = new T.Group(), col = new T.Color(v.color);
-    const haz = new T.Mesh(new T.CylinderGeometry(3.2, 3.2, 64, 24, 1, true), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.5, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide }));
+    const haz = new T.Mesh(new T.CylinderGeometry(3.2, 3.2, 64, 24, 1, true), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.6, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide }));
     haz.position.y = 32; g.add(haz);
     const onda = new T.Mesh(new T.RingGeometry(3.2, 4.8, 48), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false }));
     onda.rotation.x = -Math.PI / 2; onda.position.y = 0.6; g.add(onda);
@@ -467,9 +518,11 @@ function incPlano3D(cont, op0) {
     controles = new T.OrbitControls(camara, lienzo);
     Object.assign(controles, { enableDamping: true, dampingFactor: 0.08, enablePan: false, minDistance: 200, maxDistance: 820, minPolarAngle: 0.12, maxPolarAngle: 1.32, rotateSpeed: 0.7, zoomSpeed: 0.8 });
     controles.target.copy(objetivo); controles.enabled = false;
-    controles.addEventListener('start', () => { ayuda.style.opacity = '0'; });
+    controles.addEventListener('start', () => { ayuda.style.opacity = '0'; controles.autoRotate = false; ultimoToque = Date.now(); });
+    controles.addEventListener('end', () => { ultimoToque = Date.now(); });
+    controles.autoRotateSpeed = 0.35;
   }
-  let intro = 0, introDesde = null, origen = desde.clone();
+  let intro = 0, introDesde = null, origen = desde.clone(), ultimoToque = Date.now();
   const volver = () => { origen = camara.position.clone(); intro = 0; introDesde = null; if (controles) controles.enabled = false; };
 
   // Tamaño: ancho del contenedor y un alto proporcionado (o la pantalla entera).
@@ -501,7 +554,7 @@ function incPlano3D(cont, op0) {
     const hit = rayo.intersectObjects(Object.values(piezas).map(p => p.malla))[0];
     return hit ? hit.object.userData.id : '';
   };
-  lienzo.addEventListener('pointerdown', e => { abajo = { x: e.clientX, y: e.clientY, t: Date.now() }; });
+  lienzo.addEventListener('pointerdown', e => { abajo = { x: e.clientX, y: e.clientY, t: Date.now() }; ultimoToque = Date.now(); if (controles) controles.autoRotate = false; });
   lienzo.addEventListener('pointerup', e => {
     if (!abajo) return;
     const lejos = Math.hypot(e.clientX - abajo.x, e.clientY - abajo.y) > 8, largo = Date.now() - abajo.t > 700; abajo = null;
@@ -553,6 +606,10 @@ function incPlano3D(cont, op0) {
         u.chapa.position.y = 72 + Math.sin(t * 2.2) * 1.8;
       }
     });
+    haces.forEach(h => { const k = h.userData.k; h.rotation.z = Math.sin(t * 0.5 + k * 1.7) * 0.42; h.rotation.x = 0.35 + Math.sin(t * 0.37 + k) * 0.18; h.material.opacity = 0.05 + 0.03 * (0.5 + 0.5 * Math.sin(t * 1.3 + k)); });
+    particulas.rotation.y = t * 0.02; particulas.position.y = Math.sin(t * 0.4) * 2;
+    // Después de 20 segundos sin que nadie lo toque, gira solo, despacio.
+    if (controles && controles.enabled && !controles.autoRotate && Date.now() - ultimoToque > 20000) controles.autoRotate = true;
     if (controles && controles.enabled) controles.update();
     motor.render(escena, camara);
   };
@@ -564,14 +621,17 @@ function incPlano3D(cont, op0) {
     // Pinta los sectores según lo abierto y pone, saca o renueva las balizas.
     poner(op) {
       onclick = op.onclick;
+      if (op.titulo !== undefined) pintarLed(op.titulo);
       const niveles = op.niveles || {}, cuentas = op.cuentas || {};
       Object.values(piezas).forEach(p => {
         const nv = niveles[p.id] || 0, n = cuentas[p.id] || 0;
         p.nivel = nv; p.n = n; p.sel = op.sel === p.id;
         p.mat.color.set(nv ? INC_NIVELES[nv].plano : p.base);
         p.mat.emissive.set(nv ? INC_NIVELES[nv].color : 0xffffff);
+        p.matBorde.color.set(nv ? INC_NIVELES[nv].color : 0x8fd0ff); p.matBorde.opacity = nv ? 0.95 : 0.45;
+        p.et.visible = !nv; p.etOsc.visible = !!nv;
         const sube = p.sel ? 3 : 0;
-        p.malla.position.y = sube; p.et.position.y = p.alto + 4.5 + sube;
+        p.malla.position.y = sube; p.et.position.y = p.etOsc.position.y = p.alto + 4.5 + sube;
         const clave = nv ? nv + ':' + n : '';
         if (p.clave !== clave) {
           if (p.baliza) { escena.remove(p.baliza); limpiar(p.baliza); p.baliza = null; }
@@ -589,10 +649,195 @@ function incPlano3D(cont, op0) {
       Object.values(piezas).forEach(p => { if (p.baliza) limpiar(p.baliza); });
       desechar.forEach(x => { try { x.dispose(); } catch (_) {} });
       [piso, escenario, tira].forEach(m => { m.geometry.dispose(); m.material.dispose(); });
+      grilla.geometry.dispose(); grilla.material.dispose();
       motor.dispose(); if (motor.forceContextLoss) motor.forceContextLoss();
       cont.classList.remove('inc-3d'); cont.style.height = ''; cont.innerHTML = '';
     }
   };
+}
+// ── Métricas del show ──
+// Las gráficas del tablero: números grandes arriba (cuántas, abiertas,
+// resueltas, cuánto tardan en resolverse, el momento más cargado), las
+// incidencias por franja horaria apiladas por gravedad, y por categoría y por
+// sector en barras. Sin librerías: SVG. Los colores de la gravedad están
+// validados para daltonismo con la leyenda, la separación entre segmentos y el
+// orden fijo (grave siempre arriba); las barras de una sola serie van en el
+// azul del Arena. Cada marca muestra su detalle al pasar el mouse o con el teclado.
+const INC_GRAF_NIVEL = { 1: '#15803d', 2: '#d97706', 3: '#be123c' };
+const INC_GRAF_AZUL = '#2a78d6';
+function incMinutos(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min'; }
+// Las franjas: si la lista cruza varios días, una por día; si no, de 15, 30,
+// 60 o 120 minutos, la más fina que deje 16 columnas o menos.
+function incFranjas(lista) {
+  const ok = (lista || []).filter(i => incDia(i.created_at));
+  if (!ok.length) return [];
+  const dias = [...new Set(ok.map(i => incDia(i.created_at)))].sort();
+  const cuenta = (grupo, f) => ({ ...f, n: [1, 2, 3].map(nv => grupo.filter(i => (i.nivel || 1) === nv).length) });
+  if (dias.length > 1) return dias.map(d => cuenta(ok.filter(i => incDia(i.created_at) === d), { etq: d.slice(8, 10) + '/' + d.slice(5, 7), largo: 'El ' + d.slice(8, 10) + '/' + d.slice(5, 7) }));
+  const ts = ok.map(i => new Date(i.created_at).getTime()).sort((a, b) => a - b);
+  const paso = [15, 30, 60, 120].find(p => (ts[ts.length - 1] - ts[0]) / (p * 60000) < 16) || 240;
+  const pms = paso * 60000;
+  const ini = new Date(ts[0]); ini.setMinutes(Math.floor(ini.getMinutes() / Math.min(paso, 60)) * Math.min(paso, 60), 0, 0);
+  if (paso > 60) ini.setHours(ini.getHours() - ini.getHours() % (paso / 60));
+  const franjas = [];
+  for (let a = ini.getTime(); a <= ts[ts.length - 1]; a += pms) {
+    const b = a + pms;
+    franjas.push(cuenta(ok.filter(i => { const t = new Date(i.created_at).getTime(); return t >= a && t < b; }),
+      { etq: incHora(new Date(a).toISOString()), largo: incHora(new Date(a).toISOString()) + ' a ' + incHora(new Date(b).toISOString()) }));
+  }
+  return franjas;
+}
+// Los números del show.
+function incMetricas(lista) {
+  const l = lista || [];
+  const resueltas = l.filter(i => i.estado === 'resuelta' && i.resuelta_at && i.created_at);
+  const tiempos = resueltas.map(i => new Date(i.resuelta_at) - new Date(i.created_at)).filter(x => x >= 0);
+  const franjas = incFranjas(l);
+  const pico = franjas.reduce((m, f) => { const n = f.n[0] + f.n[1] + f.n[2]; return n > (m ? m.total : 0) ? { ...f, total: n } : m; }, null);
+  const cuenta = clave => { const m = {}; l.forEach(i => { const k = clave(i) || '—'; m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es')); };
+  return {
+    total: l.length,
+    abiertas: l.filter(i => i.estado !== 'resuelta').length,
+    graves: l.filter(i => i.estado !== 'resuelta' && (i.nivel || 1) === 3).length,
+    resueltas: l.filter(i => i.estado === 'resuelta').length,
+    tMedio: tiempos.length ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length : null,
+    pico, franjas,
+    categorias: cuenta(i => i.categoria),
+    sectores: cuenta(i => i.sector)
+  };
+}
+// El detalle de una marca: la primera línea es el valor (va fuerte), después el rótulo.
+function incTip(lineas) { return ' tabindex="0" data-tip="' + incEsc(lineas.join('\n')).replace(/\n/g, '&#10;') + '"'; }
+// Columnas apiladas: una por franja, de abajo hacia arriba leve, moderado, grave.
+function incGrafFranjas(franjas, anchoTotal) {
+  const W = Math.max(260, Math.round(anchoTotal || 640)), H = 220, izq = 30, der = 8, arriba = 18, abajo = 26, alto = H - arriba - abajo;
+  const max = Math.max(1, ...franjas.map(f => f.n[0] + f.n[1] + f.n[2]));
+  const paso = max <= 5 ? 1 : max <= 10 ? 2 : max <= 25 ? 5 : 10, tope = Math.ceil(max / paso) * paso;
+  const y = v => arriba + alto - (v / tope) * alto;
+  const slot = (W - izq - der) / Math.max(1, franjas.length), ancho = Math.min(24, slot * 0.62);
+  let g = '';
+  for (let v = 0; v <= tope; v += paso) g += '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#eceef1" stroke-width="1"/><text x="' + (izq - 6) + '" y="' + (y(v) + 3.5) + '" font-size="10" fill="#6b7280" text-anchor="end" style="font-variant-numeric:tabular-nums">' + v + '</text>';
+  const cadaEtq = Math.ceil(franjas.length / Math.max(3, Math.floor((W - izq) / 64)));   // una etiqueta cada ~64px
+  const masAlta = franjas.reduce((m, f, k) => (f.n[0] + f.n[1] + f.n[2]) > (m < 0 ? -1 : franjas[m].n[0] + franjas[m].n[1] + franjas[m].n[2]) ? k : m, -1);
+  franjas.forEach((f, k) => {
+    const x = izq + slot * k + (slot - ancho) / 2, total = f.n[0] + f.n[1] + f.n[2];
+    let base = y(0), barras = '';
+    const visibles = [1, 2, 3].filter(nv => f.n[nv - 1]);
+    visibles.forEach((nv, j) => {
+      const h = (f.n[nv - 1] / tope) * alto, tope2 = j === visibles.length - 1;
+      const hh = Math.max(1, h - (j > 0 ? 2 : 0));            // 2px de aire entre segmentos
+      const y0 = base - hh;
+      barras += tope2
+        ? '<path d="M' + x + ',' + base + 'V' + (y0 + Math.min(4, hh)) + 'Q' + x + ',' + y0 + ' ' + (x + Math.min(4, ancho / 2)) + ',' + y0 + 'H' + (x + ancho - Math.min(4, ancho / 2)) + 'Q' + (x + ancho) + ',' + y0 + ' ' + (x + ancho) + ',' + (y0 + Math.min(4, hh)) + 'V' + base + 'Z" fill="' + INC_GRAF_NIVEL[nv] + '"/>'
+        : '<rect x="' + x + '" y="' + y0 + '" width="' + ancho + '" height="' + hh + '" fill="' + INC_GRAF_NIVEL[nv] + '"/>';
+      base = y0 - 2;
+    });
+    const tip = [total + ' incidencia' + (total === 1 ? '' : 's'), f.largo].concat([3, 2, 1].filter(nv => f.n[nv - 1]).map(nv => f.n[nv - 1] + ' ' + INC_NIVELES[nv].nombre.toLowerCase()));
+    g += '<g class="inc-marca"' + incTip(tip) + '><rect x="' + (izq + slot * k) + '" y="' + arriba + '" width="' + slot + '" height="' + alto + '" fill="transparent"/>' + barras
+      + (k === masAlta && total ? '<text x="' + (x + ancho / 2) + '" y="' + (y(total) - 5) + '" font-size="10.5" font-weight="600" fill="#111827" text-anchor="middle">' + total + '</text>' : '') + '</g>';
+    if (k % cadaEtq === 0) g += '<text x="' + (x + ancho / 2) + '" y="' + (H - 8) + '" font-size="10" fill="#6b7280" text-anchor="middle" style="font-variant-numeric:tabular-nums">' + incEsc(f.etq) + '</text>';
+  });
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="Incidencias por franja horaria, por gravedad">' + g
+    + '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="#d1d5db" stroke-width="1"/></svg>';
+}
+// Barras horizontales de una sola serie (azul), con el valor en la punta. Más
+// de 6 se juntan en "Otros".
+function incGrafBarras(pares, titulo, ancho) {
+  let filas = pares.slice(0, 6);
+  if (pares.length > 6) filas = filas.concat([['Otros (' + (pares.length - 6) + ')', pares.slice(6).reduce((t, p) => t + p[1], 0)]]);
+  const W = Math.max(240, Math.round(ancho || 320)), fila = 26, H = filas.length * fila + 4, etq = Math.min(150, Math.round(W * 0.38)), der = 26;
+  const max = Math.max(1, ...filas.map(p => p[1])), largo = W - etq - der;
+  const g = filas.map(([k, n], i) => {
+    const y = i * fila + 6, w = Math.max(3, (n / max) * largo), r = Math.min(4, w / 2);
+    return '<g class="inc-marca"' + incTip([n + ' incidencia' + (n === 1 ? '' : 's'), k]) + '><rect x="0" y="' + (y - 4) + '" width="' + W + '" height="' + fila + '" fill="transparent"/>'
+      + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#4b5563" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
+      + '<path d="M' + etq + ',' + y + 'H' + (etq + w - r) + 'Q' + (etq + w) + ',' + y + ' ' + (etq + w) + ',' + (y + r) + 'V' + (y + 14 - r) + 'Q' + (etq + w) + ',' + (y + 14) + ' ' + (etq + w - r) + ',' + (y + 14) + 'H' + etq + 'Z" fill="' + INC_GRAF_AZUL + '"/>'
+      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#111827">' + n + '</text></g>';
+  }).join('');
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="' + incEsc(titulo) + '">' + g + '</svg>';
+}
+// ancho: el ancho disponible (el del contenedor); con él se calcula el de cada tarjeta.
+function incMetricasHTML(lista, ancho) {
+  const A = Math.round(ancho || 680), dosCol = A >= 700;
+  const anchoFranjas = A - 30, anchoBarras = dosCol ? Math.floor((A - 10) / 2) - 30 : A - 30;
+  incEstiloMetricas();
+  const m = incMetricas(lista);
+  if (!m.total) return '<div class="inc-met-vacio">Las gráficas aparecen con la primera incidencia del show.</div>';
+  const tile = (etq, valor, sub) => '<div class="inc-tile"><div class="inc-tile-e">' + etq + '</div><div class="inc-tile-v">' + valor + '</div>' + (sub ? '<div class="inc-tile-s">' + sub + '</div>' : '') + '</div>';
+  const pct = Math.round(m.resueltas / m.total * 100);
+  return '<div class="inc-met">'
+    + '<div class="inc-tiles' + (A < 520 ? ' angosto' : '') + '">'
+    + tile('Incidencias', m.total, m.graves ? '<span class="inc-pt" style="background:' + INC_GRAF_NIVEL[3] + '"></span>' + m.graves + ' grave' + (m.graves === 1 ? '' : 's') + ' abierta' + (m.graves === 1 ? '' : 's') : 'Ninguna grave abierta')
+    + tile('Abiertas ahora', m.abiertas, m.abiertas ? 'Esperando resolución' : 'Todo resuelto')
+    + tile('Resueltas', pct + '%', m.resueltas + ' de ' + m.total)
+    + tile('Tiempo medio de resolución', m.tMedio == null ? '—' : incMinutos(m.tMedio), m.tMedio == null ? 'Todavía ninguna resuelta' : 'Desde que se carga hasta que se resuelve')
+    + tile('Momento más cargado', m.pico ? incEsc(m.pico.etq) : '—', m.pico ? m.pico.total + ' incidencia' + (m.pico.total === 1 ? '' : 's') + ' · ' + incEsc(m.pico.largo) : '')
+    + '</div>'
+    + '<div class="inc-grafs' + (dosCol ? ' dos' : '') + '">'
+    + '<div class="inc-graf-card inc-graf-ancha"><div class="inc-graf-t">Incidencias por franja horaria</div>'
+    + '<div class="inc-leyenda">' + [3, 2, 1].map(nv => '<span><i style="background:' + INC_GRAF_NIVEL[nv] + '"></i>' + INC_NIVELES[nv].nombre + '</span>').join('') + '</div>'
+    + incGrafFranjas(m.franjas, anchoFranjas) + '</div>'
+    + '<div class="inc-graf-card"><div class="inc-graf-t">Por categoría</div>' + incGrafBarras(m.categorias, 'Incidencias por categoría', anchoBarras) + '</div>'
+    + '<div class="inc-graf-card"><div class="inc-graf-t">Sectores con más incidencias</div>' + incGrafBarras(m.sectores, 'Incidencias por sector', anchoBarras) + '</div>'
+    + '</div></div>';
+}
+function incPintarMetricas(cont, lista) {
+  if (!cont) return;
+  cont._incMetLista = lista;
+  const dibujar = () => { cont._incMetAncho = cont.clientWidth; cont.innerHTML = incMetricasHTML(cont._incMetLista, cont.clientWidth); cont._incTipOn = false; incMetricasActivar(cont); };
+  dibujar();
+  if (!cont._incMetRO && typeof window !== 'undefined' && window.ResizeObserver) {
+    cont._incMetRO = new ResizeObserver(() => { if (Math.abs(cont.clientWidth - (cont._incMetAncho || 0)) > 24) dibujar(); });
+    cont._incMetRO.observe(cont);
+  }
+}
+// El cartelito de detalle: sigue al mouse o aparece al llegar con el teclado.
+function incMetricasActivar(cont) {
+  if (!cont || cont._incTipOn) return;
+  cont._incTipOn = true;
+  const tip = document.createElement('div'); tip.className = 'inc-met-tip'; cont.appendChild(tip);
+  cont._incTip = tip;
+  if (cont._incTipEsc) return;
+  cont._incTipEsc = true;
+  const mostrar = (marca, x, y) => {
+    const tip = cont._incTip;
+    const lineas = String(marca.getAttribute('data-tip') || '').split('\n');
+    tip.textContent = '';
+    lineas.forEach((l, i) => { const d = document.createElement('div'); d.textContent = l; if (i === 0) d.className = 'v'; tip.appendChild(d); });
+    const r = cont.getBoundingClientRect();
+    tip.style.left = Math.min(Math.max(x - r.left, 70), r.width - 70) + 'px'; tip.style.top = (y - r.top) + 'px'; tip.style.opacity = '1';
+  };
+  const ocultar = () => { if (cont._incTip) cont._incTip.style.opacity = '0'; };
+  cont.addEventListener('pointermove', e => { const m = e.target.closest && e.target.closest('.inc-marca'); if (m) mostrar(m, e.clientX, e.clientY); else ocultar(); });
+  cont.addEventListener('pointerleave', ocultar);
+  cont.addEventListener('focusin', e => { const m = e.target.closest && e.target.closest('.inc-marca'); if (!m) return; const b = m.getBoundingClientRect(); mostrar(m, b.left + b.width / 2, b.top); });
+  cont.addEventListener('focusout', ocultar);
+}
+function incEstiloMetricas() {
+  if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloMet')) return;
+  const st = document.createElement('style'); st.id = 'incEstiloMet';
+  st.textContent = '.inc-met{position:relative}'
+    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}'
+    + '.inc-tiles.angosto{grid-template-columns:repeat(2,minmax(0,1fr))}.inc-tiles.angosto .inc-tile:last-child:nth-child(odd){grid-column:1/-1}'
+    + '.inc-tile{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden}'
+    + '.inc-tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(#38bdf8,#2a78d6)}'
+    + '.inc-tile-e{font-size:11.5px;color:#6b7280}'
+    + '.inc-tile-v{font-size:24px;font-weight:600;color:#111827;line-height:1.25;margin-top:2px}'
+    + '.inc-tile-s{font-size:11.5px;color:#4b5563;margin-top:2px;display:flex;align-items:center;gap:5px}'
+    + '.inc-pt{width:8px;height:8px;border-radius:50%;display:inline-block}'
+    + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.inc-grafs.dos{grid-template-columns:repeat(2,minmax(0,1fr))}'
+    + '.inc-graf-ancha{grid-column:1/-1}'
+    + '.inc-graf-card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px 14px;min-width:0}'
+    + '.inc-graf-t{font-size:13px;font-weight:600;color:#111827;margin-bottom:6px}'
+    + '.inc-leyenda{display:flex;gap:14px;font-size:11.5px;color:#4b5563;margin-bottom:4px;flex-wrap:wrap}'
+    + '.inc-leyenda span{display:inline-flex;align-items:center;gap:6px}.inc-leyenda i{width:10px;height:10px;border-radius:2px;display:inline-block}'
+    + '.inc-graf{max-width:100%;height:auto;display:block;font-family:Poppins,sans-serif;overflow:visible}'
+    + '.inc-marca{outline:none;cursor:default}.inc-marca:hover path,.inc-marca:hover rect[fill]:not([fill="transparent"]),.inc-marca:focus path,.inc-marca:focus rect[fill]:not([fill="transparent"]){filter:brightness(1.12)}'
+    + '.inc-marca:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}'
+    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#0f1117;color:#d1d5db;font:500 11.5px Poppins,sans-serif;padding:7px 10px;border-radius:8px;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s;box-shadow:0 6px 18px rgba(0,0,0,.18)}'
+    + '.inc-met-tip .v{color:#fff;font-weight:700;font-size:13px}'
+    + '.inc-met-vacio{text-align:center;color:#6b7280;font-size:12.5px;padding:18px;border:1px dashed #d1d5db;border-radius:12px;background:#fff}';
+  document.head.appendChild(st);
 }
 // ── fin INCIDENCIAS compartido ──
 
@@ -713,7 +958,9 @@ function render() {
   const vista = incVistaPreferida();
   document.getElementById('vistas').innerHTML = [['3d', '3D'], ['2d', 'Plano']].map(([k, t]) => '<button class="chip' + (vista === k ? ' on' : '') + '" onclick="elegirVista(\'' + k + '\')">' + t + '</button>').join('')
     + '<span class="sep"></span>' + [['campos', 'Campo de pie'], ['asientos', 'Con asientos']].map(([k, t]) => '<button class="chip' + (armado === k ? ' on' : '') + '" onclick="elegirArmado(\'' + k + '\')">' + t + '</button>').join('');
-  incMontarPlano(document.getElementById('plano'), { armado, niveles: res.niveles, cuentas: res.cuentas, sel: sectorSel, onclick: 'tocarSector' });
+  incMontarPlano(document.getElementById('plano'), { armado, niveles: res.niveles, cuentas: res.cuentas, sel: sectorSel, onclick: 'tocarSector', titulo: (shows.find(x => x.id === showId) || {}).nombre });
+  const met = document.getElementById('metricas');
+  if (met) incPintarMetricas(met, delD);
   document.getElementById('lugares').innerHTML = INC_LUGARES.map(l => {
     const nv = res.niveles[l], c = res.cuentas[l] || 0, sel = sectorSel === l;
     return '<button class="inc-lugar" style="' + (nv ? 'background:' + INC_NIVELES[nv].fondo + ';border-color:' + INC_NIVELES[nv].color + ';color:' + INC_NIVELES[nv].color + ';' : '') + (sel ? 'outline:2px solid #0f1117;' : '')
