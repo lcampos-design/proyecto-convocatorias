@@ -4349,7 +4349,7 @@ function incPlanoSVG(op) {
 const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13 };
 // Arriba y costado de cada tipo: los mismos colores por zona que el plano.
 const INC_3D_COLOR = {
-  baja: [0x2a5fd0, 0x0f2a66], alta: [0x6650c8, 0x261c62], campo: [0x0d6f80, 0x073640],
+  baja: [0x2c66dc, 0x10306e], alta: [0x8656dc, 0x35206e], campo: [0x10928e, 0x084a48],
   anillo: [0x16264a, 0x0a1430], back: [0x101c38, 0x080f22],
   gastro: [0x1d3f7a, 0x0f2247], banio: [0x1d3f7a, 0x0f2247], enfermeria: [0x1d3f7a, 0x0f2247], servicio: [0x1d3f7a, 0x0f2247], puerta: [0x4cc3ea, 0x4cc3ea]
 };
@@ -4459,12 +4459,14 @@ function incPlano3D(cont, op0) {
   // dibujan después, nítidos y siempre a la vista.
   const ETQ = 1;
 
-  // Luces: cielo azul y suelo oscuro, una luz blanca de frente, un contraluz
-  // celeste desde atrás y una luz azul desde el escenario.
-  escena.add(new T.HemisphereLight(0xa9cfff, 0x020814, 0.55));
+  // Luces: cielo y suelo, una luz blanca de frente, un contraluz desde atrás
+  // y una luz suave desde el escenario. Todas casi blancas, para que cada zona
+  // conserve su color.
+  // Luz neutra (blanca): si fuera celeste, el violeta y el turquesa se verían azules.
+  escena.add(new T.HemisphereLight(0xffffff, 0x0a1020, 0.62));
   const clave = new T.DirectionalLight(0xffffff, 0.45); clave.position.set(180, 380, 300); escena.add(clave);
-  const contra = new T.DirectionalLight(0x00c2ff, 0.55); contra.position.set(-220, 180, -340); escena.add(contra);
-  const luzEscenario = new T.PointLight(0x4d94ff, 0.45, 420); luzEscenario.position.set(0, 60, -110); escena.add(luzEscenario);
+  const contra = new T.DirectionalLight(0xc9d8ff, 0.3); contra.position.set(-220, 180, -340); escena.add(contra);
+  const luzEscenario = new T.PointLight(0xdfe8ff, 0.3, 420); luzEscenario.position.set(0, 60, -110); escena.add(luzEscenario);
 
   // El piso: oscuro, con grilla, y un resplandor azul debajo del estadio.
   const piso = new T.Mesh(new T.PlaneGeometry(1800, 1800), new T.MeshStandardMaterial({ color: 0x020a1c, roughness: 0.92, metalness: 0.1 }));
