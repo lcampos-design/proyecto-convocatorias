@@ -896,8 +896,8 @@ const INC_TEMA = {
     puerta: ['#0e86b4', '#08597a'], gastro: ['#a8329a', '#7a1f70'], banio: ['#5a6b85', '#3e4c63'], enfermeria: ['#ffffff', '#8f9cb0'], servicio: ['#374151', '#1f2937']
   },
   tinta: '#ffffff', tintaPiso: '#4b5768', tintaTipo: { enfermeria: '#334155' },
-  fondo: ['#bcc5d0', '#aab4c1', '#9ba6b5'], fachada: '#7c8aa0', cinta: '#3f78c2',
-  escenario: ['#111827', '#111827'], sel: '#0f1117', badge: ['#0f1117', '#ffffff'], marca: '#3b4555'
+  fondo: ['#a5afbc', '#949fad', '#85909f'], fachada: '#6b7990', cinta: '#3f78c2',
+  escenario: ['#111827', '#111827'], sel: '#0f1117', badge: ['#0f1117', '#ffffff']
 };
 const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['campo', 'Campo'], ['puerta', 'Puertas'], ['gastro', 'Gastronomía'], ['banio', 'Baños'], ['enfermeria', 'Enfermería'], ['servicio', 'Otros puntos']];
 function incLeyendaHTML(clase, soloZonas) {
@@ -954,8 +954,6 @@ function incPlanoSVG(op) {
     + partes
     + '<polyline points="' + pts(INC_CINTA) + '" fill="none" stroke="' + TM.cinta + '" stroke-width=".9" stroke-linejoin="round" opacity=".85" pointer-events="none"/>'
     + '<rect x="150" y="8" width="120" height="22" rx="4" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width="1"/><text x="210" y="21.6" font-size="7" font-weight="600" fill="#fff" text-anchor="middle" letter-spacing="1.6">ESCENARIO</text>'
-    // La firma de SBS, abajo (el logo tiene las letras caladas: un disco blanco adentro las deja blancas).
-    + '<g pointer-events="none" opacity=".92"><circle cx="173.5" cy="331.5" r="5.1" fill="#fff"/><image href="logo-sbs.png" x="168" y="326" width="11" height="11"/><text x="182.5" y="333.6" font-size="5.6" font-weight="600" fill="' + TM.marca + '" letter-spacing=".3">Show Business Solutions</text></g>'
     + '</svg>';
 }
 // ── El estadio en 3D ──
@@ -963,7 +961,7 @@ function incPlanoSVG(op) {
 // puesto con su color; el campo, el escenario con su pantalla y la
 // estructura de luces, la cinta LED que da la vuelta entre la platea baja y
 // la alta, y afuera el anillo con las puertas, la gastronomía y los baños,
-// cerrado por una fachada de vidrio, con la marca de SBS. Un solo fondo,
+// cerrado por una fachada de vidrio. Un solo fondo,
 // intermedio, sin cuadrícula. Cada lugar con algo abierto se ilumina en su
 // color y late (más rápido cuanto más grave) y le sale una columna con el
 // número. Se gira arrastrando, se acerca pellizcando y se toca el lugar
@@ -976,7 +974,7 @@ const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], anillo: 0.8, 
 // plano), el borde, el piso, el cielo y las luces (casi blancas, para que
 // cada color se vea como es).
 const INC_TEMA_3D = {
-  cielo: ['#c3cbd6', '#b1bbc8', '#a0abba'], niebla: 0xadb7c3, piso: 0xaab4c0,
+  cielo: ['#acb5c2', '#9ba6b4', '#8a95a4'], niebla: 0x98a2af, piso: 0x95a0ad,
   luces: { hemi: [0xffffff, 0x8f99ab, 0.78], clave: 0.55, contra: 0.22, escenario: 0.15 },
   color: {
     baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0xd0d7e0, 0xa9b4c2], back: [0xc3cbd6, 0xa0abba],
@@ -984,7 +982,7 @@ const INC_TEMA_3D = {
   },
   borde: { baja: 0xffffff, alta: 0xffffff, campo: 0xffffff, anillo: 0x8d9aac, back: 0x8d9aac, puerta: 0x08597a, gastro: 0xffffff, banio: 0xffffff, enfermeria: 0x8f9cb0, servicio: 0xffffff },
   opBorde: { baja: 0.5, alta: 0.5, campo: 0.55, anillo: 0.7, back: 0.7 }, opBordeOtro: 0.75, sel: 0x0f1117,
-  etqPiso: '#4b5768', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x7c8aa0, 0.8], [0.4, 0x7c8aa0, 0.6]], parantes: [0x8b98ab, 0.4], marca: '#2f3846'
+  etqPiso: '#4b5768', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x7c8aa0, 0.8], [0.4, 0x7c8aa0, 0.6]], parantes: [0x7b889c, 0.4]
 };
 let incCarga3D = null, incSin3D = false, incListo3D = false;
 function incCargar3D() {
@@ -1045,7 +1043,7 @@ function incEstiloPlano() {
 function incEstilo3D() {
   if (document.getElementById('incEstilo3D')) return;
   const st = document.createElement('style'); st.id = 'incEstilo3D';
-  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 90% at 50% 0%,#c8d0da 0%,#b3bdca 60%,#a1acbb 100%)}'
+  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 90% at 50% 0%,#b2bbc7 0%,#9fa9b7 60%,#8e99a8 100%)}'
     + '.inc-3d:fullscreen{width:100vw;height:100vh;border-radius:0}'
     + '.inc-3d canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}'
     + '.inc-3d-btns{position:absolute;top:8px;right:8px;z-index:4;display:flex;gap:6px}'
@@ -1362,26 +1360,6 @@ function incPlano3D(cont, op0) {
     escena.add(new T.LineSegments(g, new T.LineBasicMaterial({ color: TM.parantes[0], transparent: true, opacity: TM.parantes[1] })));
   }
 
-  // La marca de SBS en el piso, detrás del estadio (arriba en la vista de entrada).
-  {
-    const c = lienzoDe(1024, 280), x = c.getContext('2d'), tex = textura(c); tex.anisotropy = anis;
-    const pintarMarca = img => {
-      x.clearRect(0, 0, 1024, 280);
-      if (img) {
-        // Las letras del logo son caladas: un disco blanco adentro las deja blancas (sin marco).
-        x.fillStyle = '#ffffff'; x.beginPath(); x.arc(140, 140, 107, 0, Math.PI * 2); x.fill();
-        x.drawImage(img, 24, 24, 232, 232);
-      }
-      x.fillStyle = TM.marca; x.textBaseline = 'middle';
-      x.font = '700 104px Poppins, sans-serif'; x.fillText('SBS', 296, 108);
-      x.font = '500 42px Poppins, sans-serif'; x.fillText('Show Business Solutions', 300, 200);
-      tex.needsUpdate = true;
-    };
-    pintarMarca(null);
-    if (typeof Image !== 'undefined') { const img = new Image(); img.onload = () => pintarMarca(img); img.src = 'logo-sbs.png'; }
-    const m = new T.Mesh(new T.PlaneGeometry(150, 41), new T.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.9 }));
-    m.rotation.x = -Math.PI / 2; m.position.set(0, 0.12, -292); escena.add(m);
-  }
 
   // La baliza de un lugar con incidencias: columna de luz, onda en la base y el número.
   const baliza = (nivel, n) => {

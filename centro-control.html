@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#4a4b50">
+<meta name="theme-color" content="#f4f5f7">
 <title>Centro de Control — Movistar Arena</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,33 +11,44 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#eceef1;color:#111827;font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
-/* La marca de fondo: el wallpaper de SBS, muy suave, detrás de todo. */
-body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:url('fondo-sbs.jpg') center/cover no-repeat;opacity:.07}
-body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 80% at 50% 0%,rgba(255,255,255,.55),rgba(236,238,241,0) 70%)}
+/* El fondo: en el ingreso y en la lista, el wallpaper de SBS muy suave; en el
+   tablero, un escenario: haces de luz que barren desde arriba y el público abajo. */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:url('fondo-sbs.jpg') center/cover no-repeat;opacity:.07;transition:opacity .4s}
+body.fondo-evento{background:linear-gradient(180deg,#d4d9e1 0%,#bfc6d0 100%)}
+body.fondo-evento::before{opacity:0}
+.escena{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .6s}
+body.fondo-evento .escena{opacity:1}
+.escena-luz{position:absolute;inset:0;background:radial-gradient(55% 45% at 50% -8%,rgba(99,102,241,.22),transparent 70%),radial-gradient(35% 40% at 12% -5%,rgba(168,85,247,.2),transparent 70%),radial-gradient(35% 40% at 88% -5%,rgba(14,165,233,.2),transparent 70%)}
+.haz{position:absolute;top:-6vh;width:26vw;height:115vh;transform-origin:50% 0;clip-path:polygon(47% 0,53% 0,100% 100%,0 100%);filter:blur(10px);animation:barrer 16s ease-in-out infinite}
+.haz.h1{left:4vw;background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(167,139,250,.14) 45%,transparent 80%);animation-delay:-3s}
+.haz.h2{left:37vw;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(96,165,250,.14) 45%,transparent 80%);animation-duration:19s}
+.haz.h3{right:4vw;background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(56,189,248,.14) 45%,transparent 80%);animation-delay:-8s;animation-direction:reverse}
+@keyframes barrer{0%,100%{transform:rotate(-11deg)}50%{transform:rotate(11deg)}}
+.publico{position:absolute;left:0;right:0;bottom:0;height:210px;background-repeat:repeat-x;background-position:left bottom;background-size:1600px 210px;opacity:.5}
+@media(prefers-reduced-motion:reduce){.haz{animation:none}}
+/* En el tablero, las tarjetas dejan ver un poco el escenario. */
+body.fondo-evento .t-plano,body.fondo-evento .t-lista,body.fondo-evento .stat{background:rgba(255,255,255,.74);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%)}
 .bar,.pantalla{position:relative;z-index:1}
 button,input,select,textarea{font-family:inherit}
-/* La barra de arriba: gris SBS, armada como el panel (marca, separador, lo que se está viendo) */
-.bar{background:#4a4b50;color:#fff;position:sticky;top:0;z-index:30;min-height:62px;padding:calc(env(safe-area-inset-top,0px) + 8px) 18px 8px;display:flex;align-items:center;gap:14px;box-shadow:0 1px 0 rgba(255,255,255,.05),0 8px 22px rgba(0,0,0,.16)}
-.marca{display:flex;align-items:center;gap:11px;padding-right:16px;border-right:1px solid rgba(255,255,255,.18);min-height:38px;flex-shrink:0}
-.bar-logo{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle closest-side,#fff 0 90%,transparent 92%);flex-shrink:0;display:block}
-.marca-n{font-size:14.5px;font-weight:600;letter-spacing:-.2px;line-height:1.2}
-.marca-s{font-size:10.5px;color:#d0d0d3;line-height:1.3}
-.bar-txt{flex:1;min-width:0}
-.bar-t{font-size:15px;font-weight:600;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar-s{font-size:11.5px;color:#d6d6d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar-acc{display:flex;gap:8px;align-items:center;flex-shrink:0}
-.bar-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#f3f3f3;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;transition:background .15s}
-.bar-btn:hover{background:rgba(255,255,255,.16)}
-.bar-btn svg{width:14px;height:14px}
-.bar .inc-vivo{color:#4ade80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:999px;padding:5px 10px}
-.bar .inc-vivo.mal{color:#fda4af;background:rgba(253,164,175,.1);border-color:rgba(253,164,175,.3)}
-.atras{background:none;border:none;color:#e5e5e5;font-size:20px;cursor:pointer;padding:2px 6px;flex-shrink:0;border-radius:8px}
-.atras:hover{background:rgba(255,255,255,.1)}
-@media(max-width:760px){.marca-txt{display:none}.marca{border-right:0;padding-right:0}.bar{gap:8px;padding-left:10px;padding-right:10px}.bar-logo{width:30px;height:30px}.bar-btn{padding:7px 9px}.bar-btn .txt{display:none}.bar .inc-vivo{font-size:0;gap:0;padding:6px}.bar-acc{gap:6px}.bar-t{font-size:14px}}
+/* La barra de arriba: clara, con el logo y sólo lo justo (qué show, si está en vivo, el informe y salir) */
+.bar{background:rgba(246,247,249,.92);color:#111827;position:sticky;top:0;z-index:30;min-height:56px;padding:calc(env(safe-area-inset-top,0px) + 8px) 18px 8px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #e3e6ea;-webkit-backdrop-filter:saturate(180%) blur(16px);backdrop-filter:saturate(180%) blur(16px)}
+.bar-logo{width:32px;height:32px;flex-shrink:0;display:block}
+.bar-txt{flex:1;min-width:0;display:flex;align-items:baseline;gap:10px}
+.bar-t{font-size:15px;font-weight:600;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bar-s{font-size:12px;color:#6b7280;white-space:nowrap;flex-shrink:0}
+.bar-acc{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#fff;border:1px solid #dfe2e7;color:#1f2937;border-radius:9px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;transition:background .15s,border-color .15s}
+.bar-btn:hover{border-color:#b9bfc9}
+.bar-btn.ico{width:34px;height:32px;padding:0}
+.bar-btn svg{width:15px;height:15px}
+.bar .inc-vivo{color:#15803d;font-weight:600}
+.atras{background:none;border:none;color:#374151;font-size:20px;cursor:pointer;padding:2px 6px;flex-shrink:0;border-radius:8px}
+.atras:hover{background:#e9ebef}
+@media(max-width:760px){.bar{gap:8px;padding-left:10px;padding-right:10px}.bar-logo{width:28px;height:28px}.bar-s{display:none}.bar .inc-vivo{font-size:0;gap:0}.bar-t{font-size:14px}}
 .wrap{max-width:1180px;margin:0 auto;padding:18px}
 .pantalla{display:none}.pantalla.on{display:block}
 /* Ingreso */
-.login{min-height:calc(100vh - 62px);display:flex;align-items:center;justify-content:center;padding:20px}
+.login{min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:rgba(255,255,255,.96);border:1px solid rgba(0,0,0,.06);border-radius:18px;padding:30px 28px;width:100%;max-width:370px;box-shadow:0 24px 60px rgba(17,24,39,.12)}
 .login-logo{width:58px;height:58px;display:block;margin:0 auto 14px}
 .login-t{font-size:19px;font-weight:700;text-align:center;letter-spacing:-.3px}
@@ -132,20 +143,19 @@ button,input,select,textarea{font-family:inherit}
 </head>
 <body>
 
+<div class="escena" aria-hidden="true"><div class="escena-luz"></div><div class="haz h1"></div><div class="haz h2"></div><div class="haz h3"></div><div class="publico" id="publico"></div></div>
+
 <header class="bar">
   <button class="atras" id="btnAtras" onclick="volverShows()" style="display:none" aria-label="Volver a los shows">←</button>
-  <div class="marca">
-    <img class="bar-logo" src="logo-sbs.png" alt="SBS">
-    <div class="marca-txt"><div class="marca-n">Centro de Control</div><div class="marca-s">Movistar Arena · Show Business Solutions</div></div>
-  </div>
+  <img class="bar-logo" src="logo-sbs.png" alt="SBS">
   <div class="bar-txt">
-    <div class="bar-t" id="barT">Shows del Arena</div>
-    <div class="bar-s" id="barS">Incidencias en vivo</div>
+    <span class="bar-t" id="barT">Centro de Control</span>
+    <span class="bar-s" id="barS"></span>
   </div>
   <div class="bar-acc" id="barAcc" style="display:none">
     <span class="inc-vivo" id="vivo">En vivo</span>
-    <button class="bar-btn" onclick="cargarIncidencias()" title="Actualizar ahora"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
-    <button class="bar-btn" onclick="informe()" title="El informe del show para guardar o imprimir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span class="txt">Informe PDF</span></button>
+    <button class="bar-btn ico" onclick="cargarIncidencias()" title="Actualizar ahora" aria-label="Actualizar ahora"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+    <button class="bar-btn ico" onclick="informe()" title="Informe del show (PDF)" aria-label="Informe del show en PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></button>
   </div>
   <button class="bar-btn" id="btnSalir" onclick="salir()" style="display:none">Salir</button>
 </header>
@@ -454,8 +464,8 @@ const INC_TEMA = {
     puerta: ['#0e86b4', '#08597a'], gastro: ['#a8329a', '#7a1f70'], banio: ['#5a6b85', '#3e4c63'], enfermeria: ['#ffffff', '#8f9cb0'], servicio: ['#374151', '#1f2937']
   },
   tinta: '#ffffff', tintaPiso: '#4b5768', tintaTipo: { enfermeria: '#334155' },
-  fondo: ['#bcc5d0', '#aab4c1', '#9ba6b5'], fachada: '#7c8aa0', cinta: '#3f78c2',
-  escenario: ['#111827', '#111827'], sel: '#0f1117', badge: ['#0f1117', '#ffffff'], marca: '#3b4555'
+  fondo: ['#a5afbc', '#949fad', '#85909f'], fachada: '#6b7990', cinta: '#3f78c2',
+  escenario: ['#111827', '#111827'], sel: '#0f1117', badge: ['#0f1117', '#ffffff']
 };
 const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['campo', 'Campo'], ['puerta', 'Puertas'], ['gastro', 'Gastronomía'], ['banio', 'Baños'], ['enfermeria', 'Enfermería'], ['servicio', 'Otros puntos']];
 function incLeyendaHTML(clase, soloZonas) {
@@ -512,8 +522,6 @@ function incPlanoSVG(op) {
     + partes
     + '<polyline points="' + pts(INC_CINTA) + '" fill="none" stroke="' + TM.cinta + '" stroke-width=".9" stroke-linejoin="round" opacity=".85" pointer-events="none"/>'
     + '<rect x="150" y="8" width="120" height="22" rx="4" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width="1"/><text x="210" y="21.6" font-size="7" font-weight="600" fill="#fff" text-anchor="middle" letter-spacing="1.6">ESCENARIO</text>'
-    // La firma de SBS, abajo (el logo tiene las letras caladas: un disco blanco adentro las deja blancas).
-    + '<g pointer-events="none" opacity=".92"><circle cx="173.5" cy="331.5" r="5.1" fill="#fff"/><image href="logo-sbs.png" x="168" y="326" width="11" height="11"/><text x="182.5" y="333.6" font-size="5.6" font-weight="600" fill="' + TM.marca + '" letter-spacing=".3">Show Business Solutions</text></g>'
     + '</svg>';
 }
 // ── El estadio en 3D ──
@@ -521,7 +529,7 @@ function incPlanoSVG(op) {
 // puesto con su color; el campo, el escenario con su pantalla y la
 // estructura de luces, la cinta LED que da la vuelta entre la platea baja y
 // la alta, y afuera el anillo con las puertas, la gastronomía y los baños,
-// cerrado por una fachada de vidrio, con la marca de SBS. Un solo fondo,
+// cerrado por una fachada de vidrio. Un solo fondo,
 // intermedio, sin cuadrícula. Cada lugar con algo abierto se ilumina en su
 // color y late (más rápido cuanto más grave) y le sale una columna con el
 // número. Se gira arrastrando, se acerca pellizcando y se toca el lugar
@@ -534,7 +542,7 @@ const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], anillo: 0.8, 
 // plano), el borde, el piso, el cielo y las luces (casi blancas, para que
 // cada color se vea como es).
 const INC_TEMA_3D = {
-  cielo: ['#c3cbd6', '#b1bbc8', '#a0abba'], niebla: 0xadb7c3, piso: 0xaab4c0,
+  cielo: ['#acb5c2', '#9ba6b4', '#8a95a4'], niebla: 0x98a2af, piso: 0x95a0ad,
   luces: { hemi: [0xffffff, 0x8f99ab, 0.78], clave: 0.55, contra: 0.22, escenario: 0.15 },
   color: {
     baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0xd0d7e0, 0xa9b4c2], back: [0xc3cbd6, 0xa0abba],
@@ -542,7 +550,7 @@ const INC_TEMA_3D = {
   },
   borde: { baja: 0xffffff, alta: 0xffffff, campo: 0xffffff, anillo: 0x8d9aac, back: 0x8d9aac, puerta: 0x08597a, gastro: 0xffffff, banio: 0xffffff, enfermeria: 0x8f9cb0, servicio: 0xffffff },
   opBorde: { baja: 0.5, alta: 0.5, campo: 0.55, anillo: 0.7, back: 0.7 }, opBordeOtro: 0.75, sel: 0x0f1117,
-  etqPiso: '#4b5768', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x7c8aa0, 0.8], [0.4, 0x7c8aa0, 0.6]], parantes: [0x8b98ab, 0.4], marca: '#2f3846'
+  etqPiso: '#4b5768', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x7c8aa0, 0.8], [0.4, 0x7c8aa0, 0.6]], parantes: [0x7b889c, 0.4]
 };
 let incCarga3D = null, incSin3D = false, incListo3D = false;
 function incCargar3D() {
@@ -603,7 +611,7 @@ function incEstiloPlano() {
 function incEstilo3D() {
   if (document.getElementById('incEstilo3D')) return;
   const st = document.createElement('style'); st.id = 'incEstilo3D';
-  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 90% at 50% 0%,#c8d0da 0%,#b3bdca 60%,#a1acbb 100%)}'
+  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 90% at 50% 0%,#b2bbc7 0%,#9fa9b7 60%,#8e99a8 100%)}'
     + '.inc-3d:fullscreen{width:100vw;height:100vh;border-radius:0}'
     + '.inc-3d canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}'
     + '.inc-3d-btns{position:absolute;top:8px;right:8px;z-index:4;display:flex;gap:6px}'
@@ -920,26 +928,6 @@ function incPlano3D(cont, op0) {
     escena.add(new T.LineSegments(g, new T.LineBasicMaterial({ color: TM.parantes[0], transparent: true, opacity: TM.parantes[1] })));
   }
 
-  // La marca de SBS en el piso, detrás del estadio (arriba en la vista de entrada).
-  {
-    const c = lienzoDe(1024, 280), x = c.getContext('2d'), tex = textura(c); tex.anisotropy = anis;
-    const pintarMarca = img => {
-      x.clearRect(0, 0, 1024, 280);
-      if (img) {
-        // Las letras del logo son caladas: un disco blanco adentro las deja blancas (sin marco).
-        x.fillStyle = '#ffffff'; x.beginPath(); x.arc(140, 140, 107, 0, Math.PI * 2); x.fill();
-        x.drawImage(img, 24, 24, 232, 232);
-      }
-      x.fillStyle = TM.marca; x.textBaseline = 'middle';
-      x.font = '700 104px Poppins, sans-serif'; x.fillText('SBS', 296, 108);
-      x.font = '500 42px Poppins, sans-serif'; x.fillText('Show Business Solutions', 300, 200);
-      tex.needsUpdate = true;
-    };
-    pintarMarca(null);
-    if (typeof Image !== 'undefined') { const img = new Image(); img.onload = () => pintarMarca(img); img.src = 'logo-sbs.png'; }
-    const m = new T.Mesh(new T.PlaneGeometry(150, 41), new T.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.9 }));
-    m.rotation.x = -Math.PI / 2; m.position.set(0, 0.12, -292); escena.add(m);
-  }
 
   // La baliza de un lugar con incidencias: columna de luz, onda en la base y el número.
   const baliza = (nivel, n) => {
@@ -1352,11 +1340,35 @@ function incEstiloMetricas() {
 let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', dia = null, armadoSel = '', timer = null;
 let vistos = null, nuevos = new Set(), nivelSel = 0;
 const hoyISO = () => incDia(new Date().toISOString());
+// El público del fondo, en silueta: tres filas de cabezas y hombros, algunas
+// manos arriba y luces de celulares. Se dibuja una vez, con números fijos.
+function pintarPublico() {
+  const el = document.getElementById('publico'); if (!el || !el.style) return;
+  let a = 11; const azar = () => (a = (a * 9301 + 49297) % 233280) / 233280, f = v => v.toFixed(1);
+  const W = 1600, H = 210;
+  let svg = '', luces = '';
+  [[150, 0.62, '#59627a'], [176, 0.82, '#474f63'], [204, 1, '#363c4c']].forEach(([base, k, color]) => {
+    let g = '';
+    for (let x = -12; x < W + 24; x += (24 + azar() * 14) * k) {
+      const r = (10 + azar() * 3) * k, cy = base - (36 + azar() * 10) * k;
+      g += '<ellipse cx="' + f(x) + '" cy="' + base + '" rx="' + f(19 * k) + '" ry="' + f(30 * k) + '"/><circle cx="' + f(x) + '" cy="' + f(cy) + '" r="' + f(r) + '"/>';
+      if (azar() < 0.2) {
+        const lado = azar() < 0.5 ? -1 : 1, x0 = x + lado * 12 * k, y0 = cy + 14 * k, x1 = x0 + lado * 7 * k, y1 = cy - 34 * k;
+        g += '<path d="M' + f(x0) + ' ' + f(y0) + 'L' + f(x1) + ' ' + f(y1) + '" stroke="' + color + '" stroke-width="' + f(7 * k) + '" stroke-linecap="round"/>';
+        if (azar() < 0.55) luces += '<circle cx="' + f(x1) + '" cy="' + f(y1 - 5 * k) + '" r="' + f(3.2 * k) + '" fill="#fff" opacity=".85"/>';
+      }
+    }
+    svg += '<g fill="' + color + '">' + g + '</g>';
+  });
+  el.style.backgroundImage = 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' + svg + luces + '</svg>') + '")';
+}
+pintarPublico();
 function pantalla(id) {
   document.querySelectorAll('.pantalla').forEach(p => p.classList.toggle('on', p.id === id));
   document.getElementById('btnAtras').style.display = id === 'pShow' ? '' : 'none';
   document.getElementById('btnSalir').style.display = id === 'pLogin' ? 'none' : '';
   document.getElementById('barAcc').style.display = id === 'pShow' ? '' : 'none';
+  if (document.body && document.body.classList) document.body.classList.toggle('fondo-evento', id === 'pShow');
   window.scrollTo(0, 0);
 }
 async function iniciar() {
@@ -1421,7 +1433,7 @@ async function abrirShow(id) {
   showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = null; vistos = null; nuevos = new Set(); nivelSel = 0;
   try { armadoSel = localStorage.getItem('incArmado:' + id) || ''; } catch (_) { armadoSel = ''; }
   document.getElementById('barT').textContent = s.nombre;
-  document.getElementById('barS').textContent = resumenFechas(s) + (s.venue ? ' · ' + s.venue : '');
+  document.getElementById('barS').textContent = resumenFechas(s);
   pantalla('pShow');
   render();
   await cargarIncidencias();
@@ -1433,15 +1445,15 @@ async function abrirShow(id) {
 }
 function volverShows() {
   clearInterval(timer); showId = null;
-  document.getElementById('barT').textContent = 'Shows del Arena';
-  document.getElementById('barS').textContent = 'Incidencias en vivo';
+  document.getElementById('barT').textContent = 'Centro de Control';
+  document.getElementById('barS').textContent = '';
   pantalla('pShows'); cargarShows();
 }
 async function cargarIncidencias() {
   const vivo = document.getElementById('vivo');
   const { data, error } = await sb.rpc('ger_incidencias', { p_conv_id: showId });
   if (error || data === null) { vivo.textContent = 'Sin conexión'; vivo.className = 'inc-vivo mal'; return; }
-  vivo.textContent = 'En vivo · ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo';
+  vivo.textContent = 'En vivo'; vivo.title = 'Actualizado a las ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo';
   lista = data || [];
   nuevos = vistos ? new Set(lista.filter(i => !vistos.has(i.id)).map(i => i.id)) : new Set();
   vistos = new Set(lista.map(i => i.id));
