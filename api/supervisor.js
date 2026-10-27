@@ -1,4 +1,8 @@
-// Alta y baja de supervisores.
+// Alta y baja de supervisores y de la gerencia del Movistar Arena.
+//
+// Las dos son cuentas "de afuera del panel": el supervisor usa su app y la
+// gerencia el Centro de Control. Ninguna de las dos es admin (ver
+// centro-control.sql), así que la base no les deja ver el resto.
 //
 // Crear o borrar una cuenta necesita la clave de servidor de Supabase, que no
 // puede estar en el panel: el panel se descarga entero en el navegador de
@@ -13,6 +17,8 @@ const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
 
 const ROLES_PERMITIDOS = ['admin', 'admin_movistar', 'admin_externos'];
+// Las cuentas que se pueden crear y borrar por acá.
+const ROLES_CUENTA = ['supervisor', 'gerencia'];
 
 // Quien llama tiene que estar logueado Y tener ficha de admin. El panel decide
 // el rol en el navegador, y ahí no se puede confiar.
@@ -36,7 +42,7 @@ async function verificarAdmin(req) {
     if (!ROLES_PERMITIDOS.includes(rol)) {
       return { ok: false, status: 403, error: 'Tu usuario no tiene permiso para dar de alta supervisores' };
     }
-    return { ok: true, user, rol };
+    return { ok: true, user, rol, token };
   } catch (_) {
     return { ok: false, status: 401, error: 'No se pudo validar la sesión' };
   }
@@ -95,6 +101,16 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const email = String(cuerpo.email || '').trim().toLowerCase();
     const nombre = String(cuerpo.nombre || '').trim();
+    const rolNuevo = cuerpo.rol == null || cuerpo.rol === '' ? 'supervisor' : String(cuerpo.rol);
+    if (!ROLES_CUENTA.includes(rolNuevo)) return res.status(400).json({ error: 'Ese tipo de cuenta no se puede crear por acá' });
+    // Una cuenta de gerencia sólo deja de ser admin con la regla de centro-control.sql.
+    // Sin esa regla, vería el panel entero: no se crea.
+    if (rolNuevo === 'gerencia') {
+      const regla = await fetch(`${SB_URL}/rest/v1/rpc/mi_rol`, {
+        method: 'POST', headers: { 'Authorization': `Bearer ${auth.token}`, 'apikey': SB_ANON_KEY, 'Content-Type': 'application/json' }, body: '{}'
+      }).catch(() => null);
+      if (!regla || !regla.ok) return res.status(409).json({ error: 'Primero hay que correr centro-control.sql en Supabase' });
+    }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'El mail no parece válido' });
     if (!nombre) return res.status(400).json({ error: 'Falta el nombre' });
 
@@ -113,20 +129,24 @@ export default async function handler(req, res) {
       });
     }
 
-    // La ficha es la que lo marca como supervisor. Si esto fallara, quedaría
-    // una cuenta sin ficha, que para la base es un admin: por eso, si falla,
-    // se borra la cuenta recién creada antes de contestar.
-    const perfil = await fetch(`${SB_URL}/rest/v1/user_profiles`, {
+    // La ficha es la que lo marca como supervisor o gerencia. Si esto
+    // fallara, quedaría una cuenta sin ficha, que para la base es un admin:
+    // por eso, si falla, se borra la cuenta recién creada antes de contestar.
+    // El mail va en la ficha para mostrarlo en el panel; si la columna todavía
+    // no existe (falta correr centro-control.sql), se guarda sin el mail.
+    const guardarFicha = ficha => fetch(`${SB_URL}/rest/v1/user_profiles`, {
       method: 'POST',
       headers: { ...conServicio(servicio), 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ id: creado.id, nombre, rol: 'supervisor' })
+      body: JSON.stringify(ficha)
     });
+    let perfil = await guardarFicha({ id: creado.id, nombre, rol: rolNuevo, email });
+    if (!perfil.ok) perfil = await guardarFicha({ id: creado.id, nombre, rol: rolNuevo });
     if (!perfil.ok) {
       await fetch(`${SB_URL}/auth/v1/admin/users/${creado.id}`, { method: 'DELETE', headers: conServicio(servicio) }).catch(() => {});
       return res.status(500).json({ error: 'Se creó la cuenta pero no la ficha. Se deshizo todo; probá de nuevo.' });
     }
 
-    return res.status(200).json({ ok: true, id: creado.id, email, nombre, password });
+    return res.status(200).json({ ok: true, id: creado.id, email, nombre, rol: rolNuevo, password });
   }
 
   // ── BAJA ──
@@ -140,8 +160,8 @@ export default async function handler(req, res) {
   const esSup = await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${id}&select=rol`, { headers: conServicio(servicio) });
   const filas = await esSup.json().catch(() => []);
   const rol = Array.isArray(filas) && filas[0] ? filas[0].rol : null;
-  if (rol !== 'supervisor') {
-    return res.status(400).json({ error: 'Esa cuenta no es de un supervisor. Por acá sólo se dan de baja supervisores.' });
+  if (!ROLES_CUENTA.includes(rol)) {
+    return res.status(400).json({ error: 'Esa cuenta no es de un supervisor ni de la gerencia. Por acá sólo se dan de baja esas.' });
   }
 
   await fetch(`${SB_URL}/rest/v1/supervisor_convocatorias?supervisor_id=eq.${id}`, { method: 'DELETE', headers: conServicio(servicio) }).catch(() => {});

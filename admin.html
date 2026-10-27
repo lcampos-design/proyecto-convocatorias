@@ -101,6 +101,27 @@ tr:hover td{background:#fafaf8}
 .cal-pie input[type=date]{flex:1;min-width:120px;font-size:12px;padding:5px 8px}
 .modal-xl{max-width:760px}
 /* Incidencias en vivo: plano a la izquierda, lista a la derecha. */
+/* Centro de Control: la lista de shows a la izquierda, el tablero a la derecha. */
+.cc-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;padding:18px 22px;align-items:start}
+@media(max-width:1100px){.cc-layout{grid-template-columns:minmax(0,1fr)}}
+.cc-lista{display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 200px);overflow-y:auto;padding-right:2px}
+@media(max-width:1100px){.cc-lista{max-height:none}}
+.cc-grupo{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--r-muted);margin:10px 2px 2px}
+.cc-grupo:first-child{margin-top:0}
+.cc-show{background:#fff;border:1px solid var(--r-line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;font:inherit;width:100%;color:inherit}
+.cc-show:hover{border-color:#c7c7cc}
+.cc-show.on{border-color:var(--r-ink);box-shadow:0 0 0 1px var(--r-ink)}
+.cc-show-n{font-size:13px;font-weight:600;color:var(--r-ink);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.cc-show-f{font-size:11.5px;color:var(--r-muted);margin-top:2px}
+.cc-show-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.cc-show-chips .inc-cuenta{font-size:11px;padding:2px 8px}
+.cc-show-chips .inc-cuenta strong{font-size:12px}
+.cc-hoy{font-size:9.5px;font-weight:700;letter-spacing:.5px;color:#fff;background:var(--alerta);border-radius:999px;padding:2px 7px;display:inline-flex;align-items:center;gap:4px}
+.cc-hoy::before{content:'';width:5px;height:5px;border-radius:50%;background:#fff;animation:incLatido 1.4s infinite}
+.cc-tablero{background:#fff;border:1px solid var(--r-line);border-radius:14px;padding:16px;min-width:0;box-shadow:var(--mac-sombra)}
+.cc-tablero-top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.cc-show-t{font-size:16px;font-weight:700;color:var(--r-ink)}
+.cc-show-s{font-size:12px;color:var(--r-muted)}
 .inc-adm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
 @media(max-width:900px){.inc-adm{grid-template-columns:1fr}}
 .inc-adm-plano{border:1px solid var(--r-line);border-radius:12px;padding:10px;background:#fff}
@@ -724,6 +745,7 @@ tr:hover td{background:#f9f9fb}
     <button class="mnav-btn" data-s="solicitudes" onclick="goSec('solicitudes')">Postulantes <span id="solNavBadge" style="background:#dc2626;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
     <button class="mnav-btn" data-s="convs" onclick="goSec('convs')">Convocatorias</button>
     <button class="mnav-btn" data-s="contratos" onclick="goSec('contratos')">Contratos</button>
+    <button class="mnav-btn" data-s="control" id="navControl" onclick="goSec('control')">Centro de Control</button>
     <button class="mnav-btn" data-s="supervisores" id="navSupervisores" onclick="goSec('supervisores')" style="display:none">Supervisores</button>
     <button class="mnav-btn" style="display:none" data-s="candidatos" onclick="goSec('candidatos')">Candidatos <span id="candNavBadge" style="background:#1d4ed8;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
     <button class="mnav-btn" style="display:none" data-s="respuestas" onclick="goSec('respuestas')">Respuestas <span id="respNavBadge" style="background:#0369a1;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
@@ -891,7 +913,6 @@ tr:hover td{background:#f9f9fb}
            archivar aparte, para que no se confundan con el trabajo diario. -->
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end">
         <button class="btn btn-primary btn-sm" onclick="openPasarLista()"><i class="ic ic-tilde-circ"></i> Pasar lista</button>
-        <button class="btn btn-sec btn-sm" id="btnIncid" onclick="openIncid()" style="display:none" title="Lo que reportan los supervisores durante el show, en vivo"><i class="ic ic-aviso"></i> Incidencias</button>
         <button class="btn btn-sec btn-sm" onclick="exportPresentes()" title="La planilla que se reparte a los supervisores: una hoja por turno, una tabla por sector, con lo ya marcado">↓ Planilla supervisores</button>
         <button class="btn btn-sec btn-sm" onclick="exportPostuladosExcel()" title="La planilla completa por puesto, con datos de contacto">↓ Planilla Excel</button>
         <div class="nom-mas">
@@ -973,6 +994,62 @@ tr:hover td{background:#f9f9fb}
     <button class="btn btn-primary" onclick="openAddSup()">+ Agregar supervisor</button>
   </div>
   <div style="padding:20px 24px" id="supList"><div class="empty">Cargando...</div></div>
+</div>
+
+<!-- CENTRO DE CONTROL (Movistar Arena): incidencias en vivo, separado de Convocatorias -->
+<div id="sec-control" class="sec">
+  <div class="ctrlbar">
+    <div style="flex:1;min-width:220px">
+      <div style="font-size:15px;font-weight:700;color:var(--r-ink)">Centro de Control · Movistar Arena</div>
+      <div style="font-size:12px;color:var(--r-muted)">Lo que reportan los supervisores durante cada show, en vivo</div>
+    </div>
+    <button class="btn btn-sm btn-primary" id="ccTabShows" onclick="ccTab('shows')">Shows</button>
+    <button class="btn btn-sm btn-sec" id="ccTabAccesos" onclick="ccTab('accesos')">Accesos de la gerencia</button>
+    <a class="btn btn-sm btn-sec" style="text-decoration:none" href="/centro-control" target="_blank" rel="noopener" title="Abre lo que ve la gerencia del Arena, en otra pestaña">↗ Vista de la gerencia</a>
+  </div>
+  <div id="ccShows" class="cc-layout">
+    <div class="cc-lista" id="ccListaShows"><div class="empty">Cargando…</div></div>
+    <div class="cc-tablero" id="ccTablero">
+      <div class="cc-tablero-top">
+        <div style="flex:1;min-width:0"><div class="cc-show-t" id="incTitulo">—</div><div class="cc-show-s" id="incSubtitulo"></div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="inc-vivo" id="incVivo">En vivo</span>
+          <button class="btn btn-sec btn-xs" onclick="cargarIncidAdm()" title="Actualizar ahora">↻</button>
+          <button class="btn btn-sec btn-xs" onclick="exportIncidencias()" title="El informe del show: resumen por gravedad, categoría y sector, y el detalle con la línea de tiempo">↓ Informe Excel</button>
+        </div>
+      </div>
+      <div class="inc-resumen" id="incResumenAdm"></div>
+      <div class="inc-adm">
+        <div>
+          <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap" id="incArmadoAdm"></div>
+          <div class="inc-adm-plano" id="incPlanoAdm"></div>
+          <div class="inc-lugares" id="incLugaresAdm"></div>
+        </div>
+        <div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center" id="incFiltrosAdm"></div>
+          <div id="incListaAdm" style="max-height:66vh;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="ccAccesos" style="display:none;padding:18px 22px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px;font-size:12.5px;color:var(--r-muted)">La gerencia del Arena entra desde el celular a <strong>/centro-control</strong> y ve <strong>sólo</strong> las incidencias de los shows del Arena: el plano, la lista y el informe. No ve nada más del panel ni puede cambiar nada.</div>
+      <button class="btn btn-primary btn-sm" onclick="openAddGerencia()">+ Agregar acceso</button>
+    </div>
+    <div id="ccAccesosLista"></div>
+  </div>
+</div>
+
+<!-- Modal: un acceso para la gerencia del Arena -->
+<div class="modal-bg" id="mAddGer" style="display:none" onclick="bgClose('mAddGer',event)">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title"><span>Acceso para la gerencia del Arena</span><button class="mclose" onclick="closeM('mAddGer')">✕</button></div>
+    <div style="background:#f6f6f8;border:1px solid var(--r-line);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--r-ink2);margin-bottom:14px">Ve sólo el Centro de Control: las incidencias de los shows del Movistar Arena. Al guardar vas a ver la contraseña <strong>una sola vez</strong>, para mandársela.</div>
+    <div class="fg"><label>Email *</label><input type="email" class="fi" id="gerEmail" placeholder="gerencia@movistararena.com.ar"></div>
+    <div class="fg"><label>Nombre para mostrar *</label><input type="text" class="fi" id="gerNombre" placeholder="Ej: Operaciones Movistar Arena"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mAddGer')">Cancelar</button><button class="btn btn-primary" id="btnGuardarGer" onclick="saveGerencia()">Crear acceso</button></div>
+  </div>
 </div>
 
 <!-- VISTA SUPERVISOR (cuando el usuario logueado es supervisor) -->
@@ -1464,7 +1541,7 @@ tr:hover td{background:#f9f9fb}
 <!-- Modal: Supervisor creado (la contraseña se muestra una sola vez) -->
 <div class="modal-bg" id="mSupClave" style="display:none" onclick="bgClose('mSupClave',event)">
   <div class="modal" style="max-width:460px">
-    <div class="modal-title"><span>Supervisor creado</span><button class="mclose" onclick="closeM('mSupClave')">✕</button></div>
+    <div class="modal-title"><span id="supClaveTitulo">Supervisor creado</span><button class="mclose" onclick="closeM('mSupClave')">✕</button></div>
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">
       Esta contraseña no se guarda en ningún lado y no se puede volver a ver. Pasásela ahora.
     </div>
@@ -1513,33 +1590,6 @@ tr:hover td{background:#f9f9fb}
 </div>
 
 <!-- Modal: Pasar lista -->
-<!-- Incidencias en vivo (Movistar Arena) -->
-<div class="modal-bg" id="mIncid" style="display:none" onclick="bgClose('mIncid',event)">
-  <div class="modal" style="max-width:1180px">
-    <div class="modal-title">
-      <span><i class="ic ic-aviso"></i> Incidencias <span id="incTitulo" style="font-weight:400;color:#6b7280"></span></span>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span class="inc-vivo" id="incVivo">En vivo</span>
-        <button class="btn btn-sec btn-xs" onclick="cargarIncidAdm()" title="Actualizar ahora">↻</button>
-        <button class="btn btn-sec btn-xs" onclick="exportIncidencias()" title="El informe del show: resumen por gravedad, categoría y sector, y el detalle con la línea de tiempo">↓ Informe Excel</button>
-        <button class="mclose" onclick="closeM('mIncid')">✕</button>
-      </div>
-    </div>
-    <div class="inc-resumen" id="incResumenAdm"></div>
-    <div class="inc-adm">
-      <div>
-        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap" id="incArmadoAdm"></div>
-        <div class="inc-adm-plano" id="incPlanoAdm"></div>
-        <div class="inc-lugares" id="incLugaresAdm"></div>
-      </div>
-      <div>
-        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center" id="incFiltrosAdm"></div>
-        <div id="incListaAdm" style="max-height:62vh;overflow-y:auto"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="modal-bg" id="mLista" style="display:none" onclick="bgClose('mLista',event)">
   <div class="modal modal-xl">
     <div class="modal-title">
@@ -2007,12 +2057,22 @@ async function loadUserRole() {
     if (data) { currentUserRole = data.rol; currentUserName = data.nombre || ''; }
     else currentUserRole = 'admin';
   } catch (_) { currentUserRole = 'admin'; }
+  // El supervisor y la gerencia no leen las fichas (no son admin): la base
+  // les dice su rol y cada uno va a su página.
+  if (currentUserRole === 'admin') {
+    try {
+      const { data: rol } = await sb.rpc('mi_rol');
+      if (rol === 'supervisor') { location.replace('/supervisor-mobile'); return; }
+      if (rol === 'gerencia') { location.replace('/centro-control'); return; }
+    } catch (_) {}
+  }
   const isAdmin = currentUserRole === 'admin';
   const isAreaAdmin = currentUserRole === 'admin_movistar' || currentUserRole === 'admin_externos';
   if (isAdmin) {
     document.getElementById('navSupervisores').style.display = 'inline';
   } else if (isAreaAdmin) {
     document.getElementById('navSupervisores').style.display = 'none';
+    if (currentUserRole === 'admin_externos') document.getElementById('navControl').style.display = 'none';
     const areaLabel = currentUserRole === 'admin_movistar' ? 'Movistar Arena' : 'Externos';
     document.querySelector('.brand-sub').textContent = `Admin — ${areaLabel}`;
   } else {
@@ -2316,6 +2376,7 @@ function goSec(s) {
   if (s === 'solicitudes') renderSolicitudes();
   if (s === 'respuestas') renderRespuestas();
   if (s === 'contratos') renderContratos();
+  if (s === 'control') renderCentroControl();
 }
 
 function renderDashboard() {
@@ -3847,7 +3908,6 @@ function openDetail(id) {
   document.getElementById('detTitle').textContent = c.nombre;
   document.getElementById('detMeta').innerHTML = `<span class="a-badge ${areaClase(c.area)}">${areaLargo(c.area)}</span>${resumenFechas(c.fecha)}${c.venue ? `<span>📍 ${e(c.venue)}</span>` : ''}${c.descripcion ? `<span title="${e(c.descripcion)}">${e(c.descripcion.slice(0, 60))}${c.descripcion.length > 60 ? '…' : ''}</span>` : ''}`;
   syncPublicadaBtn(c);
-  const bi = document.getElementById('btnIncid'); if (bi) bi.style.display = incEsArena(c.area) ? '' : 'none';
   const ab = document.getElementById('btnArchivar'); if (ab) ab.innerHTML = c.archivada ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar';
   renderDetStats(); renderPuestos();
 }
@@ -4329,23 +4389,124 @@ function incPlano3D(cont, op0) {
 let incListaAdm = [], incTimerAdm = null, incFiltroAdm = 'abiertas', incSectorAdm = '', incArmadoAdm = '', incDiaAdm = '';
 // Para el destello: las que ya se vieron y las que acaban de llegar.
 let incVistosAdm = null, incNuevosAdm = new Set();
-async function openIncid() {
-  const c = convs.find(x => x.id === currentConvId); if (!c) return;
-  document.getElementById('incTitulo').textContent = '· ' + (c.nombre || '');
-  incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = null; incVistosAdm = null; incNuevosAdm = new Set();
-  try { incArmadoAdm = localStorage.getItem('incArmado:' + c.id) || ''; } catch (_) { incArmadoAdm = ''; }
-  renderIncidAdm();
-  showM('mIncid');
-  await cargarIncidAdm();
+// ── Centro de Control: la sección ──
+// A la izquierda los shows del Arena (los mismos que ve la gerencia, por
+// ger_convocatorias, con lo abierto de cada uno); a la derecha el tablero del
+// elegido. Mientras la sección está abierta, todo se actualiza cada 15 segundos.
+let ccConvId = null, ccShows = [], ccTabActual = 'shows';
+function ccTab(t) {
+  ccTabActual = t;
+  document.getElementById('ccShows').style.display = t === 'shows' ? '' : 'none';
+  document.getElementById('ccAccesos').style.display = t === 'accesos' ? '' : 'none';
+  document.getElementById('ccTabShows').className = 'btn btn-sm ' + (t === 'shows' ? 'btn-primary' : 'btn-sec');
+  document.getElementById('ccTabAccesos').className = 'btn btn-sm ' + (t === 'accesos' ? 'btn-primary' : 'btn-sec');
+  if (t === 'accesos') renderAccesosGerencia();
+}
+async function renderCentroControl() {
+  ccTab(ccTabActual);
+  await ccCargarShows();
+  if (!ccConvId) { const s0 = ccElegirInicial(); if (s0) await ccAbrirShow(s0.id); else ccSinShows(); }
+  else { renderIncidAdm(); cargarIncidAdm(); }
   clearInterval(incTimerAdm);
   incTimerAdm = setInterval(() => {
-    if (document.getElementById('mIncid').style.display === 'none') { clearInterval(incTimerAdm); return; }
-    cargarIncidAdm();
+    if (!document.getElementById('sec-control').classList.contains('active')) { clearInterval(incTimerAdm); return; }
+    if (document.hidden) return;
+    ccCargarShows();
+    if (ccConvId) cargarIncidAdm();
   }, 15000);
+}
+async function ccCargarShows() {
+  const { data, error } = await sb.rpc('ger_convocatorias');
+  // Sin centro-control.sql todavía: los shows del Arena que ya tiene el panel, sin las cuentas.
+  ccShows = (!error && Array.isArray(data)) ? data
+    : convs.filter(c => incEsArena(c.area) && !c.archivada).map(c => ({ id: c.id, nombre: c.nombre, fecha: c.fecha, venue: c.venue }));
+  renderCcShows();
+}
+function ccFechas(x) { return String((x && x.fecha) || '').split(',').map(f => f.trim()).filter(Boolean).sort(); }
+function ccGrupo(x) { const fs = ccFechas(x), hoy = hoyLocalISO(); return fs.includes(hoy) ? 'hoy' : (fs.length && fs[0] > hoy) ? 'proximos' : 'anteriores'; }
+// El show de hoy; si no hay, el próximo; si no, el último que pasó.
+function ccElegirInicial() {
+  const hoy = ccShows.filter(x => ccGrupo(x) === 'hoy');
+  if (hoy.length) return hoy[0];
+  const prox = ccShows.filter(x => ccGrupo(x) === 'proximos').sort((a, b) => ccFechas(a)[0].localeCompare(ccFechas(b)[0]));
+  if (prox.length) return prox[0];
+  return ccShows.slice().sort((a, b) => (ccFechas(b).slice(-1)[0] || '').localeCompare(ccFechas(a).slice(-1)[0] || ''))[0] || null;
+}
+function renderCcShows() {
+  const cont = document.getElementById('ccListaShows'); if (!cont) return;
+  if (!ccShows.length) { cont.innerHTML = '<div class="empty">No hay shows del Movistar Arena todavía.</div>'; return; }
+  const chips = x => {
+    if (!('total' in x)) return '';
+    const c = [3, 2, 1].filter(nv => x['abiertas_' + nv]).map(nv => '<span class="inc-cuenta" style="background:' + INC_NIVELES[nv].fondo + ';color:' + INC_NIVELES[nv].color + '"><strong>' + x['abiertas_' + nv] + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('');
+    return '<div class="cc-show-chips">' + (c || '<span class="inc-cuenta">' + (x.total ? 'Sin abiertas · ' + x.total + ' en total' : 'Sin incidencias') + '</span>') + '</div>';
+  };
+  const tarjeta = x => '<button class="cc-show' + (x.id === ccConvId ? ' on' : '') + '" onclick="ccAbrirShow(\'' + x.id + '\')"><div class="cc-show-n">' + e(x.nombre || '') + (ccGrupo(x) === 'hoy' ? '<span class="cc-hoy">HOY</span>' : '') + '</div>'
+    + '<div class="cc-show-f">' + e(resumenFechasTexto(x.fecha) || 'Sin fechas') + '</div>' + chips(x) + '</button>';
+  const g = k => ccShows.filter(x => ccGrupo(x) === k);
+  const prox = g('proximos').sort((a, b) => ccFechas(a)[0].localeCompare(ccFechas(b)[0]));
+  const ant = g('anteriores').sort((a, b) => (ccFechas(b).slice(-1)[0] || '').localeCompare(ccFechas(a).slice(-1)[0] || ''));
+  cont.innerHTML = (g('hoy').length ? '<div class="cc-grupo">Hoy</div>' + g('hoy').map(tarjeta).join('') : '')
+    + (prox.length ? '<div class="cc-grupo">Próximos</div>' + prox.map(tarjeta).join('') : '')
+    + (ant.length ? '<div class="cc-grupo">Anteriores</div>' + ant.map(tarjeta).join('') : '');
+}
+function ccSinShows() {
+  document.getElementById('incTitulo').textContent = 'Sin shows del Arena';
+  document.getElementById('incSubtitulo').textContent = 'Cuando haya una convocatoria del Movistar Arena, aparece acá.';
+}
+async function ccAbrirShow(id) {
+  const x = ccShows.find(y => y.id === id) || convs.find(y => y.id === id); if (!x) return;
+  ccConvId = id;
+  document.getElementById('incTitulo').textContent = x.nombre || '';
+  document.getElementById('incSubtitulo').textContent = [resumenFechasTexto(x.fecha), x.venue].filter(Boolean).join(' · ');
+  incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = null; incVistosAdm = null; incNuevosAdm = new Set();
+  try { incArmadoAdm = localStorage.getItem('incArmado:' + id) || ''; } catch (_) { incArmadoAdm = ''; }
+  renderCcShows();
+  renderIncidAdm();
+  await cargarIncidAdm();
+}
+
+// ── Accesos de la gerencia del Arena ──
+// Las cuentas se crean por /api/supervisor (necesita la clave de servidor),
+// con rol 'gerencia'. Antes, la base tiene que saber que la gerencia no es
+// admin (centro-control.sql): si no, esa cuenta vería el panel entero.
+function renderAccesosGerencia() {
+  const cont = document.getElementById('ccAccesosLista'); if (!cont) return;
+  const ger = userProfiles.filter(p => p.rol === 'gerencia');
+  cont.innerHTML = ger.length ? ger.map(g => '<div class="sup-card"><div class="sup-card-head"><div><div class="sup-name">' + e(g.nombre || '—') + '</div><div class="sup-email">' + e(g.email || '') + '</div></div>'
+      + '<button class="btn btn-danger btn-xs" onclick="delGerencia(\'' + g.id + '\')">Quitar acceso</button></div></div>').join('')
+    : '<div class="empty">Todavía no hay accesos de la gerencia. Creá uno con el botón: se le genera usuario y contraseña para entrar desde el celular.</div>';
+}
+function openAddGerencia() { document.getElementById('gerEmail').value = ''; document.getElementById('gerNombre').value = ''; showM('mAddGer'); }
+async function saveGerencia() {
+  const email = document.getElementById('gerEmail').value.trim(), nombre = document.getElementById('gerNombre').value.trim();
+  if (!email || !nombre) { toast('Email y nombre son obligatorios'); return; }
+  const btn = document.getElementById('btnGuardarGer'); btn.disabled = true; btn.textContent = 'Creando...';
+  try {
+    // Sin la regla nueva en la base, una cuenta de gerencia sería admin: no se crea.
+    const { error: sinSql } = await sb.rpc('mi_rol');
+    if (sinSql) { toast('Primero hay que correr centro-control.sql en Supabase'); return; }
+    const res = await fetch('/api/supervisor', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ email, nombre, rol: 'gerencia' }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast(data.error || 'No se pudo crear el acceso'); return; }
+    userProfiles.push({ id: data.id, nombre, rol: 'gerencia', email: data.email });
+    closeM('mAddGer'); renderAccesosGerencia();
+    mostrarAccesoSup(data.email, data.password, 'gerencia');
+  } catch (err) { toast('Error creando el acceso: ' + err.message); }
+  finally { btn.disabled = false; btn.textContent = 'Crear acceso'; }
+}
+async function delGerencia(id) {
+  if (!confirm('¿Quitarle el acceso? Se le borra la cuenta y no va a poder entrar más al Centro de Control.')) return;
+  try {
+    const res = await fetch('/api/supervisor', { method: 'DELETE', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ id }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast(data.error || 'No se pudo quitar'); return; }
+    userProfiles = userProfiles.filter(p => p.id !== id);
+    renderAccesosGerencia(); toast('Acceso quitado');
+  } catch (err) { toast('Error: ' + err.message); }
 }
 async function cargarIncidAdm() {
   const vivo = document.getElementById('incVivo');
-  const { data, error } = await sb.from('incidencias').select('*').eq('conv_id', currentConvId).order('created_at', { ascending: false });
+  const { data, error } = await sb.from('incidencias').select('*').eq('conv_id', ccConvId).order('created_at', { ascending: false });
   if (error) { if (vivo) { vivo.textContent = 'Sin conexión'; vivo.className = 'inc-vivo mal'; } console.error('incidencias', error); return; }
   if (vivo) { vivo.textContent = 'En vivo · ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo'; }
   incListaAdm = data || [];
@@ -4358,7 +4519,7 @@ async function cargarIncidAdm() {
 // Las del día elegido ('' = todos los días).
 function incDelDiaAdm() { return incDiaAdm ? incListaAdm.filter(i => incDia(i.created_at) === incDiaAdm) : incListaAdm; }
 function incElegirVistaAdm(v) { incGuardarVista(v); renderIncidAdm(); }
-function incElegirArmadoAdm(a) { incArmadoAdm = a; try { localStorage.setItem('incArmado:' + currentConvId, a); } catch (_) {} renderIncidAdm(); }
+function incElegirArmadoAdm(a) { incArmadoAdm = a; try { localStorage.setItem('incArmado:' + ccConvId, a); } catch (_) {} renderIncidAdm(); }
 function incTocarSectorAdm(sector) { incSectorAdm = incSectorAdm === sector ? '' : sector; renderIncidAdm(); }
 function incFiltrarAdm(k, v) { if (k === 'estado') incFiltroAdm = v; if (k === 'dia') incDiaAdm = v; if (k === 'sector') incSectorAdm = v; renderIncidAdm(); }
 function renderIncidAdm() {
@@ -4439,7 +4600,7 @@ async function incBorrarAdm(id) {
 // El informe del show: el resumen (gravedad, estado, categoría, sector, qué
 // pasó) y el detalle con la línea de tiempo. Respeta el día elegido.
 function exportIncidencias() {
-  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const c = ccShows.find(x => x.id === ccConvId) || convs.find(x => x.id === ccConvId); if (!c) return;
   const lista = incDelDiaAdm();
   if (!lista.length) { toast('Todavía no hay incidencias para el informe'); return; }
   const cuenta = clave => { const m = {}; lista.forEach(i => { const k = clave(i) || '—'; m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
@@ -8015,7 +8176,7 @@ function renderSupList() {
   if (!sups.length) { cont.innerHTML = '<div class="empty">No hay supervisores todavía. Creá uno con el botón.</div>'; return; }
   cont.innerHTML = sups.map(s => {
     const myConvs = supConvLinks.filter(l => l.supervisor_id === s.id).map(l => convs.find(c => c.id === l.conv_id)).filter(Boolean);
-    return `<div class="sup-card"><div class="sup-card-head"><div><div class="sup-name">${e(s.nombre || '—')}</div><div class="sup-email" id="sup-email-${s.id}">cargando...</div></div><button class="btn btn-danger btn-xs" onclick="delSup('${s.id}')">Eliminar</button></div>
+    return `<div class="sup-card"><div class="sup-card-head"><div><div class="sup-name">${e(s.nombre || '—')}</div><div class="sup-email" id="sup-email-${s.id}">${e(s.email || '')}</div></div><button class="btn btn-danger btn-xs" onclick="delSup('${s.id}')">Eliminar</button></div>
     ${myConvs.length ? `<div class="sup-convs">${myConvs.map(c=>`<span class="sup-conv-tag">${e(c.nombre)}<button onclick="removeSupConv('${s.id}','${c.id}')" title="Quitar">×</button></span>`).join('')}</div>` : '<div style="font-size:12px;color:#9ca3af;margin-top:8px">Sin convocatorias asignadas</div>'}
     <div style="margin-top:8px;display:flex;gap:8px;align-items:center"><select class="filt" id="addConvSel-${s.id}" style="font-size:12px;padding:4px 8px"><option value="">Asignar convocatoria...</option>${convs.map(c=>`<option value="${c.id}">${e(c.nombre)}</option>`).join('')}</select><button class="btn btn-sec btn-xs" onclick="addSupConv('${s.id}')">Asignar</button></div>
     </div>`;
@@ -8062,12 +8223,14 @@ async function saveSupProfile() {
 }
 
 // La contraseña no se guarda en ningún lado: se muestra una vez y listo.
-function mostrarAccesoSup(email, password) {
-  const url = location.origin + '/supervisor-mobile';
+function mostrarAccesoSup(email, password, tipo) {
+  const ger = tipo === 'gerencia';
+  const url = location.origin + (ger ? '/centro-control' : '/supervisor-mobile');
+  document.getElementById('supClaveTitulo').textContent = ger ? 'Acceso de la gerencia creado' : 'Supervisor creado';
   document.getElementById('supClaveUrl').value = url;
   document.getElementById('supClaveMail').value = email;
   document.getElementById('supClavePass').value = password;
-  supAccesoTexto = 'Para cargar los feedbacks:\n' + url + '\n\nUsuario: ' + email + '\nContraseña: ' + password;
+  supAccesoTexto = (ger ? 'Centro de Control del Movistar Arena (incidencias en vivo):\n' : 'Para cargar los feedbacks y las incidencias:\n') + url + '\n\nUsuario: ' + email + '\nContraseña: ' + password;
   showM('mSupClave');
 }
 async function copiarAccesoSup() {
