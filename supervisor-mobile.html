@@ -106,6 +106,45 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .install-banner{background:#534AB7;color:#fff;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:10px;cursor:pointer}
 .install-banner button{background:rgba(255,255,255,.2);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;flex-shrink:0}
 
+/* ── Incidencias (tablet) ── */
+.inc-entrar{background:#fff;color:#0f1117;border:1.5px solid #0f1117;margin-top:10px}
+.inc-layout{padding:12px 16px 24px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+.inc-layout>*{min-width:0}
+@media(min-width:900px){.inc-layout{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}}
+@media(max-width:520px){.inc-layout{padding:10px 10px 24px}.inc-panel{padding:8px}.inc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.inc-niveles{gap:5px}.inc-nivel span{display:none}}
+.inc-panel{background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+.inc-resumen{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.inc-cuenta{font-size:12px;padding:5px 10px;border-radius:999px;background:#f4f4f5;color:#52525b}
+.inc-cuenta strong{font-size:14px;margin-right:3px}
+.inc-armado{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.inc-ayuda{font-size:11.5px;color:#6b7280;text-align:center;margin:8px 0 10px}
+.inc-lugares{display:flex;flex-wrap:wrap;gap:6px}
+.inc-lugar{font-size:12.5px;font-weight:600;background:#fff;border:1.5px solid #d1d5db;color:#374151;border-radius:8px;padding:9px 12px;cursor:pointer}
+.inc-card{background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-left:4px solid #d1d5db;border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.inc-card.resuelta{opacity:.72}
+.inc-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.inc-tipo{font-size:14px;font-weight:600;color:#111827;flex:1;min-width:0}
+.inc-hora{font-size:12px;color:#6b7280;font-variant-numeric:tabular-nums}
+.inc-donde{font-size:12px;color:#6b7280;margin-top:4px}
+.inc-acc{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:12px;color:#15803d}
+.inc-nota{font-size:13px;color:#374151;margin-top:6px;white-space:pre-wrap}
+.inc-res{font-size:12.5px;color:#374151;margin-top:8px;background:#f4f4f5;border-radius:8px;padding:7px 10px}
+.inc-resolver{margin-top:8px;font-size:13px;font-weight:600;background:#0f1117;color:#fff;border:none;border-radius:8px;padding:9px 16px;cursor:pointer}
+.inc-mini{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+.inc-mini span.t{flex:1;min-width:0}
+.inc-mini .inc-resolver{margin-top:0;padding:7px 12px}
+.inc-paso{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin:16px 0 7px}
+.inc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px}
+.inc-opc{font-size:13.5px;font-weight:600;background:#fff;border:1.5px solid #d1d5db;color:#111827;border-radius:10px;padding:12px 11px;cursor:pointer;text-align:left;min-height:50px}
+.inc-opc.on{background:#0f1117;border-color:#0f1117;color:#fff}
+.inc-niveles{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.inc-nivel{background:#fff;border:2px solid;border-radius:10px;padding:10px 9px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px}
+.inc-nivel strong{font-size:14px}.inc-nivel span{font-size:11px;opacity:.9;line-height:1.3}
+.inc-checks{display:flex;flex-direction:column;gap:6px}
+.inc-check{font-size:14px;background:#fff;border:1.5px solid #d1d5db;color:#374151;border-radius:10px;padding:12px;cursor:pointer;text-align:left}
+.inc-check.on{background:#dcfce7;border-color:#15803d;color:#14532d;font-weight:600}
+#incSheet .fb-card{max-width:760px;width:100%;margin:0 auto}
+
 /* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
 button,input,select,textarea,optgroup,option{font-family:inherit}
 </style>
@@ -169,6 +208,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   </div>
   <div style="padding:16px 16px 0">
     <button class="fb-send" onclick="openLista()"><i class="ic ic-tilde-circ"></i> ✓ Pasar lista</button>
+    <button class="fb-send inc-entrar" id="btnIncid" onclick="openIncid()" style="display:none">⚠ Incidencias del show</button>
   </div>
   <div id="convPersonList" class="persona-lista"></div>
 </div>
@@ -207,6 +247,41 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
       <div class="fb-prev-title">Mis feedbacks anteriores para esta persona</div>
       <div id="fbPrevList"></div>
     </div>
+  </div>
+</div>
+
+<!-- Incidencias en vivo (sólo shows del Movistar Arena) -->
+<div id="screenIncid" class="screen">
+  <div class="app-bar">
+    <div class="app-bar-inner">
+      <button class="back-btn" onclick="cerrarIncid()">←</button>
+      <div style="flex:1">
+        <div class="app-bar-title">Incidencias</div>
+        <div class="app-bar-sub" id="incSub"></div>
+      </div>
+      <button class="logout-btn" onclick="cargarIncid()" title="Actualizar">↻</button>
+    </div>
+  </div>
+  <div class="inc-layout">
+    <div class="inc-panel">
+      <div class="inc-resumen" id="incResumen"></div>
+      <div class="inc-armado" id="incArmado"></div>
+      <div id="incPlano"></div>
+      <div class="inc-ayuda">Tocá el sector donde pasó. Si fue fuera de las tribunas, elegí el lugar:</div>
+      <div class="inc-lugares" id="incLugares"></div>
+    </div>
+    <div id="incLista"></div>
+  </div>
+</div>
+
+<!-- Hoja: cargar o resolver una incidencia -->
+<div class="fb-sheet hidden" id="incSheet">
+  <div class="fb-overlay" onclick="cerrarIncHoja()"></div>
+  <div class="fb-card">
+    <div class="fb-handle"></div>
+    <div class="fb-title" id="incSheetTitulo"></div>
+    <div class="fb-sub" id="incSheetSub"></div>
+    <div id="incSheetBody"></div>
   </div>
 </div>
 
@@ -315,6 +390,7 @@ async function openConv(convId) {
   const c = convs.find(x => x.id === convId); if (!c) return;
   document.getElementById('convScreenTitle').textContent = c.nombre;
   document.getElementById('convScreenSub').textContent = c.fecha ? fmtFecha(c.fecha) : '';
+  document.getElementById('btnIncid').style.display = incEsArena(c.area) ? '' : 'none';
   document.getElementById('convPersonList').innerHTML = '<div class="empty-state"><div class="empty-title">Cargando...</div></div>';
   showScreen('screenConv');
   // La base decide qué gente es de este recital y si es de este supervisor.
@@ -507,6 +583,339 @@ async function marcar(postId, valor) {
   // esté convocada; el teléfono no decide nada.
   const { data, error } = await sb.rpc('sup_presente', { p_post_id: postId, p_conv_id: currentConvId, p_slot_id: listaSlotId, p_valor: nuevo });
   if (error || !data || !data.ok) { x.presentes = antes; renderLista(); toast((data && data.error) || 'No se pudo guardar'); }
+}
+
+// ── INCIDENCIAS: catálogo, semáforo y plano ─────────────────────
+// Este bloque es idéntico en admin.html y supervisor-mobile.html (una prueba
+// lo vigila): lo que carga el supervisor en la tablet y lo que ve el panel
+// tienen que hablar el mismo idioma. Sin datos del público: sólo qué pasó,
+// dónde y qué se hizo.
+const INC_NIVELES = {
+  1: { nombre: 'Leve',     ayuda: 'Se resuelve en el lugar',                   color: '#15803d', fondo: '#dcfce7', plano: '#86efac' },
+  2: { nombre: 'Moderado', ayuda: 'Hace falta otra área',                      color: '#a16207', fondo: '#fef6da', plano: '#fcd34d' },
+  3: { nombre: 'Grave',    ayuda: 'Interviene alguien de afuera o hay riesgo', color: '#9f1239', fondo: '#ffe9ee', plano: '#fb7185' }
+};
+// Cada categoría: sus tipos (con el nivel que traen por defecto) y el
+// check-list de lo que corresponde hacer. Es una propuesta para arrancar:
+// se ajusta con la gente del Arena.
+const INC_CATALOGO = [
+  { cat: 'Médica', tipos: [['Desmayo / descompensación', 2], ['Lesión o caída', 2], ['Persona alcoholizada o intoxicada', 2], ['Emergencia médica grave', 3]],
+    acciones: ['Se llamó a socorrismo', 'Se asistió en el lugar', 'Se trasladó a enfermería', 'Se derivó en ambulancia (SAME)'] },
+  { cat: 'Seguridad', tipos: [['Pelea o agresión', 3], ['Persona agresiva o molesta', 2], ['Ingreso indebido / sin entrada', 2], ['Objeto prohibido', 1], ['Robo o hurto', 2]],
+    acciones: ['Se avisó a seguridad', 'Se retiró a la persona del sector', 'Se retuvo el objeto', 'Se dio aviso a la policía'] },
+  { cat: 'Ubicación', tipos: [['Cambio de ubicación', 1], ['Ubicación ocupada', 1], ['Entrada duplicada', 2], ['Persona fuera de su sector', 1]],
+    acciones: ['Se reubicó a la persona', 'Se verificó la entrada', 'Se consultó a boletería', 'Se acompañó a su ubicación'] },
+  { cat: 'Infraestructura', tipos: [['Derrame / piso resbaladizo', 1], ['Butaca o baranda rota', 1], ['Baño fuera de servicio', 1], ['Falla eléctrica o de iluminación', 2], ['Salida obstruida', 3]],
+    acciones: ['Se avisó a mantenimiento', 'Se señalizó o se cerró el paso', 'Se limpió', 'Se liberó el paso'] },
+  { cat: 'Personal', tipos: [['Falta personal en el sector', 2], ['Personal descompuesto', 2], ['Problema de conducta o uniforme', 1]],
+    acciones: ['Se cubrió con otra persona', 'Se avisó a coordinación', 'Se relevó a la persona'] },
+  { cat: 'Otro', tipos: [['Otra incidencia', 1]],
+    acciones: ['Se avisó a coordinación', 'Se resolvió en el lugar'] }
+];
+function incCategoria(cat) { return INC_CATALOGO.find(c => c.cat === cat) || INC_CATALOGO[INC_CATALOGO.length - 1]; }
+function incNivelDe(cat, tipo) { const t = incCategoria(cat).tipos.find(x => x[0] === tipo); return t ? t[1] : 1; }
+// Lugares que no están en el plano.
+const INC_LUGARES = ['Accesos y puertas', 'Pasillos y escaleras', 'Baños', 'Barras y gastronomía', 'Backstage', 'Exterior / filas de ingreso', 'Otro lugar'];
+// Las incidencias son sólo de los shows del Movistar Arena.
+function incEsArena(area) { return /arena|movistar/i.test(String(area || '')); }
+function incEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function incHora(iso) { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+// El día (AAAA-MM-DD, hora de acá): una convocatoria del Arena puede tener
+// muchas fechas, y cada fecha es un show.
+function incDia(iso) { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+// "21:34" si es de hoy; "24/10 21:34" si es de otro día.
+function incCuando(iso) {
+  const dia = incDia(iso); if (!dia) return '';
+  return (dia === incDia(new Date().toISOString()) ? '' : dia.slice(8, 10) + '/' + dia.slice(5, 7) + ' ') + incHora(iso);
+}
+function incNivelChip(n) {
+  const v = INC_NIVELES[n] || INC_NIVELES[1];
+  return '<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;background:' + v.fondo + ';color:' + v.color + '"><span style="width:7px;height:7px;border-radius:50%;background:' + v.color + '"></span>' + v.nombre + '</span>';
+}
+// Primero las abiertas, de la más grave a la más leve; dentro, las más nuevas
+// arriba. Después las resueltas, también de la más nueva a la más vieja.
+function incOrdenar(lista) {
+  return (lista || []).slice().sort((a, b) => {
+    const ra = a.estado === 'resuelta' ? 1 : 0, rb = b.estado === 'resuelta' ? 1 : 0;
+    if (ra !== rb) return ra - rb;
+    if (!ra && (b.nivel || 1) !== (a.nivel || 1)) return (b.nivel || 1) - (a.nivel || 1);
+    return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+  });
+}
+// Lo abierto en cada sector: cuántas hay y cuál es la más grave.
+function incResumenSectores(lista) {
+  const niveles = {}, cuentas = {};
+  (lista || []).filter(i => i.estado !== 'resuelta').forEach(i => {
+    cuentas[i.sector] = (cuentas[i.sector] || 0) + 1;
+    niveles[i.sector] = Math.max(niveles[i.sector] || 0, i.nivel || 1);
+  });
+  return { niveles, cuentas };
+}
+
+// El plano del Movistar Arena por sectores, visto desde arriba con el
+// escenario arriba. El campo se arma de dos maneras: de pie (delantero y
+// trasero) o con asientos (sectores A a N). Las medidas son aproximadas:
+// alcanza para ubicarse y para que cada sector se toque fácil.
+const INC_PLANO_TRIBUNAS = [
+  // Platea baja, izquierda (101 junto al escenario)
+  { id: 'Platea 101', txt: '101', t: 'baja', r: [100, 8, 40, 18] },
+  { id: 'Platea 102', txt: '102', t: 'baja', r: [100, 30, 40, 26] },
+  { id: 'Platea 103', txt: '103', t: 'baja', r: [100, 60, 40, 14] },
+  { id: 'Platea 104', txt: '104', t: 'baja', r: [100, 78, 40, 46] },
+  { id: 'Platea 105', txt: '105', t: 'baja', r: [100, 128, 40, 14] },
+  { id: 'Platea 106', txt: '106', t: 'baja', r: [100, 146, 40, 26] },
+  { id: 'Platea 107', txt: '107', t: 'baja', p: '100,176 140,176 146,204 146,246 124,246 100,208', lx: 122, ly: 212 },
+  // Platea baja, fondo
+  { id: 'Platea 108', txt: '108', t: 'baja', r: [150, 206, 16, 40] },
+  { id: 'Platea 109', txt: '109', t: 'baja', r: [170, 206, 22, 40] },
+  { id: 'Platea 110', txt: '110', t: 'baja', r: [196, 206, 28, 40] },
+  { id: 'Platea 111', txt: '111', t: 'baja', r: [228, 206, 22, 40] },
+  { id: 'Platea 112', txt: '112', t: 'baja', r: [254, 206, 16, 40] },
+  // Platea baja, derecha
+  { id: 'Platea 113', txt: '113', t: 'baja', p: '320,176 280,176 274,204 274,246 296,246 320,208', lx: 298, ly: 212 },
+  { id: 'Platea 114', txt: '114', t: 'baja', r: [280, 146, 40, 26] },
+  { id: 'Platea 115', txt: '115', t: 'baja', r: [280, 128, 40, 14] },
+  { id: 'Platea 116', txt: '116', t: 'baja', r: [280, 78, 40, 46] },
+  { id: 'Platea 117', txt: '117', t: 'baja', r: [280, 60, 40, 14] },
+  { id: 'Platea 118', txt: '118', t: 'baja', r: [280, 30, 40, 26] },
+  { id: 'Platea 119', txt: '119', t: 'baja', r: [280, 8, 40, 18] },
+  // Platea alta, izquierda
+  { id: 'Platea 301', txt: '301', t: 'alta', r: [56, 30, 36, 32] },
+  { id: 'Platea 302', txt: '302', t: 'alta', r: [56, 66, 36, 22] },
+  { id: 'Platea 303', txt: '303', t: 'alta', r: [56, 92, 36, 48] },
+  { id: 'Platea 304', txt: '304', t: 'alta', r: [56, 144, 36, 20] },
+  { id: 'Platea 305', txt: '305', t: 'alta', r: [56, 168, 36, 38] },
+  { id: 'Platea 306', txt: '306', t: 'alta', p: '56,210 92,210 116,252 116,284 86,284 56,248', lx: 86, ly: 252 },
+  // Platea alta, fondo
+  { id: 'Platea 307', txt: '307', t: 'alta', r: [120, 254, 40, 30] },
+  { id: 'Platea 308', txt: '308', t: 'alta', r: [164, 254, 26, 30] },
+  { id: 'Platea 309', txt: '309', t: 'alta', r: [194, 254, 32, 30] },
+  { id: 'Platea 310', txt: '310', t: 'alta', r: [230, 254, 26, 30] },
+  { id: 'Platea 311', txt: '311', t: 'alta', r: [260, 254, 40, 30] },
+  // Platea alta, derecha
+  { id: 'Platea 312', txt: '312', t: 'alta', p: '364,210 328,210 304,252 304,284 334,284 364,248', lx: 334, ly: 252 },
+  { id: 'Platea 313', txt: '313', t: 'alta', r: [328, 168, 36, 38] },
+  { id: 'Platea 314', txt: '314', t: 'alta', r: [328, 144, 36, 20] },
+  { id: 'Platea 315', txt: '315', t: 'alta', r: [328, 92, 36, 48] },
+  { id: 'Platea 316', txt: '316', t: 'alta', r: [328, 66, 36, 22] },
+  { id: 'Platea 317', txt: '317', t: 'alta', r: [328, 30, 36, 32] }
+];
+const INC_PLANO_CAMPO = {
+  campos: [
+    { id: 'Campo delantero', txt: 'CAMPO DELANTERO', t: 'campo', r: [150, 36, 120, 78] },
+    { id: 'Campo trasero',   txt: 'CAMPO TRASERO',   t: 'campo', r: [150, 118, 120, 82] }
+  ],
+  // Con asientos: A–D junto al escenario, F–J en el medio, K–N al fondo.
+  asientos: [['A', 'B', 'C', 'D'], ['F', 'G', 'H', 'J'], ['K', 'L', 'M', 'N']].flatMap((fila, i) =>
+    fila.map((l, j) => ({ id: 'Campo ' + l, txt: l, t: 'campo', r: [150 + j * 31, 36 + i * 56, 27, 52] })))
+};
+function incSectoresPlano(armado) { return INC_PLANO_TRIBUNAS.concat(INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
+// Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
+function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
+// El plano en SVG. op: { armado, niveles, cuentas, sel, onclick }. Cada
+// sector se pinta con el color de su incidencia abierta más grave y muestra
+// cuántas tiene abiertas.
+function incPlanoSVG(op) {
+  op = op || {};
+  const niveles = op.niveles || {}, cuentas = op.cuentas || {};
+  const BASE = { baja: '#e4e7eb', alta: '#f1f2f4', campo: '#dde3ea' };
+  const partes = incSectoresPlano(op.armado).map(s => {
+    const nv = niveles[s.id], n = cuentas[s.id] || 0, sel = op.sel === s.id;
+    const fill = nv ? INC_NIVELES[nv].plano : BASE[s.t];
+    const stroke = sel ? '#0f1117' : (nv ? INC_NIVELES[nv].color : '#b8bec6');
+    const sw = sel ? 2.4 : (nv ? 1.4 : 0.8);
+    // bx, by: dónde va el numerito de abiertas, en la esquina, sin tapar el nombre.
+    let forma, cx, cy, chico, bx, by;
+    if (s.r) { const [x, y, w, h] = s.r; forma = '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3"'; cx = x + w / 2; cy = y + h / 2; chico = h <= 18 || w <= 18; bx = x + w - 3; by = y + 3; }
+    else { forma = '<polygon points="' + s.p + '"'; cx = s.lx; cy = s.ly; chico = false; bx = cx + 13; by = cy - 13; }
+    const fs = chico ? 7 : (s.txt.length > 3 ? 8 : 9);
+    const click = op.onclick ? ' onclick="' + op.onclick + '(\'' + incEsc(s.id) + '\')" style="cursor:pointer"' : '';
+    const badge = n ? '<circle cx="' + bx + '" cy="' + by + '" r="6" fill="#0f1117" stroke="#fff" stroke-width="1" pointer-events="none"/><text x="' + bx + '" y="' + (by + 2.4) + '" font-size="7" font-weight="700" fill="#fff" text-anchor="middle" pointer-events="none">' + n + '</text>' : '';
+    return '<g' + click + '><title>' + incEsc(s.id) + (n ? ' · ' + n + ' abierta' + (n > 1 ? 's' : '') : '') + '</title>'
+      + forma + ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>'
+      + '<text x="' + cx + '" y="' + (cy + fs * 0.35) + '" font-size="' + fs + '" font-weight="600" fill="#1f2937" text-anchor="middle" pointer-events="none">' + incEsc(s.txt) + '</text>'
+      + badge + '</g>';
+  }).join('');
+  return '<svg viewBox="50 2 320 288" xmlns="http://www.w3.org/2000/svg" font-family="Poppins, sans-serif" style="width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none">'
+    + '<rect x="150" y="8" width="120" height="22" rx="4" fill="#0f1117"/><text x="210" y="22.5" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1">ESCENARIO</text>'
+    + partes + '</svg>';
+}
+// ── fin INCIDENCIAS compartido ──
+
+// ── Incidencias en la tablet ──
+// Se ven las de hoy y las que siguen abiertas de otros días. La lista se
+// actualiza sola cada 20 segundos, así cada supervisor ve lo que cargan los
+// demás.
+let incLista = [], incTimer = null, incArmado = '', incHoja = null;
+function incClaveArmado() { return 'incArmado:' + currentConvId; }
+async function openIncid() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  document.getElementById('incSub').textContent = c.nombre;
+  try { incArmado = localStorage.getItem(incClaveArmado()) || ''; } catch (_) { incArmado = ''; }
+  incLista = [];
+  renderIncid();
+  showScreen('screenIncid');
+  await cargarIncid();
+  clearInterval(incTimer);
+  incTimer = setInterval(() => {
+    if (document.getElementById('screenIncid').classList.contains('active')) cargarIncid(); else clearInterval(incTimer);
+  }, 20000);
+}
+function cerrarIncid() { clearInterval(incTimer); cerrarIncHoja(); openConv(currentConvId); }
+async function cargarIncid() {
+  const { data, error } = await sb.rpc('sup_incidencias', { p_conv_id: currentConvId });
+  if (error) { toast('No se pudieron traer las incidencias'); return; }
+  incLista = data || [];
+  renderIncid();
+}
+function incVisibles() {
+  const hoy = incDia(new Date().toISOString());
+  return incLista.filter(i => i.estado !== 'resuelta' || incDia(i.created_at) === hoy);
+}
+function incElegirArmado(a) { incArmado = a; try { localStorage.setItem(incClaveArmado(), a); } catch (_) {} renderIncid(); }
+function renderIncid() {
+  const lista = incVisibles();
+  const armado = incArmado || incArmadoDe(incLista);
+  const res = incResumenSectores(lista);
+  const abiertas = lista.filter(i => i.estado !== 'resuelta');
+  const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
+  const resueltas = lista.length - abiertas.length;
+  document.getElementById('incResumen').innerHTML = [3, 2, 1].map(nv =>
+    '<span class="inc-cuenta" style="background:' + INC_NIVELES[nv].fondo + ';color:' + INC_NIVELES[nv].color + '"><strong>' + n(nv) + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('')
+    + '<span class="inc-cuenta"><strong>' + resueltas + '</strong>resuelta' + (resueltas === 1 ? '' : 's') + ' hoy</span>';
+  document.getElementById('incArmado').innerHTML = [['campos', 'Campo de pie'], ['asientos', 'Campo con asientos']].map(([k, t]) =>
+    '<button class="turno-chip' + (armado === k ? ' on' : '') + '" onclick="incElegirArmado(\'' + k + '\')">' + t + '</button>').join('');
+  document.getElementById('incPlano').innerHTML = incPlanoSVG({ armado, niveles: res.niveles, cuentas: res.cuentas, onclick: 'incTocarSector' });
+  document.getElementById('incLugares').innerHTML = INC_LUGARES.map(l => {
+    const nv = res.niveles[l], c = res.cuentas[l] || 0;
+    return '<button class="inc-lugar"' + (nv ? ' style="background:' + INC_NIVELES[nv].fondo + ';border-color:' + INC_NIVELES[nv].color + ';color:' + INC_NIVELES[nv].color + '"' : '')
+      + ' onclick="incTocarSector(\'' + incEsc(l) + '\')">' + incEsc(l) + (c ? ' <strong>' + c + '</strong>' : '') + '</button>';
+  }).join('');
+  const cont = document.getElementById('incLista');
+  if (!lista.length) { cont.innerHTML = '<div class="empty-state"><div class="empty-title">Sin incidencias en este show</div><div style="font-size:13px;color:#9ca3af">Tocá el sector en el plano para cargar una.</div></div>'; return; }
+  cont.innerHTML = incOrdenar(lista).map(incTarjeta).join('');
+}
+function incTarjeta(i) {
+  const v = INC_NIVELES[i.nivel] || INC_NIVELES[1];
+  const resuelta = i.estado === 'resuelta';
+  return '<div class="inc-card' + (resuelta ? ' resuelta' : '') + '" style="border-left-color:' + v.color + '">'
+    + '<div class="inc-card-top">' + incNivelChip(i.nivel) + '<span class="inc-tipo">' + incEsc(i.tipo) + '</span><span class="inc-hora">' + incCuando(i.created_at) + '</span></div>'
+    + '<div class="inc-donde">' + incEsc(i.sector) + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '') + '</div>'
+    + ((i.acciones || []).length ? '<div class="inc-acc">' + i.acciones.map(a => '<span>✓ ' + incEsc(a) + '</span>').join('') + '</div>' : '')
+    + (i.nota ? '<div class="inc-nota">' + incEsc(i.nota) + '</div>' : '')
+    + (resuelta ? '<div class="inc-res"><strong>Resuelta ' + incCuando(i.resuelta_at) + '</strong> · ' + incEsc(i.resolucion || '') + '</div>'
+                : '<button class="inc-resolver" onclick="incAbrirResolver(\'' + i.id + '\')">Resolver</button>')
+    + '</div>';
+}
+
+// La hoja para cargar (modo 'nueva') o resolver (modo 'resolver').
+function incTocarSector(sector) {
+  incHoja = { modo: 'nueva', sector, cat: '', tipo: '', nivel: 1, acciones: [], ubicacion: '', nota: '' };
+  document.getElementById('incSheetTitulo').textContent = 'Nueva incidencia · ' + sector;
+  document.getElementById('incSheetSub').textContent = 'Qué pasó y qué se hizo. Sin nombres ni datos del público.';
+  renderIncHoja();
+  document.getElementById('incSheet').classList.remove('hidden');
+}
+function incAbrirResolver(id) {
+  const i = incLista.find(x => x.id === id); if (!i) return;
+  incHoja = { modo: 'resolver', id, cat: i.categoria, acciones: (i.acciones || []).slice(), resolucion: '' };
+  document.getElementById('incSheetTitulo').textContent = 'Resolver · ' + i.tipo;
+  document.getElementById('incSheetSub').textContent = i.sector + (i.ubicacion ? ' · ' + i.ubicacion : '') + ' · cargada ' + incCuando(i.created_at);
+  renderIncHoja();
+  document.getElementById('incSheet').classList.remove('hidden');
+}
+function cerrarIncHoja() { document.getElementById('incSheet').classList.add('hidden'); incHoja = null; }
+// Lo escrito en los campos se guarda antes de redibujar la hoja.
+function incLeerCampos() {
+  if (!incHoja) return;
+  ['ubicacion', 'nota', 'resolucion'].forEach(k => { const el = document.getElementById('incCampo_' + k); if (el) incHoja[k] = el.value; });
+}
+function renderIncHoja() {
+  const h = incHoja; if (!h) return;
+  const checklist = () => '<div class="inc-paso">Qué se hizo</div><div class="inc-checks">' + incCategoria(h.cat).acciones.map((a, ai) => {
+    const on = h.acciones.includes(a);
+    return '<button type="button" class="inc-check' + (on ? ' on' : '') + '" onclick="incToggleAccion(' + ai + ')">' + (on ? '☑ ' : '☐ ') + incEsc(a) + '</button>';
+  }).join('') + '</div>';
+  const body = document.getElementById('incSheetBody');
+  if (h.modo === 'resolver') {
+    body.innerHTML = checklist()
+      + '<div class="inc-paso">Cómo se resolvió</div><textarea class="fb-ta" id="incCampo_resolucion" maxlength="1000" placeholder="Ej: se reubicó en la platea 104 y se avisó a boletería">' + incEsc(h.resolucion) + '</textarea>'
+      + '<button class="fb-send" id="incGuardarBtn" onclick="incGuardarResolver()">Marcar resuelta</button>';
+    return;
+  }
+  const abiertasAca = incLista.filter(i => i.sector === h.sector && i.estado !== 'resuelta');
+  let html = abiertasAca.length ? '<div class="inc-paso">Abiertas en este lugar</div>' + abiertasAca.map(i =>
+    '<div class="inc-mini">' + incNivelChip(i.nivel) + '<span class="t">' + incEsc(i.tipo) + ' · ' + incCuando(i.created_at) + '</span><button class="inc-resolver" onclick="incAbrirResolver(\'' + i.id + '\')">Resolver</button></div>').join('') : '';
+  html += '<div class="inc-paso">Categoría</div><div class="inc-grid">' + INC_CATALOGO.map((c, ci) =>
+    '<button type="button" class="inc-opc' + (h.cat === c.cat ? ' on' : '') + '" onclick="incElegirCat(' + ci + ')">' + incEsc(c.cat) + '</button>').join('') + '</div>';
+  if (h.cat) {
+    html += '<div class="inc-paso">Qué pasó</div><div class="inc-grid">' + incCategoria(h.cat).tipos.map((t, ti) =>
+      '<button type="button" class="inc-opc' + (h.tipo === t[0] ? ' on' : '') + '" onclick="incElegirTipo(' + ti + ')">' + incEsc(t[0]) + '</button>').join('') + '</div>';
+  }
+  if (h.tipo) {
+    html += '<div class="inc-paso">Gravedad</div><div class="inc-niveles">' + [1, 2, 3].map(nv => {
+      const v = INC_NIVELES[nv], on = h.nivel === nv;
+      return '<button type="button" class="inc-nivel" style="' + (on ? 'background:' + v.color + ';border-color:' + v.color + ';color:#fff' : 'border-color:' + v.color + ';color:' + v.color)
+        + '" onclick="incElegirNivel(' + nv + ')"><strong>' + v.nombre + '</strong><span>' + v.ayuda + '</span></button>';
+    }).join('') + '</div>';
+    html += checklist();
+    html += '<div class="inc-paso">Referencia (opcional)</div><input class="l-in" id="incCampo_ubicacion" maxlength="80" placeholder="Fila, butaca, puerta… (nada del público)" value="' + incEsc(h.ubicacion) + '">';
+    html += '<textarea class="fb-ta" id="incCampo_nota" maxlength="1000" placeholder="Nota (opcional)">' + incEsc(h.nota) + '</textarea>';
+    html += '<button class="fb-send" id="incGuardarBtn" onclick="incGuardarNueva()">Guardar incidencia</button>';
+  }
+  body.innerHTML = html;
+}
+function incElegirCat(ci) {
+  incLeerCampos();
+  const c = INC_CATALOGO[ci]; if (!c || !incHoja) return;
+  if (incHoja.cat !== c.cat) { incHoja.cat = c.cat; incHoja.tipo = ''; incHoja.acciones = []; }
+  // Si la categoría tiene un solo tipo, ya queda elegido.
+  if (c.tipos.length === 1) { incHoja.tipo = c.tipos[0][0]; incHoja.nivel = c.tipos[0][1]; }
+  renderIncHoja();
+}
+function incElegirTipo(ti) {
+  incLeerCampos();
+  const t = incCategoria(incHoja.cat).tipos[ti]; if (!t) return;
+  incHoja.tipo = t[0]; incHoja.nivel = t[1];   // el nivel que trae; se puede cambiar
+  renderIncHoja();
+}
+function incElegirNivel(nv) { incLeerCampos(); incHoja.nivel = nv; renderIncHoja(); }
+function incToggleAccion(ai) {
+  incLeerCampos();
+  const a = incCategoria(incHoja.cat).acciones[ai]; if (!a) return;
+  const k = incHoja.acciones.indexOf(a);
+  if (k >= 0) incHoja.acciones.splice(k, 1); else incHoja.acciones.push(a);
+  renderIncHoja();
+}
+// Lo que se manda a la base al cargar.
+function incPayloadNueva(h, convId) {
+  return {
+    p_conv_id: convId, p_sector: h.sector, p_ubicacion: String(h.ubicacion || '').trim() || null,
+    p_categoria: h.cat, p_tipo: h.tipo, p_nivel: h.nivel, p_acciones: h.acciones.slice(),
+    p_nota: String(h.nota || '').trim() || null
+  };
+}
+async function incGuardarNueva() {
+  incLeerCampos();
+  const h = incHoja; if (!h || !h.cat || !h.tipo) { toast('Elegí qué pasó'); return; }
+  const btn = document.getElementById('incGuardarBtn'); btn.disabled = true; btn.textContent = 'Guardando...';
+  const { data, error } = await sb.rpc('sup_incidencia_crear', incPayloadNueva(h, currentConvId));
+  if (error || !data || !data.ok) { toast((data && data.error) || 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Guardar incidencia'; return; }
+  incLista.unshift(data.incidencia);
+  cerrarIncHoja(); renderIncid();
+  toast('✓ Incidencia cargada');
+}
+async function incGuardarResolver() {
+  incLeerCampos();
+  const h = incHoja; if (!h) return;
+  const txt = String(h.resolucion || '').trim();
+  if (txt.length < 3) { toast('Contá en una línea cómo se resolvió'); return; }
+  const btn = document.getElementById('incGuardarBtn'); btn.disabled = true; btn.textContent = 'Guardando...';
+  const { data, error } = await sb.rpc('sup_incidencia_resolver', { p_id: h.id, p_acciones: h.acciones.slice(), p_resolucion: txt });
+  if (error || !data || !data.ok) { toast((data && data.error) || 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Marcar resuelta'; return; }
+  const k = incLista.findIndex(x => x.id === h.id); if (k >= 0) incLista[k] = data.incidencia;
+  cerrarIncHoja(); renderIncid();
+  toast('✓ Resuelta');
 }
 
 // ── Utils ──
