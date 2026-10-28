@@ -1173,7 +1173,7 @@ tr:hover td{background:#f9f9fb}
     <div class="modal-title"><span>Cargar una incidencia</span><button class="mclose" onclick="closeM('mIncNueva')">✕</button></div>
     <div class="inc-n-aviso">Se carga en el show abierto y la ven también la gerencia y los supervisores. Si es para probar cómo se ve, borrala después (o probá en "Plano del Arena", con incidencias de ejemplo que no se guardan).</div>
     <div class="frow">
-      <div class="fg"><label>Dónde *</label><select class="fi" id="incNLugar"></select></div>
+      <div class="fg"><label>Dónde *</label><select class="fi" id="incNLugar" onchange="document.getElementById('incNRefRapida').innerHTML = incRefRapidaHTML('incNRef', this.value)"></select></div>
       <div class="fg"><label>Referencia</label><input type="text" class="fi" id="incNRef" maxlength="80" placeholder="Fila 12, butaca 8…"><div id="incNRefRapida"></div></div>
     </div>
     <div class="frow">
@@ -4147,7 +4147,21 @@ const INC_LUGARES = ['Otro lugar'];
 // Los pasillos y escaleras van por sector: se elige el sector y, en la
 // referencia, un atajo de un toque.
 const INC_REFERENCIAS = ['Pasillo', 'Escalera', 'Vomitorio', 'Fila', 'Butaca', 'Fila de ingreso'];
-function incRefRapidaHTML(idCampo) { return '<div class="inc-ref-rapida">' + INC_REFERENCIAS.map(r => '<button type="button" onclick="incRefRapida(\'' + idCampo + '\',\'' + r + '\')">' + r + '</button>').join('') + '</div>'; }
+// Según dónde pasó, los atajos que tienen sentido ahí (no todos siempre).
+const INC_REFERENCIAS_DE = {
+  campo: ['Valla', 'Pit', 'FOH', 'Pasillo'], asientos: ['Valla', 'Pit', 'FOH', 'Pasillo', 'Fila', 'Butaca'],
+  platea: ['Pasillo', 'Escalera', 'Vomitorio', 'Fila', 'Butaca'], vip: ['Palco', 'Pasillo', 'Escalera'],
+  gastro: ['Barra', 'Fila'], banio: ['Adentro', 'Fila', 'Puerta del baño'], puerta: ['Molinetes', 'Control', 'Fila'],
+  enfermeria: ['Adentro', 'Puerta'], servicio: ['Adentro', 'Fila'], calle: ['Fila de ingreso', 'Vereda', 'Esquina'],
+  anillo: ['Pasillo', 'Escalera'], back: ['Pasillo', 'Escalera']
+};
+function incReferenciasDe(sector) {
+  if (!sector) return INC_REFERENCIAS;
+  if (/^Campo [A-N]$/.test(sector)) return INC_REFERENCIAS_DE.asientos;
+  const s = incSectoresPlano('campos').find(x => x.id === sector), t = s ? s.t : '';
+  return INC_REFERENCIAS_DE[t === 'baja' || t === 'alta' ? 'platea' : t] || INC_REFERENCIAS;
+}
+function incRefRapidaHTML(idCampo, sector) { return '<div class="inc-ref-rapida">' + incReferenciasDe(sector).map(r => '<button type="button" onclick="incRefRapida(\'' + idCampo + '\',\'' + r + '\')">' + r + '</button>').join('') + '</div>'; }
 function incRefRapida(idCampo, r) {
   const el = document.getElementById(idCampo); if (!el) return;
   const v = String(el.value || '').trim();
@@ -6021,7 +6035,7 @@ function incAbrirNuevaAdm(sector) {
   document.getElementById('incNLugar').innerHTML = '<option value="">Elegí dónde pasó…</option>' + grupos.map(([g, l]) => '<optgroup label="' + g + '">' + l.map(s => '<option value="' + e(s.id) + '"' + (s.id === elegido ? ' selected' : '') + '>' + e(s.id) + (s.piso && s.t !== 'vip' && INC_TIPOS_LUGAR[s.t] ? ' · ' + s.piso : '') + '</option>').join('') + '</optgroup>').join('');
   document.getElementById('incNCat').innerHTML = INC_CATALOGO.map((c, i) => '<option value="' + i + '">' + e(c.cat) + '</option>').join('');
   document.getElementById('incNRef').value = ''; document.getElementById('incNNota').value = '';
-  document.getElementById('incNRefRapida').innerHTML = incRefRapidaHTML('incNRef');
+  document.getElementById('incNRefRapida').innerHTML = incRefRapidaHTML('incNRef', elegido);
   incNuevaCat();
   showM('mIncNueva');
 }
