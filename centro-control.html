@@ -23,10 +23,10 @@
   --sombra:inset 0 1px 0 rgba(255,255,255,.7),0 10px 30px rgba(15,40,85,.1),0 1px 3px rgba(15,40,85,.06);
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{font-family:var(--inc-fuente);background:linear-gradient(160deg,#d6e4f5 0%,#e6edf7 42%,#dfe1f3 100%) fixed;color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
-/* El fondo: la marca de SBS apenas marcada, y encima luces de color suaves (celeste, azul Movistar, un toque de violeta), como el escritorio de una Mac. */
-body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:url('fondo-sbs.jpg') center/cover no-repeat;mix-blend-mode:multiply;opacity:.07}
-body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(42% 50% at 8% 6%,rgba(56,189,248,.34),transparent 70%),radial-gradient(46% 56% at 96% 14%,rgba(31,111,229,.26),transparent 70%),radial-gradient(52% 60% at 72% 104%,rgba(139,92,246,.2),transparent 70%),radial-gradient(40% 50% at -4% 96%,rgba(14,165,233,.2),transparent 70%)}
+body{font-family:var(--inc-fuente);background:#eceef1;color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+/* El fondo: gris claro, la marca de SBS apenas marcada y un brillo blanco arriba (sin luces de color). */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:url('fondo-sbs.jpg') center/cover no-repeat;opacity:.07}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(120% 80% at 50% 0%,rgba(255,255,255,.55),rgba(236,238,241,0) 70%)}
 .bar,.pantalla{position:relative;z-index:1}
 /* El vidrio: las tarjetas dejan ver el color de atrás, desenfocado. */
 .login-card,.show,.vacio,.stat,.t-plano,.t-lista{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:var(--sombra)}
