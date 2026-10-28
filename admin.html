@@ -1291,6 +1291,21 @@ tr:hover td{background:#f9f9fb}
       <div class="fg"><label>Teléfono</label><input type="text" class="fi" id="pTel" placeholder="+54 11..."></div>
     </div>
     <div class="fg"><label>CUIT / CUIL</label><input type="text" class="fi" id="pCuit" placeholder="20-12345678-9"></div>
+    <div id="pBancoBlock" style="display:none">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:8px 0 8px">Datos bancarios</div>
+      <div id="pBancoAr" style="display:none">
+        <div class="fg"><label>CBU</label><input type="text" class="fi" id="pCbu" inputmode="numeric" maxlength="30" placeholder="Los 22 números del CBU" oninput="avisoCbuPersona()"><div id="pCbuAviso" style="font-size:11px;margin-top:4px;color:#9ca3af"></div></div>
+        <div class="frow">
+          <div class="fg"><label>Número de cuenta</label><input type="text" class="fi" id="pNroCuenta"></div>
+          <div class="fg"><label>Banco</label><input type="text" class="fi" id="pBanco"></div>
+        </div>
+      </div>
+      <div id="pBancoEs" style="display:none">
+        <div class="fg"><label>IBAN</label><input type="text" class="fi" id="pIban" placeholder="ES00 0000 0000 0000 0000 0000"></div>
+        <div class="fg"><label>Titular de la cuenta</label><input type="text" class="fi" id="pTitular"></div>
+      </div>
+      <div id="pBancoNota" style="font-size:11px;color:#9ca3af;margin:-4px 0 12px"></div>
+    </div>
     <div class="fg"><label>Posiciones</label>
       <div id="pPosChips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
@@ -3624,8 +3639,8 @@ function togglePos(x) {
   renderFormPos();
 }
 
-function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); formPosiciones = []; renderFormPos(); document.getElementById('pLocalidad').value = ''; document.getElementById('pRecom').checked = false; document.getElementById('pContratosBlock').style.display = 'none'; showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
-function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); formPosiciones = posicionesDe(p).slice(); renderFormPos(); document.getElementById('pLocalidad').value = p.localidad || ''; document.getElementById('pRecom').checked = !!p.recomendado; renderPersonContratos(p); showM('mPerson'); }
+function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); formPosiciones = []; renderFormPos(); document.getElementById('pLocalidad').value = ''; document.getElementById('pRecom').checked = false; document.getElementById('pContratosBlock').style.display = 'none'; prepararBancoPersona(null); showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
+function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); formPosiciones = posicionesDe(p).slice(); renderFormPos(); document.getElementById('pLocalidad').value = p.localidad || ''; document.getElementById('pRecom').checked = !!p.recomendado; renderPersonContratos(p); prepararBancoPersona(p); showM('mPerson'); }
 
 async function savePerson() {
   const nom = document.getElementById('pNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
@@ -3640,11 +3655,114 @@ async function savePerson() {
     const dup = people.find(p => p.cuit && p.cuit === cuit && p.id !== editPersonId);
     if (dup && !confirm(`⚠ El CUIT ${cuit} ya existe para "${dup.nombre}". ¿Continuar de todas formas?`)) return;
   }
+  const cambioBanco = editPersonId ? leerBancoPersona() : null;
+  if (cambioBanco === false) return;
   const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null, etiquetas: formEtiquetas.slice(), posiciones: formPosiciones.slice(), localidad: document.getElementById('pLocalidad').value.trim() || null, recomendado: document.getElementById('pRecom').checked };
   if (editPersonId) { const i = people.findIndex(x => x.id === editPersonId); if (i >= 0) people[i] = { ...people[i], ...d }; }
   else people.push(d);
   nomRefresh(); closeM('mPerson');
   try { await sbUpsert('personas', d); toast(editPersonId ? 'Actualizada' : 'Persona agregada'); } catch (_) {}
+  if (cambioBanco) await guardarBancoPersona(cambioBanco);
+}
+
+// Los datos bancarios están en la inscripción, no en la persona, y la lista no
+// los trae: se buscan al abrir. Si no llegan, los campos quedan bloqueados, así
+// un error de red no termina borrando el CBU al guardar.
+let bancoPersona = null;   // { personaId, doc, esEs, antes }
+async function prepararBancoPersona(p) {
+  bancoPersona = null;
+  const bloque = document.getElementById('pBancoBlock'); if (!bloque) return;
+  bloque.style.display = p ? '' : 'none';
+  if (!p) return;
+  ['pCbu', 'pNroCuenta', 'pBanco', 'pIban', 'pTitular'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.disabled = true; });
+  document.getElementById('pCbuAviso').textContent = '';
+  const nota = document.getElementById('pBancoNota');
+  const sol = solicitudDe(p);
+  const esEs = sol ? sol.area === 'espana' : p.area === 'espana';
+  document.getElementById('pBancoAr').style.display = esEs ? 'none' : '';
+  document.getElementById('pBancoEs').style.display = esEs ? '' : 'none';
+  if (!sol) { nota.textContent = 'No llenó el formulario de inscripción, así que no tiene dónde guardarse el dato bancario.'; return; }
+  nota.textContent = 'Trayendo los datos bancarios…';
+  const { data, error } = await sb.from('solicitudes').select('cbu,banco,numero_cuenta,iban,titular_cuenta').eq('id', sol.id).single();
+  if (editPersonId !== p.id) return;   // la cerraron o abrieron a otra mientras tanto
+  if (error || !data) { nota.textContent = 'No se pudieron traer los datos bancarios. Cerrá y volvé a abrir para cambiarlos.'; return; }
+  Object.assign(sol, data);
+  const antes = esEs ? { iban: data.iban || '', titular_cuenta: data.titular_cuenta || '' }
+                     : { cbu: data.cbu || '', numero_cuenta: data.numero_cuenta || '', banco: data.banco || '' };
+  const campo = { cbu: 'pCbu', numero_cuenta: 'pNroCuenta', banco: 'pBanco', iban: 'pIban', titular_cuenta: 'pTitular' };
+  Object.keys(antes).forEach(k => { const el = document.getElementById(campo[k]); el.value = antes[k]; el.disabled = false; });
+  bancoPersona = { personaId: p.id, doc: docNucleo(p.cuit), esEs, antes };
+  nota.textContent = 'Son los de su inscripción. Si los cambiás, se cambian ahí y en la planilla de liquidación.';
+  avisoCbuPersona();
+}
+
+// Las billeteras virtuales, como en el formulario (que no las acepta).
+const CBU_BILLETERAS = [
+  ['0000003', 'Mercado Pago'], ['0000086', 'Ualá'], ['0000005', 'Personal Pay'], ['3220001', 'Naranja X'],
+  ['0000007', 'Lemon Cash'], ['0000004', 'Brubank (billetera)'],
+];
+// Los dos dígitos verificadores del CBU (el 8.º y el 22.º): si no dan, hay un número mal copiado.
+function cbuVerifica(cbu) {
+  if (!/^\d{22}$/.test(cbu)) return false;
+  const dv = (desde, pesos) => (10 - pesos.reduce((s, w, i) => s + w * Number(cbu[desde + i]), 0) % 10) % 10;
+  return dv(0, [7, 1, 3, 9, 7, 1, 3]) === Number(cbu[7]) && dv(8, [3, 9, 7, 1, 3, 9, 7, 1, 3, 9, 7, 1, 3]) === Number(cbu[21]);
+}
+function cbuMotivo(cbu) {
+  if (cbu.length !== 22) return 'El CBU tiene que tener 22 números (tiene ' + cbu.length + ').';
+  const b = CBU_BILLETERAS.find(([pre]) => cbu.startsWith(pre));
+  if (b) return 'Es de ' + b[1] + ', una billetera virtual: el formulario no las acepta.';
+  if (!cbuVerifica(cbu)) return 'Los dígitos verificadores no dan: puede haber un número mal copiado.';
+  return '';
+}
+function avisoCbuPersona() {
+  const el = document.getElementById('pCbu'), av = document.getElementById('pCbuAviso'); if (!el || !av) return;
+  const cbu = el.value.replace(/\D/g, '');
+  const m = cbu ? cbuMotivo(cbu) : '';
+  av.textContent = !cbu ? '' : m ? '⚠ ' + m : '✓ ' + cbu.length + ' números, CBU válido';
+  av.style.color = !cbu ? '#9ca3af' : m ? '#9a3412' : '#065f46';
+}
+function normalizarIban(v) { return String(v || '').toUpperCase().replace(/[\s.\-]/g, ''); }
+function ibanValido(v) {
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(v)) return false;
+  if (v.startsWith('ES') && v.length !== 24) return false;
+  const reordenado = (v.slice(4) + v.slice(0, 4)).replace(/[A-Z]/g, c => (c.charCodeAt(0) - 55).toString());
+  let resto = 0;
+  for (const d of reordenado) resto = (resto * 10 + Number(d)) % 97;
+  return resto === 1;
+}
+
+// Lo que cambió de los datos bancarios: null si nada (o si no se pudieron traer),
+// false si hay algo mal y no se guarda.
+function leerBancoPersona() {
+  const b = bancoPersona; if (!b || b.personaId !== editPersonId) return null;
+  const v = id => document.getElementById(id).value.trim();
+  const d = b.esEs ? { iban: normalizarIban(v('pIban')), titular_cuenta: v('pTitular') }
+                   : { cbu: v('pCbu').replace(/\D/g, ''), numero_cuenta: v('pNroCuenta'), banco: v('pBanco') };
+  const cambios = Object.keys(d).filter(k => d[k] !== b.antes[k]);
+  if (!cambios.length) return null;
+  if (b.esEs) {
+    if (d.iban && !ibanValido(d.iban)) { toast('El IBAN no es válido: revisalo'); return false; }
+    if (d.iban && !d.titular_cuenta) { toast('Falta el titular de la cuenta'); return false; }
+  } else if (cambios.includes('cbu')) {
+    if (d.cbu && d.cbu.length !== 22) { toast(cbuMotivo(d.cbu)); return false; }
+    // El CBU es con lo que se paga: se confirma mostrando el de antes y el nuevo.
+    const m = d.cbu ? cbuMotivo(d.cbu) : '';
+    if (!confirm((m ? '⚠ ' + m + '\n\n' : '') + '¿Cambiar el CBU?\n\nAntes: ' + (b.antes.cbu || '(sin CBU)') + '\nAhora: ' + (d.cbu || '(vacío)'))) return false;
+  }
+  const out = {}; Object.keys(d).forEach(k => { out[k] = d[k] || null; });
+  // Viaja con de quién es: si mientras se guarda abren a otra persona, no se mezcla.
+  return { b, d: out };
+}
+// Se guarda en todas sus inscripciones (si tiene más de una, la planilla de
+// liquidación podría leer otra) y en lo que el panel ya tenía en memoria.
+async function guardarBancoPersona({ b, d }) {
+  if (!b || !b.doc) return;
+  const ids = solicitudes.filter(s => docNucleo(s.cuit) === b.doc).map(s => s.id);
+  if (!ids.length) return;
+  try { await sbUpdateIn('solicitudes', ids, d); } catch (_) { return; }
+  solicitudes.forEach(s => { if (ids.includes(s.id)) Object.assign(s, d); });
+  if (datosBancarios && datosBancarios.has(b.doc)) Object.assign(datosBancarios.get(b.doc), d);
+  toast('cbu' in d && d.cbu !== (b.antes.cbu || null) ? 'CBU actualizado' : 'Datos bancarios actualizados');
 }
 
 async function delPerson(id) {
