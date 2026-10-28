@@ -721,6 +721,9 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .nom-filtros{display:none;background:#fafafa;border-top:1px dashed #e5e7eb}
 .nom-filtros.on{display:flex}
 .nom-filtros-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-right:4px}
+.nom-edad{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#6b7280;white-space:nowrap}
+.nom-edad input{padding:7px 10px;font:inherit;font-size:13px;color:#111827;background:#fff;border:1px solid var(--mac-linea,#d1d5db);border-radius:8px;outline:none}
+.nom-edad input[type=number]{width:86px}
 #nomFiltrosBadge{background:var(--r-ink);color:#fff;border-color:var(--r-ink)}
 .nom-mas{position:relative}
 .nom-mas-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:30;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(24,24,27,.10);padding:6px;min-width:200px;flex-direction:column;gap:2px}
@@ -914,7 +917,7 @@ tr:hover td{background:#f9f9fb}
       <option value="Hidratación">Hidratación</option>
       <option value="_sin">Sin posición cargada</option>
     </select>
-    <button class="btn btn-sec" id="nomFiltrosBtn" onclick="toggleFiltrosNom()" title="Orden, declaración jurada, etiquetas, rotación, documento y CV"><i class="ic ic-ajustes"></i> Más filtros <span class="tc" id="nomFiltrosBadge" style="display:none"></span></button>
+    <button class="btn btn-sec" id="nomFiltrosBtn" onclick="toggleFiltrosNom()" title="Edad, estudios, idiomas, experiencia, disponibilidad, orden, declaración jurada, etiquetas, rotación, documento y CV"><i class="ic ic-ajustes"></i> Más filtros <span class="tc" id="nomFiltrosBadge" style="display:none"></span></button>
     <span style="flex:1"></span>
     <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">↓ Exportar</button>
     <div class="nom-mas">
@@ -952,6 +955,29 @@ tr:hover td{background:#f9f9fb}
       <option value="rot">⚠ En rotación</option>
       <option value="libre">✓ Disponibles</option>
     </select>
+    <!-- Lo que contó al inscribirse (edad, estudios, idiomas, experiencia,
+         disponibilidad) y las rondas de disponibilidad de las convocatorias. -->
+    <span class="nom-edad" title="Rango de edad (de quienes tienen cargada la fecha de nacimiento)">Edad
+      <input type="number" class="filt" id="nomEdadDe" min="14" max="99" placeholder="de" oninput="nomFilter()" aria-label="Edad desde">
+      a <input type="number" class="filt" id="nomEdadA" min="14" max="99" placeholder="hasta" oninput="nomFilter()" aria-label="Edad hasta"></span>
+    <select class="filt" id="nomEstFilter" onchange="nomFilter()" title="El nivel de estudios que eligió al inscribirse"><option value="">Todos los estudios</option></select>
+    <select class="filt" id="nomIdiomaFilter" onchange="nomFilter()" title="Los idiomas que marcó al inscribirse (o que nombró en habilidades, formación o experiencia)"><option value="">Todos los idiomas</option></select>
+    <select class="filt" id="nomExpFilter" onchange="nomFilter()" title="Experiencia con nosotros (eventos ya hechos) o la que contó al inscribirse">
+      <option value="">Toda la experiencia</option>
+      <option value="sbs">Ya trabajó con nosotros</option>
+      <option value="sbs5">5 eventos o más con nosotros</option>
+      <option value="nunca">Nunca trabajó con nosotros</option>
+      <option value="dice">Dice tener experiencia en eventos</option>
+      <option value="sin">Dice no tener experiencia</option>
+    </select>
+    <select class="filt" id="nomDispFilter" onchange="nomFilter()" title="Lo que puso de disponibilidad al inscribirse">
+      <option value="">Toda la disponibilidad</option>
+      <option value="finde">Fines de semana</option>
+      <option value="noche">De noche</option>
+      <option value="full">Full time / cualquier horario</option>
+    </select>
+    <span class="nom-edad" title="Quienes marcaron que pueden ese día en alguna ronda de disponibilidad">Disponible el
+      <input type="date" class="filt" id="nomDispFecha" onchange="nomDispFechaCambio()" aria-label="Disponible el día"></span>
     <button class="btn btn-sec" id="docFilterBtn" onclick="toggleDocFilter();contarFiltrosNom()" title="Ver sólo a quienes tienen el documento mal cargado"><i class="ic ic-aviso"></i> Documento <span id="docFilterCount" style="font-size:10px;background:#fed7aa;color:#9a3412;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
     <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter();contarFiltrosNom()"><i class="ic ic-doc"></i> Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
     <button class="btn btn-sec btn-sm" onclick="limpiarFiltrosNom()" title="Vuelve todos los filtros a cero">Limpiar filtros</button>
@@ -2430,8 +2456,9 @@ async function loadAll() {
       // que necesita el mail. Los textos largos (experiencia, formación,
       // observaciones), los datos bancarios y el CV son la mayor parte del peso
       // y sólo hacen falta al abrir una solicitud o al aprobarla, así que se
-      // buscan ahí, de a una fila (ver solCompleta).
-      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,estado,conv_id,puesto_id,puesto_nombre,created_at,antecedentes,beneficio_social';
+      // buscan ahí, de a una fila (ver solCompleta). Nacimiento, estudios e
+      // idiomas son cortos y los usan los filtros de la nómina.
+      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,estado,conv_id,puesto_id,puesto_nombre,created_at,antecedentes,beneficio_social,fecha_nacimiento,estudios,idiomas';
       let all = [], f = 0;
       while (true) {
         const { data, error } = await sb.from('solicitudes').select(cols).order('created_at', { ascending: false }).range(f, f + 999);
@@ -2820,10 +2847,29 @@ function nomApply() {
   // Las opciones cuentan los de la pestaña y el estado elegidos.
   if (typeof llenarOpcionesPuesto === 'function') llenarOpcionesPuesto('nomPuestoFilter', people.filter(p => nomEnPestana(p) && (!st || p.estado === st)).map(puestoDePersona));
   const puF = document.getElementById('nomPuestoFilter') ? document.getElementById('nomPuestoFilter').value : '';
+  // Lo que contó al inscribirse y las rondas de disponibilidad (en "Más filtros").
+  const valorDe = id => { const x = document.getElementById(id); return x && x.value ? String(x.value) : ''; };
+  const edadMin = valorDe('nomEdadDe'), edadMax = valorDe('nomEdadA'), estF = valorDe('nomEstFilter'), idiF = valorDe('nomIdiomaFilter');
+  const expF = valorDe('nomExpFilter'), dispF = valorDe('nomDispFilter'), dispFecha = valorDe('nomDispFecha');
+  if (typeof nomLlenarFiltrosPerfil === 'function') nomLlenarFiltrosPerfil(people.filter(p => nomEnPestana(p) && (!st || p.estado === st)));
+  const eventos = expF === 'sbs' || expF === 'sbs5' || expF === 'nunca' ? eventosConNosotros() : null;
   nomFiltered = people.filter(p => {
     if (!nomEnPestana(p)) return false;
     if (st && p.estado !== st) return false;
     if (puF && !puestosDeSol(puestoDePersona(p)).includes(puF)) return false;
+    if (edadMin || edadMax) {
+      const edad = edadDe((solicitudDe(p) || {}).fecha_nacimiento);
+      if (edad === '' || (edadMin && edad < Number(edadMin)) || (edadMax && edad > Number(edadMax))) return false;
+    }
+    if (estF && (estF === '_sin' ? !!(solicitudDe(p) || {}).estudios : (solicitudDe(p) || {}).estudios !== estF)) return false;
+    if (idiF && !idiomasDe(p).includes(idiF)) return false;
+    if (eventos) {
+      const n = (eventos.get(p.id) || new Set()).size;
+      if ((expF === 'sbs' && !n) || (expF === 'sbs5' && n < 5) || (expF === 'nunca' && n)) return false;
+    }
+    if ((expF === 'dice' || expF === 'sin') && experienciaDeclarada(p) !== expF) return false;
+    if (dispF && !disponibilidadDeclarada(p).includes(dispF)) return false;
+    if (dispFecha && !((dispPorPersona && dispPorPersona.get(docNucleo(p.cuit))) || new Set()).has(dispFecha)) return false;
     if (q && !nomCoincide(p, q)) return false;
     if (cvFilterOn && !p.cv) return false;
     if (docFilterOn && !docDudoso(p)) return false;
@@ -3802,12 +3848,15 @@ function toggleFiltrosNom() {
 function contarFiltrosNom() {
   const puesto = id => { const el = document.getElementById(id); return el && el.value ? 1 : 0; };
   const n = puesto('nomOrden') + puesto('nomDecFilter') + puesto('nomTagFilter') + puesto('nomRotFilter')
+          + (puesto('nomEdadDe') || puesto('nomEdadA')) + puesto('nomEstFilter') + puesto('nomIdiomaFilter')
+          + puesto('nomExpFilter') + puesto('nomDispFilter') + puesto('nomDispFecha')
           + (docFilterOn ? 1 : 0) + (cvFilterOn ? 1 : 0);
   const b = document.getElementById('nomFiltrosBadge'); if (!b) return;
   b.textContent = n; b.style.display = n ? '' : 'none';
 }
 function limpiarFiltrosNom() {
-  ['nomSrch', 'nomStFilter', 'nomSemFilter', 'nomZonaFilter', 'nomPuestoFilter', 'nomPosFilter', 'nomOrden', 'nomDecFilter', 'nomTagFilter', 'nomRotFilter']
+  ['nomSrch', 'nomStFilter', 'nomSemFilter', 'nomZonaFilter', 'nomPuestoFilter', 'nomPosFilter', 'nomOrden', 'nomDecFilter', 'nomTagFilter', 'nomRotFilter',
+   'nomEdadDe', 'nomEdadA', 'nomEstFilter', 'nomIdiomaFilter', 'nomExpFilter', 'nomDispFilter', 'nomDispFecha']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   if (docFilterOn) toggleDocFilter();
   if (cvFilterOn) toggleCvFilter();
@@ -4116,6 +4165,87 @@ function cuentaBbvaHTML(s, fld) {
     + '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-bottom:10px">'
     + fld('Apellido(s)', s.apellido) + fld('Nombre(s)', s.nombres) + fld('Nacionalidad', s.nacionalidad) + fld('Domicilio', s.domicilio) + fld('Código postal', s.codigo_postal)
     + '<div style="font-size:12px;color:#1e40af">' + (s.cbu ? '✓ Ya tiene el CBU cargado.' : 'Sale en Nómina → Herramientas → "Cuentas a abrir (BBVA)". Cuando el banco la abra, cargale el CBU en "Editar persona".') + '</div></div>';
+}
+
+// ── LOS FILTROS DE LA NÓMINA CON LO QUE CONTÓ AL INSCRIBIRSE ──
+// Edad, estudios e idiomas salen de la inscripción (los pide el formulario
+// desde oct-2026; España ya tenía la fecha de nacimiento). Experiencia y
+// disponibilidad, de lo que escribió (está en su ficha) y de lo que hizo con
+// nosotros. "Disponible el…", de las rondas de disponibilidad.
+const NIVELES_ESTUDIO = ['Secundario incompleto', 'Secundario en curso', 'Secundario completo', 'Terciario en curso', 'Terciario completo', 'Universitario en curso', 'Universitario completo', 'Posgrado'];
+const IDIOMAS_FILTRO = [['Inglés', /ingl/], ['Portugués', /portug/], ['Italiano', /italian/], ['Francés', /frances/]];
+// Los idiomas: los que marcó en el formulario, y también los que nombró en
+// habilidades, formación o experiencia (las inscripciones de antes no tenían la lista).
+function idiomasDe(p) {
+  const sol = solicitudDe(p) || {}, cv = p.cv || {};
+  const texto = nomPelar([sol.idiomas, cv.habilidades, cv.formacion, cv.experiencia].filter(Boolean).join(' '));
+  const r = IDIOMAS_FILTRO.filter(([, re]) => re.test(texto)).map(([n]) => n);
+  if (String(sol.idiomas || '').split(',').some(x => x.trim() && !IDIOMAS_FILTRO.some(([, re]) => re.test(nomPelar(x))))) r.push('Otro');
+  return r;
+}
+// Lo que contó de experiencia: 'dice' (tiene), 'sin' (dice que no o no puso nada).
+function experienciaDeclarada(p) {
+  const t = nomPelar((p.cv && p.cv.experiencia) || '').trim();
+  return !t || /^(no|ninguna|nada)\b|no tengo|sin experiencia|ninguna experiencia|nunca trabaje/.test(t) ? 'sin' : 'dice';
+}
+// Lo que puso de disponibilidad al inscribirse, en grandes rasgos.
+function disponibilidadDeclarada(p) {
+  const t = nomPelar((p.cv && p.cv.disponibilidad) || '');
+  const r = [];
+  if (/fin(es)? de semana|finde|sabado|domingo/.test(t)) r.push('finde');
+  if (/noche|nocturn/.test(t)) r.push('noche');
+  if (/full|tiempo completo|todo el dia|todos los dias|cualquier (dia|horario|momento|turno)|total|disponibilidad completa/.test(t)) r.push('full');
+  return r;
+}
+// En cuántos eventos trabajó con nosotros: convocatorias que ya empezaron en
+// las que quedó (no rechazado). Persona → convocatorias.
+function eventosConNosotros() {
+  const hoy = hoyLocalISO(), pasadas = new Set();
+  convs.forEach(c => { const f = String(c.fecha || '').split(',').map(x => x.trim()).filter(Boolean).sort()[0]; if (f && f < hoy) pasadas.add(c.id); });
+  const m = new Map();
+  posts.forEach(x => { if (x.estado === 'rechazado' || !pasadas.has(x.convId)) return; if (!m.has(x.personaId)) m.set(x.personaId, new Set()); m.get(x.personaId).add(x.convId); });
+  return m;
+}
+// Las opciones de estudios e idiomas, con cuántos hay de cada uno en la pestaña y el estado elegidos.
+function nomLlenarFiltrosPerfil(base) {
+  const llenar = (id, todos, opciones, cuantas) => {
+    const sel = document.getElementById(id); if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">' + e(todos) + '</option>' + opciones.filter(([v]) => cuantas[v] || v === cur).map(([v, t]) => `<option value="${e(v)}">${e(t)} · ${cuantas[v] || 0}</option>`).join('');
+    sel.value = cur;
+  };
+  const est = {}, idi = {};
+  base.forEach(p => {
+    const s = solicitudDe(p) || {};
+    const k = s.estudios || '_sin'; est[k] = (est[k] || 0) + 1;
+    idiomasDe(p).forEach(i => { idi[i] = (idi[i] || 0) + 1; });
+  });
+  llenar('nomEstFilter', 'Todos los estudios', NIVELES_ESTUDIO.map(n => [n, n]).concat([['_sin', 'Sin cargar']]), est);
+  llenar('nomIdiomaFilter', 'Todos los idiomas', IDIOMAS_FILTRO.map(([n]) => [n, n]).concat([['Otro', 'Otro idioma']]), idi);
+}
+// Las rondas de disponibilidad: quién marcó qué días (se buscan una vez, al usar el filtro).
+let dispPorPersona = null;   // núcleo del documento → días que marcó
+async function cargarDisponibilidades() {
+  if (dispPorPersona) return dispPorPersona;
+  const slotsPorConv = new Map(convs.map(c => [c.id, new Map(slotsDe(c).map(s => [s.id, s.fecha]))]));
+  const m = new Map();
+  for (let desde = 0; ; desde += 1000) {
+    const { data, error } = await sb.from('disponibilidad').select('cuit,conv_id,fechas').range(desde, desde + 999);
+    if (error) { await avisarError('No se pudieron traer las rondas de disponibilidad: ', error); return m; }
+    (data || []).forEach(r => {
+      const d = docNucleo(r.cuit); if (!d) return;
+      const slots = slotsPorConv.get(r.conv_id) || new Map();
+      if (!m.has(d)) m.set(d, new Set());
+      (Array.isArray(r.fechas) ? r.fechas : []).forEach(id => { const f = slots.get(id) || (/^\d{4}-\d\d-\d\d$/.test(id) ? id : ''); if (f) m.get(d).add(f); });
+    });
+    if (!data || data.length < 1000) break;
+  }
+  dispPorPersona = m;
+  return m;
+}
+async function nomDispFechaCambio() {
+  if (document.getElementById('nomDispFecha').value) await cargarDisponibilidades();
+  nomFilter();
 }
 // Al aprobar una solicitud se copiaban unos datos y otros no: quedaban afuera
 // los antecedentes, el beneficio social, los datos bancarios y la localidad.
