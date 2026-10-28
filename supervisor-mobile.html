@@ -1000,6 +1000,52 @@ function incRedimensionar(l, sx, sy, px, py) {
   const ou = sx * w / 2, ov = sy * h / 2;
   return { cx: r(ax + ou * ux + ov * vx), cy: r(ay + ou * uy + ov * vy), w: r(w), h: r(h) };
 }
+// Por dónde va cada puesto al editar, como sobre un riel: las puertas, sobre
+// la pared de afuera del anillo (y la de atrás del backstage); lo demás, por
+// el medio del pasillo del anillo y del backstage. Así no queda una puerta en
+// la calle ni un baño en la platea. Las calles, afuera del estadio.
+const INC_RIEL_PARED = [[22, -44], [22, 260], [70, 318], [350, 318], [398, 260], [398, -44], [22, -44]];
+const INC_RIEL_PASILLO = [[36, -32], [36, 248], [87, 304], [333, 304], [384, 248], [384, -32], [36, -32]];
+const INC_EDIFICIO = [20, -46, 400, 320];   // la fachada: x0, y0, x1, y1
+// Un giro entre -90 y 90 (un rectángulo girado 180° es el mismo).
+function incAng(a) { a = ((a % 180) + 180) % 180; return a > 90 ? a - 180 : a; }
+// El punto del riel más cerca de (x, y), con el giro del tramo.
+function incSobreRiel(riel, x, y) {
+  let mejor = null;
+  for (let i = 0; i < riel.length - 1; i++) {
+    const [ax, ay] = riel[i], [bx, by] = riel[i + 1], dx = bx - ax, dy = by - ay;
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
+    const px = ax + t * dx, py = ay + t * dy, d = (x - px) * (x - px) + (y - py) * (y - py);
+    if (!mejor || d < mejor.d - 1e-9) mejor = { x: px, y: py, d, ang: incAng(Math.atan2(dy, dx) * 180 / Math.PI) };
+  }
+  return mejor;
+}
+function incRielDe(t) { return t === 'puerta' ? INC_RIEL_PARED : INC_RIEL_PASILLO; }
+// Si está sobre su riel, o casi (a 3 o menos): uno que se dejó suelto a
+// propósito no se engancha solo con las flechas.
+function incEnRiel(l) { return l.t === 'calle' || incSobreRiel(incRielDe(l.t), l.cx, l.cy).d <= 9; }
+// Adónde va un puesto que se lleva a (x, y): el centro y el giro. Las puertas,
+// siempre a lo largo de la pared; lo demás gira lo mismo que la línea (al
+// doblar una esquina sigue el pasillo). Uno nuevo (op.nuevo) nace a lo largo.
+function incEncajarLugar(l, x, y, op) {
+  const r1 = v => Math.round(v * 10) / 10, lim = (v, a, b) => Math.min(b, Math.max(a, v));
+  if (l.t === 'calle') {
+    const [x0, y0, x1, y1] = INC_EDIFICIO, m = (l.h || 18) / 2 + 2;
+    if (x > x0 - m && x < x1 + m && y > y0 - m && y < y1 + m) {
+      // Quedó adentro del estadio: al borde más cercano, del lado de afuera.
+      const salidas = [[x0 - m - x, 0], [x1 + m - x, 0], [0, y0 - m - y], [0, y1 + m - y]];
+      const [ox, oy] = salidas.sort((a, b) => Math.abs(a[0] + a[1]) - Math.abs(b[0] + b[1]))[0];
+      x += ox; y += oy;
+    }
+    return { cx: r1(lim(x, -35, 455)), cy: r1(lim(y, -85, 385)), ang: l.ang || 0 };
+  }
+  const riel = incRielDe(l.t), p = incSobreRiel(riel, x, y);
+  let ang;
+  if (l.t === 'puerta') ang = p.ang;
+  else if (op && op.nuevo) ang = incAng(p.ang - 90);
+  else ang = incAng((l.ang || 0) + p.ang - incSobreRiel(riel, l.cx, l.cy).ang);
+  return { cx: r1(p.x), cy: r1(p.y), ang: r1(ang) };
+}
 // El plano guardado desde el panel. Si no hay nada guardado (o la base
 // todavía no lo tiene), queda el de siempre. Devuelve si cambió algo.
 async function incCargarPlanoArena() {
@@ -1966,7 +2012,11 @@ function incPlano3D(cont, op0) {
     mueve.dx = q.x - mueve.q0.x; mueve.dz = q.z - mueve.q0.z;
     if (Math.abs(mueve.dx) + Math.abs(mueve.dz) > 1) mueve.movio = true;
     if (!mueve.movio) return;
-    mueve.p.grupo.position.x = mueve.dx; mueve.p.grupo.position.z = mueve.dz;
+    // Se ve adónde va a quedar: corre por su riel (la pared, el pasillo), como
+    // en el plano. Con Alt apretado, queda suelto donde se lo deje.
+    const f = mueve.p.forma; mueve.libre = !!e.altKey;
+    const q2 = mueve.libre ? { cx: f.lx + mueve.dx, cy: f.ly + mueve.dz } : incEncajarLugar({ t: f.t, cx: f.lx, cy: f.ly, h: f.h, ang: f.ang }, f.lx + mueve.dx, f.ly + mueve.dz);
+    mueve.p.grupo.position.x = q2.cx - f.lx; mueve.p.grupo.position.z = q2.cy - f.ly;
     if (mueve.p.baliza) mueve.p.baliza.visible = false;
     lienzo.style.cursor = 'grabbing';
   };
@@ -1974,7 +2024,7 @@ function incPlano3D(cont, op0) {
     if (!mueve) return;
     const m = mueve, f = m.p.forma, r = v => Math.round(v * 2) / 2; mueve = null;
     if (controles) controles.enabled = intro >= 1;
-    if (m.movio && editar && typeof window[editar.mover] === 'function') window[editar.mover](m.p.id, r(f.lx + m.dx), r(f.ly + m.dz));
+    if (m.movio && editar && typeof window[editar.mover] === 'function') window[editar.mover](m.p.id, r(f.lx + m.dx), r(f.ly + m.dz), !!m.libre);
   };
   cont.addEventListener('pointerdown', alAgarrar, true);
   window.addEventListener('pointermove', alLlevar);
