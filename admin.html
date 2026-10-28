@@ -1154,7 +1154,7 @@ tr:hover td{background:#f9f9fb}
           <div class="cc-plano-previa-t"><span>Editor</span></div>
           <div class="cc-plano-marco"><div class="cc-plano-flota" id="ccPlanoFlota" style="display:none"></div>
           <div id="ccPlanoLienzo" class="cc-plano-lienzo" tabindex="0" aria-label="Plano del Arena para editar: arrastrá un puesto para moverlo; con uno elegido, las flechas lo mueven"></div></div>
-          <div class="cc-plano-ayuda">Cada piso tiene sus puestos: elegí arriba el piso que armás y se ven sólo los suyos (las calles, en todos). Para agregar: tocá "+ Gastronomía" (o el que sea) y después tocá en el plano dónde va. Para mover: arrastralo (acá o en la vista previa 3D). Para el tamaño: tocalo y estirá las manijas blancas. Para girar, duplicar o borrar: usá los botones que aparecen al lado.</div>
+          <div class="cc-plano-ayuda">Cada piso tiene sus puestos: elegí arriba el piso que armás y se ven sólo los suyos (las calles, en todos). Para agregar: tocá "+ Gastronomía" (o el que sea) y después tocá en el plano dónde va. Para mover: arrastralo (acá o en la vista previa 3D) o, con uno elegido, usá las flechitas del teclado (con Shift, de a 5). Cada puesto va por su línea: las puertas, sobre la pared de afuera; lo demás, por el medio del pasillo; las calles, afuera. Si alguno tiene que quedar suelto, arrastralo con Alt apretado. Para el tamaño: tocalo y estirá las manijas blancas. Para girar, duplicar o borrar: usá los botones que aparecen al lado.</div>
         </div>
         <div class="cc-plano-vp">
           <div class="cc-plano-previa-t">
@@ -4721,6 +4721,52 @@ function incRedimensionar(l, sx, sy, px, py) {
   const ou = sx * w / 2, ov = sy * h / 2;
   return { cx: r(ax + ou * ux + ov * vx), cy: r(ay + ou * uy + ov * vy), w: r(w), h: r(h) };
 }
+// Por dónde va cada puesto al editar, como sobre un riel: las puertas, sobre
+// la pared de afuera del anillo (y la de atrás del backstage); lo demás, por
+// el medio del pasillo del anillo y del backstage. Así no queda una puerta en
+// la calle ni un baño en la platea. Las calles, afuera del estadio.
+const INC_RIEL_PARED = [[22, -44], [22, 260], [70, 318], [350, 318], [398, 260], [398, -44], [22, -44]];
+const INC_RIEL_PASILLO = [[36, -32], [36, 248], [87, 304], [333, 304], [384, 248], [384, -32], [36, -32]];
+const INC_EDIFICIO = [20, -46, 400, 320];   // la fachada: x0, y0, x1, y1
+// Un giro entre -90 y 90 (un rectángulo girado 180° es el mismo).
+function incAng(a) { a = ((a % 180) + 180) % 180; return a > 90 ? a - 180 : a; }
+// El punto del riel más cerca de (x, y), con el giro del tramo.
+function incSobreRiel(riel, x, y) {
+  let mejor = null;
+  for (let i = 0; i < riel.length - 1; i++) {
+    const [ax, ay] = riel[i], [bx, by] = riel[i + 1], dx = bx - ax, dy = by - ay;
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
+    const px = ax + t * dx, py = ay + t * dy, d = (x - px) * (x - px) + (y - py) * (y - py);
+    if (!mejor || d < mejor.d - 1e-9) mejor = { x: px, y: py, d, ang: incAng(Math.atan2(dy, dx) * 180 / Math.PI) };
+  }
+  return mejor;
+}
+function incRielDe(t) { return t === 'puerta' ? INC_RIEL_PARED : INC_RIEL_PASILLO; }
+// Si está sobre su riel, o casi (a 3 o menos): uno que se dejó suelto a
+// propósito no se engancha solo con las flechas.
+function incEnRiel(l) { return l.t === 'calle' || incSobreRiel(incRielDe(l.t), l.cx, l.cy).d <= 9; }
+// Adónde va un puesto que se lleva a (x, y): el centro y el giro. Las puertas,
+// siempre a lo largo de la pared; lo demás gira lo mismo que la línea (al
+// doblar una esquina sigue el pasillo). Uno nuevo (op.nuevo) nace a lo largo.
+function incEncajarLugar(l, x, y, op) {
+  const r1 = v => Math.round(v * 10) / 10, lim = (v, a, b) => Math.min(b, Math.max(a, v));
+  if (l.t === 'calle') {
+    const [x0, y0, x1, y1] = INC_EDIFICIO, m = (l.h || 18) / 2 + 2;
+    if (x > x0 - m && x < x1 + m && y > y0 - m && y < y1 + m) {
+      // Quedó adentro del estadio: al borde más cercano, del lado de afuera.
+      const salidas = [[x0 - m - x, 0], [x1 + m - x, 0], [0, y0 - m - y], [0, y1 + m - y]];
+      const [ox, oy] = salidas.sort((a, b) => Math.abs(a[0] + a[1]) - Math.abs(b[0] + b[1]))[0];
+      x += ox; y += oy;
+    }
+    return { cx: r1(lim(x, -35, 455)), cy: r1(lim(y, -85, 385)), ang: l.ang || 0 };
+  }
+  const riel = incRielDe(l.t), p = incSobreRiel(riel, x, y);
+  let ang;
+  if (l.t === 'puerta') ang = p.ang;
+  else if (op && op.nuevo) ang = incAng(p.ang - 90);
+  else ang = incAng((l.ang || 0) + p.ang - incSobreRiel(riel, l.cx, l.cy).ang);
+  return { cx: r1(p.x), cy: r1(p.y), ang: r1(ang) };
+}
 // El plano guardado desde el panel. Si no hay nada guardado (o la base
 // todavía no lo tiene), queda el de siempre. Devuelve si cambió algo.
 async function incCargarPlanoArena() {
@@ -5687,7 +5733,11 @@ function incPlano3D(cont, op0) {
     mueve.dx = q.x - mueve.q0.x; mueve.dz = q.z - mueve.q0.z;
     if (Math.abs(mueve.dx) + Math.abs(mueve.dz) > 1) mueve.movio = true;
     if (!mueve.movio) return;
-    mueve.p.grupo.position.x = mueve.dx; mueve.p.grupo.position.z = mueve.dz;
+    // Se ve adónde va a quedar: corre por su riel (la pared, el pasillo), como
+    // en el plano. Con Alt apretado, queda suelto donde se lo deje.
+    const f = mueve.p.forma; mueve.libre = !!e.altKey;
+    const q2 = mueve.libre ? { cx: f.lx + mueve.dx, cy: f.ly + mueve.dz } : incEncajarLugar({ t: f.t, cx: f.lx, cy: f.ly, h: f.h, ang: f.ang }, f.lx + mueve.dx, f.ly + mueve.dz);
+    mueve.p.grupo.position.x = q2.cx - f.lx; mueve.p.grupo.position.z = q2.cy - f.ly;
     if (mueve.p.baliza) mueve.p.baliza.visible = false;
     lienzo.style.cursor = 'grabbing';
   };
@@ -5695,7 +5745,7 @@ function incPlano3D(cont, op0) {
     if (!mueve) return;
     const m = mueve, f = m.p.forma, r = v => Math.round(v * 2) / 2; mueve = null;
     if (controles) controles.enabled = intro >= 1;
-    if (m.movio && editar && typeof window[editar.mover] === 'function') window[editar.mover](m.p.id, r(f.lx + m.dx), r(f.ly + m.dz));
+    if (m.movio && editar && typeof window[editar.mover] === 'function') window[editar.mover](m.p.id, r(f.lx + m.dx), r(f.ly + m.dz), !!m.libre);
   };
   cont.addEventListener('pointerdown', alAgarrar, true);
   window.addEventListener('pointermove', alLlevar);
@@ -6190,14 +6240,22 @@ function ccPlanoPrevia() {
 }
 // Desde la vista previa 3D: el puesto que se llevó a otro lado, o que se estiró.
 const ccLimitar = (v, a, b) => Math.round(Math.min(b, Math.max(a, v)) * 2) / 2;
-function ccPlanoMoverA(id, cx, cy) {
-  const l = ccPlanoBorrador && ccPlanoBorrador.find(x => x.id === id); if (!l) return;
-  l.cx = ccLimitar(cx, -35, 455); l.cy = ccLimitar(cy, -85, 385); ccPlanoSel = id; ccPlanoPintar();
+// Adónde queda un puesto que se lleva a (x, y): por su línea (la pared, el
+// pasillo; las calles, afuera) o, si se lo suelta a propósito, donde se lo dejó.
+function ccPlanoLlevar(l, x, y, libre) {
+  Object.assign(l, libre ? { cx: ccLimitar(x, -35, 455), cy: ccLimitar(y, -85, 385) } : incEncajarLugar(l, x, y));
 }
+function ccPlanoMoverA(id, cx, cy, libre) {
+  const l = ccPlanoBorrador && ccPlanoBorrador.find(x => x.id === id); if (!l) return;
+  ccPlanoLlevar(l, cx, cy, libre); ccPlanoSel = id; ccPlanoPintar();
+}
+// Al estirarlo, el que iba por su línea sigue en ella (sin girar).
 function ccPlanoMedirA(id, r) {
   const l = ccPlanoBorrador && ccPlanoBorrador.find(x => x.id === id); if (!l || !r) return;
-  const lim = incLimitesLugar(l.t);
-  l.cx = ccLimitar(r.cx, -35, 455); l.cy = ccLimitar(r.cy, -85, 385); l.w = ccLimitar(r.w, lim.w[0], lim.w[1]); l.h = ccLimitar(r.h, lim.h[0], lim.h[1]);
+  const lim = incLimitesLugar(l.t), enRiel = incEnRiel(l);
+  l.w = ccLimitar(r.w, lim.w[0], lim.w[1]); l.h = ccLimitar(r.h, lim.h[0], lim.h[1]);
+  const c = enRiel ? incEncajarLugar(l, r.cx, r.cy) : { cx: ccLimitar(r.cx, -35, 455), cy: ccLimitar(r.cy, -85, 385) };
+  l.cx = c.cx; l.cy = c.cy;
   ccPlanoSel = id; ccPlanoPintar();
 }
 // Al elegir un puesto de otro piso, el editor pasa a ese piso (si no, no se vería).
@@ -6245,7 +6303,8 @@ function ccPlanoCampo(k, v) {
     }
     l.id = nuevo; ccPlanoSel = nuevo; ccPlanoPintar(); return;
   }
-  if (k === 't') { if (INC_TIPOS_LUGAR[v]) { l.t = v; if (v === 'calle') l.piso = ''; else if (!l.piso) l.piso = ccPlanoPiso; } ccPlanoPintar(); return; }
+  // Al cambiarle el tipo, va a la línea de ese tipo (una puerta, a la pared).
+  if (k === 't') { if (INC_TIPOS_LUGAR[v]) { l.t = v; if (v === 'calle') l.piso = ''; else if (!l.piso) l.piso = ccPlanoPiso; Object.assign(l, incEncajarLugar(l, l.cx, l.cy, { nuevo: true })); } ccPlanoPintar(); return; }
   // Al pasarlo a otro piso, el editor se va con él a ese piso.
   if (k === 'piso') { if (INC_PISOS.some(x => x[0] === v)) { l.piso = v; ccPlanoPiso = v; if (incPisoElegido() !== v) incElegirPiso(v); } ccPlanoPintar(); return; }
   if (k === 'txt') l.txt = String(v == null ? '' : v).slice(0, l.t === 'calle' ? 24 : 6);
@@ -6265,13 +6324,20 @@ function ccPlanoColocarEn(x, y) {
   const t = ccPlanoColocar, tipo = INC_TIPOS_LUGAR[t]; if (!tipo) return;
   const n = ccPlanoNombreLibre(tipo.nombre);
   // Nace en el piso que se está armando (las calles, afuera: en ninguno).
-  const l = { id: tipo.nombre + ' ' + n, t, txt: t === 'calle' ? 'CALLE ' + n : (t === 'puerta' ? 'P' : '') + n, cx: Math.round(Math.min(455, Math.max(-35, x)) * 2) / 2, cy: Math.round(Math.min(385, Math.max(-85, y)) * 2) / 2, w: tipo.w, h: tipo.h, ang: 0, piso: t === 'calle' ? '' : ccPlanoPiso };
+  // Nace sobre su línea, a lo largo (la puerta, en la pared más cercana a donde se tocó).
+  const l = { id: tipo.nombre + ' ' + n, t, txt: t === 'calle' ? 'CALLE ' + n : (t === 'puerta' ? 'P' : '') + n, cx: x, cy: y, w: tipo.w, h: tipo.h, ang: 0, piso: t === 'calle' ? '' : ccPlanoPiso };
+  Object.assign(l, incEncajarLugar(l, x, y, { nuevo: true }));
   ccPlanoBorrador.push(l); ccPlanoSel = l.id; ccPlanoColocar = ''; ccPlanoPintar();
 }
+// La copia va al lado, en la misma línea (pegada a lo largo, sin encimarse).
 function ccPlanoDuplicar() {
   const l = ccPlanoBorrador.find(x => x.id === ccPlanoSel); if (!l) return;
   const tipo = INC_TIPOS_LUGAR[l.t], n = ccPlanoNombreLibre(tipo.nombre);
-  const c = Object.assign({}, l, { id: tipo.nombre + ' ' + n, txt: l.t === 'calle' ? 'CALLE ' + n : (l.t === 'puerta' ? 'P' : '') + n, cx: Math.min(455, l.cx + 8), cy: Math.min(385, l.cy + 8) });
+  const c = Object.assign({}, l, { id: tipo.nombre + ' ' + n, txt: l.t === 'calle' ? 'CALLE ' + n : (l.t === 'puerta' ? 'P' : '') + n });
+  if (l.t !== 'calle' && incEnRiel(l)) {
+    const a = incSobreRiel(incRielDe(l.t), l.cx, l.cy).ang * Math.PI / 180, d = Math.max(l.w, l.h) + 4;
+    Object.assign(c, incEncajarLugar(l, l.cx + Math.cos(a) * d, l.cy + Math.sin(a) * d));
+  } else ccPlanoLlevar(c, l.cx + 8, l.cy + 8, l.t !== 'calle');
   ccPlanoBorrador.push(c); ccPlanoSel = c.id; ccPlanoPintar();
 }
 function ccPlanoBorrar() {
@@ -6301,7 +6367,6 @@ function ccPlanoOriginal() {
 function ccPlanoActivar() {
   const cont = document.getElementById('ccPlanoLienzo'); if (!cont || cont._ccOn) return; cont._ccOn = true;
   const aPlano = (svg, ev) => { const m = svg.getScreenCTM && svg.getScreenCTM(); if (!m) return null; const p = svg.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY; return p.matrixTransform(m.inverse()); };
-  const limitar = (v, a, b) => Math.round(Math.min(b, Math.max(a, v)) * 2) / 2;
   cont.addEventListener('pointerdown', ev => {
     const svg = cont.querySelector('svg'), g = ev.target && ev.target.closest ? ev.target.closest('[data-lugar]') : null;
     if (!svg) return;
@@ -6310,7 +6375,7 @@ function ccPlanoActivar() {
     const asa = ev.target && ev.target.closest ? ev.target.closest('[data-asa]') : null, le = asa && ccPlanoBorrador.find(x => x.id === ccPlanoSel);
     if (le) {
       const [sx, sy] = asa.getAttribute('data-asa').split(',').map(Number);
-      ccPlanoArrastre = { asa: true, l: le, sx, sy, base: Object.assign({}, le), raf: 0 };
+      ccPlanoArrastre = { asa: true, l: le, sx, sy, base: Object.assign({}, le), raf: 0, enRiel: incEnRiel(le) };
       try { cont.setPointerCapture(ev.pointerId); } catch (_) {}
       ev.preventDefault(); return;
     }
@@ -6326,30 +6391,45 @@ function ccPlanoActivar() {
       // Se redibuja el plano a medida que se estira (de a un cuadro).
       const svg = cont.querySelector('svg'), q = svg && aPlano(svg, ev); if (!q) return;
       Object.assign(a.l, incRedimensionar(a.base, a.sx, a.sy, q.x, q.y));
+      // El que iba por su línea sigue en ella mientras se estira.
+      if (a.enRiel) { const c = incEncajarLugar(a.l, a.l.cx, a.l.cy); a.l.cx = c.cx; a.l.cy = c.cy; }
       if (!a.raf) a.raf = requestAnimationFrame(() => { a.raf = 0; if (ccPlanoArrastre === a) ccPlanoPintar(false); });
       return;
     }
     const p = aPlano(a.svg, ev); if (!p) return;
     const dx = p.x - a.x0, dy = p.y - a.y0;
     if (Math.abs(dx) + Math.abs(dy) > 0.8) a.movio = true;
-    a.g.setAttribute('transform', 'translate(' + dx + ' ' + dy + ')');
+    // Se ve adónde va a quedar: corrido por su línea y, si dobla una esquina, girado.
+    const q = Object.assign({}, a.l, { cx: a.cx, cy: a.cy }); ccPlanoLlevar(q, a.cx + dx, a.cy + dy, ev.altKey);
+    a.g.setAttribute('transform', 'translate(' + (q.cx - a.cx) + ' ' + (q.cy - a.cy) + ') rotate(' + ((q.ang || 0) - (a.l.ang || 0)) + ' ' + a.cx + ' ' + a.cy + ')');
   });
   cont.addEventListener('pointerup', ev => {
     const a = ccPlanoArrastre; if (!a) return; ccPlanoArrastre = null;
     if (a.asa) { if (a.raf) cancelAnimationFrame(a.raf); ccPlanoPintar(); return; }
     const p = aPlano(a.svg, ev);
-    if (a.movio && p) { a.l.cx = limitar(a.cx + p.x - a.x0, -35, 455); a.l.cy = limitar(a.cy + p.y - a.y0, -85, 385); }
+    if (a.movio && p) ccPlanoLlevar(a.l, a.cx + p.x - a.x0, a.cy + p.y - a.y0, ev.altKey);
     ccPlanoSel = a.l.id; ccPlanoPintar();
     try { cont.focus({ preventScroll: true }); } catch (_) {}
   });
   cont.addEventListener('pointercancel', () => { ccPlanoArrastre = null; ccPlanoPintar(); });
-  cont.addEventListener('keydown', ev => {
-    if (ev.key === 'Escape' && ccPlanoColocar) { ccPlanoColocar = ''; ccPlanoPintar(false); return; }
-    const l = ccPlanoBorrador.find(x => x.id === ccPlanoSel); if (!l) return;
-    const paso = ev.shiftKey ? 5 : 1, mov = { ArrowLeft: [-paso, 0], ArrowRight: [paso, 0], ArrowUp: [0, -paso], ArrowDown: [0, paso] }[ev.key];
-    if (mov) { ev.preventDefault(); l.cx = limitar(l.cx + mov[0], -35, 455); l.cy = limitar(l.cy + mov[1], -85, 385); ccPlanoPintar(); }
-    else if (ev.key === 'Escape') { ccPlanoSel = ''; ccPlanoColocar = ''; ccPlanoPintar(); }
-  });
+  // Las flechitas mueven el elegido aunque se lo haya tocado en la vista previa
+  // 3D o en la lista (no hace falta hacer clic en el plano antes). No se meten
+  // mientras se escribe en el formulario ni con un cartel abierto.
+  if (document.addEventListener) document.addEventListener('keydown', ev => ccPlanoTecla(ev, cont));
+}
+function ccPlanoTecla(ev, cont) {
+  if (ccTabActual !== 'plano' || !ccPlanoBorrador || !cont || !cont.offsetParent) return;
+  const t = ev.target || {};
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || '') || t.isContentEditable) return;
+  if ([...document.querySelectorAll('.modal-bg')].some(m => m.style.display === 'flex')) return;
+  if (ev.altKey || ev.ctrlKey || ev.metaKey) return;   // Alt + flecha es "atrás" en el navegador
+  if (ev.key === 'Escape' && ccPlanoColocar) { ccPlanoColocar = ''; ccPlanoPintar(false); return; }
+  const l = ccPlanoBorrador.find(x => x.id === ccPlanoSel); if (!l) return;
+  const paso = ev.shiftKey ? 5 : 1, mov = { ArrowLeft: [-paso, 0], ArrowRight: [paso, 0], ArrowUp: [0, -paso], ArrowDown: [0, paso] }[ev.key];
+  // Por su línea: en la pared de la izquierda, arriba y abajo; en el fondo, a los costados.
+  // Uno que se dejó suelto a propósito se sigue moviendo suelto.
+  if (mov) { ev.preventDefault(); ccPlanoLlevar(l, l.cx + mov[0], l.cy + mov[1], !incEnRiel(l)); ccPlanoPintar(); }
+  else if (ev.key === 'Escape') { ccPlanoSel = ''; ccPlanoColocar = ''; ccPlanoPintar(); }
 }
 
 // ── Cargar una incidencia desde el panel ──
