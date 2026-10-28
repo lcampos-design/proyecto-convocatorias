@@ -67,7 +67,10 @@ export function armarMail({ nombre, link, invitado }) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ error: 'Método no permitido' }); }
   const servicio = process.env.SUPABASE_SERVICE_ROLE_KEY || '', resend = process.env.RESEND_API_KEY || '';
-  if (!servicio || !resend) return res.status(500).json({ error: 'Falta configurar el servidor (SUPABASE_SERVICE_ROLE_KEY o RESEND_API_KEY en Vercel)' });
+  if (!servicio || !resend) {
+    const faltan = [!servicio && 'SUPABASE_SERVICE_ROLE_KEY', !resend && 'RESEND_API_KEY'].filter(Boolean);
+    return res.status(500).json({ error: 'Falta configurar en Vercel: ' + faltan.join(' y ') + '.' });
+  }
 
   const cuerpo = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
   const cuit = String(cuerpo.cuit || '').replace(/\D/g, '');
