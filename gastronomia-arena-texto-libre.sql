@@ -8,11 +8,13 @@
 --  mano, de antes de que el formulario tuviera la lista: "Bartender",
 --  "Acomodadores y bartenders", "Acomodadores, runner, barra"… Misma regla,
 --  con las mismas palabras que usa el filtro de puestos del panel
---  (gastronomía, gastronómico, barra, bartender, mozo, camarero/a):
+--  (gastronomía, gastronómico, barra, bartender, mozo, camarero/a, mesero/a):
 --
 --   · Si no nombra ningún puesto del Arena (acomodador, orientador,
 --     stagehand / cargas, supervisor / coordinador / encargado), pasa a
---     Externos, con el texto como estaba.
+--     Externos, con el texto como estaba. Un puesto del Arena cuenta sólo si
+--     está en un pedazo que no habla de gastronomía: "encargada de
+--     camareras" o "supervisor de barra" son de gastronomía.
 --   · Si nombra alguno, se queda en el Arena y se le saca del texto sólo la
 --     parte de gastronomía: "Acomodadores, runner, barra" queda
 --     "Acomodadores, runner".
@@ -51,27 +53,31 @@ pelado as (
   select b.*, translate(lower(coalesce(b.puesto, '')), 'áéíóúüñàèìòù', 'aeiouunaeiou') as p
   from base b
 ),
+-- El texto en sus pedazos (comas, barras, puntos, "y", "o", "y/o"), y de cada uno si habla de gastronomía.
+pedazos as (
+  select b.tabla, b.id, t.n, btrim(t.seg) as seg,
+         translate(lower(t.seg), 'áéíóúüñàèìòù', 'aeiouunaeiou') ~ '(gastro|barra|bartend|mozo|camarer|meser)' as es_gastro,
+         translate(lower(t.seg), 'áéíóúüñàèìòù', 'aeiouunaeiou') ~ '(acomod|orient|stage|montaj|supervis|coordin|encargad)|(^|[^a-z])carga' as es_arena
+  from pelado b, regexp_split_to_table(coalesce(b.puesto, ''), '\s*([,;/.]|\s+y\s*/\s*o\s+|\s+y\s+|\s+o\s+)\s*') with ordinality as t(seg, n)
+  where btrim(t.seg) <> ''
+),
 marcadas as (
-  select tabla, id, puesto, notas,
-         p ~ '(acomod|orient|stage|montaj|supervis|coordin|encargad)|(^|[^a-z])carga' as del_arena
-  from pelado
-  where p ~ '(gastro|barra|bartend|mozo|camarer)'
+  select b.tabla, b.id, b.puesto, b.notas,
+         exists (select 1 from pedazos d where d.tabla = b.tabla and d.id = b.id and d.es_arena and not d.es_gastro) as del_arena,
+         (select string_agg(d.seg, ', ' order by d.n) from pedazos d where d.tabla = b.tabla and d.id = b.id and not d.es_gastro) as sin_gastro
+  from pelado b
+  where b.p ~ '(gastro|barra|bartend|mozo|camarer|meser)'
 )
 select m.tabla, m.id, 'movistar_arena', m.puesto, m.notas,
        case when m.del_arena then 'movistar_arena (sin gastronomía)' else 'externos' end,
-       case when not m.del_arena then m.puesto
-            -- Se parte el texto en sus pedazos (comas, barras, puntos, "y", "o")
-            -- y se sacan los de gastronomía que no nombran un puesto del Arena.
-            else (select string_agg(btrim(t.seg), ', ' order by t.n)
-                  from regexp_split_to_table(m.puesto, '\s*([,;/.]|\s+y\s+|\s+o\s+)\s*') with ordinality as t(seg, n)
-                  where btrim(t.seg) <> ''
-                    and not (translate(lower(t.seg), 'áéíóúüñàèìòù', 'aeiouunaeiou') ~ '(gastro|barra|bartend|mozo|camarer)'
-                             and translate(lower(t.seg), 'áéíóúüñàèìòù', 'aeiouunaeiou') !~ '(acomod|orient|stage|montaj|supervis|coordin|encargad)|(^|[^a-z])carga'))
-       end
+       -- A Externos, con el texto como estaba; en el Arena, sin los pedazos de gastronomía.
+       case when m.del_arena then m.sin_gastro else m.puesto end
 from marcadas m
--- Si una corrida anterior ya la anotó y se cortó antes de cambiarla, no se anota dos veces.
+-- Si una corrida anterior ya la anotó y se cortó antes de cambiarla, no se anota dos veces
+-- (salvo que la haya anotado para dejarla igual: con la regla de ahora sí se cambia).
 where not exists (select 1 from respaldo.gastronomia_arena_texto r
-                  where r.tabla = m.tabla and r.id = m.id and r.puesto_antes is not distinct from m.puesto);
+                  where r.tabla = m.tabla and r.id = m.id and r.puesto_antes is not distinct from m.puesto
+                    and (r.paso_a = 'externos' or r.puesto_nuevo is distinct from r.puesto_antes));
 
 -- ── 2) SIN PUESTO DEL ARENA: A EXTERNOS ──
 --  (Sólo si sigue en el Arena con el mismo texto que se anotó.)
@@ -111,14 +117,16 @@ select * from (
   union all
   select 'quedan', null, 'en el Arena con gastronomía (revisar)', count(*)::text, null
   from public.solicitudes
-  where area = 'movistar_arena' and translate(lower(coalesce(puesto_interes, '')), 'áéíóúüñàèìòù', 'aeiouunaeiou') ~ '(gastro|barra|bartend|mozo|camarer)'
+  where area = 'movistar_arena' and translate(lower(coalesce(puesto_interes, '')), 'áéíóúüñàèìòù', 'aeiouunaeiou') ~ '(gastro|barra|bartend|mozo|camarer|meser)'
 ) x
 order by (tabla = 'quedan'), tabla, que_paso, nombre;
 
 -- ── SI HAY QUE VOLVER ATRÁS ──
---  (No correr salvo que haga falta.)
+--  (No correr salvo que haga falta.) Si una fila se anotó más de una vez, vale la primera: cómo estaba al principio.
 --   update public.solicitudes s set area = r.area_antes, puesto_interes = r.puesto_antes
---   from respaldo.gastronomia_arena_texto r where r.tabla = 'solicitudes' and s.id::text = r.id;
+--   from (select distinct on (tabla, id) * from respaldo.gastronomia_arena_texto order by tabla, id, cuando) r
+--   where r.tabla = 'solicitudes' and s.id::text = r.id;
 --   update public.personas p set area = r.area_antes,
 --          cv = jsonb_set(p.cv, '{puestoInteres}', to_jsonb(coalesce(r.puesto_antes, ''))), notas = r.notas_antes
---   from respaldo.gastronomia_arena_texto r where r.tabla = 'personas' and p.id::text = r.id;
+--   from (select distinct on (tabla, id) * from respaldo.gastronomia_arena_texto order by tabla, id, cuando) r
+--   where r.tabla = 'personas' and p.id::text = r.id;
