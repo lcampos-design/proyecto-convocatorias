@@ -1333,6 +1333,7 @@ tr:hover td{background:#f9f9fb}
         <div class="fg"><label>Titular de la cuenta</label><input type="text" class="fi" id="pTitular"></div>
       </div>
       <div id="pBancoNota" style="font-size:11px;color:#9ca3af;margin:-4px 0 12px"></div>
+      <button type="button" class="btn btn-sec btn-sm" id="pInvitarDatos" onclick="invitarMisDatos()" title="Le llega al mail que dejó al inscribirse: con ese link revisa y cambia sus datos (vence en 24 horas)" style="margin-bottom:12px">✉ Mandarle el link para que actualice sus datos</button>
     </div>
     <div class="fg"><label>Posiciones</label>
       <div id="pPosChips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
@@ -4304,6 +4305,37 @@ async function cargarPlanillaSol(personaId) {
   pintarPlanillaSol('cvSolBox', sol);
   const completa = await solCompleta(sol.id);
   pintarPlanillaSol('cvSolBox', completa || sol);
+  await pintarCambiosDatos('cvSolBox', p);
+}
+// Lo que cambió la persona desde /mis-datos, con el valor de antes (lo más nuevo arriba).
+const CAMPOS_DATOS = { email: 'Mail', tel: 'Teléfono', localidad: 'Localidad', fecha_nacimiento: 'Fecha de nacimiento', estudios: 'Estudios', idiomas: 'Idiomas', disponibilidad: 'Disponibilidad',
+  tiene_cuenta: 'Tiene cuenta', cbu: 'CBU', numero_cuenta: 'Número de cuenta', banco: 'Banco', apellido: 'Apellido', nombres: 'Nombre', nacionalidad: 'Nacionalidad', domicilio: 'Domicilio', codigo_postal: 'Código postal', cv: 'CV' };
+function cambiosDatosHTML(filas) {
+  if (!filas || !filas.length) return '';
+  const v = (campo, x) => x == null || x === '' ? '—' : campo === 'tiene_cuenta' ? (x === 'true' ? 'sí' : 'no') : campo === 'fecha_nacimiento' ? fechaDMA(x) : x;
+  return '<div class="cv-section-divider"></div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:8px">Cambios que hizo en sus datos</div>'
+    + filas.map(c => `<div style="font-size:12px;color:#374151;padding:5px 0;border-bottom:1px solid #f3f4f6"><span style="color:#9ca3af">${e(c.cuando ? new Date(c.cuando).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')}</span> · <b>${e(CAMPOS_DATOS[c.campo] || c.campo)}</b>: <span style="color:#9ca3af;text-decoration:line-through">${e(v(c.campo, c.antes))}</span> → ${e(v(c.campo, c.despues))}</div>`).join('');
+}
+async function pintarCambiosDatos(contenedorId, p) {
+  const nuc = docNucleo(p && p.cuit); if (!nuc) return;
+  try {
+    const { data, error } = await sb.from('datos_cambios').select('campo,antes,despues,cuando').eq('nucleo', nuc).order('cuando', { ascending: false }).limit(30);
+    if (error || !data || !data.length) return;
+    const cont = document.getElementById(contenedorId); if (cont) cont.insertAdjacentHTML('beforeend', cambiosDatosHTML(data));
+  } catch (_) {}
+}
+// Mandarle a alguien el link para que actualice sus datos (le llega al mail que tiene cargado).
+async function invitarMisDatos() {
+  const p = people.find(x => x.id === editPersonId); if (!p) return;
+  const cuit = String(p.cuit || '').replace(/\D/g, '');
+  if (cuit.length !== 11) { toast('Para mandarle el link hace falta su CUIL completo (11 números)'); return; }
+  if (p.area === 'espana') { toast('Por ahora el link es para Argentina (Movistar Arena y Externos)'); return; }
+  if (!confirm('¿Mandarle a ' + p.nombre + ' un link para que revise y complete sus datos?\n\nLe llega al mail que dejó al inscribirse y vence en 24 horas.')) return;
+  try {
+    const res = await fetch('/api/mis-datos', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ cuit, invitar: true }) });
+    const r = await res.json().catch(() => ({}));
+    toast(res.ok && r.ok ? '✓ Le mandamos el link a ' + r.email : (r.error || 'No se pudo mandar el link'));
+  } catch (_) { toast('No se pudo mandar el link'); }
 }
 
 // ── VER EL CV SIN DESCARGARLO ─────────────────────────────────
@@ -7882,8 +7914,8 @@ function renderNotifs() {
       : notifFilter === 'pendiente' ? 'No tenés notificaciones sin leer.' : 'Nada por acá.'}</div>`;
     return;
   }
-  const tipoIcon = { aprobacion: '<i class="ic ic-tilde-circ"></i>', cupo_lleno: '<i class="ic ic-diana"></i>', rotacion: '⚠', confirmacion: '<i class="ic ic-bandeja"></i>', otro: '<i class="ic ic-chincheta"></i>' };
-  const tipoLabel = { aprobacion: 'Aprobación', cupo_lleno: 'Cupo lleno', rotacion: 'Rotación', confirmacion: 'Confirmación', otro: 'General' };
+  const tipoIcon = { aprobacion: '<i class="ic ic-tilde-circ"></i>', cupo_lleno: '<i class="ic ic-diana"></i>', rotacion: '⚠', confirmacion: '<i class="ic ic-bandeja"></i>', datos: '✏️', otro: '<i class="ic ic-chincheta"></i>' };
+  const tipoLabel = { aprobacion: 'Aprobación', cupo_lleno: 'Cupo lleno', rotacion: 'Rotación', confirmacion: 'Confirmación', datos: 'Cambió sus datos', otro: 'General' };
   const stColors = { pendiente: 'var(--espera-sv);color:var(--espera)', enviada: 'var(--ok-sv);color:var(--ok)', descartada: 'var(--neutro-sv);color:var(--neutro)' };
   const stLabel = { pendiente: 'Sin leer', enviada: 'Enviada', descartada: 'Leída' };
   cont.innerHTML = src.map(n => `

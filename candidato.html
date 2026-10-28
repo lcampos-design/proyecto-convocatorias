@@ -141,6 +141,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   <!-- Formulario -->
   <div id="formScreen">
     <div class="required-note">Los campos marcados con <span style="color:#ef4444">*</span> son obligatorios</div>
+    <div class="required-note solo-ar" style="margin-left:6px">¿Ya te inscribiste? <a href="/mis-datos" style="color:#534AB7;font-weight:600">Actualizá tus datos acá</a></div>
     <div class="err-msg" id="errMsg"></div>
 
     <!-- España: presentación -->
@@ -890,7 +891,7 @@ async function submitForm() {
     if (dupCheck?.existe) {
       const areaLabel = AREA_LABEL[dupCheck.area] || 'Externos';
       const porQue = dupCheck.motivo === 'nombre' ? 'con ese nombre' : 'con ese CUIL/CUIT';
-      showErr(`Ya existe una inscripción ${porQue} en ${areaLabel}. Cada persona puede registrarse en una sola área. Si necesitás un cambio, escribinos.`);
+      showErr(`Ya existe una inscripción ${porQue} en ${areaLabel}. Cada persona puede registrarse en una sola área. Si querés cambiar tus datos, entrá a convocatorias.show-bs.com/mis-datos.`);
       btn.disabled = false; btn.textContent = 'Enviar solicitud →';
       return;
     }
