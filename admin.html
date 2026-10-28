@@ -124,11 +124,22 @@ tr:hover td{background:#fafaf8}
 .cc-seg button.on{background:#fff;color:var(--r-ink);box-shadow:0 1px 3px rgba(16,24,40,.14)}
 .cc-seg svg{width:14px;height:14px;flex-shrink:0}
 /* Editor del plano del Arena */
-.cc-plano{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;padding:18px 22px;align-items:start}
+.cc-plano{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;padding:16px 22px;align-items:start}
 @media(max-width:1000px){.cc-plano{grid-template-columns:minmax(0,1fr)}}
 .cc-plano-izq,.cc-plano-der{background:#fff;border:1px solid var(--r-line);border-radius:14px;padding:14px}
 .cc-plano-der{position:sticky;top:12px;display:flex;flex-direction:column;gap:14px}
-.cc-plano-barra{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.cc-plano-barra{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--r-line)}
+.cc-plano-barra .btn i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;box-shadow:0 0 0 1px rgba(15,23,42,.18)}
+/* El plano para editar y la vista previa, lado a lado. El plano no pasa del
+   alto de la pantalla (ni de 600px de ancho): entero, sin tener que bajar. */
+.cc-plano-dos{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.cc-plano-ed{flex:0 1 600px;min-width:320px;max-width:max(320px,calc((100vh - 250px) * 1.06))}
+.cc-plano-vp{flex:1 1 520px;min-width:min(100%,520px)}
+/* La vista previa, del mismo alto que el plano de al lado. */
+@media(min-width:960px){
+  #ccPlanoPrevia{height:min(565px,calc(100vh - 250px));min-height:380px}
+  #ccPlanoPrevia>svg{height:calc(100% - 44px)!important}
+}
 .cc-plano-t{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--r-muted);margin-right:2px}
 .cc-plano-lienzo{outline:none;border-radius:12px}
 .cc-plano-marco{position:relative}
@@ -143,8 +154,8 @@ tr:hover td{background:#fafaf8}
 .cc-plano-flota button.borrar{color:#fda4af}
 .cc-plano-lienzo:focus-visible{box-shadow:0 0 0 3px rgba(37,99,235,.35)}
 .cc-plano-lienzo [data-lugar]:hover polygon{stroke-width:2;filter:brightness(1.08)}
-.cc-plano-ayuda{font-size:11.5px;color:var(--r-muted);margin:8px 2px 14px}
-.cc-plano-previa-t{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--r-ink)}
+.cc-plano-ayuda{font-size:11.5px;color:var(--r-muted);margin:8px 2px 0;line-height:1.45}
+.cc-plano-previa-t{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:24px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--r-ink)}
 .cc-plano-previa-t label{font-size:12px;font-weight:500;color:var(--r-muted);display:flex;gap:6px;align-items:center;cursor:pointer}
 .cc-plano-f{display:flex;flex-direction:column;gap:10px}
 .cc-plano-f h4{margin:0;font-size:14px;color:var(--r-ink)}
@@ -154,10 +165,13 @@ tr:hover td{background:#fafaf8}
 .cc-plano-f .val{font-size:11.5px;color:var(--r-ink);font-weight:600;float:right}
 .cc-plano-giros{display:flex;gap:6px;margin-top:6px}
 .cc-plano-botones{display:flex;gap:6px;flex-wrap:wrap}
-.cc-plano-lista{display:flex;flex-direction:column;gap:4px;max-height:46vh;overflow-y:auto}
-.cc-plano-lista button{display:flex;gap:8px;align-items:center;text-align:left;background:#f7f7f9;border:1px solid transparent;border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;color:var(--r-ink);cursor:pointer}
+.cc-plano-lista{display:flex;flex-direction:column;gap:3px;max-height:calc(100vh - 380px);min-height:200px;overflow-y:auto;margin:0 -4px;padding:0 4px}
+.cc-plano-grupo{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--r-muted);margin:8px 0 2px}
+.cc-plano-grupo:first-child{margin-top:0}
+.cc-plano-grupo i,.cc-plano-lista button i{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 1px rgba(15,23,42,.18)}
+.cc-plano-lista button{display:flex;gap:8px;align-items:center;text-align:left;background:#f7f7f9;border:1px solid transparent;border-radius:8px;padding:5px 9px;font:inherit;font-size:12.5px;color:var(--r-ink);cursor:pointer}
 .cc-plano-lista button:hover{border-color:var(--r-line);background:#fff}
-.cc-plano-lista small{color:var(--r-muted);margin-left:auto}
+.cc-plano-lista small{color:var(--r-muted);margin-left:auto;font-size:10.5px;font-weight:600;background:#eceef2;border-radius:5px;padding:1px 6px}
 .cc-plano-acc{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--r-line);padding-top:12px}
 .cc-plano-estado{font-size:12px;color:var(--r-muted)}
 .cc-plano-estado.pend{color:#a16207;font-weight:600}
@@ -1067,7 +1081,7 @@ tr:hover td{background:#f9f9fb}
     <button class="btn btn-sm btn-primary" id="ccTabShows" onclick="ccTab('shows')">Shows</button>
     <button class="btn btn-sm btn-sec" id="ccTabPlano" onclick="ccTab('plano')">Plano del Arena</button>
     <button class="btn btn-sm btn-sec" id="ccTabAccesos" onclick="ccTab('accesos')">Accesos de la gerencia</button>
-    <a class="btn btn-sm btn-sec" style="text-decoration:none" href="/centro-control" target="_blank" rel="noopener" title="Abre lo que ve la gerencia del Arena, en otra pestaña">↗ Vista de la gerencia</a>
+    <a class="btn btn-sm btn-sec" style="text-decoration:none" href="/centro-control" target="_blank" rel="noopener" title="Abre lo que ve la gerencia del Arena, en otra pestaña. La primera vez pide entrar: sirve tu mismo usuario o uno de gerencia, y salir de ahí no cierra el panel">↗ Vista de la gerencia</a>
   </div>
   <div id="ccShows" class="cc-layout">
     <div class="cc-lista" id="ccListaShows"><div class="empty">Cargando…</div></div>
@@ -1103,22 +1117,29 @@ tr:hover td{background:#f9f9fb}
     <div class="cc-plano-izq">
       <div class="cc-plano-barra">
         <span class="cc-plano-t">Agregar</span>
-        <button class="btn btn-xs btn-sec" data-agregar="gastro" onclick="ccPlanoAgregar('gastro')">+ Gastronomía</button>
-        <button class="btn btn-xs btn-sec" data-agregar="banio" onclick="ccPlanoAgregar('banio')">+ Baños</button>
-        <button class="btn btn-xs btn-sec" data-agregar="puerta" onclick="ccPlanoAgregar('puerta')">+ Puerta</button>
-        <button class="btn btn-xs btn-sec" data-agregar="enfermeria" onclick="ccPlanoAgregar('enfermeria')">+ Enfermería</button>
-        <button class="btn btn-xs btn-sec" data-agregar="servicio" onclick="ccPlanoAgregar('servicio')">+ Otro punto</button>
+        <button class="btn btn-xs btn-sec" data-agregar="gastro" onclick="ccPlanoAgregar('gastro')"><i style="background:#a8329a"></i>+ Gastronomía</button>
+        <button class="btn btn-xs btn-sec" data-agregar="banio" onclick="ccPlanoAgregar('banio')"><i style="background:#5a6b85"></i>+ Baños</button>
+        <button class="btn btn-xs btn-sec" data-agregar="puerta" onclick="ccPlanoAgregar('puerta')"><i style="background:#0e86b4"></i>+ Puerta</button>
+        <button class="btn btn-xs btn-sec" data-agregar="enfermeria" onclick="ccPlanoAgregar('enfermeria')"><i style="background:#ffffff"></i>+ Enfermería</button>
+        <button class="btn btn-xs btn-sec" data-agregar="servicio" onclick="ccPlanoAgregar('servicio')"><i style="background:#374151"></i>+ Otro punto</button>
       </div>
       <div class="cc-plano-aviso" id="ccPlanoAviso" style="display:none"></div>
       <div class="cc-plano-guardar" id="ccPlanoBarra" style="display:none"><span>Hay cambios sin guardar</span><button class="btn btn-sec btn-xs" onclick="ccPlanoDescartar()">Descartar</button><button class="btn btn-primary btn-xs" onclick="ccPlanoGuardar()">Guardar cambios</button></div>
-      <div class="cc-plano-marco"><div class="cc-plano-flota" id="ccPlanoFlota" style="display:none"></div>
-      <div id="ccPlanoLienzo" class="cc-plano-lienzo" tabindex="0" aria-label="Plano del Arena para editar: arrastrá un puesto para moverlo; con uno elegido, las flechas lo mueven"></div></div>
-      <div class="cc-plano-ayuda">Para agregar: tocá "+ Gastronomía" (o el que sea) y después tocá en el plano dónde va. Para mover: arrastralo. Para girar, duplicar o borrar: tocalo y usá los botones que aparecen al lado.</div>
-      <div class="cc-plano-previa-t">
-        <span>Vista previa</span>
-        <label><input type="checkbox" id="ccPlanoSim" onchange="ccPlanoPrevia()"> Con incidencias de ejemplo</label>
+      <div class="cc-plano-dos">
+        <div class="cc-plano-ed">
+          <div class="cc-plano-previa-t"><span>Editor</span></div>
+          <div class="cc-plano-marco"><div class="cc-plano-flota" id="ccPlanoFlota" style="display:none"></div>
+          <div id="ccPlanoLienzo" class="cc-plano-lienzo" tabindex="0" aria-label="Plano del Arena para editar: arrastrá un puesto para moverlo; con uno elegido, las flechas lo mueven"></div></div>
+          <div class="cc-plano-ayuda">Para agregar: tocá "+ Gastronomía" (o el que sea) y después tocá en el plano dónde va. Para mover: arrastralo. Para girar, duplicar o borrar: tocalo y usá los botones que aparecen al lado.</div>
+        </div>
+        <div class="cc-plano-vp">
+          <div class="cc-plano-previa-t">
+            <span>Vista previa</span>
+            <label><input type="checkbox" id="ccPlanoSim" onchange="ccPlanoPrevia()"> Con incidencias de ejemplo</label>
+          </div>
+          <div id="ccPlanoPrevia" class="inc-adm-plano" data-alto="pantalla"></div>
+        </div>
       </div>
-      <div id="ccPlanoPrevia" class="inc-adm-plano"></div>
     </div>
     <div class="cc-plano-der">
       <div id="ccPlanoForm"></div>
@@ -2113,6 +2134,14 @@ async function initAuth() {
     document.getElementById('loginErr').style.display = 'block';
     return;
   }
+  // La sesión se puede cerrar desde otra pestaña (o vencer): se vuelve al
+  // ingreso en vez de seguir guardando sin usuario. Si en otra pestaña entró
+  // otra cuenta, se recarga para mostrar la que quedó.
+  sb.auth.onAuthStateChange((evento, sesion) => {
+    if (!currentUserId) return;
+    if (evento === 'SIGNED_OUT') sesionCerrada();
+    else if (sesion && sesion.user && sesion.user.id !== currentUserId) location.reload();
+  });
   // Supabase deja el tipo en el fragmento de la dirección (#...&type=recovery).
   // Se guarda antes de mostrar nada, porque la biblioteca lo limpia al leerlo.
   const vieneDeRecupero = /[#&]type=recovery/.test(location.hash || '');
@@ -2267,6 +2296,7 @@ async function guardarClave() {
 }
 
 async function doLogout() {
+  currentUserId = null;
   await sb.auth.signOut();
   location.reload();
 }
@@ -2435,28 +2465,43 @@ function detalleError(error) {
   const texto = partes.join(' — ');
   return (error.code ? '[' + error.code + '] ' : '') + (texto || String(error));
 }
+// Sin sesión (se cerró en otra pestaña, o venció) la base contesta "permission
+// denied for table …": no falta ningún permiso, falta el usuario. Se dice eso y
+// se vuelve al ingreso.
+async function avisarError(prefijo, error) {
+  if (error && error.code === '42501') {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { sesionCerrada(); return; }
+  }
+  toast(prefijo + detalleError(error));
+}
+function sesionCerrada() {
+  currentUserId = null;
+  showLogin();
+  toast('Se cerró la sesión: volvé a entrar para seguir');
+}
 async function sbUpsert(table, data) {
   setSaveStatus('saving');
   const { error } = await sb.from(table).upsert(data);
-  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
+  if (error) { setSaveStatus('error'); await avisarError('Error al guardar: ', error); console.error(table, error); throw error; }
   setSaveStatus('ok');
 }
 async function sbInsert(table, data) {
   setSaveStatus('saving');
   const { error } = await sb.from(table).insert(data);
-  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
+  if (error) { setSaveStatus('error'); await avisarError('Error al guardar: ', error); console.error(table, error); throw error; }
   setSaveStatus('ok');
 }
 async function sbUpdate(table, id, data) {
   setSaveStatus('saving');
   const { error } = await sb.from(table).update(data).eq('id', id);
-  if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
+  if (error) { setSaveStatus('error'); await avisarError('Error al guardar: ', error); console.error(table, error); throw error; }
   setSaveStatus('ok');
 }
 async function sbDelete(table, id) {
   setSaveStatus('saving');
   const { error } = await sb.from(table).delete().eq('id', id);
-  if (error) { setSaveStatus('error'); toast('Error al eliminar: ' + error.message); console.error(table, error); throw error; }
+  if (error) { setSaveStatus('error'); await avisarError('Error al eliminar: ', error); console.error(table, error); throw error; }
   setSaveStatus('ok');
 }
 // Los ids viajan en la dirección de la petición. Con muchos —"Descartar
@@ -2468,7 +2513,7 @@ async function sbUpdateIn(table, ids, data) {
   setSaveStatus('saving');
   for (let i = 0; i < ids.length; i += TANDA_IDS) {
     const { error } = await sb.from(table).update(data).in('id', ids.slice(i, i + TANDA_IDS));
-    if (error) { setSaveStatus('error'); toast('Error al guardar: ' + detalleError(error)); console.error(table, error); throw error; }
+    if (error) { setSaveStatus('error'); await avisarError('Error al guardar: ', error); console.error(table, error); throw error; }
   }
   setSaveStatus('ok');
 }
@@ -2477,7 +2522,7 @@ async function sbDeleteIn(table, ids) {
   setSaveStatus('saving');
   for (let i = 0; i < ids.length; i += TANDA_IDS) {
     const { error } = await sb.from(table).delete().in('id', ids.slice(i, i + TANDA_IDS));
-    if (error) { setSaveStatus('error'); toast('Error al eliminar: ' + detalleError(error)); console.error(table, error); throw error; }
+    if (error) { setSaveStatus('error'); await avisarError('Error al eliminar: ', error); console.error(table, error); throw error; }
   }
   setSaveStatus('ok');
 }
@@ -5287,7 +5332,7 @@ function renderCcSumar() {
 }
 async function ccSumarShow(id) {
   const { error } = await sb.from('convocatorias').update({ centro_control: true }).eq('id', id);
-  if (error) { toast(/centro_control/.test(error.message || '') ? 'Primero hay que correr centro-control-shows.sql en Supabase' : 'No se pudo sumar: ' + error.message); return; }
+  if (error) { if (/centro_control/.test(error.message || '')) toast('Primero hay que correr centro-control-shows.sql en Supabase'); else await avisarError('No se pudo sumar: ', error); return; }
   const c = convs.find(x => x.id === id); if (c) c.centro_control = true;
   closeM('mCcSumar'); toast('Sumado al Centro de Control');
   await ccCargarShows();
@@ -5298,7 +5343,7 @@ async function ccQuitarShow() {
   const x = ccShows.find(y => y.id === ccConvId) || convs.find(y => y.id === ccConvId) || {};
   if (!confirm('¿Sacar "' + (x.nombre || 'este show') + '" del Centro de Control?\n\nLa gerencia deja de verlo y los supervisores ya no cargan incidencias en ese show. Las que ya se cargaron quedan guardadas.')) return;
   const { error } = await sb.from('convocatorias').update({ centro_control: false }).eq('id', ccConvId);
-  if (error) { toast('No se pudo sacar: ' + error.message); return; }
+  if (error) { await avisarError('No se pudo sacar: ', error); return; }
   const c = convs.find(y => y.id === ccConvId); if (c) c.centro_control = false;
   ccConvId = null; toast('Quitado del Centro de Control');
   await ccCargarShows();
@@ -5374,8 +5419,11 @@ function ccPlanoFormPintar() {
   const cont = document.getElementById('ccPlanoForm'); if (!cont) return;
   const i = ccPlanoBorrador.findIndex(x => x.id === ccPlanoSel), l = ccPlanoBorrador[i];
   if (!l) {
-    cont.innerHTML = '<div class="cc-plano-f"><h4>Puestos del anillo</h4><div style="font-size:12px;color:var(--r-muted)">' + ccPlanoBorrador.length + ' en el plano. Tocá uno, acá o en el plano, para moverlo o cambiarle el nombre, el tamaño o el giro.</div>'
-      + '<div class="cc-plano-lista">' + Object.keys(INC_TIPOS_LUGAR).map(t => ccPlanoBorrador.map((x, k) => x.t !== t ? '' : '<button onclick="ccPlanoElegirN(' + k + ')">' + e(x.id) + '<small>' + e(INC_TIPOS_LUGAR[t].nombre) + ' · ' + e(x.piso || '') + '</small></button>').join('')).join('') + '</div></div>';
+    cont.innerHTML = '<div class="cc-plano-f"><h4>Puestos del anillo <span style="font-weight:500;color:var(--r-muted);font-size:12px">· ' + ccPlanoBorrador.length + '</span></h4><div style="font-size:12px;color:var(--r-muted);line-height:1.4">Tocá uno, acá o en el plano, para cambiarle el nombre, el piso, el tamaño o el giro.</div>'
+      + '<div class="cc-plano-lista">' + Object.keys(INC_TIPOS_LUGAR).map(t => {
+        const filas = ccPlanoBorrador.map((x, k) => x.t !== t ? '' : '<button onclick="ccPlanoElegirN(' + k + ')"><i style="background:' + INC_TEMA.color[t][0] + '"></i>' + e(x.id) + '<small>' + e(x.piso || '') + '</small></button>').join('');
+        return filas ? '<div class="cc-plano-grupo"><i style="background:' + INC_TEMA.color[t][0] + '"></i>' + e({ puerta: 'Puertas', servicio: 'Otros puntos' }[t] || INC_TIPOS_LUGAR[t].nombre) + '</div>' + filas : '';
+      }).join('') + '</div></div>';
     return;
   }
   const opTipo = Object.keys(INC_TIPOS_LUGAR).map(t => '<option value="' + t + '"' + (t === l.t ? ' selected' : '') + '>' + e(INC_TIPOS_LUGAR[t].nombre) + '</option>').join('');
@@ -5441,7 +5489,7 @@ async function ccPlanoGuardar() {
   const btn = document.getElementById('ccPlanoGuardarBtn'); if (btn) btn.disabled = true;
   try {
     const { error } = await sb.from('arena_plano').upsert({ id: 1, lugares: lista, updated_at: new Date().toISOString(), updated_por: ((document.getElementById('userEmail') || {}).textContent || '').trim() || null });
-    if (error) { toast(/arena_plano/.test(error.message || '') ? 'Primero hay que correr plano-arena.sql en Supabase' : 'No se pudo guardar: ' + error.message); return; }
+    if (error) { if (/arena_plano/.test(error.message || '')) toast('Primero hay que correr plano-arena.sql en Supabase'); else await avisarError('No se pudo guardar: ', error); return; }
     ccPlanoGuardado = ccClon(lista); ccPlanoBorrador = ccClon(lista);
     toast('✓ Plano guardado: ya lo ven la tablet y la gerencia');
     ccPlanoPintar();
