@@ -7069,7 +7069,16 @@ function renderPicker() {
   const sols = pickerConSol ? solicitudesSinAprobar(af, q) : [];
   const el = document.getElementById('pickerList');
   if (!avail.length && !sols.length) { el.innerHTML = '<div class="picker-empty">Sin resultados</div>'; document.getElementById('pickerSelCount').textContent = '0 seleccionados'; return; }
-  el.innerHTML = avail.map(p => `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${rotulo(p.estado)}</span></div>`).join('');
+  // Quien ya está en otro evento esas fechas (o en otro puesto de este) va al
+  // final, marcado, y no se puede elegir: al asignar se bloquea igual.
+  const cDest = convs.find(x => x.id === currentConvId);
+  const ocupado = ocupadosEnFechas(convFechasArr(cDest), x => x.convId === currentConvId && x.puestoId === currentPuestoId);
+  const ocup = new Map(avail.map(p => [p.id, ocupado(p)]));
+  avail.sort((a, b) => (ocup.get(a.id).length ? 1 : 0) - (ocup.get(b.id).length ? 1 : 0));
+  const nOcup = avail.filter(p => ocup.get(p.id).length).length;
+  el.innerHTML = (nOcup ? `<div style="font-size:11.5px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:7px 10px;margin-bottom:6px">${nOcup} ${nOcup === 1 ? 'ya está' : 'ya están'} en otro evento esas fechas: ${nOcup === 1 ? 'aparece' : 'aparecen'} al final, marcad${nOcup === 1 ? 'a' : 'as'}.</div>` : '') + avail.map(p => ocup.get(p.id).length
+    ? `<div class="picker-item" style="opacity:.62;cursor:not-allowed" title="Ya está: ${e(textoOcupado(ocup.get(p.id)))}" onclick="toast('Ya está en otro evento ese día: ' + this.dataset.txt)" data-txt="${e(textoOcupado(ocup.get(p.id)))}"><input type="checkbox" class="cb" disabled><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(p.nombre)}</div><div style="font-size:11px;color:#9a3412">Ocupado · ${e(textoOcupado(ocup.get(p.id)))}</div></div><span class="a-badge" style="font-size:10px;background:#ffedd5;color:#9a3412">Ocupado</span></div>`
+    : `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${rotulo(p.estado)}</span></div>`).join('');
   el.innerHTML += sols.map(so => { const k = 'sol:' + so.id; return `<div class="picker-item ${pickerSel.has(k) ? 'sel' : ''}" onclick="togglePickerSel('${k}')"><input type="checkbox" class="cb" ${pickerSel.has(k) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${k}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(so.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(so.area)}${so.cuit ? ' · ' + e(so.cuit) : ''}</div></div><span class="a-badge" style="font-size:10px;background:#fef3c7;color:#92400e">Sin aprobar</span></div>`; }).join('');
   document.getElementById('pickerSelCount').textContent = pickerSel.size + ' seleccionados';
 }
@@ -7104,6 +7113,31 @@ function choquesDeFecha(persona, convDestino, puestoDestino) {
   });
   return choques;
 }
+// Quién ya está en otro evento alguna de esas fechas, armado de una sola
+// pasada (para marcarlo en listas largas sin recorrer todo por cada persona).
+// excluir(x) dice qué postulaciones no cuentan (por ejemplo, las de este mismo
+// puesto). Devuelve, para una persona, lo que tiene esas fechas, o nada.
+function ocupadosEnFechas(fechas, excluir) {
+  const dias = new Set(fechas || []), porClave = new Map();
+  if (!dias.size) return () => [];
+  const porId = new Map((people || []).map(y => [y.id, y]));
+  (posts || []).forEach(x => {
+    if (x.estado === 'rechazado' || (excluir && excluir(x))) return;
+    const conv = (convs || []).find(cv => cv.id === x.convId); if (!conv || conv.archivada) return;
+    const comunes = convFechasArr(conv).filter(f => dias.has(f)); if (!comunes.length) return;
+    const puesto = (conv.puestos || []).find(q => q.id === x.puestoId);
+    const item = { convId: conv.id, conv: conv.nombre, puesto: (puesto && puesto.nombre) || '', fechas: comunes };
+    const otra = porId.get(x.personaId), doc = docNucleo(x.cuit || (otra && otra.cuit));
+    [x.personaId ? 'id:' + x.personaId : '', doc ? 'doc:' + doc : ''].filter(Boolean).forEach(k => { if (!porClave.has(k)) porClave.set(k, []); porClave.get(k).push(item); });
+  });
+  return persona => {
+    if (!persona) return [];
+    const doc = docNucleo(persona.cuit), vistos = new Set(), out = [];
+    [].concat(porClave.get('id:' + persona.id) || [], doc ? porClave.get('doc:' + doc) || [] : []).forEach(it => { const k = it.convId + '|' + it.puesto; if (!vistos.has(k)) { vistos.add(k); out.push(it); } });
+    return out;
+  };
+}
+function textoOcupado(lista) { return lista.map(it => it.fechas.map(f => fmtFechaCorta(f)).join(', ') + ' · ' + it.conv + (it.puesto ? ' (' + it.puesto + ')' : '')).join(' — '); }
 function textoChoque(nombre, ch) {
   const dias = ch.fechas.map(f => fmtFechaCorta ? fmtFechaCorta(f) : f).join(', ');
   return `· ${nombre} — ${dias}: ya está en ${ch.mismaConv ? 'el puesto' : '"' + ch.conv + '", puesto'} ${ch.puesto}`;
@@ -9490,6 +9524,8 @@ function renderDispBody() {
   const q = String(dispBusqueda || '').toLowerCase().trim(), qd = q.replace(/\D/g, '');
   const visibles = dispRows.filter(r => !q || String(r.nombre || '').toLowerCase().includes(q) || (qd && normDoc(r.cuit).includes(qd)))
     .sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es'));
+  // Otros eventos esas fechas (estar en este mismo no cuenta).
+  const ocupadoDisp = ocupadosEnFechas(slots.map(s => s.fecha), x => x.convId === currentConvId);
   const rows = visibles.map(r => {
     const rf = Array.isArray(r.fechas) ? r.fechas : [];
     const cn = docNucleo(r.cuit);
@@ -9497,7 +9533,15 @@ function renderDispBody() {
     const sol = solicitudes.find(s => docNucleo(s.cuit) === cn);
     const email = per?.email || sol?.email || '';
     const tel = per?.tel || sol?.tel || '';
-    const cells = slots.map(s => `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${rf.includes(s.id) ? '<span style="color:#16a34a;font-weight:700">✓</span>' : '<span style="color:#d1d5db">·</span>'}</td>`).join('');
+    // Si ese día ya está en otro evento, la tilde va en naranja y dice dónde.
+    const otros = ocupadoDisp(per || { id: '', cuit: r.cuit });
+    const cells = slots.map(s => {
+      const ya = otros.filter(it => it.fechas.includes(s.fecha));
+      const marca = rf.includes(s.id)
+        ? (ya.length ? `<span style="color:#c2410c;font-weight:700" title="Ya está ese día: ${e(textoOcupado(ya))}">✓ <span style="font-size:10px;font-weight:600">ocupado</span></span>` : '<span style="color:#16a34a;font-weight:700">✓</span>')
+        : (ya.length ? `<span style="color:#c2410c;font-size:10px" title="Ya está ese día: ${e(textoOcupado(ya))}">ocupado</span>` : '<span style="color:#d1d5db">·</span>');
+      return `<td style="text-align:center;padding:6px 8px;border-bottom:1px solid #f3f4f6">${marca}</td>`;
+    }).join('');
     return `<tr>
       <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${eN(r.nombre || '—')}<div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
       ${cells}
@@ -9510,7 +9554,8 @@ function renderDispBody() {
     <thead><tr>${th('Persona (' + (q ? visibles.length + ' de ' + dispRows.length : dispRows.length) + ')')}${thDates}<th style="border-bottom:1px solid #e5e7eb"></th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td style="padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">Disponibles</td>${foot}<td></td></tr></tfoot>
-  </table></div>`;
+  </table></div>
+  <div style="font-size:11.5px;color:#6b7280;margin-top:8px"><span style="color:#c2410c;font-weight:700">✓ ocupado</span>: dijo que puede, pero ese día ya está en otro evento (pasá el mouse para ver cuál).</div>`;
   document.getElementById('dispBody').innerHTML = html;
   arrastrable(document.getElementById('dispScroll'));
 }
