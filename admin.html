@@ -1973,7 +1973,12 @@ tr:hover td{background:#f9f9fb}
 <div class="modal-bg" id="mEtiquetas" style="display:none" onclick="bgClose('mEtiquetas',event)">
   <div class="modal" style="max-width:620px">
     <div class="modal-title"><span><i class="ic ic-etiqueta"></i> Etiquetas</span><button class="mclose" onclick="closeM('mEtiquetas')">✕</button></div>
-    <div style="font-size:12px;color:#9ca3af;margin-bottom:12px">Renombrar, unir o borrar. El cambio se aplica a todas las personas que tengan esa etiqueta; no se borra a nadie de la nómina.</div>
+    <div style="font-size:12px;color:#9ca3af;margin-bottom:12px">Crear, renombrar, unir o borrar. El cambio se aplica a todas las personas que tengan esa etiqueta; no se borra a nadie de la nómina. Una etiqueta nueva queda lista para ponérsela a quien quieras (en la ficha o con varias marcadas).</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+      <input type="text" class="fi" id="etqNueva" placeholder="Nueva etiqueta (ej. Gastronomía, Bilingüe)" maxlength="40" style="flex:1" onkeydown="if(event.key==='Enter')crearEtiqueta()">
+      <input type="color" id="etqNuevaColor" value="#534AB7" title="Color" style="width:38px;height:34px;border:1px solid var(--r-line);border-radius:8px;padding:2px;background:#fff">
+      <button class="btn btn-primary btn-sm" onclick="crearEtiqueta()">+ Crear</button>
+    </div>
     <input type="text" class="fi" id="etqBusq" placeholder="Buscar etiqueta..." oninput="renderEtqManager()">
     <div id="etqLista" style="margin-top:12px;max-height:50vh;overflow:auto"></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mEtiquetas')">Cerrar</button></div>
@@ -2320,9 +2325,21 @@ async function loadAll() {
   // La Nómina se trae SIN el archivo del CV (cv.archivo.datos pesa cientos de MB con muchas personas
   // y hacía que la consulta cortara y quedara en 0). El base64 se baja por persona bajo demanda.
   {
-    const { data, error } = await sb.rpc('personas_lista');
-    if (!error && Array.isArray(data)) {
-      people = data;
+    // personas_lista devuelve una fila por persona y Supabase corta cada
+    // respuesta en 1.000 filas: con más gente, las fichas más nuevas no
+    // llegaban nunca (no aparecían al buscarlas aunque estuvieran
+    // aceptadas). Se pide de a tandas de 1.000.
+    let todas = [], error = null;
+    for (let desde = 0; ; desde += 1000) {
+      const r = await sb.rpc('personas_lista').range(desde, desde + 999);
+      if (r.error || !Array.isArray(r.data)) { error = r.error || new Error('sin datos'); break; }
+      todas = todas.concat(r.data);
+      if (r.data.length < 1000) break;
+    }
+    if (todas.length && error) toast('La nómina no terminó de cargar (' + todas.length + ' personas): recargá la página');
+    if (todas.length) {
+      const vistos = new Set();
+      people = todas.filter(p => p && p.id && !vistos.has(p.id) && vistos.add(p.id));
     } else {
       // Fallback (si la función personas_lista aún no está creada): columnas livianas, sin cv.
       // Si se agrega una columna a la ficha, va acá también: si no, cuando
@@ -2714,6 +2731,33 @@ function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('#sec-nomina .
 function nomSearch() { nomPage = 1; nomApply(); contarFiltrosNom(); }
 function nomFilter() { nomPage = 1; nomApply(); contarFiltrosNom(); }
 function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge(); refreshTagUI(); }
+// Buscar en la nómina: por nombre (sin tildes y en cualquier orden: "maria
+// gonzalez" encuentra a "González, María"), mail, documento o teléfono. Los
+// números se comparan sin guiones ni puntos, así que "20-43318136-5"
+// encuentra lo mismo que "20433181365".
+const nomPelar = v => String(v == null ? '' : v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9@._ ]+/g, ' ');
+function nomCoincide(p, q) {
+  const qd = q.replace(/\D/g, '');
+  if (qd.length >= 3 && (normDoc(p.cuit).includes(qd) || String(p.tel || '').replace(/\D/g, '').includes(qd))) return true;
+  const nombre = nomPelar(p.nombre) + ' ' + nomPelar(p.email);
+  const palabras = nomPelar(q).split(/\s+/).filter(Boolean);
+  return palabras.length > 0 && palabras.every(w => nombre.includes(w));
+}
+// Si no aparece acá pero sí en otra pestaña (otra área, OUT) o con otro
+// estado, se avisa dónde está, en vez de un "sin resultados" a secas.
+function nomEnOtroLado(q) {
+  if (!q) return '';
+  const st = document.getElementById('nomStFilter').value;
+  const hay = people.filter(p => nomCoincide(p, q));
+  if (!hay.length) return '';
+  const nombres = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España' };
+  const donde = new Map();
+  hay.forEach(p => {
+    const k = p.out_flag ? 'OUT' : (st && p.estado !== st) ? 'con otro estado' : (nombres[p.area] || 'otra área');
+    donde.set(k, (donde.get(k) || 0) + 1);
+  });
+  return 'Hay ' + hay.length + ' con esa búsqueda en otro lado: ' + [...donde].map(([k, n]) => k + ' (' + n + ')').join(', ') + '. Probá en "Todas" o sacá los filtros.';
+}
 function nomApply() {
   const q = document.getElementById('nomSrch').value.toLowerCase().trim();
   const st = document.getElementById('nomStFilter').value;
@@ -2733,16 +2777,7 @@ function nomApply() {
     else if (nomAreaTab === 'rec') { if (!p.recomendado) return false; }
     else if (nomAreaTab !== 'all' && p.area !== nomAreaTab) return false;
     if (st && p.estado !== st) return false;
-    if (q) {
-      // Antes sólo buscaba por nombre. Los números se comparan sin guiones ni
-      // puntos, así que "20-43318136-5" encuentra lo mismo que "20433181365".
-      const qd = q.replace(/\D/g, '');
-      const coincide = p.nombre.toLowerCase().includes(q)
-        || (p.email || '').toLowerCase().includes(q)
-        || (qd && normDoc(p.cuit).includes(qd))
-        || (qd && String(p.tel || '').replace(/\D/g, '').includes(qd));
-      if (!coincide) return false;
-    }
+    if (q && !nomCoincide(p, q)) return false;
     if (cvFilterOn && !p.cv) return false;
     if (docFilterOn && !docDudoso(p)) return false;
     if (zonaF === '_sin' && zonaDe(p)) return false;
@@ -2850,7 +2885,10 @@ function renderNomTable() {
   // Aparecen al filtrar por una (ahí todos la tienen) y en la ficha de cada persona.
   const verEtiquetas = !!(document.getElementById('nomTagFilter') || {}).value;
   const sl = nomFiltered.slice((nomPage - 1) * PS, nomPage * PS);
-  if (!sl.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty">${people.length === 0 ? 'Todavía no hay personas.' : 'Sin resultados para este filtro.'}</div></td></tr>`; return; }
+  if (!sl.length) {
+    const otro = people.length ? nomEnOtroLado((document.getElementById('nomSrch').value || '').toLowerCase().trim()) : '';
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty">${people.length === 0 ? 'Todavía no hay personas.' : otro ? e(otro) : 'Sin resultados para este filtro.'}</div></td></tr>`; return;
+  }
   tbody.innerHTML = sl.map(p => {
     const sem = p.semaforo || 1;
     const rot = checkRotacion(p.id);
@@ -3362,6 +3400,16 @@ function refreshTagUI() {
 // las personas que las tengan.
 let etqUniendo = null;
 
+// Una etiqueta nueva, sin tener que ponérsela antes a alguien.
+async function crearEtiqueta() {
+  const inp = document.getElementById('etqNueva'), nm = String(inp.value || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+  if (!nm) { inp.focus(); return; }
+  const ya = listaEtiquetas().find(t => t.nombre.toLowerCase() === nm.toLowerCase());
+  if (ya) { toast('Ya existe: "' + ya.nombre + '"'); return; }
+  etiquetasPaleta.push({ nombre: nm, color: document.getElementById('etqNuevaColor').value || '#534AB7' });
+  await saveTagPalette(); refreshTagUI();
+  inp.value = ''; renderEtqManager(); toast('Etiqueta creada: ' + nm);
+}
 function openEtiquetas() { etqUniendo = null; const b = document.getElementById('etqBusq'); if (b) b.value = ''; renderEtqManager(); showM('mEtiquetas'); }
 
 // Todas las etiquetas que existen: las que alguien tiene puestas y las que
