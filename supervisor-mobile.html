@@ -1605,6 +1605,17 @@ function incPlano3D(cont, op0) {
   const matTruss = new T.MeshStandardMaterial({ color: 0x2c3e5c, roughness: 0.4, metalness: 0.8 });
   [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(1.6, 50, 1.6), matTruss); t.position.set(x, 25, z); escena.add(t); });
   [[0, -114, 110, 0], [0, -164, 110, 0], [-54, -139, 52, Math.PI / 2], [54, -139, 52, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 1.8, 1.8), matTruss); t.position.set(x, 50, z); t.rotation.y = r; escena.add(t); });
+  // Cerrado: techo, laterales y fondo en negro medio traslúcido; el frente, abierto (que se vea la pantalla).
+  {
+    const matCierre = new T.MeshBasicMaterial({ color: 0x05070c, transparent: true, opacity: 0.55, side: T.DoubleSide, depthWrite: false });
+    // El techo, más traslúcido: desde arriba deja ver la pantalla con el nombre del show.
+    const matTecho = new T.MeshBasicMaterial({ color: 0x05070c, transparent: true, opacity: 0.34, side: T.DoubleSide, depthWrite: false });
+    const panel = (w, h, x, y, z, rx, ry, mat) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), mat || matCierre); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, 0); m.renderOrder = 2; escena.add(m); };
+    panel(110, 52, 0, 50.9, -139, -Math.PI / 2, 0, matTecho);   // el techo
+    panel(110, 50, 0, 25, -164.6);                         // el fondo, detrás de la pantalla
+    panel(52, 50, -54.6, 25, -139, 0, Math.PI / 2);        // los laterales
+    panel(52, 50, 54.6, 25, -139, 0, Math.PI / 2);
+  }
   const lienzoLed = lienzoDe(1024, 256), texLed = textura(lienzoLed);
   let tituloLed = null;
   const pintarLed = titulo => {
