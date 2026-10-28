@@ -681,7 +681,17 @@ function incCategoria(cat) { return INC_CATALOGO.find(c => c.cat === cat) || INC
 function incNivelDe(cat, tipo) { const t = incCategoria(cat).tipos.find(x => x[0] === tipo); return t ? t[1] : 1; }
 // Lugares que no están dibujados en el plano (el anillo, con sus puertas,
 // la gastronomía y los baños, sí lo está).
-const INC_LUGARES = ['Pasillos y escaleras', 'Exterior / filas de ingreso', 'Otro lugar'];
+const INC_LUGARES = ['Fila de ingreso · Humboldt', 'Fila de ingreso · Corrientes', 'Fila de ingreso · Dorrego', 'Otro lugar'];
+// Los pasillos y escaleras van por sector: se elige el sector y, en la
+// referencia, un atajo de un toque.
+const INC_REFERENCIAS = ['Pasillo', 'Escalera', 'Vomitorio', 'Fila', 'Butaca'];
+function incRefRapidaHTML(idCampo) { return '<div class="inc-ref-rapida">' + INC_REFERENCIAS.map(r => '<button type="button" onclick="incRefRapida(\'' + idCampo + '\',\'' + r + '\')">' + r + '</button>').join('') + '</div>'; }
+function incRefRapida(idCampo, r) {
+  const el = document.getElementById(idCampo); if (!el) return;
+  const v = String(el.value || '').trim();
+  el.value = v ? (new RegExp('(^|· )' + r + '( |$)').test(v) ? v : v + ' · ' + r) : r;
+  if (el.focus) el.focus();
+}
 // Las incidencias son sólo de los shows del Movistar Arena.
 function incEsArena(area) { return /arena|movistar/i.test(String(area || '')); }
 function incEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -789,8 +799,27 @@ const INC_PLANO_ZONAS = [
   { id: 'Anillo izquierdo', txt: 'ANILLO', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 70, rot: -90 },
   { id: 'Anillo fondo', txt: 'ANILLO', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
   { id: 'Anillo derecho', txt: 'ANILLO', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 70, rot: 90 },
-  { id: 'Backstage', txt: 'BACKSTAGE', t: 'back', r: [50, -32, 320, 28] }
+  { id: 'Backstage', txt: 'BACKSTAGE', t: 'back', r: [50, -32, 320, 28] },
+  // El VIP: entre la platea baja (P1) y la alta (P3).
+  { id: 'VIP', txt: 'VIP', t: 'vip', p: '93,28 93,211 117,253 303,253 327,211 327,28 321,28 321,209 299,247 121,247 99,209 99,28', lx: 210, ly: 250, piso: 'VIP' }
 ];
+// Los pisos del Arena: el campo en planta baja, la platea baja en el 1, la
+// alta en el 3 y el VIP entre las dos. Cada puesto del anillo dice el suyo.
+const INC_PISOS = [['PB', 'Planta baja'], ['P1', 'Piso 1'], ['VIP', 'VIP'], ['P3', 'Piso 3']];
+function incPisoDe(s) { return (s && (s.piso || { campo: 'PB', baja: 'P1', alta: 'P3', vip: 'VIP' }[s.t])) || ''; }
+// El piso que se está mirando ('' = todos), por aparato.
+function incPisoElegido() { try { const p = localStorage.getItem('incPiso') || ''; return INC_PISOS.some(x => x[0] === p) ? p : ''; } catch (_) { return ''; } }
+const incPlanos = new Set();
+function incElegirPiso(p) {
+  try { localStorage.setItem('incPiso', p || ''); } catch (_) {}
+  incPlanos.forEach(cont => { if (!cont.isConnected) { incPlanos.delete(cont); return; } if (cont._incOp) incMontarPlano(cont, cont._incOp); });
+  if (typeof window !== 'undefined' && typeof window.incPisoCambiado === 'function') window.incPisoCambiado();
+}
+function incPisosHTML(clase) {
+  const p = incPisoElegido();
+  return '<div class="' + (clase || 'inc-pisos') + '" role="group" aria-label="Ver un piso">' + [['', 'Todos']].concat(INC_PISOS.map(x => [x[0], x[0]])).map(([k, t]) =>
+    '<button type="button" class="' + (p === k ? 'on' : '') + '" onclick="incElegirPiso(\'' + k + '\')" title="' + (k ? (INC_PISOS.find(x => x[0] === k) || [])[1] : 'Todos los pisos') + '">' + t + '</button>').join('') + '</div>';
+}
 // Los tipos de puesto: nombre, ícono y tamaño con el que nace uno nuevo.
 const INC_TIPOS_LUGAR = {
   puerta: { nombre: 'Puerta', w: 22, h: 12 },
@@ -803,21 +832,21 @@ const INC_TIPOS_LUGAR = {
 // centro; w: el largo (en las puertas, a lo largo de la fachada); h: el
 // ancho; ang: el giro, en grados. Una primera versión, para ajustar.
 const INC_LUGARES_BASE = [
-  { id: 'Baños 1', t: 'banio', txt: '1', cx: 36.5, cy: -15, w: 17, h: 22, ang: 0 },
-  { id: 'Puerta 1', t: 'puerta', txt: 'P1', cx: 22, cy: 44, w: 22, h: 12, ang: 90 },
-  { id: 'Gastronomía 1', t: 'gastro', txt: '1', cx: 36.5, cy: 112, w: 17, h: 40, ang: 0 },
-  { id: 'Puerta 2', t: 'puerta', txt: 'P2', cx: 22, cy: 168, w: 22, h: 12, ang: 90 },
-  { id: 'Baños 2', t: 'banio', txt: '2', cx: 36.5, cy: 209, w: 17, h: 26, ang: 0 },
-  { id: 'Puerta 3', t: 'puerta', txt: 'P3', cx: 46, cy: 289, w: 22, h: 12, ang: 50.4 },
-  { id: 'Gastronomía 2', t: 'gastro', txt: '2', cx: 150, cy: 304, w: 44, h: 16, ang: 0 },
-  { id: 'Puerta 4', t: 'puerta', txt: 'P4', cx: 210, cy: 318, w: 24, h: 12, ang: 0 },
-  { id: 'Gastronomía 3', t: 'gastro', txt: '3', cx: 270, cy: 304, w: 44, h: 16, ang: 0 },
-  { id: 'Puerta 5', t: 'puerta', txt: 'P5', cx: 374, cy: 289, w: 22, h: 12, ang: -50.4 },
-  { id: 'Baños 3', t: 'banio', txt: '3', cx: 383.5, cy: 209, w: 17, h: 26, ang: 0 },
-  { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 398, cy: 168, w: 22, h: 12, ang: 90 },
-  { id: 'Gastronomía 4', t: 'gastro', txt: '4', cx: 383.5, cy: 112, w: 17, h: 40, ang: 0 },
-  { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 44, w: 22, h: 12, ang: 90 },
-  { id: 'Baños 4', t: 'banio', txt: '4', cx: 383.5, cy: -15, w: 17, h: 22, ang: 0 }
+  { id: 'Baños 1', t: 'banio', txt: '1', cx: 36.5, cy: -15, w: 17, h: 22, ang: 0, piso: 'P1' },
+  { id: 'Puerta 1', t: 'puerta', txt: 'P1', cx: 22, cy: 44, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Gastronomía 1', t: 'gastro', txt: '1', cx: 36.5, cy: 112, w: 17, h: 40, ang: 0, piso: 'P1' },
+  { id: 'Puerta 2', t: 'puerta', txt: 'P2', cx: 22, cy: 168, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Baños 2', t: 'banio', txt: '2', cx: 36.5, cy: 209, w: 17, h: 26, ang: 0, piso: 'P3' },
+  { id: 'Puerta 3', t: 'puerta', txt: 'P3', cx: 46, cy: 289, w: 22, h: 12, ang: 50.4, piso: 'PB' },
+  { id: 'Gastronomía 2', t: 'gastro', txt: '2', cx: 150, cy: 304, w: 44, h: 16, ang: 0, piso: 'P3' },
+  { id: 'Puerta 4', t: 'puerta', txt: 'P4', cx: 210, cy: 318, w: 24, h: 12, ang: 0, piso: 'PB' },
+  { id: 'Gastronomía 3', t: 'gastro', txt: '3', cx: 270, cy: 304, w: 44, h: 16, ang: 0, piso: 'P3' },
+  { id: 'Puerta 5', t: 'puerta', txt: 'P5', cx: 374, cy: 289, w: 22, h: 12, ang: -50.4, piso: 'PB' },
+  { id: 'Baños 3', t: 'banio', txt: '3', cx: 383.5, cy: 209, w: 17, h: 26, ang: 0, piso: 'P3' },
+  { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 398, cy: 168, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Gastronomía 4', t: 'gastro', txt: '4', cx: 383.5, cy: 112, w: 17, h: 40, ang: 0, piso: 'P1' },
+  { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 44, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Baños 4', t: 'banio', txt: '4', cx: 383.5, cy: -15, w: 17, h: 22, ang: 0, piso: 'P1' }
 ];
 // Deja una lista de puestos en condiciones: tipos conocidos, nombres únicos
 // (y que no choquen con un sector), medidas dentro del plano.
@@ -829,7 +858,8 @@ function incNormalizarLugares(lista) {
     const id = String(l.id == null ? '' : l.id).trim().slice(0, 60), k = id.toLowerCase();
     if (!id || fijos.has(k) || vistos.has(k)) return null;
     vistos.add(k);
-    return { id, t: l.t, txt: String(l.txt == null ? '' : l.txt).trim().slice(0, 6), cx: num(l.cx, 8, 412, 210), cy: num(l.cy, -40, 328, 304), w: num(l.w, 6, 80, tipo.w), h: num(l.h, 6, 80, tipo.h), ang: num(l.ang, -180, 180, 0) };
+    const piso = INC_PISOS.some(x => x[0] === l.piso) ? l.piso : (l.t === 'puerta' ? 'PB' : 'P1');
+    return { id, t: l.t, txt: String(l.txt == null ? '' : l.txt).trim().slice(0, 6), cx: num(l.cx, 8, 412, 210), cy: num(l.cy, -40, 328, 304), w: num(l.w, 6, 80, tipo.w), h: num(l.h, 6, 80, tipo.h), ang: num(l.ang, -180, 180, 0), piso };
   }).filter(Boolean).slice(0, 80);
 }
 let incLugaresArena = incNormalizarLugares(INC_LUGARES_BASE), incVersionPlano = 0;
@@ -848,7 +878,7 @@ async function incCargarPlanoArena() {
 }
 // Un puesto como forma del plano (un rectángulo girado).
 function incLugarForma(l) {
-  return { id: l.id, txt: l.txt, t: l.t, ico: INC_TIPOS_LUGAR[l.t].ico, p: incRectRot(l.cx, l.cy, l.w, l.h, l.ang * Math.PI / 180), lx: l.cx, ly: l.cy, w: l.w, h: l.h, ang: l.ang, lugar: true };
+  return { id: l.id, txt: l.txt, t: l.t, ico: INC_TIPOS_LUGAR[l.t].ico, p: incRectRot(l.cx, l.cy, l.w, l.h, l.ang * Math.PI / 180), lx: l.cx, ly: l.cy, w: l.w, h: l.h, ang: l.ang, piso: l.piso, lugar: true };
 }
 // La fachada de vidrio que cierra el anillo, y la cinta LED que da la vuelta
 // entre la platea baja y la alta.
@@ -866,12 +896,12 @@ const INC_ICONOS = {
 function incSectoresPlano(armado) { return INC_PLANO_ZONAS.concat(incLugaresArena.map(incLugarForma), INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
 // Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
 function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
-// La zona de un lugar, para decir dónde queda: "Platea alta", "Platea baja"
-// o "Anillo" (los puestos). Para el campo y el pasillo, el nombre ya lo dice.
+// La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
+// "Platea baja · P1", "PB" (el campo) o "Anillo · P1" (los puestos).
 function incZona(sector) {
   const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
   if (!s) return '';
-  return s.t === 'baja' ? 'Platea baja' : s.t === 'alta' ? 'Platea alta' : s.lugar ? 'Anillo' : '';
+  return s.t === 'baja' ? 'Platea baja · P1' : s.t === 'alta' ? 'Platea alta · P3' : s.t === 'campo' ? 'PB' : s.lugar ? 'Anillo · ' + s.piso : '';
 }
 // Los botones de abajo del plano: los lugares que no están dibujados, y
 // cualquier lugar con incidencias que el plano no tenga (por ejemplo, las
@@ -892,17 +922,17 @@ function incLugaresSueltos(lista, armado) {
 const INC_TEMA = {
   color: {
     baja: ['#2f63d4', '#1d4aa8'], alta: ['#7a4fd6', '#5a35b0'], campo: ['#0d7f7b', '#0a5f5c'],
-    anillo: ['#d2d8e0', '#97a3b3'], back: ['#c4cbd5', '#97a3b3'],
+    anillo: ['#d2d8e0', '#97a3b3'], back: ['#c4cbd5', '#97a3b3'], vip: ['#1f2937', '#0b0f17'],
     puerta: ['#0e86b4', '#08597a'], gastro: ['#a8329a', '#7a1f70'], banio: ['#5a6b85', '#3e4c63'], enfermeria: ['#ffffff', '#8f9cb0'], servicio: ['#374151', '#1f2937']
   },
   tinta: '#ffffff', tintaPiso: '#4b5768', tintaTipo: { enfermeria: '#334155' },
-  fondo: ['#a5afbc', '#949fad', '#85909f'], fachada: '#6b7990', cinta: '#3f78c2',
+  fondo: ['#8d98a7', '#7d8898', '#6f7a8a'], fachada: '#5a677c', cinta: '#3f78c2',
   escenario: ['#111827', '#111827'], sel: '#0f1117', badge: ['#0f1117', '#ffffff']
 };
-const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['campo', 'Campo'], ['puerta', 'Puertas'], ['gastro', 'Gastronomía'], ['banio', 'Baños'], ['enfermeria', 'Enfermería'], ['servicio', 'Otros puntos']];
+const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['vip', 'VIP'], ['campo', 'Campo'], ['puerta', 'Puertas'], ['gastro', 'Gastronomía'], ['banio', 'Baños'], ['enfermeria', 'Enfermería'], ['servicio', 'Otros puntos']];
 function incLeyendaHTML(clase, soloZonas) {
   const col = INC_TEMA.color;
-  return '<div class="' + (clase || 'inc-plano-ley') + '">' + INC_LEYENDA.slice(0, soloZonas ? 3 : 99).map(([t, n]) => '<span><i style="background:' + col[t][0] + ';border-color:' + col[t][1] + '"></i>' + n + '</span>').join('') + '</div>';
+  return '<div class="' + (clase || 'inc-plano-ley') + '">' + INC_LEYENDA.slice(0, soloZonas ? 4 : 99).map(([t, n]) => '<span><i style="background:' + col[t][0] + ';border-color:' + col[t][1] + '"></i>' + n + '</span>').join('') + '</div>';
 }
 // El plano en SVG. op: { armado, niveles, cuentas, sel, onclick, editor }.
 // Cada lugar se pinta con el color de su incidencia abierta más grave y
@@ -910,7 +940,7 @@ function incLeyendaHTML(clase, soloZonas) {
 // poder arrastrarlos (lo maneja el panel).
 function incPlanoSVG(op) {
   op = op || {};
-  const TM = INC_TEMA, niveles = op.niveles || {}, cuentas = op.cuentas || {};
+  const TM = INC_TEMA, niveles = op.niveles || {}, cuentas = op.cuentas || {}, pisoSel = op.editor ? '' : incPisoElegido();
   const partes = incSectoresPlano(op.armado).map(s => {
     const nv = niveles[s.id], n = cuentas[s.id] || 0, sel = op.sel === s.id, col = TM.color[s.t], v = nv ? INC_NIVELES[nv] : null;
     const piso = s.t === 'anillo' || s.t === 'back';
@@ -942,7 +972,8 @@ function incPlanoSVG(op) {
     const click = op.editor ? (s.lugar ? ' data-lugar="' + incEsc(s.id) + '" style="cursor:move"' : '')
       : op.onclick ? ' onclick="' + op.onclick + '(\'' + incEsc(s.id) + '\')" style="cursor:pointer"' : '';
     const badge = n ? '<circle cx="' + bx + '" cy="' + by + '" r="5" fill="' + TM.badge[0] + '" stroke="' + TM.badge[1] + '" stroke-width=".8" pointer-events="none"/><text x="' + bx + '" y="' + (by + 2) + '" font-size="5.8" font-weight="700" fill="' + TM.badge[1] + '" text-anchor="middle" pointer-events="none">' + n + '</text>' : '';
-    return '<g' + click + '><title>' + incEsc(s.id) + (n ? ' · ' + n + ' abierta' + (n > 1 ? 's' : '') : '') + '</title>'
+    const otroPiso = pisoSel && incPisoDe(s) && incPisoDe(s) !== pisoSel;
+    return '<g' + click + (otroPiso ? ' opacity=".2"' : '') + '><title>' + incEsc(s.id) + (s.lugar ? ' · ' + s.piso : '') + (n ? ' · ' + n + ' abierta' + (n > 1 ? 's' : '') : '') + '</title>'
       + forma + ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>'
       + etq + badge + '</g>';
   }).join('');
@@ -952,7 +983,6 @@ function incPlanoSVG(op) {
     + '<rect x="6" y="-42" width="408" height="384" rx="14" fill="url(#incFondoG)"/>'
     + '<polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="' + TM.fachada + '" stroke-width="1" pointer-events="none"/>'
     + partes
-    + '<polyline points="' + pts(INC_CINTA) + '" fill="none" stroke="' + TM.cinta + '" stroke-width=".9" stroke-linejoin="round" opacity=".85" pointer-events="none"/>'
     + '<rect x="150" y="8" width="120" height="22" rx="4" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width="1"/><text x="210" y="21.6" font-size="7" font-weight="600" fill="#fff" text-anchor="middle" letter-spacing="1.6">ESCENARIO</text>'
     + '</svg>';
 }
@@ -969,20 +999,20 @@ function incPlanoSVG(op) {
 // va en su propia columna, al costado (o abajo, en el celular), sin tapar el
 // plano. three.js se carga recién cuando hace falta (pesa). Si el aparato no
 // tiene WebGL o el 3D falla, queda el plano en 2D: nunca se queda sin plano.
-const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13 };
+const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], vip: 11.5, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13 };
 // Los colores del 3D: arriba y costado de cada tipo (los mismos tonos que el
 // plano), el borde, el piso, el cielo y las luces (casi blancas, para que
 // cada color se vea como es).
 const INC_TEMA_3D = {
-  cielo: ['#acb5c2', '#9ba6b4', '#8a95a4'], niebla: 0x98a2af, piso: 0x95a0ad,
+  cielo: ['#939dab', '#838e9c', '#737e8d'], niebla: 0x808b99, piso: 0x7d8896,
   luces: { hemi: [0xffffff, 0x8f99ab, 0.78], clave: 0.55, contra: 0.22, escenario: 0.15 },
   color: {
-    baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0xd0d7e0, 0xa9b4c2], back: [0xc3cbd6, 0xa0abba],
+    baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0xd0d7e0, 0xa9b4c2], back: [0xc3cbd6, 0xa0abba], vip: [0x252e3d, 0x141a24],
     puerta: [0x0e86b4, 0x0e86b4], gastro: [0xb03aa2, 0x7a1f70], banio: [0x63748e, 0x3e4c63], enfermeria: [0xf6f8fb, 0xc6ced9], servicio: [0x414b5b, 0x262d38]
   },
-  borde: { baja: 0xffffff, alta: 0xffffff, campo: 0xffffff, anillo: 0x8d9aac, back: 0x8d9aac, puerta: 0x08597a, gastro: 0xffffff, banio: 0xffffff, enfermeria: 0x8f9cb0, servicio: 0xffffff },
+  borde: { baja: 0xffffff, alta: 0xffffff, campo: 0xffffff, anillo: 0x8d9aac, back: 0x8d9aac, vip: 0xe5e7eb, puerta: 0x08597a, gastro: 0xffffff, banio: 0xffffff, enfermeria: 0x8f9cb0, servicio: 0xffffff },
   opBorde: { baja: 0.5, alta: 0.5, campo: 0.55, anillo: 0.7, back: 0.7 }, opBordeOtro: 0.75, sel: 0x0f1117,
-  etqPiso: '#4b5768', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x7c8aa0, 0.8], [0.4, 0x7c8aa0, 0.6]], parantes: [0x7b889c, 0.4]
+  etqPiso: '#4b5768', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x5f6c82, 0.8], [0.4, 0x5f6c82, 0.6]], parantes: [0x637087, 0.4]
 };
 let incCarga3D = null, incSin3D = false, incListo3D = false;
 function incCargar3D() {
@@ -1011,6 +1041,7 @@ function incGuardarVista(v) { try { localStorage.setItem('incVista', v); } catch
 function incMontarPlano(cont, op) {
   if (!cont) return;
   cont._incOp = op;
+  incPlanos.add(cont);
   incEstiloPlano();
   const quiere3D = (op.vista || incVistaPreferida()) === '3d' && incHayWebGL();
   if (quiere3D && window.THREE && (incListo3D || !incCarga3D)) {
@@ -1026,14 +1057,20 @@ function incMontarPlano(cont, op) {
     }
   }
   if (cont._inc3d) { cont._inc3d.destruir(); cont._inc3d = null; }
-  cont.innerHTML = incPlanoSVG(op) + '<div class="inc-plano-pie">' + incLeyendaHTML() + '</div>';
+  cont.innerHTML = incPlanoSVG(op) + '<div class="inc-plano-pie">' + incLeyendaHTML() + (op.sinPisos ? '' : incPisosHTML()) + '</div>';
   if (quiere3D && !incSin3D) incCargar3D().then(ok => { if (ok && cont._incOp && (cont._incOp.vista || incVistaPreferida()) === '3d') incMontarPlano(cont, cont._incOp); });
 }
 // La leyenda de abajo del plano 2D (y la del 3D, encima).
 function incEstiloPlano() {
   if (document.getElementById('incEstiloPlano')) return;
   const st = document.createElement('style'); st.id = 'incEstiloPlano';
-  st.textContent = '.inc-plano-pie{display:flex;align-items:flex-start;gap:10px;margin-top:8px}'
+  st.textContent = '.inc-plano-pie{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;margin-top:8px}'
+    + '.inc-pisos,.inc-3d-pisos{display:inline-flex;background:#e6e8ec;border-radius:10px;padding:3px;gap:2px}'
+    + '.inc-pisos button,.inc-3d-pisos button{border:0;background:transparent;font:600 11.5px Poppins,sans-serif;color:#4b5563;padding:5px 10px;border-radius:7px;cursor:pointer}'
+    + '.inc-pisos button.on,.inc-3d-pisos button.on{background:#fff;color:#111827;box-shadow:0 1px 3px rgba(16,24,40,.14)}'
+    + '.inc-3d-pisos{position:absolute;left:8px;bottom:8px;z-index:3;background:rgba(255,255,255,.85);box-shadow:0 1px 3px rgba(15,23,42,.12)}'
+    + '.inc-ref-rapida{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 2px}'
+    + '.inc-ref-rapida button{font:600 11.5px Poppins,sans-serif;background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:999px;padding:5px 11px;cursor:pointer}'
     + '.inc-plano-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font:500 11px Poppins,sans-serif;color:#4b5563}'
     + '.inc-plano-ley span,.inc-3d-ley span{display:inline-flex;align-items:center;gap:5px}'
     + '.inc-plano-ley i,.inc-3d-ley i{width:10px;height:10px;border-radius:3px;border:1px solid;display:inline-block}'
@@ -1043,7 +1080,7 @@ function incEstiloPlano() {
 function incEstilo3D() {
   if (document.getElementById('incEstilo3D')) return;
   const st = document.createElement('style'); st.id = 'incEstilo3D';
-  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 90% at 50% 0%,#b2bbc7 0%,#9fa9b7 60%,#8e99a8 100%)}'
+  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 90% at 50% 0%,#99a3b1 0%,#86919f 60%,#76818f 100%)}'
     + '.inc-3d:fullscreen{width:100vw;height:100vh;border-radius:0}'
     + '.inc-3d canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}'
     + '.inc-3d-btns{position:absolute;top:8px;right:8px;z-index:4;display:flex;gap:6px}'
@@ -1051,6 +1088,14 @@ function incEstilo3D() {
     + '.inc-3d-btn:hover{background:#fff;border-color:rgba(15,17,23,.3)}'
     + '.inc-3d-btn-det{display:none}.inc-3d:fullscreen .inc-3d-btn-det{display:inline-block}'
     + '.inc-3d-ayuda{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:2;color:#fff;font:500 11px Poppins,sans-serif;background:rgba(15,17,23,.72);padding:5px 12px;border-radius:999px;pointer-events:none;transition:opacity .8s;width:max-content;max-width:92%;text-align:center;line-height:1.35}'
+    + '.inc-3d-etqs{position:absolute;left:0;top:0;right:0;bottom:0;z-index:1;pointer-events:none;overflow:hidden}'
+    + '.inc-3d-e{position:absolute;left:0;top:0;white-space:nowrap;font:600 11px/1 Poppins,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(15,23,42,.6);-webkit-user-select:none;user-select:none}'
+    + '.inc-3d-e.chico{font-size:10px}.inc-3d-e.campo{font-size:10.5px;letter-spacing:.6px}.inc-3d-e.esc{font-size:10px;letter-spacing:1.6px}'
+    + '.inc-3d-e.piso{font-size:9px;letter-spacing:1.3px;color:#3f4a5a;text-shadow:0 1px 0 rgba(255,255,255,.5)}'
+    + '.inc-3d-e.osc{color:#111827;text-shadow:0 1px 1px rgba(255,255,255,.55)}'
+    + '.inc-3d-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;font:600 10.5px/1 Poppins,sans-serif;color:#fff;border:1.5px solid rgba(255,255,255,.95);box-shadow:0 1px 4px rgba(15,23,42,.3);text-shadow:none}'
+    + '.inc-3d-pill svg{width:12px;height:12px;fill:currentColor;display:block}'
+    + '.inc-3d-chapa{display:grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:999px;font:700 12px/1 Poppins,sans-serif;color:#fff;border:2px solid #fff;box-shadow:0 2px 6px rgba(15,23,42,.35);text-shadow:none}'
     + '.inc-3d-tip{position:absolute;z-index:3;pointer-events:none;background:#111827;color:#fff;font:600 12px Poppins,sans-serif;padding:5px 10px;border-radius:7px;transform:translate(-50%,-140%);white-space:nowrap;opacity:0;transition:opacity .12s}'
     // El detalle de las incidencias, en pantalla completa: su propia columna, sin tapar el plano.
     + '.inc-3d-det{position:absolute;z-index:3;top:0;right:0;bottom:0;width:var(--inc-det-w,360px);display:none;flex-direction:column;background:#fff;color:#111827;border-left:1px solid rgba(15,17,23,.1);overflow:hidden;font-family:Poppins,sans-serif;box-shadow:-8px 0 24px rgba(15,23,42,.08)}'
@@ -1103,10 +1148,19 @@ function incPlano3D(cont, op0) {
   const tip = document.createElement('div'); tip.className = 'inc-3d-tip'; cont.appendChild(tip);
   const ley = document.createElement('div'); ley.innerHTML = incLeyendaHTML('inc-3d-ley', true); if (ley.firstChild) cont.appendChild(ley.firstChild);
   const panel = document.createElement('div'); panel.className = 'inc-3d-det'; cont.appendChild(panel);
+  const pisosEl = document.createElement('div'); cont.appendChild(pisosEl);
   const version = incVersionPlano;
-  // Dos capas: la 0 es el estadio; la 1, los carteles, que se dibujan
-  // después, siempre a la vista.
-  const ETQ = 1;
+  // Los carteles: texto de verdad encima del plano (nítido a cualquier
+  // tamaño); en cada cuadro se ubica sobre el punto del 3D que le toca.
+  const capaEtq = document.createElement('div'); capaEtq.className = 'inc-3d-etqs'; cont.insertBefore(capaEtq, btns);
+  const etiquetas = [];
+  const etiqueta = (html, clase, pos, pieza) => {
+    const el = document.createElement('div'); el.className = 'inc-3d-e' + (clase ? ' ' + clase : ''); el.innerHTML = html;
+    capaEtq.appendChild(el);
+    const e = { el, pos, pieza, mostrado: true }; etiquetas.push(e); return e;
+  };
+  const sacarEtiqueta = e => { const i = etiquetas.indexOf(e); if (i >= 0) etiquetas.splice(i, 1); if (e.el.parentNode) e.el.parentNode.removeChild(e.el); };
+  const icoSVG = ico => '<svg viewBox="0 0 24 24"><path d="' + INC_ICONOS[ico] + '"/></svg>';
 
   // Luces casi blancas: cielo y suelo, una de frente, un contraluz desde atrás
   // y una suave desde el escenario (si fueran celestes, el violeta y el
@@ -1116,42 +1170,35 @@ function incPlano3D(cont, op0) {
   const contra = new T.DirectionalLight(0xc9d8ff, TM.luces.contra); contra.position.set(-220, 180, -340); escena.add(contra);
   const luzEscenario = new T.PointLight(0xdfe8ff, TM.luces.escenario, 420); luzEscenario.position.set(0, 60, -110); escena.add(luzEscenario);
 
-  // El piso, liso (sin cuadrícula).
-  const piso = new T.Mesh(new T.PlaneGeometry(1800, 1800), new T.MeshStandardMaterial({ color: TM.piso, roughness: 0.92, metalness: 0.1 }));
-  piso.rotation.x = -Math.PI / 2; piso.position.y = -0.1; escena.add(piso);
+  // Sin piso que se extienda (se le veía el borde): sólo una sombra suave debajo del estadio.
+  {
+    const c = lienzoDe(256, 256), x = c.getContext('2d'), gr = x.createRadialGradient(128, 128, 30, 128, 128, 128);
+    gr.addColorStop(0, 'rgba(30,38,52,.34)'); gr.addColorStop(0.65, 'rgba(30,38,52,.16)'); gr.addColorStop(1, 'rgba(30,38,52,0)');
+    x.fillStyle = gr; x.fillRect(0, 0, 256, 256);
+    const sombra = new T.Mesh(new T.PlaneGeometry(760, 700), new T.MeshBasicMaterial({ map: textura(c), transparent: true, depthWrite: false }));
+    sombra.rotation.x = -Math.PI / 2; sombra.position.y = -0.2; escena.add(sombra);
+  }
 
   const aPlano = (x, y) => new T.Vector2(x - 210, 146 - y);   // del plano 2D a la forma (después se acuesta sobre el piso)
-  const cartel = (txt, alto, color, fondo) => {
-    const c = document.createElement('canvas'), fs = 64;
-    let ctx = c.getContext('2d'); ctx.font = '600 ' + fs + 'px Poppins, sans-serif';
-    const ancho = Math.ceil(ctx.measureText(txt).width) + (fondo ? 48 : 20);
-    c.width = Math.max(ancho, fondo ? 96 : 0); c.height = fs + (fondo ? 32 : 20);
-    ctx = c.getContext('2d');
-    if (fondo) { ctx.fillStyle = fondo; const r = c.height / 2; ctx.beginPath(); ctx.arc(r, r, r - 2, Math.PI / 2, Math.PI * 1.5); ctx.arc(c.width - r, r, r - 2, -Math.PI / 2, Math.PI / 2); ctx.closePath(); ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = '#ffffff'; ctx.stroke(); }
-    ctx.font = '600 ' + fs + 'px Poppins, sans-serif'; ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(txt, c.width / 2, c.height / 2 + 3);
-    const tex = new T.CanvasTexture(c); tex.anisotropy = 4;
-    const mat = new T.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-    const sp = new T.Sprite(mat); sp.scale.set(alto * c.width / c.height, alto, 1); sp.layers.set(ETQ);
-    desechar.push(tex, mat);
-    return sp;
-  };
-  // El cartelito de los puestos: ícono y número en una pastilla del color del tipo.
-  const cartelIco = (ico, txt, alto, fondo, tinta) => {
-    const H = 96, fs = 52, conIco = !!(ico && window.Path2D);
-    let c = lienzoDe(8, H), x = c.getContext('2d'); x.font = '600 ' + fs + 'px Poppins, sans-serif';
-    const tw = txt ? Math.ceil(x.measureText(txt).width) : 0;
-    c = lienzoDe(24 + (conIco ? 58 : 0) + (conIco && txt ? 8 : 0) + tw + 24, H); x = c.getContext('2d');
-    const r = H / 2 - 4;
-    x.beginPath(); x.arc(r + 4, H / 2, r, Math.PI / 2, Math.PI * 1.5); x.arc(c.width - r - 4, H / 2, r, -Math.PI / 2, Math.PI / 2); x.closePath();
-    x.fillStyle = fondo; x.fill(); x.lineWidth = 5; x.strokeStyle = 'rgba(255,255,255,.95)'; x.stroke();
-    if (conIco) { x.save(); x.translate(24, H / 2 - 29); x.scale(58 / 24, 58 / 24); x.fillStyle = tinta; x.fill(new Path2D(INC_ICONOS[ico])); x.restore(); }
-    if (txt) { x.font = '600 ' + fs + 'px Poppins, sans-serif'; x.fillStyle = tinta; x.textBaseline = 'middle'; x.fillText(txt, 24 + (conIco ? 66 : 0), H / 2 + 3); }
-    const tex = textura(c); tex.anisotropy = 4;
-    const mat = new T.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
-    const sp = new T.Sprite(mat); sp.scale.set(alto * c.width / H, alto, 1); sp.layers.set(ETQ);
-    desechar.push(mat);
-    return sp;
+  // El público del campo de pie: siluetas simples (cuerpo y cabeza), algunas
+  // con la luz del celular. No se tocan: tocar el campo sigue eligiendo el campo.
+  const geoCuerpo = new T.CylinderGeometry(0.9, 1.15, 3.1, 7), geoCabeza = new T.SphereGeometry(0.85, 8, 6), geoLuz = new T.SphereGeometry(0.42, 6, 4);
+  geoCuerpo.translate(0, 1.55, 0); geoCabeza.translate(0, 3.75, 0); geoLuz.translate(0, 5.7, 0);
+  const matGente = new T.MeshStandardMaterial({ color: 0x4a5263, roughness: 0.85 }), matLuz = new T.MeshBasicMaterial({ color: 0xffffff });
+  let semilla = 7; const azar = () => (semilla = (semilla * 9301 + 49297) % 233280) / 233280;
+  const gente = (grupo, r, base) => {
+    const [x, y, w, h] = r, paso = 7.5, cols = Math.floor((w - 6) / paso), filas = Math.floor((h - 6) / paso), n = cols * filas;
+    if (n <= 0) return;
+    const cuerpos = new T.InstancedMesh(geoCuerpo, matGente, n), cabezas = new T.InstancedMesh(geoCabeza, matGente, n), luces = [], m = new T.Matrix4();
+    let k = 0;
+    for (let i = 0; i < cols; i++) for (let j = 0; j < filas; j++) {
+      const px = x + 3 + (i + 0.5) * paso + (azar() - 0.5) * 3 - 210, pz = y + 3 + (j + 0.5) * paso + (azar() - 0.5) * 3 - 146, e = 0.85 + azar() * 0.3;
+      m.makeScale(e, e, e); m.setPosition(px, base, pz);
+      cuerpos.setMatrixAt(k, m); cabezas.setMatrixAt(k, m); k++;
+      if (azar() < 0.08) luces.push(m.clone());
+    }
+    grupo.add(cuerpos); grupo.add(cabezas);
+    if (luces.length) { const ls = new T.InstancedMesh(geoLuz, matLuz, luces.length); luces.forEach((mm, i) => ls.setMatrixAt(i, mm)); grupo.add(ls); }
   };
 
   // Las butacas (una por baldosa, suaves: que se note la fila, sin cuadricular).
@@ -1228,7 +1275,7 @@ function incPlano3D(cont, op0) {
     const lx = s.lx !== undefined ? s.lx : s.r[0] + s.r[2] / 2, ly = s.ly !== undefined ? s.ly : s.r[1] + s.r[3] / 2;
     const cx = lx - 210, cz = ly - 146, grupo = new T.Group(), base = TM.color[s.t], bordeBase = TM.borde[s.t];
     escena.add(grupo);
-    const p = { id: s.id, grupo, cx, cz, bz: cz, nivel: 0, n: 0, sel: false, clave: '', baliza: null, et: null, etOsc: null, hBase: 0, hEt: 0 };
+    const p = { id: s.id, grupo, cx, cz, bz: cz, nivel: 0, n: 0, sel: false, clave: '', baliza: null, et: null, hBase: 0, hEt: 0, piso: incPisoDe(s), mats: [] };
     const tocable = m => { m.userData.id = s.id; toques.push(m); };
     if (s.t === 'puerta') {
       // La puerta: un marco de color en la fachada y su huella en el piso.
@@ -1246,9 +1293,10 @@ function incPlano3D(cont, op0) {
       const c0 = pts.reduce((a, q) => a.add(q), new T.Vector2()).multiplyScalar(1 / pts.length);
       const zona = new T.Mesh(extruir(pts.map(q => q.clone().sub(c0).multiplyScalar(1.6).add(c0)), h + 2), new T.MeshBasicMaterial());
       zona.visible = false; grupo.add(zona); tocable(zona);
+      p.mats = [matMarco, matHuella];
       p.pintar = (v, sel) => { matMarco.color.set(sel ? TM.sel : v ? sevColor(v) : base[0]); matHuella.color.set(v ? v.plano : base[0]); };
       p.latir = k => { matHuella.opacity = 0.22 + k * 0.5; };
-      p.hBase = h; p.hEt = h + 5; p.et = cartelIco(null, s.txt, 5, T2.color.puerta[0], '#ffffff');
+      p.hBase = h; p.hEt = h + 5; p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.puerta[0] + '">' + incEsc(s.txt) + '</span>'; p.etClase = 'pill';
     } else {
       let geo, rot = 0;
       if (s.t === 'baja' || s.t === 'alta') {
@@ -1268,6 +1316,7 @@ function incPlano3D(cont, op0) {
       const opB = TM.opBorde[s.t] || TM.opBordeOtro;
       const matBorde = new T.LineBasicMaterial({ color: bordeBase, transparent: true, opacity: opB });
       grupo.add(new T.LineSegments(new T.EdgesGeometry(geo, 25), matBorde));
+      p.mats = [matTop, matLado, matBorde];
       // Con una incidencia: el color fuerte del semáforo y la luz del color claro.
       p.pintar = (v, sel) => {
         matTop.color.set(v ? v.color : base[0]); matLado.color.set(v ? v.color : base[1]); if (v) matLado.color.multiplyScalar(0.55);
@@ -1275,19 +1324,20 @@ function incPlano3D(cont, op0) {
         matBorde.color.set(sel ? TM.sel : v ? sevColor(v) : bordeBase); matBorde.opacity = v || sel ? 1 : opB;
       };
       p.latir = k => { matTop.emissiveIntensity = k; };
-      if (s.ico) { p.et = cartelIco(s.ico, s.txt, 5.6, T2.color[s.t][0], T2.tintaTipo[s.t] || '#ffffff'); p.hEt = p.hBase + 6; }
-      else if (s.t === 'anillo' || s.t === 'back') { const tam = s.t === 'back' ? 5.2 : 4.2; p.et = cartel(s.txt, tam, TM.etqPiso); p.etOsc = cartel(s.txt, tam, '#111827'); p.hEt = p.hBase + 3; }
+      if (s.ico) { p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color[s.t][0] + ';color:' + (T2.tintaTipo[s.t] || '#ffffff') + '">' + icoSVG(s.ico) + incEsc(s.txt) + '</span>'; p.etClase = 'pill'; p.hEt = p.hBase + 6; }
+      else if (s.t === 'anillo' || s.t === 'back') { p.etHtml = incEsc(s.txt); p.etClase = 'piso'; p.hEt = p.hBase + 3; }
       else {
         // El número: blanco sobre el color de la zona; oscuro cuando el sector se pinta con una incidencia.
-        const chico = s.r && (s.r[2] <= 18 || s.r[3] <= 18), tam = chico ? 5 : (s.txt.length > 3 ? 5.6 : 7);
-        p.et = cartel(s.txt, tam, '#ffffff'); p.etOsc = cartel(s.txt, tam, '#111827'); p.hEt = p.hBase + 4;
+        const chico = s.r && (s.r[2] <= 18 || s.r[3] <= 18);
+        p.etHtml = incEsc(s.txt); p.etClase = s.txt.length > 3 ? 'campo' : chico ? 'chico' : ''; p.hEt = p.hBase + 4;
         p.bz = cz - (s.r ? Math.min(10, s.r[3] * 0.3) : 8);
       }
     }
     // El cartel del backstage va a un costado, para no tapar la pantalla.
     const corre = s.t === 'back' ? -105 : 0;
-    [p.et, p.etOsc].forEach(x => { if (x) { x.position.set(cx + corre, p.hEt, cz); grupo.add(x); } });
-    if (p.etOsc) p.etOsc.visible = false;
+    p.et = etiqueta(p.etHtml, p.etClase, new T.Vector3(cx + corre, p.hEt, cz), p);
+    // En el campo de pie, el público parado.
+    if (s.t === 'campo' && s.r && !/^Campo [A-N]$/.test(s.id)) gente(grupo, s.r, p.hBase);
     piezas[s.id] = p;
   });
 
@@ -1297,7 +1347,7 @@ function incPlano3D(cont, op0) {
   escenario.position.set(0, 3.5, -127); escena.add(escenario);
   const tira = new T.Mesh(new T.BoxGeometry(118, 0.8, 0.8), new T.MeshBasicMaterial({ color: 0x2a9fd6 }));
   tira.position.set(0, 6.6, -116); escena.add(tira);
-  const cEsc = cartel('ESCENARIO', 6, '#ffffff'); cEsc.position.set(0, 12, -122); escena.add(cEsc);
+  etiqueta('ESCENARIO', 'esc', new T.Vector3(0, 12, -122));
   const matTruss = new T.MeshStandardMaterial({ color: 0x3a4e72, roughness: 0.4, metalness: 0.8 });
   [[-63, -114], [63, -114], [-63, -141], [63, -141]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(2.4, 54, 2.4), matTruss); t.position.set(x, 27, z); escena.add(t); });
   [[0, -114, 128, 0], [0, -141, 128, 0], [-63, -127.5, 27, Math.PI / 2], [63, -127.5, 27, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 2.4, 2.4), matTruss); t.position.set(x, 54, z); t.rotation.y = r; escena.add(t); });
@@ -1346,7 +1396,7 @@ function incPlano3D(cont, op0) {
     texCinta.needsUpdate = true;
   };
   pintarCinta(op0.titulo);
-  const cintaLed = new T.Mesh(pared(INC_CINTA.map(([x, y]) => new T.Vector3(x - 210, 0, y - 146)), 10.5, 16, false, 5.5 * 32), new T.MeshBasicMaterial({ map: texCinta }));
+  const cintaLed = new T.Mesh(pared(INC_CINTA.map(([x, y]) => new T.Vector3(x - 210, 0, y - 146)), 12, 17, false, 5 * 32), new T.MeshBasicMaterial({ map: texCinta }));
   escena.add(cintaLed);
 
   // La fachada de vidrio que cierra el anillo, con una línea arriba y otra abajo.
@@ -1368,19 +1418,28 @@ function incPlano3D(cont, op0) {
     haz.position.y = 32; g.add(haz);
     const onda = new T.Mesh(new T.RingGeometry(3.2, 4.8, 48), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false }));
     onda.rotation.x = -Math.PI / 2; onda.position.y = 0.6; g.add(onda);
-    const chapa = cartel(String(n), 10, '#ffffff', v.color); chapa.position.y = 70; g.add(chapa);
-    g.userData = { haz, onda, chapa, nivel, nace: null };
+    const chapa = etiqueta('<span class="inc-3d-chapa" style="background:' + v.color + '">' + n + '</span>', 'chapa', new T.Vector3());
+    g.userData = { haz, onda, chapa, nivel, nace: null, alto: 70 };
     return g;
   };
 
-  const dibujar = () => {
-    camara.layers.set(0); motor.render(escena, camara);
-    // Los carteles, encima: siempre a la vista.
-    camara.layers.set(ETQ);
-    const fondo = escena.background; escena.background = null;
-    motor.autoClear = false; motor.clearDepth(); motor.render(escena, camara); motor.autoClear = true;
-    escena.background = fondo;
+  // Cada cartel, sobre su punto: se proyecta a la pantalla y se escala un poco
+  // con la distancia (como si estuviera en el 3D, pero siempre nítido).
+  const vec = new T.Vector3();
+  const ubicarEtiquetas = () => {
+    const w = lienzo.clientWidth || 1, h = lienzo.clientHeight || 1;
+    etiquetas.forEach(e => {
+      vec.copy(e.pos); if (e.pieza) vec.y += e.pieza.grupo.position.y;
+      const dist = camara.position.distanceTo(vec);
+      vec.project(camara);
+      const fuera = vec.z > 1 || vec.x < -1.15 || vec.x > 1.15 || vec.y < -1.15 || vec.y > 1.15;
+      if (fuera) { if (e.mostrado) { e.el.style.display = 'none'; e.mostrado = false; } return; }
+      if (!e.mostrado) { e.el.style.display = ''; e.mostrado = true; }
+      const k = Math.max(0.72, Math.min(1.4, 510 / dist));
+      e.el.style.transform = 'translate(' + ((vec.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - vec.y) / 2 * h).toFixed(1) + 'px) translate(-50%,-50%) scale(' + k.toFixed(3) + ')';
+    });
   };
+  const dibujar = () => { motor.render(escena, camara); ubicarEtiquetas(); };
 
   // El detalle de las incidencias, para verlo sin salir de la pantalla
   // completa: lo abierto (de lo más grave a lo más leve) y, si se toca un
@@ -1419,12 +1478,12 @@ function incPlano3D(cont, op0) {
   });
 
   // Cámara: entra volando desde arriba hasta la vista de la platea 309, mirando al escenario.
-  const objetivo = new T.Vector3(0, 0, 8), hacia = new T.Vector3(0, 300, 412), desde = new T.Vector3(300, 820, 780);
+  const objetivo = new T.Vector3(0, 0, 8), haciaBase = new T.Vector3(0, 300, 412), hacia = haciaBase.clone(), desde = new T.Vector3(300, 820, 780);
   camara.position.copy(desde); camara.lookAt(objetivo);
   let controles = null;
   if (T.OrbitControls) {
     controles = new T.OrbitControls(camara, lienzo);
-    Object.assign(controles, { enableDamping: true, dampingFactor: 0.08, enablePan: false, minDistance: 180, maxDistance: 1050, minPolarAngle: 0.12, maxPolarAngle: 1.32, rotateSpeed: 0.7, zoomSpeed: 0.8 });
+    Object.assign(controles, { enableDamping: true, dampingFactor: 0.08, enablePan: false, minDistance: 160, maxDistance: 720, minPolarAngle: 0.12, maxPolarAngle: 1.32, rotateSpeed: 0.7, zoomSpeed: 0.8 });
     controles.target.copy(objetivo); controles.enabled = false;
     controles.addEventListener('start', () => { ayuda.style.opacity = '0'; controles.autoRotate = false; ultimoToque = Date.now(); });
     controles.addEventListener('end', () => { ultimoToque = Date.now(); });
@@ -1452,6 +1511,10 @@ function incPlano3D(cont, op0) {
     lienzo.style.width = full ? w + 'px' : ''; lienzo.style.height = full ? h + 'px' : '';
     btns.style.right = (detW + 8) + 'px'; ayuda.style.left = full ? (w / 2) + 'px' : ''; ayuda.style.bottom = (detH + 10) + 'px';
     motor.setSize(w, h, false); camara.aspect = w / h; camara.updateProjectionMatrix();
+    // El encuadre de entrada: si la pantalla es angosta, un poco más lejos, para que entre el estadio entero.
+    const f = Math.max(1, 1.3 / camara.aspect);
+    hacia.copy(haciaBase).multiplyScalar(f);
+    if (controles) controles.maxDistance = 720 * f;
   };
   medirRef = medir;
   const ro = window.ResizeObserver ? new ResizeObserver(medir) : null; if (ro) ro.observe(cont);
@@ -1528,7 +1591,8 @@ function incPlano3D(cont, op0) {
         const fase = (t * (0.45 + p.nivel * 0.25)) % 1;
         u.onda.scale.setScalar(1 + fase * 3); u.onda.material.opacity = 0.85 * (1 - fase);
         u.haz.material.opacity = 0.3 + 0.18 * latido;
-        u.chapa.position.y = 70 + Math.sin(t * 2.2) * 1.8;
+        u.alto = 70 + Math.sin(t * 2.2) * 1.8;
+        u.chapa.pos.set(p.baliza.position.x, p.baliza.position.y + u.alto * p.baliza.scale.y, p.baliza.position.z);
       }
     });
     texCinta.offset.x = (t * 0.06) % 1;
@@ -1549,21 +1613,31 @@ function incPlano3D(cont, op0) {
     poner(op) {
       ultimoOp = op; onclick = op.onclick; accion = op.accionPantalla || null; detLista = Array.isArray(op.detalle) ? op.detalle : null;
       if (op.titulo !== undefined) { pintarLed(op.titulo); pintarCinta(op.titulo); }
-      const niveles = op.niveles || {}, cuentas = op.cuentas || {}, elegido = selLocal || op.sel;
+      const niveles = op.niveles || {}, cuentas = op.cuentas || {}, elegido = selLocal || op.sel, pisoSel = incPisoElegido();
+      pisosEl.innerHTML = incPisosHTML('inc-3d-pisos'); if (op.sinPisos) pisosEl.innerHTML = '';
       Object.values(piezas).forEach(p => {
         const nv = niveles[p.id] || 0, n = cuentas[p.id] || 0;
         p.nivel = nv; p.n = n; p.sel = elegido === p.id;
         p.pintar(nv ? INC_NIVELES[nv] : null, p.sel);
-        if (p.etOsc) { p.et.visible = !nv; p.etOsc.visible = !!nv; }
+        // El nombre: blanco sobre el color de la zona; oscuro cuando se pinta con una incidencia.
+        if (p.etClase !== 'pill') p.et.el.classList.toggle('osc', !!nv);
+        // El piso elegido: lo que no es de ese piso queda apagado (y su cartel, oculto).
+        const apagado = !!(pisoSel && p.piso && p.piso !== pisoSel);
+        if (p.apagado !== apagado) {
+          p.apagado = apagado;
+          p.mats.forEach(m => { if (m.userData.op0 === undefined) { m.userData.op0 = m.opacity; m.userData.tr0 = m.transparent; } m.transparent = apagado || m.userData.tr0; m.opacity = apagado ? 0.14 : m.userData.op0; m.depthWrite = !apagado; m.needsUpdate = true; });
+          p.et.el.style.visibility = apagado ? 'hidden' : '';
+          p.grupo.children.forEach(o => { if (o.isInstancedMesh) o.visible = !apagado; });
+        }
         const sube = p.sel ? 3 : 0;
         p.grupo.position.y = sube;
         const clave = nv ? nv + ':' + n : '';
         if (p.clave !== clave) {
-          if (p.baliza) { escena.remove(p.baliza); limpiar(p.baliza); p.baliza = null; }
+          if (p.baliza) { escena.remove(p.baliza); sacarEtiqueta(p.baliza.userData.chapa); limpiar(p.baliza); p.baliza = null; }
           if (nv) { p.baliza = baliza(nv, n); escena.add(p.baliza); }
           p.clave = clave;
         }
-        if (p.baliza) p.baliza.position.set(p.cx, p.hBase + sube, p.bz);
+        if (p.baliza) { p.baliza.position.set(p.cx, p.hBase + sube, p.bz); p.baliza.userData.chapa.pos.set(p.cx, p.hBase + sube + 70, p.bz); p.baliza.visible = !apagado; p.baliza.userData.chapa.el.style.visibility = apagado ? 'hidden' : ''; }
       });
       pintarDetalle();
     },
@@ -1837,7 +1911,7 @@ function incTarjeta(i) {
   const resuelta = i.estado === 'resuelta';
   return '<div class="inc-card' + (resuelta ? ' resuelta' : '') + (incNuevos.has(i.id) ? ' nueva' : '') + '" style="border-left-color:' + v.color + '">'
     + '<div class="inc-card-top">' + incNivelChip(i.nivel) + '<span class="inc-tipo">' + incEsc(i.tipo) + '</span><span class="inc-hora">' + incCuando(i.created_at) + '</span></div>'
-    + '<div class="inc-donde">' + incEsc(i.sector) + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '') + '</div>'
+    + '<div class="inc-donde">' + incEsc(i.sector) + (incZona(i.sector) ? ' · ' + incZona(i.sector) : '') + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '') + '</div>'
     + ((i.acciones || []).length ? '<div class="inc-acc">' + i.acciones.map(a => '<span>✓ ' + incEsc(a) + '</span>').join('') + '</div>' : '')
     + (i.nota ? '<div class="inc-nota">' + incEsc(i.nota) + '</div>' : '')
     + (resuelta ? '<div class="inc-res"><strong>Resuelta ' + incCuando(i.resuelta_at) + '</strong> · ' + incEsc(i.resolucion || '') + '</div>'
@@ -1896,7 +1970,7 @@ function renderIncHoja() {
         + '" onclick="incElegirNivel(' + nv + ')"><strong>' + v.nombre + '</strong><span>' + v.ayuda + '</span></button>';
     }).join('') + '</div>';
     html += checklist();
-    html += '<div class="inc-paso">Referencia (opcional)</div><input class="l-in" id="incCampo_ubicacion" maxlength="80" placeholder="Fila, butaca, puerta… (nada del público)" value="' + incEsc(h.ubicacion) + '">';
+    html += '<div class="inc-paso">Referencia (opcional)</div><input class="l-in" id="incCampo_ubicacion" maxlength="80" placeholder="Fila, butaca, puerta… (nada del público)" value="' + incEsc(h.ubicacion) + '">' + incRefRapidaHTML('incCampo_ubicacion');
     html += '<textarea class="fb-ta" id="incCampo_nota" maxlength="1000" placeholder="Nota (opcional)">' + incEsc(h.nota) + '</textarea>';
     html += '<button class="fb-send" id="incGuardarBtn" onclick="incGuardarNueva()">Guardar incidencia</button>';
   }
