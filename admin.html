@@ -618,6 +618,23 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .cv-prev img{display:block;width:100%;height:auto}
 .cv-prev iframe{display:block;width:100%;height:58vh;min-height:320px;border:0;background:#fff}
 .cv-prev-msg{padding:16px;font-size:12px;color:var(--r-faint);text-align:center}
+/* La vista rápida del CV: al costado de la nómina, sin tapar la lista entera. */
+.cv-rapida{position:fixed;top:72px;right:16px;bottom:16px;width:min(440px,calc(100vw - 32px));z-index:60;display:none;flex-direction:column;background:#fff;border:1px solid var(--r-line);border-radius:14px;box-shadow:0 18px 48px rgba(15,23,42,.18);overflow:hidden}
+.cv-rapida.on{display:flex}
+.cv-rapida-cab{display:flex;align-items:center;gap:8px;padding:12px 12px 10px 16px;border-bottom:1px solid var(--r-line)}
+.cv-rapida-cab strong{display:block;font-size:14px;color:var(--r-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cv-rapida-cab span{font-size:11.5px;color:var(--r-muted)}
+.cv-rapida-cab .btn{min-width:32px;justify-content:center}
+.cv-rapida-cuerpo{flex:1;min-height:0;display:flex;flex-direction:column;padding:10px 14px 14px;overflow:auto}
+.cv-rapida-cuerpo .cv-file-box{margin-top:0}
+.cv-rapida-cuerpo .cv-prev{flex:1;display:flex;flex-direction:column;min-height:260px}
+.cv-rapida-cuerpo .cv-prev iframe{flex:1;height:auto;min-height:260px}
+.cv-rapida-meta{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.cv-ojo{border:1px solid var(--mac-linea);background:#fff;color:var(--r-ink2);border-radius:6px;padding:2px 6px;margin-left:4px;cursor:pointer;vertical-align:middle;font-size:11px;line-height:1}
+.cv-ojo:hover{background:#f3f4f6}
+tr.cv-rapida-fila td{background:#eef4ff!important}
+/* En pantallas anchas, la nómina se corre para que el panel no la tape. */
+@media(min-width:1100px){body.cv-rapida-on #sec-nomina{padding-right:464px}}
 
 
 /* Documento que no puede existir: se marca, no se corrige solo */
@@ -1970,6 +1987,17 @@ tr:hover td{background:#f9f9fb}
   </div>
 </div>
 
+<!-- La vista rápida del CV, al costado de la nómina -->
+<aside class="cv-rapida" id="cvRapida" aria-label="Vista rápida del CV">
+  <div class="cv-rapida-cab">
+    <div style="flex:1;min-width:0"><strong id="cvRapidaNom">—</strong><span id="cvRapidaPos"></span></div>
+    <button class="btn btn-sec btn-xs" onclick="cvRapidaPasar(-1)" title="Anterior (flecha arriba)" aria-label="Anterior">↑</button>
+    <button class="btn btn-sec btn-xs" onclick="cvRapidaPasar(1)" title="Siguiente (flecha abajo)" aria-label="Siguiente">↓</button>
+    <button class="btn btn-sec btn-xs" id="cvRapidaFicha" title="Abrir el CV completo, con lo que cargó al inscribirse">Abrir</button>
+    <button class="btn btn-sec btn-xs" onclick="cvRapidaCerrar()" title="Cerrar (Esc)" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="cv-rapida-cuerpo"><div class="cv-rapida-meta" id="cvRapidaMeta"></div><div id="cvRapidaBox" style="flex:1;display:flex;flex-direction:column;min-height:0"></div></div>
+</aside>
 <div class="modal-bg" id="mEtiquetas" style="display:none" onclick="bgClose('mEtiquetas',event)">
   <div class="modal" style="max-width:620px">
     <div class="modal-title"><span><i class="ic ic-etiqueta"></i> Etiquetas</span><button class="mclose" onclick="closeM('mEtiquetas')">✕</button></div>
@@ -2568,6 +2596,7 @@ function rotulo(v) {
 function goSec(s) {
   document.querySelectorAll('.mnav-btn').forEach(b => b.classList.toggle('active', b.dataset.s === s));
   document.querySelectorAll('.sec').forEach(d => d.classList.toggle('active', d.id === 'sec-' + s));
+  if (s !== 'nomina' && typeof cvRapidaId !== 'undefined' && cvRapidaId) cvRapidaCerrar();   // la vista rápida del CV es de la nómina
   if (s === 'dashboard') renderDashboard();
   if (s === 'candidatos') renderCandidatos();
   if (s === 'supervisores') renderSupList();
@@ -2894,7 +2923,7 @@ function renderNomTable() {
     const rot = checkRotacion(p.id);
     const aus = checkAusencia(p);
     const rowBg = p.out_flag ? 'background:#fff7f7' : aus.penalizado ? 'background:#fff7f7' : rot.excede ? 'background:#fffbeb' : '';
-    return `<tr style="${rowBg}">
+    return `<tr style="${rowBg}"${typeof cvRapidaId !== 'undefined' && cvRapidaId === p.id ? ' class="cv-rapida-fila"' : ''}>
 <td><input type="checkbox" class="cb rcb" data-id="${p.id}" onchange="checkNomBulk()"></td>
 <td class="cn">
   ${eN(p.nombre)}
@@ -2903,7 +2932,7 @@ function renderNomTable() {
   ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_nota||p.out_categoria||'')}"><i class="ic ic-prohibido"></i> ${nomAreaTab === 'out' && p.out_categoria ? e(frase(p.out_categoria)) : 'OUT'}</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
-  ${(p.cv || solicitudDe(p)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv ? 'Ver CV' : 'Ver datos'}</button>` : ''}
+  ${(p.cv || solicitudDe(p)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv ? 'Ver CV' : 'Ver datos'}</button>` : ''}${p.cv && p.cv.archivo ? `<button class="cv-ojo" onclick="cvRapida('${p.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : ''}
   ${(posicionesDe(p).length || zonaDe(p)) ? `<div class="pos-chips">${zonaDe(p) ? `<span class="zona-chip" title="Sale de la localidad que cargó al inscribirse">${e(zonaDe(p))}</span>` : ''}${posicionesDe(p).map(x => `<span class="pos-chip">${e(x)}</span>`).join('')}${(() => { const pr = promedioDe(p.id); return pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">${pr.toFixed(2)}</span>` : ''; })()}</div>` : ''}
   ${(() => { const d = dondeEsta(p); return d.length ? `<div class="pos-chips">${d.slice(0, 3).map(x => `<span class="conv-chip" title="${e(x.fechas.map(f => fechaDMA ? fechaDMA(f) : f).join(', '))}${x.puesto ? ' · ' + e(x.puesto) : ''}" onclick="event.stopPropagation();goSec('convs');openDetail('${x.convId}')"><i class="ic ic-calendario"></i> ${e(x.conv)} · ${e(fechaDMA ? fechaDMA(x.fecha) : x.fecha)}</span>`).join('')}${d.length > 3 ? `<span class="conv-chip" style="opacity:.7">+${d.length - 3}</span>` : ''}</div>` : ''; })()}
   ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
@@ -4020,6 +4049,58 @@ async function cargarVistaCvPersona(id) {
     pintarVistaCv('cvPrevBox', p.cv.archivo, `downloadCvFileById('${id}')`);
   }
 }
+
+// ── La vista rápida del CV, desde la nómina ──
+// Se trae sólo el archivo de quien se está viendo (pesa); al pasar a otro se
+// suelta el anterior, para no ir llenando la memoria.
+let cvRapidaId = '', cvRapidaTraidos = [];
+function cvRapidaLista() { return nomFiltered.filter(p => p.cv && p.cv.archivo); }
+async function cvRapida(id) {
+  const p = people.find(x => x.id === id); if (!p || !p.cv || !p.cv.archivo) return;
+  cvRapidaId = id;
+  // De los archivos que se trajeron para esta vista, quedan los dos últimos.
+  cvRapidaTraidos = cvRapidaTraidos.filter(x => x !== id);
+  while (cvRapidaTraidos.length > 2) { const v = people.find(x => x.id === cvRapidaTraidos.shift()); if (v && v.cv && v.cv.archivo) delete v.cv.archivo.datos; }
+  const lista = cvRapidaLista(), i = lista.findIndex(x => x.id === id);
+  document.getElementById('cvRapidaNom').textContent = p.nombre || '';
+  document.getElementById('cvRapidaPos').textContent = i >= 0 ? (i + 1) + ' de ' + lista.length + ' con CV en esta lista' : '';
+  document.getElementById('cvRapidaFicha').onclick = () => viewCv(id);
+  document.getElementById('cvRapidaMeta').innerHTML = '<span class="a-badge ' + areaClase(p.area) + '">' + areaCorto(p.area) + '</span>'
+    + (zonaDe(p) ? '<span class="zona-chip">' + e(zonaDe(p)) + '</span>' : '') + posicionesDe(p).map(x => '<span class="pos-chip">' + e(x) + '</span>').join('');
+  document.getElementById('cvRapida').classList.add('on'); document.body.classList.add('cv-rapida-on');
+  document.querySelectorAll('#nomTbody tr').forEach(tr => { const cb = tr.querySelector('.rcb'); tr.classList.toggle('cv-rapida-fila', !!cb && cb.dataset.id === id); });
+  if (!document.getElementById('mCvView') || document.getElementById('mCvView').style.display === 'none') soltarCvBlobs();
+  pintarVistaCv('cvRapidaBox', p.cv.archivo, "downloadCvFileById('" + id + "')");
+  if (!p.cv.archivo.datos) {
+    try {
+      const { data } = await sb.from('personas').select('cv').eq('id', id).single();
+      const datos = data && data.cv && data.cv.archivo && data.cv.archivo.datos;
+      if (datos) { p.cv.archivo.datos = datos; cvRapidaTraidos.push(id); }
+    } catch (_) {}
+    if (cvRapidaId === id) pintarVistaCv('cvRapidaBox', p.cv.archivo, "downloadCvFileById('" + id + "')");
+  }
+}
+function cvRapidaPasar(d) {
+  const lista = cvRapidaLista(); if (!lista.length) return;
+  let i = lista.findIndex(x => x.id === cvRapidaId);
+  i = i < 0 ? 0 : Math.min(lista.length - 1, Math.max(0, i + d));
+  // Si el siguiente está en otra página de la lista, se pasa de página.
+  const j = nomFiltered.findIndex(x => x.id === lista[i].id), pag = Math.floor(j / PS) + 1;
+  if (j >= 0 && pag !== nomPage) { nomPage = pag; renderNomTable(); renderNomPag(); }
+  cvRapida(lista[i].id);
+}
+function cvRapidaCerrar() {
+  document.getElementById('cvRapida').classList.remove('on'); document.body.classList.remove('cv-rapida-on'); cvRapidaId = '';
+  document.querySelectorAll('#nomTbody tr.cv-rapida-fila').forEach(tr => tr.classList.remove('cv-rapida-fila'));
+  document.getElementById('cvRapidaBox').innerHTML = '';
+}
+// Con el panel abierto: flechas para pasar, Esc para cerrar (no mientras se escribe).
+if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('keydown', ev => {
+  if (!cvRapidaId || /^(INPUT|TEXTAREA|SELECT)$/.test((ev.target && ev.target.tagName) || '')) return;
+  if (ev.key === 'ArrowDown') { ev.preventDefault(); cvRapidaPasar(1); }
+  else if (ev.key === 'ArrowUp') { ev.preventDefault(); cvRapidaPasar(-1); }
+  else if (ev.key === 'Escape') cvRapidaCerrar();
+});
 
 // Se abre también para quien no tiene CV cargado pero sí inscripción: ahí
 // está la planilla con el CBU, que antes sólo se veía yendo a Solicitudes.
