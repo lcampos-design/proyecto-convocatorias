@@ -416,11 +416,12 @@ const INC_PLANO_ZONAS = [
   // escenario, entre la platea baja (P1) y la alta (P3); y los corners, también
   // del VIP, que hoy son la 101 y la 119 (junto al escenario, donde empieza la platea baja),
   // lo más cerca del escenario. Lado Cancha a la izquierda, lado Sede a la derecha.
+  // Los corners son de butacas: suben en filas como la platea baja (gradas).
   { id: 'Palcos · Cancha', txt: 'PALCOS', t: 'vip', p: '92.5,30 99.5,30 99.5,221.5 92.5,224', lx: 96, ly: 126, rot: -90, piso: 'VIP' },
   { id: 'Palcos · Sede', txt: 'PALCOS', t: 'vip', p: '320.5,30 327.5,30 327.5,224 320.5,221.5', lx: 324, ly: 126, rot: 90, piso: 'VIP' },
   { id: 'Lounge', txt: 'LOUNGE', t: 'vip', p: '92.5,224 127,257 293,257 327.5,224 320.5,221.5 290,253 130,253 99.5,221.5', lx: 210, ly: 255, piso: 'VIP' },
-  { id: 'Corner · Cancha', txt: 'CORNER 101', t: 'vip', r: [100, 18, 40, 22], piso: 'VIP' },
-  { id: 'Corner · Sede', txt: 'CORNER 119', t: 'vip', r: [280, 18, 40, 22], piso: 'VIP' }
+  { id: 'Corner · Cancha', txt: 'CORNER 101', t: 'vip', r: [100, 18, 40, 22], piso: 'VIP', gradas: 'baja' },
+  { id: 'Corner · Sede', txt: 'CORNER 119', t: 'vip', r: [280, 18, 40, 22], piso: 'VIP', gradas: 'baja' }
 ];
 // Los pisos del Arena: el campo en planta baja, la platea baja en el 1, la
 // alta en el 3 y el VIP entre las dos. Cada puesto del anillo dice el suyo.
@@ -525,7 +526,24 @@ const INC_LUGARES_BASE = [
   { id: 'Sede 2', t: 'gastro', txt: 'S2', cx: 384, cy: 191, w: 17, h: 25, ang: 0, piso: 'P3' },
   { id: 'Beer Garden', t: 'gastro', txt: 'BEER', cx: 165, cy: 304, w: 26, h: 14, ang: 0, piso: 'P3' },
   { id: 'Fernetería', t: 'gastro', txt: 'FER', cx: 255, cy: 304, w: 26, h: 14, ang: 0, piso: 'P3' }
-].concat(INC_CALLES_BASE);
+].concat(INC_CALLES_BASE, [
+  // Los baños de arriba, como en el cartel de evacuación del Arena (el 1, el más
+  // cerca del escenario): en P1, dos por costado a los lados de la barra del
+  // medio; en el VIP, tres por costado sobre la pared de afuera; en P3, uno por
+  // costado junto a la 301 y la 317.
+  { id: 'Baños Cancha 1 (P1)', t: 'banio', txt: 'C1', cx: 36, cy: 101, w: 17, h: 22, ang: 0, piso: 'P1' },
+  { id: 'Baños Cancha 2 (P1)', t: 'banio', txt: 'C2', cx: 36, cy: 151, w: 17, h: 22, ang: 0, piso: 'P1' },
+  { id: 'Baños Sede 1 (P1)', t: 'banio', txt: 'S1', cx: 384, cy: 101, w: 17, h: 22, ang: 0, piso: 'P1' },
+  { id: 'Baños Sede 2 (P1)', t: 'banio', txt: 'S2', cx: 384, cy: 151, w: 17, h: 22, ang: 0, piso: 'P1' },
+  { id: 'Baños Cancha 1 (VIP)', t: 'banio', txt: 'C1', cx: 36, cy: 66, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Cancha 2 (VIP)', t: 'banio', txt: 'C2', cx: 36, cy: 133, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Cancha 3 (VIP)', t: 'banio', txt: 'C3', cx: 36, cy: 200, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Sede 1 (VIP)', t: 'banio', txt: 'S1', cx: 384, cy: 66, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Sede 2 (VIP)', t: 'banio', txt: 'S2', cx: 384, cy: 133, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Sede 3 (VIP)', t: 'banio', txt: 'S3', cx: 384, cy: 200, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Cancha (P3)', t: 'banio', txt: 'C', cx: 36, cy: 20, w: 17, h: 22, ang: 0, piso: 'P3' },
+  { id: 'Baños Sede (P3)', t: 'banio', txt: 'S', cx: 384, cy: 20, w: 17, h: 22, ang: 0, piso: 'P3' }
+]);
 // Deja una lista de puestos en condiciones: tipos conocidos, nombres únicos
 // (y que no choquen con un sector), medidas dentro del plano.
 function incNormalizarLugares(lista) {
@@ -616,8 +634,12 @@ async function incCargarPlanoArena() {
   try {
     const { data, error } = await sb.rpc('plano_arena');
     if (error || !data || !Array.isArray(data.lugares)) return false;
-    // Un plano guardado antes de que hubiera calles: se le suman las de siempre.
-    const nuevos = incNormalizarLugares(data.lugares.some(l => l && l.t === 'calle') ? data.lugares : data.lugares.concat(INC_CALLES_BASE));
+    // Un plano guardado antes de que hubiera calles, o baños arriba (P1, VIP y
+    // P3): se le suman los de siempre.
+    let lista = data.lugares;
+    if (!lista.some(l => l && l.t === 'calle')) lista = lista.concat(INC_CALLES_BASE);
+    if (!lista.some(l => l && l.t === 'banio' && l.piso && l.piso !== 'PB')) lista = lista.concat(INC_LUGARES_BASE.filter(l => l.t === 'banio' && l.piso !== 'PB'));
+    const nuevos = incNormalizarLugares(lista);
     if (JSON.stringify(nuevos) === JSON.stringify(incLugaresArena)) return false;
     incLugaresArena = nuevos; incVersionPlano++;
     return true;
@@ -800,9 +822,11 @@ function incPlanoSVG(op) {
     } else if (n) badge = '<circle cx="' + bx + '" cy="' + by + '" r="5" fill="' + TM.badge[0] + '" stroke="' + TM.badge[1] + '" stroke-width=".8" pointer-events="none"/><text x="' + bx + '" y="' + (by + 2) + '" font-size="5.8" font-weight="700" fill="' + TM.badge[1] + '" text-anchor="middle" pointer-events="none">' + n + '</text>';
     if (op.editor && sel && s.lugar) elegido = s;
     const otroPiso = pisoSel && incPisoDe(s) && incPisoDe(s) !== pisoSel;
+    // Un sector de butacas que no es platea (el corner): sus filas, suaves, a lo largo del costado.
+    const filas = s.gradas && s.r ? [1, 2, 3, 4].map(k => { const fx = s.r[0] + s.r[2] * k / 5; return '<line x1="' + fx + '" y1="' + (s.r[1] + 2) + '" x2="' + fx + '" y2="' + (s.r[1] + s.r[3] - 2) + '" stroke="#0b1b33" stroke-opacity=".18" stroke-width=".5" pointer-events="none"/>'; }).join('') : '';
     return '<g' + click + (otroPiso ? ' opacity=".2"' : '') + '><title>' + incEsc(s.id) + (s.lugar && s.piso ? ' · ' + s.piso : '') + (n ? ' · ' + incAbiertasTexto(n, pn) : '') + '</title>'
       + forma + ' fill="' + fill + '"' + tinte + ' stroke="' + stroke + '" stroke-width="' + sw + '"/>'
-      + etq + badge + '</g>';
+      + filas + etq + badge + '</g>';
   }).join('');
   const pts = a => a.map(p => p.join(',')).join(' ');
   // En el editor, lugar de sobra alrededor para llevar las calles; si no, lo justo.
@@ -1164,9 +1188,11 @@ function incPlano3D(cont, op0) {
       p.hBase = h; p.hEt = h + 5; p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.puerta[0] + ';color:' + (T2.tintaTipo.puerta || '#ffffff') + '">' + incEsc(s.txt) + '</span>'; p.etClase = 'pill';
     } else {
       let geo, rot = 0;
-      if (s.t === 'baja' || s.t === 'alta') {
+      // Con butacas: las plateas y lo que sube como ellas (el corner, del VIP, como la baja).
+      const sentado = s.t === 'baja' || s.t === 'alta' || !!s.gradas;
+      if (sentado) {
         // Hacia dónde suben las filas: hacia afuera del campo.
-        const [h0, h1] = INC_3D_ALTURA[s.t];
+        const [h0, h1] = INC_3D_ALTURA[s.gradas || s.t];
         // Se decide por dónde está: detrás del campo (el fondo) o al costado. Por la
         // posición de costado nomás, la 307 y la 311 (que se asoman a las esquinas) subían de lado.
         const fondo = ly > 206;
@@ -1176,7 +1202,7 @@ function incPlano3D(cont, op0) {
         geo = g.geo;
         p.hBase = (g.filas.find(f => dc >= f.a - 0.01 && dc <= f.b + 0.01) || g.filas[g.filas.length - 1]).h;
       } else { p.hBase = INC_3D_ALTURA[s.t]; geo = extruir(pts, p.hBase); }
-      const mapa = s.t === 'baja' || s.t === 'alta' ? butacas(rot) : s.t === 'campo' && /^Campo [A-N]$/.test(s.id) ? butacas(0) : null;
+      const mapa = sentado ? butacas(rot) : s.t === 'campo' && /^Campo [A-N]$/.test(s.id) ? butacas(0) : null;
       const matTop = new T.MeshStandardMaterial({ color: base[0], map: mapa, roughness: 0.55, metalness: 0.2, emissive: base[0], emissiveIntensity: TM.brillo });
       const matLado = new T.MeshStandardMaterial({ color: base[1], roughness: 0.5, metalness: 0.35 });
       const malla = new T.Mesh(geo, [matTop, matLado]); grupo.add(malla); tocable(malla);
@@ -1229,8 +1255,8 @@ function incPlano3D(cont, op0) {
     piezas[s.id] = p;
   });
 
-  // El escenario, simple: el piso, la tarima con un proscenio adelante y el
-  // frente de luz. Sin pantalla, pared ni caja arriba.
+  // El escenario, simple: el piso, la tarima con un proscenio adelante, el
+  // frente de luz y la armazón arriba. Sin pantalla, pared ni caja.
   const matTarima = new T.MeshStandardMaterial({ color: 0x0b1526, roughness: 0.32, metalness: 0.55 });
   const tarima = new T.Mesh(new T.BoxGeometry(100, 6, 44), matTarima); tarima.position.set(0, 3, -140); escena.add(tarima);
   const proscenio = new T.Mesh(new T.BoxGeometry(64, 4, 6), matTarima); proscenio.position.set(0, 2, -115); escena.add(proscenio);
@@ -1246,6 +1272,10 @@ function incPlano3D(cont, op0) {
     [[100, 6.1, -118], [64, 4.1, -112]].forEach(([l, y, z]) => { const t = new T.Mesh(new T.BoxGeometry(l, 0.45, 0.45), matLuz); t.position.set(0, y, z); escena.add(t); });
   }
   etiqueta('ESCENARIO', 'esc', new T.Vector3(0, 12, -136));
+  // La armazón: cuatro columnas finas y el cuadro de arriba, sin paneles (que se vea a través).
+  const matTruss = new T.MeshStandardMaterial({ color: 0x2c3e5c, roughness: 0.4, metalness: 0.8 });
+  [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(1.6, 50, 1.6), matTruss); t.position.set(x, 25, z); escena.add(t); });
+  [[0, -114, 110, 0], [0, -164, 110, 0], [-54, -139, 52, Math.PI / 2], [54, -139, 52, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 1.8, 1.8), matTruss); t.position.set(x, 50, z); t.rotation.y = r; escena.add(t); });
   // La consola (FOH) al fondo del campo, de referencia (no se toca: tocar sigue eligiendo el campo).
   {
     const [fx, fy, fw, fh] = INC_FOH, cx = fx + fw / 2 - 210, cz = fy + fh / 2 - 146;
