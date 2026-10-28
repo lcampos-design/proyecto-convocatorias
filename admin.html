@@ -3912,6 +3912,10 @@ async function saveCvEntry() {
   if (existe) {
     if (!confirm(`Ya existe "${nom}". ¿Actualizar su CV?`)) return;
     existe.cv = cv; d = existe;
+    // Los otros archivos (carnet de manipulación, certificados) siguen: cambiar
+    // el CV no los borra. La lista de la nómina los trae sin contenido, así
+    // que se buscan en la base.
+    try { const { data } = await sb.from('personas').select('cv').eq('id', existe.id).single(); if (data && data.cv && Array.isArray(data.cv.adjuntos) && data.cv.adjuntos.length) cv.adjuntos = data.cv.adjuntos; } catch (_) {}
   } else {
     d = { id: uid(), nombre: nom, area: document.getElementById('cvArea').value, estado: 'pendiente', email: document.getElementById('cvEmail').value.trim() || null, tel: document.getElementById('cvTel').value.trim() || null, notas: cv.puestoInteres ? `Interés: ${cv.puestoInteres}` : null, cv };
     people.push(d);
@@ -4002,6 +4006,20 @@ function dataUrlABlob(dataUrl) {
 }
 function soltarCvBlobs() { cvBlobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (_) {} }); cvBlobUrls = []; }
 
+// Del formulario llega todo en archivo_cv: el CV y, adentro, los otros
+// archivos en "extras" (carnet de manipulación, certificados…). Puede venir
+// sólo con extras, sin CV.
+function cvPrincipal(a) { return a && (a.datos || a.nombre) ? { nombre: a.nombre, tipo: a.tipo, datos: a.datos } : null; }
+function cvExtras(a) { return a && Array.isArray(a.extras) ? a.extras.filter(x => x && x.nombre) : []; }
+// La lista de los otros archivos, con "Ver" (en el recuadro de la vista previa) y "Descargar".
+function listaAdjuntosHTML(adjuntos, verJs, bajarJs) {
+  if (!adjuntos.length) return '';
+  return '<div class="cv-section-divider"></div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:8px">Otros archivos (' + adjuntos.length + ')</div>'
+    + adjuntos.map((x, i) => '<div class="cv-file-box" style="margin-bottom:6px"><span style="font-size:16px"><i class="ic ic-clip"></i></span><div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + e(x.nombre) + '</div><div style="font-size:11px;color:#9ca3af">' + e(x.tipo || '') + '</div></div>'
+      + (tipoDeArchivo(x) !== 'otro' ? '<button class="btn btn-sec btn-xs" onclick="' + verJs(i) + '">Ver</button>' : '') + '<button class="btn btn-sec btn-xs" onclick="' + bajarJs(i) + '">↓ Descargar</button></div>').join('')
+    + '<div id="adjPrevBox"></div>';
+}
+function bajarDataUrl(datos, nombre) { if (!datos) { toast('No se pudo cargar el archivo'); return; } const a = document.createElement('a'); a.href = datos; a.download = nombre || 'archivo'; a.click(); }
 function tipoDeArchivo(archivo) {
   const t = String((archivo && archivo.tipo) || '').toLowerCase();
   const n = String((archivo && archivo.nombre) || '').toLowerCase();
@@ -4122,12 +4140,25 @@ function viewCv(id) {
   }
   html += `<div id="cvSolBox"></div>`;
   if (cv.archivo) html += `<div class="cv-section-divider"></div><div id="cvPrevBox"></div>`;
+  html += listaAdjuntosHTML(Array.isArray(cv.adjuntos) ? cv.adjuntos : [], i => `verAdjPersona('${id}',${i})`, i => `bajarAdjPersona('${id}',${i})`);
   document.getElementById('cvViewBody').innerHTML = html;
   cargarPlanillaSol(id);
   if (cv.archivo) cargarVistaCvPersona(id);
   const dlBtn = document.getElementById('cvDownloadBtn'); dlBtn.style.display = cv.archivo ? 'inline-flex' : 'none'; dlBtn.dataset.id = id;
   showM('mCvView');
 }
+// Los otros archivos de una persona: la lista llega sin el contenido (pesa),
+// que se trae de esa persona al pedirlo.
+async function adjuntoPersona(id, i) {
+  const p = people.find(x => x.id === id); if (!p || !p.cv || !Array.isArray(p.cv.adjuntos) || !p.cv.adjuntos[i]) return null;
+  const x = p.cv.adjuntos[i];
+  if (!x.datos) {
+    try { const { data } = await sb.from('personas').select('cv').eq('id', id).single(); const t = data && data.cv && Array.isArray(data.cv.adjuntos) && data.cv.adjuntos[i]; if (t && t.datos) x.datos = t.datos; } catch (_) {}
+  }
+  return x;
+}
+async function verAdjPersona(id, i) { const x = await adjuntoPersona(id, i); if (x) pintarVistaCv('adjPrevBox', x, `bajarAdjPersona('${id}',${i})`); }
+async function bajarAdjPersona(id, i) { const x = await adjuntoPersona(id, i); if (x) bajarDataUrl(x.datos, x.nombre); }
 async function bajarCvArchivo(id) {
   const p = people.find(x => x.id === id); if (!p?.cv?.archivo) return;
   let datos = p.cv.archivo.datos;
@@ -9324,12 +9355,16 @@ async function openSolView(id) {
     html += bool('Cobra beneficio social / plan de gobierno / AUH', s.beneficio_social);
   }
 
-  if (s.archivo_cv) html += `<div class="cv-section-divider"></div><div id="solPrevBox"></div>`;
+  const principal = cvPrincipal(s.archivo_cv), extras = cvExtras(s.archivo_cv);
+  if (principal) html += `<div class="cv-section-divider"></div><div id="solPrevBox"></div>`;
+  html += listaAdjuntosHTML(extras, i => `verAdjSol('${s.id}',${i})`, i => `bajarAdjSol('${s.id}',${i})`);
   document.getElementById('mSolBody').innerHTML = html;
-  if (s.archivo_cv) pintarVistaCv('solPrevBox', s.archivo_cv, `downloadSolFile('${s.id}')`);
+  if (principal) pintarVistaCv('solPrevBox', principal, `downloadSolFile('${s.id}')`);
   showM('mSolView');
 }
-function downloadSolFile(id) { const s = solicitudes.find(x => x.id === id); if(!s?.archivo_cv) return; const a=document.createElement('a'); a.href=s.archivo_cv.datos; a.download=s.archivo_cv.nombre; a.click(); }
+function downloadSolFile(id) { const s = solicitudes.find(x => x.id === id); const p = s && cvPrincipal(s.archivo_cv); if (p) bajarDataUrl(p.datos, p.nombre); }
+function verAdjSol(id, i) { const s = solicitudes.find(x => x.id === id), x = s && cvExtras(s.archivo_cv)[i]; if (x) pintarVistaCv('adjPrevBox', x, `bajarAdjSol('${id}',${i})`); }
+function bajarAdjSol(id, i) { const s = solicitudes.find(x => x.id === id), x = s && cvExtras(s.archivo_cv)[i]; if (x) bajarDataUrl(x.datos, x.nombre); }
 
 async function solAction(estado) {
   await singleSolSt(solViewId, estado);
@@ -9365,7 +9400,7 @@ async function singleSolSt(id, estado) {
       // social entra igual, pero en OUT con el motivo escrito. Antes se
       // aprobaba sin ninguna marca y nadie se enteraba.
       const out = outPorDeclaracion(s);
-      const np = { id: uid(), nombre: s.nombre, area: s.area, estado: 'confirmado', email: s.email||null, tel: s.tel||null, cuit: s.cuit||null, notas: s.puesto_interes?`Interés: ${s.puesto_interes}`:null, cv: { puestoInteres: s.puesto_interes||'', experiencia: s.experiencia||'', formacion: s.formacion||'', habilidades: s.habilidades||'', disponibilidad: s.disponibilidad||'', fechaEnvio: s.created_at?.slice(0,10)||'', archivo: s.archivo_cv||null }, ...out };
+      const np = { id: uid(), nombre: s.nombre, area: s.area, estado: 'confirmado', email: s.email||null, tel: s.tel||null, cuit: s.cuit||null, notas: s.puesto_interes?`Interés: ${s.puesto_interes}`:null, cv: { puestoInteres: s.puesto_interes||'', experiencia: s.experiencia||'', formacion: s.formacion||'', habilidades: s.habilidades||'', disponibilidad: s.disponibilidad||'', fechaEnvio: s.created_at?.slice(0,10)||'', archivo: cvPrincipal(s.archivo_cv), ...(cvExtras(s.archivo_cv).length ? { adjuntos: cvExtras(s.archivo_cv) } : {}) }, ...out };
       if (s.area === 'espana') Object.assign(np.cv, { fechaNacimiento: s.fecha_nacimiento || '', talla: s.talla || '', permisoTrabajo: s.permiso_trabajo, contactoEmergencia: s.contacto_emergencia || '', observaciones: s.observaciones || '', iban: s.iban || '', titularCuenta: s.titular_cuenta || '', aceptaPrivacidadAt: s.acepta_privacidad_at || '' });
       people.push(np);
       personaId = np.id;
