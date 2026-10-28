@@ -1080,6 +1080,40 @@ const INC_ICONOS = {
 function incSectoresPlano(armado) { return INC_PLANO_ZONAS.concat(incLugaresArena.map(incLugarForma), INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
 // Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
 function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
+// El armado del campo (de pie o con asientos) es del show, no del aparato: lo
+// elige cualquiera que mira el plano (el panel, la gerencia o la tablet) y lo
+// ven todos igual. Si la base todavía no lo guarda (falta correr
+// centro-control-armado.sql), queda en el aparato, como antes.
+const incArmados = {};   // id del show → 'campos' | 'asientos'
+let incArmadosEnBase = true;
+async function incCargarArmados() {
+  if (!incArmadosEnBase) return false;
+  try {
+    const { data, error } = await sb.rpc('cc_armados');
+    if (error) { if (/cc_armados/.test(error.message || '')) incArmadosEnBase = false; return false; }
+    let cambio = false;
+    Object.entries(data || {}).forEach(([k, v]) => { if ((v === 'campos' || v === 'asientos') && incArmados[k] !== v) { incArmados[k] = v; cambio = true; } });
+    return cambio;
+  } catch (_) { return false; }
+}
+function incArmadoDelShow(convId, lista) {
+  if (incArmados[convId]) return incArmados[convId];
+  let local = ''; try { local = localStorage.getItem('incArmado:' + convId) || ''; } catch (_) {}
+  return local === 'campos' || local === 'asientos' ? local : incArmadoDe(lista);
+}
+async function incGuardarArmado(convId, a) {
+  if (!convId || (a !== 'campos' && a !== 'asientos')) return;
+  incArmados[convId] = a;
+  try { localStorage.setItem('incArmado:' + convId, a); } catch (_) {}
+  if (!incArmadosEnBase) return;
+  try {
+    const { error } = await sb.rpc('cc_poner_armado', { p_conv_id: convId, p_armado: a });
+    if (error && /cc_poner_armado/.test(error.message || '')) incArmadosEnBase = false;
+  } catch (_) {}
+}
+// Mientras se mira un show: si el panel guardó otro plano o alguien cambió el
+// armado, se ve en todos sin volver a entrar. Devuelve si cambió algo.
+async function incRefrescarPlano() { const r = await Promise.all([incCargarPlanoArena(), incCargarArmados()]); return r[0] || r[1]; }
 // La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
 // "Platea baja · P1", "PB" (el campo) o "Anillo · P1" (los puestos).
 function incZona(sector) {
@@ -2314,23 +2348,23 @@ function incEstiloMetricas() {
 // Se ven las de hoy y las que siguen abiertas de otros días. La lista se
 // actualiza sola cada 20 segundos, así cada supervisor ve lo que cargan los
 // demás.
-let incLista = [], incTimer = null, incArmado = '', incHoja = null;
+let incLista = [], incTimer = null, incHoja = null;
 // Para el destello: las que ya se vieron y las que acaban de llegar.
 let incVistos = null, incNuevos = new Set();
-function incClaveArmado() { return 'incArmado:' + currentConvId; }
 async function openIncid() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   document.getElementById('incSub').textContent = c.nombre;
-  try { incArmado = localStorage.getItem(incClaveArmado()) || ''; } catch (_) { incArmado = ''; }
   incLista = []; incVistos = null; incNuevos = new Set();
   renderIncid();
   showScreen('screenIncid');
   await cargarIncid();
-  // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…).
-  if (await incCargarPlanoArena()) renderIncid();
+  // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado del campo del show.
+  if (await incRefrescarPlano()) renderIncid();
   clearInterval(incTimer);
   incTimer = setInterval(() => {
-    if (document.getElementById('screenIncid').classList.contains('active')) cargarIncid(); else clearInterval(incTimer);
+    if (!document.getElementById('screenIncid').classList.contains('active')) { clearInterval(incTimer); return; }
+    cargarIncid();
+    incRefrescarPlano().then(c => { if (c) renderIncid(); });
   }, 20000);
 }
 function cerrarIncid() { clearInterval(incTimer); cerrarIncHoja(); openShow(currentConvId); }
@@ -2346,11 +2380,12 @@ function incVisibles() {
   const hoy = incDia(new Date().toISOString());
   return incLista.filter(i => i.estado !== 'resuelta' || incDia(i.created_at) === hoy);
 }
-function incElegirArmado(a) { incArmado = a; try { localStorage.setItem(incClaveArmado(), a); } catch (_) {} renderIncid(); }
+// El armado es del show: al cambiarlo acá, lo ven igual el panel y la gerencia.
+function incElegirArmado(a) { incGuardarArmado(currentConvId, a); renderIncid(); }
 function incElegirVista(v) { incGuardarVista(v); renderIncid(); }
 function renderIncid() {
   const lista = incVisibles();
-  const armado = incArmado || incArmadoDe(incLista);
+  const armado = incArmadoDelShow(currentConvId, incLista);
   const res = incResumenSectores(lista);
   const abiertas = lista.filter(i => i.estado !== 'resuelta');
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
