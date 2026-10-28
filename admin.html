@@ -10198,17 +10198,78 @@ function openDispMes() {
   document.getElementById('dmMes').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   showM('mDispMes'); renderDispMes();
 }
+// ── LOS EVENTOS DEL GOOGLE CALENDAR (los del Arena y los de Externos) ──
+// Los trae /api/calendario (las direcciones iCal secretas están en Vercel). Los
+// que todavía no son una convocatoria se crean desde acá, con los datos puestos.
+let dmCal = { mes: '', estado: '', datos: null }, dmCalLista = [];
+async function dmCargarCalendario(mes) {
+  dmCal = { mes, estado: 'cargando', datos: null };
+  try {
+    const res = await fetch('/api/calendario?mes=' + encodeURIComponent(mes), { headers: await authHeader() });
+    const r = await res.json().catch(() => ({}));
+    dmCal = { mes, estado: res.ok ? 'ok' : 'error', datos: r };
+  } catch (_) { dmCal = { mes, estado: 'error', datos: null }; }
+  const sel = document.getElementById('dmMes');
+  if (sel && sel.value === mes && document.getElementById('mDispMes').style.display !== 'none') renderDispMes();
+}
+// La convocatoria que ya es ese evento: de la misma área, con algún día en común y un nombre parecido.
+const DM_COMUNES = new Set(['movistar', 'arena', 'show', 'evento', 'eventos', 'recital', 'tour', 'fecha', 'concierto', 'festival', 'presenta']);
+function dmConvDe(ev) {
+  const pel = s => nomPelar(s).replace(/\s+/g, ' ').trim();
+  const parecidos = (a, b) => {
+    const x = pel(a), y = pel(b); if (!x || !y) return false;
+    if (x.includes(y) || y.includes(x)) return true;
+    const px = new Set(x.split(' ').filter(w => w.length >= 4 && !DM_COMUNES.has(w)));
+    return y.split(' ').some(w => w.length >= 4 && !DM_COMUNES.has(w) && px.has(w));
+  };
+  return convs.find(c => !c.archivada && (c.area === ev.area || c.area === 'ambas')
+    && slotsDe(c).some(s => ev.fechas.includes(s.fecha)) && parecidos(c.nombre, ev.titulo)) || null;
+}
+function dmCalendarioHTML(mes) {
+  const titulo = `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:6px 0 8px">Del Google Calendar</div>`;
+  const nota = t => titulo + `<div style="font-size:12.5px;color:#6b7280;margin-bottom:14px">${t}</div>`;
+  if (dmCal.mes !== mes || dmCal.estado === 'cargando') return nota('Buscando los eventos del calendario…');
+  const d = dmCal.datos || {};
+  if (dmCal.estado === 'error') return nota('No se pudo leer el Google Calendar' + (d.error ? ': ' + e(d.error) : '') + '.');
+  if (!d.configurado) return nota('Para traer los eventos del Google Calendar hay que cargar en Vercel la dirección secreta iCal de cada calendario: <code>GCAL_ICS_ARENA</code> y <code>GCAL_ICS_EXTERNOS</code>.');
+  const area = document.getElementById('dmArea').value;
+  dmCalLista = (d.eventos || []).filter(ev => area ? ev.area === area : true);
+  const avisos = [(d.errores || []).length ? 'No se pudo leer el calendario de ' + d.errores.map(a => areaLargo(a)).join(' y ') + '.' : '',
+    (d.faltan || []).length ? 'Falta cargar en Vercel ' + d.faltan.join(' y ') + '.' : ''].filter(Boolean).join(' ');
+  if (!dmCalLista.length) return nota('El calendario no tiene eventos en ' + e(dmNombreMes(mes)) + '.' + (avisos ? ' ' + avisos : ''));
+  return titulo + dmCalLista.map((ev, i) => {
+    const ya = dmConvDe(ev);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+      <div style="flex:1;min-width:0"><b>${e(ev.titulo)}</b> <span style="color:#9ca3af">· ${ev.fechas.map(f => e(fechaDMA(f).slice(0, 5))).join(', ')}${ev.horario ? ' · ' + e(ev.horario) : ''}${area ? '' : ' · ' + e(areaCorto(ev.area))}</span></div>
+      ${ya ? `<span style="font-size:11px;color:var(--ok)">✓ Ya es «${e(ya.nombre)}»</span>` : `<button class="btn btn-sec btn-xs" onclick="dmCrearDesdeCal(${i})">Crear convocatoria</button>`}</div>`;
+  }).join('') + (avisos ? `<div style="font-size:12px;color:#9a3412;margin-top:6px">${avisos}</div>` : '') + '<div style="height:14px"></div>';
+}
+// El evento del calendario como convocatoria nueva: se abre el formulario de siempre, con los datos puestos, para revisar y guardar.
+function dmCrearDesdeCal(i) {
+  const ev = dmCalLista[i]; if (!ev) return;
+  closeM('mDispMes');
+  openAddConv();
+  document.getElementById('cNombre').value = ev.titulo;
+  document.getElementById('cArea').value = ev.area;
+  document.getElementById('cVenue').value = ev.lugar || '';
+  document.getElementById('cHorario').value = ev.horario || '';
+  document.getElementById('cDesc').value = ev.detalle || '';
+  convTurnos = ev.fechas.map(f => ({ id: uid(), fecha: f, horario: '' }));
+  renderFechasList();
+  toast('Revisá los datos del calendario y guardá la convocatoria');
+}
 function renderDispMes() {
   const evs = dmEventos(), mes = document.getElementById('dmMes').value;
   const cuerpo = document.getElementById('dmBody'); if (!cuerpo) return;
   if (!mes) { cuerpo.innerHTML = ''; return; }
-  if (!evs.length) { cuerpo.innerHTML = `<div class="empty">No hay convocatorias con fechas en ${e(dmNombreMes(mes))} para esta área.</div>`; return; }
+  if (dmCal.mes !== mes) dmCargarCalendario(mes);
+  if (!evs.length) { cuerpo.innerHTML = dmCalendarioHTML(mes) + `<div class="empty">No hay convocatorias con fechas en ${e(dmNombreMes(mes))} para esta área.</div>`; return; }
   const cerradas = evs.filter(x => !x.c.disp_abierta).length;
   const g = dmGrupos(), etiquetas = [...new Set(people.flatMap(p => p.etiquetas || []).map(String))].sort((a, b) => a.localeCompare(b, 'es'));
   const tagSel = (document.getElementById('dmTag') || {}).value || '';
   const grupo = (k, t, n) => `<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="cb" id="dmG_${k}" onchange="dmContar()" ${(document.getElementById('dmG_' + k) || {}).checked ? 'checked' : ''}> ${t} <span style="color:#9ca3af">(${n})</span></label>`;
-  cuerpo.innerHTML = `
-    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:6px 0 8px">1 · Los eventos de ${e(dmNombreMes(mes))}</div>
+  cuerpo.innerHTML = dmCalendarioHTML(mes) + `
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:6px 0 8px">1 · Las convocatorias de ${e(dmNombreMes(mes))}</div>
     ${evs.map(x => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
       <div style="flex:1;min-width:0"><b>${e(x.c.nombre)}</b> <span style="color:#9ca3af">· ${x.dias.map(d => e(fechaDMA(d.fecha).slice(0, 5))).join(', ')}</span></div>
       <span style="font-size:11px;padding:2px 8px;border-radius:999px;${x.c.disp_abierta ? 'background:var(--ok-sv);color:var(--ok)' : 'background:#f3f4f6;color:#6b7280'}">${x.c.disp_abierta ? 'Ronda abierta' : 'Ronda cerrada'}</span></div>`).join('')}
