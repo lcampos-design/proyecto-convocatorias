@@ -922,10 +922,10 @@ function incLugaresSueltos(lista, armado) {
 const INC_TEMA = {
   color: {
     baja: ['#2f63d4', '#1d4aa8'], alta: ['#7a4fd6', '#5a35b0'], campo: ['#0d7f7b', '#0a5f5c'],
-    anillo: ['#d2d8e0', '#97a3b3'], back: ['#c4cbd5', '#97a3b3'], vip: ['#1f2937', '#0b0f17'],
+    anillo: ['#99a2ae', '#7b8592'], back: ['#8d96a3', '#7b8592'], vip: ['#1f2937', '#0b0f17'],
     puerta: ['#0e86b4', '#08597a'], gastro: ['#a8329a', '#7a1f70'], banio: ['#5a6b85', '#3e4c63'], enfermeria: ['#ffffff', '#8f9cb0'], servicio: ['#374151', '#1f2937']
   },
-  tinta: '#ffffff', tintaPiso: '#4b5768', tintaTipo: { enfermeria: '#334155' },
+  tinta: '#ffffff', tintaPiso: '#1f2733', tintaTipo: { enfermeria: '#334155' },
   fondo: ['#8d98a7', '#7d8898', '#6f7a8a'], fachada: '#5a677c', cinta: '#3f78c2',
   escenario: ['#111827', '#111827'], sel: '#0f1117', badge: ['#0f1117', '#ffffff']
 };
@@ -1006,12 +1006,12 @@ const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], vip: 11.5, an
 const INC_TEMA_3D = {
   luces: { hemi: [0xffffff, 0x8f99ab, 0.78], clave: 0.55, contra: 0.22, escenario: 0.15 },
   color: {
-    baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0xd0d7e0, 0xa9b4c2], back: [0xc3cbd6, 0xa0abba], vip: [0x252e3d, 0x141a24],
+    baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0x858e9b, 0x666f7c], back: [0x79828f, 0x5e6774], vip: [0x252e3d, 0x141a24],
     puerta: [0x0e86b4, 0x0e86b4], gastro: [0xb03aa2, 0x7a1f70], banio: [0x63748e, 0x3e4c63], enfermeria: [0xf6f8fb, 0xc6ced9], servicio: [0x414b5b, 0x262d38]
   },
-  borde: { baja: 0xffffff, alta: 0xffffff, campo: 0xffffff, anillo: 0x8d9aac, back: 0x8d9aac, vip: 0xe5e7eb, puerta: 0x08597a, gastro: 0xffffff, banio: 0xffffff, enfermeria: 0x8f9cb0, servicio: 0xffffff },
+  borde: { baja: 0xffffff, alta: 0xffffff, campo: 0xffffff, anillo: 0xaab3bf, back: 0xaab3bf, vip: 0xe5e7eb, puerta: 0x08597a, gastro: 0xffffff, banio: 0xffffff, enfermeria: 0x8f9cb0, servicio: 0xffffff },
   opBorde: { baja: 0.5, alta: 0.5, campo: 0.55, anillo: 0.7, back: 0.7 }, opBordeOtro: 0.75, sel: 0x0f1117,
-  etqPiso: '#4b5768', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x5f6c82, 0.8], [0.4, 0x5f6c82, 0.6]], parantes: [0x637087, 0.4]
+  etqPiso: '#1f2733', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x5f6c82, 0.8], [0.4, 0x5f6c82, 0.6]], parantes: [0x637087, 0.4]
 };
 let incCarga3D = null, incSin3D = false, incListo3D = false;
 function incCargar3D() {
@@ -1076,43 +1076,11 @@ function incEstiloPlano() {
     + '.inc-3d-ley{position:absolute;left:8px;top:8px;z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 170px);font:500 10.5px Poppins,sans-serif;color:#334155;background:rgba(255,255,255,.78);padding:5px 9px;border-radius:8px;pointer-events:none;box-shadow:0 1px 3px rgba(15,23,42,.08)}';
   document.head.appendChild(st);
 }
-// El público del fondo del 3D, en silueta: tres filas de cabezas y hombros,
-// algunas manos arriba y luces de celulares.
-let incPublicoCache = '';
-function incPublicoFondo() {
-  if (incPublicoCache) return incPublicoCache;
-  let a = 11; const azar = () => (a = (a * 9301 + 49297) % 233280) / 233280, f = v => v.toFixed(1);
-  const W = 1600, H = 210;
-  let svg = '', luces = '';
-  [[150, 0.62, '#2a3241'], [176, 0.82, '#1d2430'], [204, 1, '#11161e']].forEach(([base, k, color]) => {
-    let g = '';
-    for (let x = -12; x < W + 24; x += (24 + azar() * 14) * k) {
-      const r = (10 + azar() * 3) * k, cy = base - (36 + azar() * 10) * k;
-      g += '<ellipse cx="' + f(x) + '" cy="' + base + '" rx="' + f(19 * k) + '" ry="' + f(30 * k) + '"/><circle cx="' + f(x) + '" cy="' + f(cy) + '" r="' + f(r) + '"/>';
-      if (azar() < 0.2) {
-        const lado = azar() < 0.5 ? -1 : 1, x0 = x + lado * 12 * k, y0 = cy + 14 * k, x1 = x0 + lado * 7 * k, y1 = cy - 34 * k;
-        g += '<path d="M' + f(x0) + ' ' + f(y0) + 'L' + f(x1) + ' ' + f(y1) + '" stroke="' + color + '" stroke-width="' + f(7 * k) + '" stroke-linecap="round"/>';
-        if (azar() < 0.55) luces += '<circle cx="' + f(x1) + '" cy="' + f(y1 - 5 * k) + '" r="' + f(3.2 * k) + '" fill="#fff" opacity=".85"/>';
-      }
-    }
-    svg += '<g fill="' + color + '">' + g + '</g>';
-  });
-  incPublicoCache = 'url(&quot;data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' + svg + luces + '</svg>').replace(/'/g, '%27') + '&quot;)';
-  return incPublicoCache;
-}
 function incEstilo3D() {
   if (document.getElementById('incEstilo3D')) return;
   const st = document.createElement('style'); st.id = 'incEstilo3D';
   st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 85% at 50% 0%,#3d485b 0%,#272f3c 55%,#171c25 100%)}'
-    // El fondo del show: haces de luz que barren desde arriba y el público abajo, detrás del estadio.
-    + '.inc-3d-fondo{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}'
-    + '.inc-3d-fondo .haz{position:absolute;top:-8%;width:30%;height:125%;transform-origin:50% 0;clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);filter:blur(8px);opacity:.6;animation:incBarrer 16s ease-in-out infinite}'
-    + '.inc-3d-fondo .h1{left:2%;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(167,139,250,.2) 45%,transparent 80%);animation-delay:-3s}'
-    + '.inc-3d-fondo .h2{left:35%;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(96,165,250,.2) 45%,transparent 80%);animation-duration:19s}'
-    + '.inc-3d-fondo .h3{right:2%;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(56,189,248,.2) 45%,transparent 80%);animation-delay:-8s;animation-direction:reverse}'
-    + '@keyframes incBarrer{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}'
-    + '.inc-3d-fondo .publico{position:absolute;left:0;right:0;bottom:0;height:24%;background-repeat:repeat-x;background-position:left bottom;background-size:auto 100%}'
-    + '@media(prefers-reduced-motion:reduce){.inc-3d-fondo .haz{animation:none}}'
+
     + '.inc-3d:fullscreen{width:100vw;height:100vh;border-radius:0}'
     + '.inc-3d canvas{position:relative;z-index:1;display:block;width:100%;height:100%;touch-action:none;outline:none}'
     + '.inc-3d-btns{position:absolute;top:8px;right:8px;z-index:4;display:flex;gap:6px}'
@@ -1123,7 +1091,7 @@ function incEstilo3D() {
     + '.inc-3d-etqs{position:absolute;left:0;top:0;right:0;bottom:0;z-index:2;pointer-events:none;overflow:hidden}'
     + '.inc-3d-e{position:absolute;left:0;top:0;white-space:nowrap;font:600 11px/1 Poppins,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(15,23,42,.6);-webkit-user-select:none;user-select:none}'
     + '.inc-3d-e.chico{font-size:10px}.inc-3d-e.campo{font-size:10.5px;letter-spacing:.6px}.inc-3d-e.esc{font-size:10px;letter-spacing:1.6px}'
-    + '.inc-3d-e.piso{font-size:9px;letter-spacing:1.3px;color:#3f4a5a;text-shadow:0 1px 0 rgba(255,255,255,.5)}'
+    + '.inc-3d-e.piso{font-size:9px;letter-spacing:1.3px;color:#e5e9ef;text-shadow:0 1px 2px rgba(15,23,42,.55)}'
     + '.inc-3d-e.osc{color:#111827;text-shadow:0 1px 1px rgba(255,255,255,.55)}'
     + '.inc-3d-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;font:600 10.5px/1 Poppins,sans-serif;color:#fff;border:1.5px solid rgba(255,255,255,.95);box-shadow:0 1px 4px rgba(15,23,42,.3);text-shadow:none}'
     + '.inc-3d-pill svg{width:12px;height:12px;fill:currentColor;display:block}'
@@ -1162,10 +1130,6 @@ function incPlano3D(cont, op0) {
   const anis = Math.min(8, motor.capabilities && motor.capabilities.getMaxAnisotropy ? motor.capabilities.getMaxAnisotropy() : 1);
   const lienzo = motor.domElement;
   lienzo.style.cursor = 'grab';
-  // Detrás del estadio, el fondo del show: haces de luz que barren y el público.
-  const fondoShow = document.createElement('div'); fondoShow.className = 'inc-3d-fondo';
-  fondoShow.innerHTML = '<div class="haz h1"></div><div class="haz h2"></div><div class="haz h3"></div><div class="publico" style="background-image:' + incPublicoFondo() + '"></div>';
-  cont.appendChild(fondoShow);
   cont.appendChild(lienzo);
   const btns = document.createElement('div'); btns.className = 'inc-3d-btns';
   btns.innerHTML = '<button type="button" class="inc-3d-btn inc-3d-btn-det" data-a="detalle" title="Ver u ocultar el detalle de las incidencias">☰ Incidencias</button>'
