@@ -932,24 +932,30 @@ function incLugaresSueltos(lista, armado) {
   const otros = [...new Set((lista || []).map(i => i.sector).filter(s => s && !enPlano.has(s) && !INC_LUGARES.includes(s)))].sort();
   return INC_LUGARES.concat(otros);
 }
-// Los colores del plano: un solo fondo, intermedio (un gris azulado, ni muy
-// blanco ni muy oscuro), sin cuadrícula. Cada zona y cada tipo de puesto
-// tiene su color (relleno y borde), siempre lejos de los del semáforo, que
-// son los únicos que se encienden: la platea baja en azul, la alta en
-// violeta, el campo en turquesa; las puertas en celeste, la gastronomía en
-// fucsia, los baños en gris azulado, la enfermería en blanco y los otros
-// puntos en gris oscuro. Además cada lugar lleva su número o su ícono, y hay
-// leyenda.
+// Los colores del plano, en la línea del Movistar Arena: de noche, en azul.
+// Las zonas van en una escala del celeste al azul noche —el campo celeste
+// claro, la platea alta azul, la baja azul Movistar y el VIP azul noche—, que
+// se distinguen por lo claro u oscuro (no sólo por el tono, así se ven
+// también con daltonismo) y además cada una lleva su número o su nombre. Los
+// puestos: las puertas en celeste hielo, la gastronomía en el violeta de
+// Movistar, los baños en azul acero, la enfermería en blanco y los otros
+// puntos en pizarra. Todo lejos del semáforo, que es lo único que se enciende.
 const INC_TEMA = {
   color: {
-    baja: ['#2f63d4', '#1d4aa8'], alta: ['#7a4fd6', '#5a35b0'], campo: ['#0d7f7b', '#0a5f5c'],
-    anillo: ['#99a2ae', '#7b8592'], back: ['#8d96a3', '#7b8592'], vip: ['#1f2937', '#0b0f17'],
-    puerta: ['#0e86b4', '#08597a'], gastro: ['#a8329a', '#7a1f70'], banio: ['#5a6b85', '#3e4c63'], enfermeria: ['#ffffff', '#8f9cb0'], servicio: ['#374151', '#1f2937']
+    baja: ['#1f4fcf', '#5b8dff'], alta: ['#3d86f2', '#8cc0ff'], campo: ['#4cc9f7', '#a6e6ff'],
+    anillo: ['#2a3d5e', '#3d557d'], back: ['#24375a', '#3d557d'], vip: ['#132f66', '#4fb3ff'],
+    puerta: ['#9ee6ff', '#4fb3ff'], gastro: ['#b84ad8', '#e2a6f5'], banio: ['#6f8fc0', '#a9c2e6'], enfermeria: ['#ffffff', '#a9c2e6'], servicio: ['#3e5579', '#6f8fc0']
   },
-  tinta: '#ffffff', tintaPiso: '#1f2733', tintaTipo: { enfermeria: '#334155' },
-  fondo: ['#8d98a7', '#7d8898', '#6f7a8a'], fachada: '#5a677c', cinta: '#3f78c2',
-  escenario: ['#111827', '#111827'], sel: '#0f1117', badge: ['#0f1117', '#ffffff']
+  tinta: '#ffffff', tintaPiso: '#9fbbe3', tintaTipo: { campo: '#0b1b33', puerta: '#0b1b33', enfermeria: '#0b1b33' },
+  fondo: ['#173a66', '#0f2a4d', '#0a1d3a'], fachada: '#3f7fc4',
+  escenario: ['#050d1f', '#3fa9f5'], sel: '#ffffff', badge: ['#ffffff', '#0b1b33']
 };
+// El vidrio oscuro de lo que flota sobre el plano (la leyenda, los botones, los pisos, la ayuda).
+const INC_VIDRIO = 'background:rgba(9,24,48,.5);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(160,200,255,.2);box-shadow:0 4px 14px rgba(0,8,24,.28)';
+// La letra: la de la página (la gerencia usa la del sistema, como en una Mac), o Poppins.
+const INC_FUENTE = 'var(--inc-fuente,Poppins),sans-serif';
+// Cuándo la ventana del detalle va abajo en vez de al costado: en el celular y en las pantallas paradas (la tablet vertical).
+const INC_VENTANA_ABAJO = '(max-width:640px),(orientation:portrait) and (max-width:1100px)';
 const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['vip', 'VIP'], ['campo', 'Campo'], ['puerta', 'Puertas'], ['gastro', 'Gastronomía'], ['banio', 'Baños'], ['enfermeria', 'Enfermería'], ['servicio', 'Otros puntos']];
 function incLeyendaHTML(clase, soloZonas) {
   const col = INC_TEMA.color;
@@ -999,7 +1005,7 @@ function incPlanoSVG(op) {
       + etq + badge + '</g>';
   }).join('');
   const pts = a => a.map(p => p.join(',')).join(' ');
-  return '<svg viewBox="6 -42 408 384" xmlns="http://www.w3.org/2000/svg" font-family="Poppins, sans-serif" style="width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;border-radius:12px' + (op.editor ? ';touch-action:none' : '') + '">'
+  return '<svg viewBox="6 -42 408 384" xmlns="http://www.w3.org/2000/svg" style="font-family:' + INC_FUENTE + ';width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;border-radius:12px' + (op.editor ? ';touch-action:none' : '') + '">'
     + '<defs><radialGradient id="incFondoG" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="' + TM.fondo[0] + '"/><stop offset=".6" stop-color="' + TM.fondo[1] + '"/><stop offset="1" stop-color="' + TM.fondo[2] + '"/></radialGradient></defs>'
     + '<rect x="6" y="-42" width="408" height="384" rx="14" fill="url(#incFondoG)"/>'
     + '<polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="' + TM.fachada + '" stroke-width="1" pointer-events="none"/>'
@@ -1012,27 +1018,32 @@ function incPlanoSVG(op) {
 // puesto con su color; el campo, el escenario con su pantalla y la
 // estructura de luces, la cinta LED que da la vuelta entre la platea baja y
 // la alta, y afuera el anillo con las puertas, la gastronomía y los baños,
-// cerrado por una fachada de vidrio. Un solo fondo,
-// intermedio, sin cuadrícula. Cada lugar con algo abierto se ilumina en su
+// cerrado por una fachada de vidrio. De noche, en azul Movistar, con los
+// contornos en luz LED, suaves; sin cuadrícula. Cada lugar con algo abierto se ilumina en su
 // color y late (más rápido cuanto más grave) y le sale una columna con el
 // número. Se gira arrastrando, se acerca pellizcando y se toca el lugar
 // igual que en el plano; en pantalla completa, el detalle de las incidencias
-// va en su propia columna, al costado (o abajo, en el celular), sin tapar el
-// plano. three.js se carga recién cuando hace falta (pesa). Si el aparato no
+// va en una ventana de vidrio que flota al costado (abajo, en el celular) y el
+// estadio se corre para que no lo tape. Donde el navegador no da pantalla
+// completa (el iPhone), el plano se agranda igual a toda la pantalla.
+// three.js se carga recién cuando hace falta (pesa). Si el aparato no
 // tiene WebGL o el 3D falla, queda el plano en 2D: nunca se queda sin plano.
 const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], vip: 11.5, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13 };
 // Los colores del 3D: arriba y costado de cada tipo (los mismos tonos que el
-// plano), el borde, el piso, el cielo y las luces (casi blancas, para que
-// cada color se vea como es).
+// plano), el contorno LED de cada uno, el halo de abajo, el vidrio de la
+// fachada y las luces (casi blancas, apenas frías: si fueran celestes, los
+// azules se confundirían entre sí y el semáforo no se vería como es).
 const INC_TEMA_3D = {
-  luces: { hemi: [0xffffff, 0x8f99ab, 0.78], clave: 0.55, contra: 0.22, escenario: 0.15 },
+  luces: { hemi: [0xe8f0ff, 0x1a2a48, 0.8], clave: 0.55, contra: 0.3, escenario: 0.35 },
   color: {
-    baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0x858e9b, 0x666f7c], back: [0x79828f, 0x5e6774], vip: [0x252e3d, 0x141a24],
-    puerta: [0x0e86b4, 0x0e86b4], gastro: [0xb03aa2, 0x7a1f70], banio: [0x63748e, 0x3e4c63], enfermeria: [0xf6f8fb, 0xc6ced9], servicio: [0x414b5b, 0x262d38]
+    baja: [0x2557dc, 0x16348c], alta: [0x4a8ff5, 0x2a5fb8], campo: [0x3fb8ec, 0x1b7fb0], anillo: [0x2c4063, 0x1a2944], back: [0x26395b, 0x17243d], vip: [0x16336e, 0x0b1c40],
+    puerta: [0x9ee6ff, 0x9ee6ff], gastro: [0xbf55e0, 0x7d2a9a], banio: [0x7896c6, 0x44608c], enfermeria: [0xffffff, 0xc6d4e8], servicio: [0x44608a, 0x26395b]
   },
-  borde: { baja: 0xffffff, alta: 0xffffff, campo: 0xffffff, anillo: 0xaab3bf, back: 0xaab3bf, vip: 0xe5e7eb, puerta: 0x08597a, gastro: 0xffffff, banio: 0xffffff, enfermeria: 0x8f9cb0, servicio: 0xffffff },
-  opBorde: { baja: 0.5, alta: 0.5, campo: 0.55, anillo: 0.7, back: 0.7 }, opBordeOtro: 0.75, sel: 0x0f1117,
-  etqPiso: '#1f2733', vidrio: [0x9fb3cb, 0.18], fachada: [[10, 0x5f6c82, 0.8], [0.4, 0x5f6c82, 0.6]], parantes: [0x637087, 0.4]
+  borde: { baja: 0x8cc0ff, alta: 0xb5d8ff, campo: 0xd2f3ff, anillo: 0x4f7fb8, back: 0x4f7fb8, vip: 0x4fb3ff, puerta: 0x9ee6ff, gastro: 0xf0c8fb, banio: 0xd2e2f7, enfermeria: 0xa9c2e6, servicio: 0xa9c2e6 },
+  opBorde: { baja: 0.5, alta: 0.5, campo: 0.6, anillo: 0.55, back: 0.55, vip: 0.9 }, opBordeOtro: 0.7, sel: 0xffffff,
+  brillo: 0.1,   // cuánto brilla cada zona con su propio color: la luz LED, suave
+  halo: ['rgba(56,160,255,.18)', 'rgba(56,160,255,.06)'],
+  vidrio: [0x3d8fe0, 0.1], fachada: [[10, 0x56b8ff, 0.75], [0.4, 0x3d8fe0, 0.55]], parantes: [0x3d8fe0, 0.35]
 };
 let incCarga3D = null, incSin3D = false, incListo3D = false;
 function incCargar3D() {
@@ -1085,54 +1096,71 @@ function incEstiloPlano() {
   if (document.getElementById('incEstiloPlano')) return;
   const st = document.createElement('style'); st.id = 'incEstiloPlano';
   st.textContent = '.inc-plano-pie{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;margin-top:8px}'
-    + '.inc-pisos,.inc-3d-pisos{display:inline-flex;background:#e6e8ec;border-radius:10px;padding:3px;gap:2px}'
-    + '.inc-pisos button,.inc-3d-pisos button{border:0;background:transparent;font:600 11.5px Poppins,sans-serif;color:#4b5563;padding:5px 10px;border-radius:7px;cursor:pointer}'
-    + '.inc-pisos button.on,.inc-3d-pisos button.on{background:#fff;color:#111827;box-shadow:0 1px 3px rgba(16,24,40,.14)}'
-    + '.inc-3d-pisos{position:absolute;left:8px;bottom:8px;z-index:3;background:rgba(255,255,255,.85);box-shadow:0 1px 3px rgba(15,23,42,.12)}'
+    + '.inc-pisos{display:inline-flex;background:rgba(11,27,51,.07);border-radius:10px;padding:3px;gap:2px}'
+    + '.inc-pisos button{border:0;background:transparent;font:600 12px ' + INC_FUENTE + ';color:#43546e;padding:6px 11px;border-radius:8px;cursor:pointer}'
+    + '.inc-pisos button.on{background:#fff;color:#0b1b33;box-shadow:0 1px 3px rgba(11,27,51,.16)}'
+    + '.inc-3d-pisos{position:absolute;left:calc(10px + var(--inc-izq,0px));bottom:calc(10px + var(--inc-tapa-abajo,0px) + var(--inc-inf,0px));z-index:3;display:inline-flex;gap:2px;padding:3px;border-radius:11px;' + INC_VIDRIO + '}'
+    + '.inc-3d-pisos button{border:0;background:transparent;font:600 12px ' + INC_FUENTE + ';color:#cfe0f7;padding:6px 11px;border-radius:8px;cursor:pointer}'
+    + '.inc-3d-pisos button.on{background:rgba(255,255,255,.92);color:#0b1b33}'
     + '.inc-ref-rapida{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 2px}'
-    + '.inc-ref-rapida button{font:600 11.5px Poppins,sans-serif;background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:999px;padding:5px 11px;cursor:pointer}'
-    + '.inc-plano-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font:500 11px Poppins,sans-serif;color:#4b5563}'
+    + '.inc-ref-rapida button{font:600 12px ' + INC_FUENTE + ';background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:999px;padding:6px 12px;cursor:pointer}'
+    + '.inc-plano-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font:500 11.5px ' + INC_FUENTE + ';color:#43546e}'
     + '.inc-plano-ley span,.inc-3d-ley span{display:inline-flex;align-items:center;gap:5px}'
     + '.inc-plano-ley i,.inc-3d-ley i{width:10px;height:10px;border-radius:3px;border:1px solid;display:inline-block}'
-    + '.inc-3d-ley{position:absolute;left:8px;top:8px;z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 170px);font:500 10.5px Poppins,sans-serif;color:#334155;background:rgba(255,255,255,.78);padding:5px 9px;border-radius:8px;pointer-events:none;box-shadow:0 1px 3px rgba(15,23,42,.08)}';
+    + '.inc-3d-ley{position:absolute;left:calc(10px + var(--inc-izq,0px));top:calc(10px + var(--inc-sup,0px));z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 190px);font:500 11px ' + INC_FUENTE + ';color:#dbe8ff;padding:6px 10px;border-radius:10px;pointer-events:none;' + INC_VIDRIO + '}'
+    // En los aparatos táctiles, lo que se toca, del tamaño del dedo.
+    + '@media(pointer:coarse){.inc-pisos button,.inc-3d-pisos button{min-height:38px;padding:0 13px}.inc-ref-rapida button{min-height:36px}}';
   document.head.appendChild(st);
 }
 function incEstilo3D() {
   if (document.getElementById('incEstilo3D')) return;
   const st = document.createElement('style'); st.id = 'incEstilo3D';
-  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 85% at 50% 0%,#3d485b 0%,#272f3c 55%,#171c25 100%)}'
-
-    + '.inc-3d:fullscreen{width:100vw;height:100vh;border-radius:0}'
+  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:14px;overflow:hidden;border:none!important;background:radial-gradient(120% 85% at 50% 0%,#1b3d6b 0%,#0f2a4d 52%,#071a33 100%)}'
+    // Pantalla completa (la del navegador o, donde no la hay, la de mentira): toda la pantalla, encima de todo.
+    + '.inc-3d.inc-3d-full{position:fixed!important;left:0;top:0;right:0;bottom:0;width:100vw!important;height:100vh!important;height:100dvh!important;min-height:0!important;margin:0!important;border-radius:0;z-index:2147483000;--inc-sup:env(safe-area-inset-top,0px);--inc-der:env(safe-area-inset-right,0px);--inc-izq:env(safe-area-inset-left,0px);--inc-inf:env(safe-area-inset-bottom,0px)}'
+    + 'html.inc-3d-bloqueo,html.inc-3d-bloqueo body{overflow:hidden!important;overscroll-behavior:none}'
     + '.inc-3d canvas{position:relative;z-index:1;display:block;width:100%;height:100%;touch-action:none;outline:none}'
-    + '.inc-3d-btns{position:absolute;top:8px;right:8px;z-index:4;display:flex;gap:6px}'
-    + '.inc-3d-btn{background:rgba(255,255,255,.88);color:#111827;border:1px solid rgba(15,17,23,.14);border-radius:8px;padding:6px 10px;font:600 12px Poppins,sans-serif;cursor:pointer;box-shadow:0 1px 3px rgba(15,23,42,.1);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}'
-    + '.inc-3d-btn:hover{background:#fff;border-color:rgba(15,17,23,.3)}'
-    + '.inc-3d-btn-det{display:none}.inc-3d:fullscreen .inc-3d-btn-det{display:inline-block}'
-    + '.inc-3d-ayuda{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:2;color:#fff;font:500 11px Poppins,sans-serif;background:rgba(15,17,23,.72);padding:5px 12px;border-radius:999px;pointer-events:none;transition:opacity .8s;width:max-content;max-width:92%;text-align:center;line-height:1.35}'
+    + '.inc-3d-btns{position:absolute;top:calc(10px + var(--inc-sup,0px));right:calc(10px + var(--inc-der,0px));z-index:6;display:flex;gap:6px}'
+    + '.inc-3d-btn{' + INC_VIDRIO + ';color:#eaf3ff;border-radius:10px;min-width:36px;min-height:36px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:5px;font:600 12.5px ' + INC_FUENTE + ';cursor:pointer;transition:background .15s}'
+    + '.inc-3d-btn:hover{background:rgba(20,44,82,.7)}'
+    + '.inc-3d-btn:focus-visible{outline:2px solid #7cc8ff;outline-offset:2px}'
+    + '.inc-3d-btn-det{display:none}.inc-3d-full .inc-3d-btn-det{display:inline-flex}'
+    + '.inc-3d-ayuda{position:absolute;left:50%;bottom:calc(12px + var(--inc-tapa-abajo,0px) + var(--inc-inf,0px));transform:translateX(-50%);z-index:3;' + INC_VIDRIO + ';color:#eaf3ff;font:500 11.5px ' + INC_FUENTE + ';padding:6px 13px;border-radius:999px;pointer-events:none;transition:opacity .8s;width:max-content;max-width:92%;text-align:center;line-height:1.35}'
     + '.inc-3d-etqs{position:absolute;left:0;top:0;right:0;bottom:0;z-index:2;pointer-events:none;overflow:hidden}'
-    + '.inc-3d-e{position:absolute;left:0;top:0;white-space:nowrap;font:600 11px/1 Poppins,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(15,23,42,.6);-webkit-user-select:none;user-select:none}'
+    + '.inc-3d-e{position:absolute;left:0;top:0;white-space:nowrap;font:600 11px/1 ' + INC_FUENTE + ';color:#fff;text-shadow:0 1px 3px rgba(0,10,30,.7);-webkit-user-select:none;user-select:none}'
     + '.inc-3d-e.chico{font-size:10px}.inc-3d-e.campo{font-size:10.5px;letter-spacing:.6px}.inc-3d-e.esc{font-size:10px;letter-spacing:1.6px}'
-    + '.inc-3d-e.piso{font-size:9px;letter-spacing:1.3px;color:#e5e9ef;text-shadow:0 1px 2px rgba(15,23,42,.55)}'
-    + '.inc-3d-e.osc{color:#111827;text-shadow:0 1px 1px rgba(255,255,255,.55)}'
-    + '.inc-3d-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;font:600 10.5px/1 Poppins,sans-serif;color:#fff;border:1.5px solid rgba(255,255,255,.95);box-shadow:0 1px 4px rgba(15,23,42,.3);text-shadow:none}'
+    + '.inc-3d-e.piso{font-size:9px;letter-spacing:1.3px;color:#9fbbe3;text-shadow:0 1px 2px rgba(0,10,30,.6)}'
+    + '.inc-3d-e.claro,.inc-3d-e.osc{color:#0b1b33;text-shadow:0 1px 1px rgba(255,255,255,.5)}'
+    + '.inc-3d-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:999px;font:600 10.5px/1 ' + INC_FUENTE + ';color:#fff;border:1.5px solid rgba(255,255,255,.9);box-shadow:0 0 10px rgba(80,180,255,.35),0 1px 4px rgba(0,10,30,.35);text-shadow:none}'
     + '.inc-3d-pill svg{width:12px;height:12px;fill:currentColor;display:block}'
-    + '.inc-3d-chapa{display:grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:999px;font:700 12px/1 Poppins,sans-serif;color:#fff;border:2px solid #fff;box-shadow:0 2px 6px rgba(15,23,42,.35);text-shadow:none}'
-    + '.inc-3d-tip{position:absolute;z-index:3;pointer-events:none;background:#111827;color:#fff;font:600 12px Poppins,sans-serif;padding:5px 10px;border-radius:7px;transform:translate(-50%,-140%);white-space:nowrap;opacity:0;transition:opacity .12s}'
-    // El detalle de las incidencias, en pantalla completa: su propia columna, sin tapar el plano.
-    + '.inc-3d-det{position:absolute;z-index:3;top:0;right:0;bottom:0;width:var(--inc-det-w,360px);display:none;flex-direction:column;background:#fff;color:#111827;border-left:1px solid rgba(15,17,23,.1);overflow:hidden;font-family:Poppins,sans-serif;box-shadow:-8px 0 24px rgba(15,23,42,.08)}'
-    + '.inc-3d:fullscreen .inc-3d-det.abierto{display:flex}'
-    + '.inc-3d-det-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border-bottom:1px solid #eef0f3}'
-    + '.inc-3d-det-cab strong{display:block;font-size:15px}.inc-3d-det-cab span{font-size:11.5px;color:#6b7280}'
-    + '.inc-3d-det button{font:600 11.5px Poppins,sans-serif;border-radius:8px;padding:6px 10px;cursor:pointer;border:1px solid #d6dae1;background:#fff;color:#111827}'
-    + '.inc-3d-det .inc-3d-det-accion{margin:12px 16px 0;background:#111827;border-color:#111827;color:#fff}'
-    + '.inc-3d-det-lista{flex:1;overflow-y:auto;padding:12px 14px 16px;display:flex;flex-direction:column;gap:8px;background:#f6f7f9}'
-    + '.inc-3d-det-card{background:#fff;border:1px solid #e5e7eb;border-left:4px solid;border-radius:10px;padding:9px 11px}'
-    + '.inc-3d-det-card .t{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.inc-3d-det-card .t b{font-size:13px;flex:1;min-width:0}.inc-3d-det-card .t span{font-size:11px;color:#6b7280}'
-    + '.inc-3d-det-card .d{font-size:11.5px;color:#6b7280;margin-top:3px}'
-    + '.inc-3d-det-card .a{display:flex;flex-wrap:wrap;gap:2px 9px;margin-top:4px;font-size:11.5px;color:#15803d}'
-    + '.inc-3d-det-card .n{font-size:12px;margin-top:4px;white-space:pre-wrap}'
-    + '.inc-3d-det-vacio{font-size:12.5px;color:#6b7280;text-align:center;padding:24px 10px}'
-    + '@media(max-width:640px){.inc-3d-det{left:0;top:auto;width:auto;height:var(--inc-det-h,44%);border-left:0;border-top:1px solid rgba(15,17,23,.1);border-radius:14px 14px 0 0}}';
+    + '.inc-3d-chapa{display:grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:999px;font:700 12px/1 ' + INC_FUENTE + ';color:#fff;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,10,30,.45);text-shadow:none}'
+    + '.inc-3d-tip{position:absolute;z-index:4;pointer-events:none;' + INC_VIDRIO + ';color:#fff;font:600 12px ' + INC_FUENTE + ';padding:6px 10px;border-radius:8px;transform:translate(-50%,-140%);white-space:nowrap;opacity:0;transition:opacity .12s}'
+    // El detalle, en pantalla completa: una ventana de vidrio que flota al costado (abajo, en el celular), sin ocupar todo el alto.
+    + '.inc-3d-det{position:absolute;z-index:5;top:calc(58px + var(--inc-sup,0px));right:calc(14px + var(--inc-der,0px));width:min(380px,calc(100% - 28px));max-height:calc(100% - 150px - var(--inc-sup,0px));display:none;flex-direction:column;background:rgba(244,248,253,.74);-webkit-backdrop-filter:blur(28px) saturate(180%);backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,.6);border-radius:18px;box-shadow:0 24px 60px rgba(0,8,26,.5),0 0 0 .5px rgba(0,8,26,.25);color:#0b1b33;overflow:hidden;font-family:' + INC_FUENTE + ';animation:incVentana .22s ease-out}'
+    + '@keyframes incVentana{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}'
+    + '.inc-3d-full .inc-3d-det.abierto{display:flex}'
+    + '.inc-3d-det-cab{display:flex;align-items:center;gap:8px;padding:12px 10px 10px 16px;border-bottom:1px solid rgba(11,27,51,.08)}'
+    + '.inc-3d-det-tit{flex:1;min-width:0}.inc-3d-det-tit strong{display:block;font-size:15px;font-weight:650;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.inc-3d-det-tit span{font-size:12px;color:#43546e}'
+    + '.inc-3d-det button{font:600 12px ' + INC_FUENTE + ';cursor:pointer;color:#0b1b33}'
+    + '.inc-3d-det-todas{border:0;background:rgba(11,27,51,.07);border-radius:999px;padding:0 12px;min-height:32px}'
+    + '.inc-3d-det-x{position:relative;flex-shrink:0;width:30px;height:30px;border-radius:50%;border:0;background:rgba(11,27,51,.08);font-size:13px!important;line-height:1}'
+    + '.inc-3d-det-x::after{content:"";position:absolute;left:-7px;top:-7px;right:-7px;bottom:-7px}'   // para tocarla, más grande que el botón
+    + '.inc-3d-det-x:hover,.inc-3d-det-todas:hover{background:rgba(11,27,51,.14)}'
+    + '.inc-3d-det .inc-3d-det-accion{margin:10px 12px 0;min-height:40px;border-radius:11px;border:0;background:#0b1b33;color:#fff}'
+    + '.inc-3d-det-lista{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 12px 14px;display:flex;flex-direction:column;gap:8px}'
+    + '.inc-3d-det-card{background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.9);border-left:4px solid;border-radius:12px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,8,26,.06)}'
+    + '.inc-3d-det-card .t{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.inc-3d-det-card .t b{font-size:13.5px;flex:1;min-width:0}.inc-3d-det-card .t span{font-size:11.5px;color:#43546e}'
+    + '.inc-3d-det-card .d{font-size:12px;color:#43546e;margin-top:3px}'
+    + '.inc-3d-det-card .a{display:flex;flex-wrap:wrap;gap:2px 9px;margin-top:4px;font-size:12px;color:#15803d}'
+    + '.inc-3d-det-card .n{font-size:12.5px;margin-top:4px;white-space:pre-wrap}'
+    + '.inc-3d-det-vacio{font-size:13px;color:#43546e;text-align:center;padding:22px 10px}'
+    + '@media' + INC_VENTANA_ABAJO + '{.inc-3d-det{left:max(calc(10px + var(--inc-izq,0px)),calc(50% - 330px));right:max(calc(10px + var(--inc-der,0px)),calc(50% - 330px));top:auto;bottom:calc(10px + var(--inc-inf,0px));width:auto;max-height:46%}}'
+    // En el celular la ayuda va arriba de los pisos (si no, se pisan).
+    + '@media(max-width:560px){.inc-3d-ayuda{bottom:calc(58px + var(--inc-tapa-abajo,0px) + var(--inc-inf,0px))}'
+    // La leyenda, más chica; en pantalla completa, abajo de los botones (si no, se pisan).
+    + '.inc-3d-ley{max-width:calc(100% - 150px);font-size:10.5px;gap:2px 8px;padding:5px 8px}.inc-3d-full .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}}'
+    // En los aparatos táctiles, lo que se toca, del tamaño del dedo (44 px).
+    + '@media(pointer:coarse){.inc-3d-btn{min-width:44px;min-height:44px;font-size:13px}.inc-3d-det-x{width:36px;height:36px}.inc-3d-det-todas{min-height:38px}}';
   document.head.appendChild(st);
 }
 function incPlano3D(cont, op0) {
@@ -1183,12 +1211,12 @@ function incPlano3D(cont, op0) {
   escena.add(new T.HemisphereLight(TM.luces.hemi[0], TM.luces.hemi[1], TM.luces.hemi[2]));
   const clave = new T.DirectionalLight(0xffffff, TM.luces.clave); clave.position.set(180, 380, 300); escena.add(clave);
   const contra = new T.DirectionalLight(0xc9d8ff, TM.luces.contra); contra.position.set(-220, 180, -340); escena.add(contra);
-  const luzEscenario = new T.PointLight(0xdfe8ff, TM.luces.escenario, 420); luzEscenario.position.set(0, 60, -110); escena.add(luzEscenario);
+  const luzEscenario = new T.PointLight(0x7fbfff, TM.luces.escenario, 420); luzEscenario.position.set(0, 60, -110); escena.add(luzEscenario);
 
-  // Sin piso que se extienda (se le veía el borde): sólo una sombra suave debajo del estadio.
+  // Sin piso que se extienda (se le veía el borde): sólo un halo azul suave debajo del estadio.
   {
     const c = lienzoDe(256, 256), x = c.getContext('2d'), gr = x.createRadialGradient(128, 128, 30, 128, 128, 128);
-    gr.addColorStop(0, 'rgba(30,38,52,.34)'); gr.addColorStop(0.65, 'rgba(30,38,52,.16)'); gr.addColorStop(1, 'rgba(30,38,52,0)');
+    gr.addColorStop(0, TM.halo[0]); gr.addColorStop(0.65, TM.halo[1]); gr.addColorStop(1, 'rgba(56,160,255,0)');
     x.fillStyle = gr; x.fillRect(0, 0, 256, 256);
     const sombra = new T.Mesh(new T.PlaneGeometry(760, 700), new T.MeshBasicMaterial({ map: textura(c), transparent: true, depthWrite: false }));
     sombra.rotation.x = -Math.PI / 2; sombra.position.y = -0.2; escena.add(sombra);
@@ -1290,7 +1318,7 @@ function incPlano3D(cont, op0) {
       p.mats = [matMarco, matHuella];
       p.pintar = (v, sel) => { matMarco.color.set(sel ? TM.sel : v ? sevColor(v) : base[0]); matHuella.color.set(v ? v.plano : base[0]); };
       p.latir = k => { matHuella.opacity = 0.22 + k * 0.5; };
-      p.hBase = h; p.hEt = h + 5; p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.puerta[0] + '">' + incEsc(s.txt) + '</span>'; p.etClase = 'pill';
+      p.hBase = h; p.hEt = h + 5; p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.puerta[0] + ';color:' + (T2.tintaTipo.puerta || '#ffffff') + '">' + incEsc(s.txt) + '</span>'; p.etClase = 'pill';
     } else {
       let geo, rot = 0;
       if (s.t === 'baja' || s.t === 'alta') {
@@ -1303,7 +1331,7 @@ function incPlano3D(cont, op0) {
         p.hBase = (g.filas.find(f => dc >= f.a - 0.01 && dc <= f.b + 0.01) || g.filas[g.filas.length - 1]).h;
       } else { p.hBase = INC_3D_ALTURA[s.t]; geo = extruir(pts, p.hBase); }
       const mapa = s.t === 'baja' || s.t === 'alta' ? butacas(rot) : s.t === 'campo' && /^Campo [A-N]$/.test(s.id) ? butacas(0) : null;
-      const matTop = new T.MeshStandardMaterial({ color: base[0], map: mapa, roughness: 0.55, metalness: 0.2, emissive: 0x000000 });
+      const matTop = new T.MeshStandardMaterial({ color: base[0], map: mapa, roughness: 0.55, metalness: 0.2, emissive: base[0], emissiveIntensity: TM.brillo });
       const matLado = new T.MeshStandardMaterial({ color: base[1], roughness: 0.5, metalness: 0.35 });
       const malla = new T.Mesh(geo, [matTop, matLado]); grupo.add(malla); tocable(malla);
       // El contorno (cada fila de la platea tiene el suyo).
@@ -1314,7 +1342,7 @@ function incPlano3D(cont, op0) {
       // Con una incidencia: el color fuerte del semáforo y la luz del color claro.
       p.pintar = (v, sel) => {
         matTop.color.set(v ? v.color : base[0]); matLado.color.set(v ? v.color : base[1]); if (v) matLado.color.multiplyScalar(0.55);
-        matTop.emissive.set(v ? v.plano : 0xffffff);
+        matTop.emissive.set(v ? v.plano : base[0]);
         matBorde.color.set(sel ? TM.sel : v ? sevColor(v) : bordeBase); matBorde.opacity = v || sel ? 1 : opB;
       };
       p.latir = k => { matTop.emissiveIntensity = k; };
@@ -1323,7 +1351,7 @@ function incPlano3D(cont, op0) {
       else {
         // El número: blanco sobre el color de la zona; oscuro cuando el sector se pinta con una incidencia.
         const chico = s.r && (s.r[2] <= 18 || s.r[3] <= 18);
-        p.etHtml = incEsc(s.txt); p.etClase = s.txt.length > 3 ? 'campo' : chico ? 'chico' : ''; p.hEt = p.hBase + 4;
+        p.etHtml = incEsc(s.txt); p.etClase = (s.txt.length > 3 ? 'campo' : chico ? 'chico' : '') + (s.t === 'campo' ? ' claro' : ''); p.hEt = p.hBase + 4;
         p.bz = cz - (s.r ? Math.min(10, s.r[3] * 0.3) : 8);
       }
     }
@@ -1337,7 +1365,7 @@ function incPlano3D(cont, op0) {
   // (con los equipos) y la pantalla LED con el nombre del show.
   const escenario = new T.Mesh(new T.BoxGeometry(120, 7, 22), new T.MeshStandardMaterial({ color: 0x060b18, roughness: 0.35, metalness: 0.5 }));
   escenario.position.set(0, 3.5, -127); escena.add(escenario);
-  const tira = new T.Mesh(new T.BoxGeometry(118, 0.8, 0.8), new T.MeshBasicMaterial({ color: 0x2a9fd6 }));
+  const tira = new T.Mesh(new T.BoxGeometry(118, 0.8, 0.8), new T.MeshBasicMaterial({ color: 0x4fc3ff }));
   tira.position.set(0, 6.6, -116); escena.add(tira);
   etiqueta('ESCENARIO', 'esc', new T.Vector3(0, 12, -122));
   const matTruss = new T.MeshStandardMaterial({ color: 0x3a4e72, roughness: 0.4, metalness: 0.8 });
@@ -1436,19 +1464,22 @@ function incPlano3D(cont, op0) {
   // El detalle de las incidencias, para verlo sin salir de la pantalla
   // completa: lo abierto (de lo más grave a lo más leve) y, si se toca un
   // lugar, sólo lo de ese lugar.
-  let detLista = null, detSector = '', detAbierto = true, accion = null, selLocal = '', ultimoOp = op0, medirRef = null;
+  let vivo = true, detLista = null, detSector = '', detAbierto = true, accion = null, selLocal = '', ultimoOp = op0, medirRef = null, falsa = false;
+  // En pantalla completa: la del navegador o la de mentira (ver más abajo).
+  const enPantalla = () => falsa || document.fullscreenElement === cont || document.webkitFullscreenElement === cont;
   const pintarDetalle = () => {
     btnDet.style.display = detLista ? '' : 'none';
     const antes = panel.classList.contains('abierto');
     panel.classList.toggle('abierto', !!detLista && detAbierto);
-    if (medirRef && antes !== panel.classList.contains('abierto')) medirRef();   // el plano se achica o se agranda
-    if (!detLista) { panel.innerHTML = ''; return; }
+    const cambio = antes !== panel.classList.contains('abierto');
+    if (!detLista) { panel.innerHTML = ''; if (medirRef && cambio) medirRef(); return; }
     const de = i => !detSector || i.sector === detSector;
     const abiertas = incOrdenar(detLista.filter(i => i.estado !== 'resuelta' && de(i))), resueltas = detLista.filter(i => i.estado === 'resuelta' && de(i)).length;
     const total = detLista.filter(i => i.estado !== 'resuelta').length;
     btnDet.textContent = '☰ Incidencias' + (total ? ' · ' + total : '');
-    panel.innerHTML = '<div class="inc-3d-det-cab"><div><strong>' + (detSector ? incEsc(detSector) : 'Abiertas ahora') + '</strong><span>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + (resueltas ? ' · ' + resueltas + ' resuelta' + (resueltas === 1 ? '' : 's') : '') + '</span></div>'
-      + (detSector ? '<button type="button" data-d="todas">Ver todas</button>' : '<button type="button" data-d="cerrar" title="Ocultar">✕</button>') + '</div>'
+    panel.innerHTML = '<div class="inc-3d-det-cab"><div class="inc-3d-det-tit"><strong>' + (detSector ? incEsc(detSector) : 'Abiertas ahora') + '</strong><span>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + (resueltas ? ' · ' + resueltas + ' resuelta' + (resueltas === 1 ? '' : 's') : '') + '</span></div>'
+      + (detSector ? '<button type="button" class="inc-3d-det-todas" data-d="todas">Ver todas</button>' : '')
+      + '<button type="button" class="inc-3d-det-x" data-d="cerrar" title="Cerrar" aria-label="Cerrar el detalle">✕</button></div>'
       + (accion && detSector ? '<button type="button" class="inc-3d-det-accion" data-d="accion">' + incEsc(accion.texto) + '</button>' : '')
       + '<div class="inc-3d-det-lista">' + (abiertas.length ? abiertas.map(i => {
         const v = INC_NIVELES[i.nivel] || INC_NIVELES[1];
@@ -1457,6 +1488,8 @@ function incPlano3D(cont, op0) {
           + ((i.acciones || []).length ? '<div class="a">' + i.acciones.map(a => '<span>✓ ' + incEsc(a) + '</span>').join('') + '</div>' : '')
           + (i.nota ? '<div class="n">' + incEsc(i.nota) + '</div>' : '') + '</div>';
       }).join('') : '<div class="inc-3d-det-vacio">' + (detSector ? 'No hay nada abierto en ' + incEsc(detSector) + '.' : 'No hay incidencias abiertas.') + '</div>') + '</div>';
+    // La ventana cambió de tamaño: el estadio se acomoda en lo que queda libre.
+    if (medirRef && (cambio || enPantalla())) medirRef(cambio && enPantalla());
   };
   panel.addEventListener('click', e => {
     const b = e.target.closest('[data-d]'); if (!b) return;
@@ -1465,7 +1498,7 @@ function incPlano3D(cont, op0) {
     if (d === 'cerrar') { detAbierto = false; pintarDetalle(); }
     if (d === 'accion' && accion && typeof window[accion.fn] === 'function') {
       const lugar = detSector, fn = window[accion.fn], ir = () => fn(lugar);
-      if (document.fullscreenElement) document.exitFullscreen().then(ir, ir); else ir();
+      if (enPantalla()) { salirPantalla(); setTimeout(ir, 150); } else ir();
     }
   });
 
@@ -1486,40 +1519,93 @@ function incPlano3D(cont, op0) {
 
   // Tamaño: el ancho del contenedor y un alto proporcionado; con
   // data-alto="pantalla" (en pantallas grandes), el alto que le da la página;
-  // o la pantalla entera. En pantalla completa con el detalle abierto, el
-  // plano deja lugar a la columna del detalle (o a la franja de abajo, en el celular).
-  const medir = () => {
-    const full = document.fullscreenElement === cont;
+  // o la pantalla entera. En pantalla completa, con la ventana del detalle
+  // abierta, el estadio se corre al lado libre (o hacia arriba, en el celular)
+  // y se aleja lo justo para entrar entero en lo que queda.
+  const medir = reencuadrar => {
+    const full = enPantalla();
     const fijo = !full && cont.dataset && cont.dataset.alto === 'pantalla' && window.innerWidth >= 960;
-    const conDet = full && panel.classList.contains('abierto'), angosto = window.innerWidth <= 640;
-    const detW = conDet && !angosto ? Math.min(400, Math.max(300, Math.round(window.innerWidth * 0.3))) : 0;
-    const detH = conDet && angosto ? Math.round(window.innerHeight * 0.44) : 0;
-    let w = full ? window.innerWidth - detW : cont.clientWidth, h;
-    if (!w) return;
-    if (full) h = window.innerHeight - detH;
-    else if (fijo) { cont.style.height = ''; h = Math.max(320, cont.clientHeight); }
-    else { h = Math.max(260, Math.min(Math.round(w * 0.82), 680)); cont.style.height = h + 'px'; }
-    cont.style.setProperty('--inc-det-w', detW + 'px'); cont.style.setProperty('--inc-det-h', detH + 'px');
-    lienzo.style.width = full ? w + 'px' : ''; lienzo.style.height = full ? h + 'px' : '';
-    btns.style.right = (detW + 8) + 'px'; ayuda.style.left = full ? (w / 2) + 'px' : ''; ayuda.style.bottom = (detH + 10) + 'px';
-    motor.setSize(w, h, false); camara.aspect = w / h; camara.updateProjectionMatrix();
-    // El encuadre de entrada: si la pantalla es angosta, un poco más lejos, para que entre el estadio entero.
-    const f = Math.max(1, 1.3 / camara.aspect);
+    const w = cont.clientWidth;
+    let h;
+    if (full || fijo) { cont.style.height = ''; h = full ? cont.clientHeight : Math.max(320, cont.clientHeight); }
+    else if (w) { h = Math.max(280, Math.min(Math.round(w * 0.82), 680)); cont.style.height = h + 'px'; }
+    if (!w || !h) return;
+    const conDet = full && panel.classList.contains('abierto'), abajo = conDet && !!(window.matchMedia && window.matchMedia(INC_VENTANA_ABAJO).matches);
+    const tapaW = conDet && !abajo ? panel.offsetWidth + 28 : 0, tapaH = abajo ? panel.offsetHeight + 20 : 0;
+    cont.style.setProperty('--inc-tapa-abajo', tapaH + 'px');
+    ayuda.style.left = Math.round((w - tapaW) / 2) + 'px';
+    motor.setSize(w, h, false); camara.aspect = w / h;
+    if (tapaW || tapaH) camara.setViewOffset(w, h, tapaW / 2, tapaH / 2, w, h); else camara.clearViewOffset();
+    camara.updateProjectionMatrix();
+    // El encuadre de entrada: que el estadio entre entero en lo libre (en una pantalla angosta, un poco más lejos).
+    const f = Math.max(1, 1.45 * h / Math.max(1, w - tapaW), h / Math.max(1, h - tapaH));
     hacia.copy(haciaBase).multiplyScalar(f);
     if (controles) controles.maxDistance = 720 * f;
+    if (reencuadrar === true) volver();
   };
   medirRef = medir;
-  const ro = window.ResizeObserver ? new ResizeObserver(medir) : null; if (ro) ro.observe(cont);
-  // Al salir de pantalla completa se olvida lo elegido ahí.
-  const alCambiarPantalla = () => { medir(); if (document.fullscreenElement !== cont && (selLocal || detSector)) { selLocal = ''; detSector = ''; api.poner(ultimoOp); } };
+  const ro = window.ResizeObserver ? new ResizeObserver(() => medir()) : null; if (ro) ro.observe(cont);
+  const btnPantalla = btns.querySelector('[data-a="pantalla"]');
+  let estabaFull = false;
+  const alCambiarPantalla = () => {
+    const full = enPantalla();
+    cont.classList.toggle('inc-3d-full', full);
+    btnPantalla.textContent = full ? '✕' : '⛶';
+    btnPantalla.title = full ? 'Salir de pantalla completa' : 'Pantalla completa'; btnPantalla.setAttribute('aria-label', btnPantalla.title);
+    // Al entrar o salir, la cámara vuelve a encuadrar el estadio entero.
+    medir(full !== estabaFull); estabaFull = full;
+    // Al salir de pantalla completa se olvida lo elegido ahí.
+    if (!full && (selLocal || detSector)) { selLocal = ''; detSector = ''; api.poner(ultimoOp); }
+  };
   document.addEventListener('fullscreenchange', alCambiarPantalla);
+  document.addEventListener('webkitfullscreenchange', alCambiarPantalla);
   medir();
+
+  // Pantalla completa: la del navegador, si la da. Si no (el iPhone no la da
+  // para nada que no sea un video) o falla, el plano se agranda igual a toda
+  // la pantalla —"la de mentira"— y se sale con la ✕, con Esc o con atrás.
+  let marca = null, conHistoria = false;
+  const ponerFalsa = on => {
+    if (on === falsa) return;
+    falsa = on;
+    if (on) {
+      // Directo en el body, para que nada de la página (una tarjeta de vidrio, la barra) lo encierre o lo tape.
+      marca = document.createComment('plano 3D'); cont.parentNode.insertBefore(marca, cont); document.body.appendChild(cont);
+      document.documentElement.classList.add('inc-3d-bloqueo');
+      try { history.pushState({ inc3d: true }, ''); conHistoria = true; } catch (_) {}
+    } else {
+      if (marca && marca.parentNode) marca.parentNode.replaceChild(cont, marca);
+      marca = null;
+      document.documentElement.classList.remove('inc-3d-bloqueo');
+      if (conHistoria) { conHistoria = false; try { if (history.state && history.state.inc3d) history.back(); } catch (_) {} }
+    }
+    alCambiarPantalla();
+  };
+  const entrarPantalla = () => {
+    detAbierto = true; pintarDetalle();
+    const pedir = cont.requestFullscreen || cont.webkitRequestFullscreen;
+    if (!pedir) { ponerFalsa(true); return; }
+    try { const r = pedir.call(cont); if (r && r.catch) r.catch(() => ponerFalsa(true)); } catch (_) { ponerFalsa(true); return; }
+    // Hay navegadores que dicen que sí y no hacen nada: si no entró, se agranda igual.
+    setTimeout(() => { if (vivo && !enPantalla()) ponerFalsa(true); }, 1000);
+  };
+  const salirPantalla = () => {
+    if (falsa) ponerFalsa(false);
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      const salir = document.exitFullscreen || document.webkitExitFullscreen;
+      try { const r = salir.call(document); if (r && r.catch) r.catch(() => {}); } catch (_) {}
+    }
+  };
+  const alAtras = () => { if (falsa) { conHistoria = false; ponerFalsa(false); } };
+  const alTecla = e => { if (e.key === 'Escape' && falsa) ponerFalsa(false); };
+  window.addEventListener('popstate', alAtras);
+  document.addEventListener('keydown', alTecla);
 
   btns.addEventListener('click', e => {
     const a = e.target.closest('button') && e.target.closest('button').dataset.a;
     if (a === 'vista') volver();
     if (a === 'detalle') { detAbierto = !detAbierto; pintarDetalle(); }
-    if (a === 'pantalla') { if (document.fullscreenElement) document.exitFullscreen(); else if (cont.requestFullscreen) { detAbierto = true; pintarDetalle(); cont.requestFullscreen(); } }
+    if (a === 'pantalla') { if (enPantalla()) salirPantalla(); else entrarPantalla(); }
   });
 
   // Tocar un lugar (un toque corto, no un arrastre) y el cartelito al pasar el mouse.
@@ -1539,7 +1625,7 @@ function incPlano3D(cont, op0) {
     const lejos = Math.hypot(e.clientX - abajo.x, e.clientY - abajo.y) > 8, largo = Date.now() - abajo.t > 700; abajo = null;
     if (lejos || largo) return;
     const id = sectorEn(e);
-    if (document.fullscreenElement === cont && detLista) { selLocal = detSector = (selLocal === id ? '' : id); detAbierto = true; api.poner(ultimoOp); return; }
+    if (enPantalla() && detLista) { selLocal = detSector = (selLocal === id ? '' : id); detAbierto = true; api.poner(ultimoOp); return; }
     if (id && onclick && typeof window[onclick] === 'function') window[onclick](id);
   });
   lienzo.addEventListener('pointermove', e => {
@@ -1556,7 +1642,7 @@ function incPlano3D(cont, op0) {
   lienzo.addEventListener('pointerleave', () => { sobre = ''; tip.style.opacity = '0'; });
 
   // Cada cuadro: la cámara de entrada, el latido, las balizas, las luces y la cinta que corre.
-  let vivo = true; const t0 = performance.now();
+  const t0 = performance.now();
   const cuadro = ahora => {
     if (!vivo) return;
     requestAnimationFrame(cuadro);
@@ -1571,7 +1657,7 @@ function incPlano3D(cont, op0) {
     }
     Object.values(piezas).forEach(p => {
       const brillo = p.id === sobre;
-      if (!p.nivel) { p.latir(p.sel ? 0.2 : (brillo ? 0.12 : 0)); return; }
+      if (!p.nivel) { p.latir(p.sel ? 0.34 : (brillo ? 0.28 : TM.brillo)); return; }
       const vel = [0, 2, 3.4, 5.5][p.nivel];
       const latido = 0.5 + 0.5 * Math.sin(t * vel);
       p.latir(0.22 + 0.24 * latido + (brillo ? 0.08 : 0));
@@ -1636,11 +1722,15 @@ function incPlano3D(cont, op0) {
       vivo = false;
       if (ro) ro.disconnect();
       document.removeEventListener('fullscreenchange', alCambiarPantalla);
+      document.removeEventListener('webkitfullscreenchange', alCambiarPantalla);
+      window.removeEventListener('popstate', alAtras); document.removeEventListener('keydown', alTecla);
+      // Si estaba en la pantalla completa de mentira, el plano vuelve a su lugar.
+      if (falsa) { falsa = false; if (marca && marca.parentNode) marca.parentNode.replaceChild(cont, marca); marca = null; document.documentElement.classList.remove('inc-3d-bloqueo'); }
       if (controles) controles.dispose();
       limpiar(escena);
       desechar.forEach(x => { try { x.dispose(); } catch (_) {} });
       motor.dispose(); if (motor.forceContextLoss) motor.forceContextLoss();
-      cont.classList.remove('inc-3d'); cont.style.height = ''; cont.innerHTML = '';
+      cont.classList.remove('inc-3d', 'inc-3d-full'); cont.style.height = ''; cont.innerHTML = '';
     }
   };
   return api;
@@ -1821,10 +1911,10 @@ function incEstiloMetricas() {
     + '.inc-graf-t{font-size:13px;font-weight:600;color:#111827;margin-bottom:6px}'
     + '.inc-leyenda{display:flex;gap:14px;font-size:11.5px;color:#4b5563;margin-bottom:4px;flex-wrap:wrap}'
     + '.inc-leyenda span{display:inline-flex;align-items:center;gap:6px}.inc-leyenda i{width:10px;height:10px;border-radius:2px;display:inline-block}'
-    + '.inc-graf{max-width:100%;height:auto;display:block;font-family:Poppins,sans-serif;overflow:visible}'
+    + '.inc-graf{max-width:100%;height:auto;display:block;font-family:var(--inc-fuente,Poppins),sans-serif;overflow:visible}'
     + '.inc-marca{outline:none;cursor:default}.inc-marca:hover path,.inc-marca:hover rect[fill]:not([fill="transparent"]),.inc-marca:focus path,.inc-marca:focus rect[fill]:not([fill="transparent"]){filter:brightness(1.12)}'
     + '.inc-marca:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}'
-    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#0f1117;color:#d1d5db;font:500 11.5px Poppins,sans-serif;padding:7px 10px;border-radius:8px;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s;box-shadow:0 6px 18px rgba(0,0,0,.18)}'
+    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#0f1117;color:#d1d5db;font:500 11.5px var(--inc-fuente,Poppins),sans-serif;padding:7px 10px;border-radius:8px;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s;box-shadow:0 6px 18px rgba(0,0,0,.18)}'
     + '.inc-met-tip .v{color:#fff;font-weight:700;font-size:13px}'
     + '.inc-met-vacio{text-align:center;color:#6b7280;font-size:12.5px;padding:18px;border:1px dashed #d1d5db;border-radius:12px;background:#fff}';
   document.head.appendChild(st);
