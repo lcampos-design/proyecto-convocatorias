@@ -67,12 +67,13 @@ export function armarMail({ nombre, link, invitado }) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ error: 'Método no permitido' }); }
   const servicio = process.env.SUPABASE_SERVICE_ROLE_KEY || '', resend = process.env.RESEND_API_KEY || '';
+  const cuerpo = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
   if (!servicio || !resend) {
+    // El detalle (qué variable falta) sólo para el panel; a la persona, un mensaje que entienda.
     const faltan = [!servicio && 'SUPABASE_SERVICE_ROLE_KEY', !resend && 'RESEND_API_KEY'].filter(Boolean);
-    return res.status(500).json({ error: 'Falta configurar en Vercel: ' + faltan.join(' y ') + '.' });
+    return res.status(500).json({ error: cuerpo.invitar ? 'Falta configurar en Vercel: ' + faltan.join(' y ') + '.' : 'Ahora no podemos mandarte el link. Probá de nuevo más tarde.' });
   }
 
-  const cuerpo = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
   const cuit = String(cuerpo.cuit || '').replace(/\D/g, '');
   if (cuit.length !== 11) return res.status(400).json({ error: 'El CUIL tiene que tener 11 números.' });
   const invitado = !!cuerpo.invitar;
