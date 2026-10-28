@@ -1004,7 +1004,6 @@ const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], vip: 11.5, an
 // plano), el borde, el piso, el cielo y las luces (casi blancas, para que
 // cada color se vea como es).
 const INC_TEMA_3D = {
-  cielo: ['#939dab', '#838e9c', '#737e8d'], niebla: 0x808b99, piso: 0x7d8896,
   luces: { hemi: [0xffffff, 0x8f99ab, 0.78], clave: 0.55, contra: 0.22, escenario: 0.15 },
   color: {
     baja: [0x3a74e6, 0x1f4aa8], alta: [0x9064e4, 0x5a35b0], campo: [0x14a09b, 0x0a5f5c], anillo: [0xd0d7e0, 0xa9b4c2], back: [0xc3cbd6, 0xa0abba], vip: [0x252e3d, 0x141a24],
@@ -1077,18 +1076,51 @@ function incEstiloPlano() {
     + '.inc-3d-ley{position:absolute;left:8px;top:8px;z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 170px);font:500 10.5px Poppins,sans-serif;color:#334155;background:rgba(255,255,255,.78);padding:5px 9px;border-radius:8px;pointer-events:none;box-shadow:0 1px 3px rgba(15,23,42,.08)}';
   document.head.appendChild(st);
 }
+// El público del fondo del 3D, en silueta: tres filas de cabezas y hombros,
+// algunas manos arriba y luces de celulares.
+let incPublicoCache = '';
+function incPublicoFondo() {
+  if (incPublicoCache) return incPublicoCache;
+  let a = 11; const azar = () => (a = (a * 9301 + 49297) % 233280) / 233280, f = v => v.toFixed(1);
+  const W = 1600, H = 210;
+  let svg = '', luces = '';
+  [[150, 0.62, '#2a3241'], [176, 0.82, '#1d2430'], [204, 1, '#11161e']].forEach(([base, k, color]) => {
+    let g = '';
+    for (let x = -12; x < W + 24; x += (24 + azar() * 14) * k) {
+      const r = (10 + azar() * 3) * k, cy = base - (36 + azar() * 10) * k;
+      g += '<ellipse cx="' + f(x) + '" cy="' + base + '" rx="' + f(19 * k) + '" ry="' + f(30 * k) + '"/><circle cx="' + f(x) + '" cy="' + f(cy) + '" r="' + f(r) + '"/>';
+      if (azar() < 0.2) {
+        const lado = azar() < 0.5 ? -1 : 1, x0 = x + lado * 12 * k, y0 = cy + 14 * k, x1 = x0 + lado * 7 * k, y1 = cy - 34 * k;
+        g += '<path d="M' + f(x0) + ' ' + f(y0) + 'L' + f(x1) + ' ' + f(y1) + '" stroke="' + color + '" stroke-width="' + f(7 * k) + '" stroke-linecap="round"/>';
+        if (azar() < 0.55) luces += '<circle cx="' + f(x1) + '" cy="' + f(y1 - 5 * k) + '" r="' + f(3.2 * k) + '" fill="#fff" opacity=".85"/>';
+      }
+    }
+    svg += '<g fill="' + color + '">' + g + '</g>';
+  });
+  incPublicoCache = 'url(&quot;data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' + svg + luces + '</svg>').replace(/'/g, '%27') + '&quot;)';
+  return incPublicoCache;
+}
 function incEstilo3D() {
   if (document.getElementById('incEstilo3D')) return;
   const st = document.createElement('style'); st.id = 'incEstilo3D';
-  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 90% at 50% 0%,#99a3b1 0%,#86919f 60%,#76818f 100%)}'
+  st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:12px;overflow:hidden;border:none!important;background:radial-gradient(120% 85% at 50% 0%,#3d485b 0%,#272f3c 55%,#171c25 100%)}'
+    // El fondo del show: haces de luz que barren desde arriba y el público abajo, detrás del estadio.
+    + '.inc-3d-fondo{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}'
+    + '.inc-3d-fondo .haz{position:absolute;top:-8%;width:30%;height:125%;transform-origin:50% 0;clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);filter:blur(8px);opacity:.6;animation:incBarrer 16s ease-in-out infinite}'
+    + '.inc-3d-fondo .h1{left:2%;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(167,139,250,.2) 45%,transparent 80%);animation-delay:-3s}'
+    + '.inc-3d-fondo .h2{left:35%;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(96,165,250,.2) 45%,transparent 80%);animation-duration:19s}'
+    + '.inc-3d-fondo .h3{right:2%;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(56,189,248,.2) 45%,transparent 80%);animation-delay:-8s;animation-direction:reverse}'
+    + '@keyframes incBarrer{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}'
+    + '.inc-3d-fondo .publico{position:absolute;left:0;right:0;bottom:0;height:24%;background-repeat:repeat-x;background-position:left bottom;background-size:auto 100%}'
+    + '@media(prefers-reduced-motion:reduce){.inc-3d-fondo .haz{animation:none}}'
     + '.inc-3d:fullscreen{width:100vw;height:100vh;border-radius:0}'
-    + '.inc-3d canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}'
+    + '.inc-3d canvas{position:relative;z-index:1;display:block;width:100%;height:100%;touch-action:none;outline:none}'
     + '.inc-3d-btns{position:absolute;top:8px;right:8px;z-index:4;display:flex;gap:6px}'
     + '.inc-3d-btn{background:rgba(255,255,255,.88);color:#111827;border:1px solid rgba(15,17,23,.14);border-radius:8px;padding:6px 10px;font:600 12px Poppins,sans-serif;cursor:pointer;box-shadow:0 1px 3px rgba(15,23,42,.1);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}'
     + '.inc-3d-btn:hover{background:#fff;border-color:rgba(15,17,23,.3)}'
     + '.inc-3d-btn-det{display:none}.inc-3d:fullscreen .inc-3d-btn-det{display:inline-block}'
     + '.inc-3d-ayuda{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:2;color:#fff;font:500 11px Poppins,sans-serif;background:rgba(15,17,23,.72);padding:5px 12px;border-radius:999px;pointer-events:none;transition:opacity .8s;width:max-content;max-width:92%;text-align:center;line-height:1.35}'
-    + '.inc-3d-etqs{position:absolute;left:0;top:0;right:0;bottom:0;z-index:1;pointer-events:none;overflow:hidden}'
+    + '.inc-3d-etqs{position:absolute;left:0;top:0;right:0;bottom:0;z-index:2;pointer-events:none;overflow:hidden}'
     + '.inc-3d-e{position:absolute;left:0;top:0;white-space:nowrap;font:600 11px/1 Poppins,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(15,23,42,.6);-webkit-user-select:none;user-select:none}'
     + '.inc-3d-e.chico{font-size:10px}.inc-3d-e.campo{font-size:10.5px;letter-spacing:.6px}.inc-3d-e.esc{font-size:10px;letter-spacing:1.6px}'
     + '.inc-3d-e.piso{font-size:9px;letter-spacing:1.3px;color:#3f4a5a;text-shadow:0 1px 0 rgba(255,255,255,.5)}'
@@ -1123,19 +1155,17 @@ function incPlano3D(cont, op0) {
   const lienzoDe = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
   const textura = c => { const t = new T.CanvasTexture(c); desechar.push(t); return t; };
   const escena = new T.Scene();
-  {
-    const g = lienzoDe(2, 256), x = g.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 256);
-    gr.addColorStop(0, TM.cielo[0]); gr.addColorStop(0.45, TM.cielo[1]); gr.addColorStop(1, TM.cielo[2]);
-    x.fillStyle = gr; x.fillRect(0, 0, 2, 256);
-    escena.background = textura(g);
-  }
-  escena.fog = new T.Fog(TM.niebla, 950, 1900);
   const camara = new T.PerspectiveCamera(38, 1.25, 1, 5000);
-  const motor = new T.WebGLRenderer({ antialias: true });
+  const motor = new T.WebGLRenderer({ antialias: true, alpha: true });
+  motor.setClearColor(0x000000, 0);
   motor.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   const anis = Math.min(8, motor.capabilities && motor.capabilities.getMaxAnisotropy ? motor.capabilities.getMaxAnisotropy() : 1);
   const lienzo = motor.domElement;
   lienzo.style.cursor = 'grab';
+  // Detrás del estadio, el fondo del show: haces de luz que barren y el público.
+  const fondoShow = document.createElement('div'); fondoShow.className = 'inc-3d-fondo';
+  fondoShow.innerHTML = '<div class="haz h1"></div><div class="haz h2"></div><div class="haz h3"></div><div class="publico" style="background-image:' + incPublicoFondo() + '"></div>';
+  cont.appendChild(fondoShow);
   cont.appendChild(lienzo);
   const btns = document.createElement('div'); btns.className = 'inc-3d-btns';
   btns.innerHTML = '<button type="button" class="inc-3d-btn inc-3d-btn-det" data-a="detalle" title="Ver u ocultar el detalle de las incidencias">☰ Incidencias</button>'
@@ -1180,27 +1210,6 @@ function incPlano3D(cont, op0) {
   }
 
   const aPlano = (x, y) => new T.Vector2(x - 210, 146 - y);   // del plano 2D a la forma (después se acuesta sobre el piso)
-  // El público del campo de pie: siluetas simples (cuerpo y cabeza), algunas
-  // con la luz del celular. No se tocan: tocar el campo sigue eligiendo el campo.
-  const geoCuerpo = new T.CylinderGeometry(0.9, 1.15, 3.1, 7), geoCabeza = new T.SphereGeometry(0.85, 8, 6), geoLuz = new T.SphereGeometry(0.42, 6, 4);
-  geoCuerpo.translate(0, 1.55, 0); geoCabeza.translate(0, 3.75, 0); geoLuz.translate(0, 5.7, 0);
-  const matGente = new T.MeshStandardMaterial({ color: 0x4a5263, roughness: 0.85 }), matLuz = new T.MeshBasicMaterial({ color: 0xffffff });
-  let semilla = 7; const azar = () => (semilla = (semilla * 9301 + 49297) % 233280) / 233280;
-  const gente = (grupo, r, base) => {
-    const [x, y, w, h] = r, paso = 7.5, cols = Math.floor((w - 6) / paso), filas = Math.floor((h - 6) / paso), n = cols * filas;
-    if (n <= 0) return;
-    const cuerpos = new T.InstancedMesh(geoCuerpo, matGente, n), cabezas = new T.InstancedMesh(geoCabeza, matGente, n), luces = [], m = new T.Matrix4();
-    let k = 0;
-    for (let i = 0; i < cols; i++) for (let j = 0; j < filas; j++) {
-      const px = x + 3 + (i + 0.5) * paso + (azar() - 0.5) * 3 - 210, pz = y + 3 + (j + 0.5) * paso + (azar() - 0.5) * 3 - 146, e = 0.85 + azar() * 0.3;
-      m.makeScale(e, e, e); m.setPosition(px, base, pz);
-      cuerpos.setMatrixAt(k, m); cabezas.setMatrixAt(k, m); k++;
-      if (azar() < 0.08) luces.push(m.clone());
-    }
-    grupo.add(cuerpos); grupo.add(cabezas);
-    if (luces.length) { const ls = new T.InstancedMesh(geoLuz, matLuz, luces.length); luces.forEach((mm, i) => ls.setMatrixAt(i, mm)); grupo.add(ls); }
-  };
-
   // Las butacas (una por baldosa, suaves: que se note la fila, sin cuadricular).
   const lienzoButacas = lienzoDe(32, 32);
   { const x = lienzoButacas.getContext('2d'); x.fillStyle = '#dde3ec'; x.fillRect(0, 0, 32, 32); x.fillStyle = '#ffffff'; x.fillRect(3, 3, 26, 19); x.fillStyle = '#eef1f6'; x.fillRect(3, 18, 26, 4); }
@@ -1336,8 +1345,6 @@ function incPlano3D(cont, op0) {
     // El cartel del backstage va a un costado, para no tapar la pantalla.
     const corre = s.t === 'back' ? -105 : 0;
     p.et = etiqueta(p.etHtml, p.etClase, new T.Vector3(cx + corre, p.hEt, cz), p);
-    // En el campo de pie, el público parado.
-    if (s.t === 'campo' && s.r && !/^Campo [A-N]$/.test(s.id)) gente(grupo, s.r, p.hBase);
     piezas[s.id] = p;
   });
 
@@ -1627,7 +1634,6 @@ function incPlano3D(cont, op0) {
           p.apagado = apagado;
           p.mats.forEach(m => { if (m.userData.op0 === undefined) { m.userData.op0 = m.opacity; m.userData.tr0 = m.transparent; } m.transparent = apagado || m.userData.tr0; m.opacity = apagado ? 0.14 : m.userData.op0; m.depthWrite = !apagado; m.needsUpdate = true; });
           p.et.el.style.visibility = apagado ? 'hidden' : '';
-          p.grupo.children.forEach(o => { if (o.isInstancedMesh) o.visible = !apagado; });
         }
         const sube = p.sel ? 3 : 0;
         p.grupo.position.y = sube;
