@@ -34,6 +34,12 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .msg.ok{background:#dcfce7;color:#166534}
 .center{text-align:center;color:#6b7280;padding:40px 10px}
 .link{color:#534AB7;font-weight:600;text-decoration:none}
+/* El mes: un bloque por evento, con sus días. */
+.ev{margin-top:16px;padding-top:14px;border-top:1px solid #f1f1f4}
+.ev-t{font-size:15px;font-weight:700;color:#111827}
+.ev-m{font-size:12px;color:#9ca3af;margin:2px 0 8px}
+.res{margin:8px 0 0 18px;padding:0}
+.res li{margin-top:4px}
 
 /* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
 button,input,select,textarea,optgroup,option{font-family:inherit}
@@ -51,9 +57,14 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
 const sb = supabase.createClient(SB_URL, SB_KEY);
-const CONV = new URLSearchParams(location.search).get('conv');
+const PARAMS = new URLSearchParams(location.search);
+const CONV = PARAMS.get('conv');
+// El mes entero (?mes=2026-11, y si se quiere &area=movistar_arena): todos los
+// eventos de ese mes con la ronda abierta, en una sola página.
+const MES = PARAMS.get('mes'), AREA = PARAMS.get('area') || '';
 const AREA_LABEL = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España', ambas: 'Ambas áreas' };
 let conv = null, slots = [];
+let eventosMes = [], prevPorConv = {}, prevCuil = '';
 
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtFecha(f){ try { return new Date(f+'T00:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'long'}); } catch(e){ return f; } }
@@ -67,6 +78,7 @@ function slotsDe(c){
 }
 
 async function init(){
+  if (MES) return initMes();
   if (!CONV) { show('<div class="card"><div class="center">Link inválido. Pedile el link a la coordinación.</div></div>'); return; }
   const { data, error } = await sb.from('convocatorias').select('id,nombre,fecha,area,disp_abierta,horario,venue,horarios_por_fecha,turnos').eq('id', CONV).single();
   if (error || !data) { show('<div class="card"><div class="center">No encontramos esta convocatoria.</div></div>'); return; }
@@ -102,7 +114,7 @@ function onCuil(inp){
   inp.value = inp.value.replace(/\D/g,'');
   clearTimeout(prefillTimer);
   const w = document.getElementById('regWarn'); if (w && inp.value.length < 11) w.style.display = 'none';
-  if (inp.value.length === 11) prefillTimer = setTimeout(() => { prefill(); checkReg(); }, 250);
+  if (inp.value.length === 11) prefillTimer = setTimeout(() => { (MES ? prefillMes : prefill)(); checkReg(); }, 250);
 }
 async function checkReg(){
   const cuil = document.getElementById('cuil').value.replace(/\D/g,'');
@@ -159,6 +171,109 @@ async function enviar(){
     err.textContent = 'Hubo un error. Probá de nuevo.'; err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'Enviar disponibilidad';
   }
+}
+
+// ── EL MES ENTERO ──
+function nombreMes(m){ try { return new Date(m + '-01T00:00:00').toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }); } catch(e){ return m; } }
+async function initMes(){
+  if (!/^\d{4}-\d{2}$/.test(MES)) { show('<div class="card"><div class="center">Link inválido. Pedile el link a la coordinación.</div></div>'); return; }
+  document.querySelector('.page-sub').textContent = 'Marcá qué días podés en ' + nombreMes(MES);
+  const { data, error } = await sb.from('convocatorias').select('id,nombre,fecha,area,disp_abierta,horario,venue,horarios_por_fecha,turnos').eq('disp_abierta', true);
+  if (error) { show('<div class="card"><div class="center">No se pudieron traer los eventos. Probá de nuevo en un rato.</div></div>'); return; }
+  // Sólo los días de ese mes de cada evento (uno que cruza de mes muestra los suyos de este).
+  // Sin área son las dos de Argentina (España tiene su propio link).
+  eventosMes = (data || []).filter(c => AREA ? c.area === AREA || c.area === 'ambas' : c.area !== 'espana')
+    .map(c => ({ conv: c, slots: slotsDe(c).filter(s => String(s.fecha || '').startsWith(MES)) }))
+    .filter(x => x.slots.length)
+    .sort((a, b) => a.slots[0].fecha.localeCompare(b.slots[0].fecha) || String(a.conv.nombre).localeCompare(String(b.conv.nombre)));
+  if (!eventosMes.length) { show(`<div class="card"><div class="conv-name">Disponibilidad de ${esc(nombreMes(MES))}</div><div class="center">Todavía no hay eventos abiertos para este mes. Volvé a mirar más adelante.</div></div>`); return; }
+  prevPorConv = {}; prevCuil = '';
+  renderMes();
+}
+function renderMes(){
+  const bloques = eventosMes.map(ev => `<div class="ev">
+      <div class="ev-t">${esc(ev.conv.nombre)}</div>
+      <div class="ev-m">${[AREA ? '' : (AREA_LABEL[ev.conv.area] || ''), ev.conv.venue ? '📍 ' + esc(ev.conv.venue) : ''].filter(Boolean).join(' · ')}</div>
+      ${ev.slots.map(s => `<label class="drow" data-c="${esc(ev.conv.id)}" data-f="${esc(s.id)}" onclick="toggleRow(this)"><input type="checkbox"><span class="dcol"><span class="d1">${fmtFecha(s.fecha)}</span>${s.horario ? `<span class="dh">🕒 ${esc(s.horario)}</span>` : ''}</span></label>`).join('')}
+    </div>`).join('');
+  show(`<div class="card">
+    <div class="conv-name">Disponibilidad de ${esc(nombreMes(MES))}</div>
+    <div class="conv-meta">${eventosMes.length} evento${eventosMes.length === 1 ? '' : 's'}${AREA ? ' · ' + esc(AREA_LABEL[AREA] || AREA) : ''}</div>
+    <label class="lbl">Tu CUIL (11 dígitos)</label>
+    <input class="fi" id="cuil" inputmode="numeric" maxlength="11" placeholder="Sin guiones" oninput="onCuil(this)">
+    <div class="msg err" id="regWarn" style="margin-top:8px"></div>
+    <label class="lbl">¿Qué días podés? (marcá los que sí, de todos los eventos que quieras)</label>
+    ${bloques}
+    <button class="btn" id="enviarBtn" onclick="enviarMes()">Enviar disponibilidad</button>
+    <div class="msg err" id="err"></div>
+    <div class="msg ok" id="ok"></div>
+  </div>`);
+}
+// Lo que ya había marcado en cada evento (para mostrarlo y para no borrarle días de otros meses).
+async function cargarPrevMes(cuil){
+  const pares = await Promise.all(eventosMes.map(async ev => {
+    try { const { data } = await sb.rpc('mi_disponibilidad', { p_cuit: cuil, p_conv_id: ev.conv.id }); return [ev.conv.id, Array.isArray(data) ? data : []]; }
+    catch(_) { return [ev.conv.id, []]; }
+  }));
+  prevPorConv = Object.fromEntries(pares); prevCuil = cuil;
+}
+async function prefillMes(){
+  const cuil = document.getElementById('cuil').value.replace(/\D/g,'');
+  if (cuil.length !== 11) return;
+  await cargarPrevMes(cuil);
+  document.querySelectorAll('.drow').forEach(r => { const on = (prevPorConv[r.dataset.c] || []).includes(r.dataset.f); r.querySelector('input').checked = on; r.classList.toggle('on', on); });
+}
+async function enviarMes(){
+  const err = document.getElementById('err'), ok = document.getElementById('ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  const cuil = document.getElementById('cuil').value.replace(/\D/g,'');
+  if (cuil.length !== 11) { err.textContent = 'Ingresá tu CUIL (11 dígitos).'; err.style.display = 'block'; return; }
+  const btn = document.getElementById('enviarBtn'); btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    if (prevCuil !== cuil) await cargarPrevMes(cuil);
+    const marcados = {}; eventosMes.forEach(ev => { marcados[ev.conv.id] = []; });
+    document.querySelectorAll('.drow').forEach(r => { if (r.querySelector('input').checked) marcados[r.dataset.c].push(r.dataset.f); });
+    // Se manda cada evento que tiene algo marcado ahora o lo tenía antes; a los
+    // días de otros meses de ese mismo evento no se los toca.
+    const aMandar = eventosMes.filter(ev => marcados[ev.conv.id].length || (prevPorConv[ev.conv.id] || []).length);
+    if (!aMandar.length) { err.textContent = 'Marcá al menos un día.'; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Enviar disponibilidad'; return; }
+    const guardados = [], choques = [], cerrados = [], fallidos = [];
+    let nombre = '';
+    for (const ev of aMandar) {
+      const deEsteMes = new Set(ev.slots.map(s => s.id));
+      const fechas = (prevPorConv[ev.conv.id] || []).filter(f => !deEsteMes.has(f)).concat(marcados[ev.conv.id]);
+      const { data, error } = await sb.rpc('guardar_disponibilidad', { p_cuit: cuil, p_conv_id: ev.conv.id, p_fechas: fechas });
+      if (error) { fallidos.push(ev.conv.nombre); continue; }
+      if (data && data.ok) { guardados.push({ nombre: ev.conv.nombre, n: marcados[ev.conv.id].length }); nombre = nombre || data.nombre || ''; continue; }
+      if (data && data.motivo === 'no_registrado') {
+        err.innerHTML = 'No encontramos tu registro con ese CUIL. Primero tenés que <a class="link" href="candidato.html">registrarte acá</a>.';
+        err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Enviar disponibilidad'; return;
+      }
+      if (data && data.motivo === 'convocado') (data.choques || []).forEach(ch => choques.push({ evento: ev.conv.nombre, fecha: ch.fecha, conv: ch.conv }));
+      else if (data && data.motivo === 'cerrada') cerrados.push(ev.conv.nombre);
+      else fallidos.push(ev.conv.nombre);
+    }
+    prevCuil = '';   // la próxima vez se vuelve a leer lo guardado
+    if (!choques.length && !cerrados.length && !fallidos.length) {
+      show(`<div class="card"><div style="font-size:46px;text-align:center;margin-bottom:10px">✅</div>
+        <div class="conv-name" style="text-align:center">¡Gracias${nombre ? ', ' + esc(String(nombre).split(' ')[0]) : ''}!</div>
+        <div class="center" style="padding:12px 0 0">Registramos tu disponibilidad de ${esc(nombreMes(MES))}:</div>
+        <ul class="res">${guardados.map(g => `<li><strong>${esc(g.nombre)}</strong>: ${g.n ? g.n + ' día' + (g.n === 1 ? '' : 's') : 'ningún día'}</li>`).join('')}</ul>
+        <div class="center" style="padding:12px 0 0">Si te seleccionan, te vamos a enviar la confirmación.</div>
+        <button class="btn" onclick="initMes()">Modificar mi respuesta</button></div>`);
+      return;
+    }
+    // Algo no se guardó: se dice qué, y lo demás quedó guardado.
+    let h = '';
+    if (guardados.length) h += `<div>Se guardó: ${guardados.map(g => '<strong>' + esc(g.nombre) + '</strong>').join(', ')}.</div>`;
+    if (choques.length) h += `<div style="margin-top:8px">No se guardó lo de abajo: ya estás convocado/a esos días para otro servicio. Desmarcalos y volvé a enviar.</div><ul class="res">${choques.map(ch => `<li><strong>${esc(fmtFecha(ch.fecha))}</strong> (${esc(ch.evento)}) — ya estás en <strong>${esc(ch.conv)}</strong></li>`).join('')}</ul>`;
+    if (cerrados.length) h += `<div style="margin-top:8px">Ya se cerró la ronda de: ${cerrados.map(esc).join(', ')}.</div>`;
+    if (fallidos.length) h += `<div style="margin-top:8px">No se pudo guardar: ${fallidos.map(esc).join(', ')}. Probá de nuevo.</div>`;
+    err.innerHTML = h; err.style.display = 'block';
+  } catch (e) {
+    err.textContent = 'Hubo un error. Probá de nuevo.'; err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Enviar disponibilidad';
 }
 
 init();
