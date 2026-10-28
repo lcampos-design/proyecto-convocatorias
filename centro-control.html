@@ -413,14 +413,14 @@ const INC_PLANO_ZONAS = [
   { id: 'Anillo derecho', txt: 'ANILLO', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
   { id: 'Backstage', txt: 'BACKSTAGE', t: 'back', r: [50, -44, 320, 24] },
   // El Premium (el VIP): los palcos a los costados y el lounge enfrente del
-  // escenario, entre la platea baja (P1) y la alta (P3); y los corners en P1,
-  // que hoy son la 101 y la 119 (los sectores de la platea baja junto al escenario),
+  // escenario, entre la platea baja (P1) y la alta (P3); y los corners, también
+  // del VIP, que hoy son la 101 y la 119 (junto al escenario, donde empieza la platea baja),
   // lo más cerca del escenario. Lado Cancha a la izquierda, lado Sede a la derecha.
   { id: 'Palcos · Cancha', txt: 'PALCOS', t: 'vip', p: '92.5,30 99.5,30 99.5,221.5 92.5,224', lx: 96, ly: 126, rot: -90, piso: 'VIP' },
   { id: 'Palcos · Sede', txt: 'PALCOS', t: 'vip', p: '320.5,30 327.5,30 327.5,224 320.5,221.5', lx: 324, ly: 126, rot: 90, piso: 'VIP' },
   { id: 'Lounge', txt: 'LOUNGE', t: 'vip', p: '92.5,224 127,257 293,257 327.5,224 320.5,221.5 290,253 130,253 99.5,221.5', lx: 210, ly: 255, piso: 'VIP' },
-  { id: 'Corner · Cancha', txt: 'CORNER 101', t: 'vip', r: [100, 18, 40, 22], piso: 'P1' },
-  { id: 'Corner · Sede', txt: 'CORNER 119', t: 'vip', r: [280, 18, 40, 22], piso: 'P1' }
+  { id: 'Corner · Cancha', txt: 'CORNER 101', t: 'vip', r: [100, 18, 40, 22], piso: 'VIP' },
+  { id: 'Corner · Sede', txt: 'CORNER 119', t: 'vip', r: [280, 18, 40, 22], piso: 'VIP' }
 ];
 // Los pisos del Arena: el campo en planta baja, la platea baja en el 1, la
 // alta en el 3 y el VIP entre las dos. Cada puesto del anillo dice el suyo.
@@ -1195,8 +1195,8 @@ function incPlano3D(cont, op0) {
     piezas[s.id] = p;
   });
 
-  // El escenario, simple: la tarima con un proscenio adelante y el frente de
-  // luz, y atrás la pantalla (sin letras) contra la pared. Sin caja arriba.
+  // El escenario, simple: el piso, la tarima con un proscenio adelante y el
+  // frente de luz. Sin pantalla, pared ni caja arriba.
   const matTarima = new T.MeshStandardMaterial({ color: 0x0b1526, roughness: 0.32, metalness: 0.55 });
   const tarima = new T.Mesh(new T.BoxGeometry(100, 6, 44), matTarima); tarima.position.set(0, 3, -140); escena.add(tarima);
   const proscenio = new T.Mesh(new T.BoxGeometry(64, 4, 6), matTarima); proscenio.position.set(0, 2, -115); escena.add(proscenio);
@@ -1212,27 +1212,6 @@ function incPlano3D(cont, op0) {
     [[100, 6.1, -118], [64, 4.1, -112]].forEach(([l, y, z]) => { const t = new T.Mesh(new T.BoxGeometry(l, 0.45, 0.45), matLuz); t.position.set(0, y, z); escena.add(t); });
   }
   etiqueta('ESCENARIO', 'esc', new T.Vector3(0, 12, -136));
-  // La pared del fondo, detrás de la pantalla: negra, medio traslúcida.
-  {
-    const pared = new T.Mesh(new T.PlaneGeometry(110, 50), new T.MeshBasicMaterial({ color: 0x05070c, transparent: true, opacity: 0.55, side: T.DoubleSide, depthWrite: false }));
-    pared.position.set(0, 25, -164.6); pared.renderOrder = 2; escena.add(pared);
-  }
-  // La pantalla grande, sola: el azul con los puntitos de los LED, sin letras
-  // (el nombre del show va en la cinta que da la vuelta).
-  const lienzoLed = lienzoDe(1024, 256), texLed = textura(lienzoLed);
-  {
-    const x = lienzoLed.getContext('2d'), g = x.createLinearGradient(0, 0, 1024, 256);
-    g.addColorStop(0, '#00153f'); g.addColorStop(0.5, '#003a9e'); g.addColorStop(1, '#00153f');
-    x.fillStyle = g; x.fillRect(0, 0, 1024, 256);
-    x.fillStyle = 'rgba(255,255,255,.07)'; for (let i = 0; i < 1024; i += 8) for (let j = 0; j < 256; j += 8) x.fillRect(i, j, 4, 4);   // los puntitos de los LED
-    texLed.needsUpdate = true;
-  }
-  const pantallaLed = new T.Mesh(new T.PlaneGeometry(92, 24), new T.MeshBasicMaterial({ map: texLed }));
-  pantallaLed.position.set(0, 26, -161); escena.add(pantallaLed);
-  const marcoLed = new T.Mesh(new T.BoxGeometry(96, 28, 1.5), new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 }));
-  marcoLed.position.set(0, 26, -162.2); escena.add(marcoLed);
-  // Un borde de luz abajo de la pantalla grande.
-  { const t = new T.Mesh(new T.BoxGeometry(96, 0.5, 0.5), matLuz); t.position.set(0, 11.8, -161.3); escena.add(t); }
   // La consola (FOH) al fondo del campo, de referencia (no se toca: tocar sigue eligiendo el campo).
   {
     const [fx, fy, fw, fh] = INC_FOH, cx = fx + fw / 2 - 210, cz = fy + fh / 2 - 146;
