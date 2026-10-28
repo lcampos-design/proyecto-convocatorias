@@ -269,7 +269,21 @@ const INC_LUGARES = ['Otro lugar'];
 // Los pasillos y escaleras van por sector: se elige el sector y, en la
 // referencia, un atajo de un toque.
 const INC_REFERENCIAS = ['Pasillo', 'Escalera', 'Vomitorio', 'Fila', 'Butaca', 'Fila de ingreso'];
-function incRefRapidaHTML(idCampo) { return '<div class="inc-ref-rapida">' + INC_REFERENCIAS.map(r => '<button type="button" onclick="incRefRapida(\'' + idCampo + '\',\'' + r + '\')">' + r + '</button>').join('') + '</div>'; }
+// Según dónde pasó, los atajos que tienen sentido ahí (no todos siempre).
+const INC_REFERENCIAS_DE = {
+  campo: ['Valla', 'Pit', 'FOH', 'Pasillo'], asientos: ['Valla', 'Pit', 'FOH', 'Pasillo', 'Fila', 'Butaca'],
+  platea: ['Pasillo', 'Escalera', 'Vomitorio', 'Fila', 'Butaca'], vip: ['Palco', 'Pasillo', 'Escalera'],
+  gastro: ['Barra', 'Fila'], banio: ['Adentro', 'Fila', 'Puerta del baño'], puerta: ['Molinetes', 'Control', 'Fila'],
+  enfermeria: ['Adentro', 'Puerta'], servicio: ['Adentro', 'Fila'], calle: ['Fila de ingreso', 'Vereda', 'Esquina'],
+  anillo: ['Pasillo', 'Escalera'], back: ['Pasillo', 'Escalera']
+};
+function incReferenciasDe(sector) {
+  if (!sector) return INC_REFERENCIAS;
+  if (/^Campo [A-N]$/.test(sector)) return INC_REFERENCIAS_DE.asientos;
+  const s = incSectoresPlano('campos').find(x => x.id === sector), t = s ? s.t : '';
+  return INC_REFERENCIAS_DE[t === 'baja' || t === 'alta' ? 'platea' : t] || INC_REFERENCIAS;
+}
+function incRefRapidaHTML(idCampo, sector) { return '<div class="inc-ref-rapida">' + incReferenciasDe(sector).map(r => '<button type="button" onclick="incRefRapida(\'' + idCampo + '\',\'' + r + '\')">' + r + '</button>').join('') + '</div>'; }
 function incRefRapida(idCampo, r) {
   const el = document.getElementById(idCampo); if (!el) return;
   const v = String(el.value || '').trim();
