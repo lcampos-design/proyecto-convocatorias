@@ -1024,6 +1024,7 @@ tr:hover td{background:#f9f9fb}
       <select class="filt" id="cvArchF" onchange="renderCvList()">
         <option value="activas">Activas</option><option value="archivadas">Archivadas</option><option value="todas">Todas</option>
       </select>
+      <button class="btn btn-sec" onclick="openDispMes()" title="Todos los eventos de un mes en un solo link de disponibilidad, para el canal de difusión y por mail"><i class="ic ic-calendario"></i> Disponibilidad del mes</button>
       <button class="btn btn-primary" onclick="openAddConv()">+ Nueva convocatoria</button>
     </div>
     <div id="cvCards"></div>
@@ -1627,6 +1628,19 @@ tr:hover td{background:#f9f9fb}
     <div class="modal-title"><span id="mDispTitle">Disponibilidad</span><button class="mclose" onclick="closeM('mDispAdmin')">✕</button></div>
     <div id="dispBody"></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mDispAdmin')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- Modal: la ronda de disponibilidad del mes (todos los eventos del mes, un link) -->
+<div class="modal-bg" id="mDispMes" style="display:none" onclick="bgClose('mDispMes',event)">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-title"><span>Disponibilidad del mes</span><button class="mclose" onclick="closeM('mDispMes')">✕</button></div>
+    <div class="frow">
+      <div class="fg"><label>Mes</label><input type="month" class="fi" id="dmMes" onchange="renderDispMes()"></div>
+      <div class="fg"><label>Área</label><select class="fi" id="dmArea" onchange="renderDispMes()"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="">Todas</option></select></div>
+    </div>
+    <div id="dmBody"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mDispMes')">Cerrar</button></div>
   </div>
 </div>
 
@@ -10138,6 +10152,113 @@ function arrastrable(el) {
   });
 }
 
+// ── LA DISPONIBILIDAD DEL MES ──
+// Todos los eventos de un mes en una sola página (disponibilidad?mes=…): se
+// abren sus rondas, sale el link y el mensaje para el canal de difusión, y se
+// le manda por mail a los grupos que se elijan (recomendados, supervisores,
+// equipo de operaciones, una etiqueta).
+const dmMesDe = c => slotsDe(c).map(s => String(s.fecha || '').slice(0, 7));
+function dmEventos() {
+  const mes = (document.getElementById('dmMes') || {}).value || '', area = (document.getElementById('dmArea') || {}).value || '';
+  // "Todas" son las dos de Argentina: España tiene lo suyo.
+  return convs.filter(c => !c.archivada && (area ? c.area === area || c.area === 'ambas' : c.area !== 'espana') && dmMesDe(c).includes(mes))
+    .map(c => ({ c, dias: slotsDe(c).filter(s => String(s.fecha || '').startsWith(mes)) }))
+    .sort((a, b) => String(a.dias[0].fecha).localeCompare(String(b.dias[0].fecha)));
+}
+function dmLink() {
+  const mes = document.getElementById('dmMes').value, area = document.getElementById('dmArea').value;
+  return location.origin + '/disponibilidad?mes=' + mes + (area ? '&area=' + area : '');
+}
+function dmNombreMes(m) { try { return new Date(m + '-01T00:00:00').toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }); } catch (_) { return m; } }
+// Los grupos para el mail: de la nómina (sin los OUT), con mail, del área elegida.
+function dmGrupos() {
+  const area = document.getElementById('dmArea').value;
+  const base = people.filter(p => !p.out_flag && p.email && (area ? p.area === area : p.area !== 'espana'));
+  const tag = (document.getElementById('dmTag') || {}).value || '';
+  return {
+    rec: base.filter(p => p.recomendado),
+    sup: base.filter(p => posicionesDe(p).includes('Supervisor')),
+    ops: base.filter(p => posicionesDe(p).includes('Equipo operaciones')),
+    tag: tag ? base.filter(p => (p.etiquetas || []).some(t => String(t).toLowerCase() === tag.toLowerCase())) : [],
+  };
+}
+function dmDestinatarios() {
+  const g = dmGrupos(), vistos = new Set(), out = [];
+  ['rec', 'sup', 'ops', 'tag'].forEach(k => { const cb = document.getElementById('dmG_' + k); if (cb && cb.checked) g[k].forEach(p => { const m = String(p.email).trim().toLowerCase(); if (!vistos.has(m)) { vistos.add(m); out.push(p); } }); });
+  return out;
+}
+function dmMensaje() {
+  const evs = dmEventos(), mes = dmNombreMes(document.getElementById('dmMes').value);
+  return `📅 Disponibilidad de ${mes}\n\nMarcá qué días podés trabajar en los eventos de ${mes.split(' ')[0]}:\n${dmLink()}\n\n`
+    + evs.map(x => `• ${x.c.nombre} — ${x.dias.map(d => fechaDMA(d.fecha).slice(0, 5)).join(', ')}`).join('\n')
+    + '\n\nSe completa con tu CUIL. Si te seleccionan, te llega la confirmación.';
+}
+function openDispMes() {
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);   // el mes que viene
+  document.getElementById('dmMes').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  showM('mDispMes'); renderDispMes();
+}
+function renderDispMes() {
+  const evs = dmEventos(), mes = document.getElementById('dmMes').value;
+  const cuerpo = document.getElementById('dmBody'); if (!cuerpo) return;
+  if (!mes) { cuerpo.innerHTML = ''; return; }
+  if (!evs.length) { cuerpo.innerHTML = `<div class="empty">No hay convocatorias con fechas en ${e(dmNombreMes(mes))} para esta área.</div>`; return; }
+  const cerradas = evs.filter(x => !x.c.disp_abierta).length;
+  const g = dmGrupos(), etiquetas = [...new Set(people.flatMap(p => p.etiquetas || []).map(String))].sort((a, b) => a.localeCompare(b, 'es'));
+  const tagSel = (document.getElementById('dmTag') || {}).value || '';
+  const grupo = (k, t, n) => `<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="cb" id="dmG_${k}" onchange="dmContar()" ${(document.getElementById('dmG_' + k) || {}).checked ? 'checked' : ''}> ${t} <span style="color:#9ca3af">(${n})</span></label>`;
+  cuerpo.innerHTML = `
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:6px 0 8px">1 · Los eventos de ${e(dmNombreMes(mes))}</div>
+    ${evs.map(x => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px">
+      <div style="flex:1;min-width:0"><b>${e(x.c.nombre)}</b> <span style="color:#9ca3af">· ${x.dias.map(d => e(fechaDMA(d.fecha).slice(0, 5))).join(', ')}</span></div>
+      <span style="font-size:11px;padding:2px 8px;border-radius:999px;${x.c.disp_abierta ? 'background:var(--ok-sv);color:var(--ok)' : 'background:#f3f4f6;color:#6b7280'}">${x.c.disp_abierta ? 'Ronda abierta' : 'Ronda cerrada'}</span></div>`).join('')}
+    ${cerradas ? `<button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="dmAbrirRondas()">${cerradas === 1 ? 'Abrir la ronda de la que está cerrada' : 'Abrir la ronda de las ' + cerradas + ' cerradas'}</button>` : '<div style="font-size:12px;color:var(--ok);margin-top:8px">✓ Todas tienen la ronda abierta: salen en el link.</div>'}
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:18px 0 8px">2 · El link y el mensaje para el canal de difusión</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><code style="flex:1;min-width:0;word-break:break-all;font-size:12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px">${e(dmLink())}</code><button class="btn btn-sec btn-sm" onclick="copiarDispLink(dmLink())"><i class="ic ic-enlace"></i> Copiar link</button></div>
+    <textarea class="fi" id="dmTexto" style="height:150px;margin-top:8px;font-size:12.5px">${e(dmMensaje())}</textarea>
+    <button class="btn btn-sec btn-sm" style="margin-top:6px" onclick="copiarDispLink(document.getElementById('dmTexto').value)">Copiar mensaje</button>
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:18px 0 8px">3 · Mandarlo por mail</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 18px">
+      ${grupo('rec', 'Recomendados', g.rec.length)}${grupo('sup', 'Supervisores', g.sup.length)}${grupo('ops', 'Equipo de operaciones', g.ops.length)}
+      <span style="display:flex;align-items:center;gap:8px;font-size:13px">${grupo('tag', 'Etiqueta', g.tag.length)}<select class="filt" id="dmTag" onchange="renderDispMes()" style="font-size:12px;padding:4px 8px"><option value="">elegir…</option>${etiquetas.map(t => `<option ${t === tagSel ? 'selected' : ''}>${e(t)}</option>`).join('')}</select></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" id="dmMandarBtn" onclick="dmMandar()">Mandar</button><span id="dmCuantos" style="font-size:12px;color:#6b7280"></span></div>`;
+  dmContar();
+}
+function dmContar() {
+  const n = dmDestinatarios().length, el = document.getElementById('dmCuantos'), btn = document.getElementById('dmMandarBtn');
+  if (el) el.textContent = n ? `Le llega a ${n} persona${n === 1 ? '' : 's'} (sin repetir).` : 'Elegí a quién mandárselo.';
+  if (btn) btn.disabled = !n;
+}
+async function dmAbrirRondas() {
+  const ids = dmEventos().filter(x => !x.c.disp_abierta).map(x => x.c.id); if (!ids.length) return;
+  try { await sbUpdateIn('convocatorias', ids, { disp_abierta: true }); } catch (_) { return; }
+  convs.forEach(c => { if (ids.includes(c.id)) c.disp_abierta = true; });
+  toast('✓ Ronda abierta en ' + ids.length + ' convocatoria' + (ids.length === 1 ? '' : 's'));
+  renderDispMes();
+}
+async function dmMandar() {
+  const dest = dmDestinatarios(), mes = document.getElementById('dmMes').value; if (!dest.length) return;
+  if (dmEventos().some(x => !x.c.disp_abierta)) { toast('Primero abrí la ronda de todas: si no, esos eventos no salen en el link'); return; }
+  if (!confirm(`¿Mandar el link de la disponibilidad de ${dmNombreMes(mes)} a ${dest.length} persona(s)?`)) return;
+  const btn = document.getElementById('dmMandarBtn'), cuantos = document.getElementById('dmCuantos'); btn.disabled = true;
+  const asunto = `Disponibilidad de ${dmNombreMes(mes)} — Show Business Solutions`;
+  let ok = 0, mal = 0;
+  for (let i = 0; i < dest.length; i++) {
+    const p = dest[i];
+    cuantos.textContent = `Mandando ${i + 1} de ${dest.length}…`;
+    const from = p.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
+    const texto = `Hola ${String(p.nombre || '').trim().split(/\s+/)[0] || ''}:\n\nYa está abierta la disponibilidad de ${dmNombreMes(mes)}. Marcá qué días podés trabajar en este link (se completa con tu CUIL):\n${dmLink()}\n\n`
+      + dmEventos().map(x => `• ${x.c.nombre} — ${x.dias.map(d => fechaDMA(d.fecha).slice(0, 5)).join(', ')}`).join('\n') + '\n\nSi te seleccionan, te llega la confirmación.\n\nShow Business Solutions';
+    try {
+      const res = await fetch('/api/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+        body: JSON.stringify({ from, to: [p.email], subject: asunto, text: texto, html: renderEmailHtml(texto, from, p.area === 'movistar_arena' ? 'movistar' : 'externos') }) });
+      if (res.ok) ok++; else mal++;
+    } catch (_) { mal++; }
+  }
+  cuantos.textContent = `✓ Enviado a ${ok}` + (mal ? ` · ${mal} no salieron (revisá el mail de esas personas)` : '') + '.';
+  btn.disabled = false;
+}
 async function toggleDispAbierta(val) {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   c.disp_abierta = val; renderDispBody();
