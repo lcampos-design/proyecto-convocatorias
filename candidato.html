@@ -40,6 +40,15 @@ textarea.fi{height:90px;resize:vertical}
 .file-text{font-size:13px;color:#6b7280}
 .file-text strong{color:#534AB7}
 .file-name{font-size:12px;color:#534AB7;font-weight:500;margin-top:6px}
+/* Los otros archivos (carnet de manipulación, certificados…), debajo del CV. */
+.extras-t{font-size:13px;font-weight:600;color:#374151;margin:18px 0 4px}
+.extras-s{font-size:12px;color:#6b7280;margin-bottom:10px;line-height:1.45}
+.file-area.chica{padding:14px}
+.extras-lista{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.extra-item{display:flex;align-items:center;gap:8px;background:#f5f3ff;border:1px solid #e0e7ff;border-radius:8px;padding:7px 10px;font-size:12.5px;color:#3730a3}
+.extra-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.extra-item button{border:0;background:transparent;color:#6b7280;font-size:16px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px}
+.extra-item button:hover{background:#e0e7ff;color:#111827}
 .submit-btn{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:opacity .15s;font-family:inherit}
 .submit-btn:hover{opacity:.9}
 .submit-btn:disabled{opacity:.5;cursor:not-allowed}
@@ -308,6 +317,16 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
         <div class="file-text solo-es" style="margin-top:4px">PDF, Word o imagen · Máx. 1 MB</div>
         <div class="file-name" id="fileName"></div>
       </div>
+      <div class="extras-t solo-ar">Otros archivos <span style="font-weight:400;color:#9ca3af">(opcional)</span></div>
+      <div class="extras-t solo-es">Otros archivos <span style="font-weight:400;color:#9ca3af">(opcional)</span></div>
+      <div class="extras-s solo-ar">Si tenés <strong>carnet de manipulación de alimentos</strong>, certificados, títulos o cursos, sumalos acá. Hasta 3 archivos, de 1 MB cada uno.</div>
+      <div class="extras-s solo-es">Si tienes <strong>carnet de manipulador de alimentos</strong>, certificados, títulos o cursos, súmalos aquí. Hasta 3 archivos, de 1 MB cada uno.</div>
+      <div class="file-area chica" id="extrasArea" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="soltarExtras(event)">
+        <input type="file" id="fExtras" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="elegirExtras(this.files)">
+        <div class="file-text solo-ar">📎 Arrastrá los archivos acá o <strong>hacé click para elegir</strong></div>
+        <div class="file-text solo-es">📎 Arrastra los archivos aquí o <strong>haz clic para elegirlos</strong></div>
+      </div>
+      <div class="extras-lista" id="extrasLista"></div>
       <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
     </div>
 
@@ -496,6 +515,38 @@ function processFile(f) {
   const r = new FileReader();
   r.onload = ev => { fileData = { nombre: f.name, tipo: f.type, datos: ev.target.result }; document.getElementById('fileName').textContent = `✓ ${f.name} (${(f.size/1024).toFixed(0)} KB)`; };
   r.readAsDataURL(f);
+}
+
+// Los otros archivos: hasta 3, de 1 MB cada uno (sin repetir).
+const MAX_EXTRAS = 3;
+let extrasData = [];
+function soltarExtras(e) { e.preventDefault(); document.getElementById('extrasArea').classList.remove('dragover'); elegirExtras(e.dataTransfer.files); }
+function elegirExtras(lista) {
+  const es = selectedArea === 'espana';
+  [...(lista || [])].forEach(f => {
+    if (extrasData.length >= MAX_EXTRAS) { showErr(es ? 'Puedes sumar hasta 3 archivos.' : 'Podés sumar hasta 3 archivos.'); return; }
+    if (f.size > 1048576) { showErr((es ? 'Supera 1 MB: ' : 'Supera 1 MB: ') + f.name + (es ? '. Elige uno más ligero.' : '. Elegí uno más liviano.')); return; }
+    if (extrasData.some(x => x.nombre === f.name)) return;
+    const lugar = { nombre: f.name, tipo: f.type, datos: null, kb: Math.round(f.size / 1024) };
+    extrasData.push(lugar);
+    const r = new FileReader();
+    r.onload = ev => { lugar.datos = ev.target.result; pintarExtras(); };
+    r.readAsDataURL(f);
+  });
+  document.getElementById('fExtras').value = '';
+  pintarExtras();
+}
+function quitarExtra(i) { extrasData.splice(i, 1); pintarExtras(); }
+function pintarExtras() {
+  const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  document.getElementById('extrasLista').innerHTML = extrasData.map((x, i) => '<div class="extra-item"><span>' + (x.datos ? '✓ ' : '… ') + esc(x.nombre) + ' (' + x.kb + ' KB)</span><button type="button" onclick="quitarExtra(' + i + ')" aria-label="Quitar ' + esc(x.nombre) + '">✕</button></div>').join('');
+  document.getElementById('extrasArea').style.display = extrasData.length >= MAX_EXTRAS ? 'none' : '';
+}
+// Lo que viaja: el CV en archivo_cv, como siempre, y los otros adentro, en "extras".
+function archivosParaEnviar() {
+  const extras = extrasData.filter(x => x.datos).map(x => ({ nombre: x.nombre, tipo: x.tipo, datos: x.datos }));
+  if (!fileData && !extras.length) return null;
+  return extras.length ? Object.assign({}, fileData || {}, { extras }) : fileData;
 }
 
 function showErr(msg) { const el = document.getElementById('errMsg'); el.textContent = msg; el.style.display = 'block'; window.scrollTo({top:0,behavior:'smooth'}); }
@@ -708,7 +759,7 @@ async function submitForm() {
     formacion,
     habilidades,
     disponibilidad,
-    archivo_cv:     fileData ? fileData : null,
+    archivo_cv:     archivosParaEnviar(),
     cbu,
     numero_cuenta:  nroCuenta,
     banco,
@@ -806,7 +857,7 @@ async function submitFormEs() {
     puesto_interes:       posiciones.join(', '),
     experiencia:          experiencia || null,
     disponibilidad:       disponib,
-    archivo_cv:           fileData ? fileData : null,
+    archivo_cv:           archivosParaEnviar(),
     fecha_nacimiento:     nacimiento,
     talla,
     permiso_trabajo:      permiso === 'si',
@@ -863,7 +914,7 @@ function resetForm() {
   ['fDni','fNacimiento','fExpEs','fDispEs','fEmergenciaEs','fObsEs','fIban','fTitular'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.style.borderColor = ''; });
   document.querySelectorAll('input[name="posicionEs"], input[name="tallaEs"], input[name="permisoEs"], #fPrivacidad').forEach(i => i.checked = false);
   ['dniOk','dniWarn','ibanOk','ibanWarn'].forEach(id => document.getElementById(id).style.display = 'none');
-  fileData = null; setArea(eraEspana ? 'espana' : 'movistar_arena');
+  fileData = null; extrasData = []; pintarExtras(); setArea(eraEspana ? 'espana' : 'movistar_arena');
   window.scrollTo({top:0,behavior:'smooth'});
 }
 </script>
