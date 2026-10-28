@@ -399,7 +399,7 @@ const INC_PLANO_ZONAS = [
   { id: 'Anillo derecho', txt: 'ANILLO', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
   { id: 'Backstage', txt: 'BACKSTAGE', t: 'back', r: [50, -44, 320, 24] },
   // El VIP: entre la platea baja (P1) y la alta (P3).
-  { id: 'VIP', txt: 'VIP', t: 'vip', p: '93,30 93,224 127,257 293,257 327,224 327,30 322,30 322,222 290,253 130,253 98,222 98,30', lx: 210, ly: 255.5, piso: 'VIP' }
+  { id: 'VIP', txt: 'VIP', t: 'vip', p: '92.5,30 92.5,224 127,257 293,257 327.5,224 327.5,30 320.5,30 320.5,221.5 290,253 130,253 99.5,221.5 99.5,30', lx: 210, ly: 255, piso: 'VIP' }
 ];
 // Los pisos del Arena: el campo en planta baja, la platea baja en el 1, la
 // alta en el 3 y el VIP entre las dos. Cada puesto del anillo dice el suyo.
@@ -491,11 +491,31 @@ function incNormalizarLugares(lista) {
     const calle = l.t === 'calle';
     const piso = calle ? '' : INC_PISOS.some(x => x[0] === l.piso) ? l.piso : (l.t === 'puerta' ? 'PB' : 'P1');
     // Las calles van afuera del estadio, son largas y llevan el nombre entero.
-    return { id, t: l.t, txt: String(l.txt == null ? '' : l.txt).trim().slice(0, calle ? 24 : 6), cx: num(l.cx, -40, 460, 210), cy: num(l.cy, -90, 390, 304), w: num(l.w, 6, calle ? 480 : 80, tipo.w), h: num(l.h, 6, calle ? 40 : 80, tipo.h), ang: num(l.ang, -180, 180, 0), piso };
+    const lim = incLimitesLugar(l.t);
+    return { id, t: l.t, txt: String(l.txt == null ? '' : l.txt).trim().slice(0, calle ? 24 : 6), cx: num(l.cx, -40, 460, 210), cy: num(l.cy, -90, 390, 304), w: num(l.w, lim.w[0], lim.w[1], tipo.w), h: num(l.h, lim.h[0], lim.h[1], tipo.h), ang: num(l.ang, -180, 180, 0), piso };
   }).filter(Boolean).slice(0, 80);
 }
 let incLugaresArena = incNormalizarLugares(INC_LUGARES_BASE), incVersionPlano = 0;
-function incPonerLugares(lista) { incLugaresArena = incNormalizarLugares(lista); incVersionPlano++; }
+// Si no cambió nada, el plano no se rehace (el 3D se rehace cuando cambia la versión).
+function incPonerLugares(lista) {
+  const nuevos = incNormalizarLugares(lista);
+  if (JSON.stringify(nuevos) === JSON.stringify(incLugaresArena)) return;
+  incLugaresArena = nuevos; incVersionPlano++;
+}
+// Cuánto puede medir un puesto (las calles, largas y angostas).
+function incLimitesLugar(t) { return t === 'calle' ? { w: [6, 480], h: [6, 40] } : { w: [6, 80], h: [6, 80] }; }
+// Cambiar el tamaño de un puesto agarrándolo de una manija: sx, sy dicen
+// cuál (-1, 0 o 1 a lo largo y a lo ancho; 0 es un lado). La esquina (o el
+// lado) de enfrente queda quieta; px, py es adonde se llevó la manija.
+function incRedimensionar(l, sx, sy, px, py) {
+  const a = (l.ang || 0) * Math.PI / 180, ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux;
+  const lim = incLimitesLugar(l.t), r = v => Math.round(v * 2) / 2;
+  const ax = l.cx - sx * l.w / 2 * ux - sy * l.h / 2 * vx, ay = l.cy - sx * l.w / 2 * uy - sy * l.h / 2 * vy;
+  const du = (px - ax) * ux + (py - ay) * uy, dv = (px - ax) * vx + (py - ay) * vy;
+  const w = sx ? Math.min(lim.w[1], Math.max(lim.w[0], sx * du)) : l.w, h = sy ? Math.min(lim.h[1], Math.max(lim.h[0], sy * dv)) : l.h;
+  const ou = sx * w / 2, ov = sy * h / 2;
+  return { cx: r(ax + ou * ux + ov * vx), cy: r(ay + ou * uy + ov * vy), w: r(w), h: r(h) };
+}
 // El plano guardado desde el panel. Si no hay nada guardado (o la base
 // todavía no lo tiene), queda el de siempre. Devuelve si cambió algo.
 async function incCargarPlanoArena() {
@@ -555,11 +575,11 @@ function incLugaresSueltos(lista, armado) {
 const INC_TEMA = {
   color: {
     baja: ['#1f4fcf', '#5b8dff'], alta: ['#3d86f2', '#8cc0ff'], campo: ['#4cc9f7', '#a6e6ff'],
-    anillo: ['#2a3d5e', '#3d557d'], back: ['#24375a', '#3d557d'], vip: ['#132f66', '#4fb3ff'],
+    anillo: ['#2a3d5e', '#3d557d'], back: ['#24375a', '#3d557d'], vip: ['#dfe7f2', '#9fb0c8'],
     puerta: ['#9ee6ff', '#4fb3ff'], gastro: ['#b84ad8', '#e2a6f5'], banio: ['#6f8fc0', '#a9c2e6'], enfermeria: ['#ffffff', '#a9c2e6'], servicio: ['#3e5579', '#6f8fc0'],
     calle: ['#0c1a2e', '#3d557d']
   },
-  tinta: '#ffffff', tintaPiso: '#9fbbe3', tintaTipo: { campo: '#0b1b33', puerta: '#0b1b33', enfermeria: '#0b1b33' },
+  tinta: '#ffffff', tintaPiso: '#9fbbe3', tintaTipo: { campo: '#0b1b33', puerta: '#0b1b33', enfermeria: '#0b1b33', vip: '#0b1b33' },
   fondo: ['#173a66', '#0f2a4d', '#0a1d3a'], fachada: '#3f7fc4',
   escenario: ['#050d1f', '#3fa9f5'], sel: '#ffffff', badge: ['#ffffff', '#0b1b33']
 };
@@ -587,6 +607,7 @@ function incPlanoSVG(op) {
   const TM = INC_TEMA, niveles = op.niveles || {}, cuentas = op.cuentas || {}, porNivel = op.porNivel || {};
   const pisoSel = op.editor ? (op.piso || '') : incPisoElegido(), capas = op.editor ? INC_CAPAS_TODAS : incCapas();
   let x0 = 6, y0 = -50, x1 = 414, y1 = 342;   // lo que se ve: el estadio y lo que haya afuera (las calles)
+  let elegido = null;   // en el editor, el puesto elegido: lleva manijas para cambiarle el tamaño
   const partes = incSectoresPlano(op.armado).map(s => {
     const nv = niveles[s.id], n = cuentas[s.id] || 0, sel = op.sel === s.id, col = TM.color[s.t], v = nv ? INC_NIVELES[nv] : null;
     const calle = s.t === 'calle';
@@ -626,6 +647,9 @@ function incPlanoSVG(op) {
       const ancho = w >= h, tam = ancho ? 7.5 : 7, ix = ancho ? cx - 5.5 : cx, iy = ancho ? cy : cy - 3.5;
       etq = '<path d="' + INC_ICONOS[s.ico] + '" transform="translate(' + (ix - tam / 2) + ' ' + (iy - tam / 2) + ') scale(' + (tam / 24) + ')" fill="' + tinta + '"' + suave + ' pointer-events="none"/>'
         + (s.txt ? '<text x="' + (ancho ? cx + 6 : cx) + '" y="' + (ancho ? cy + 1.8 : cy + 6.8) + '" font-size="5" font-weight="600" fill="' + tinta + '"' + suave + ' text-anchor="middle" pointer-events="none">' + incEsc(s.txt) + '</text>' : '');
+    } else if (s.t === 'vip' && (capas.nombres || n)) {
+      etq = '<rect x="' + (cx - 11) + '" y="' + (cy - 4.2) + '" width="22" height="8.4" rx="4.2" fill="' + (v ? '#ffffff' : col[0]) + '" stroke="' + (v ? v.color : '#0b1b33') + '" stroke-width=".6" pointer-events="none"/>'
+        + '<text x="' + cx + '" y="' + (cy + 1.9) + '" font-size="5.2" font-weight="700" letter-spacing="1" fill="#0b1b33" text-anchor="middle" pointer-events="none">VIP</text>';
     } else if (capas.nombres || n || s.lugar) {
       const fs = s.t === 'anillo' ? 4.2 : s.t === 'puerta' ? 4.8 : s.t === 'back' ? 4.8 : chico ? 5 : (s.txt.length > 3 ? 5.4 : 6.2);
       const espacio = piso ? 1.4 : (s.txt.length > 3 ? 0.5 : 0);
@@ -642,6 +666,7 @@ function incPlanoSVG(op) {
       badge = '<g pointer-events="none"><rect x="' + (xi - 1) + '" y="' + (by - 5.5) + '" width="' + (ancho + 2) + '" height="11" rx="5.5" fill="#ffffff"/>'
         + desg.map((k, i) => '<rect x="' + (xi + i * W + 0.5) + '" y="' + (by - 4.5) + '" width="' + (W - 1) + '" height="9" rx="4.5" fill="' + INC_NIVELES[k].color + '"/><text x="' + (xi + i * W + W / 2) + '" y="' + (by + 1.9) + '" font-size="5.4" font-weight="700" fill="#ffffff" text-anchor="middle">' + pn[k] + '</text>').join('') + '</g>';
     } else if (n) badge = '<circle cx="' + bx + '" cy="' + by + '" r="5" fill="' + TM.badge[0] + '" stroke="' + TM.badge[1] + '" stroke-width=".8" pointer-events="none"/><text x="' + bx + '" y="' + (by + 2) + '" font-size="5.8" font-weight="700" fill="' + TM.badge[1] + '" text-anchor="middle" pointer-events="none">' + n + '</text>';
+    if (op.editor && sel && s.lugar) elegido = s;
     const otroPiso = pisoSel && incPisoDe(s) && incPisoDe(s) !== pisoSel;
     return '<g' + click + (otroPiso ? ' opacity=".2"' : '') + '><title>' + incEsc(s.id) + (s.lugar && s.piso ? ' · ' + s.piso : '') + (n ? ' · ' + incAbiertasTexto(n, pn) : '') + '</title>'
       + forma + ' fill="' + fill + '"' + tinte + ' stroke="' + stroke + '" stroke-width="' + sw + '"/>'
@@ -655,6 +680,17 @@ function incPlanoSVG(op) {
     + '<rect x="' + vb[0] + '" y="' + vb[1] + '" width="' + vb[2] + '" height="' + vb[3] + '" rx="14" fill="url(#incFondoG)"/>'
     + '<polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="' + TM.fachada + '" stroke-width="1" pointer-events="none"/>'
     + partes
+    // Las manijas: en las esquinas y en el medio de cada lado (el cursor dice hacia dónde estira).
+    + (elegido ? (() => {
+      const e = elegido, a = e.ang * Math.PI / 180, ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux;
+      return '<g class="inc-asas">' + [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]].map(([sx, sy]) => {
+        const x = e.lx + sx * e.w / 2 * ux + sy * e.h / 2 * vx, y = e.ly + sx * e.w / 2 * uy + sy * e.h / 2 * vy;
+        const g = ((Math.atan2(y - e.ly, x - e.lx) * 180 / Math.PI) % 180 + 180) % 180, cur = g < 22.5 || g >= 157.5 ? 'ew' : g < 67.5 ? 'nwse' : g < 112.5 ? 'ns' : 'nesw';
+        const f = v => v.toFixed(1);
+        return '<g data-asa="' + sx + ',' + sy + '" style="cursor:' + cur + '-resize"><rect x="' + f(x - 6) + '" y="' + f(y - 6) + '" width="12" height="12" fill="transparent"/>'
+          + '<rect x="' + f(x - 2.6) + '" y="' + f(y - 2.6) + '" width="5.2" height="5.2" rx="1.2" fill="#ffffff" stroke="#2f80ed" stroke-width="1"/></g>';
+      }).join('') + '</g>';
+    })() : '')
     // La consola (FOH), de referencia: no se toca (se toca el campo de abajo).
     + '<g pointer-events="none"><rect x="' + INC_FOH[0] + '" y="' + INC_FOH[1] + '" width="' + INC_FOH[2] + '" height="' + INC_FOH[3] + '" rx="3" fill="' + TM.escenario[0] + '" fill-opacity=".85" stroke="' + TM.escenario[1] + '" stroke-width=".7"/>'
     + '<text x="' + (INC_FOH[0] + INC_FOH[2] / 2) + '" y="' + (INC_FOH[1] + INC_FOH[3] / 2 + 1.8) + '" font-size="5" font-weight="600" fill="#fff" fill-opacity=".85" text-anchor="middle" letter-spacing="1">FOH</text></g>'
@@ -678,7 +714,7 @@ function incPlanoSVG(op) {
 // completa (el iPhone), el plano se agranda igual a toda la pantalla.
 // three.js se carga recién cuando hace falta (pesa). Si el aparato no
 // tiene WebGL o el 3D falla, queda el plano en 2D: nunca se queda sin plano.
-const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], vip: 11.5, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13, calle: 0.5 };
+const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], vip: 13, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13, calle: 0.5 };
 // Los colores del 3D: arriba y costado de cada tipo (los mismos tonos que el
 // plano), el contorno LED de cada uno, el halo de abajo, el vidrio de la
 // fachada y las luces (casi blancas, apenas frías: si fueran celestes, los
@@ -686,10 +722,10 @@ const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], vip: 11.5, an
 const INC_TEMA_3D = {
   luces: { hemi: [0xe8f0ff, 0x1a2a48, 0.8], clave: 0.55, contra: 0.3, escenario: 0.35 },
   color: {
-    baja: [0x2557dc, 0x16348c], alta: [0x4a8ff5, 0x2a5fb8], campo: [0x3fb8ec, 0x1b7fb0], anillo: [0x2c4063, 0x1a2944], back: [0x26395b, 0x17243d], vip: [0x16336e, 0x0b1c40],
+    baja: [0x2557dc, 0x16348c], alta: [0x4a8ff5, 0x2a5fb8], campo: [0x3fb8ec, 0x1b7fb0], anillo: [0x2c4063, 0x1a2944], back: [0x26395b, 0x17243d], vip: [0xe3eaf5, 0x8d9db6],
     puerta: [0x9ee6ff, 0x9ee6ff], gastro: [0xbf55e0, 0x7d2a9a], banio: [0x7896c6, 0x44608c], enfermeria: [0xffffff, 0xc6d4e8], servicio: [0x44608a, 0x26395b], calle: [0x0f1d33, 0x0a1424]
   },
-  borde: { baja: 0x8cc0ff, alta: 0xb5d8ff, campo: 0xd2f3ff, anillo: 0x4f7fb8, back: 0x4f7fb8, vip: 0x4fb3ff, puerta: 0x9ee6ff, gastro: 0xf0c8fb, banio: 0xd2e2f7, enfermeria: 0xa9c2e6, servicio: 0xa9c2e6, calle: 0x3d6ea8 },
+  borde: { baja: 0x8cc0ff, alta: 0xb5d8ff, campo: 0xd2f3ff, anillo: 0x4f7fb8, back: 0x4f7fb8, vip: 0xffffff, puerta: 0x9ee6ff, gastro: 0xf0c8fb, banio: 0xd2e2f7, enfermeria: 0xa9c2e6, servicio: 0xa9c2e6, calle: 0x3d6ea8 },
   opBorde: { baja: 0.5, alta: 0.5, campo: 0.6, anillo: 0.55, back: 0.55, vip: 0.9, calle: 0.55 }, opBordeOtro: 0.7, sel: 0xffffff,
   brillo: 0.1,   // cuánto brilla cada zona con su propio color: la luz LED, suave
   halo: ['rgba(56,160,255,.18)', 'rgba(56,160,255,.06)'],
@@ -801,6 +837,11 @@ function incEstilo3D() {
     + '.inc-3d-capas-l button::after{content:"";flex-shrink:0;width:30px;height:18px;border-radius:999px;background:radial-gradient(circle 7px at 9px 50%,#fff 96%,transparent 100%) rgba(255,255,255,.22);transition:background .15s}'
     + '.inc-3d-capas-l button.on::after{background:radial-gradient(circle 7px at 21px 50%,#fff 96%,transparent 100%) #2f80ed}'
     + '.inc-3d-btn svg{width:16px;height:16px;flex-shrink:0}'
+    // Las manijas para cambiar el tamaño de un puesto (en la vista previa del editor).
+    + '.inc-3d-asas{position:absolute;left:0;top:0;right:0;bottom:0;z-index:3;pointer-events:none;overflow:hidden}'
+    + '.inc-3d-asa{position:absolute;left:0;top:0;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:4px;background:#fff;border:2px solid #2f80ed;box-shadow:0 1px 5px rgba(0,8,26,.5);pointer-events:auto;touch-action:none;display:none}'
+    + '.inc-3d-asas.on .inc-3d-asa{display:block}'
+    + '@media(pointer:coarse){.inc-3d-asa{width:22px;height:22px;margin:-11px 0 0 -11px}}'
     + '.inc-3d-tip{position:absolute;z-index:4;pointer-events:none;' + INC_VIDRIO + ';color:#fff;font:600 12px ' + INC_FUENTE + ';padding:6px 10px;border-radius:8px;transform:translate(-50%,-140%);white-space:nowrap;opacity:0;transition:opacity .12s}'
     // El detalle, en pantalla completa: una ventana de vidrio que flota al costado (abajo, en el celular), sin ocupar todo el alto.
     + '.inc-3d-det{position:absolute;z-index:5;top:calc(58px + var(--inc-sup,0px));right:calc(14px + var(--inc-der,0px));width:min(380px,calc(100% - 28px));max-height:calc(100% - 150px - var(--inc-sup,0px));display:none;flex-direction:column;background:rgba(244,248,253,.74);-webkit-backdrop-filter:blur(28px) saturate(180%);backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,.6);border-radius:18px;box-shadow:0 24px 60px rgba(0,8,26,.5),0 0 0 .5px rgba(0,8,26,.25);color:#0b1b33;overflow:hidden;font-family:' + INC_FUENTE + ';animation:incVentana .22s ease-out}'
@@ -994,7 +1035,10 @@ function incPlano3D(cont, op0) {
       if (s.t === 'baja' || s.t === 'alta') {
         // Hacia dónde suben las filas: hacia afuera del campo.
         const [h0, h1] = INC_3D_ALTURA[s.t];
-        const dir = s.p ? new T.Vector2(lx < 210 ? -1 : 1, -1).normalize() : lx < 150 ? new T.Vector2(-1, 0) : lx > 270 ? new T.Vector2(1, 0) : new T.Vector2(0, -1);
+        // Se decide por dónde está: detrás del campo (el fondo) o al costado. Por la
+        // posición de costado nomás, la 307 y la 311 (que se asoman a las esquinas) subían de lado.
+        const fondo = ly > 206;
+        const dir = s.p ? new T.Vector2(lx < 210 ? -1 : 1, -1).normalize() : fondo ? new T.Vector2(0, -1) : new T.Vector2(lx < 210 ? -1 : 1, 0);
         rot = s.p ? (lx < 210 ? Math.PI / 4 : -Math.PI / 4) : (dir.y ? 0 : Math.PI / 2);
         const g = gradas(pts, dir, h0, h1), dc = cx * dir.x - cz * dir.y;
         geo = g.geo;
@@ -1033,6 +1077,7 @@ function incPlano3D(cont, op0) {
       }
       if (s.ico) { p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color[s.t][0] + ';color:' + (T2.tintaTipo[s.t] || '#ffffff') + '">' + icoSVG(s.ico) + incEsc(s.txt) + '</span>'; p.etClase = 'pill'; p.hEt = p.hBase + 6; }
       else if (s.t === 'anillo' || s.t === 'back') { p.etHtml = incEsc(s.txt); p.etClase = 'piso'; p.hEt = p.hBase + 3; }
+      else if (s.t === 'vip') { p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.vip[0] + ';color:#0b1b33;letter-spacing:1px">VIP</span>'; p.etClase = 'pill'; p.hEt = p.hBase + 4; }
       else if (s.t === 'calle') {
         // El nombre, a un cuarto del largo (en el medio, el de la calle de atrás quedaba encima de la pantalla).
         const a = s.ang * Math.PI / 180;
@@ -1048,12 +1093,12 @@ function incPlano3D(cont, op0) {
     // El cartel del backstage va a un costado, para no tapar las pantallas.
     const corre = s.t === 'back' ? -128 : 0;
     p.et = etiqueta(p.etHtml, p.etClase, new T.Vector3(cx + corre + (p.etDx || 0), p.hEt, cz + (p.etDz || 0)), p);
+    if (s.lugar) p.forma = { lx: s.lx, ly: s.ly, w: s.w, h: s.h, ang: s.ang, t: s.t };
     piezas[s.id] = p;
   });
 
-  // El escenario: la tarima con un proscenio adelante y el frente de luz, la
-  // pantalla grande con el nombre del show y una a cada costado, el sonido
-  // colgado a los lados y la estructura de luces (reticulada) con sus equipos.
+  // El escenario, simple: la tarima con un proscenio adelante y el frente de
+  // luz, la pantalla con el nombre del show y un marco arriba.
   const matTarima = new T.MeshStandardMaterial({ color: 0x0b1526, roughness: 0.32, metalness: 0.55 });
   const tarima = new T.Mesh(new T.BoxGeometry(100, 6, 44), matTarima); tarima.position.set(0, 3, -140); escena.add(tarima);
   const proscenio = new T.Mesh(new T.BoxGeometry(64, 4, 6), matTarima); proscenio.position.set(0, 2, -115); escena.add(proscenio);
@@ -1069,47 +1114,10 @@ function incPlano3D(cont, op0) {
     [[100, 6.1, -118], [64, 4.1, -112]].forEach(([l, y, z]) => { const t = new T.Mesh(new T.BoxGeometry(l, 0.45, 0.45), matLuz); t.position.set(0, y, z); escena.add(t); });
   }
   etiqueta('ESCENARIO', 'esc', new T.Vector3(0, 12, -136));
-  // La estructura: cuatro torres y el marco de arriba, con el reticulado en líneas.
+  // El marco: cuatro columnas finas y el cuadro de arriba.
   const matTruss = new T.MeshStandardMaterial({ color: 0x2c3e5c, roughness: 0.4, metalness: 0.8 });
-  [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(2, 56, 2), matTruss); t.position.set(x, 28, z); escena.add(t); });
-  [[0, -114, 110, 0], [0, -164, 110, 0], [-54, -139, 52, Math.PI / 2], [54, -139, 52, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 2.4, 2.4), matTruss); t.position.set(x, 56, z); t.rotation.y = r; escena.add(t); });
-  {
-    const v = [], zig = (a, b, n, fn) => { for (let i = 0; i < n; i++) { const p0 = fn(a + (b - a) * i / n, i % 2), p1 = fn(a + (b - a) * (i + 1) / n, (i + 1) % 2); v.push(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2]); } };
-    [-114, -164].forEach(z => zig(-54, 54, 28, (x, k) => [x, k ? 57.2 : 54.8, z]));
-    [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => zig(0, 55, 14, (y, k) => [x + (k ? 1 : -1), y, z]));
-    const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(v, 3));
-    escena.add(new T.LineSegments(g, new T.LineBasicMaterial({ color: 0x5d7fae, transparent: true, opacity: 0.55 })));
-  }
-  // Los equipos colgados adelante, con su luz apuntando al escenario (suave).
-  {
-    const matCuerpo = new T.MeshStandardMaterial({ color: 0x131b2a, roughness: 0.5, metalness: 0.6 }), matLente = new T.MeshBasicMaterial({ color: 0xd6f0ff });
-    const matHaz = new T.MeshBasicMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.045, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide });
-    const geoHaz = new T.ConeGeometry(6, 46, 20, 1, true); geoHaz.translate(0, -23, 0);
-    for (let i = 0; i < 8; i++) {
-      const x = -45.5 + i * 13;
-      const cuerpo = new T.Mesh(new T.BoxGeometry(2.6, 2.4, 2.6), matCuerpo); cuerpo.position.set(x, 53.6, -114); escena.add(cuerpo);
-      const lente = new T.Mesh(new T.CircleGeometry(0.9, 16), matLente); lente.rotation.x = Math.PI / 2; lente.position.set(x, 52.35, -114); escena.add(lente);
-      if (i % 2) { const haz = new T.Mesh(geoHaz, matHaz); haz.position.set(x, 52.3, -114); haz.rotation.x = -0.32; haz.rotation.z = (x > 0 ? 1 : -1) * 0.12; escena.add(haz); }
-    }
-  }
-  // El sonido: un arreglo de parlantes colgado a cada lado, adelante.
-  {
-    const matPa = new T.MeshStandardMaterial({ color: 0x151d2b, roughness: 0.6, metalness: 0.3 }), geoPa = new T.BoxGeometry(8, 3, 6);
-    [-64, 64].forEach(x => { for (let i = 0; i < 7; i++) { const b = new T.Mesh(geoPa, matPa); b.position.set(x, 50 - i * 3.1, -113 + i * 0.35); b.rotation.x = -i * 0.045; escena.add(b); } });
-  }
-  // Las pantallas de los costados (como en los recitales), apenas giradas hacia el público.
-  {
-    const c = lienzoDe(256, 336), x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 336);
-    g.addColorStop(0, '#00153f'); g.addColorStop(0.55, '#003a9e'); g.addColorStop(1, '#00153f');
-    x.fillStyle = g; x.fillRect(0, 0, 256, 336);
-    x.fillStyle = 'rgba(255,255,255,.07)'; for (let i = 0; i < 256; i += 8) for (let j = 0; j < 336; j += 8) x.fillRect(i, j, 4, 4);
-    x.fillStyle = '#9fd8ff'; x.textAlign = 'center'; x.font = '600 30px Poppins, sans-serif'; x.fillText('MOVISTAR', 128, 160); x.fillText('ARENA', 128, 198);
-    const matPant = new T.MeshBasicMaterial({ map: textura(c) }), matMarco = new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 });
-    [-1, 1].forEach(k => {
-      const pant = new T.Mesh(new T.PlaneGeometry(20, 26), matPant); pant.position.set(k * 68, 26, -150); pant.rotation.y = -k * 0.45; escena.add(pant);
-      const marco = new T.Mesh(new T.BoxGeometry(22, 28, 1), matMarco); marco.position.set(k * 68 + k * 0.3, 26, -150.6); marco.rotation.y = -k * 0.45; escena.add(marco);
-    });
-  }
+  [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(1.6, 50, 1.6), matTruss); t.position.set(x, 25, z); escena.add(t); });
+  [[0, -114, 110, 0], [0, -164, 110, 0], [-54, -139, 52, Math.PI / 2], [54, -139, 52, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 1.8, 1.8), matTruss); t.position.set(x, 50, z); t.rotation.y = r; escena.add(t); });
   const lienzoLed = lienzoDe(1024, 256), texLed = textura(lienzoLed);
   let tituloLed = null;
   const pintarLed = titulo => {
@@ -1195,10 +1203,44 @@ function incPlano3D(cont, op0) {
   // Cada cartel, sobre su punto: se proyecta a la pantalla y se escala un poco
   // con la distancia (como si estuviera en el 3D, pero siempre nítido).
   const vec = new T.Vector3();
+  // Las manijas del puesto elegido (en la vista previa del editor): en sus esquinas.
+  let editar = op0.editar || null, asaSel = null, medida = null, agarre = null;
+  const asasEl = document.createElement('div'); asasEl.className = 'inc-3d-asas'; cont.appendChild(asasEl);
+  const asas = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => { const el = document.createElement('div'); el.className = 'inc-3d-asa'; el.dataset.asa = sx + ',' + sy; asasEl.appendChild(el); return { el, sx, sy }; });
+  const altoAsa = p => p.t === 'puerta' || p.t === 'calle' ? 0.6 : p.hBase;
+  const esquina = (f, sx, sy, alto) => {
+    const a = f.ang * Math.PI / 180, ux = Math.cos(a), uy = Math.sin(a);
+    return new T.Vector3(f.lx + sx * f.w / 2 * ux - sy * f.h / 2 * uy - 210, alto, f.ly + sx * f.w / 2 * uy + sy * f.h / 2 * ux - 146);
+  };
+  // Mientras se estira, el contorno del tamaño nuevo.
+  const fantasma = new T.LineLoop(new T.BufferGeometry(), new T.LineBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true }));
+  fantasma.visible = false; fantasma.renderOrder = 10; escena.add(fantasma);
+  const pintarFantasma = () => {
+    if (!medida || !asaSel) { fantasma.visible = false; return; }
+    const al = altoAsa(asaSel) + 0.3;
+    fantasma.geometry.setFromPoints([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => esquina(medida, sx, sy, al)));
+    fantasma.visible = true;
+  };
+  const vecA = new T.Vector3(), vecC = new T.Vector3();
+  const ubicarAsas = () => {
+    const ver = !!(editar && asaSel && asaSel.grupo.visible && !mueve);
+    asasEl.classList.toggle('on', ver); if (!ver) return;
+    const f = medida || asaSel.forma, al = altoAsa(asaSel), w = lienzo.clientWidth || 1, h = lienzo.clientHeight || 1;
+    vecC.set(f.lx - 210, al, f.ly - 146).project(camara);
+    const cx = (vecC.x + 1) / 2 * w, cy = (1 - vecC.y) / 2 * h;
+    asas.forEach(m => {
+      vecA.copy(esquina(f, m.sx, m.sy, al)).project(camara);
+      const x = (vecA.x + 1) / 2 * w, y = (1 - vecA.y) / 2 * h;
+      m.el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+      // El cursor, según hacia dónde queda la esquina en la pantalla.
+      const g = ((Math.atan2(y - cy, x - cx) * 180 / Math.PI) % 180 + 180) % 180;
+      m.el.style.cursor = (g < 22.5 || g >= 157.5 ? 'ew' : g < 67.5 ? 'nwse' : g < 112.5 ? 'ns' : 'nesw') + '-resize';
+    });
+  };
   const ubicarEtiquetas = () => {
     const w = lienzo.clientWidth || 1, h = lienzo.clientHeight || 1;
     etiquetas.forEach(e => {
-      vec.copy(e.pos); if (e.pieza) vec.y += e.pieza.grupo.position.y;
+      vec.copy(e.pos); if (e.pieza) vec.add(e.pieza.grupo.position);
       const dist = camara.position.distanceTo(vec);
       vec.project(camara);
       const fuera = vec.z > 1 || vec.x < -1.15 || vec.x > 1.15 || vec.y < -1.15 || vec.y > 1.15;
@@ -1208,7 +1250,7 @@ function incPlano3D(cont, op0) {
       e.el.style.transform = 'translate(' + ((vec.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - vec.y) / 2 * h).toFixed(1) + 'px) translate(-50%,-50%) scale(' + k.toFixed(3) + ')';
     });
   };
-  const dibujar = () => { motor.render(escena, camara); ubicarEtiquetas(); };
+  const dibujar = () => { motor.render(escena, camara); ubicarEtiquetas(); ubicarAsas(); };
 
   // El detalle de las incidencias, para verlo sin salir de la pantalla
   // completa: lo abierto (de lo más grave a lo más leve) y, si se toca un
@@ -1264,6 +1306,10 @@ function incPlano3D(cont, op0) {
     controles.autoRotateSpeed = 0.35;
   }
   let intro = 0, introDesde = null, origen = desde.clone(), ultimoToque = Date.now();
+  if (cont._incCam) {
+    camara.position.copy(cont._incCam.pos); camara.lookAt(cont._incCam.obj); intro = 1;
+    if (controles) { controles.target.copy(cont._incCam.obj); controles.enabled = true; }
+  }
   const volver = () => { origen = camara.position.clone(); intro = 0; introDesde = null; if (controles) controles.enabled = false; };
 
   // Tamaño: el ancho del contenedor y un alto proporcionado; con
@@ -1382,7 +1428,7 @@ function incPlano3D(cont, op0) {
     if (e.pointerType !== 'mouse' || abajo || Date.now() - ultimoMov < 40) return;
     ultimoMov = Date.now();
     sobre = sectorEn(e);
-    lienzo.style.cursor = sobre && onclick ? 'pointer' : 'grab';
+    lienzo.style.cursor = sobre && editar && piezas[sobre] && piezas[sobre].forma ? 'move' : sobre && onclick ? 'pointer' : 'grab';
     if (sobre) {
       const p = piezas[sobre], r = lienzo.getBoundingClientRect();
       tip.textContent = sobre + (p.n ? ' · ' + incAbiertasTexto(p.n, p.pn) : '');
@@ -1390,6 +1436,69 @@ function incPlano3D(cont, op0) {
     } else tip.style.opacity = '0';
   });
   lienzo.addEventListener('pointerleave', () => { sobre = ''; tip.style.opacity = '0'; });
+
+  // En la vista previa del editor: un puesto se agarra y se lleva (sin girar
+  // la cámara), y sus esquinas lo estiran o lo achican. Al soltar, el panel
+  // guarda el cambio en el borrador.
+  const plano = new T.Plane(new T.Vector3(0, 1, 0), 0), enPiso = new T.Vector3();
+  const puntoEn = (e, alto) => {
+    const r = lienzo.getBoundingClientRect();
+    punto.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    rayo.setFromCamera(punto, camara); plano.constant = -alto;
+    return rayo.ray.intersectPlane(plano, enPiso) ? enPiso.clone() : null;
+  };
+  let mueve = null;
+  const alAgarrar = e => {
+    if (!editar || e.target !== lienzo || (e.button || 0) > 0) return;
+    const p = piezas[sectorEn(e)];
+    if (!p || !p.forma || !p.grupo.visible) return;
+    const q = puntoEn(e, 0); if (!q) return;
+    mueve = { p, q0: q, dx: 0, dz: 0, movio: false };
+    if (controles) controles.enabled = false;   // antes que la cámara se entere: no gira
+  };
+  const alLlevar = e => {
+    if (!mueve) return;
+    const q = puntoEn(e, 0); if (!q) return;
+    mueve.dx = q.x - mueve.q0.x; mueve.dz = q.z - mueve.q0.z;
+    if (Math.abs(mueve.dx) + Math.abs(mueve.dz) > 1) mueve.movio = true;
+    if (!mueve.movio) return;
+    mueve.p.grupo.position.x = mueve.dx; mueve.p.grupo.position.z = mueve.dz;
+    if (mueve.p.baliza) mueve.p.baliza.visible = false;
+    lienzo.style.cursor = 'grabbing';
+  };
+  const alSoltar = () => {
+    if (!mueve) return;
+    const m = mueve, f = m.p.forma, r = v => Math.round(v * 2) / 2; mueve = null;
+    if (controles) controles.enabled = intro >= 1;
+    if (m.movio && editar && typeof window[editar.mover] === 'function') window[editar.mover](m.p.id, r(f.lx + m.dx), r(f.ly + m.dz));
+  };
+  cont.addEventListener('pointerdown', alAgarrar, true);
+  window.addEventListener('pointermove', alLlevar);
+  window.addEventListener('pointerup', alSoltar);
+  asasEl.addEventListener('pointerdown', e => {
+    const el = e.target.closest ? e.target.closest('.inc-3d-asa') : null; if (!el || !asaSel) return;
+    e.preventDefault(); e.stopPropagation();
+    const [sx, sy] = el.dataset.asa.split(',').map(Number), f = asaSel.forma;
+    agarre = { sx, sy, p: asaSel, base: { cx: f.lx, cy: f.ly, w: f.w, h: f.h, ang: f.ang, t: f.t }, r: null };
+    try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    if (controles) controles.enabled = false;
+  });
+  asasEl.addEventListener('pointermove', e => {
+    if (!agarre) return;
+    const a = agarre, q = puntoEn(e, altoAsa(a.p)); if (!q) return;
+    a.r = incRedimensionar(a.base, a.sx, a.sy, q.x + 210, q.z + 146);
+    medida = { lx: a.r.cx, ly: a.r.cy, w: a.r.w, h: a.r.h, ang: a.base.ang };
+    pintarFantasma();
+  });
+  const alSoltarAsa = () => {
+    if (!agarre) return;
+    const a = agarre; agarre = null;
+    if (controles) controles.enabled = intro >= 1;
+    if (a.r && editar && typeof window[editar.medir] === 'function') window[editar.medir](a.p.id, a.r);
+    else { medida = null; pintarFantasma(); }
+  };
+  asasEl.addEventListener('pointerup', alSoltarAsa);
+  asasEl.addEventListener('pointercancel', alSoltarAsa);
 
   // Cada cuadro: la cámara de entrada, el latido, las balizas, las luces y la cinta que corre.
   const t0 = performance.now();
@@ -1425,7 +1534,7 @@ function incPlano3D(cont, op0) {
     });
     texCinta.offset.x = (t * 0.06) % 1;
     // Después de 20 segundos sin que nadie lo toque, gira solo, despacio.
-    if (controles && controles.enabled && !controles.autoRotate && Date.now() - ultimoToque > 20000) controles.autoRotate = true;
+    if (controles && controles.enabled && !controles.autoRotate && !editar && Date.now() - ultimoToque > 20000) controles.autoRotate = true;
     if (controles && controles.enabled) controles.update();
     dibujar();
   };
@@ -1439,7 +1548,8 @@ function incPlano3D(cont, op0) {
     armado: op0.armado, version,
     // Pinta los lugares según lo abierto y pone, saca o renueva las balizas.
     poner(op) {
-      ultimoOp = op; onclick = op.onclick; accion = op.accionPantalla || null; detLista = Array.isArray(op.detalle) ? op.detalle : null;
+      ultimoOp = op; onclick = op.onclick; accion = op.accionPantalla || null; detLista = Array.isArray(op.detalle) ? op.detalle : null; editar = op.editar || null;
+      if (editar) { ayuda.textContent = 'Arrastrá un puesto para moverlo · sus esquinas, para el tamaño'; if (controles) controles.autoRotate = false; }
       if (op.titulo !== undefined) { pintarLed(op.titulo); pintarCinta(op.titulo); }
       const niveles = op.niveles || {}, cuentas = op.cuentas || {}, porNivel = op.porNivel || {}, elegido = selLocal || op.sel, pisoSel = incPisoElegido(), capas = incCapas();
       pisosEl.innerHTML = incPisosHTML('inc-3d-pisos'); if (op.sinPisos) pisosEl.innerHTML = '';
@@ -1464,7 +1574,7 @@ function incPlano3D(cont, op0) {
         }
         p.et.el.style.visibility = fuera || apagado || (!capas.nombres && !p.lugar && !n) ? 'hidden' : '';
         const sube = p.sel ? 3 : 0;
-        p.grupo.position.y = sube;
+        if (!mueve || mueve.p !== p) p.grupo.position.set(0, sube, 0);
         const desg = [3, 2, 1].filter(k => pn[k]).map(k => [k, pn[k]]);
         const clave = nv ? nv + ':' + n + ':' + desg.join('|') : '';
         if (p.clave !== clave) {
@@ -1474,10 +1584,17 @@ function incPlano3D(cont, op0) {
         }
         if (p.baliza) { const ver = !fuera && !apagado; p.baliza.position.set(p.cx, p.hBase + sube, p.bz); p.baliza.userData.chapa.pos.set(p.cx, p.hBase + sube + 70, p.bz); p.baliza.visible = ver; p.baliza.userData.chapa.el.style.visibility = ver ? '' : 'hidden'; }
       });
+      // El elegido, con sus manijas (si se está editando y se ve).
+      const ps = piezas[elegido]; asaSel = editar && ps && ps.forma && ps.grupo.visible ? ps : null;
+      if (!agarre) { medida = null; pintarFantasma(); }
       pintarDetalle();
     },
     destruir() {
       vivo = false;
+      // La cámara queda para la próxima (si se rehace, no vuelve a entrar volando).
+      if (intro >= 1) cont._incCam = { pos: camara.position.clone(), obj: controles ? controles.target.clone() : objetivo.clone() };
+      cont.removeEventListener('pointerdown', alAgarrar, true);
+      window.removeEventListener('pointermove', alLlevar); window.removeEventListener('pointerup', alSoltar);
       if (ro) ro.disconnect();
       document.removeEventListener('fullscreenchange', alCambiarPantalla);
       document.removeEventListener('webkitfullscreenchange', alCambiarPantalla);
