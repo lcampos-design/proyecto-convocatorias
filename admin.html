@@ -924,6 +924,7 @@ tr:hover td{background:#f9f9fb}
         <button class="btn btn-sec btn-sm" onclick="openEtiquetas()" title="Renombrar, unir o borrar etiquetas"><i class="ic ic-etiqueta"></i> Etiquetas</button>
         <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
         <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
+        <button class="btn btn-sec btn-sm" id="btnExportBbva" onclick="exportBbva()" title="Los de esta lista que no tienen cuenta y todavía no tienen CBU, con los datos que pide el banco">↓ Cuentas a abrir (BBVA)</button>
         <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
       </div>
     </div>
@@ -3695,7 +3696,7 @@ async function prepararBancoPersona(p) {
   document.getElementById('pBancoEs').style.display = esEs ? '' : 'none';
   if (!sol) { nota.textContent = 'No llenó el formulario de inscripción, así que no tiene dónde guardarse el dato bancario.'; return; }
   nota.textContent = 'Trayendo los datos bancarios…';
-  const { data, error } = await sb.from('solicitudes').select('cbu,banco,numero_cuenta,iban,titular_cuenta').eq('id', sol.id).single();
+  const { data, error } = await sb.from('solicitudes').select('cbu,banco,numero_cuenta,iban,titular_cuenta,tiene_cuenta').eq('id', sol.id).single();
   if (editPersonId !== p.id) return;   // la cerraron o abrieron a otra mientras tanto
   if (error || !data) { nota.textContent = 'No se pudieron traer los datos bancarios. Cerrá y volvé a abrir para cambiarlos.'; return; }
   Object.assign(sol, data);
@@ -3704,7 +3705,9 @@ async function prepararBancoPersona(p) {
   const campo = { cbu: 'pCbu', numero_cuenta: 'pNroCuenta', banco: 'pBanco', iban: 'pIban', titular_cuenta: 'pTitular' };
   Object.keys(antes).forEach(k => { const el = document.getElementById(campo[k]); el.value = antes[k]; el.disabled = false; });
   bancoPersona = { personaId: p.id, doc: docNucleo(p.cuit), esEs, antes };
-  nota.textContent = 'Son los de su inscripción. Si los cambiás, se cambian ahí y en la planilla de liquidación.';
+  nota.textContent = !esEs && data.tiene_cuenta === false && !data.cbu
+    ? 'No tenía cuenta: pidió que le abran una en el BBVA. Cuando el banco la abra, cargá acá el CBU (y sale de la planilla para el banco).'
+    : 'Son los de su inscripción. Si los cambiás, se cambian ahí y en la planilla de liquidación.';
   avisoCbuPersona();
 }
 
@@ -3771,6 +3774,8 @@ async function guardarBancoPersona({ b, d }) {
   if (!b || !b.doc) return;
   const ids = solicitudes.filter(s => docNucleo(s.cuit) === b.doc).map(s => s.id);
   if (!ids.length) return;
+  // Con un CBU cargado ya tiene cuenta (si era de los del BBVA, sale de esa planilla).
+  if (!b.esEs && d.cbu) d.tiene_cuenta = true;
   try { await sbUpdateIn('solicitudes', ids, d); } catch (_) { return; }
   solicitudes.forEach(s => { if (ids.includes(s.id)) Object.assign(s, d); });
   if (datosBancarios && datosBancarios.has(b.doc)) Object.assign(datosBancarios.get(b.doc), d);
@@ -4032,6 +4037,38 @@ async function exportNom() {
   await descargarExcel(`nomina-${new Date().toISOString().slice(0, 10)}.xlsx`, [hdrs, ...rows], 'Nómina', { titulo: 'Nómina', subtitulo: rows.length + ' persona' + (rows.length === 1 ? '' : 's') });
 }
 
+// La planilla para el banco: de la lista que se está mirando, los que dijeron
+// que no tienen cuenta y todavía no tienen CBU, con las columnas que pide el
+// BBVA. El DNI sale del CUIL; lo demás, del formulario.
+async function exportBbva() {
+  const btn = document.getElementById('btnExportBbva');
+  if (btn) { btn.disabled = true; btn.textContent = 'Buscando…'; }
+  const sinCuenta = new Map();
+  try {
+    for (let desde = 0; ; desde += 1000) {
+      const { data, error } = await sb.from('solicitudes')
+        .select('cuit,nombre,email,tel,localidad,fecha_nacimiento,apellido,nombres,nacionalidad,domicilio,codigo_postal,cbu')
+        .eq('tiene_cuenta', false).order('created_at', { ascending: false }).range(desde, desde + 999);
+      if (error) { await avisarError('No se pudo armar la planilla: ', error); return; }
+      (data || []).forEach(x => { const d = docNucleo(x.cuit); if (d && !sinCuenta.has(d)) sinCuenta.set(d, x); });
+      if (!data || data.length < 1000) break;
+    }
+  } finally { if (btn) { btn.disabled = false; btn.textContent = '↓ Cuentas a abrir (BBVA)'; } }
+  const hoy = fechaDMA(hoyLocalISO());
+  const filas = [['Fecha de hoy', 'Apellido', 'Nombre', 'F. Nacimiento', 'Nacionalidad', 'Nro. de Documento', 'CUIL', 'Mail empleado', 'Dirección', 'Localidad', 'Código postal', 'Celular contacto del empleado']];
+  nomFiltered.forEach(p => {
+    const s = sinCuenta.get(docNucleo(p.cuit)); if (!s || s.cbu) return;
+    const cuil = String(p.cuit || s.cuit || '').replace(/\D/g, '');
+    const dni = cuil.length === 11 ? String(Number(cuil.slice(2, 10))) : cuil;
+    const an = apellidoYNombre(s.nombre || p.nombre);
+    filas.push([hoy, s.apellido || an.apellido, s.nombres || an.nombre, fechaDMA(s.fecha_nacimiento), s.nacionalidad || '', dni, cuil,
+      p.email || s.email || '', s.domicilio || '', s.localidad || '', s.codigo_postal || '', p.tel || s.tel || '']);
+  });
+  if (filas.length < 2) { toast('En esta lista nadie pidió que le abran una cuenta (o ya tienen el CBU cargado)'); return; }
+  const n = filas.length - 1;
+  await descargarExcel(`cuentas-bbva-${hoyLocalISO()}.xlsx`, filas, 'BBVA', { titulo: 'Cuentas a abrir en el BBVA', subtitulo: n + ' persona' + (n === 1 ? '' : 's') + ' sin cuenta bancaria' });
+}
+
 // ── CV ──
 function openCvForm() { ['cvNombre', 'cvEmail', 'cvTel', 'cvPuesto', 'cvExp', 'cvForm', 'cvSkills', 'cvDisp'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cvArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('cvFile').value = ''; document.getElementById('cvFileStatus').textContent = ''; cvFileData = null; showM('mCvForm'); setTimeout(() => document.getElementById('cvNombre').focus(), 50); }
 function handleCvFile() { const f = document.getElementById('cvFile').files[0]; if (!f) { cvFileData = null; return; } if (f.size > 1048576) { document.getElementById('cvFileStatus').textContent = `⚠ El archivo pesa ${(f.size / 1024 / 1024).toFixed(1)} MB. Máx: 1 MB.`; document.getElementById('cvFile').value = ''; cvFileData = null; return; } const r = new FileReader(); r.onload = ev => { cvFileData = { nombre: f.name, tipo: f.type, datos: ev.target.result }; document.getElementById('cvFileStatus').textContent = `✓ ${f.name} (${(f.size / 1024).toFixed(0)} KB)`; }; r.readAsDataURL(f); }
@@ -4058,6 +4095,28 @@ async function saveCvEntry() {
 
 
 // ── LA PLANILLA QUE COMPLETÓ LA PERSONA, EN LA NÓMINA ─────────
+// Los años que tiene hoy alguien nacido el día iso ('' si no hay fecha).
+function edadDe(iso, hoy) {
+  const [y, m, d] = String(iso || '').slice(0, 10).split('-').map(Number); if (!y || !m || !d) return '';
+  const h = hoy || new Date(), cumplio = h.getMonth() + 1 > m || (h.getMonth() + 1 === m && h.getDate() >= d);
+  return h.getFullYear() - y - (cumplio ? 0 : 1);
+}
+// Lo nuevo del formulario de Argentina: nacimiento (con la edad), estudios e idiomas.
+function datosPerfilHTML(s, fld) {
+  if (!s || s.area === 'espana') return '';
+  const edad = edadDe(s.fecha_nacimiento);
+  return fld('Fecha de nacimiento', s.fecha_nacimiento ? fechaDMA(s.fecha_nacimiento) + (edad !== '' ? ' (' + edad + ' años)' : '') : '')
+    + fld('Nivel de estudios', s.estudios) + fld('Idiomas', s.idiomas);
+}
+// Si dijo que no tiene cuenta: los datos para abrirle una en el BBVA.
+function cuentaBbvaHTML(s, fld) {
+  if (!s || s.tiene_cuenta !== false) return '';
+  return '<div class="cv-section-divider"></div>'
+    + '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:10px">No tiene cuenta: abrirle una en el BBVA</div>'
+    + '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-bottom:10px">'
+    + fld('Apellido(s)', s.apellido) + fld('Nombre(s)', s.nombres) + fld('Nacionalidad', s.nacionalidad) + fld('Domicilio', s.domicilio) + fld('Código postal', s.codigo_postal)
+    + '<div style="font-size:12px;color:#1e40af">' + (s.cbu ? '✓ Ya tiene el CBU cargado.' : 'Sale en Nómina → Herramientas → "Cuentas a abrir (BBVA)". Cuando el banco la abra, cargale el CBU en "Editar persona".') + '</div></div>';
+}
 // Al aprobar una solicitud se copiaban unos datos y otros no: quedaban afuera
 // los antecedentes, el beneficio social, los datos bancarios y la localidad.
 // La solicitud no se borra al aprobarla, así que en vez de copiar más datos
@@ -4089,11 +4148,13 @@ function pintarPlanillaSol(contenedorId, sol) {
   if (sol.localidad || usuarioInstagram(sol.instagram)) h += '<div class="cv-section-divider"></div>';
   if (sol.localidad) h += fld('Localidad', localidadLinda(sol.localidad) || sol.localidad);
   if (usuarioInstagram(sol.instagram)) h += `<div class="cv-viewer-field"><div class="cv-viewer-label">Instagram</div><div class="cv-viewer-value">${chipInstagram(sol.instagram)}</div></div>`;
+  h += datosPerfilHTML(sol, fld);
   const banco = sol.cbu || sol.banco || sol.numero_cuenta;
   if (banco) {
     h += '<div class="cv-section-divider"></div>' + titulo('Datos bancarios');
     h += fld('CBU', sol.cbu) + fld('Número de cuenta', sol.numero_cuenta) + fld('Banco', sol.banco);
   }
+  h += cuentaBbvaHTML(sol, fld);
   const hayDec = (sol.antecedentes !== null && sol.antecedentes !== undefined) ||
                  (sol.beneficio_social !== null && sol.beneficio_social !== undefined);
   if (hayDec) {
@@ -9582,6 +9643,7 @@ async function openSolView(id) {
   html += '<div class="cv-section-divider"></div>';
   if (usuarioInstagram(s.instagram)) html += `<div class="cv-viewer-field"><div class="cv-viewer-label">Instagram</div><div class="cv-viewer-value">${chipInstagram(s.instagram)}</div></div>`;
   html += fld('Experiencia', s.experiencia);
+  html += datosPerfilHTML(s, fld);
   html += fld('Formación', s.formacion);
   html += fld('Habilidades', s.habilidades);
 
@@ -9614,6 +9676,7 @@ async function openSolView(id) {
     html += fld('Banco', s.banco);
     html += `</div>`;
   }
+  html += cuentaBbvaHTML(s, fld);
 
   // Declaración Jurada
   if (s.antecedentes !== null && s.antecedentes !== undefined || s.beneficio_social !== null && s.beneficio_social !== undefined) {

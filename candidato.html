@@ -98,6 +98,13 @@ body:not(.es) .solo-es{display:none !important}
 body.es .solo-ar{display:none !important}
 .radio-opt input[type=checkbox]{accent-color:#534AB7;width:16px;height:16px;flex-shrink:0}
 .opt-desc{display:block;font-size:12px;color:#6b7280;font-weight:400;margin-top:2px}
+/* Idiomas: cada uno con su nivel, que aparece al marcarlo. */
+.idiomas{display:flex;flex-direction:column;gap:6px}
+.idioma{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:38px}
+.idioma label{display:flex;align-items:center;gap:8px;min-width:112px;margin:0;font-size:14px;font-weight:500;color:#374151;cursor:pointer;text-transform:none;letter-spacing:0}
+.idioma label input{accent-color:#534AB7;width:16px;height:16px}
+.idioma select,.idioma input[type=text]{display:none;width:auto;flex:1;min-width:120px;max-width:200px;padding:7px 10px}
+.idioma.on select,.idioma.on input[type=text]{display:block}
 .opt-inline{display:grid;gap:10px}
 .opt-inline .radio-opt{justify-content:center;padding:10px 8px;gap:6px}
 #tallaEs{grid-template-columns:repeat(6,1fr)}
@@ -236,8 +243,9 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
           <input type="tel" class="fi" id="fTel" placeholder="+54 11...">
         </div>
       </div>
-      <div class="frow solo-es">
-        <div class="fg">
+      <!-- La fecha de nacimiento la piden las dos áreas (en Argentina, para el banco y para filtrar por edad). -->
+      <div class="frow">
+        <div class="fg solo-es">
           <label>DNI / NIE <span class="req">*</span></label>
           <input type="text" class="fi" id="fDni" placeholder="Ej: 12345678Z o X1234567L" maxlength="12" oninput="validarDniInput(this)" autocapitalize="characters">
           <div class="cbu-warn" id="dniWarn">⚠ Revisa el DNI/NIE: 8 números y una letra (DNI) o X/Y/Z, 7 números y una letra (NIE).</div>
@@ -272,10 +280,35 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
         <label>Experiencia laboral <span class="req">*</span></label>
         <textarea class="fi" id="fExp" placeholder="Contanos tu experiencia en eventos, producción u otras áreas relacionadas..."></textarea>
       </div>
+      <!-- Estudios e idiomas, de una lista: así se puede filtrar la nómina. -->
+      <div class="fg">
+        <label>Nivel de estudios <span class="req">*</span></label>
+        <select class="fi" id="fEstudios">
+          <option value="">Elegí una opción…</option>
+          <option>Secundario incompleto</option>
+          <option>Secundario en curso</option>
+          <option>Secundario completo</option>
+          <option>Terciario en curso</option>
+          <option>Terciario completo</option>
+          <option>Universitario en curso</option>
+          <option>Universitario completo</option>
+          <option>Posgrado</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>¿Hablás otros idiomas? <span style="font-weight:400;color:#9ca3af;font-size:11px">Marcá los que hables y tu nivel</span></label>
+        <div class="idiomas" id="idiomasAr">
+          <div class="idioma"><label><input type="checkbox" value="Inglés" onchange="syncIdioma(this)"> Inglés</label><select class="fi" aria-label="Nivel de inglés"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+          <div class="idioma"><label><input type="checkbox" value="Portugués" onchange="syncIdioma(this)"> Portugués</label><select class="fi" aria-label="Nivel de portugués"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+          <div class="idioma"><label><input type="checkbox" value="Italiano" onchange="syncIdioma(this)"> Italiano</label><select class="fi" aria-label="Nivel de italiano"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+          <div class="idioma"><label><input type="checkbox" value="Francés" onchange="syncIdioma(this)"> Francés</label><select class="fi" aria-label="Nivel de francés"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+          <div class="idioma"><label><input type="checkbox" value="Otro" onchange="syncIdioma(this)"> Otro</label><input type="text" class="fi" id="idiomaOtroTxt" maxlength="30" placeholder="¿Cuál?" aria-label="Qué otro idioma"><select class="fi" aria-label="Nivel del otro idioma"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+        </div>
+      </div>
       <div class="frow">
         <div class="fg">
           <label>Formación <span class="req">*</span></label>
-          <textarea class="fi" style="height:70px" id="fForm" placeholder="Estudios, cursos, certificaciones..."></textarea>
+          <textarea class="fi" style="height:70px" id="fForm" placeholder="Carrera e institución, cursos, certificaciones..."></textarea>
         </div>
         <div class="fg">
           <label>Habilidades <span class="req">*</span></label>
@@ -354,6 +387,53 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <!-- Datos bancarios -->
     <div class="card solo-ar">
       <div class="section-title">Datos bancarios</div>
+      <div class="fg">
+        <label>¿Tenés una cuenta bancaria a tu nombre? <span class="req">*</span></label>
+        <div class="radio-group">
+          <label class="radio-opt" id="ctaSi" onclick="selectRadio('cta','si')">
+            <input type="radio" name="tieneCuenta" value="si"> <span class="radio-label">Sí</span>
+          </label>
+          <label class="radio-opt" id="ctaNo" onclick="selectRadio('cta','no')">
+            <input type="radio" name="tieneCuenta" value="no"> <span class="radio-label">No<span class="opt-desc">Te abrimos una en el BBVA para pagarte</span></span>
+          </label>
+        </div>
+      </div>
+      <!-- Si no tiene cuenta, se le abre una en el BBVA: el banco pide estos datos (el resto ya está arriba). -->
+      <div id="ctaNoCampos" style="display:none">
+        <div class="bank-info">
+          Te abrimos una cuenta a tu nombre en el <strong>BBVA</strong> para poder pagarte. Completá estos datos <strong>tal cual figuran en tu DNI</strong>.
+        </div>
+        <div class="frow">
+          <div class="fg">
+            <label>Apellido(s) <span class="req">*</span></label>
+            <input type="text" class="fi" id="fApellido" maxlength="60" placeholder="Como en el DNI">
+          </div>
+          <div class="fg">
+            <label>Nombre(s) <span class="req">*</span></label>
+            <input type="text" class="fi" id="fNombres" maxlength="60" placeholder="Como en el DNI">
+          </div>
+        </div>
+        <div class="fg">
+          <label>Nacionalidad <span class="req">*</span></label>
+          <select class="fi" id="fNacionalidad" onchange="document.getElementById('fNacionalidadOtra').style.display = this.value === 'Otra' ? '' : 'none'">
+            <option value="">Elegí una opción…</option>
+            <option>Argentina</option>
+            <option>Otra</option>
+          </select>
+          <input type="text" class="fi" id="fNacionalidadOtra" maxlength="40" placeholder="¿Cuál? (ej. Uruguaya, Paraguaya, Venezolana)" style="display:none;margin-top:8px">
+        </div>
+        <div class="frow">
+          <div class="fg" style="flex:2">
+            <label>Domicilio <span class="req">*</span></label>
+            <input type="text" class="fi" id="fDomicilio" maxlength="120" placeholder="Calle, número, piso y depto.">
+          </div>
+          <div class="fg">
+            <label>Código postal <span class="req">*</span></label>
+            <input type="text" class="fi" id="fCp" maxlength="8" placeholder="Ej: 1414" autocapitalize="characters">
+          </div>
+        </div>
+      </div>
+      <div id="ctaSiCampos" style="display:none">
       <div class="bank-info">
         Te pedimos estos datos para adelantar tareas administrativas y tenerlos a disposición para futuros pagos. Solo se aceptan <strong>cuentas bancarias</strong>. No se aceptan alias ni billeteras virtuales (Mercado Pago, Ualá, Personal Pay, etc.). La cuenta debe estar a tu nombre.
       </div>
@@ -375,6 +455,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
           <label>Banco <span class="req">*</span></label>
           <input type="text" class="fi" id="fBanco" placeholder="Ej: Banco Nación, Galicia...">
         </div>
+      </div>
       </div>
     </div>
 
@@ -690,14 +771,44 @@ function validarIbanInput(input) {
   input.style.borderColor = val.length === 0 ? '' : ok ? '#10b981' : completo ? '#f97316' : '';
 }
 
-let antecedentes = null, beneficioSocial = null;
+let antecedentes = null, beneficioSocial = null, tieneCuenta = null;
 
+// Idiomas: al marcar uno aparece su nivel (y, en "Otro", cuál); al desmarcarlo se borra.
+function syncIdioma(cb) {
+  const fila = cb.closest('.idioma');
+  fila.classList.toggle('on', cb.checked);
+  if (!cb.checked) fila.querySelectorAll('select, input[type="text"]').forEach(x => { x.value = ''; });
+}
+// Lo marcado, como texto: "Inglés (avanzado), Portugués (básico)". Si falta algo, dice qué.
+function leerIdiomas() {
+  const elegidos = [];
+  for (const fila of document.querySelectorAll('#idiomasAr .idioma')) {
+    const cb = fila.querySelector('input[type="checkbox"]'); if (!cb.checked) continue;
+    let nombre = cb.value;
+    if (nombre === 'Otro') {
+      nombre = document.getElementById('idiomaOtroTxt').value.replace(/[,;()]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!nombre) return { error: 'Contanos qué otro idioma hablás.' };
+    }
+    const nivel = fila.querySelector('select').value;
+    if (!nivel) return { error: 'Elegí tu nivel de ' + nombre.toLowerCase() + '.' };
+    elegidos.push(nombre + ' (' + nivel.toLowerCase() + ')');
+  }
+  return { texto: elegidos.join(', ') };
+}
 function selectRadio(grupo, valor) {
   if (grupo === 'ant') {
     antecedentes = valor;
     document.getElementById('antSi').classList.toggle('selected', valor === 'si');
     document.getElementById('antNo').classList.toggle('selected', valor === 'no');
     document.querySelector('input[name="antecedentes"][value="' + valor + '"]').checked = true;
+  } else if (grupo === 'cta') {
+    // Con cuenta: el CBU de siempre. Sin cuenta: los datos para abrirle una en el BBVA.
+    tieneCuenta = valor;
+    document.getElementById('ctaSi').classList.toggle('selected', valor === 'si');
+    document.getElementById('ctaNo').classList.toggle('selected', valor === 'no');
+    document.querySelector('input[name="tieneCuenta"][value="' + valor + '"]').checked = true;
+    document.getElementById('ctaSiCampos').style.display = valor === 'si' ? '' : 'none';
+    document.getElementById('ctaNoCampos').style.display = valor === 'no' ? '' : 'none';
   } else {
     beneficioSocial = valor;
     document.getElementById('benSi').classList.toggle('selected', valor === 'si');
@@ -717,12 +828,25 @@ async function submitForm() {
 
   if (!nombre)      { showErr('El nombre es obligatorio.'); return; }
   if (!exp)         { showErr('Contanos algo de tu experiencia.'); return; }
-  if (!cbu)         { showErr('El CBU es obligatorio.'); return; }
-  if (cbu.length !== 22) { showErr('El CBU debe tener exactamente 22 dígitos.'); return; }
-  const wallet = WALLETS.find(w => cbu.startsWith(w.prefix));
-  if (wallet)       { showErr(`No se aceptan billeteras virtuales (${wallet.nombre}). Ingresá el CBU de tu cuenta bancaria.`); return; }
-  if (!nroCuenta)   { showErr('El número de cuenta es obligatorio.'); return; }
-  if (!banco)       { showErr('El banco es obligatorio.'); return; }
+  // La cuenta: si tiene, el CBU; si no, los datos para abrirle una en el BBVA (como en el DNI).
+  const valor     = id => document.getElementById(id).value.trim();
+  const apellido  = valor('fApellido'), nombres = valor('fNombres');
+  const nacionalidad = valor('fNacionalidad') === 'Otra' ? valor('fNacionalidadOtra') : valor('fNacionalidad');
+  const domicilio = valor('fDomicilio'), cp = valor('fCp').toUpperCase().replace(/\s+/g, '');
+  if (tieneCuenta === null) { showErr('Contanos si tenés una cuenta bancaria a tu nombre.'); return; }
+  if (tieneCuenta === 'si') {
+    if (!cbu)         { showErr('El CBU es obligatorio.'); return; }
+    if (cbu.length !== 22) { showErr('El CBU debe tener exactamente 22 dígitos.'); return; }
+    const wallet = WALLETS.find(w => cbu.startsWith(w.prefix));
+    if (wallet)       { showErr(`No se aceptan billeteras virtuales (${wallet.nombre}). Ingresá el CBU de tu cuenta bancaria.`); return; }
+    if (!nroCuenta)   { showErr('El número de cuenta es obligatorio.'); return; }
+    if (!banco)       { showErr('El banco es obligatorio.'); return; }
+  } else {
+    if (!apellido || !nombres) { showErr('Para abrirte la cuenta, completá tu apellido y tu nombre como figuran en el DNI.'); return; }
+    if (!nacionalidad)         { showErr('Indicá tu nacionalidad.'); return; }
+    if (!domicilio)            { showErr('Indicá tu domicilio (calle, número, piso y depto.).'); return; }
+    if (!/^(\d{4}|[A-Z]\d{4}[A-Z]{3})$/.test(cp)) { showErr('Revisá el código postal: son 4 números (ej. 1414) o el nuevo, con letras (ej. C1414ABC).'); return; }
+  }
   const cuitVal = document.getElementById('fCuit').value.trim();
   if (!cuitVal) { showErr('El CUIL/CUIT es obligatorio.'); return; }
   if (cuitVal.length !== 11) { showErr('El CUIL/CUIT debe tener exactamente 11 dígitos.'); return; }
@@ -742,8 +866,15 @@ async function submitForm() {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))     { showErr('Ingresá un email válido.'); return; }
   if (!tel)                                          { showErr('El teléfono es obligatorio.'); return; }
   if (!localidad)                                    { showErr('Indicá tu localidad.'); return; }
+  const nacimiento = document.getElementById('fNacimiento').value;
+  if (!nacimiento)                                   { showErr('Indicá tu fecha de nacimiento.'); return; }
+  if (nacimiento > new Date().toISOString().slice(0, 10) || nacimiento < '1900-01-01') { showErr('Revisá la fecha de nacimiento.'); return; }
   if (document.getElementById('posOtroAr').checked && !/(^|, )Otro: /.test(puesto)) { showErr('Contanos cuál es el otro puesto que te interesa.'); return; }
   if (!puesto)                                       { showErr('Indicá el puesto de interés.'); return; }
+  const estudios = document.getElementById('fEstudios').value;
+  if (!estudios)                                     { showErr('Elegí tu nivel de estudios.'); return; }
+  const idiomas = leerIdiomas();
+  if (idiomas.error)                                 { showErr(idiomas.error); return; }
   if (!formacion)                                    { showErr('Completá tu formación.'); return; }
   if (!habilidades)                                  { showErr('Completá tus habilidades.'); return; }
   if (!disponibilidad)                               { showErr('Indicá tu disponibilidad.'); return; }
@@ -782,9 +913,19 @@ async function submitForm() {
     habilidades,
     disponibilidad,
     archivo_cv:     archivosParaEnviar(),
-    cbu,
-    numero_cuenta:  nroCuenta,
-    banco,
+    fecha_nacimiento: nacimiento,
+    estudios,
+    idiomas:        idiomas.texto || null,
+    tiene_cuenta:   tieneCuenta === 'si',
+    cbu:            tieneCuenta === 'si' ? cbu : null,
+    numero_cuenta:  tieneCuenta === 'si' ? nroCuenta : null,
+    banco:          tieneCuenta === 'si' ? banco : null,
+    // Para abrirle la cuenta en el BBVA (sólo si no tiene).
+    apellido:       tieneCuenta === 'no' ? apellido : null,
+    nombres:        tieneCuenta === 'no' ? nombres : null,
+    nacionalidad:   tieneCuenta === 'no' ? nacionalidad : null,
+    domicilio:      tieneCuenta === 'no' ? domicilio : null,
+    codigo_postal:  tieneCuenta === 'no' ? cp : null,
     antecedentes:   antecedentes === 'si',
     beneficio_social: beneficioSocial === 'si',
     estado: 'pendiente'
@@ -933,8 +1074,12 @@ function resetForm() {
   document.getElementById('cbuOk').style.display = 'none';
   document.getElementById('submitBtn').disabled = false;
   document.getElementById('submitBtn').textContent = 'Enviar solicitud →';
-  antecedentes = null; beneficioSocial = null;
-  ['antSi','antNo','benSi','benNo'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  antecedentes = null; beneficioSocial = null; tieneCuenta = null;
+  ['antSi','antNo','benSi','benNo','ctaSi','ctaNo'].forEach(id => document.getElementById(id).classList.remove('selected'));
+  document.querySelectorAll('input[name="tieneCuenta"]').forEach(i => { i.checked = false; });
+  ['ctaSiCampos','ctaNoCampos','fNacionalidadOtra'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+  ['fEstudios','fApellido','fNombres','fNacionalidad','fNacionalidadOtra','fDomicilio','fCp'].forEach(id => { document.getElementById(id).value = ''; });
+  document.querySelectorAll('#idiomasAr input[type="checkbox"]').forEach(cb => { cb.checked = false; syncIdioma(cb); });
   // España: limpiar sus campos y quedarse en España
   ['fDni','fNacimiento','fExpEs','fDispEs','fEmergenciaEs','fObsEs','fIban','fTitular','posOtroTxtEs'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.style.borderColor = ''; });
   document.getElementById('posOtroTxtEs').style.display = 'none';
