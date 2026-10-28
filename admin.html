@@ -1072,6 +1072,7 @@ tr:hover td{background:#f9f9fb}
     <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, CUIL, email, puesto o localidad..." oninput="solFilter()">
     <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select>
     <select class="filt" id="solStF" onchange="solFilter()"><option value="">Todos los estados</option><option value="pendiente">Pendientes</option><option value="aprobado">Aprobadas</option><option value="rechazado">Rechazadas</option></select>
+    <select class="filt" id="solPuestoF" onchange="solFilter()" title="Filtrar por el puesto que eligieron en el formulario"><option value="">Todos los puestos</option></select>
     <select class="filt" id="solLocF" onchange="solFilter()"><option value="">Todas las localidades</option></select>
   </div>
   <div class="bulk-bar" id="solBulk">
@@ -2753,6 +2754,7 @@ function verSolicitudesDe(area) {
   const st = document.getElementById('solStF'); if (st) st.value = '';
   const q = document.getElementById('solSrch'); if (q) q.value = '';
   const loc = document.getElementById('solLocF'); if (loc) loc.value = '';
+  const pu = document.getElementById('solPuestoF'); if (pu) pu.value = '';
   solFilter();
 }
 
@@ -9216,6 +9218,39 @@ function fillSolLocOptions() {
     locs.map(l => `<option value="${e(l.clave)}">${e(l.texto)} · ${l.cuantas}</option>`).join('');
   if (cur) sel.value = cur;
 }
+// Los puestos que eligen en el formulario, para filtrar. Junta las formas de
+// decir lo mismo: "Acomodadores" (España) o los textos libres de antes
+// ("acomodadora y orientadora") caen en su puesto; lo de "Otro: …" y lo que
+// no se reconoce, en "Otro".
+const SOL_PUESTOS = [
+  ['Acomodador', /acomod/], ['Orientador', /orient/], ['Host / Azafatos', /host|azafat/],
+  ['Hidratación', /hidrat/], ['Operador de acreditaciones', /acredit/], ['Etiquetadores', /etiquet/],
+  ['Stagehand / cargas', /stage|\bcarga|montaj/], ['Producción', /produc/],
+  ['Gastronomía', /gastro|barra|bartend|mozo|camarer/], ['Supervisor', /supervis|coordin|encargad/],
+];
+const solPuestosMemo = new Map();
+function puestosDeSol(texto) {
+  const t = String(texto || '').trim(); if (!t) return [];
+  if (solPuestosMemo.has(t)) return solPuestosMemo.get(t);
+  const r = new Set();
+  t.split(/[,;]+/).map(nomPelar).map(p => p.trim()).filter(Boolean).forEach(p => {
+    const de = /^otro\b/.test(p) ? [] : SOL_PUESTOS.filter(([, re]) => re.test(p)).map(([n]) => n);
+    if (de.length) de.forEach(n => r.add(n)); else r.add('Otro');
+  });
+  solPuestosMemo.set(t, [...r]);
+  return solPuestosMemo.get(t);
+}
+// Las opciones, con cuántas hay de cada una en el área y el estado elegidos
+// (España tiene sus propios puestos). Sólo las que tienen alguna.
+function fillSolPuestoOptions(base) {
+  const sel = document.getElementById('solPuestoF'); if (!sel) return;
+  const cur = sel.value, cuantas = {};
+  base.forEach(s => puestosDeSol(s.puesto_interes).forEach(p => { cuantas[p] = (cuantas[p] || 0) + 1; }));
+  const ops = SOL_PUESTOS.map(([n]) => n).concat('Otro').filter(n => cuantas[n] || n === cur);
+  sel.innerHTML = '<option value="">Todos los puestos</option>' +
+    ops.map(n => `<option value="${e(n)}">${e(n)} · ${cuantas[n] || 0}</option>`).join('');
+  sel.value = cur;
+}
 function solFilter() { solPage = 1; renderSolicitudes(); }
 function solPageGo(n) { solPage = n; renderSolicitudes(); const el = document.getElementById('sec-solicitudes'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 
@@ -9226,9 +9261,12 @@ function renderSolicitudes() {
   const af = document.getElementById('solAreaF').value;
   const sf = document.getElementById('solStF').value;
   const lf = document.getElementById('solLocF').value.trim().toLowerCase();
+  fillSolPuestoOptions(solicitudes.filter(s => (!af || s.area === af) && (!sf || s.estado === sf)));
+  const pf = document.getElementById('solPuestoF')?.value || '';
   const filtered = solicitudes.filter(s => {
     if (af && s.area !== af) return false;
     if (sf && s.estado !== sf) return false;
+    if (pf && !puestosDeSol(s.puesto_interes).includes(pf)) return false;
     if (lf && localidadCanonica(s.localidad) !== lf) return false;
     if (q && !s.nombre.toLowerCase().includes(q) && !(s.email||'').toLowerCase().includes(q) && !(s.puesto_interes||'').toLowerCase().includes(q) && !(s.localidad||'').toLowerCase().includes(q) && !(qd && String(s.cuit||'').replace(/\D/g,'').includes(qd))) return false;
     return true;

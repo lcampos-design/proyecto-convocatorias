@@ -209,7 +209,9 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
           <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Etiquetadores"> <span class="radio-label">Etiquetadores<span class="opt-desc">Numeran y organizan butacas y sillas</span></span></label>
           <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Personal de carga"> <span class="radio-label">Personal de carga<span class="opt-desc">Carga y descarga de equipos, backline y escenografía (montaje y desmontaje)</span></span></label>
           <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Gastronomía"> <span class="radio-label">Gastronomía<span class="opt-desc">Atención en barras y puestos de comida y bebida</span></span></label>
+          <label class="radio-opt"><input type="checkbox" name="posicionEs" value="Otro" id="posOtroEs" onchange="document.getElementById('posOtroTxtEs').style.display = this.checked ? '' : 'none'"> <span class="radio-label">Otro<span class="opt-desc">Si la tuya no está en la lista, cuéntanos cuál</span></span></label>
         </div>
+        <input type="text" id="posOtroTxtEs" maxlength="60" placeholder="¿Cuál? (p. ej. Seguridad, Limpieza, Merchandising)" style="display:none;margin-top:8px;width:100%;padding:11px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font:inherit;font-size:15px">
       </div>
       <div class="fg solo-es">
         <label>¿Tienes experiencia previa en alguna de estas posiciones? Cuéntanos cuál y dónde</label>
@@ -740,6 +742,7 @@ async function submitForm() {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))     { showErr('Ingresá un email válido.'); return; }
   if (!tel)                                          { showErr('El teléfono es obligatorio.'); return; }
   if (!localidad)                                    { showErr('Indicá tu localidad.'); return; }
+  if (document.getElementById('posOtroAr').checked && !/(^|, )Otro: /.test(puesto)) { showErr('Contanos cuál es el otro puesto que te interesa.'); return; }
   if (!puesto)                                       { showErr('Indicá el puesto de interés.'); return; }
   if (!formacion)                                    { showErr('Completá tu formación.'); return; }
   if (!habilidades)                                  { showErr('Completá tus habilidades.'); return; }
@@ -820,7 +823,9 @@ async function submitFormEs() {
   const dni          = normalizarDni(val('fDni'));
   const nacimiento   = val('fNacimiento');
   const ciudad       = val('fLocalidad');
-  const posiciones   = marcado('posicionEs');
+  // "Otro" se guarda con lo que escribieron, como en Argentina: "Otro: Seguridad".
+  const otroEs       = val('posOtroTxtEs').replace(/[,;]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const posiciones   = marcado('posicionEs').map(p => p !== 'Otro' ? p : otroEs ? 'Otro: ' + otroEs : '').filter(Boolean);
   const experiencia  = val('fExpEs');
   const disponib     = val('fDispEs');
   const talla        = marcado('tallaEs')[0] || '';
@@ -840,6 +845,7 @@ async function submitFormEs() {
   if (!nacimiento)                                { showErr('Indica tu fecha de nacimiento.'); return; }
   if (nacimiento > new Date().toISOString().slice(0, 10) || nacimiento < '1900-01-01') { showErr('Revisa la fecha de nacimiento.'); return; }
   if (!ciudad)                                    { showErr('Indica tu ciudad o zona de residencia.'); return; }
+  if (document.getElementById('posOtroEs').checked && !otroEs) { showErr('Cuéntanos cuál es la otra posición que te interesa.'); return; }
   if (!posiciones.length)                         { showErr('Elige al menos una posición.'); return; }
   if (!disponib)                                  { showErr('Indica tu disponibilidad.'); return; }
   if (!talla)                                     { showErr('Elige tu talla de ropa.'); return; }
@@ -930,7 +936,8 @@ function resetForm() {
   antecedentes = null; beneficioSocial = null;
   ['antSi','antNo','benSi','benNo'].forEach(id => document.getElementById(id).classList.remove('selected'));
   // España: limpiar sus campos y quedarse en España
-  ['fDni','fNacimiento','fExpEs','fDispEs','fEmergenciaEs','fObsEs','fIban','fTitular'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.style.borderColor = ''; });
+  ['fDni','fNacimiento','fExpEs','fDispEs','fEmergenciaEs','fObsEs','fIban','fTitular','posOtroTxtEs'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.style.borderColor = ''; });
+  document.getElementById('posOtroTxtEs').style.display = 'none';
   document.querySelectorAll('input[name="posicionEs"], input[name="tallaEs"], input[name="permisoEs"], #fPrivacidad').forEach(i => i.checked = false);
   ['dniOk','dniWarn','ibanOk','ibanWarn'].forEach(id => document.getElementById(id).style.display = 'none');
   fileData = null; extrasData = []; pintarExtras(); setArea(eraEspana ? 'espana' : 'movistar_arena');
