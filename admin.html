@@ -4201,62 +4201,66 @@ function incAbiertasTexto(n, pn) {
 }
 
 // El plano del Movistar Arena por sectores, visto desde arriba con el
-// escenario arriba. El campo se arma de dos maneras: de pie (delantero y
-// trasero) o con asientos (sectores A a N). Las medidas son aproximadas:
-// alcanza para ubicarse y para que cada sector se toque fácil.
+// escenario arriba. Las medidas salen del plano interno del Arena (Layout
+// General): cada sector con su tamaño (la 104, la 303 y la 305 son las
+// grandes; la 103, la 105, la 302, la 304, la 308 y la 310, las angostas) y
+// las esquinas en diagonal (107, 113, 306, 312). El campo se arma de dos
+// maneras: de pie (delantero y trasero) o con asientos (sectores A a N).
 const INC_PLANO_TRIBUNAS = [
-  // Platea baja, izquierda (101 junto al escenario)
-  { id: 'Platea 101', txt: '101', t: 'baja', r: [100, 8, 40, 18] },
-  { id: 'Platea 102', txt: '102', t: 'baja', r: [100, 30, 40, 26] },
-  { id: 'Platea 103', txt: '103', t: 'baja', r: [100, 60, 40, 14] },
-  { id: 'Platea 104', txt: '104', t: 'baja', r: [100, 78, 40, 46] },
-  { id: 'Platea 105', txt: '105', t: 'baja', r: [100, 128, 40, 14] },
-  { id: 'Platea 106', txt: '106', t: 'baja', r: [100, 146, 40, 26] },
-  { id: 'Platea 107', txt: '107', t: 'baja', p: '100,176 140,176 146,204 146,246 124,246 100,208', lx: 122, ly: 212 },
+  // Platea baja, izquierda (101: los palcos junto al escenario)
+  { id: 'Platea 101', txt: '101', t: 'baja', r: [100, 18, 40, 22] },
+  { id: 'Platea 102', txt: '102', t: 'baja', r: [100, 44, 40, 25] },
+  { id: 'Platea 103', txt: '103', t: 'baja', r: [100, 73, 40, 16] },
+  { id: 'Platea 104', txt: '104', t: 'baja', r: [100, 93, 40, 56] },
+  { id: 'Platea 105', txt: '105', t: 'baja', r: [100, 153, 40, 16] },
+  { id: 'Platea 106', txt: '106', t: 'baja', r: [100, 173, 40, 32] },
+  { id: 'Platea 107', txt: '107', t: 'baja', p: '100,209 140,209 144,213 144,252', lx: 131, ly: 222 },
   // Platea baja, fondo
-  { id: 'Platea 108', txt: '108', t: 'baja', r: [150, 206, 16, 40] },
-  { id: 'Platea 109', txt: '109', t: 'baja', r: [170, 206, 22, 40] },
-  { id: 'Platea 110', txt: '110', t: 'baja', r: [196, 206, 28, 40] },
-  { id: 'Platea 111', txt: '111', t: 'baja', r: [228, 206, 22, 40] },
-  { id: 'Platea 112', txt: '112', t: 'baja', r: [254, 206, 16, 40] },
+  { id: 'Platea 108', txt: '108', t: 'baja', r: [148, 210, 22, 42] },
+  { id: 'Platea 109', txt: '109', t: 'baja', r: [174, 210, 16, 42] },
+  { id: 'Platea 110', txt: '110', t: 'baja', r: [194, 210, 32, 42] },
+  { id: 'Platea 111', txt: '111', t: 'baja', r: [230, 210, 16, 42] },
+  { id: 'Platea 112', txt: '112', t: 'baja', r: [250, 210, 22, 42] },
   // Platea baja, derecha
-  { id: 'Platea 113', txt: '113', t: 'baja', p: '320,176 280,176 274,204 274,246 296,246 320,208', lx: 298, ly: 212 },
-  { id: 'Platea 114', txt: '114', t: 'baja', r: [280, 146, 40, 26] },
-  { id: 'Platea 115', txt: '115', t: 'baja', r: [280, 128, 40, 14] },
-  { id: 'Platea 116', txt: '116', t: 'baja', r: [280, 78, 40, 46] },
-  { id: 'Platea 117', txt: '117', t: 'baja', r: [280, 60, 40, 14] },
-  { id: 'Platea 118', txt: '118', t: 'baja', r: [280, 30, 40, 26] },
-  { id: 'Platea 119', txt: '119', t: 'baja', r: [280, 8, 40, 18] },
+  { id: 'Platea 113', txt: '113', t: 'baja', p: '320,209 280,209 276,213 276,252', lx: 289, ly: 222 },
+  { id: 'Platea 114', txt: '114', t: 'baja', r: [280, 173, 40, 32] },
+  { id: 'Platea 115', txt: '115', t: 'baja', r: [280, 153, 40, 16] },
+  { id: 'Platea 116', txt: '116', t: 'baja', r: [280, 93, 40, 56] },
+  { id: 'Platea 117', txt: '117', t: 'baja', r: [280, 73, 40, 16] },
+  { id: 'Platea 118', txt: '118', t: 'baja', r: [280, 44, 40, 25] },
+  { id: 'Platea 119', txt: '119', t: 'baja', r: [280, 18, 40, 22] },
   // Platea alta, izquierda
-  { id: 'Platea 301', txt: '301', t: 'alta', r: [56, 30, 36, 32] },
-  { id: 'Platea 302', txt: '302', t: 'alta', r: [56, 66, 36, 22] },
-  { id: 'Platea 303', txt: '303', t: 'alta', r: [56, 92, 36, 48] },
-  { id: 'Platea 304', txt: '304', t: 'alta', r: [56, 144, 36, 20] },
-  { id: 'Platea 305', txt: '305', t: 'alta', r: [56, 168, 36, 38] },
-  { id: 'Platea 306', txt: '306', t: 'alta', p: '56,210 92,210 116,252 116,284 86,284 56,248', lx: 86, ly: 252 },
+  { id: 'Platea 301', txt: '301', t: 'alta', r: [60, 38, 32, 31] },
+  { id: 'Platea 302', txt: '302', t: 'alta', r: [60, 75, 32, 12] },
+  { id: 'Platea 303', txt: '303', t: 'alta', r: [60, 93, 32, 58] },
+  { id: 'Platea 304', txt: '304', t: 'alta', r: [60, 157, 32, 12] },
+  { id: 'Platea 305', txt: '305', t: 'alta', r: [60, 173, 32, 50] },
+  { id: 'Platea 306', txt: '306', t: 'alta', p: '60,227 92,227 128,258 128,284', lx: 105, ly: 252 },
   // Platea alta, fondo
-  { id: 'Platea 307', txt: '307', t: 'alta', r: [120, 254, 40, 30] },
-  { id: 'Platea 308', txt: '308', t: 'alta', r: [164, 254, 26, 30] },
-  { id: 'Platea 309', txt: '309', t: 'alta', r: [194, 254, 32, 30] },
-  { id: 'Platea 310', txt: '310', t: 'alta', r: [230, 254, 26, 30] },
-  { id: 'Platea 311', txt: '311', t: 'alta', r: [260, 254, 40, 30] },
+  { id: 'Platea 307', txt: '307', t: 'alta', r: [130, 258, 36, 26] },
+  { id: 'Platea 308', txt: '308', t: 'alta', r: [172, 258, 12, 26] },
+  { id: 'Platea 309', txt: '309', t: 'alta', r: [192, 258, 36, 26] },
+  { id: 'Platea 310', txt: '310', t: 'alta', r: [236, 258, 12, 26] },
+  { id: 'Platea 311', txt: '311', t: 'alta', r: [254, 258, 36, 26] },
   // Platea alta, derecha
-  { id: 'Platea 312', txt: '312', t: 'alta', p: '364,210 328,210 304,252 304,284 334,284 364,248', lx: 334, ly: 252 },
-  { id: 'Platea 313', txt: '313', t: 'alta', r: [328, 168, 36, 38] },
-  { id: 'Platea 314', txt: '314', t: 'alta', r: [328, 144, 36, 20] },
-  { id: 'Platea 315', txt: '315', t: 'alta', r: [328, 92, 36, 48] },
-  { id: 'Platea 316', txt: '316', t: 'alta', r: [328, 66, 36, 22] },
-  { id: 'Platea 317', txt: '317', t: 'alta', r: [328, 30, 36, 32] }
+  { id: 'Platea 312', txt: '312', t: 'alta', p: '360,227 328,227 292,258 292,284', lx: 315, ly: 252 },
+  { id: 'Platea 313', txt: '313', t: 'alta', r: [328, 173, 32, 50] },
+  { id: 'Platea 314', txt: '314', t: 'alta', r: [328, 157, 32, 12] },
+  { id: 'Platea 315', txt: '315', t: 'alta', r: [328, 93, 32, 58] },
+  { id: 'Platea 316', txt: '316', t: 'alta', r: [328, 75, 32, 12] },
+  { id: 'Platea 317', txt: '317', t: 'alta', r: [328, 38, 32, 31] }
 ];
 const INC_PLANO_CAMPO = {
   campos: [
-    { id: 'Campo delantero', txt: 'CAMPO DELANTERO', t: 'campo', r: [150, 36, 120, 78] },
-    { id: 'Campo trasero',   txt: 'CAMPO TRASERO',   t: 'campo', r: [150, 118, 120, 82] }
+    { id: 'Campo delantero', txt: 'CAMPO DELANTERO', t: 'campo', r: [150, 36, 120, 82] },
+    { id: 'Campo trasero',   txt: 'CAMPO TRASERO',   t: 'campo', r: [150, 122, 120, 84] }
   ],
   // Con asientos: A–D junto al escenario, F–J en el medio, K–N al fondo.
   asientos: [['A', 'B', 'C', 'D'], ['F', 'G', 'H', 'J'], ['K', 'L', 'M', 'N']].flatMap((fila, i) =>
-    fila.map((l, j) => ({ id: 'Campo ' + l, txt: l, t: 'campo', r: [150 + j * 31, 36 + i * 56, 27, 52] })))
+    fila.map((l, j) => ({ id: 'Campo ' + l, txt: l, t: 'campo', r: [150 + j * 31, 36 + i * 57, 27, 53] })))
 };
+// La consola de sonido y luces (FOH), al fondo del campo: sólo de referencia (no se toca).
+const INC_FOH = [192, 184, 36, 20];
 // El anillo de afuera: el hall que rodea las plateas. Lo fijo es el piso del
 // pasillo (en tres tramos) y el backstage detrás del escenario; lo que hay
 // adentro (puertas, gastronomía, baños, enfermería, otros puntos) se arma
@@ -4266,14 +4270,14 @@ function incRectRot(cx, cy, w, d, ang) {
   return [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]].map(([x, y]) => r(cx + x * c - y * s) + ',' + r(cy + x * s + y * c)).join(' ');
 }
 function incEspejo(p) { return p.split(' ').map(par => { const xy = par.split(',').map(Number); return (420 - xy[0]) + ',' + xy[1]; }).join(' '); }
-const INC_ANILLO_LADO = '50,-32 50,250 83,290 120,290 120,318 70,318 22,260 22,-32';
+const INC_ANILLO_LADO = '50,-44 50,236 104,290 120,290 120,318 70,318 22,260 22,-44';
 const INC_PLANO_ZONAS = [
-  { id: 'Anillo izquierdo', txt: 'ANILLO', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 70, rot: -90 },
+  { id: 'Anillo izquierdo', txt: 'ANILLO', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 226, rot: -90 },
   { id: 'Anillo fondo', txt: 'ANILLO', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
-  { id: 'Anillo derecho', txt: 'ANILLO', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 70, rot: 90 },
-  { id: 'Backstage', txt: 'BACKSTAGE', t: 'back', r: [50, -32, 320, 28] },
+  { id: 'Anillo derecho', txt: 'ANILLO', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
+  { id: 'Backstage', txt: 'BACKSTAGE', t: 'back', r: [50, -44, 320, 24] },
   // El VIP: entre la platea baja (P1) y la alta (P3).
-  { id: 'VIP', txt: 'VIP', t: 'vip', p: '93,28 93,211 117,253 303,253 327,211 327,28 321,28 321,209 299,247 121,247 99,209 99,28', lx: 210, ly: 250, piso: 'VIP' }
+  { id: 'VIP', txt: 'VIP', t: 'vip', p: '93,30 93,224 127,257 293,257 327,224 327,30 322,30 322,222 290,253 130,253 98,222 98,30', lx: 210, ly: 255.5, piso: 'VIP' }
 ];
 // Los pisos del Arena: el campo en planta baja, la platea baja en el 1, la
 // alta en el 3 y el VIP entre las dos. Cada puesto del anillo dice el suyo.
@@ -4324,28 +4328,33 @@ const INC_TIPOS_LUGAR = {
 // Las calles principales de afuera. Ubicadas a ojo alrededor del estadio: se acomodan desde el panel.
 const INC_CALLES_BASE = [
   { id: 'Calle Humboldt', t: 'calle', txt: 'HUMBOLDT', cx: 210, cy: 350, w: 400, h: 18, ang: 0 },
-  { id: 'Av. Corrientes', t: 'calle', txt: 'AV. CORRIENTES', cx: 430, cy: 143, w: 370, h: 20, ang: 90 },
-  { id: 'Av. Dorrego', t: 'calle', txt: 'AV. DORREGO', cx: 210, cy: -64, w: 400, h: 18, ang: 0 }
+  { id: 'Av. Corrientes', t: 'calle', txt: 'AV. CORRIENTES', cx: 430, cy: 137, w: 384, h: 20, ang: 90 },
+  { id: 'Av. Dorrego', t: 'calle', txt: 'AV. DORREGO', cx: 210, cy: -68, w: 400, h: 18, ang: 0 }
 ];
-// Los puestos de siempre (si todavía no se guardó otro plano). cx, cy: el
-// centro; w: el largo (en las puertas, a lo largo de la fachada); h: el
-// ancho; ang: el giro, en grados. Una primera versión, para ajustar.
+// Los puestos de siempre (si todavía no se guardó otro plano), los de planta
+// baja como están en el plano del Arena: en cada costado, desde el escenario,
+// camarines (o producción), gastronomía, una puerta, dos baños, otra puerta,
+// gastronomía y la entrada de la esquina; y las puertas del fondo. Los de
+// los otros pisos se cargan desde el panel. cx, cy: el centro; w: el largo
+// (en las puertas, a lo largo de la fachada); h: el ancho; ang: el giro.
 const INC_LUGARES_BASE = [
-  { id: 'Baños 1', t: 'banio', txt: '1', cx: 36.5, cy: -15, w: 17, h: 22, ang: 0, piso: 'P1' },
-  { id: 'Puerta 1', t: 'puerta', txt: 'P1', cx: 22, cy: 44, w: 22, h: 12, ang: 90, piso: 'PB' },
-  { id: 'Gastronomía 1', t: 'gastro', txt: '1', cx: 36.5, cy: 112, w: 17, h: 40, ang: 0, piso: 'P1' },
-  { id: 'Puerta 2', t: 'puerta', txt: 'P2', cx: 22, cy: 168, w: 22, h: 12, ang: 90, piso: 'PB' },
-  { id: 'Baños 2', t: 'banio', txt: '2', cx: 36.5, cy: 209, w: 17, h: 26, ang: 0, piso: 'P3' },
+  { id: 'Camarines', t: 'servicio', txt: 'CAM', cx: 36, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
+  { id: 'Gastronomía 1', t: 'gastro', txt: '1', cx: 36, cy: 61, w: 17, h: 22, ang: 0, piso: 'PB' },
+  { id: 'Puerta 1', t: 'puerta', txt: 'P1', cx: 22, cy: 82, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Baños 1', t: 'banio', txt: '1', cx: 36, cy: 107, w: 17, h: 28, ang: 0, piso: 'PB' },
+  { id: 'Baños 2', t: 'banio', txt: '2', cx: 36, cy: 140, w: 17, h: 28, ang: 0, piso: 'PB' },
+  { id: 'Puerta 2', t: 'puerta', txt: 'P2', cx: 22, cy: 163, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Gastronomía 2', t: 'gastro', txt: '2', cx: 36, cy: 191, w: 17, h: 25, ang: 0, piso: 'PB' },
   { id: 'Puerta 3', t: 'puerta', txt: 'P3', cx: 46, cy: 289, w: 22, h: 12, ang: 50.4, piso: 'PB' },
-  { id: 'Gastronomía 2', t: 'gastro', txt: '2', cx: 150, cy: 304, w: 44, h: 16, ang: 0, piso: 'P3' },
-  { id: 'Puerta 4', t: 'puerta', txt: 'P4', cx: 210, cy: 318, w: 24, h: 12, ang: 0, piso: 'PB' },
-  { id: 'Gastronomía 3', t: 'gastro', txt: '3', cx: 270, cy: 304, w: 44, h: 16, ang: 0, piso: 'P3' },
+  { id: 'Puerta 4', t: 'puerta', txt: 'P4', cx: 210, cy: 318, w: 40, h: 12, ang: 0, piso: 'PB' },
   { id: 'Puerta 5', t: 'puerta', txt: 'P5', cx: 374, cy: 289, w: 22, h: 12, ang: -50.4, piso: 'PB' },
-  { id: 'Baños 3', t: 'banio', txt: '3', cx: 383.5, cy: 209, w: 17, h: 26, ang: 0, piso: 'P3' },
-  { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 398, cy: 168, w: 22, h: 12, ang: 90, piso: 'PB' },
-  { id: 'Gastronomía 4', t: 'gastro', txt: '4', cx: 383.5, cy: 112, w: 17, h: 40, ang: 0, piso: 'P1' },
-  { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 44, w: 22, h: 12, ang: 90, piso: 'PB' },
-  { id: 'Baños 4', t: 'banio', txt: '4', cx: 383.5, cy: -15, w: 17, h: 22, ang: 0, piso: 'P1' }
+  { id: 'Gastronomía 3', t: 'gastro', txt: '3', cx: 384, cy: 191, w: 17, h: 25, ang: 0, piso: 'PB' },
+  { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 398, cy: 163, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Baños 3', t: 'banio', txt: '3', cx: 384, cy: 140, w: 17, h: 28, ang: 0, piso: 'PB' },
+  { id: 'Baños 4', t: 'banio', txt: '4', cx: 384, cy: 107, w: 17, h: 28, ang: 0, piso: 'PB' },
+  { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 82, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Gastronomía 4', t: 'gastro', txt: '4', cx: 384, cy: 61, w: 17, h: 22, ang: 0, piso: 'PB' },
+  { id: 'Producción', t: 'servicio', txt: 'PROD', cx: 384, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' }
 ].concat(INC_CALLES_BASE);
 // Deja una lista de puestos en condiciones: tipos conocidos, nombres únicos
 // (y que no choquen con un sector), medidas dentro del plano.
@@ -4384,8 +4393,8 @@ function incLugarForma(l) {
 }
 // La fachada de vidrio que cierra el anillo, y la cinta LED que da la vuelta
 // entre la platea baja y la alta.
-const INC_FACHADA = [[20, -34], [20, 261], [69, 320], [351, 320], [400, 261], [400, -34]];
-const INC_CINTA = [[96, 28], [96, 210], [120, 250], [300, 250], [324, 210], [324, 28]];
+const INC_FACHADA = [[20, -46], [20, 261], [69, 320], [351, 320], [400, 261], [400, -46]];
+const INC_CINTA = [[96, 30], [96, 223], [129, 255], [291, 255], [324, 223], [324, 30]];
 // Íconos (24×24) de los puestos.
 const INC_ICONOS = {
   gastro: 'M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z',
@@ -4455,7 +4464,7 @@ function incPlanoSVG(op) {
   op = op || {};
   const TM = INC_TEMA, niveles = op.niveles || {}, cuentas = op.cuentas || {}, porNivel = op.porNivel || {};
   const pisoSel = op.editor ? (op.piso || '') : incPisoElegido(), capas = op.editor ? INC_CAPAS_TODAS : incCapas();
-  let x0 = 6, y0 = -42, x1 = 414, y1 = 342;   // lo que se ve: el estadio y lo que haya afuera (las calles)
+  let x0 = 6, y0 = -50, x1 = 414, y1 = 342;   // lo que se ve: el estadio y lo que haya afuera (las calles)
   const partes = incSectoresPlano(op.armado).map(s => {
     const nv = niveles[s.id], n = cuentas[s.id] || 0, sel = op.sel === s.id, col = TM.color[s.t], v = nv ? INC_NIVELES[nv] : null;
     const calle = s.t === 'calle';
@@ -4524,9 +4533,12 @@ function incPlanoSVG(op) {
     + '<rect x="' + vb[0] + '" y="' + vb[1] + '" width="' + vb[2] + '" height="' + vb[3] + '" rx="14" fill="url(#incFondoG)"/>'
     + '<polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="' + TM.fachada + '" stroke-width="1" pointer-events="none"/>'
     + partes
+    // La consola (FOH), de referencia: no se toca (se toca el campo de abajo).
+    + '<g pointer-events="none"><rect x="' + INC_FOH[0] + '" y="' + INC_FOH[1] + '" width="' + INC_FOH[2] + '" height="' + INC_FOH[3] + '" rx="3" fill="' + TM.escenario[0] + '" fill-opacity=".85" stroke="' + TM.escenario[1] + '" stroke-width=".7"/>'
+    + '<text x="' + (INC_FOH[0] + INC_FOH[2] / 2) + '" y="' + (INC_FOH[1] + INC_FOH[3] / 2 + 1.8) + '" font-size="5" font-weight="600" fill="#fff" fill-opacity=".85" text-anchor="middle" letter-spacing="1">FOH</text></g>'
     // El escenario: la tarima con el proscenio adelante y su borde de luz.
-    + '<rect x="150" y="8" width="120" height="22" rx="4" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width="1"/><rect x="176" y="29" width="68" height="5" rx="2" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width=".8"/>'
-    + '<text x="210" y="21.2" font-size="6.2" font-weight="600" fill="#fff" fill-opacity=".9" text-anchor="middle" letter-spacing="1.6">ESCENARIO</text>'
+    + '<rect x="160" y="-16" width="100" height="44" rx="4" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width="1"/><rect x="178" y="28" width="64" height="6" rx="2" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width=".8"/>'
+    + '<text x="210" y="8.2" font-size="6.2" font-weight="600" fill="#fff" fill-opacity=".9" text-anchor="middle" letter-spacing="1.6">ESCENARIO</text>'
     + '</svg>';
 }
 // ── El estadio en 3D ──
@@ -4921,8 +4933,8 @@ function incPlano3D(cont, op0) {
   // pantalla grande con el nombre del show y una a cada costado, el sonido
   // colgado a los lados y la estructura de luces (reticulada) con sus equipos.
   const matTarima = new T.MeshStandardMaterial({ color: 0x0b1526, roughness: 0.32, metalness: 0.55 });
-  const tarima = new T.Mesh(new T.BoxGeometry(124, 6, 24), matTarima); tarima.position.set(0, 3, -128); escena.add(tarima);
-  const proscenio = new T.Mesh(new T.BoxGeometry(80, 4, 7), matTarima); proscenio.position.set(0, 2, -112.5); escena.add(proscenio);
+  const tarima = new T.Mesh(new T.BoxGeometry(100, 6, 44), matTarima); tarima.position.set(0, 3, -140); escena.add(tarima);
+  const proscenio = new T.Mesh(new T.BoxGeometry(64, 4, 6), matTarima); proscenio.position.set(0, 2, -115); escena.add(proscenio);
   const matLuz = new T.MeshBasicMaterial({ color: 0x4fc3ff });
   {
     // El frente de la tarima y del proscenio: una franja de luz que se apaga hacia abajo.
@@ -4930,19 +4942,19 @@ function incPlano3D(cont, op0) {
     g.addColorStop(0, 'rgba(79,195,255,.95)'); g.addColorStop(0.2, 'rgba(79,195,255,.35)'); g.addColorStop(1, 'rgba(79,195,255,0)');
     x.fillStyle = g; x.fillRect(0, 0, 4, 64);
     const matFrente = new T.MeshBasicMaterial({ map: textura(c), transparent: true, depthWrite: false });
-    const frente = new T.Mesh(new T.PlaneGeometry(124, 5.8), matFrente); frente.position.set(0, 3, -115.9); escena.add(frente);
-    const frenteP = new T.Mesh(new T.PlaneGeometry(80, 3.8), matFrente); frenteP.position.set(0, 2, -108.9); escena.add(frenteP);
-    [[124, 6.1, -116], [80, 4.1, -109]].forEach(([l, y, z]) => { const t = new T.Mesh(new T.BoxGeometry(l, 0.45, 0.45), matLuz); t.position.set(0, y, z); escena.add(t); });
+    const frente = new T.Mesh(new T.PlaneGeometry(100, 5.8), matFrente); frente.position.set(0, 3, -117.9); escena.add(frente);
+    const frenteP = new T.Mesh(new T.PlaneGeometry(64, 3.8), matFrente); frenteP.position.set(0, 2, -111.9); escena.add(frenteP);
+    [[100, 6.1, -118], [64, 4.1, -112]].forEach(([l, y, z]) => { const t = new T.Mesh(new T.BoxGeometry(l, 0.45, 0.45), matLuz); t.position.set(0, y, z); escena.add(t); });
   }
-  etiqueta('ESCENARIO', 'esc', new T.Vector3(0, 12, -122));
+  etiqueta('ESCENARIO', 'esc', new T.Vector3(0, 12, -136));
   // La estructura: cuatro torres y el marco de arriba, con el reticulado en líneas.
   const matTruss = new T.MeshStandardMaterial({ color: 0x2c3e5c, roughness: 0.4, metalness: 0.8 });
-  [[-64, -113], [64, -113], [-64, -142], [64, -142]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(2, 56, 2), matTruss); t.position.set(x, 28, z); escena.add(t); });
-  [[0, -113, 130, 0], [0, -142, 130, 0], [-64, -127.5, 29, Math.PI / 2], [64, -127.5, 29, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 2.4, 2.4), matTruss); t.position.set(x, 56, z); t.rotation.y = r; escena.add(t); });
+  [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(2, 56, 2), matTruss); t.position.set(x, 28, z); escena.add(t); });
+  [[0, -114, 110, 0], [0, -164, 110, 0], [-54, -139, 52, Math.PI / 2], [54, -139, 52, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 2.4, 2.4), matTruss); t.position.set(x, 56, z); t.rotation.y = r; escena.add(t); });
   {
     const v = [], zig = (a, b, n, fn) => { for (let i = 0; i < n; i++) { const p0 = fn(a + (b - a) * i / n, i % 2), p1 = fn(a + (b - a) * (i + 1) / n, (i + 1) % 2); v.push(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2]); } };
-    [-113, -142].forEach(z => zig(-64, 64, 32, (x, k) => [x, k ? 57.2 : 54.8, z]));
-    [[-64, -113], [64, -113], [-64, -142], [64, -142]].forEach(([x, z]) => zig(0, 55, 14, (y, k) => [x + (k ? 1 : -1), y, z]));
+    [-114, -164].forEach(z => zig(-54, 54, 28, (x, k) => [x, k ? 57.2 : 54.8, z]));
+    [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => zig(0, 55, 14, (y, k) => [x + (k ? 1 : -1), y, z]));
     const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(v, 3));
     escena.add(new T.LineSegments(g, new T.LineBasicMaterial({ color: 0x5d7fae, transparent: true, opacity: 0.55 })));
   }
@@ -4952,16 +4964,16 @@ function incPlano3D(cont, op0) {
     const matHaz = new T.MeshBasicMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.045, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide });
     const geoHaz = new T.ConeGeometry(6, 46, 20, 1, true); geoHaz.translate(0, -23, 0);
     for (let i = 0; i < 8; i++) {
-      const x = -52.5 + i * 15;
-      const cuerpo = new T.Mesh(new T.BoxGeometry(2.6, 2.4, 2.6), matCuerpo); cuerpo.position.set(x, 53.6, -113); escena.add(cuerpo);
-      const lente = new T.Mesh(new T.CircleGeometry(0.9, 16), matLente); lente.rotation.x = Math.PI / 2; lente.position.set(x, 52.35, -113); escena.add(lente);
-      if (i % 2) { const haz = new T.Mesh(geoHaz, matHaz); haz.position.set(x, 52.3, -113); haz.rotation.x = -0.32; haz.rotation.z = (x > 0 ? 1 : -1) * 0.12; escena.add(haz); }
+      const x = -45.5 + i * 13;
+      const cuerpo = new T.Mesh(new T.BoxGeometry(2.6, 2.4, 2.6), matCuerpo); cuerpo.position.set(x, 53.6, -114); escena.add(cuerpo);
+      const lente = new T.Mesh(new T.CircleGeometry(0.9, 16), matLente); lente.rotation.x = Math.PI / 2; lente.position.set(x, 52.35, -114); escena.add(lente);
+      if (i % 2) { const haz = new T.Mesh(geoHaz, matHaz); haz.position.set(x, 52.3, -114); haz.rotation.x = -0.32; haz.rotation.z = (x > 0 ? 1 : -1) * 0.12; escena.add(haz); }
     }
   }
   // El sonido: un arreglo de parlantes colgado a cada lado, adelante.
   {
     const matPa = new T.MeshStandardMaterial({ color: 0x151d2b, roughness: 0.6, metalness: 0.3 }), geoPa = new T.BoxGeometry(8, 3, 6);
-    [-76, 76].forEach(x => { for (let i = 0; i < 7; i++) { const b = new T.Mesh(geoPa, matPa); b.position.set(x, 50 - i * 3.1, -112 + i * 0.35); b.rotation.x = -i * 0.045; escena.add(b); } });
+    [-64, 64].forEach(x => { for (let i = 0; i < 7; i++) { const b = new T.Mesh(geoPa, matPa); b.position.set(x, 50 - i * 3.1, -113 + i * 0.35); b.rotation.x = -i * 0.045; escena.add(b); } });
   }
   // Las pantallas de los costados (como en los recitales), apenas giradas hacia el público.
   {
@@ -4972,8 +4984,8 @@ function incPlano3D(cont, op0) {
     x.fillStyle = '#9fd8ff'; x.textAlign = 'center'; x.font = '600 30px Poppins, sans-serif'; x.fillText('MOVISTAR', 128, 160); x.fillText('ARENA', 128, 198);
     const matPant = new T.MeshBasicMaterial({ map: textura(c) }), matMarco = new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 });
     [-1, 1].forEach(k => {
-      const pant = new T.Mesh(new T.PlaneGeometry(20, 26), matPant); pant.position.set(k * 76, 26, -131); pant.rotation.y = -k * 0.45; escena.add(pant);
-      const marco = new T.Mesh(new T.BoxGeometry(22, 28, 1), matMarco); marco.position.set(k * 76 + k * 0.3, 26, -131.6); marco.rotation.y = -k * 0.45; escena.add(marco);
+      const pant = new T.Mesh(new T.PlaneGeometry(20, 26), matPant); pant.position.set(k * 68, 26, -150); pant.rotation.y = -k * 0.45; escena.add(pant);
+      const marco = new T.Mesh(new T.BoxGeometry(22, 28, 1), matMarco); marco.position.set(k * 68 + k * 0.3, 26, -150.6); marco.rotation.y = -k * 0.45; escena.add(marco);
     });
   }
   const lienzoLed = lienzoDe(1024, 256), texLed = textura(lienzoLed);
@@ -4994,12 +5006,20 @@ function incPlano3D(cont, op0) {
     texLed.needsUpdate = true;
   };
   pintarLed(op0.titulo);
-  const pantallaLed = new T.Mesh(new T.PlaneGeometry(100, 26), new T.MeshBasicMaterial({ map: texLed }));
-  pantallaLed.position.set(0, 26, -139); escena.add(pantallaLed);
-  const marcoLed = new T.Mesh(new T.BoxGeometry(104, 30, 1.5), new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 }));
-  marcoLed.position.set(0, 26, -140.2); escena.add(marcoLed);
+  const pantallaLed = new T.Mesh(new T.PlaneGeometry(92, 24), new T.MeshBasicMaterial({ map: texLed }));
+  pantallaLed.position.set(0, 26, -161); escena.add(pantallaLed);
+  const marcoLed = new T.Mesh(new T.BoxGeometry(96, 28, 1.5), new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 }));
+  marcoLed.position.set(0, 26, -162.2); escena.add(marcoLed);
   // Un borde de luz abajo de la pantalla grande.
-  { const t = new T.Mesh(new T.BoxGeometry(104, 0.5, 0.5), matLuz); t.position.set(0, 10.8, -139.3); escena.add(t); }
+  { const t = new T.Mesh(new T.BoxGeometry(96, 0.5, 0.5), matLuz); t.position.set(0, 11.8, -161.3); escena.add(t); }
+  // La consola (FOH) al fondo del campo, de referencia (no se toca: tocar sigue eligiendo el campo).
+  {
+    const [fx, fy, fw, fh] = INC_FOH, cx = fx + fw / 2 - 210, cz = fy + fh / 2 - 146;
+    const foh = new T.Mesh(new T.BoxGeometry(fw, 3.5, fh), matTarima); foh.position.set(cx, INC_3D_ALTURA.campo + 1.75, cz); escena.add(foh);
+    const borde = new T.LineSegments(new T.EdgesGeometry(foh.geometry), new T.LineBasicMaterial({ color: 0x4fc3ff, transparent: true, opacity: 0.7 }));
+    borde.position.copy(foh.position); escena.add(borde);
+    etiqueta('FOH', 'esc', new T.Vector3(cx, 8, cz));
+  }
 
   // La cinta LED entre la platea baja y la alta, con el texto que corre.
   const lienzoCinta = lienzoDe(2048, 64), texCinta = textura(lienzoCinta);
@@ -5110,7 +5130,7 @@ function incPlano3D(cont, op0) {
   });
 
   // Cámara: entra volando desde arriba hasta la vista de la platea 309, mirando al escenario.
-  const objetivo = new T.Vector3(0, 0, 8), haciaBase = new T.Vector3(0, 300, 412), hacia = haciaBase.clone(), desde = new T.Vector3(300, 820, 780);
+  const objetivo = new T.Vector3(0, 0, 14), haciaBase = new T.Vector3(0, 318, 440), hacia = haciaBase.clone(), desde = new T.Vector3(300, 820, 780);
   camara.position.copy(desde); camara.lookAt(objetivo);
   let controles = null;
   if (T.OrbitControls) {
