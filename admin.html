@@ -903,7 +903,8 @@ tr:hover td{background:#f9f9fb}
       <option value="Otra">Otra (sin reconocer)</option>
       <option value="_sin">Sin localidad cargada</option>
     </select>
-    <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por posición">
+    <select class="filt" id="nomPuestoFilter" onchange="nomFilter()" title="Filtrar por el puesto que eligió al inscribirse"><option value="">Todos los puestos</option></select>
+    <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por la posición que le asignó el equipo">
       <option value="">Todas las posiciones</option>
       <option value="Supervisor">Supervisores</option>
       <option value="Equipo operaciones">Equipo operaciones</option>
@@ -2814,15 +2815,14 @@ function nomApply() {
   const posF = document.getElementById('nomPosFilter') ? document.getElementById('nomPosFilter').value : '';
   const zonaF = document.getElementById('nomZonaFilter') ? document.getElementById('nomZonaFilter').value : '';
   const orden = document.getElementById('nomOrden') ? document.getElementById('nomOrden').value : '';
+  // El puesto que eligió al inscribirse (lo de "Posiciones" es lo que le asignó el equipo).
+  // Las opciones cuentan los de la pestaña y el estado elegidos.
+  if (typeof llenarOpcionesPuesto === 'function') llenarOpcionesPuesto('nomPuestoFilter', people.filter(p => nomEnPestana(p) && (!st || p.estado === st)).map(puestoDePersona));
+  const puF = document.getElementById('nomPuestoFilter') ? document.getElementById('nomPuestoFilter').value : '';
   nomFiltered = people.filter(p => {
-    // Los OUT tienen su propia pestaña: no se mezclan con el resto de la nómina.
-    if (nomAreaTab === 'out') { if (!p.out_flag) return false; }
-    else if (p.out_flag) return false;
-    // Recomendados no es un área: es el apartado de a quién llamar primero, y
-    // se cruza con los filtros de zona y posición igual que el resto.
-    else if (nomAreaTab === 'rec') { if (!p.recomendado) return false; }
-    else if (nomAreaTab !== 'all' && p.area !== nomAreaTab) return false;
+    if (!nomEnPestana(p)) return false;
     if (st && p.estado !== st) return false;
+    if (puF && !puestosDeSol(puestoDePersona(p)).includes(puF)) return false;
     if (q && !nomCoincide(p, q)) return false;
     if (cvFilterOn && !p.cv) return false;
     if (docFilterOn && !docDudoso(p)) return false;
@@ -2851,6 +2851,18 @@ function nomApply() {
   if (dc) { dc.textContent = docCount; dc.style.display = docCount ? '' : 'none'; }
   renderNomTable(); renderNomPag();
 }
+// Si la persona va en la pestaña que se está mirando.
+function nomEnPestana(p) {
+  // Los OUT tienen su propia pestaña: no se mezclan con el resto de la nómina.
+  if (nomAreaTab === 'out') return !!p.out_flag;
+  if (p.out_flag) return false;
+  // Recomendados no es un área: es el apartado de a quién llamar primero, y
+  // se cruza con los filtros de zona y posición igual que el resto.
+  if (nomAreaTab === 'rec') return !!p.recomendado;
+  return nomAreaTab === 'all' || p.area === nomAreaTab;
+}
+// Lo que eligió al inscribirse: está en su ficha (se copió al aprobarla) o, si no, en la inscripción.
+function puestoDePersona(p) { return (p.cv && p.cv.puestoInteres) || ((solicitudDe(p) || {}).puesto_interes) || ''; }
 let docFilterOn = false;
 function toggleDocFilter() {
   docFilterOn = !docFilterOn;
@@ -3790,7 +3802,7 @@ function contarFiltrosNom() {
   b.textContent = n; b.style.display = n ? '' : 'none';
 }
 function limpiarFiltrosNom() {
-  ['nomSrch', 'nomStFilter', 'nomSemFilter', 'nomZonaFilter', 'nomPosFilter', 'nomOrden', 'nomDecFilter', 'nomTagFilter', 'nomRotFilter']
+  ['nomSrch', 'nomStFilter', 'nomSemFilter', 'nomZonaFilter', 'nomPuestoFilter', 'nomPosFilter', 'nomOrden', 'nomDecFilter', 'nomTagFilter', 'nomRotFilter']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   if (docFilterOn) toggleDocFilter();
   if (cvFilterOn) toggleCvFilter();
@@ -9448,10 +9460,11 @@ function puestosDeSol(texto) {
 }
 // Las opciones, con cuántas hay de cada una en el área y el estado elegidos
 // (España tiene sus propios puestos). Sólo las que tienen alguna.
-function fillSolPuestoOptions(base) {
-  const sel = document.getElementById('solPuestoF'); if (!sel) return;
+function fillSolPuestoOptions(base) { llenarOpcionesPuesto('solPuestoF', base.map(s => s.puesto_interes)); }
+function llenarOpcionesPuesto(idSel, textos) {
+  const sel = document.getElementById(idSel); if (!sel) return;
   const cur = sel.value, cuantas = {};
-  base.forEach(s => puestosDeSol(s.puesto_interes).forEach(p => { cuantas[p] = (cuantas[p] || 0) + 1; }));
+  textos.forEach(t => puestosDeSol(t).forEach(p => { cuantas[p] = (cuantas[p] || 0) + 1; }));
   const ops = SOL_PUESTOS.map(([n]) => n).concat('Otro').filter(n => cuantas[n] || n === cur);
   sel.innerHTML = '<option value="">Todos los puestos</option>' +
     ops.map(n => `<option value="${e(n)}">${e(n)} · ${cuantas[n] || 0}</option>`).join('');
