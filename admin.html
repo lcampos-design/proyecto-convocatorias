@@ -4801,6 +4801,40 @@ const INC_ICONOS = {
 function incSectoresPlano(armado) { return INC_PLANO_ZONAS.concat(incLugaresArena.map(incLugarForma), INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
 // Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
 function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
+// El armado del campo (de pie o con asientos) es del show, no del aparato: lo
+// elige cualquiera que mira el plano (el panel, la gerencia o la tablet) y lo
+// ven todos igual. Si la base todavía no lo guarda (falta correr
+// centro-control-armado.sql), queda en el aparato, como antes.
+const incArmados = {};   // id del show → 'campos' | 'asientos'
+let incArmadosEnBase = true;
+async function incCargarArmados() {
+  if (!incArmadosEnBase) return false;
+  try {
+    const { data, error } = await sb.rpc('cc_armados');
+    if (error) { if (/cc_armados/.test(error.message || '')) incArmadosEnBase = false; return false; }
+    let cambio = false;
+    Object.entries(data || {}).forEach(([k, v]) => { if ((v === 'campos' || v === 'asientos') && incArmados[k] !== v) { incArmados[k] = v; cambio = true; } });
+    return cambio;
+  } catch (_) { return false; }
+}
+function incArmadoDelShow(convId, lista) {
+  if (incArmados[convId]) return incArmados[convId];
+  let local = ''; try { local = localStorage.getItem('incArmado:' + convId) || ''; } catch (_) {}
+  return local === 'campos' || local === 'asientos' ? local : incArmadoDe(lista);
+}
+async function incGuardarArmado(convId, a) {
+  if (!convId || (a !== 'campos' && a !== 'asientos')) return;
+  incArmados[convId] = a;
+  try { localStorage.setItem('incArmado:' + convId, a); } catch (_) {}
+  if (!incArmadosEnBase) return;
+  try {
+    const { error } = await sb.rpc('cc_poner_armado', { p_conv_id: convId, p_armado: a });
+    if (error && /cc_poner_armado/.test(error.message || '')) incArmadosEnBase = false;
+  } catch (_) {}
+}
+// Mientras se mira un show: si el panel guardó otro plano o alguien cambió el
+// armado, se ve en todos sin volver a entrar. Devuelve si cambió algo.
+async function incRefrescarPlano() { const r = await Promise.all([incCargarPlanoArena(), incCargarArmados()]); return r[0] || r[1]; }
 // La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
 // "Platea baja · P1", "PB" (el campo) o "Anillo · P1" (los puestos).
 function incZona(sector) {
@@ -6035,7 +6069,7 @@ function incEstiloMetricas() {
 // Mientras el tablero está abierto se actualiza solo cada 15 segundos. Se
 // filtra por día (una convocatoria del Arena puede tener muchas fechas), por
 // estado y por sector (tocando el plano).
-let incListaAdm = [], incTimerAdm = null, incFiltroAdm = 'abiertas', incSectorAdm = '', incArmadoAdm = '', incDiaAdm = '';
+let incListaAdm = [], incTimerAdm = null, incFiltroAdm = 'abiertas', incSectorAdm = '', incDiaAdm = '';
 // Para el destello: las que ya se vieron y las que acaban de llegar.
 let incVistosAdm = null, incNuevosAdm = new Set();
 // ── Centro de Control: la sección ──
@@ -6065,8 +6099,15 @@ async function renderCentroControl() {
     if (!document.getElementById('sec-control').classList.contains('active')) { clearInterval(incTimerAdm); return; }
     if (document.hidden) return;
     ccCargarShows();
-    if (ccConvId) cargarIncidAdm();
+    if (ccConvId) { cargarIncidAdm(); ccRefrescarPlano(); }
   }, 15000);
+}
+// En el tablero: el plano guardado y el armado, por si los cambiaron desde otra
+// compu o desde la tablet (en el editor manda el borrador: no se toca).
+async function ccRefrescarPlano() {
+  const antes = incVersionPlano, armado = await incCargarArmados();
+  await ccCargarPlanoGuardado();
+  if ((armado || incVersionPlano !== antes) && ccTabActual === 'shows' && ccConvId) renderIncidAdm();
 }
 // Entran sólo los shows que se suman a mano (convocatorias.centro_control):
 // muchos del área Movistar Arena son eventos externos.
@@ -6398,7 +6439,7 @@ function ccPlanoTecla(ev, cont) {
 let incNuevaNivelAdm = 1;
 function incAbrirNuevaAdm(sector) {
   if (!ccConvId) { toast('Primero elegí un show'); return; }
-  const armado = incArmadoAdm || incArmadoDe(incListaAdm);
+  const armado = incArmadoDelShow(ccConvId, incListaAdm);
   // Ordenado por piso: el campo (PB), la platea baja (P1, los 100), el VIP, la alta (P3, los 300), y el anillo por tipo de puesto.
   const puestos = t => incLugaresArena.filter(l => l.t === t);
   const grupos = [['Campo · PB', INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos], ['Platea baja (102 a 118) · P1', INC_PLANO_TRIBUNAS.filter(s => s.t === 'baja')], ['Premium · palcos, lounge y corners', INC_PLANO_ZONAS.filter(s => s.t === 'vip')], ['Platea alta (301 a 317) · P3', INC_PLANO_TRIBUNAS.filter(s => s.t === 'alta')],
@@ -6484,10 +6525,10 @@ async function ccAbrirShow(id) {
   document.getElementById('incTitulo').textContent = x.nombre || '';
   document.getElementById('incSubtitulo').textContent = [resumenFechasTexto(x.fecha), x.venue].filter(Boolean).join(' · ');
   incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = null; incVistosAdm = null; incNuevosAdm = new Set(); incNivelAdm = 0;
-  try { incArmadoAdm = localStorage.getItem('incArmado:' + id) || ''; } catch (_) { incArmadoAdm = ''; }
   renderCcShows();
   renderIncidAdm();
   await cargarIncidAdm();
+  if (await incCargarArmados()) renderIncidAdm();
 }
 
 // ── Accesos de la gerencia del Arena ──
@@ -6551,7 +6592,8 @@ const CC_ICO = {
   campos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="3"/><path d="M3.5 20v-.5a5.5 5.5 0 0 1 11 0v.5"/><path d="M16 4.2a3 3 0 0 1 0 5.6M20.5 20v-.5a5.5 5.5 0 0 0-3.5-5.1"/></svg>',
   asientos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6.5 11V5.5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2V11"/><path d="M4 11h16v4.5H4zM6 15.5V20M18 15.5V20"/></svg>'
 };
-function incElegirArmadoAdm(a) { incArmadoAdm = a; try { localStorage.setItem('incArmado:' + ccConvId, a); } catch (_) {} renderIncidAdm(); }
+// El armado es del show: al cambiarlo acá, lo ven igual la gerencia y la tablet.
+function incElegirArmadoAdm(a) { incGuardarArmado(ccConvId, a); renderIncidAdm(); }
 function incTocarSectorAdm(sector) { incSectorAdm = incSectorAdm === sector ? '' : sector; renderIncidAdm(); }
 function incFiltrarAdm(k, v) { if (k === 'estado') { incFiltroAdm = v; incNivelAdm = 0; } if (k === 'dia') incDiaAdm = v; if (k === 'sector') incSectorAdm = v; if (k === 'nivel') incNivelAdm = 0; renderIncidAdm(); }
 // Tocar un contador: el listado muestra esas.
@@ -6563,7 +6605,7 @@ function incTocarStatAdm(k) {
 }
 function renderIncidAdm() {
   const delDia = incDelDiaAdm();
-  const armado = incArmadoAdm || incArmadoDe(incListaAdm);
+  const armado = incArmadoDelShow(ccConvId, incListaAdm);
   const res = incResumenSectores(delDia);
   const abiertas = delDia.filter(i => i.estado !== 'resuelta');
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;

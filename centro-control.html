@@ -643,6 +643,40 @@ const INC_ICONOS = {
 function incSectoresPlano(armado) { return INC_PLANO_ZONAS.concat(incLugaresArena.map(incLugarForma), INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
 // Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
 function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
+// El armado del campo (de pie o con asientos) es del show, no del aparato: lo
+// elige cualquiera que mira el plano (el panel, la gerencia o la tablet) y lo
+// ven todos igual. Si la base todavía no lo guarda (falta correr
+// centro-control-armado.sql), queda en el aparato, como antes.
+const incArmados = {};   // id del show → 'campos' | 'asientos'
+let incArmadosEnBase = true;
+async function incCargarArmados() {
+  if (!incArmadosEnBase) return false;
+  try {
+    const { data, error } = await sb.rpc('cc_armados');
+    if (error) { if (/cc_armados/.test(error.message || '')) incArmadosEnBase = false; return false; }
+    let cambio = false;
+    Object.entries(data || {}).forEach(([k, v]) => { if ((v === 'campos' || v === 'asientos') && incArmados[k] !== v) { incArmados[k] = v; cambio = true; } });
+    return cambio;
+  } catch (_) { return false; }
+}
+function incArmadoDelShow(convId, lista) {
+  if (incArmados[convId]) return incArmados[convId];
+  let local = ''; try { local = localStorage.getItem('incArmado:' + convId) || ''; } catch (_) {}
+  return local === 'campos' || local === 'asientos' ? local : incArmadoDe(lista);
+}
+async function incGuardarArmado(convId, a) {
+  if (!convId || (a !== 'campos' && a !== 'asientos')) return;
+  incArmados[convId] = a;
+  try { localStorage.setItem('incArmado:' + convId, a); } catch (_) {}
+  if (!incArmadosEnBase) return;
+  try {
+    const { error } = await sb.rpc('cc_poner_armado', { p_conv_id: convId, p_armado: a });
+    if (error && /cc_poner_armado/.test(error.message || '')) incArmadosEnBase = false;
+  } catch (_) {}
+}
+// Mientras se mira un show: si el panel guardó otro plano o alguien cambió el
+// armado, se ve en todos sin volver a entrar. Devuelve si cambió algo.
+async function incRefrescarPlano() { const r = await Promise.all([incCargarPlanoArena(), incCargarArmados()]); return r[0] || r[1]; }
 // La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
 // "Platea baja · P1", "PB" (el campo) o "Anillo · P1" (los puestos).
 function incZona(sector) {
@@ -1876,7 +1910,7 @@ function incEstiloMetricas() {
 // ── Centro de Control: lo que ve la gerencia del Movistar Arena ──
 // Sólo lectura. Todo sale de dos funciones de la base (ger_convocatorias y
 // ger_incidencias), que no devuelven nada a quien no es gerencia o admin.
-let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', dia = null, armadoSel = '', timer = null;
+let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', dia = null, timer = null;
 let vistos = null, nuevos = new Set(), nivelSel = 0;
 const hoyISO = () => incDia(new Date().toISOString());
 function pantalla(id) {
@@ -1966,17 +2000,20 @@ function renderShows() {
 async function abrirShow(id) {
   const s = shows.find(x => x.id === id); if (!s) return;
   showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = null; vistos = null; nuevos = new Set(); nivelSel = 0;
-  try { armadoSel = localStorage.getItem('incArmado:' + id) || ''; } catch (_) { armadoSel = ''; }
   document.getElementById('barT').textContent = s.nombre;
   document.getElementById('barS').textContent = resumenFechas(s);
   pantalla('pShow');
   render();
   await cargarIncidencias();
-  // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…).
-  if (await incCargarPlanoArena()) render();
+  // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado del campo del show.
+  if (await incRefrescarPlano()) render();
   clearInterval(timer);
-  // En vivo: cada 15 segundos, mientras se está mirando.
-  timer = setInterval(() => { if (document.getElementById('pShow').classList.contains('on') && !document.hidden) cargarIncidencias(); }, 15000);
+  // En vivo: cada 15 segundos, mientras se está mirando (y el plano, por si lo cambiaron).
+  timer = setInterval(() => {
+    if (!document.getElementById('pShow').classList.contains('on') || document.hidden) return;
+    cargarIncidencias();
+    incRefrescarPlano().then(c => { if (c) render(); });
+  }, 15000);
 }
 function volverShows() {
   clearInterval(timer); showId = null;
@@ -1997,7 +2034,8 @@ async function cargarIncidencias() {
 }
 function delDia() { return dia ? lista.filter(i => incDia(i.created_at) === dia) : lista; }
 function elegirVista(v) { incGuardarVista(v); render(); }
-function elegirArmado(a) { armadoSel = a; try { localStorage.setItem('incArmado:' + showId, a); } catch (_) {} render(); }
+// El armado es del show: al cambiarlo acá, lo ven igual el panel y la tablet.
+function elegirArmado(a) { incGuardarArmado(showId, a); render(); }
 function tocarSector(sector) { sectorSel = sectorSel === sector ? '' : sector; render(); }
 function filtrar(k, v) { if (k === 'estado') { filtro = v; nivelSel = 0; } if (k === 'dia') dia = v; if (k === 'sector') sectorSel = v; if (k === 'nivel') nivelSel = 0; render(); }
 // Tocar un contador de arriba: el listado muestra esas (y en el celular, baja hasta el listado).
@@ -2017,7 +2055,7 @@ const ICO = {
 };
 function render() {
   const delD = delDia();
-  const armado = armadoSel || incArmadoDe(lista);
+  const armado = incArmadoDelShow(showId, lista);
   const res = incResumenSectores(delD);
   const abiertas = delD.filter(i => i.estado !== 'resuelta');
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
