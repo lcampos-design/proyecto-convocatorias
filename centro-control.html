@@ -7,7 +7,7 @@
 <title>Centro de Control — Movistar Arena</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 /* Estilo Mac: vidrio esmerilado sobre un fondo de color suave, la letra del
@@ -632,8 +632,9 @@ const INC_TEMA = {
 };
 // El vidrio oscuro de lo que flota sobre el plano (la leyenda, los botones, los pisos, la ayuda).
 const INC_VIDRIO = 'background:rgba(9,24,48,.5);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(160,200,255,.2);box-shadow:0 4px 14px rgba(0,8,24,.28)';
-// La letra: la de la página (la gerencia usa la del sistema, como en una Mac), o Poppins.
-const INC_FUENTE = 'var(--inc-fuente,Poppins),sans-serif';
+// La letra del plano (2D y 3D): Poppins, en las tres páginas. La gerencia usa la
+// del sistema para el resto de la pantalla (como en una Mac), pero el plano no.
+const INC_FUENTE = 'Poppins,sans-serif';
 // Cuándo la ventana del detalle va abajo en vez de al costado: en el celular y en las pantallas paradas (la tablet vertical).
 const INC_VENTANA_ABAJO = '(max-width:640px),(orientation:portrait) and (max-width:1100px)';
 const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['vip', 'Premium'], ['campo', 'Campo'], ['puerta', 'Puertas'], ['gastro', 'Gastronomía'], ['banio', 'Baños'], ['enfermeria', 'Enfermería'], ['servicio', 'Otros puntos'], ['calle', 'Calles']];
@@ -843,7 +844,7 @@ function incEstiloPlano() {
     + '.inc-capas button{border:1px solid rgba(11,27,51,.14);background:rgba(255,255,255,.7);font:600 12px ' + INC_FUENTE + ';color:#6b7b94;padding:5px 11px;border-radius:999px;cursor:pointer;text-decoration:line-through;text-decoration-color:rgba(107,123,148,.6)}'
     + '.inc-capas button.on{background:#0b1b33;border-color:#0b1b33;color:#fff;text-decoration:none}'
     + '.inc-ref-rapida{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 2px}'
-    + '.inc-ref-rapida button{font:600 12px ' + INC_FUENTE + ';background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:999px;padding:6px 12px;cursor:pointer}'
+    + '.inc-ref-rapida button{font:600 12px var(--inc-fuente,Poppins),sans-serif;background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;border-radius:999px;padding:6px 12px;cursor:pointer}'
     + '.inc-plano-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font:500 11.5px ' + INC_FUENTE + ';color:#43546e}'
     + '.inc-plano-ley span,.inc-3d-ley span{display:inline-flex;align-items:center;gap:5px}'
     + '.inc-plano-ley i,.inc-3d-ley i{width:10px;height:10px;border-radius:3px;border:1px solid;display:inline-block}'
@@ -1232,6 +1233,11 @@ function incPlano3D(cont, op0) {
     texCinta.needsUpdate = true;
   };
   pintarCinta(op0.titulo);
+  // Lo de los lienzos no se vuelve a dibujar solo: si Poppins llegó después, se repinta con ella.
+  if (typeof document !== 'undefined' && document.fonts && document.fonts.load)
+    Promise.all(['500 30px Poppins', '600 30px Poppins'].map(f => document.fonts.load(f))).then(() => {
+      const a = tituloLed, b = tituloCinta; tituloLed = tituloCinta = null; pintarLed(a); pintarCinta(b);
+    }).catch(() => {});
   const cintaLed = new T.Mesh(pared(INC_CINTA.map(([x, y]) => new T.Vector3(x - 210, 0, y - 146)), 12, 17, false, 5 * 32), new T.MeshBasicMaterial({ map: texCinta }));
   escena.add(cintaLed);
 
