@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis datos — Show Business Solutions</title>
+<meta name="description" content="Actualizá los datos que cargaste al inscribirte en Show Business Solutions: contacto, cuenta bancaria, estudios, idiomas y CV.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/logo-sbs.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a1a;font-size:15px;min-height:100vh;position:relative;background:#1a1a1a}
+.sbs-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:#2b2b2b url('fondo-sbs.jpg') center/cover no-repeat}
+.page-header{background:#0f1117;padding:28px 24px;text-align:center;position:relative;z-index:1}
+.page-title{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.page-sub{font-size:13px;color:#d1d5db;margin-top:4px}
+.container{max-width:640px;margin:32px auto;padding:0 16px 60px;position:relative;z-index:1}
+.card{background:rgba(255,255,255,.94);backdrop-filter:blur(4px);border-radius:12px;padding:28px;margin-bottom:16px;border:1px solid #e5e7eb}
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:#f3f4f6}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px}
+.fg .req{color:#ef4444;margin-left:2px}
+.fi{width:100%;padding:10px 13px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+.fi:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.1)}
+textarea.fi{height:70px;resize:vertical}
+.frow{display:flex;gap:12px}
+.frow .fg{flex:1}
+@media(max-width:560px){.frow{flex-direction:column;gap:0}.card{padding:22px 18px}}
+.texto{font-size:14px;color:#374151;line-height:1.55;margin-bottom:16px}
+.nota{font-size:12px;color:#6b7280;line-height:1.5}
+.btn{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{opacity:.92}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sec{background:#fff;color:#534AB7;border:2px solid #534AB7;font-size:14px;padding:10px}
+.err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.ok{background:#f0fdf4;border:1px solid #a7f3d0;color:#065f46;border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.5;display:none}
+.radio-group{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.radio-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all .15s}
+.radio-opt:hover{border-color:#a5b4fc;background:#f5f3ff}
+.radio-opt.selected{border-color:#534AB7;background:#f0eeff}
+.radio-opt input{accent-color:#534AB7;width:16px;height:16px;flex-shrink:0}
+.radio-label{font-size:14px;color:#374151;font-weight:500}
+.opt-desc{display:block;font-size:12px;color:#6b7280;font-weight:400;margin-top:2px}
+.bank-info{background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px}
+.aviso{font-size:12px;margin-top:5px;color:#9ca3af}
+.idiomas{display:flex;flex-direction:column;gap:6px}
+.idioma{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:38px}
+.idioma label{display:flex;align-items:center;gap:8px;min-width:112px;margin:0;font-size:14px;font-weight:500;color:#374151;cursor:pointer}
+.idioma label input{accent-color:#534AB7;width:16px;height:16px}
+.idioma select,.idioma input[type=text]{display:none;width:auto;flex:1;min-width:120px;max-width:200px;padding:7px 10px}
+.idioma.on select,.idioma.on input[type=text]{display:block}
+.file-area{border:2px dashed #d1d5db;border-radius:8px;padding:16px;text-align:center;cursor:pointer;position:relative}
+.file-area:hover{border-color:#534AB7;background:#f5f3ff}
+.file-area input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.oculto{display:none}
+</style>
+</head>
+<body>
+<div class="sbs-bg"></div>
+<div class="page-header">
+  <div class="page-title">Mis datos</div>
+  <div class="page-sub">Actualizá lo que cargaste al inscribirte</div>
+</div>
+
+<div class="container">
+  <div class="err" id="err"></div>
+
+  <!-- 1) Sin link: se pide con el CUIL, y llega al mail de la inscripción. -->
+  <div id="paso1" class="card oculto">
+    <div class="section-title">Pedí tu link</div>
+    <p class="texto">Poné tu CUIL y te mandamos un link al mail que dejaste al inscribirte. Con ese link vas a poder cambiar tus datos: el teléfono, la cuenta para pagarte, tus estudios, tu CV…</p>
+    <div class="fg">
+      <label for="cuil">CUIL <span class="req">*</span></label>
+      <input type="text" class="fi" id="cuil" inputmode="numeric" maxlength="13" placeholder="Los 11 números, sin guiones" autocomplete="off">
+    </div>
+    <button class="btn" id="pedirBtn" onclick="pedirLink()">Mandarme el link</button>
+    <div class="ok" id="pedido" style="margin-top:14px"></div>
+    <p class="nota" style="margin-top:14px">¿Todavía no te inscribiste? <a href="/candidato">Inscribite acá</a>.</p>
+  </div>
+
+  <!-- 2) Con link: sus datos, para cambiar. -->
+  <div id="paso2" class="oculto">
+    <div class="card">
+      <p class="texto" id="hola" style="margin-bottom:0"></p>
+    </div>
+    <div class="card">
+      <div class="section-title">Contacto</div>
+      <div class="frow">
+        <div class="fg"><label for="email">Email <span class="req">*</span></label><input type="email" class="fi" id="email"></div>
+        <div class="fg"><label for="tel">Teléfono <span class="req">*</span></label><input type="tel" class="fi" id="tel"></div>
+      </div>
+      <div class="fg"><label for="localidad">Localidad <span class="req">*</span></label><input type="text" class="fi" id="localidad" placeholder="Ej: Villa Crespo (CABA) / La Plata (Bs. As.)"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Sobre vos</div>
+      <div class="frow">
+        <div class="fg"><label for="nacimiento">Fecha de nacimiento <span class="req">*</span></label><input type="date" class="fi" id="nacimiento"></div>
+        <div class="fg">
+          <label for="estudios">Nivel de estudios <span class="req">*</span></label>
+          <select class="fi" id="estudios">
+            <option value="">Elegí una opción…</option>
+            <option>Secundario incompleto</option><option>Secundario en curso</option><option>Secundario completo</option>
+            <option>Terciario en curso</option><option>Terciario completo</option>
+            <option>Universitario en curso</option><option>Universitario completo</option><option>Posgrado</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label>¿Hablás otros idiomas? <span style="font-weight:400;color:#9ca3af;font-size:11px">Marcá los que hables y tu nivel</span></label>
+        <div class="idiomas" id="idiomas">
+          <div class="idioma"><label><input type="checkbox" value="Inglés" onchange="syncIdioma(this)"> Inglés</label><select class="fi" aria-label="Nivel de inglés"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+          <div class="idioma"><label><input type="checkbox" value="Portugués" onchange="syncIdioma(this)"> Portugués</label><select class="fi" aria-label="Nivel de portugués"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+          <div class="idioma"><label><input type="checkbox" value="Italiano" onchange="syncIdioma(this)"> Italiano</label><select class="fi" aria-label="Nivel de italiano"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+          <div class="idioma"><label><input type="checkbox" value="Francés" onchange="syncIdioma(this)"> Francés</label><select class="fi" aria-label="Nivel de francés"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+          <div class="idioma"><label><input type="checkbox" value="Otro" onchange="syncIdioma(this)"> Otro</label><input type="text" class="fi" id="idiomaOtro" maxlength="30" placeholder="¿Cuál?" aria-label="Qué otro idioma"><select class="fi" aria-label="Nivel del otro idioma"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
+        </div>
+      </div>
+      <div class="fg"><label for="disp">Disponibilidad <span class="req">*</span></label><input type="text" class="fi" id="disp" placeholder="Full time, fines de semana, turno noche..."></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Cuenta para pagarte</div>
+      <div class="fg">
+        <label>¿Tenés una cuenta bancaria a tu nombre? <span class="req">*</span></label>
+        <div class="radio-group">
+          <label class="radio-opt" id="ctaSi" onclick="elegirCuenta(true)"><input type="radio" name="cta"> <span class="radio-label">Sí</span></label>
+          <label class="radio-opt" id="ctaNo" onclick="elegirCuenta(false)"><input type="radio" name="cta"> <span class="radio-label">No<span class="opt-desc">Te abrimos una en el BBVA para pagarte</span></span></label>
+        </div>
+      </div>
+      <div id="conCuenta" class="oculto">
+        <div class="bank-info">Sólo cuentas bancarias a tu nombre: no se aceptan alias ni billeteras virtuales (Mercado Pago, Ualá, Personal Pay, etc.).</div>
+        <div class="fg">
+          <label for="cbu">CBU <span class="req">*</span></label>
+          <input type="text" class="fi" id="cbu" inputmode="numeric" maxlength="22" placeholder="Los 22 números del CBU" oninput="avisoCbu()">
+          <div class="aviso" id="cbuAviso"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label for="nroCuenta">Número de cuenta <span class="req">*</span></label><input type="text" class="fi" id="nroCuenta"></div>
+          <div class="fg"><label for="banco">Banco <span class="req">*</span></label><input type="text" class="fi" id="banco" placeholder="Ej: Banco Nación, Galicia..."></div>
+        </div>
+      </div>
+      <div id="sinCuenta" class="oculto">
+        <div class="bank-info">Te abrimos una cuenta a tu nombre en el <strong>BBVA</strong> para poder pagarte. Completá estos datos <strong>tal cual figuran en tu DNI</strong>.</div>
+        <div class="frow">
+          <div class="fg"><label for="apellido">Apellido(s) <span class="req">*</span></label><input type="text" class="fi" id="apellido" maxlength="60" placeholder="Como en el DNI"></div>
+          <div class="fg"><label for="nombres">Nombre(s) <span class="req">*</span></label><input type="text" class="fi" id="nombres" maxlength="60" placeholder="Como en el DNI"></div>
+        </div>
+        <div class="fg">
+          <label for="nacionalidad">Nacionalidad <span class="req">*</span></label>
+          <select class="fi" id="nacionalidad" onchange="document.getElementById('nacionalidadOtra').style.display = this.value === 'Otra' ? '' : 'none'">
+            <option value="">Elegí una opción…</option><option>Argentina</option><option>Otra</option>
+          </select>
+          <input type="text" class="fi" id="nacionalidadOtra" maxlength="40" placeholder="¿Cuál? (ej. Uruguaya, Paraguaya, Venezolana)" style="display:none;margin-top:8px">
+        </div>
+        <div class="frow">
+          <div class="fg" style="flex:2"><label for="domicilio">Domicilio <span class="req">*</span></label><input type="text" class="fi" id="domicilio" maxlength="120" placeholder="Calle, número, piso y depto."></div>
+          <div class="fg"><label for="cp">Código postal <span class="req">*</span></label><input type="text" class="fi" id="cp" maxlength="8" placeholder="Ej: 1414"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">CV</div>
+      <p class="nota" id="cvActual" style="margin-bottom:10px"></p>
+      <div class="file-area">
+        <input type="file" id="cvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="elegirCv()">
+        <div style="font-size:13px;color:#6b7280"><strong style="color:#534AB7">Subí uno nuevo</strong> si querés reemplazarlo (PDF, Word o foto, hasta 1 MB)</div>
+        <div id="cvNuevo" style="font-size:12px;color:#534AB7;font-weight:500;margin-top:6px"></div>
+      </div>
+    </div>
+    <button class="btn" id="guardarBtn" onclick="guardar()">Guardar cambios</button>
+  </div>
+
+  <!-- 3) Listo. -->
+  <div id="paso3" class="card oculto">
+    <div class="section-title">Listo</div>
+    <div class="ok" id="listo" style="display:block"></div>
+    <p class="nota" style="margin-top:14px">Si te olvidaste de algo, podés volver a este link hasta que venza (24 horas desde que lo pediste).</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// La misma clave pública que usa el formulario de inscripción: lo que se puede
+// hacer con ella lo decide la base. Acá, sólo ver y guardar los datos propios
+// con un link vigente (ver mis-datos.sql).
+const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+const sb = window.supabase ? supabase.createClient(SB_URL, SB_KEY) : null;
+const TOKEN = new URLSearchParams(location.search).get('t') || '';
+const $ = id => document.getElementById(id);
+const valor = id => $(id).value.trim();
+let tieneCuenta = null, cvNuevo = null;
+
+function mostrarError(m) { const el = $('err'); el.textContent = m; el.style.display = m ? 'block' : 'none'; if (m) window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function paso(n) { ['paso1', 'paso2', 'paso3'].forEach((id, i) => $(id).classList.toggle('oculto', i + 1 !== n)); }
+
+// ── 1) Pedir el link ──
+async function pedirLink() {
+  mostrarError('');
+  const cuil = valor('cuil').replace(/\D/g, '');
+  if (cuil.length !== 11) { mostrarError('El CUIL tiene que tener 11 números.'); return; }
+  const btn = $('pedirBtn'); btn.disabled = true; btn.textContent = 'Mandando…';
+  try {
+    const res = await fetch('/api/mis-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cuit: cuil }) });
+    const r = await res.json().catch(() => ({}));
+    if (!res.ok || !r.ok) { mostrarError(r.error || 'No se pudo mandar el link. Probá de nuevo en un rato.'); return; }
+    const ok = $('pedido'); ok.style.display = 'block';
+    ok.innerHTML = '✓ Te mandamos el link a <strong>' + esc(r.email) + '</strong>. Revisá tu casilla (y el correo no deseado): vence en 24 horas.';
+  } catch (_) { mostrarError('No se pudo mandar el link. Revisá tu conexión y probá de nuevo.'); }
+  finally { btn.disabled = false; btn.textContent = 'Mandarme el link'; }
+}
+const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ── Idiomas: los mismos del formulario de inscripción ──
+function syncIdioma(cb) {
+  const fila = cb.closest('.idioma');
+  fila.classList.toggle('on', cb.checked);
+  if (!cb.checked) fila.querySelectorAll('select, input[type="text"]').forEach(x => { x.value = ''; });
+}
+function leerIdiomas() {
+  const elegidos = [];
+  for (const fila of document.querySelectorAll('#idiomas .idioma')) {
+    const cb = fila.querySelector('input[type="checkbox"]'); if (!cb.checked) continue;
+    let nombre = cb.value;
+    if (nombre === 'Otro') {
+      nombre = $('idiomaOtro').value.replace(/[,;()]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!nombre) return { error: 'Contanos qué otro idioma hablás.' };
+    }
+    const nivel = fila.querySelector('select').value;
+    if (!nivel) return { error: 'Elegí tu nivel de ' + nombre.toLowerCase() + '.' };
+    elegidos.push(nombre + ' (' + nivel.toLowerCase() + ')');
+  }
+  return { texto: elegidos.join(', ') };
+}
+// "Inglés (avanzado), Alemán (básico)" → marcados en la lista.
+function ponerIdiomas(texto) {
+  const filas = [...document.querySelectorAll('#idiomas .idioma')];
+  String(texto || '').split(',').map(x => x.trim()).filter(Boolean).forEach(item => {
+    const m = item.match(/^(.*?)\s*\(([^)]*)\)\s*$/), nombre = (m ? m[1] : item).trim(), nivel = m ? m[2].trim() : '';
+    let fila = filas.find(f => f.querySelector('input[type="checkbox"]').value.toLowerCase() === nombre.toLowerCase());
+    if (!fila) { fila = filas[filas.length - 1]; $('idiomaOtro').value = nombre; }
+    const cb = fila.querySelector('input[type="checkbox"]'); cb.checked = true; fila.classList.add('on');
+    const sel = fila.querySelector('select'), op = [...sel.options].find(o => o.value.toLowerCase() === nivel.toLowerCase());
+    if (op) sel.value = op.value;
+  });
+}
+
+// ── La cuenta ──
+function elegirCuenta(si) {
+  tieneCuenta = si;
+  $('ctaSi').classList.toggle('selected', si); $('ctaNo').classList.toggle('selected', !si);
+  $('ctaSi').querySelector('input').checked = si; $('ctaNo').querySelector('input').checked = !si;
+  $('conCuenta').classList.toggle('oculto', !si); $('sinCuenta').classList.toggle('oculto', si);
+}
+const BILLETERAS = [['0000003', 'Mercado Pago'], ['0000086', 'Ualá'], ['0000005', 'Personal Pay'], ['3220001', 'Naranja X'], ['0000007', 'Lemon Cash'], ['0000004', 'Brubank (billetera)']];
+function cbuVerifica(cbu) {
+  if (!/^\d{22}$/.test(cbu)) return false;
+  const dv = (desde, pesos) => (10 - pesos.reduce((s, w, i) => s + w * Number(cbu[desde + i]), 0) % 10) % 10;
+  return dv(0, [7, 1, 3, 9, 7, 1, 3]) === Number(cbu[7]) && dv(8, [3, 9, 7, 1, 3, 9, 7, 1, 3, 9, 7, 1, 3]) === Number(cbu[21]);
+}
+function cbuMotivo(cbu) {
+  if (cbu.length !== 22) return 'El CBU tiene que tener 22 números (tiene ' + cbu.length + ').';
+  const b = BILLETERAS.find(([pre]) => cbu.startsWith(pre));
+  if (b) return 'Es de ' + b[1] + ', una billetera virtual: poné el CBU de una cuenta bancaria.';
+  if (!cbuVerifica(cbu)) return 'El CBU no es válido: revisá los números.';
+  return '';
+}
+function avisoCbu() {
+  const el = $('cbu'); el.value = el.value.replace(/\D/g, '');
+  const m = el.value ? cbuMotivo(el.value) : '', av = $('cbuAviso');
+  av.textContent = !el.value ? '' : m ? '⚠ ' + m : '✓ CBU válido';
+  av.style.color = !el.value ? '#9ca3af' : m ? '#9a3412' : '#065f46';
+}
+
+// ── El CV nuevo (opcional) ──
+function elegirCv() {
+  const f = $('cvFile').files[0]; cvNuevo = null; $('cvNuevo').textContent = '';
+  if (!f) return;
+  if (f.size > 1048576) { mostrarError('El archivo supera 1 MB. Elegí uno más liviano.'); $('cvFile').value = ''; return; }
+  const r = new FileReader();
+  r.onload = ev => { cvNuevo = { nombre: f.name, tipo: f.type, datos: ev.target.result }; $('cvNuevo').textContent = '✓ ' + f.name; };
+  r.readAsDataURL(f);
+}
+
+// ── 2) Con el link: traer los datos ──
+async function cargar() {
+  const { data, error } = await sb.rpc('mis_datos_ver', { p_token: TOKEN });
+  if (error || !data || !data.ok) {
+    paso(1);
+    mostrarError(data && data.motivo === 'vencido' ? 'Ese link venció o no es válido. Pedí uno nuevo con tu CUIL.' : 'No se pudieron traer tus datos. Probá de nuevo en un rato.');
+    return;
+  }
+  const d = data;
+  // Quien está en la nómina pero nunca llenó el formulario (lo cargó el equipo) no tiene dónde guardar estos datos.
+  if (!d.con_inscripcion) {
+    paso(1);
+    mostrarError('Tu ficha la cargó nuestro equipo y no tiene inscripción, así que tus datos los actualizamos nosotros: escribinos a ' + (d.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com') + '.');
+    return;
+  }
+  $('hola').innerHTML = 'Hola' + (d.nombre ? ', <strong>' + esc(String(d.nombre).trim().split(/\s+/)[0]) + '</strong>' : '') + '. Revisá tus datos, cambiá lo que haga falta y tocá <strong>Guardar cambios</strong>.';
+  $('email').value = d.email || ''; $('tel').value = d.tel || ''; $('localidad').value = d.localidad || '';
+  $('nacimiento').value = d.fecha_nacimiento ? String(d.fecha_nacimiento).slice(0, 10) : '';
+  $('estudios').value = d.estudios || '';
+  ponerIdiomas(d.idiomas);
+  $('disp').value = d.disponibilidad || '';
+  if (d.tiene_cuenta === true || d.tiene_cuenta === false) elegirCuenta(d.tiene_cuenta);
+  $('cbu').value = d.cbu || ''; $('nroCuenta').value = d.numero_cuenta || ''; $('banco').value = d.banco || ''; avisoCbu();
+  $('apellido').value = d.apellido || ''; $('nombres').value = d.nombres || ''; $('domicilio').value = d.domicilio || ''; $('cp').value = d.codigo_postal || '';
+  if (d.nacionalidad) {
+    const esAr = d.nacionalidad === 'Argentina';
+    $('nacionalidad').value = esAr ? 'Argentina' : 'Otra';
+    if (!esAr) { $('nacionalidadOtra').value = d.nacionalidad; $('nacionalidadOtra').style.display = ''; }
+  }
+  $('cvActual').textContent = d.cv ? 'El que tenemos: ' + d.cv : 'Todavía no tenemos tu CV.';
+  paso(2);
+}
+
+// ── Guardar ──
+async function guardar() {
+  mostrarError('');
+  const idi = leerIdiomas();
+  const nac = valor('nacionalidad') === 'Otra' ? valor('nacionalidadOtra') : valor('nacionalidad');
+  const cbu = valor('cbu').replace(/\D/g, ''), cp = valor('cp').toUpperCase().replace(/\s+/g, '');
+  const err =
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor('email')) ? 'Revisá el mail.'
+    : valor('tel').replace(/\D/g, '').length < 8 ? 'Revisá el teléfono.'
+    : !valor('localidad') ? 'Indicá tu localidad.'
+    : !valor('nacimiento') || valor('nacimiento') > new Date().toISOString().slice(0, 10) || valor('nacimiento') < '1900-01-01' ? 'Revisá la fecha de nacimiento.'
+    : !valor('estudios') ? 'Elegí tu nivel de estudios.'
+    : idi.error ? idi.error
+    : !valor('disp') ? 'Indicá tu disponibilidad.'
+    : tieneCuenta === null ? 'Contanos si tenés una cuenta bancaria a tu nombre.'
+    : tieneCuenta && cbuMotivo(cbu) ? cbuMotivo(cbu)
+    : tieneCuenta && (!valor('nroCuenta') || !valor('banco')) ? 'Completá el número de cuenta y el banco.'
+    : !tieneCuenta && (!valor('apellido') || !valor('nombres')) ? 'Completá tu apellido y tu nombre como figuran en el DNI.'
+    : !tieneCuenta && !nac ? 'Indicá tu nacionalidad.'
+    : !tieneCuenta && !valor('domicilio') ? 'Indicá tu domicilio (calle, número, piso y depto.).'
+    : !tieneCuenta && !/^(\d{4}|[A-Z]\d{4}[A-Z]{3})$/.test(cp) ? 'Revisá el código postal: son 4 números (ej. 1414) o el nuevo, con letras (ej. C1414ABC).'
+    : '';
+  if (err) { mostrarError(err); return; }
+  const datos = {
+    email: valor('email'), tel: valor('tel'), localidad: valor('localidad'),
+    fecha_nacimiento: valor('nacimiento'), estudios: valor('estudios'), idiomas: idi.texto || '', disponibilidad: valor('disp'),
+    tiene_cuenta: tieneCuenta,
+    cbu, numero_cuenta: valor('nroCuenta'), banco: valor('banco'),
+    apellido: valor('apellido'), nombres: valor('nombres'), nacionalidad: nac, domicilio: valor('domicilio'), codigo_postal: cp,
+    ...(cvNuevo ? { cv: cvNuevo } : {})
+  };
+  const btn = $('guardarBtn'); btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const { data, error } = await sb.rpc('mis_datos_guardar', { p_token: TOKEN, p_datos: datos });
+    if (error || !data) { mostrarError('No se pudo guardar. Probá de nuevo en un rato.'); return; }
+    if (!data.ok) { mostrarError(data.motivo === 'vencido' ? 'El link venció. Pedí uno nuevo con tu CUIL para guardar los cambios.' : (data.mensaje || 'Revisá los datos.')); return; }
+    $('listo').innerHTML = data.cambios
+      ? '✓ Listo, tus datos quedaron actualizados. Cambiaste: <strong>' + esc((data.que || []).join(', ')) + '</strong>.'
+      : 'No había nada distinto para cambiar: tus datos están como los dejaste.';
+    paso(3); window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (_) { mostrarError('No se pudo guardar. Revisá tu conexión y probá de nuevo.'); }
+  finally { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+}
+
+if (TOKEN && sb) cargar(); else paso(1);
+</script>
+</body>
+</html>
