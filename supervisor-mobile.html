@@ -1632,7 +1632,7 @@ function incPlano3D(cont, op0) {
   });
 
   // El escenario, simple: la tarima con un proscenio adelante y el frente de
-  // luz, la pantalla con el nombre del show y un marco arriba.
+  // luz, la pantalla (sin letras) y el tinglado arriba.
   const matTarima = new T.MeshStandardMaterial({ color: 0x0b1526, roughness: 0.32, metalness: 0.55 });
   const tarima = new T.Mesh(new T.BoxGeometry(100, 6, 44), matTarima); tarima.position.set(0, 3, -140); escena.add(tarima);
   const proscenio = new T.Mesh(new T.BoxGeometry(64, 4, 6), matTarima); proscenio.position.set(0, 2, -115); escena.add(proscenio);
@@ -1655,7 +1655,7 @@ function incPlano3D(cont, op0) {
   // Cerrado: techo, laterales y fondo en negro medio traslúcido; el frente, abierto (que se vea la pantalla).
   {
     const matCierre = new T.MeshBasicMaterial({ color: 0x05070c, transparent: true, opacity: 0.55, side: T.DoubleSide, depthWrite: false });
-    // El techo, más traslúcido: desde arriba deja ver la pantalla con el nombre del show.
+    // El techo, más traslúcido: desde arriba deja ver la pantalla.
     const matTecho = new T.MeshBasicMaterial({ color: 0x05070c, transparent: true, opacity: 0.34, side: T.DoubleSide, depthWrite: false });
     const panel = (w, h, x, y, z, rx, ry, mat) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), mat || matCierre); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, 0); m.renderOrder = 2; escena.add(m); };
     panel(110, 52, 0, 50.9, -139, -Math.PI / 2, 0, matTecho);   // el techo
@@ -1663,24 +1663,16 @@ function incPlano3D(cont, op0) {
     panel(52, 50, -54.6, 25, -139, 0, Math.PI / 2);        // los laterales
     panel(52, 50, 54.6, 25, -139, 0, Math.PI / 2);
   }
+  // La pantalla grande, sola: el azul con los puntitos de los LED, sin letras
+  // (el nombre del show va en la cinta que da la vuelta).
   const lienzoLed = lienzoDe(1024, 256), texLed = textura(lienzoLed);
-  let tituloLed = null;
-  const pintarLed = titulo => {
-    if (titulo === tituloLed) return; tituloLed = titulo;
+  {
     const x = lienzoLed.getContext('2d'), g = x.createLinearGradient(0, 0, 1024, 256);
     g.addColorStop(0, '#00153f'); g.addColorStop(0.5, '#003a9e'); g.addColorStop(1, '#00153f');
     x.fillStyle = g; x.fillRect(0, 0, 1024, 256);
     x.fillStyle = 'rgba(255,255,255,.07)'; for (let i = 0; i < 1024; i += 8) for (let j = 0; j < 256; j += 8) x.fillRect(i, j, 4, 4);   // los puntitos de los LED
-    const t = String(titulo || '').toUpperCase(), sub = t && !/MOVISTAR ARENA/.test(t);
-    x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle';
-    let fs = 88, txt = t || 'MOVISTAR ARENA';
-    x.font = '600 ' + fs + 'px Poppins, sans-serif';
-    while (x.measureText(txt).width > 940 && fs > 40) { fs -= 6; x.font = '600 ' + fs + 'px Poppins, sans-serif'; }
-    x.fillText(txt, 512, sub ? 112 : 132);
-    if (sub) { x.font = '500 30px Poppins, sans-serif'; x.fillStyle = '#9fd8ff'; x.fillText('MOVISTAR ARENA', 512, 196); }
     texLed.needsUpdate = true;
-  };
-  pintarLed(op0.titulo);
+  }
   const pantallaLed = new T.Mesh(new T.PlaneGeometry(92, 24), new T.MeshBasicMaterial({ map: texLed }));
   pantallaLed.position.set(0, 26, -161); escena.add(pantallaLed);
   const marcoLed = new T.Mesh(new T.BoxGeometry(96, 28, 1.5), new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 }));
@@ -1716,11 +1708,9 @@ function incPlano3D(cont, op0) {
     texCinta.needsUpdate = true;
   };
   pintarCinta(op0.titulo);
-  // Lo de los lienzos no se vuelve a dibujar solo: si Poppins llegó después, se repinta con ella.
+  // El lienzo no se vuelve a dibujar solo: si Poppins llegó después, la cinta se repinta con ella.
   if (typeof document !== 'undefined' && document.fonts && document.fonts.load)
-    Promise.all(['500 30px Poppins', '600 30px Poppins'].map(f => document.fonts.load(f))).then(() => {
-      const a = tituloLed, b = tituloCinta; tituloLed = tituloCinta = null; pintarLed(a); pintarCinta(b);
-    }).catch(() => {});
+    document.fonts.load('600 30px Poppins').then(() => { const b = tituloCinta; tituloCinta = null; pintarCinta(b); }).catch(() => {});
   const cintaLed = new T.Mesh(pared(INC_CINTA.map(([x, y]) => new T.Vector3(x - 210, 0, y - 146)), 12, 17, false, 5 * 32), new T.MeshBasicMaterial({ map: texCinta }));
   escena.add(cintaLed);
 
@@ -2104,7 +2094,7 @@ function incPlano3D(cont, op0) {
     poner(op) {
       ultimoOp = op; onclick = op.onclick; accion = op.accionPantalla || null; detLista = Array.isArray(op.detalle) ? op.detalle : null; editar = op.editar || null;
       if (editar) { ayuda.textContent = 'Arrastrá un puesto para moverlo · sus esquinas, para el tamaño'; if (controles) controles.autoRotate = false; }
-      if (op.titulo !== undefined) { pintarLed(op.titulo); pintarCinta(op.titulo); }
+      if (op.titulo !== undefined) pintarCinta(op.titulo);
       const niveles = op.niveles || {}, cuentas = op.cuentas || {}, porNivel = op.porNivel || {}, elegido = selLocal || op.sel, pisoSel = incPisoElegido(), capas = incCapas();
       pisosEl.innerHTML = incPisosHTML('inc-3d-pisos'); if (op.sinPisos) pisosEl.innerHTML = '';
       capasEl.innerHTML = incCapasHTML('inc-3d-capas-l');
