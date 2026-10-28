@@ -329,7 +329,7 @@ const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
 // ════════════════════════════════════════
 
-const sb = supabase.createClient(SB_URL, SB_KEY);
+const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'sbs-supervisor' } });
 let currentUser = null, currentUserId = null, currentUserName = '';
 // "people" guarda solo la gente del recital abierto. posts, feedbacks y
 // myConvIds ya no existen: esa informacion no sale de ninguna tabla.
@@ -356,8 +356,28 @@ function toast(msg) { const t = document.getElementById('toastMob'); t.textConte
 function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
 
 // ── Auth ──
+// Cada página guarda su sesión aparte: el panel, la app del supervisor y esta.
+// Antes era una sola para las tres, y salir (o entrar con otra cuenta) en una
+// cerraba la de las otras pestañas. Quien ya entró por el panel con una cuenta
+// de supervisor —o venía de antes, cuando era una sola— sigue adentro: la sesión
+// se pasa para acá. Se pasa, no se copia: dos copias de la misma se pisan al
+// renovarse y Supabase termina cerrando las dos.
+async function traerSesionDelPanel(rolDeAca) {
+  const clave = 'sb-' + new URL(SB_URL).hostname.split('.')[0] + '-auth-token';
+  let guardada = null;
+  try { guardada = JSON.parse(localStorage.getItem(clave) || 'null'); } catch (_) {}
+  if (!guardada || !guardada.refresh_token) return;
+  const panel = supabase.createClient(SB_URL, SB_KEY, { auth: { autoRefreshToken: false, detectSessionInUrl: false } });
+  const { data: rol } = await panel.rpc('mi_rol');
+  if (rol !== rolDeAca) return;
+  const { data: { session } } = await panel.auth.getSession();
+  if (!session) return;
+  localStorage.removeItem(clave);
+  await sb.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
+}
 async function initAuth() {
-  const { data: { session } } = await sb.auth.getSession();
+  let { data: { session } } = await sb.auth.getSession();
+  if (!session) { try { await traerSesionDelPanel('supervisor'); } catch (_) {} ({ data: { session } } = await sb.auth.getSession()); }
   if (session) { currentUser = session.user; currentUserId = session.user.id; await loadData(); }
   else showScreen('screenLogin');
 }
@@ -372,7 +392,8 @@ async function doLogin() {
   currentUser = data.user; currentUserId = data.user.id; await loadData();
 }
 
-async function doLogout() { await sb.auth.signOut(); location.reload(); }
+// Salir cierra sólo esta: no la del panel ni la de otros equipos.
+async function doLogout() { await sb.auth.signOut({ scope: 'local' }); location.reload(); }
 
 // ── Load data ──
 async function loadData() {
@@ -386,7 +407,7 @@ async function loadData() {
 
     // La gerencia del Arena tiene su propia página.
     const { data: rol } = await sb.rpc('mi_rol');
-    if (rol === 'gerencia') { location.replace('/centro-control'); return; }
+    if (rol === 'gerencia') { await sb.auth.signOut({ scope: 'local' }); location.replace('/centro-control'); return; }
 
     setLoad(true, 50);
     const { data: misConvs, error: cErr } = await sb.rpc('sup_convocatorias');
