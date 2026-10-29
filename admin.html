@@ -130,7 +130,110 @@ tr:hover td{background:#fafaf8}
 .cc-plano-bar .cc-seg svg{width:13px;height:13px}
 .cc-plano-bar .cc-editar{margin-left:auto}
 /* Las pestañas del Centro de Control, en un selector. */
-.cc-tabs button{padding:6px 12px}
+.cc-tabs button{padding:0 13px}
+/* ── El Centro de Control con el diseño de la vista de la gerencia ──
+   El fondo gris claro con la marca de SBS apenas marcada; las tarjetas de
+   vidrio; los números como widgets; las botoneras de a dos; los filtros en
+   pastillas; las incidencias en tarjetas. Lo mismo, con la misma letra. */
+#sec-control{--tinta:#0b1b33;--tinta-2:#43546e;--tinta-3:#6b7b94;--azul:#1f6fe5;--vidrio:rgba(255,255,255,.56);--vidrio-fuerte:rgba(255,255,255,.74);--vidrio-borde:rgba(255,255,255,.72);--linea:rgba(11,27,51,.08);--desenfoque:saturate(180%) blur(24px);--sombra:inset 0 1px 0 rgba(255,255,255,.7),0 10px 30px rgba(15,40,85,.1),0 1px 3px rgba(15,40,85,.06);position:relative;isolation:isolate;background:#eceef1;color:var(--tinta);min-height:calc(100vh - 56px);letter-spacing:-.01em}
+#sec-control::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('fondo-sbs.jpg') center/cover no-repeat;opacity:.07}
+#sec-control::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(120% 80% at 50% 0%,rgba(255,255,255,.55),rgba(236,238,241,0) 70%)}
+#sec-control .ctrlbar{background:rgba(255,255,255,.5);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border-bottom:1px solid var(--linea)}
+#sec-control .cc-show,#sec-control .cc-sumar-fila,#sec-control .stat,#sec-control .t-plano,#sec-control .t-lista,#sec-control .cc-plano-izq,#sec-control .cc-plano-der,#sec-control #ccAccesos>div{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:var(--sombra)}
+#sec-control .cc-show,#sec-control .cc-sumar-fila{border-radius:16px;padding:12px 14px;transition:background .15s,transform .15s}
+#sec-control .cc-show:hover{background:var(--vidrio-fuerte);transform:translateY(-1px)}
+#sec-control .cc-show.on{background:rgba(255,255,255,.88);box-shadow:0 0 0 2px var(--tinta),var(--sombra)}
+#sec-control .cc-show-n{font-size:14px;color:var(--tinta);letter-spacing:-.2px}
+#sec-control .cc-show-f,#sec-control .cc-show-s{color:var(--tinta-3)}
+#sec-control .cc-grupo{text-transform:none;letter-spacing:0;font-size:12px;color:var(--tinta-2)}
+#sec-control .cc-show-chips .inc-cuenta{background:rgba(11,27,51,.06);color:var(--tinta-2)}
+#sec-control .cc-tablero{background:transparent;border:0;box-shadow:none;padding:0}
+#sec-control .cc-show-t{font-size:20px;font-weight:700;letter-spacing:-.4px;color:var(--tinta)}
+#sec-control .cc-plano-izq,#sec-control .cc-plano-der{border-radius:22px}
+#sec-control .cc-met-t{text-transform:none;letter-spacing:0;font-size:13px;color:var(--tinta-2);border-top:0;padding-top:0;margin:26px 4px 10px}
+#sec-control #incMetricasAdm .inc-tile,#sec-control #incMetricasAdm .inc-graf-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:var(--sombra);border-radius:16px}
+/* Los botones de la barra del show: de vidrio; cargar, en tinta. */
+#sec-control .bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 13px;border-radius:10px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.62);color:var(--tinta);font:600 12.5px Poppins,sans-serif;cursor:pointer;flex-shrink:0;box-shadow:0 1px 2px rgba(15,40,85,.08);transition:background .15s}
+#sec-control .bar-btn:hover{background:rgba(255,255,255,.9)}
+#sec-control .bar-btn.ico{width:36px;padding:0;font-size:15px}
+#sec-control .bar-btn.prim{background:var(--tinta);border-color:var(--tinta);color:#fff}
+#sec-control .bar-btn.prim:hover{background:#13294a}
+#sec-control .cc-tablero-top .inc-vivo{color:#15803d;font-weight:600;font-size:12px;background:rgba(21,128,61,.1);padding:5px 10px;border-radius:999px}
+#sec-control .cc-tablero-top .inc-vivo.mal{color:#9f1239;background:rgba(159,18,57,.1)}
+/* Los números, como los widgets de la gerencia. */
+#sec-control .t-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+#sec-control .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;flex:1 1 560px;max-width:860px}
+#sec-control .stat{--c:#0b1b33;border-radius:16px;padding:10px 14px 11px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:6px;min-width:0;min-height:66px;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s}
+#sec-control .stat-t{display:flex;align-items:center;gap:6px;max-width:100%;font-size:12px;font-weight:600;color:var(--tinta-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sec-control .stat-t i{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--c);box-shadow:0 0 0 3px rgba(11,27,51,.06)}
+#sec-control .stat-n{display:flex;align-items:baseline;gap:5px;min-width:0}
+#sec-control .stat b{font-size:25px;line-height:1;font-weight:700;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
+#sec-control .stat small{font-size:12px;color:var(--tinta-3);font-weight:500;white-space:nowrap}
+#sec-control .stat:hover{background:var(--vidrio-fuerte);transform:translateY(-1px)}
+#sec-control .stat.on{background:rgba(255,255,255,.88);box-shadow:0 0 0 2px var(--c),var(--sombra)}
+#sec-control .stat.pulso{animation:incPulsoStat 1.3s ease-in-out infinite}
+@keyframes incPulsoStat{0%,100%{box-shadow:0 0 0 0 rgba(159,18,57,.45),var(--sombra)}50%{box-shadow:0 0 0 6px rgba(159,18,57,0),var(--sombra)}}
+@media(max-width:700px){#sec-control .stats{grid-template-columns:repeat(6,minmax(0,1fr));flex-basis:100%;max-width:none}#sec-control .stat{grid-column:span 2}#sec-control .stat:nth-child(n+4){grid-column:span 3}}
+#sec-control .herr{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* Las botoneras de a dos, como en la gerencia (las pestañas, la vista, el armado, los pisos del editor). */
+#sec-control .cc-seg,#sec-control .cc-plano-pisos{display:inline-flex;background:rgba(11,27,51,.07);border:1px solid rgba(255,255,255,.55);border-radius:11px;padding:3px;gap:2px}
+#sec-control .cc-seg button,#sec-control .cc-plano-pisos button{border:0;background:transparent;font:600 12.5px Poppins,sans-serif;color:var(--tinta-2);padding:0 13px;min-height:32px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
+#sec-control .cc-seg button:hover,#sec-control .cc-plano-pisos button:hover{color:var(--tinta)}
+#sec-control .cc-seg button.on,#sec-control .cc-plano-pisos button.on{background:rgba(255,255,255,.95);color:var(--tinta);box-shadow:0 1px 3px rgba(11,27,51,.16),0 0 0 .5px rgba(11,27,51,.06)}
+#sec-control .cc-seg svg{width:15px;height:15px;flex-shrink:0}
+#sec-control .cc-seg.chico button{font-size:12px;padding:0 11px}
+#sec-control .ctrlbar a.btn{display:inline-flex;align-items:center;min-height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.62);color:var(--tinta);font-weight:600;box-shadow:0 1px 2px rgba(15,40,85,.08)}
+/* El plano grande y, al costado, el listado. */
+#sec-control .t-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+#sec-control .t-grid>*{min-width:0}
+#sec-control .t-plano{border-radius:22px;padding:10px}
+#sec-control .t-plano .inc-adm-plano{border:0;padding:0;background:transparent}
+#sec-control .t-lista{border-radius:22px;display:flex;flex-direction:column;overflow:hidden}
+#sec-control .t-lista-cab{padding:14px 14px 10px;border-bottom:1px solid var(--linea)}
+#sec-control .t-lista-t{font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--tinta)}
+#sec-control .t-lista-t small{font-size:12px;font-weight:500;color:var(--tinta-3)}
+#sec-control .t-lista-cuerpo{padding:12px}
+@media(min-width:1200px){
+  #sec-control .t-grid{grid-template-columns:minmax(0,1fr) 360px;align-items:start}
+  #incPlanoAdm{height:calc(100vh - 290px);min-height:500px}
+  #sec-control .t-lista{position:sticky;top:12px;height:calc(100vh - 210px);min-height:560px}
+  #sec-control .t-lista-cuerpo{flex:1;overflow-y:auto}
+}
+@media(min-width:1600px){#sec-control .t-grid{grid-template-columns:minmax(0,1fr) 420px}}
+/* En el plano 2D, el dibujo ocupa lo que queda arriba de los controles y la leyenda. */
+#incPlanoAdm:not(.inc-3d),#ccPlanoPrevia:not(.inc-3d){display:flex;flex-direction:column}
+#incPlanoAdm:not(.inc-3d)>svg,#ccPlanoPrevia:not(.inc-3d)>svg{flex:1 1 0;min-height:0;height:auto!important}
+#sec-control .fila{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#sec-control .chip{display:inline-flex;align-items:center;gap:4px;min-height:30px;font:600 12px Poppins,sans-serif;background:rgba(255,255,255,.62);border:1px solid rgba(11,27,51,.1);color:var(--tinta-2);border-radius:999px;padding:0 12px;cursor:pointer;white-space:nowrap}
+#sec-control .chip:hover{background:rgba(255,255,255,.9);color:var(--tinta)}
+#sec-control .chip.on,#sec-control .chip.prim{background:var(--tinta);border-color:var(--tinta);color:#fff}
+#sec-control .chip-x{border:0;background:none;color:inherit;cursor:pointer;font-size:11px;padding:0 0 0 2px}
+#sec-control .vacio{text-align:center;padding:40px 18px;color:var(--tinta-2);font-size:13px}
+#sec-control .inc-lugares{margin:10px 2px 2px;align-items:center}
+#sec-control .inc-lugares-t{font-size:12px;font-weight:600;color:var(--tinta-3);margin-right:4px}
+#sec-control .inc-lugar{min-height:34px;font:600 12.5px Poppins,sans-serif;background:rgba(255,255,255,.62);border:1px solid rgba(11,27,51,.1);color:var(--tinta);border-radius:10px;padding:0 12px}
+/* Las incidencias, en tarjetas como las de la gerencia. */
+#sec-control .inc-card{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.85);border-left:4px solid #cbd5e1;border-radius:14px;padding:11px 13px;margin-bottom:8px;box-shadow:0 1px 2px rgba(15,40,85,.05)}
+#sec-control .inc-card.resuelta{opacity:.75}
+#sec-control .inc-tipo{font-size:14.5px;color:var(--tinta);letter-spacing:-.2px}
+#sec-control .inc-hora{font-size:12.5px;color:var(--tinta-3)}
+#sec-control .inc-donde{font-size:12.5px;color:var(--tinta-2)}
+#sec-control .inc-donde b{color:var(--tinta)}
+#sec-control .inc-acc{font-size:12.5px;color:#15803d}
+#sec-control .inc-nota{font-size:13.5px;color:var(--tinta)}
+#sec-control .inc-res{font-size:13px;color:var(--tinta-2);background:rgba(11,27,51,.05);border-radius:9px;padding:7px 10px}
+#sec-control .inc-card-acts .chip{min-height:28px;padding:0 11px}
+#sec-control .inc-card.nueva{animation:incLlegaGer 1.6s ease-out}
+@keyframes incLlegaGer{0%{transform:translateY(-10px);opacity:0}25%{transform:none;opacity:1;background:#fff3bf}100%{background:rgba(255,255,255,.72)}}
+/* El editor del plano: lo de agregar, en pastillas; los títulos, con la letra de la gerencia. */
+#sec-control .cc-plano-barra{border-bottom:1px solid var(--linea)}
+#sec-control .cc-plano-barra .btn{min-height:32px;border-radius:999px;background:rgba(255,255,255,.62);border:1px solid rgba(11,27,51,.1);color:var(--tinta-2);font-weight:600}
+#sec-control .cc-plano-barra .btn:hover{background:rgba(255,255,255,.9);color:var(--tinta)}
+#sec-control .cc-plano-barra .btn.on{background:var(--tinta);border-color:var(--tinta);color:#fff}
+#sec-control .cc-plano-t{text-transform:none;letter-spacing:0;font-size:12px;color:var(--tinta-2)}
+#sec-control .cc-plano-grupo{text-transform:none;letter-spacing:0;font-size:11.5px}
+#sec-control .cc-plano-previa-t{font-size:14px;font-weight:700;letter-spacing:-.2px;color:var(--tinta)}
+#sec-control .cc-ayuda-btn{background:rgba(255,255,255,.62);border-color:rgba(11,27,51,.1)}
 /* Editor del plano del Arena */
 .cc-plano{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;padding:16px 22px;align-items:start}
 @media(max-width:1000px){.cc-plano{grid-template-columns:minmax(0,1fr)}}
@@ -143,14 +246,11 @@ tr:hover td{background:#fafaf8}
 .cc-plano-barra .btn i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;box-shadow:0 0 0 1px rgba(15,23,42,.18)}
 /* El plano para editar y la vista previa, lado a lado. El plano no pasa del
    alto de la pantalla (ni de 600px de ancho): entero, sin tener que bajar. */
-.cc-plano-dos{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
-.cc-plano-ed{flex:0 1 600px;min-width:320px;max-width:max(320px,calc((100vh - 250px) * 1.06))}
-.cc-plano-vp{flex:1 1 520px;min-width:min(100%,520px)}
-/* La vista previa, del mismo alto que el plano de al lado. */
-@media(min-width:960px){
-  #ccPlanoPrevia{height:min(565px,calc(100vh - 250px));min-height:380px}
-  #ccPlanoPrevia>svg{height:calc(100% - 44px)!important}
-}
+.cc-plano-dos{display:grid;grid-template-columns:minmax(300px,min(600px,calc((100vh - 250px) * 1.04))) minmax(0,1fr);gap:18px;align-items:stretch}
+.cc-plano-ed,.cc-plano-vp{min-width:0;display:flex;flex-direction:column}
+@media(max-width:1000px){.cc-plano-dos{grid-template-columns:minmax(0,1fr)}}
+/* La vista previa, del mismo alto que el plano de al lado (los dos arrancan y terminan en la misma línea). */
+@media(min-width:1001px){#ccPlanoPrevia{flex:1 1 0;min-height:380px}}
 .cc-plano-t{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--r-muted);margin-right:2px}
 .cc-plano-lienzo{outline:none;border-radius:12px}
 .cc-plano-marco{position:relative}
@@ -1165,10 +1265,10 @@ tr:hover td{background:#f9f9fb}
         <div style="flex:1;min-width:0"><div class="cc-show-t" id="incTitulo">—</div><div class="cc-show-s" id="incSubtitulo"></div></div>
         <div style="display:flex;gap:8px;align-items:center">
           <span class="inc-vivo" id="incVivo">En vivo</span>
-          <button class="btn btn-primary btn-xs" onclick="incAbrirNuevaAdm()" title="Cargar una incidencia desde el panel (la ven también la gerencia y los supervisores)">+ Cargar incidencia</button>
-          <button class="btn btn-sec btn-xs" onclick="cargarIncidAdm()" title="Actualizar ahora" aria-label="Actualizar ahora">↻</button>
+          <button class="bar-btn prim" onclick="incAbrirNuevaAdm()" title="Cargar una incidencia desde el panel (la ven también la gerencia y los supervisores)">+ Cargar incidencia</button>
+          <button class="bar-btn ico" onclick="cargarIncidAdm()" title="Actualizar ahora" aria-label="Actualizar ahora">↻</button>
           <div class="nom-mas">
-            <button class="btn btn-sec btn-xs" onclick="toggleCcMas(event)" title="Informe Excel, quitar del Centro" aria-label="Más acciones">⋯</button>
+            <button class="bar-btn ico" onclick="toggleCcMas(event)" title="Informe Excel, quitar del Centro" aria-label="Más acciones">⋯</button>
             <div class="nom-mas-menu" id="ccMasMenu">
               <button class="btn btn-sm" onclick="exportIncidencias()" title="El informe del show: resumen por gravedad, categoría y sector, y el detalle con la línea de tiempo">↓ Informe Excel</button>
               <button class="btn btn-sm" id="ccQuitar" onclick="ccQuitarShow()" title="La gerencia deja de verlo y los supervisores ya no cargan incidencias en este show">Quitar del Centro</button>
@@ -1176,17 +1276,23 @@ tr:hover td{background:#f9f9fb}
           </div>
         </div>
       </div>
-      <div class="inc-resumen" id="incResumenAdm"></div>
-      <div class="inc-adm">
-        <div>
-          <div class="cc-plano-bar" id="incArmadoAdm"></div>
-          <div class="inc-adm-plano" id="incPlanoAdm"></div>
+      <!-- Como en la vista de la gerencia: arriba los números y la botonera; el plano grande y, al costado, el listado. -->
+      <div class="t-cab">
+        <div class="stats" id="incResumenAdm"></div>
+        <div class="herr" id="incArmadoAdm"></div>
+      </div>
+      <div class="t-grid">
+        <section class="t-plano">
+          <div class="inc-adm-plano" id="incPlanoAdm" data-alto="pantalla"></div>
           <div class="inc-lugares" id="incLugaresAdm"></div>
-        </div>
-        <div>
-          <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center" id="incFiltrosAdm"></div>
-          <div id="incListaAdm" style="max-height:66vh;overflow-y:auto"></div>
-        </div>
+        </section>
+        <aside class="t-lista">
+          <div class="t-lista-cab">
+            <div class="t-lista-t" id="incListaT">Incidencias</div>
+            <div class="fila" id="incFiltrosAdm"></div>
+          </div>
+          <div class="t-lista-cuerpo" id="incListaAdm"></div>
+        </aside>
       </div>
       <div class="cc-met-t">Métricas del show</div>
       <div id="incMetricasAdm"></div>
@@ -5821,6 +5927,7 @@ function incEstilo3D() {
     + '.inc-3d-btn:focus-visible{outline:2px solid #7cc8ff;outline-offset:2px}'
     + '.inc-3d-btn-det{display:none}.inc-3d-full .inc-3d-btn-det{display:inline-flex}'
     + '.inc-3d-ayuda{position:absolute;left:50%;bottom:calc(12px + var(--inc-tapa-abajo,0px) + var(--inc-inf,0px));transform:translateX(-50%);z-index:3;' + INC_VIDRIO + ';color:#eaf3ff;font:500 11.5px ' + INC_FUENTE + ';padding:6px 13px;border-radius:999px;pointer-events:none;transition:opacity .8s;width:max-content;max-width:92%;text-align:center;line-height:1.35}'
+    + '.inc-3d-ayuda.arriba{bottom:calc(58px + var(--inc-tapa-abajo,0px) + var(--inc-inf,0px))}'
     + '.inc-3d-etqs{position:absolute;left:0;top:0;right:0;bottom:0;z-index:2;pointer-events:none;overflow:hidden}'
     + '.inc-3d-e{position:absolute;left:0;top:0;white-space:nowrap;font:600 9.5px/1 ' + INC_FUENTE + ';color:rgba(255,255,255,.86);text-shadow:0 1px 2px rgba(0,10,30,.6);-webkit-user-select:none;user-select:none}'
     + '.inc-3d-e.chico{font-size:8.5px}.inc-3d-e.campo{font-size:9.5px;letter-spacing:.2px}.inc-3d-e.esc{font-size:10px;letter-spacing:.3px}'
@@ -6491,6 +6598,8 @@ function incPlano3D(cont, op0) {
     const tapaW = conDet && !abajo ? panel.offsetWidth + 28 : 0, tapaH = abajo ? panel.offsetHeight + 20 : 0;
     cont.style.setProperty('--inc-tapa-abajo', tapaH + 'px');
     ayuda.style.left = Math.round((w - tapaW) / 2) + 'px';
+    // En un plano angosto, la ayuda va arriba de los pisos (si no, se pisan).
+    ayuda.classList.toggle('arriba', w - tapaW < 820);
     motor.setSize(w, h, false); camara.aspect = w / h;
     if (tapaW || tapaH) camara.setViewOffset(w, h, tapaW / 2, tapaH / 2, w, h); else camara.clearViewOffset();
     camara.updateProjectionMatrix();
@@ -7209,7 +7318,9 @@ function ccPlanoFlota() {
   if (!g || !g.getBoundingClientRect) { f.style.display = 'none'; return; }
   const r = g.getBoundingClientRect(), base = lienzo.getBoundingClientRect();
   f.innerHTML = '<button onclick="ccPlanoGirar()" title="Girar 45°">⟳ Girar</button><button onclick="ccPlanoDuplicar()">⧉ Duplicar</button><button class="borrar" onclick="ccPlanoBorrar()">✕ Borrar</button>';
-  f.style.left = (r.left - base.left + r.width / 2) + 'px'; f.style.top = Math.max(34, r.top - base.top - 12) + 'px'; f.style.display = '';
+  // Arriba del puesto; si el puesto está contra un borde, la barrita no se sale del plano.
+  f.style.display = ''; const medio = (f.offsetWidth || 220) / 2;
+  f.style.left = Math.min(Math.max(r.left - base.left + r.width / 2, medio + 4), base.width - medio - 4) + 'px'; f.style.top = Math.max(34, r.top - base.top - 12) + 'px';
 }
 function ccPlanoGirar() { const l = ccPlanoBorrador.find(x => x.id === ccPlanoSel); if (!l) return; l.ang = ((Math.round(l.ang / 45) * 45 + 45 + 90) % 180 + 180) % 180 - 90; ccPlanoPintar(); }
 // Unas incidencias de mentira para ver cómo se ve (no se guardan en ningún lado).
@@ -7616,16 +7727,17 @@ function renderIncidAdm() {
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
   // Los contadores se tocan: el listado muestra esas (grave, moderado, leve, resueltas, todas).
   const elegido = incNivelAdm ? String(incNivelAdm) : (incFiltroAdm === 'resueltas' || incFiltroAdm === 'todas' ? incFiltroAdm : '');
-  const cuenta = (clave, estilo, num, txt, late) => '<button type="button" class="inc-cuenta cc-cuenta' + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="' + estilo + '" onclick="incTocarStatAdm(\'' + clave + '\')" title="Ver en el listado"><strong>' + num + '</strong>' + txt + '</button>';
-  document.getElementById('incResumenAdm').innerHTML = '<span style="font-size:12px;color:var(--r-muted);margin-right:2px">Abiertas:</span>' + [3, 2, 1].map(nv =>
-    cuenta(String(nv), 'background:' + INC_NIVELES[nv].fondo + ';color:' + INC_NIVELES[nv].color, n(nv), INC_NIVELES[nv].nombre.toLowerCase(), nv === 3 && n(3))).join('')
-    + cuenta('resueltas', '', delDia.length - abiertas.length, 'resueltas')
-    + cuenta('todas', '', delDia.length, 'en total');
+  // Como en la gerencia: el punto de color y qué es, arriba; el número grande (y "abiertas"), abajo.
+  const nombres = { 3: 'Graves', 2: 'Moderadas', 1: 'Leves' };
+  const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat' + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="incTocarStatAdm(\'' + clave + '\')" title="Ver ' + (txt + (sufijo ? ' ' + sufijo : '')).toLowerCase() + ' en el listado">'
+    + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
+  document.getElementById('incResumenAdm').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', INC_NIVELES[nv].color, nv === 3 && n(3), String(nv))).join('')
+    + stat(delDia.length - abiertas.length, 'Resueltas', '', '#94a3b8', false, 'resueltas') + stat(delDia.length, 'En total', '', '#0b1b33', false, 'todas');
   const vista = incVistaPreferida();
   // La botonera, igual que la de la gerencia: dos grupos con íconos.
-  const seg = (items, actual, fn) => '<div class="cc-seg">' + items.map(([k, t]) => '<button class="' + (actual === k ? 'on' : '') + '" onclick="' + fn + '(\'' + k + '\')">' + (CC_ICO[k] || '') + t + '</button>').join('') + '</div>';
+  const seg = (items, actual, fn) => '<div class="cc-seg seg">' + items.map(([k, t]) => '<button class="' + (actual === k ? 'on' : '') + '" onclick="' + fn + '(\'' + k + '\')">' + (CC_ICO[k] || '') + t + '</button>').join('') + '</div>';
   document.getElementById('incArmadoAdm').innerHTML = seg([['3d', '3D'], ['2d', 'Plano']], vista, 'incElegirVistaAdm') + seg([['campos', 'Campo de pie'], ['asientos', 'Con asientos']], armado, 'incElegirArmadoAdm')
-    + '<button class="btn btn-sec btn-xs cc-editar" onclick="ccTab(\'plano\')" title="Agregar, mover o sacar puertas, gastronomía, baños…">✎ Editar plano</button>';
+    + '<button class="bar-btn cc-editar" onclick="ccTab(\'plano\')" title="Agregar, mover o sacar puertas, gastronomía, baños…">✎ Editar plano</button>';
   incMontarPlano(document.getElementById('incPlanoAdm'), { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: incSectorAdm, onclick: 'incTocarSectorAdm', titulo: ((ccShows.find(x => x.id === ccConvId) || convs.find(x => x.id === ccConvId)) || {}).nombre,
     detalle: delDia, accionPantalla: { texto: '+ Cargar incidencia acá', fn: 'incAbrirNuevaAdm' } });
   // Las métricas: del día elegido (lo mismo que cuentan los números de arriba).
@@ -7638,19 +7750,19 @@ function renderIncidAdm() {
   }).join('');
   // Filtros: día, estado y, si se tocó el plano, el sector.
   const dias = [...new Set(incListaAdm.map(i => incDia(i.created_at)).filter(Boolean))].sort().reverse();
-  const chip = (k, v, t, on) => '<button class="btn btn-xs ' + (on ? 'btn-primary' : 'btn-sec') + '" onclick="incFiltrarAdm(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
+  const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="incFiltrarAdm(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
+  const quitar = (k, t) => '<span class="chip on">' + t + ' <button type="button" class="chip-x" onclick="incFiltrarAdm(\'' + k + '\',\'\')" aria-label="Sacar el filtro">✕</button></span>';
+  document.getElementById('incListaT').innerHTML = 'Incidencias<small>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + ' · ' + delDia.length + ' en total</small>';
   document.getElementById('incFiltrosAdm').innerHTML =
-    '<div class="cc-seg">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (incFiltroAdm === v ? 'on' : '') + '" onclick="incFiltrarAdm(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
-    + (dias.length > 1 || (dias.length === 1 && incDiaAdm !== dias[0]) ? '<span style="width:1px;height:18px;background:var(--r-line);margin:0 2px"></span>' + chip('dia', '', 'Todos los días', !incDiaAdm)
-        + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), incDiaAdm === d)).join('') : '')
-    + (incNivelAdm ? '<span class="inc-cuenta" style="background:var(--r-ink);color:#fff">' + INC_NIVELES[incNivelAdm].nombre + ' <button onclick="incFiltrarAdm(\'nivel\',\'\')" style="background:none;border:none;color:#fff;cursor:pointer;margin-left:4px">✕</button></span>' : '')
-    + (incSectorAdm ? '<span class="inc-cuenta" style="background:var(--r-ink);color:#fff">' + incEsc(incSectorAdm) + ' <button onclick="incFiltrarAdm(\'sector\',\'\')" style="background:none;border:none;color:#fff;cursor:pointer;margin-left:4px">✕</button></span>'
-      + '<button class="btn btn-primary btn-xs" onclick="incAbrirNuevaAdm(incSectorAdm)">+ Cargar acá</button>' : '');
+    '<div class="cc-seg seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (incFiltroAdm === v ? 'on' : '') + '" onclick="incFiltrarAdm(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
+    + (dias.length > 1 || (dias.length === 1 && incDiaAdm !== dias[0]) ? chip('dia', '', 'Todos los días', !incDiaAdm) + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), incDiaAdm === d)).join('') : '')
+    + (incNivelAdm ? quitar('nivel', INC_NIVELES[incNivelAdm].nombre) : '')
+    + (incSectorAdm ? quitar('sector', incEsc(incSectorAdm)) + '<button class="chip prim" onclick="incAbrirNuevaAdm(incSectorAdm)">+ Cargar acá</button>' : '');
   const lista = incOrdenar(delDia).filter(i => incFiltroAdm === 'todas' || (incFiltroAdm === 'abiertas') === (i.estado !== 'resuelta'))
     .filter(i => !incSectorAdm || i.sector === incSectorAdm).filter(i => !incNivelAdm || (i.nivel || 1) === incNivelAdm);
   const cont = document.getElementById('incListaAdm');
   if (!lista.length) {
-    cont.innerHTML = '<div class="empty">' + (!incListaAdm.length ? 'Todavía no hay incidencias en este show. Las cargan los supervisores desde la tablet.'
+    cont.innerHTML = '<div class="vacio">' + (!incListaAdm.length ? 'Todavía no hay incidencias en este show. Las cargan los supervisores desde la tablet.'
       : incFiltroAdm === 'abiertas' ? 'No hay incidencias abiertas' + (incSectorAdm ? ' en ' + incEsc(incSectorAdm) : '') + '.' : 'Nada por acá.') + '</div>';
     return;
   }
@@ -7663,8 +7775,8 @@ function renderIncidAdm() {
       + (i.nota ? '<div class="inc-nota">' + incEsc(i.nota) + '</div>' : '')
       + (resuelta ? '<div class="inc-res"><strong>Resuelta ' + incCuando(i.resuelta_at) + '</strong>' + (i.resuelta_por_nombre ? ' por ' + incEsc(i.resuelta_por_nombre) : '') + ' · ' + incEsc(i.resolucion || '') + '</div>' : '')
       + '<div class="inc-card-acts">'
-      + (resuelta ? '<button class="btn btn-sec btn-xs" onclick="incReabrirAdm(\'' + i.id + '\')">Reabrir</button>' : '<button class="btn btn-primary btn-xs" onclick="incResolverAdm(\'' + i.id + '\')">Resolver</button>')
-      + '<button class="btn btn-sec btn-xs" onclick="incBorrarAdm(\'' + i.id + '\')" title="Borrarla (si se cargó por error)">Borrar</button>'
+      + (resuelta ? '<button class="chip" onclick="incReabrirAdm(\'' + i.id + '\')">Reabrir</button>' : '<button class="chip prim" onclick="incResolverAdm(\'' + i.id + '\')">Resolver</button>')
+      + '<button class="chip" onclick="incBorrarAdm(\'' + i.id + '\')" title="Borrarla (si se cargó por error)">Borrar</button>'
       + '</div></div>';
   }).join('');
   incNuevosAdm = new Set();
