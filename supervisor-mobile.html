@@ -931,6 +931,8 @@ const INC_CALLES_BASE = [
 // (en las puertas, a lo largo de la fachada); h: el ancho; ang: el giro.
 const INC_LUGARES_BASE = [
   { id: 'Camarines', t: 'servicio', txt: 'CAM', cx: 36, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
+  // La enfermería, como en el cartel del Arena: del lado Cancha, cerca de la Puerta 8.
+  { id: 'Enfermería', t: 'enfermeria', txt: '', cx: 36, cy: 42.5, w: 17, h: 15, ang: 0, piso: 'PB' },
   // Gastronomía, planta baja. Lado Cancha (izquierda): los externos 1 y 2
   // donde están los locales del plano, el interno y el eventual hacia el fondo.
   { id: 'Cancha externo 1 (Paty)', t: 'gastro', txt: 'CE1', cx: 36, cy: 61, w: 17, h: 22, ang: 0, piso: 'PB' },
@@ -1074,27 +1076,44 @@ function incEncajarLugar(l, x, y, op) {
   else ang = incAng((l.ang || 0) + p.ang - incSobreRiel(riel, l.cx, l.cy).ang);
   return { cx: r1(p.x), cy: r1(p.y), ang: r1(ang) };
 }
+// El plano de siempre de la primera versión del editor (27-10-2026), con el
+// que quedó guardado el de ellos: tipo, centro, largo, ancho y giro de cada
+// puesto (las puertas, ya con el número del cartel: ver plano-cartel-arena.sql).
+const INC_PLANO_V1 = {
+  'Baños 1': ['banio', 36.5, -15, 17, 22, 0], 'Baños 2': ['banio', 36.5, 209, 17, 26, 0], 'Baños 3': ['banio', 383.5, 209, 17, 26, 0], 'Baños 4': ['banio', 383.5, -15, 17, 22, 0],
+  'Gastronomía 1': ['gastro', 36.5, 112, 17, 40, 0], 'Gastronomía 2': ['gastro', 150, 304, 44, 16, 0], 'Gastronomía 3': ['gastro', 270, 304, 44, 16, 0], 'Gastronomía 4': ['gastro', 383.5, 112, 17, 40, 0],
+  'Puerta 8': ['puerta', 22, 44, 22, 12, 90], 'Puerta 6': ['puerta', 22, 168, 22, 12, 90], 'Puerta 3': ['puerta', 46, 289, 22, 12, 50.4], 'Puerta 4': ['puerta', 210, 318, 24, 12, 0],
+  'Puerta 5': ['puerta', 374, 289, 22, 12, -50.4], 'Puerta 7': ['puerta', 398, 168, 22, 12, 90], 'Puerta 9': ['puerta', 398, 44, 22, 12, 90]
+};
 // El plano guardado desde el panel. Si no hay nada guardado (o la base
 // todavía no lo tiene), queda el de siempre. Devuelve si cambió algo.
 async function incCargarPlanoArena() {
   try {
     const { data, error } = await sb.rpc('plano_arena');
     if (error || !data || !Array.isArray(data.lugares)) return false;
+    // Lo que quedó del plano de siempre de la primera versión del editor
+    // (27-10-2026) tal cual, sin que nadie lo moviera, pasa al de ahora (las
+    // medidas del plano del Arena); las cuatro barras de ejemplo ("Gastronomía
+    // 1" a "4") se sacan: las reemplazó la gastronomía real. Lo movido a mano queda.
+    const base = {}; INC_LUGARES_BASE.forEach(l => { base[l.id] = l; });
+    const sinTocar = l => { const v = l && INC_PLANO_V1[l.id]; return !!v && l.t === v[0] && [l.cx, l.cy, l.w, l.h, l.ang].every((x, i) => Math.abs(Number(x) - v[i + 1]) < 0.06); };
+    const guardados = data.lugares.filter(l => !(sinTocar(l) && !base[l.id])).map(l => sinTocar(l) ? Object.assign({}, base[l.id]) : l);
     // Un plano guardado antes de que los puestos tuvieran piso: cada uno toma el
     // de su igual en el plano de siempre; los que se agregaron a mano eran de
     // planta baja (el anillo era uno solo).
     const pisoBase = {}, valido = p => INC_PISOS.some(x => x[0] === p);
     INC_LUGARES_BASE.forEach(l => { if (l.piso) pisoBase[l.id.toLowerCase()] = l.piso; });
     const sinPisos = !data.lugares.some(l => l && valido(l.piso));
-    let lista = data.lugares.map(l => {
+    let lista = guardados.map(l => {
       if (!l || typeof l !== 'object' || l.t === 'calle' || valido(l.piso)) return l;
       const p = pisoBase[String(l.id == null ? '' : l.id).trim().toLowerCase()] || (sinPisos ? 'PB' : '');
       return p ? Object.assign({}, l, { piso: p }) : l;
     });
-    // Y uno guardado antes de que hubiera calles, o gastronomía o baños en
-    // algún piso: se le suman los de siempre (los de ese piso).
+    // Y uno guardado antes de que hubiera calles, o gastronomía, baños,
+    // enfermería, camarines o producción en algún piso: se le suman los de
+    // siempre (los de ese piso).
     if (!lista.some(l => l && l.t === 'calle')) lista = lista.concat(INC_CALLES_BASE);
-    INC_PISOS.forEach(([p]) => ['gastro', 'banio'].forEach(t => {
+    INC_PISOS.forEach(([p]) => ['gastro', 'banio', 'enfermeria', 'servicio'].forEach(t => {
       if (!lista.some(l => l && l.t === t && l.piso === p)) lista = lista.concat(INC_LUGARES_BASE.filter(l => l.t === t && l.piso === p));
     }));
     const nuevos = incNormalizarLugares(lista);
@@ -1312,13 +1331,15 @@ function incAccionFicha(op, f, sector) {
   if (f === 'cerrar' && op.onclick && typeof window[op.onclick] === 'function') window[op.onclick](sector);
   if (f === 'accion' && op.accionPantalla && typeof window[op.accionPantalla.fn] === 'function') window[op.accionPantalla.fn](sector);
 }
-// Los botones de abajo del plano: los lugares que no están dibujados, y
-// cualquier lugar con incidencias que el plano no tenga (por ejemplo, las
-// cargadas antes de que existiera el anillo, como "Baños").
-function incLugaresSueltos(lista, armado) {
+// Los botones de abajo del plano: los lugares con incidencias que el plano no
+// tiene (por ejemplo, las cargadas antes de que existiera el anillo, como
+// "Baños", o en "Otro lugar"). conOtro (la tablet): también "Otro lugar"
+// siempre, que es cómo se carga algo fuera del plano; en el panel eso está en
+// el "Dónde" del formulario, y en la gerencia no se carga.
+function incLugaresSueltos(lista, armado, conOtro) {
   const enPlano = new Set(incSectoresPlano(armado).map(s => s.id));
-  const otros = [...new Set((lista || []).map(i => i.sector).filter(s => s && !enPlano.has(s) && !INC_LUGARES.includes(s)))].sort();
-  return INC_LUGARES.concat(otros);
+  const otros = [...new Set((lista || []).map(i => i.sector).filter(s => s && !enPlano.has(s)))].sort();
+  return conOtro ? INC_LUGARES.concat(otros.filter(s => !INC_LUGARES.includes(s))) : otros;
 }
 // Los colores del plano, en la línea del Movistar Arena: de noche, en azul.
 // Las zonas van en una escala del celeste al azul noche —el campo celeste
@@ -1346,16 +1367,24 @@ const INC_VIDRIO = 'background:rgba(9,24,48,.5);-webkit-backdrop-filter:blur(14p
 const INC_FUENTE = 'Poppins,sans-serif';
 // Cuándo la ventana del detalle va abajo en vez de al costado: en el celular y en las pantallas paradas (la tablet vertical).
 const INC_VENTANA_ABAJO = '(max-width:640px),(orientation:portrait) and (max-width:1100px)';
-const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['vip', 'Premium'], ['campo', 'Campo'], ['puerta', 'Puertas'], ['gastro', 'Gastronomía'], ['banio', 'Baños'], ['enfermeria', 'Enfermería'], ['servicio', 'Otros puntos'], ['calle', 'Calles']];
-// modo: '' (el plano: zonas y puestos en cuadritos), true (sólo las zonas) o
-// '3d' (las zonas en cuadrito y los puestos con su ícono, como se ven en el estadio).
-// Al final, qué es el número de color: las incidencias abiertas.
+// En el orden en que se recorre el Arena: las puertas, el campo (PB), la
+// platea baja (P1), el VIP, la alta (P3) y después los puestos. Los "otros
+// puntos" del anillo son los camarines y la producción.
+const INC_LEYENDA = [['puerta', 'Puertas'], ['campo', 'Campo'], ['baja', 'Platea baja'], ['vip', 'VIP'], ['alta', 'Platea alta'], ['banio', 'Baños'], ['gastro', 'Gastronomía'], ['enfermeria', 'Enfermería'], ['servicio', 'Camarines y producción'], ['calle', 'Calles']];
+const INC_LEYENDA_ZONAS = ['campo', 'baja', 'vip', 'alta'];
+// modo: '' (el plano: todo en cuadritos), true (sólo las zonas) o '3d' (las
+// zonas en cuadrito y los puestos con su ícono, como se ven en el estadio).
+// De los puestos, sólo los tipos que hay en el plano. Al final, qué es el
+// círculo de color: las incidencias abiertas (sin un número de ejemplo, que
+// parecía una cantidad).
 function incLeyendaHTML(clase, modo) {
-  const col = INC_TEMA.color, cuadro = ([t, n]) => '<span><i style="background:' + col[t][0] + ';border-color:' + col[t][1] + '"></i>' + n + '</span>';
-  const abiertas = '<span><b class="inc-ley-n" style="background:' + INC_NIVELES[2].color + '">2</b>Incidencias abiertas</span>';
-  if (modo === '3d') return '<div class="' + clase + '">' + INC_LEYENDA.slice(0, 4).map(cuadro).join('')
-    + '<span class="inc-ley-puestos">' + INC_LEYENDA.slice(4).filter(([t]) => INC_TIPOS_LUGAR[t] && INC_TIPOS_LUGAR[t].ico).map(([t, n]) => '<span><b class="inc-ley-ico" style="background:' + col[t][0] + ';color:' + (INC_TEMA.tintaTipo[t] || '#ffffff') + '"><svg viewBox="0 0 24 24"><path d="' + INC_ICONOS[INC_TIPOS_LUGAR[t].ico] + '"/></svg></b>' + n + '</span>').join('') + '</span>' + abiertas + '</div>';
-  return '<div class="' + (clase || 'inc-plano-ley') + '">' + INC_LEYENDA.slice(0, modo ? 4 : 99).map(cuadro).join('') + (modo ? '' : abiertas) + '</div>';
+  const col = INC_TEMA.color, hay = new Set(incLugaresArena.map(l => l.t));
+  const cuadro = ([t, n], cl) => '<span' + (cl ? ' class="' + cl + '"' : '') + '><i style="background:' + col[t][0] + ';border-color:' + col[t][1] + '"></i>' + n + '</span>';
+  const icono = ([t, n]) => '<span class="inc-ley-p"><b class="inc-ley-ico" style="background:' + col[t][0] + ';color:' + (INC_TEMA.tintaTipo[t] || '#ffffff') + '"><svg viewBox="0 0 24 24"><path d="' + INC_ICONOS[INC_TIPOS_LUGAR[t].ico] + '"/></svg></b>' + n + '</span>';
+  const abiertas = '<span><b class="inc-ley-n">' + [1, 2, 3].map(k => '<i style="background:' + INC_NIVELES[k].color + '"></i>').join('') + '</b>Incidencias abiertas</span>';
+  const zona = t => INC_LEYENDA_ZONAS.includes(t);
+  const items = INC_LEYENDA.filter(([t]) => zona(t) || (modo !== true && hay.has(t) && (modo !== '3d' || (INC_TIPOS_LUGAR[t] && INC_TIPOS_LUGAR[t].ico))));
+  return '<div class="' + (clase || 'inc-plano-ley') + '">' + items.map(it => modo === '3d' && !zona(it[0]) ? icono(it) : cuadro(it)).join('') + (modo === true ? '' : abiertas) + '</div>';
 }
 // El plano en SVG. op: { armado, niveles, cuentas, porNivel, sel, onclick,
 // editor, piso }. Cada lugar se pinta con el color de su incidencia abierta
@@ -1640,10 +1669,10 @@ function incEstiloPlano() {
     + '.inc-plano-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font:500 11.5px ' + INC_FUENTE + ';color:#43546e}'
     + '.inc-plano-ley span,.inc-3d-ley span{display:inline-flex;align-items:center;gap:5px}'
     + '.inc-plano-ley i,.inc-3d-ley i{width:10px;height:10px;border-radius:3px;border:1px solid;display:inline-block}'
-    + '.inc-ley-puestos{display:contents}'
     + '.inc-ley-ico{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1px solid rgba(255,255,255,.85)}.inc-ley-ico svg{width:9px;height:9px;fill:currentColor;display:block}'
-    + '.inc-ley-n{display:inline-grid;place-items:center;min-width:15px;height:15px;padding:0 3px;border-radius:999px;border:1.5px solid #fff;color:#fff;font:700 9px/1 ' + INC_FUENTE + '}'
-    + '.inc-3d-ley{position:absolute;left:calc(10px + var(--inc-izq,0px));top:calc(10px + var(--inc-sup,0px));z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 190px);font:500 11px ' + INC_FUENTE + ';color:#dbe8ff;padding:6px 10px;border-radius:10px;pointer-events:none;' + INC_VIDRIO + '}'
+    + '.inc-ley-n{display:inline-flex;align-items:center;gap:2px}'
+    + '.inc-plano-ley .inc-ley-n i,.inc-3d-ley .inc-ley-n i{width:8px;height:8px;border:0;border-radius:50%}'
+    + '.inc-3d-ley{position:absolute;left:calc(10px + var(--inc-izq,0px));top:calc(10px + var(--inc-sup,0px));z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 250px);font:500 11px ' + INC_FUENTE + ';color:#dbe8ff;padding:6px 10px;border-radius:10px;pointer-events:none;' + INC_VIDRIO + '}'
     // En los aparatos táctiles, lo que se toca, del tamaño del dedo.
     + '@media(pointer:coarse){.inc-pisos button,.inc-3d-pisos button{min-height:38px;padding:0 13px}.inc-ref-rapida button,.inc-capas button{min-height:36px}.inc-ficha-cab button{width:36px;height:36px}.inc-ficha-accion{min-height:44px}.inc-bus-q{height:42px;font-size:16px}.inc-bus-cab button{width:40px;height:40px}.inc-bus-fila{min-height:44px}.inc-bus-tipos button,.inc-bus-btn{min-height:36px}}';
   document.head.appendChild(st);
@@ -1734,7 +1763,7 @@ function incEstilo3D() {
     // En el celular la ayuda va arriba de los pisos (si no, se pisan).
     + '@media(max-width:560px){.inc-3d-ayuda{bottom:calc(58px + var(--inc-tapa-abajo,0px) + var(--inc-inf,0px))}'
     // La leyenda, más chica; en pantalla completa, abajo de los botones (si no, se pisan).
-    + '.inc-3d-btn-txt{display:none}.inc-3d-ley .inc-ley-puestos{display:none}.inc-3d-ley{max-width:calc(100% - 150px);font-size:10.5px;gap:2px 8px;padding:5px 8px}.inc-3d-full .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}}'
+    + '.inc-3d-btn-txt{display:none}.inc-3d-ley .inc-ley-p{display:none}.inc-3d-ley{max-width:calc(100% - 150px);font-size:10.5px;gap:2px 8px;padding:5px 8px}.inc-3d-full .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}}'
     // En los aparatos táctiles, lo que se toca, del tamaño del dedo (44 px).
     + '@media(pointer:coarse){.inc-3d-btn{min-width:44px;min-height:44px;font-size:13px}.inc-3d-det-x{width:36px;height:36px}.inc-3d-det-todas{min-height:38px}.inc-3d-capas-l button{min-height:44px}.inc-3d-vistas-l>button{min-height:44px}.inc-3d-vistas-p button{min-height:40px}}';
   document.head.appendChild(st);
@@ -1927,6 +1956,14 @@ function incPlano3D(cont, op0) {
       const matTop = new T.MeshStandardMaterial({ color: base[0], map: mapa, roughness: 0.55, metalness: 0.2, emissive: base[0], emissiveIntensity: TM.brillo });
       const matLado = new T.MeshStandardMaterial({ color: base[1], roughness: 0.5, metalness: 0.35 });
       const malla = new T.Mesh(geo, [matTop, matLado]); grupo.add(malla); tocable(malla);
+      // Los puestos de los pisos de arriba, con su pedazo de piso debajo: en
+      // "Todos" los pisos son de vidrio y sin esto parecían flotar.
+      if (s.lugar && s.t !== 'calle' && s.piso && s.piso !== 'PB') {
+        const c0 = pts.reduce((a, q) => a.add(q), new T.Vector2()).multiplyScalar(1 / pts.length);
+        const gp = new T.ShapeGeometry(new T.Shape(pts.map(q => q.clone().sub(c0).multiplyScalar(1.3).add(c0)))); gp.rotateX(-Math.PI / 2);
+        const baldosa = new T.Mesh(gp, new T.MeshBasicMaterial({ color: TM.color.anillo[0], transparent: true, opacity: 0.92, depthWrite: false }));
+        baldosa.position.y = 0.08; grupo.add(baldosa);
+      }
       if (s.t === 'calle') {
         // Con algo abierto: el asfalto sigue oscuro, el borde toma el color del semáforo y brilla apenas.
         p.pintarCalle = true;
@@ -1997,6 +2034,23 @@ function incPlano3D(cont, op0) {
   const matTruss = new T.MeshStandardMaterial({ color: 0x2c3e5c, roughness: 0.4, metalness: 0.8 });
   [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(1.6, 50, 1.6), matTruss); t.position.set(x, 25, z); escena.add(t); });
   [[0, -114, 110, 0], [0, -164, 110, 0], [-54, -139, 52, Math.PI / 2], [54, -139, 52, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 1.8, 1.8), matTruss); t.position.set(x, 50, z); t.rotation.y = r; escena.add(t); });
+  // Los telones: negros y traslúcidos, al fondo (detrás de la pantalla) y a
+  // los costados, colgados de la armazón hasta el piso. Sin techo: que no sea una caja.
+  {
+    const c = lienzoDe(512, 8), x = c.getContext('2d');
+    // Los pliegues: franjas que se oscurecen y se aclaran (14 cada 108 de ancho).
+    for (let i = 0; i < 512; i++) { const k = 0.5 + 0.5 * Math.sin(i / 512 * Math.PI * 2 * 14); x.fillStyle = 'rgba(4,6,12,' + (0.5 + 0.32 * k).toFixed(3) + ')'; x.fillRect(i, 0, 1, 8); }
+    const texTelon = textura(c); texTelon.wrapS = T.RepeatWrapping;
+    const matTelon = new T.MeshBasicMaterial({ map: texTelon, transparent: true, side: T.DoubleSide, depthWrite: false });
+    const telon = (ancho, px, pz, giro) => {
+      const g = new T.PlaneGeometry(ancho, 50), uv = g.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * ancho / 108);   // el mismo ancho de pliegue en todos
+      const m = new T.Mesh(g, matTelon); m.position.set(px, 25, pz); m.rotation.y = giro || 0; m.renderOrder = 2; escena.add(m);
+    };
+    telon(108, 0, -164.4);                  // el del fondo
+    telon(50, -54.4, -139, Math.PI / 2);    // los de los costados
+    telon(50, 54.4, -139, Math.PI / 2);
+  }
   // La pantalla grande, colgada al fondo de la armazón: el azul con los puntitos
   // de los LED, sin letras (el nombre del show va en la cinta que da la vuelta).
   const lienzoLed = lienzoDe(1024, 256), texLed = textura(lienzoLed);
@@ -2927,7 +2981,7 @@ function renderIncid() {
     '<button class="turno-chip' + (armado === k ? ' on' : '') + '" onclick="incElegirArmado(\'' + k + '\')">' + t + '</button>').join('');
   incMontarPlano(document.getElementById('incPlano'), { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, onclick: 'incTocarSector', titulo: (convs.find(x => x.id === currentConvId) || {}).nombre,
     detalle: lista, accionPantalla: { texto: '+ Cargar incidencia acá', fn: 'incTocarSector' } });
-  document.getElementById('incLugares').innerHTML = incLugaresSueltos(lista, armado).map(l => {
+  document.getElementById('incLugares').innerHTML = incLugaresSueltos(lista, armado, true).map(l => {
     const nv = res.niveles[l], c = res.cuentas[l] || 0;
     return '<button class="inc-lugar"' + (nv ? ' style="background:' + INC_NIVELES[nv].fondo + ';border-color:' + INC_NIVELES[nv].color + ';color:' + INC_NIVELES[nv].color + '"' : '')
       + ' onclick="incTocarSector(\'' + incEsc(l) + '\')">' + incEsc(l) + (c ? ' <strong>' + c + '</strong>' : '') + '</button>';
