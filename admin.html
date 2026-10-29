@@ -165,7 +165,7 @@ tr:hover td{background:#fafaf8}
 #sec-control .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;flex:1 1 560px;max-width:860px}
 #sec-control .stat{--c:#0b1b33;border-radius:16px;padding:10px 14px 11px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:6px;min-width:0;min-height:66px;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s}
 #sec-control .stat-t{display:flex;align-items:center;gap:6px;max-width:100%;font-size:12px;font-weight:600;color:var(--tinta-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#sec-control .stat-t i{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--c);box-shadow:0 0 0 3px rgba(11,27,51,.06)}
+#sec-control .stat-t i{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--c);box-shadow:0 0 0 3px rgba(11,27,51,.06);margin:3px 0 3px 3px}
 #sec-control .stat-n{display:flex;align-items:baseline;gap:5px;min-width:0}
 #sec-control .stat b{font-size:25px;line-height:1;font-weight:700;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
 #sec-control .stat small{font-size:12px;color:var(--tinta-3);font-weight:500;white-space:nowrap}
@@ -6923,7 +6923,8 @@ function incPlano3D(cont, op0) {
     alCambiarPantalla();
   };
   const entrarPantalla = () => {
-    detAbierto = true; pintarDetalle();
+    // Las incidencias, cerradas: se abren con "☰ Incidencias" (o tocando un lugar).
+    detAbierto = false; pintarDetalle();
     const pedir = cont.requestFullscreen || cont.webkitRequestFullscreen;
     if (!pedir) { ponerFalsa(true); return; }
     try { const r = pedir.call(cont); if (r && r.catch) r.catch(() => ponerFalsa(true)); } catch (_) { ponerFalsa(true); return; }
@@ -7442,7 +7443,7 @@ function incGrafBarras(pares, titulo, ancho, op) {
     return '<g class="' + (toca ? incClaseMarca(k, op.sel) : 'inc-marca') + '"' + incTip(tip) + (toca ? incTocable(op.tipo, k) : '') + '><rect x="0" y="' + (y - 4) + '" width="' + W + '" height="' + fila + '" fill="transparent"/>'
       + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#4b5563" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
       + '<path d="M' + etq + ',' + y + 'H' + (etq + w - r) + 'Q' + (etq + w) + ',' + y + ' ' + (etq + w) + ',' + (y + r) + 'V' + (y + 14 - r) + 'Q' + (etq + w) + ',' + (y + 14) + ' ' + (etq + w - r) + ',' + (y + 14) + 'H' + etq + 'Z" fill="' + INC_GRAF_AZUL + '"/>'
-      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#111827">' + n + (a ? '<tspan font-weight="400" fill="#6b7280"> · ' + a + ' abierta' + (a === 1 ? '' : 's') + '</tspan>' : '') + '</text></g>';
+      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#111827">' + n + (a ? '<tspan font-weight="400" fill="#6b7280"> · ' + (a === n ? (n === 1 ? 'abierta' : 'todas abiertas') : a + ' abierta' + (a === 1 ? '' : 's')) + '</tspan>' : '') + '</text></g>';
   }).join('') + (resto.length ? '<text x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#6b7280" text-anchor="end">+ ' + resto.length + ' más</text>'
     + '<text x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#6b7280">' + enResto + ' incidencia' + (enResto === 1 ? '' : 's') + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="' + incEsc(titulo) + '">' + g + '</svg>';
@@ -8085,7 +8086,7 @@ const CC_ICO = {
 function incElegirArmadoAdm(a) { incGuardarArmado(ccConvId, a); renderIncidAdm(); }
 function incTocarSectorAdm(sector) {
   // Si estaba elegido por una incidencia tocada en el listado, tocarlo (o la ✕ de su ficha) la suelta.
-  const f = incFocoAdm && incListaAdm.find(i => String(i.id) === incFocoAdm); incFocoAdm = '';
+  const f = incFocoAdm && incListaAdm.find(i => String(i.id) === incFocoAdm); incFocoAdm = ''; incCatAdm = incFranjaAdm = '';
   if (f && f.sector === sector && incSectorAdm !== sector) { renderIncidAdm(); return; }
   incSectorAdm = incSectorAdm === sector ? '' : sector; renderIncidAdm();
 }
@@ -8094,10 +8095,15 @@ function incFiltrarAdm(k, v) { if (k === 'estado') { incFiltroAdm = v; incNivelA
 function incTocarIncAdm(id) { incFocoAdm = incFocoAdm === id ? '' : id; renderIncidAdm(); }
 // Tocar una métrica: como en la gerencia (categoría y franja filtran; sector y la que lleva más tiempo abierta van al plano).
 function incTocarMetricaAdm(tipo, v) {
-  if (tipo === 'categoria') { incCatAdm = incCatAdm === v ? '' : v; if (incCatAdm) { incFiltroAdm = 'todas'; incNivelAdm = 0; } }
-  if (tipo === 'franja') { incFranjaAdm = incFranjaAdm === v ? '' : v; if (incFranjaAdm) { incFiltroAdm = 'todas'; incNivelAdm = 0; } }
-  if (tipo === 'sector') { incFocoAdm = ''; incSectorAdm = incSectorAdm === v ? '' : v; if (incSectorAdm) { incFiltroAdm = 'todas'; incNivelAdm = 0; } }
-  if (tipo === 'inc') { incFocoAdm = v; incCatAdm = incFranjaAdm = incSectorAdm = ''; incNivelAdm = 0; incFiltroAdm = 'abiertas'; incIrAFocoAdm = true; }
+  // De a una: tocar otra reemplaza la anterior (si se sumaran, no se entendería); la misma otra vez, la suelta.
+  const antes = { categoria: incCatAdm, franja: incFranjaAdm, sector: incSectorAdm, inc: incFocoAdm }[tipo];
+  const nuevo = tipo !== 'inc' && antes === v ? '' : v;
+  incCatAdm = incFranjaAdm = incSectorAdm = incFocoAdm = ''; incNivelAdm = 0;
+  if (tipo === 'categoria') incCatAdm = nuevo;
+  if (tipo === 'franja') incFranjaAdm = nuevo;
+  if (tipo === 'sector') incSectorAdm = nuevo;
+  if (tipo === 'inc') { incFocoAdm = nuevo; incIrAFocoAdm = true; }
+  if (nuevo) incFiltroAdm = tipo === 'inc' ? 'abiertas' : 'todas';
   renderIncidAdm();
   const g = document.querySelector && document.querySelector('#sec-control .t-grid'); if (g && g.scrollIntoView) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

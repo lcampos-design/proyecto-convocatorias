@@ -86,7 +86,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--azul);outline-o
 .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;flex:1 1 640px;max-width:860px}
 .stat{--c:#0b1b33;border-radius:16px;padding:10px 14px 11px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:6px;min-width:0;min-height:66px;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s}
 .stat-t{display:flex;align-items:center;gap:6px;max-width:100%;font-size:12px;font-weight:600;color:var(--tinta-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stat-t i{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--c);box-shadow:0 0 0 3px rgba(11,27,51,.06)}
+.stat-t i{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--c);box-shadow:0 0 0 3px rgba(11,27,51,.06);margin:3px 0 3px 3px}
 .stat-n{display:flex;align-items:baseline;gap:5px;min-width:0}
 .stat b{font-size:25px;line-height:1;font-weight:700;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
 .stat small{font-size:12px;color:var(--tinta-3);font-weight:500;white-space:nowrap}
@@ -2347,7 +2347,8 @@ function incPlano3D(cont, op0) {
     alCambiarPantalla();
   };
   const entrarPantalla = () => {
-    detAbierto = true; pintarDetalle();
+    // Las incidencias, cerradas: se abren con "☰ Incidencias" (o tocando un lugar).
+    detAbierto = false; pintarDetalle();
     const pedir = cont.requestFullscreen || cont.webkitRequestFullscreen;
     if (!pedir) { ponerFalsa(true); return; }
     try { const r = pedir.call(cont); if (r && r.catch) r.catch(() => ponerFalsa(true)); } catch (_) { ponerFalsa(true); return; }
@@ -2866,7 +2867,7 @@ function incGrafBarras(pares, titulo, ancho, op) {
     return '<g class="' + (toca ? incClaseMarca(k, op.sel) : 'inc-marca') + '"' + incTip(tip) + (toca ? incTocable(op.tipo, k) : '') + '><rect x="0" y="' + (y - 4) + '" width="' + W + '" height="' + fila + '" fill="transparent"/>'
       + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#4b5563" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
       + '<path d="M' + etq + ',' + y + 'H' + (etq + w - r) + 'Q' + (etq + w) + ',' + y + ' ' + (etq + w) + ',' + (y + r) + 'V' + (y + 14 - r) + 'Q' + (etq + w) + ',' + (y + 14) + ' ' + (etq + w - r) + ',' + (y + 14) + 'H' + etq + 'Z" fill="' + INC_GRAF_AZUL + '"/>'
-      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#111827">' + n + (a ? '<tspan font-weight="400" fill="#6b7280"> · ' + a + ' abierta' + (a === 1 ? '' : 's') + '</tspan>' : '') + '</text></g>';
+      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#111827">' + n + (a ? '<tspan font-weight="400" fill="#6b7280"> · ' + (a === n ? (n === 1 ? 'abierta' : 'todas abiertas') : a + ' abierta' + (a === 1 ? '' : 's')) + '</tspan>' : '') + '</text></g>';
   }).join('') + (resto.length ? '<text x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#6b7280" text-anchor="end">+ ' + resto.length + ' más</text>'
     + '<text x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#6b7280">' + enResto + ' incidencia' + (enResto === 1 ? '' : 's') + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="' + incEsc(titulo) + '">' + g + '</svg>';
@@ -3106,7 +3107,7 @@ function elegirVista(v) { incGuardarVista(v); render(); }
 function elegirArmado(a) { incGuardarArmado(showId, a); render(); }
 function tocarSector(sector) {
   // Si estaba elegido por una incidencia tocada en el listado, tocarlo (o la ✕ de su ficha) la suelta.
-  const f = focoInc && lista.find(i => String(i.id) === focoInc); focoInc = '';
+  const f = focoInc && lista.find(i => String(i.id) === focoInc); focoInc = ''; catSel = franjaSel = '';
   if (f && f.sector === sector && sectorSel !== sector) { render(); return; }
   sectorSel = sectorSel === sector ? '' : sector; render();
 }
@@ -3117,10 +3118,15 @@ function tocarInc(id) { focoInc = focoInc === id ? '' : id; render(); }
 // resueltas, como las cuenta la métrica); un sector va a su lugar en el plano; la que
 // lleva más tiempo abierta, a su lugar y desplegada. Y se sube a verlo.
 function tocarMetrica(tipo, v) {
-  if (tipo === 'categoria') { catSel = catSel === v ? '' : v; if (catSel) { filtro = 'todas'; nivelSel = 0; } }
-  if (tipo === 'franja') { franjaSel = franjaSel === v ? '' : v; if (franjaSel) { filtro = 'todas'; nivelSel = 0; } }
-  if (tipo === 'sector') { focoInc = ''; sectorSel = sectorSel === v ? '' : v; if (sectorSel) { filtro = 'todas'; nivelSel = 0; } }
-  if (tipo === 'inc') { focoInc = v; catSel = franjaSel = sectorSel = ''; nivelSel = 0; filtro = 'abiertas'; irAFoco = true; }
+  // De a una: tocar otra reemplaza la anterior (si se sumaran, no se entendería); la misma otra vez, la suelta.
+  const antes = { categoria: catSel, franja: franjaSel, sector: sectorSel, inc: focoInc }[tipo];
+  const nuevo = tipo !== 'inc' && antes === v ? '' : v;
+  catSel = franjaSel = sectorSel = focoInc = ''; nivelSel = 0;
+  if (tipo === 'categoria') catSel = nuevo;
+  if (tipo === 'franja') franjaSel = nuevo;
+  if (tipo === 'sector') sectorSel = nuevo;
+  if (tipo === 'inc') { focoInc = nuevo; irAFoco = true; }
+  if (nuevo) filtro = tipo === 'inc' ? 'abiertas' : 'todas';
   render();
   const g = document.querySelector && document.querySelector('#pShow .t-grid'); if (g && g.scrollIntoView) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
