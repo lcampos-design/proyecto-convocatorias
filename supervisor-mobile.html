@@ -1195,6 +1195,110 @@ function incFichaHTML(sector, op, clase) {
     + (op.accionPantalla ? '<button type="button" class="inc-ficha-accion" data-f="accion">' + incEsc(op.accionPantalla.texto) + '</button>' : '')
     + '</div>';
 }
+// ── Buscar y filtrar ──
+// El tipo de puesto que se quiere ver ('' = todos), por aparato, como el piso.
+const INC_TIPOS_FILTRO = ['puerta', 'gastro', 'banio', 'enfermeria', 'servicio'];
+function incTipoElegido() { try { const t = localStorage.getItem('incTipo') || ''; return INC_TIPOS_FILTRO.includes(t) ? t : ''; } catch (_) { return ''; } }
+function incElegirTipo(t) {
+  try { localStorage.setItem('incTipo', INC_TIPOS_FILTRO.includes(t) ? t : ''); } catch (_) {}
+  incPlanos.forEach(cont => { if (!cont.isConnected) { incPlanos.delete(cont); return; } if (cont._incOp) incMontarPlano(cont, cont._incOp); });
+}
+function incNombreTipo(t) { return (INC_LEYENDA.find(x => x[0] === t) || [t, t])[1]; }
+// Para buscar sin que importen las mayúsculas ni las tildes ("banos" encuentra "Baños").
+function incSinTildes(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+// Lo que coincide con lo que se escribió: por nombre, código o tipo (primero
+// el código o el nombre justos, después los que empiezan así, después los que
+// lo tienen adentro). Sin nada escrito, los puestos del piso y del tipo
+// elegidos, ordenados como se recorre el plano: piso, lado y desde el escenario.
+function incBuscarLugares(q, armado) {
+  const t = incSinTildes(q).trim(), lugares = incSectoresPlano(armado || 'campos');
+  if (!t) {
+    const piso = incPisoElegido(), tipo = incTipoElegido(), lados = ['Lado Cancha', 'Lado Sede', 'Fondo · Humboldt', ''];
+    const ordenDe = x => INC_PISOS.findIndex(p => p[0] === x.s.piso) * 10 + lados.indexOf(x.f.lado);
+    return lugares.filter(s => s.lugar && s.t !== 'calle' && (!piso || s.piso === piso) && (!tipo || s.t === tipo))
+      .map(s => ({ s, f: incFichaDatos(s.id) }))
+      .sort((a, b) => ordenDe(a) - ordenDe(b) || (a.f.lado === 'Fondo · Humboldt' ? a.s.lx - b.s.lx : a.s.ly - b.s.ly))
+      .map(x => x.s);
+  }
+  return lugares.map(s => {
+    const id = incSinTildes(s.id), cods = [incSinTildes(s.txt), incSinTildes(s.lugar ? incTxtLugar(s) : '')].filter(Boolean), tipo = incSinTildes(s.lugar ? INC_TIPOS_LUGAR[s.t].nombre : '');
+    const puntos = id === t || cods.includes(t) ? 0 : id.startsWith(t) || cods.some(x => x.startsWith(t)) ? 1 : id.includes(t) || (tipo && tipo.startsWith(t)) ? 2 : -1;
+    return { s, puntos };
+  }).filter(x => x.puntos >= 0).sort((a, b) => a.puntos - b.puntos).slice(0, 14).map(x => x.s);
+}
+// La lista: cada lugar con su ícono y código, su nombre, qué es y lo abierto.
+// Sin nada escrito, con el piso y el lado como títulos (piso → lado → puesto).
+function incBuscadorListaHTML(q, op) {
+  const lista = incBuscarLugares(q, op.armado), cuentas = op.cuentas || {}, porNivel = op.porNivel || {}, niveles = op.niveles || {};
+  if (!lista.length) return '<div class="inc-bus-vacio">' + (String(q || '').trim() ? 'No hay ningún lugar que se llame así.' : 'No hay puestos de ese tipo en este piso.') + '</div>';
+  let antes = '';
+  return lista.map(s => {
+    const f = incFichaDatos(s.id), grupo = String(q || '').trim() ? '' : [f.pisoNombre, f.lado].filter(Boolean).join(' · ');
+    const cab = grupo && grupo !== antes ? '<div class="inc-bus-grupo">' + incEsc(grupo) + '</div>' : '';
+    if (grupo) antes = grupo;
+    const col = INC_TEMA.color[s.t] ? INC_TEMA.color[s.t][0] : INC_TEMA.color.anillo[0], tinta = INC_TEMA.tintaTipo[s.t] || '#ffffff';
+    const n = cuentas[s.id] || 0, peor = [3, 2, 1].find(k => (porNivel[s.id] || {})[k]) || niveles[s.id] || 1;
+    return cab + '<button type="button" class="inc-bus-fila" data-b="ir" data-id="' + incEsc(s.id) + '">'
+      + '<span class="inc-ficha-ico" style="background:' + col + ';color:' + tinta + '">' + (f.ico ? '<svg viewBox="0 0 24 24"><path d="' + INC_ICONOS[f.ico] + '"/></svg>' : '') + incEsc(f.codigo || '·') + '</span>'
+      + '<span class="inc-bus-nom"><b>' + incEsc(s.id) + '</b><small>' + incEsc(grupo ? f.tipo : [f.tipo, f.pisoNombre, f.lado].filter(Boolean).join(' · ')) + '</small></span>'
+      + (n ? '<span class="inc-bus-n" style="background:' + INC_NIVELES[peor].color + '" title="' + incEsc(incAbiertasTexto(n, porNivel[s.id])) + '">' + n + '</span>' : '') + '</button>';
+  }).join('');
+}
+const INC_LUPA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>';
+function incBuscadorTiposHTML() {
+  const t = incTipoElegido();
+  return [['', 'Todos']].concat(INC_TIPOS_FILTRO.map(k => [k, incNombreTipo(k)])).map(([k, n]) =>
+    '<button type="button" data-b="tipo" data-t="' + k + '" class="' + (t === k ? 'on' : '') + '" aria-pressed="' + (t === k) + '">' + (k ? '<svg viewBox="0 0 24 24"><path d="' + INC_ICONOS[INC_TIPOS_LUGAR[k].ico] + '"/></svg>' : '') + n + '</button>').join('');
+}
+function incBuscadorHTML(clase) {
+  return '<div class="' + clase + '" data-buscador>'
+    + '<div class="inc-bus-cab"><input type="search" class="inc-bus-q" placeholder="Buscar: nombre o código (Branca, CE1, 104…)" aria-label="Buscar un puesto o un sector" autocomplete="off" enterkeyhint="search"><button type="button" data-b="cerrar" title="Cerrar" aria-label="Cerrar el buscador">✕</button></div>'
+    + '<div class="inc-bus-tipos" role="group" aria-label="Qué puestos ver">' + incBuscadorTiposHTML() + '</div>'
+    + '<div class="inc-bus-lista"></div></div>';
+}
+// El botón del plano 2D (en el 3D es la lupa de arriba): dice si hay un tipo elegido.
+function incBuscarBotonHTML() {
+  const t = incTipoElegido();
+  return '<button type="button" class="inc-bus-btn' + (t ? ' on' : '') + '" data-b="abrir" aria-expanded="false">' + INC_LUPA + 'Buscar' + (t ? ' · ' + incEsc(incNombreTipo(t)) : '') + '</button>';
+}
+// Pone (o saca) el panel donde va en el contenedor y le actualiza la lista y los tipos, sin perder lo escrito.
+function incBuscadorRefrescar(cont) {
+  if (!cont || !cont.querySelector) return;
+  const b = cont._incBus || (cont._incBus = { abierto: false, q: '' }), donde = cont.querySelector('.inc-bus-lugar');
+  if (cont.classList) cont.classList.toggle('inc-con-bus', !!b.abierto);
+  cont.querySelectorAll('[data-a="buscar"],[data-b="abrir"]').forEach(x => x.setAttribute('aria-expanded', String(!!b.abierto)));
+  if (!donde) return;
+  if (!b.abierto) { donde.innerHTML = ''; return; }
+  let p = donde.querySelector('[data-buscador]');
+  if (!p) {
+    donde.innerHTML = incBuscadorHTML(donde.dataset.clase || 'inc-bus'); p = donde.querySelector('[data-buscador]');
+    const q = p.querySelector('.inc-bus-q'); q.value = b.q || '';
+    if (b.foco) { b.foco = false; setTimeout(() => { try { q.focus(); } catch (_) {} }, 30); }
+  }
+  p.querySelector('.inc-bus-tipos').innerHTML = incBuscadorTiposHTML();
+  p.querySelector('.inc-bus-lista').innerHTML = incBuscadorListaHTML(b.q, cont._incOp || {});
+}
+function incBuscadorAccion(cont, a, el) {
+  const b = cont._incBus || (cont._incBus = { abierto: false, q: '' });
+  if (a === 'tipo') { incElegirTipo(el.dataset.t); return; }   // se rehace el plano (y el panel con él)
+  if (a === 'ir') { incIrALugar(cont, el.dataset.id); return; }
+  if (a === 'abrir') { b.abierto = !b.abierto; b.foco = b.abierto; }
+  if (a === 'cerrar') b.abierto = false;
+  incBuscadorRefrescar(cont);
+}
+// Elegir un lugar desde el buscador: lo mismo que tocarlo (la ficha, la
+// cámara, o en la tablet cargar ahí); si es de otro piso, a ese piso; si no es
+// del tipo que se está mirando, se vuelven a ver todos.
+function incIrALugar(cont, id) {
+  const op = cont._incOp || {}, s = incSectoresPlano(op.armado || 'campos').find(x => x.id === id); if (!s) return;
+  if (cont._incBus) cont._incBus.abierto = false;
+  if (s.lugar && incTipoElegido() && s.t !== incTipoElegido()) { try { localStorage.setItem('incTipo', ''); } catch (_) {} }
+  if (cont._inc3d && cont._inc3d.ir) { incBuscadorRefrescar(cont); cont._inc3d.ir(id); return; }
+  const piso = s.lugar ? s.piso : incPisoDe(s), pisoSel = incPisoElegido();
+  if (piso && pisoSel && piso !== pisoSel) incElegirPiso(piso);
+  if (op.sel !== id && op.onclick && typeof window[op.onclick] === 'function') window[op.onclick](id);
+  else incMontarPlano(cont, op);
+}
 // Los botones de la ficha: cerrarla (es volver a tocar el lugar) o cargar ahí.
 function incAccionFicha(op, f, sector) {
   if (!op || !sector) return;
@@ -1257,14 +1361,14 @@ function incLeyendaHTML(clase, modo) {
 function incPlanoSVG(op) {
   op = op || {};
   const TM = INC_TEMA, niveles = op.niveles || {}, cuentas = op.cuentas || {}, porNivel = op.porNivel || {};
-  const pisoSel = op.editor ? (op.piso || '') : incPisoElegido(), capas = op.editor ? INC_CAPAS_TODAS : incCapas();
+  const pisoSel = op.editor ? (op.piso || '') : incPisoElegido(), capas = op.editor ? INC_CAPAS_TODAS : incCapas(), tipoSel = op.editor ? '' : incTipoElegido();
   let x0 = 6, y0 = -50, x1 = 414, y1 = 342;   // lo que se ve: el estadio y lo que haya afuera (las calles)
   let elegido = null;   // en el editor, el puesto elegido: lleva manijas para cambiarle el tamaño
   const partes = incSectoresPlano(op.armado).map(s => {
     const nv = niveles[s.id], n = cuentas[s.id] || 0, sel = op.sel === s.id, col = TM.color[s.t], v = nv ? INC_NIVELES[nv] : null;
     const calle = s.t === 'calle';
     if (s.lugar && s.piso && pisoSel && s.piso !== pisoSel) return '';
-    if (!n && ((calle && !capas.calles) || (s.lugar && !calle && !capas.puestos))) return '';
+    if (!n && ((calle && !capas.calles) || (s.lugar && !calle && !capas.puestos) || (s.lugar && !calle && tipoSel && s.t !== tipoSel))) return '';
     if (s.lugar) {
       const a = s.ang * Math.PI / 180, ex = Math.abs(s.w / 2 * Math.cos(a)) + Math.abs(s.h / 2 * Math.sin(a)), ey = Math.abs(s.w / 2 * Math.sin(a)) + Math.abs(s.h / 2 * Math.cos(a));
       x0 = Math.min(x0, s.lx - ex - 8); x1 = Math.max(x1, s.lx + ex + 8); y0 = Math.min(y0, s.ly - ey - 8); y1 = Math.max(y1, s.ly + ey + 8);
@@ -1426,7 +1530,18 @@ function incMontarPlano(cont, op) {
   incEstiloPlano();
   if (!cont._incFicha && cont.addEventListener) {
     cont._incFicha = true;
-    cont.addEventListener('click', e => { const b = e.target.closest ? e.target.closest('[data-ficha] [data-f]') : null; if (b) incAccionFicha(cont._incOp, b.dataset.f, b.closest('[data-ficha]').dataset.ficha); });
+    cont.addEventListener('click', e => {
+      const b = e.target.closest ? e.target.closest('[data-ficha] [data-f]') : null; if (b) incAccionFicha(cont._incOp, b.dataset.f, b.closest('[data-ficha]').dataset.ficha);
+      const bb = e.target.closest ? e.target.closest('[data-b]') : null; if (bb) incBuscadorAccion(cont, bb.dataset.b, bb);
+    });
+    // Lo que se escribe en el buscador: sólo se rehace la lista (no se pierde lo escrito).
+    cont.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('inc-bus-q')) { (cont._incBus || (cont._incBus = { abierto: true, q: '' })).q = e.target.value; const l = cont.querySelector('.inc-bus-lista'); if (l) l.innerHTML = incBuscadorListaHTML(e.target.value, cont._incOp || {}); } });
+    // Enter elige el primero; Esc cierra.
+    cont.addEventListener('keydown', e => {
+      if (!e.target.classList || !e.target.classList.contains('inc-bus-q')) return;
+      if (e.key === 'Enter') { const f = cont.querySelector('.inc-bus-fila'); if (f) { e.preventDefault(); incIrALugar(cont, f.dataset.id); } }
+      if (e.key === 'Escape') incBuscadorAccion(cont, 'cerrar');
+    });
   }
   const quiere3D = (op.vista || incVistaPreferida()) === '3d' && incHayWebGL();
   if (quiere3D && window.THREE && (incListo3D || !incCarga3D)) {
@@ -1442,7 +1557,8 @@ function incMontarPlano(cont, op) {
     }
   }
   if (cont._inc3d) { cont._inc3d.destruir(); cont._inc3d = null; }
-  cont.innerHTML = incPlanoSVG(op) + (op.sel && !op.editar ? incFichaHTML(op.sel, op, 'inc-ficha') : '') + '<div class="inc-plano-pie">' + incLeyendaHTML() + '<div class="inc-plano-ctl">' + incCapasHTML() + (op.sinPisos ? '' : incPisosHTML()) + '</div></div>';
+  cont.innerHTML = incPlanoSVG(op) + (op.sel && !op.editar ? incFichaHTML(op.sel, op, 'inc-ficha') : '') + '<div class="inc-plano-pie">' + incLeyendaHTML() + '<div class="inc-plano-ctl">' + (op.editar ? '' : incBuscarBotonHTML()) + incCapasHTML() + (op.sinPisos ? '' : incPisosHTML()) + '</div></div><div class="inc-bus-lugar" data-clase="inc-bus"></div>';
+  incBuscadorRefrescar(cont);
   if (quiere3D && !incSin3D) incCargar3D().then(ok => { if (ok && cont._incOp && (cont._incOp.vista || incVistaPreferida()) === '3d') incMontarPlano(cont, cont._incOp); });
 }
 // La leyenda de abajo del plano 2D (y la del 3D, encima).
@@ -1470,7 +1586,32 @@ function incEstiloPlano() {
     + '.inc-ficha-abiertas i{width:9px;height:9px;border-radius:50%;flex-shrink:0}'
     + '.inc-ficha-accion{min-height:38px;border:0;border-radius:10px;background:#0b1b33;color:#fff;font:600 12.5px ' + INC_FUENTE + ';cursor:pointer}'
     + '.inc-3d-ficha{position:absolute;z-index:5;top:calc(56px + var(--inc-sup,0px));right:calc(10px + var(--inc-der,0px));width:min(300px,calc(100% - 20px));margin:0;background:rgba(244,248,253,.84);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.6);box-shadow:0 18px 44px rgba(0,8,26,.45);animation:incVentana .22s ease-out}'
-    + '.inc-3d-full .inc-3d-ficha{display:none}'
+    + '.inc-3d-full .inc-3d-ficha,.inc-con-bus .inc-3d-ficha{display:none}'
+    // El buscador: en el plano, debajo; en el 3D, flotando arriba a la derecha (en el celular, de lado a lado).
+    + '.inc-bus{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px;border-radius:14px;background:#fff;border:1px solid rgba(11,27,51,.1);box-shadow:0 1px 3px rgba(11,27,51,.08);font-family:' + INC_FUENTE + ';color:#0b1b33}'
+    + '.inc-3d-bus{position:absolute;z-index:6;top:calc(56px + var(--inc-sup,0px));right:calc(10px + var(--inc-der,0px));width:min(340px,calc(100% - 20px));max-height:calc(100% - 130px);margin:0;background:rgba(244,248,253,.92);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.6);box-shadow:0 18px 44px rgba(0,8,26,.45);animation:incVentana .22s ease-out}'
+    + '.inc-bus-cab{display:flex;align-items:center;gap:6px}'
+    + '.inc-bus-q{flex:1;min-width:0;height:36px;border:1px solid rgba(11,27,51,.16);border-radius:10px;padding:0 11px;background:#fff;color:#0b1b33;font:500 13px ' + INC_FUENTE + ';outline:none}'
+    + '.inc-bus-q:focus{border-color:#2f80ed;box-shadow:0 0 0 3px rgba(47,128,237,.18)}'
+    + '.inc-bus-cab button{flex-shrink:0;width:32px;height:32px;border:0;border-radius:50%;background:rgba(11,27,51,.08);color:#0b1b33;cursor:pointer}'
+    + '.inc-bus-tipos{display:flex;flex-wrap:wrap;gap:4px}'
+    + '.inc-bus-tipos button{display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(11,27,51,.14);background:#fff;border-radius:999px;padding:4px 10px;color:#43546e;font:600 11.5px ' + INC_FUENTE + ';cursor:pointer}'
+    + '.inc-bus-tipos button svg{width:11px;height:11px;fill:currentColor;display:block}'
+    + '.inc-bus-tipos button.on{background:#0b1b33;border-color:#0b1b33;color:#fff}'
+    + '.inc-bus-lista{display:flex;flex-direction:column;gap:1px;max-height:320px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}'
+    + '.inc-3d-bus .inc-bus-lista{max-height:none;flex:1;min-height:0}'
+    + '.inc-bus-grupo{padding:8px 4px 3px;color:#6b7b94;font:700 10.5px ' + INC_FUENTE + ';letter-spacing:.6px;text-transform:uppercase}'
+    + '.inc-bus-fila{display:flex;align-items:center;gap:9px;width:100%;padding:6px;border:0;border-radius:10px;background:transparent;color:#0b1b33;font-family:' + INC_FUENTE + ';text-align:left;cursor:pointer}'
+    + '.inc-bus-fila:hover,.inc-bus-fila:focus-visible{background:rgba(47,128,237,.1);outline:none}'
+    + '.inc-bus-nom{flex:1;min-width:0;display:flex;flex-direction:column}'
+    + '.inc-bus-nom b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.inc-bus-nom small{font-size:11px;color:#6b7b94}'
+    + '.inc-bus-n{flex-shrink:0;min-width:20px;height:20px;padding:0 6px;border-radius:999px;color:#fff;font:700 11px/20px ' + INC_FUENTE + ';text-align:center}'
+    + '.inc-bus-vacio{padding:14px 6px;color:#6b7b94;font-size:12.5px;text-align:center}'
+    + '.inc-bus-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(11,27,51,.14);background:rgba(255,255,255,.7);color:#0b1b33;font:600 12px ' + INC_FUENTE + ';padding:5px 11px;border-radius:999px;cursor:pointer}'
+    + '.inc-bus-btn svg{width:13px;height:13px}.inc-bus-btn.on{background:#0b1b33;border-color:#0b1b33;color:#fff}'
+    // En el 3D, la lupa con un punto si se está mirando un solo tipo.
+    + '.inc-3d-btn.filtro{position:relative}.inc-3d-btn.filtro::after{content:"";position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#7cc8ff;box-shadow:0 0 0 2px rgba(9,24,48,.8)}'
+    + '@media' + INC_VENTANA_ABAJO + '{.inc-3d-bus{left:calc(10px + var(--inc-izq,0px));right:calc(10px + var(--inc-der,0px));width:auto;max-height:calc(100% - 140px)}}'
     + '.inc-3d-det .inc-ficha-datos{padding:0 16px 2px}'
     + '@media' + INC_VENTANA_ABAJO + '{.inc-3d-ficha{top:auto;left:calc(10px + var(--inc-izq,0px));right:calc(10px + var(--inc-der,0px));bottom:calc(60px + var(--inc-inf,0px));width:auto}}'
     + '.inc-capas{display:inline-flex;flex-wrap:wrap;gap:4px}'
@@ -1486,7 +1627,7 @@ function incEstiloPlano() {
     + '.inc-ley-n{display:inline-grid;place-items:center;min-width:15px;height:15px;padding:0 3px;border-radius:999px;border:1.5px solid #fff;color:#fff;font:700 9px/1 ' + INC_FUENTE + '}'
     + '.inc-3d-ley{position:absolute;left:calc(10px + var(--inc-izq,0px));top:calc(10px + var(--inc-sup,0px));z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 190px);font:500 11px ' + INC_FUENTE + ';color:#dbe8ff;padding:6px 10px;border-radius:10px;pointer-events:none;' + INC_VIDRIO + '}'
     // En los aparatos táctiles, lo que se toca, del tamaño del dedo.
-    + '@media(pointer:coarse){.inc-pisos button,.inc-3d-pisos button{min-height:38px;padding:0 13px}.inc-ref-rapida button,.inc-capas button{min-height:36px}.inc-ficha-cab button{width:36px;height:36px}.inc-ficha-accion{min-height:44px}}';
+    + '@media(pointer:coarse){.inc-pisos button,.inc-3d-pisos button{min-height:38px;padding:0 13px}.inc-ref-rapida button,.inc-capas button{min-height:36px}.inc-ficha-cab button{width:36px;height:36px}.inc-ficha-accion{min-height:44px}.inc-bus-q{height:42px;font-size:16px}.inc-bus-cab button{width:40px;height:40px}.inc-bus-fila{min-height:44px}.inc-bus-tipos button,.inc-bus-btn{min-height:36px}}';
   document.head.appendChild(st);
 }
 function incEstilo3D() {
@@ -1590,6 +1731,7 @@ function incPlano3D(cont, op0) {
   cont.appendChild(lienzo);
   const btns = document.createElement('div'); btns.className = 'inc-3d-btns';
   btns.innerHTML = '<button type="button" class="inc-3d-btn inc-3d-btn-det" data-a="detalle" title="Ver u ocultar el detalle de las incidencias">☰ Incidencias</button>'
+    + '<button type="button" class="inc-3d-btn" data-a="buscar" title="Buscar un puesto o un sector, o ver un solo tipo" aria-label="Buscar" aria-expanded="false">' + INC_LUPA + '</button>'
     + '<button type="button" class="inc-3d-btn" data-a="capas" title="Qué mostrar: nombres, puestos, calles" aria-label="Capas: qué mostrar" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 2.5 8 12 13l9.5-5z"/><path d="m2.5 12.5 9.5 5 9.5-5"/><path d="m2.5 17 9.5 5 9.5-5"/></svg></button>'
     + '<button type="button" class="inc-3d-btn" data-a="vista" title="Volver a la vista de entrada" aria-label="Volver a la vista de entrada">⟲<span class="inc-3d-btn-txt"> Vista</span></button>'
     + '<button type="button" class="inc-3d-btn" data-a="pantalla" title="Pantalla completa">⛶</button>';
@@ -1603,7 +1745,8 @@ function incPlano3D(cont, op0) {
   const fichaEl = document.createElement('div'); cont.appendChild(fichaEl);
   const pisosEl = document.createElement('div'); cont.appendChild(pisosEl);
   const capasEl = document.createElement('div'); capasEl.className = 'inc-3d-capas'; cont.appendChild(capasEl);
-  const btnCapas = btns.querySelector('[data-a="capas"]');
+  const btnCapas = btns.querySelector('[data-a="capas"]'), btnBus = btns.querySelector('[data-a="buscar"]');
+  const busEl = document.createElement('div'); busEl.className = 'inc-bus-lugar'; busEl.dataset.clase = 'inc-bus inc-3d-bus'; cont.appendChild(busEl);
   const version = incVersionPlano;
   // Los carteles: texto de verdad encima del plano (nítido a cualquier
   // tamaño); en cada cuadro se ubica sobre el punto del 3D que le toca.
@@ -2201,6 +2344,7 @@ function incPlano3D(cont, op0) {
   btns.addEventListener('click', e => {
     const a = e.target.closest('button') && e.target.closest('button').dataset.a;
     if (a === 'vista') volver();
+    if (a === 'buscar') incBuscadorAccion(cont, 'abrir');
     if (a === 'capas') { const ab = capasEl.classList.toggle('abierto'); btnCapas.setAttribute('aria-expanded', String(ab)); }
     if (a === 'detalle') { detAbierto = !detAbierto; pintarDetalle(); }
     if (a === 'pantalla') { if (enPantalla()) salirPantalla(); else entrarPantalla(); }
@@ -2223,6 +2367,7 @@ function incPlano3D(cont, op0) {
     const lejos = Math.hypot(e.clientX - abajo.x, e.clientY - abajo.y) > 8, largo = Date.now() - abajo.t > 700; abajo = null;
     if (lejos || largo) return;
     const id = sectorEn(e), pz = piezas[id];
+    if (id && cont._incBus && cont._incBus.abierto) { cont._incBus.abierto = false; incBuscadorRefrescar(cont); }
     if (pz && pz.lugar && pz.piso && !incPisoElegido() && !editar && (selLocal || (ultimoOp && ultimoOp.sel)) !== id) { irA = id; incElegirPiso(pz.piso); }
     if (enPantalla() && detLista) { selLocal = detSector = (selLocal === id ? '' : id); detAbierto = true; api.poner(ultimoOp); return; }
     if (id && onclick && typeof window[onclick] === 'function') window[onclick](id);
@@ -2389,7 +2534,10 @@ function incPlano3D(cont, op0) {
       if (editar) { ayuda.textContent = 'Arrastrá un puesto para moverlo · sus esquinas, para el tamaño'; if (controles) controles.autoRotate = false; }
       if (op.titulo !== undefined) pintarCinta(op.titulo);
       const niveles = op.niveles || {}, cuentas = op.cuentas || {}, porNivel = op.porNivel || {}, elegido = selLocal || op.sel, pisoSel = incPisoElegido(), capas = incCapas();
-      const iSel = ordenPiso(pisoSel);
+      const iSel = ordenPiso(pisoSel), tipoSel = editar ? '' : incTipoElegido();
+      // La lupa: no se usa editando; con un tipo elegido, con un punto.
+      btnBus.style.display = editar ? 'none' : ''; btnBus.classList.toggle('filtro', !!tipoSel);
+      btnBus.title = tipoSel ? 'Buscar · se ven sólo: ' + incNombreTipo(tipoSel) : 'Buscar un puesto o un sector, o ver un solo tipo';
       pisosEl.innerHTML = incPisosHTML('inc-3d-pisos'); if (op.sinPisos) pisosEl.innerHTML = '';
       capasEl.innerHTML = incCapasHTML('inc-3d-capas-l');
       Object.values(piezas).forEach(p => {
@@ -2405,7 +2553,7 @@ function incPlano3D(cont, op0) {
         // salvo lo que tiene algo abierto; sin nombres, los sectores quedan sin su cartel.
         const otroPiso = !!(pisoSel && p.piso && p.piso !== pisoSel);
         const iP = ordenPiso(p.nivelDe), arriba = !!pisoSel && iP > iSel, abajo = !!pisoSel && iP >= 0 && iP < iSel;
-        const fuera = (p.lugar && otroPiso) || (!p.lugar && arriba) || (!n && ((p.t === 'calle' && !capas.calles) || (p.lugar && p.t !== 'calle' && !capas.puestos)));
+        const fuera = (p.lugar && otroPiso) || (!p.lugar && arriba) || (!n && ((p.t === 'calle' && !capas.calles) || (p.lugar && p.t !== 'calle' && (!capas.puestos || (tipoSel && p.t !== tipoSel)))));
         const apagado = abajo && !p.lugar;
         p.grupo.visible = !fuera;
         if (p.apagado !== apagado) { p.apagado = apagado; apagar(p.mats, apagado); }
@@ -2451,6 +2599,19 @@ function incPlano3D(cont, op0) {
       const ps = piezas[elegido]; asaSel = editar && ps && ps.forma && ps.grupo.visible ? ps : null;
       if (!agarre) { medida = null; pintarFantasma(); }
       pintarDetalle();
+      incBuscadorRefrescar(cont);
+    },
+    // Ir a un lugar (desde el buscador): a su piso si hace falta, y lo mismo que tocarlo.
+    ir(id) {
+      const pz = piezas[id]; if (!pz) return;
+      const pisoSel = incPisoElegido(), destino = pz.nivelDe;
+      if (destino && ((pz.lugar && pisoSel !== destino) || (pisoSel && pisoSel !== destino))) { irA = id; incElegirPiso(destino); }
+      if (enPantalla() && detLista) { selLocal = detSector = id; detAbierto = true; api.poner(ultimoOp); return; }
+      if (ultimoOp && ultimoOp.sel === id) { api.poner(ultimoOp); if (!editar) viajarA(pz); return; }
+      if (onclick && typeof window[onclick] === 'function') window[onclick](id);
+      // Si la página no lo marca como elegido (la tablet abre la carga), la cámara va igual.
+      if (!(ultimoOp && ultimoOp.sel === id) && !editar) viajarA(pz);
+      else api.poner(ultimoOp);
     },
     destruir() {
       vivo = false;
