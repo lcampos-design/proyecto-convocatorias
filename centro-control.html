@@ -7,14 +7,13 @@
 <title>Centro de Control — Movistar Arena</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-/* Estilo Mac: vidrio esmerilado sobre un fondo de color suave, la letra del
-   sistema (la de Apple en la Mac, el iPhone y el iPad; Inter en el resto) y
-   todo lo que se toca del tamaño del dedo. */
+/* Estilo Mac: vidrio esmerilado sobre un fondo de color suave, la letra de
+   la marca (Poppins, en todo) y todo lo que se toca del tamaño del dedo. */
 :root{
-  --inc-fuente:-apple-system,BlinkMacSystemFont,'SF Pro Text','Inter','Segoe UI Variable Text','Segoe UI',Roboto,sans-serif;
+  --inc-fuente:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --tinta:#0b1b33;--tinta-2:#43546e;--tinta-3:#6b7b94;
   --azul:#1f6fe5;
   --vidrio:rgba(255,255,255,.56);--vidrio-fuerte:rgba(255,255,255,.74);--vidrio-borde:rgba(255,255,255,.72);
@@ -23,6 +22,8 @@
   --sombra:inset 0 1px 0 rgba(255,255,255,.7),0 10px 30px rgba(15,40,85,.1),0 1px 3px rgba(15,40,85,.06);
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
+button,input,select,textarea,optgroup,option{font-family:inherit}
 body{font-family:var(--inc-fuente);background:#eceef1;color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
 /* El fondo: gris claro, la marca de SBS apenas marcada y un brillo blanco arriba (sin luces de color). */
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:url('fondo-sbs.jpg') center/cover no-repeat;opacity:.07}
@@ -388,8 +389,8 @@ const INC_PLANO_TRIBUNAS = [
 ];
 const INC_PLANO_CAMPO = {
   campos: [
-    { id: 'Campo delantero', txt: 'CAMPO DELANTERO', t: 'campo', r: [150, 36, 120, 82] },
-    { id: 'Campo trasero',   txt: 'CAMPO TRASERO',   t: 'campo', r: [150, 122, 120, 84] }
+    { id: 'Campo delantero', txt: 'Campo delantero', t: 'campo', r: [150, 36, 120, 82] },
+    { id: 'Campo trasero',   txt: 'Campo trasero',   t: 'campo', r: [150, 122, 120, 84] }
   ],
   // Con asientos: A–D junto al escenario, F–J en el medio, K–N al fondo.
   asientos: [['A', 'B', 'C', 'D'], ['F', 'G', 'H', 'J'], ['K', 'L', 'M', 'N']].flatMap((fila, i) =>
@@ -408,21 +409,21 @@ function incRectRot(cx, cy, w, d, ang) {
 function incEspejo(p) { return p.split(' ').map(par => { const xy = par.split(',').map(Number); return (420 - xy[0]) + ',' + xy[1]; }).join(' '); }
 const INC_ANILLO_LADO = '50,-44 50,236 104,290 120,290 120,318 70,318 22,260 22,-44';
 const INC_PLANO_ZONAS = [
-  { id: 'Anillo izquierdo', txt: 'ANILLO', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 226, rot: -90 },
-  { id: 'Anillo fondo', txt: 'ANILLO', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
-  { id: 'Anillo derecho', txt: 'ANILLO', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
-  { id: 'Backstage', txt: 'BACKSTAGE', t: 'back', r: [50, -44, 320, 24] },
+  { id: 'Anillo izquierdo', txt: 'Anillo', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 226, rot: -90 },
+  { id: 'Anillo fondo', txt: 'Anillo', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
+  { id: 'Anillo derecho', txt: 'Anillo', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
+  { id: 'Backstage', txt: 'Backstage', t: 'back', r: [50, -44, 320, 24] },
   // El Premium (el VIP): los palcos a los costados y el lounge enfrente del
   // escenario, entre la platea baja (P1) y la alta (P3); y los corners, también
   // del VIP, que hoy son la 101 y la 119 (junto al escenario, donde empieza la platea baja),
   // lo más cerca del escenario. Lado Cancha a la izquierda, lado Sede a la derecha.
   // Los corners son de butacas: suben en filas como la platea baja (gradas).
   // Se llaman como en el cartel del Arena: Diamante (el 101) y Trébol (el 119).
-  { id: 'Palcos · Cancha', txt: 'PALCOS', t: 'vip', p: '92.5,30 99.5,30 99.5,221.5 92.5,224', lx: 96, ly: 126, rot: -90, piso: 'VIP' },
-  { id: 'Palcos · Sede', txt: 'PALCOS', t: 'vip', p: '320.5,30 327.5,30 327.5,224 320.5,221.5', lx: 324, ly: 126, rot: 90, piso: 'VIP' },
-  { id: 'Lounge', txt: 'LOUNGE', t: 'vip', p: '92.5,224 127,257 293,257 327.5,224 320.5,221.5 290,253 130,253 99.5,221.5', lx: 210, ly: 255, piso: 'VIP' },
-  { id: 'Corner Diamante', txt: 'DIAMANTE 101', t: 'vip', r: [100, 18, 40, 22], piso: 'VIP', gradas: 'baja' },
-  { id: 'Corner Trébol', txt: 'TRÉBOL 119', t: 'vip', r: [280, 18, 40, 22], piso: 'VIP', gradas: 'baja' }
+  { id: 'Palcos · Cancha', txt: 'Palcos', t: 'vip', p: '92.5,30 99.5,30 99.5,221.5 92.5,224', lx: 96, ly: 126, rot: -90, piso: 'VIP' },
+  { id: 'Palcos · Sede', txt: 'Palcos', t: 'vip', p: '320.5,30 327.5,30 327.5,224 320.5,221.5', lx: 324, ly: 126, rot: 90, piso: 'VIP' },
+  { id: 'Lounge', txt: 'Lounge', t: 'vip', p: '92.5,224 127,257 293,257 327.5,224 320.5,221.5 290,253 130,253 99.5,221.5', lx: 210, ly: 255, piso: 'VIP' },
+  { id: 'Corner Diamante', txt: 'Diamante 101', t: 'vip', r: [100, 18, 40, 22], piso: 'VIP', gradas: 'baja' },
+  { id: 'Corner Trébol', txt: 'Trébol 119', t: 'vip', r: [280, 18, 40, 22], piso: 'VIP', gradas: 'baja' }
 ];
 // Los pisos del Arena: el campo en planta baja, la platea baja en el 1, la
 // alta en el 3 y el VIP entre las dos. Cada puesto del anillo dice el suyo.
@@ -475,10 +476,10 @@ const INC_TIPOS_LUGAR = {
 // Muñecas del lado Cancha (como en el cartel de evacuación del Arena) y
 // Dorrego detrás del escenario. Ubicadas a ojo: se acomodan desde el panel.
 const INC_CALLES_BASE = [
-  { id: 'Calle Humboldt', t: 'calle', txt: 'HUMBOLDT', cx: 210, cy: 350, w: 400, h: 18, ang: 0 },
-  { id: 'Av. Corrientes', t: 'calle', txt: 'AV. CORRIENTES', cx: 430, cy: 137, w: 384, h: 20, ang: 90 },
-  { id: 'Calle Muñecas', t: 'calle', txt: 'MUÑECAS', cx: -10, cy: 137, w: 384, h: 18, ang: 90 },
-  { id: 'Av. Dorrego', t: 'calle', txt: 'AV. DORREGO', cx: 210, cy: -68, w: 400, h: 18, ang: 0 }
+  { id: 'Calle Humboldt', t: 'calle', txt: 'Humboldt', cx: 210, cy: 350, w: 400, h: 18, ang: 0 },
+  { id: 'Av. Corrientes', t: 'calle', txt: 'Av. Corrientes', cx: 430, cy: 137, w: 384, h: 20, ang: 90 },
+  { id: 'Calle Muñecas', t: 'calle', txt: 'Muñecas', cx: -10, cy: 137, w: 384, h: 18, ang: 90 },
+  { id: 'Av. Dorrego', t: 'calle', txt: 'Av. Dorrego', cx: 210, cy: -68, w: 400, h: 18, ang: 0 }
 ];
 // Los puestos de siempre (si todavía no se guardó otro plano). Planta baja,
 // como en el plano del Arena: en cada costado, desde el escenario, camarines
@@ -497,7 +498,7 @@ const INC_LUGARES_BASE = [
   // Planta baja, lado Cancha (izquierda), desde el escenario. Contra la pared
   // de afuera: la enfermería, los externos y el eventual; contra la de
   // adentro: los baños y el interno, enfrentado con el externo 2.
-  { id: 'Camarines', t: 'servicio', txt: 'CAM', cx: 36, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
+  { id: 'Camarines', t: 'servicio', txt: 'Cam.', cx: 36, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
   { id: 'Enfermería', t: 'enfermeria', txt: '', cx: 28.5, cy: 40, w: 11, h: 15, ang: 0, piso: 'PB' },
   { id: 'Cancha externo 1 (Paty)', t: 'gastro', txt: 'CE1', cx: 28.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'PB' },
   { id: 'Puerta 8', t: 'puerta', txt: 'P8', cx: 22, cy: 92, w: 22, h: 12, ang: 90, piso: 'PB' },
@@ -520,24 +521,28 @@ const INC_LUGARES_BASE = [
   { id: 'Baños 4', t: 'banio', txt: '4', cx: 376.5, cy: 107, w: 11, h: 28, ang: 0, piso: 'PB' },
   { id: 'Puerta 9', t: 'puerta', txt: 'P9', cx: 398, cy: 92, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Sede externo 1 (Kit Kat)', t: 'gastro', txt: 'SE1', cx: 391.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'PB' },
-  { id: 'Producción', t: 'servicio', txt: 'PROD', cx: 384, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
+  { id: 'Producción', t: 'servicio', txt: 'Prod.', cx: 384, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
   // Gastronomía, primer piso: las cuatro barras externas, afuera (algunos días
   // figuran con el sponsor: Gordon's, McCain, Hellmann's); las internas,
-  // adentro, enfrentadas con la externa 02; la chica, al fondo.
+  // adentro, enfrentadas con la externa 02. Las grandes (Stella Artois, y en
+  // P3 Beer Garden y Fernetería) van en las esquinas de Humboldt, en un espacio
+  // más grande contra los ventanales, enfrente de los ascensores (que dan la
+  // espalda al campo).
   { id: 'Cancha externo 01', t: 'gastro', txt: 'CE01', cx: 28.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'P1' },
   { id: 'Cancha externo 02', t: 'gastro', txt: 'CE02', cx: 28.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'P1' },
-  { id: 'Patagonia (P1)', t: 'gastro', txt: 'PAT', cx: 43.5, cy: 214, w: 11, h: 20, ang: 0, piso: 'P1' },
+  { id: 'Patagonia (P1)', t: 'gastro', txt: 'Pat.', cx: 43.5, cy: 214, w: 11, h: 20, ang: 0, piso: 'P1' },
   { id: 'Sede externo 01', t: 'gastro', txt: 'SE01', cx: 391.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'P1' },
   { id: 'Sede externo 02', t: 'gastro', txt: 'SE02', cx: 391.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'P1' },
-  { id: 'Branca', t: 'gastro', txt: 'BRA', cx: 376.5, cy: 214, w: 11, h: 20, ang: 0, piso: 'P1' },
-  { id: 'Stella Artois', t: 'gastro', txt: 'STE', cx: 210, cy: 304, w: 22, h: 14, ang: 0, piso: 'P1' },
-  // Gastronomía, tercer piso: las cuatro barras, afuera, y las dos chicas al fondo.
+  { id: 'Branca', t: 'gastro', txt: 'Bra.', cx: 376.5, cy: 214, w: 11, h: 20, ang: 0, piso: 'P1' },
+  { id: 'Stella Artois', t: 'gastro', txt: 'Ste.', cx: 58.1, cy: 279.7, w: 16, h: 32, ang: -42.3, piso: 'P1' },
+  // Gastronomía, tercer piso: las cuatro barras, afuera, y Beer Garden y
+  // Fernetería en las esquinas de Humboldt, contra los ventanales.
   { id: 'Cancha 1', t: 'gastro', txt: 'C1', cx: 28.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'P3' },
   { id: 'Cancha 2', t: 'gastro', txt: 'C2', cx: 28.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'P3' },
   { id: 'Sede 1', t: 'gastro', txt: 'S1', cx: 391.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'P3' },
   { id: 'Sede 2', t: 'gastro', txt: 'S2', cx: 391.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'P3' },
-  { id: 'Beer Garden', t: 'gastro', txt: 'BEER', cx: 165, cy: 304, w: 26, h: 14, ang: 0, piso: 'P3' },
-  { id: 'Fernetería', t: 'gastro', txt: 'FER', cx: 255, cy: 304, w: 26, h: 14, ang: 0, piso: 'P3' }
+  { id: 'Beer Garden', t: 'gastro', txt: 'Beer', cx: 58.1, cy: 279.7, w: 16, h: 32, ang: -42.3, piso: 'P3' },
+  { id: 'Fernetería', t: 'gastro', txt: 'Fer.', cx: 361.9, cy: 279.7, w: 16, h: 32, ang: 42.3, piso: 'P3' }
 ].concat(INC_CALLES_BASE, [
   // Los baños de arriba, como en el cartel de evacuación del Arena (medidos
   // sobre la foto; el 1, el más cerca del escenario): en P1, un bloque por
@@ -557,6 +562,15 @@ const INC_LUGARES_BASE = [
   { id: 'Baños Cancha (P3)', t: 'banio', txt: 'C', cx: 36, cy: -12, w: 22, h: 40, ang: 0, piso: 'P3' },
   { id: 'Baños Sede (P3)', t: 'banio', txt: 'S', cx: 384, cy: -12, w: 22, h: 40, ang: 0, piso: 'P3' }
 ]);
+// El cartel de un puesto sin todo en mayúsculas ("CAM" → "Cam.", "AV. DORREGO" →
+// "Av. Dorrego"): si es uno de los de siempre, como ése; si no, cada palabra de
+// tres letras o más con mayúscula inicial. Los códigos (CE1, SE02, P8) quedan igual.
+function incSinMayusculas(id, txt) {
+  if (!txt || /[a-záéíóúñ]/.test(txt) || !/[A-ZÁÉÍÓÚÑ]{3,}/.test(txt)) return txt;
+  const base = typeof INC_LUGARES_BASE !== 'undefined' && INC_LUGARES_BASE.find(l => l.id === id);
+  if (base && base.txt.toUpperCase().replace(/\.$/, '') === txt.replace(/\.$/, '')) return base.txt;
+  return txt.split(' ').map(p => /\d/.test(p) || p.replace(/[^A-ZÁÉÍÓÚÑ]/g, '').length < 3 ? p : p.charAt(0) + p.slice(1).toLowerCase()).join(' ');
+}
 // Deja una lista de puestos en condiciones: tipos conocidos, nombres únicos
 // (y que no choquen con un sector), medidas dentro del plano.
 function incNormalizarLugares(lista) {
@@ -572,8 +586,9 @@ function incNormalizarLugares(lista) {
     // Las calles van afuera del estadio, son largas y llevan el nombre entero.
     const lim = incLimitesLugar(l.t);
     // El rubro (barra, cerveza, comidas…), si lo tiene: sale en la ficha.
+    const txt = incSinMayusculas(id, String(l.txt == null ? '' : l.txt).trim().slice(0, calle ? 24 : 6));
     const rubro = calle ? '' : String(l.rubro == null ? '' : l.rubro).trim().slice(0, 40);
-    return Object.assign({ id, t: l.t, txt: String(l.txt == null ? '' : l.txt).trim().slice(0, calle ? 24 : 6), cx: num(l.cx, -40, 460, 210), cy: num(l.cy, -90, 390, 304), w: num(l.w, lim.w[0], lim.w[1], tipo.w), h: num(l.h, lim.h[0], lim.h[1], tipo.h), ang: num(l.ang, -180, 180, 0), piso }, rubro ? { rubro } : {});
+    return Object.assign({ id, t: l.t, txt, cx: num(l.cx, -40, 460, 210), cy: num(l.cy, -90, 390, 304), w: num(l.w, lim.w[0], lim.w[1], tipo.w), h: num(l.h, lim.h[0], lim.h[1], tipo.h), ang: num(l.ang, -180, 180, 0), piso }, rubro ? { rubro } : {});
   }).filter(Boolean).slice(0, 80);
 }
 let incLugaresArena = incNormalizarLugares(INC_LUGARES_BASE), incVersionPlano = 0;
@@ -794,7 +809,7 @@ function incFichaDatos(sector) {
   const zonas = { baja: 'Platea baja', alta: 'Platea alta', vip: 'Premium', campo: 'Campo', anillo: 'Anillo', back: 'Backstage' };
   const x = s.lx !== undefined ? s.lx : s.r[0] + s.r[2] / 2, y = s.ly !== undefined ? s.ly : s.r[1] + s.r[3] / 2;
   const lado = s.t === 'calle' ? 'Afuera' : s.t === 'back' ? 'Detrás del escenario' : s.t === 'campo' ? ''
-    : s.lugar ? (y > 285 ? 'Fondo · Humboldt' : x < 60 ? 'Lado Cancha' : x > 360 ? 'Lado Sede' : '')
+    : s.lugar ? (y > 255 && x < 110 ? 'Esquina Humboldt · lado Cancha' : y > 255 && x > 310 ? 'Esquina Humboldt · lado Sede' : y > 285 ? 'Fondo · Humboldt' : x < 60 ? 'Lado Cancha' : x > 360 ? 'Lado Sede' : '')
     : (x < 150 ? 'Lado Cancha' : x > 270 ? 'Lado Sede' : y > 206 ? 'Fondo · Humboldt' : '');
   const piso = incPisoDe(s) || (s.t === 'anillo' || s.t === 'back' ? 'PB' : '');
   return {
@@ -837,7 +852,7 @@ function incSinTildes(s) { return String(s == null ? '' : s).toLowerCase().norma
 function incBuscarLugares(q, armado) {
   const t = incSinTildes(q).trim(), lugares = incSectoresPlano(armado || 'campos');
   if (!t) {
-    const piso = incPisoElegido(), tipo = incTipoElegido(), lados = ['Lado Cancha', 'Lado Sede', 'Fondo · Humboldt', ''];
+    const piso = incPisoElegido(), tipo = incTipoElegido(), lados = ['Lado Cancha', 'Esquina Humboldt · lado Cancha', 'Fondo · Humboldt', 'Esquina Humboldt · lado Sede', 'Lado Sede', ''];
     const ordenDe = x => INC_PISOS.findIndex(p => p[0] === x.s.piso) * 10 + lados.indexOf(x.f.lado);
     return lugares.filter(s => s.lugar && s.t !== 'calle' && (!piso || s.piso === piso) && (!tipo || s.t === tipo))
       .map(s => ({ s, f: incFichaDatos(s.id) }))
@@ -1073,20 +1088,20 @@ function incPlanoSVG(op) {
       const a = s.ang * Math.PI / 180, dx = Math.cos(a) * s.w / 2, dy = Math.sin(a) * s.w / 2, nx = -Math.sin(a) * s.h * 0.32, ny = Math.cos(a) * s.h * 0.32;
       const rot = ((s.ang % 360) + 540) % 360 - 180, leer = rot > 90 ? rot - 180 : rot < -90 ? rot + 180 : rot;
       etq = [-1, 1].map(k => '<line x1="' + (cx - dx + k * nx).toFixed(1) + '" y1="' + (cy - dy + k * ny).toFixed(1) + '" x2="' + (cx + dx + k * nx).toFixed(1) + '" y2="' + (cy + dy + k * ny).toFixed(1) + '" stroke="#ffffff" stroke-opacity=".22" stroke-width=".6" stroke-dasharray="5 4" pointer-events="none"/>').join('')
-        + '<text x="' + cx + '" y="' + (cy + 1.8) + '" font-size="5" font-weight="600" letter-spacing="1.8" fill="' + tinta + '"' + suave + ' text-anchor="middle" transform="rotate(' + leer + ' ' + cx + ' ' + cy + ')" pointer-events="none">' + incEsc(s.txt) + '</text>';
+        + '<text x="' + cx + '" y="' + (cy + 1.8) + '" font-size="5" font-weight="600" letter-spacing=".4" fill="' + tinta + '"' + suave + ' text-anchor="middle" transform="rotate(' + leer + ' ' + cx + ' ' + cy + ')" pointer-events="none">' + incEsc(s.txt) + '</text>';
     } else if (s.ico) {
       const ancho = w >= h, tam = ancho ? 7.5 : 7, ix = ancho ? cx - 5.5 : cx, iy = ancho ? cy : cy - 3.5;
       etq = '<path d="' + INC_ICONOS[s.ico] + '" transform="translate(' + (ix - tam / 2) + ' ' + (iy - tam / 2) + ') scale(' + (tam / 24) + ')" fill="' + tinta + '"' + suave + ' pointer-events="none"/>'
         + (s.txt ? '<text x="' + (ancho ? cx + 6 : cx) + '" y="' + (ancho ? cy + 1.8 : cy + 6.8) + '" font-size="5" font-weight="600" fill="' + tinta + '"' + suave + ' text-anchor="middle" pointer-events="none">' + incEsc(incTxtLugar(s)) + '</text>' : '');
     } else if (s.t === 'vip' && s.rot && (capas.nombres || n)) {
-      etq = '<text x="' + cx + '" y="' + (cy + 1.5) + '" font-size="4.2" font-weight="700" letter-spacing="1.4" fill="#0b1b33" fill-opacity=".8" text-anchor="middle" transform="rotate(' + s.rot + ' ' + cx + ' ' + cy + ')" pointer-events="none">' + incEsc(s.txt) + '</text>';
+      etq = '<text x="' + cx + '" y="' + (cy + 1.5) + '" font-size="4.4" font-weight="700" letter-spacing=".3" fill="#0b1b33" fill-opacity=".8" text-anchor="middle" transform="rotate(' + s.rot + ' ' + cx + ' ' + cy + ')" pointer-events="none">' + incEsc(s.txt) + '</text>';
     } else if (s.t === 'vip' && (capas.nombres || n)) {
       const an = s.txt.length * 3.6 + 8;
       etq = '<rect x="' + (cx - an / 2) + '" y="' + (cy - 4.2) + '" width="' + an + '" height="8.4" rx="4.2" fill="' + (v ? '#ffffff' : col[0]) + '" stroke="' + (v ? v.color : '#0b1b33') + '" stroke-width=".6" pointer-events="none"/>'
-        + '<text x="' + cx + '" y="' + (cy + 1.8) + '" font-size="4.8" font-weight="700" letter-spacing=".8" fill="#0b1b33" text-anchor="middle" pointer-events="none">' + incEsc(s.txt) + '</text>';
+        + '<text x="' + cx + '" y="' + (cy + 1.8) + '" font-size="4.8" font-weight="700" letter-spacing=".2" fill="#0b1b33" text-anchor="middle" pointer-events="none">' + incEsc(s.txt) + '</text>';
     } else if (capas.nombres || n || s.lugar) {
       const fs = s.t === 'anillo' ? 4.2 : s.t === 'puerta' ? 4.8 : s.t === 'back' ? 4.8 : chico ? 5 : (s.txt.length > 3 ? 5.4 : 6.2);
-      const espacio = piso ? 1.4 : (s.txt.length > 3 ? 0.5 : 0);
+      const espacio = piso ? 0.4 : 0;
       etq = '<text x="' + cx + '" y="' + (cy + fs * 0.35) + '" font-size="' + fs + '" font-weight="600" fill="' + tinta + '"' + suave + ' text-anchor="middle"'
         + (espacio ? ' letter-spacing="' + espacio + '"' : '') + (s.rot ? ' transform="rotate(' + s.rot + ' ' + cx + ' ' + cy + ')"' : '') + ' pointer-events="none">' + incEsc(s.txt) + '</text>';
     }
@@ -1132,7 +1147,7 @@ function incPlanoSVG(op) {
     + '<text x="' + (INC_FOH[0] + INC_FOH[2] / 2) + '" y="' + (INC_FOH[1] + INC_FOH[3] / 2 + 1.8) + '" font-size="5" font-weight="600" fill="#fff" fill-opacity=".85" text-anchor="middle" letter-spacing="1">FOH</text></g>'
     // El escenario: la tarima con el proscenio adelante y su borde de luz.
     + '<rect x="160" y="-16" width="100" height="44" rx="4" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width="1"/><rect x="178" y="28" width="64" height="6" rx="2" fill="' + TM.escenario[0] + '" stroke="' + TM.escenario[1] + '" stroke-width=".8"/>'
-    + '<text x="210" y="8.2" font-size="6.2" font-weight="600" fill="#fff" fill-opacity=".9" text-anchor="middle" letter-spacing="1.6">ESCENARIO</text>'
+    + '<text x="210" y="8.2" font-size="6.2" font-weight="600" fill="#fff" fill-opacity=".9" text-anchor="middle" letter-spacing=".3">Escenario</text>'
     + '</svg>';
 }
 // ── El estadio en 3D ──
@@ -1289,7 +1304,7 @@ function incEstiloPlano() {
     + '.inc-bus-tipos button.on{background:#0b1b33;border-color:#0b1b33;color:#fff}'
     + '.inc-bus-lista{display:flex;flex-direction:column;gap:1px;max-height:320px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}'
     + '.inc-3d-bus .inc-bus-lista{max-height:none;flex:1;min-height:0}'
-    + '.inc-bus-grupo{padding:8px 4px 3px;color:#6b7b94;font:700 10.5px ' + INC_FUENTE + ';letter-spacing:.6px;text-transform:uppercase}'
+    + '.inc-bus-grupo{padding:8px 4px 3px;color:#6b7b94;font:700 11px ' + INC_FUENTE + '}'
     + '.inc-bus-fila{display:flex;align-items:center;gap:9px;width:100%;padding:6px;border:0;border-radius:10px;background:transparent;color:#0b1b33;font-family:' + INC_FUENTE + ';text-align:left;cursor:pointer}'
     + '.inc-bus-fila:hover,.inc-bus-fila:focus-visible{background:rgba(47,128,237,.1);outline:none}'
     + '.inc-bus-nom{flex:1;min-width:0;display:flex;flex-direction:column}'
@@ -1340,12 +1355,12 @@ function incEstilo3D() {
     + '.inc-3d-ayuda{position:absolute;left:50%;bottom:calc(12px + var(--inc-tapa-abajo,0px) + var(--inc-inf,0px));transform:translateX(-50%);z-index:3;' + INC_VIDRIO + ';color:#eaf3ff;font:500 11.5px ' + INC_FUENTE + ';padding:6px 13px;border-radius:999px;pointer-events:none;transition:opacity .8s;width:max-content;max-width:92%;text-align:center;line-height:1.35}'
     + '.inc-3d-etqs{position:absolute;left:0;top:0;right:0;bottom:0;z-index:2;pointer-events:none;overflow:hidden}'
     + '.inc-3d-e{position:absolute;left:0;top:0;white-space:nowrap;font:600 9.5px/1 ' + INC_FUENTE + ';color:rgba(255,255,255,.86);text-shadow:0 1px 2px rgba(0,10,30,.6);-webkit-user-select:none;user-select:none}'
-    + '.inc-3d-e.chico{font-size:8.5px}.inc-3d-e.campo{font-size:9px;letter-spacing:.8px}.inc-3d-e.esc{font-size:9px;letter-spacing:1.6px}'
-    + '.inc-3d-e.piso{font-size:8px;letter-spacing:1.3px;color:rgba(159,187,227,.8);text-shadow:0 1px 2px rgba(0,10,30,.6)}'
-    + '.inc-3d-e.calle{font-size:9px;letter-spacing:1.8px;color:rgba(159,187,227,.9)}'
+    + '.inc-3d-e.chico{font-size:8.5px}.inc-3d-e.campo{font-size:9.5px;letter-spacing:.2px}.inc-3d-e.esc{font-size:10px;letter-spacing:.3px}'
+    + '.inc-3d-e.piso{font-size:9px;letter-spacing:.3px;color:rgba(159,187,227,.8);text-shadow:0 1px 2px rgba(0,10,30,.6)}'
+    + '.inc-3d-e.calle{font-size:9.5px;letter-spacing:.4px;color:rgba(159,187,227,.9)}'
     // El nombre de cada piso (en "Todos"): se toca para ir a ese piso.
     + '.inc-3d-e.nivel{pointer-events:auto}'
-    + '.inc-3d-nivel{display:inline-block;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.92);color:#0b1b33;font:700 10px/1 ' + INC_FUENTE + ';letter-spacing:1.3px;text-transform:uppercase;text-shadow:none;box-shadow:0 2px 10px rgba(0,10,30,.4);cursor:pointer}'
+    + '.inc-3d-nivel{display:inline-block;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.92);color:#0b1b33;font:700 11px/1 ' + INC_FUENTE + ';text-shadow:none;box-shadow:0 2px 10px rgba(0,10,30,.4);cursor:pointer}'
     + '.inc-3d-nivel:hover{background:#fff;box-shadow:0 0 0 2px #7cc8ff,0 2px 10px rgba(0,10,30,.4)}'
     + '.inc-3d-e.claro,.inc-3d-e.osc{color:rgba(11,27,51,.86);text-shadow:0 1px 1px rgba(255,255,255,.45)}'
     + '.inc-3d-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:999px;font:600 9.5px/1 ' + INC_FUENTE + ';color:#fff;border:1px solid rgba(255,255,255,.85);box-shadow:0 0 8px rgba(80,180,255,.3),0 1px 3px rgba(0,10,30,.3);text-shadow:none;opacity:.92}'
@@ -1368,7 +1383,7 @@ function incEstilo3D() {
     + '.inc-3d-capas.abierto{display:block}'
     // El menú de vistas: la lista y, abajo, los pisos.
     + '.inc-3d-vistas-l{display:flex;flex-direction:column;gap:2px;min-width:200px}'
-    + '.inc-3d-vistas-t{padding:6px 11px 3px;color:#9fbbe3;font:700 10px ' + INC_FUENTE + ';letter-spacing:1px;text-transform:uppercase}'
+    + '.inc-3d-vistas-t{padding:6px 11px 3px;color:#9fbbe3;font:700 11px ' + INC_FUENTE + '}'
     + '.inc-3d-vistas-l>button{display:flex;align-items:center;min-height:36px;padding:0 11px;border:0;border-radius:8px;background:transparent;color:#eaf3ff;font:600 12.5px ' + INC_FUENTE + ';text-align:left;cursor:pointer}'
     + '.inc-3d-vistas-l>button:hover{background:rgba(255,255,255,.08)}.inc-3d-vistas-l>button.on{background:rgba(255,255,255,.16)}'
     + '.inc-3d-vistas-l>button.on::after{content:"✓";margin-left:auto;padding-left:12px;color:#7cc8ff}'
@@ -1641,7 +1656,7 @@ function incPlano3D(cont, op0) {
       }
       if (s.ico) { p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color[s.t][0] + ';color:' + (T2.tintaTipo[s.t] || '#ffffff') + '">' + icoSVG(s.ico) + (s.txt ? '<b class="inc-3d-cod">' + incEsc(s.txt) + '</b>' : '') + '</span>'; p.etClase = 'pill'; p.hEt = p.hBase + 6; p.compacto = true; }
       else if (s.t === 'anillo' || s.t === 'back') { p.etHtml = incEsc(s.txt); p.etClase = 'piso'; p.hEt = p.hBase + 3; }
-      else if (s.t === 'vip') { p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.vip[0] + ';color:#0b1b33;letter-spacing:1px">' + incEsc(s.txt) + '</span>'; p.etClase = 'pill'; p.hEt = p.hBase + 4; }
+      else if (s.t === 'vip') { p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.vip[0] + ';color:#0b1b33">' + incEsc(s.txt) + '</span>'; p.etClase = 'pill'; p.hEt = p.hBase + 4; }
       else if (s.t === 'calle') {
         // El nombre, a un cuarto del largo (en el medio, el de la calle de atrás quedaba encima de la pantalla).
         const a = s.ang * Math.PI / 180;
@@ -1677,7 +1692,7 @@ function incPlano3D(cont, op0) {
     const frenteP = new T.Mesh(new T.PlaneGeometry(64, 3.8), matFrente); frenteP.position.set(0, 2, -111.9); escena.add(frenteP);
     [[100, 6.1, -118], [64, 4.1, -112]].forEach(([l, y, z]) => { const t = new T.Mesh(new T.BoxGeometry(l, 0.45, 0.45), matLuz); t.position.set(0, y, z); escena.add(t); });
   }
-  etiqueta('ESCENARIO', 'esc', new T.Vector3(0, 12, -136));
+  etiqueta('Escenario', 'esc', new T.Vector3(0, 12, -136));
   // La armazón: cuatro columnas finas y el cuadro de arriba, sin paneles (que se vea a través).
   const matTruss = new T.MeshStandardMaterial({ color: 0x2c3e5c, roughness: 0.4, metalness: 0.8 });
   [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(1.6, 50, 1.6), matTruss); t.position.set(x, 25, z); escena.add(t); });
