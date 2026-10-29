@@ -634,11 +634,23 @@ async function incCargarPlanoArena() {
   try {
     const { data, error } = await sb.rpc('plano_arena');
     if (error || !data || !Array.isArray(data.lugares)) return false;
-    // Un plano guardado antes de que hubiera calles, o baños arriba (P1, VIP y
-    // P3): se le suman los de siempre.
-    let lista = data.lugares;
+    // Un plano guardado antes de que los puestos tuvieran piso: cada uno toma el
+    // de su igual en el plano de siempre; los que se agregaron a mano eran de
+    // planta baja (el anillo era uno solo).
+    const pisoBase = {}, valido = p => INC_PISOS.some(x => x[0] === p);
+    INC_LUGARES_BASE.forEach(l => { if (l.piso) pisoBase[l.id.toLowerCase()] = l.piso; });
+    const sinPisos = !data.lugares.some(l => l && valido(l.piso));
+    let lista = data.lugares.map(l => {
+      if (!l || typeof l !== 'object' || l.t === 'calle' || valido(l.piso)) return l;
+      const p = pisoBase[String(l.id == null ? '' : l.id).trim().toLowerCase()] || (sinPisos ? 'PB' : '');
+      return p ? Object.assign({}, l, { piso: p }) : l;
+    });
+    // Y uno guardado antes de que hubiera calles, o gastronomía o baños en
+    // algún piso: se le suman los de siempre (los de ese piso).
     if (!lista.some(l => l && l.t === 'calle')) lista = lista.concat(INC_CALLES_BASE);
-    if (!lista.some(l => l && l.t === 'banio' && l.piso && l.piso !== 'PB')) lista = lista.concat(INC_LUGARES_BASE.filter(l => l.t === 'banio' && l.piso !== 'PB'));
+    INC_PISOS.forEach(([p]) => ['gastro', 'banio'].forEach(t => {
+      if (!lista.some(l => l && l.t === t && l.piso === p)) lista = lista.concat(INC_LUGARES_BASE.filter(l => l.t === t && l.piso === p));
+    }));
     const nuevos = incNormalizarLugares(lista);
     if (JSON.stringify(nuevos) === JSON.stringify(incLugaresArena)) return false;
     incLugaresArena = nuevos; incVersionPlano++;
@@ -1256,7 +1268,7 @@ function incPlano3D(cont, op0) {
   });
 
   // El escenario, simple: el piso, la tarima con un proscenio adelante, el
-  // frente de luz y la armazón arriba. Sin pantalla, pared ni caja.
+  // frente de luz, la armazón arriba y la pantalla (sin letras). Sin pared ni caja.
   const matTarima = new T.MeshStandardMaterial({ color: 0x0b1526, roughness: 0.32, metalness: 0.55 });
   const tarima = new T.Mesh(new T.BoxGeometry(100, 6, 44), matTarima); tarima.position.set(0, 3, -140); escena.add(tarima);
   const proscenio = new T.Mesh(new T.BoxGeometry(64, 4, 6), matTarima); proscenio.position.set(0, 2, -115); escena.add(proscenio);
@@ -1276,6 +1288,22 @@ function incPlano3D(cont, op0) {
   const matTruss = new T.MeshStandardMaterial({ color: 0x2c3e5c, roughness: 0.4, metalness: 0.8 });
   [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(1.6, 50, 1.6), matTruss); t.position.set(x, 25, z); escena.add(t); });
   [[0, -114, 110, 0], [0, -164, 110, 0], [-54, -139, 52, Math.PI / 2], [54, -139, 52, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 1.8, 1.8), matTruss); t.position.set(x, 50, z); t.rotation.y = r; escena.add(t); });
+  // La pantalla grande, colgada al fondo de la armazón: el azul con los puntitos
+  // de los LED, sin letras (el nombre del show va en la cinta que da la vuelta).
+  const lienzoLed = lienzoDe(1024, 256), texLed = textura(lienzoLed);
+  {
+    const x = lienzoLed.getContext('2d'), g = x.createLinearGradient(0, 0, 1024, 256);
+    g.addColorStop(0, '#00153f'); g.addColorStop(0.5, '#003a9e'); g.addColorStop(1, '#00153f');
+    x.fillStyle = g; x.fillRect(0, 0, 1024, 256);
+    x.fillStyle = 'rgba(255,255,255,.07)'; for (let i = 0; i < 1024; i += 8) for (let j = 0; j < 256; j += 8) x.fillRect(i, j, 4, 4);   // los puntitos de los LED
+    texLed.needsUpdate = true;
+  }
+  const pantallaLed = new T.Mesh(new T.PlaneGeometry(92, 24), new T.MeshBasicMaterial({ map: texLed }));
+  pantallaLed.position.set(0, 26, -161); escena.add(pantallaLed);
+  const marcoLed = new T.Mesh(new T.BoxGeometry(96, 28, 1.5), new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 }));
+  marcoLed.position.set(0, 26, -162.2); escena.add(marcoLed);
+  // Un borde de luz abajo de la pantalla.
+  { const t = new T.Mesh(new T.BoxGeometry(96, 0.5, 0.5), matLuz); t.position.set(0, 11.8, -161.3); escena.add(t); }
   // La consola (FOH) al fondo del campo, de referencia (no se toca: tocar sigue eligiendo el campo).
   {
     const [fx, fy, fw, fh] = INC_FOH, cx = fx + fw / 2 - 210, cz = fy + fh / 2 - 146;
