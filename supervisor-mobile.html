@@ -899,7 +899,7 @@ function incPisosHTML(clase) {
 }
 // Los tipos de puesto: nombre, ícono y tamaño con el que nace uno nuevo.
 const INC_TIPOS_LUGAR = {
-  puerta: { nombre: 'Puerta', w: 22, h: 12 },
+  puerta: { nombre: 'Puerta', ico: 'puerta', w: 22, h: 12 },
   gastro: { nombre: 'Gastronomía', ico: 'gastro', w: 17, h: 30 },
   banio: { nombre: 'Baños', ico: 'banio', w: 17, h: 22 },
   enfermeria: { nombre: 'Enfermería', ico: 'enfermeria', w: 17, h: 20 },
@@ -1096,6 +1096,9 @@ async function incCargarPlanoArena() {
     return true;
   } catch (_) { return false; }
 }
+// Lo que dice el cartel de un puesto: su código; las puertas, el número (con
+// el ícono de la puerta; "P1" se confundía con el piso P1).
+function incTxtLugar(s) { return s.t === 'puerta' ? String(s.txt == null ? '' : s.txt).replace(/^P(?=\d)/i, '') : s.txt; }
 // Un puesto como forma del plano (un rectángulo girado).
 function incLugarForma(l) {
   return { id: l.id, txt: l.txt, t: l.t, ico: INC_TIPOS_LUGAR[l.t].ico, p: incRectRot(l.cx, l.cy, l.w, l.h, l.ang * Math.PI / 180), lx: l.cx, ly: l.cy, w: l.w, h: l.h, ang: l.ang, piso: l.piso, rubro: l.rubro || '', lugar: true };
@@ -1106,6 +1109,7 @@ const INC_FACHADA = [[20, -46], [20, 261], [69, 320], [351, 320], [400, 261], [4
 const INC_CINTA = [[96, 30], [96, 223], [129, 255], [291, 255], [324, 223], [324, 30]];
 // Íconos (24×24) de los puestos.
 const INC_ICONOS = {
+  puerta: 'M19 19V5c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v14H3v2h18v-2h-2zm-4-6h-2v-2h2v2z',
   gastro: 'M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z',
   banio: 'M5.5 22v-7.5H4V9c0-1.1.9-2 2-2h3c1.1 0 2 .9 2 2v5.5H9.5V22h-4zM18 22v-6h3l-2.54-7.63C18.18 7.55 17.42 7 16.56 7h-.12c-.86 0-1.63.55-1.9 1.37L12 16h3v6h3zM7.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm9 0c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2z',
   enfermeria: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z',
@@ -1172,7 +1176,7 @@ function incFichaDatos(sector) {
   return {
     id: s.id, t: s.t, ico: s.ico || '', tipo: s.lugar ? INC_TIPOS_LUGAR[s.t].nombre : zonas[s.t] || '',
     // El código (CE1, SE01…) o el número del sector (104, A); los nombres largos no.
-    codigo: s.t === 'calle' ? '' : s.lugar || String(s.txt).length <= 4 ? s.txt : '',
+    codigo: s.t === 'calle' ? '' : s.lugar ? incTxtLugar(s) : String(s.txt).length <= 4 ? s.txt : '',
     piso, pisoNombre: (INC_PISOS.find(p => p[0] === piso) || [])[1] || '', lado, rubro: s.rubro || ''
   };
 }
@@ -1232,9 +1236,15 @@ const INC_FUENTE = 'Poppins,sans-serif';
 // Cuándo la ventana del detalle va abajo en vez de al costado: en el celular y en las pantallas paradas (la tablet vertical).
 const INC_VENTANA_ABAJO = '(max-width:640px),(orientation:portrait) and (max-width:1100px)';
 const INC_LEYENDA = [['baja', 'Platea baja'], ['alta', 'Platea alta'], ['vip', 'Premium'], ['campo', 'Campo'], ['puerta', 'Puertas'], ['gastro', 'Gastronomía'], ['banio', 'Baños'], ['enfermeria', 'Enfermería'], ['servicio', 'Otros puntos'], ['calle', 'Calles']];
-function incLeyendaHTML(clase, soloZonas) {
-  const col = INC_TEMA.color;
-  return '<div class="' + (clase || 'inc-plano-ley') + '">' + INC_LEYENDA.slice(0, soloZonas ? 4 : 99).map(([t, n]) => '<span><i style="background:' + col[t][0] + ';border-color:' + col[t][1] + '"></i>' + n + '</span>').join('') + '</div>';
+// modo: '' (el plano: zonas y puestos en cuadritos), true (sólo las zonas) o
+// '3d' (las zonas en cuadrito y los puestos con su ícono, como se ven en el estadio).
+// Al final, qué es el número de color: las incidencias abiertas.
+function incLeyendaHTML(clase, modo) {
+  const col = INC_TEMA.color, cuadro = ([t, n]) => '<span><i style="background:' + col[t][0] + ';border-color:' + col[t][1] + '"></i>' + n + '</span>';
+  const abiertas = '<span><b class="inc-ley-n" style="background:' + INC_NIVELES[2].color + '">2</b>Incidencias abiertas</span>';
+  if (modo === '3d') return '<div class="' + clase + '">' + INC_LEYENDA.slice(0, 4).map(cuadro).join('')
+    + '<span class="inc-ley-puestos">' + INC_LEYENDA.slice(4).filter(([t]) => INC_TIPOS_LUGAR[t] && INC_TIPOS_LUGAR[t].ico).map(([t, n]) => '<span><b class="inc-ley-ico" style="background:' + col[t][0] + ';color:' + (INC_TEMA.tintaTipo[t] || '#ffffff') + '"><svg viewBox="0 0 24 24"><path d="' + INC_ICONOS[INC_TIPOS_LUGAR[t].ico] + '"/></svg></b>' + n + '</span>').join('') + '</span>' + abiertas + '</div>';
+  return '<div class="' + (clase || 'inc-plano-ley') + '">' + INC_LEYENDA.slice(0, modo ? 4 : 99).map(cuadro).join('') + (modo ? '' : abiertas) + '</div>';
 }
 // El plano en SVG. op: { armado, niveles, cuentas, porNivel, sel, onclick,
 // editor, piso }. Cada lugar se pinta con el color de su incidencia abierta
@@ -1288,7 +1298,7 @@ function incPlanoSVG(op) {
     } else if (s.ico) {
       const ancho = w >= h, tam = ancho ? 7.5 : 7, ix = ancho ? cx - 5.5 : cx, iy = ancho ? cy : cy - 3.5;
       etq = '<path d="' + INC_ICONOS[s.ico] + '" transform="translate(' + (ix - tam / 2) + ' ' + (iy - tam / 2) + ') scale(' + (tam / 24) + ')" fill="' + tinta + '"' + suave + ' pointer-events="none"/>'
-        + (s.txt ? '<text x="' + (ancho ? cx + 6 : cx) + '" y="' + (ancho ? cy + 1.8 : cy + 6.8) + '" font-size="5" font-weight="600" fill="' + tinta + '"' + suave + ' text-anchor="middle" pointer-events="none">' + incEsc(s.txt) + '</text>' : '');
+        + (s.txt ? '<text x="' + (ancho ? cx + 6 : cx) + '" y="' + (ancho ? cy + 1.8 : cy + 6.8) + '" font-size="5" font-weight="600" fill="' + tinta + '"' + suave + ' text-anchor="middle" pointer-events="none">' + incEsc(incTxtLugar(s)) + '</text>' : '');
     } else if (s.t === 'vip' && s.rot && (capas.nombres || n)) {
       etq = '<text x="' + cx + '" y="' + (cy + 1.5) + '" font-size="4.2" font-weight="700" letter-spacing="1.4" fill="#0b1b33" fill-opacity=".8" text-anchor="middle" transform="rotate(' + s.rot + ' ' + cx + ' ' + cy + ')" pointer-events="none">' + incEsc(s.txt) + '</text>';
     } else if (s.t === 'vip' && (capas.nombres || n)) {
@@ -1471,6 +1481,9 @@ function incEstiloPlano() {
     + '.inc-plano-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font:500 11.5px ' + INC_FUENTE + ';color:#43546e}'
     + '.inc-plano-ley span,.inc-3d-ley span{display:inline-flex;align-items:center;gap:5px}'
     + '.inc-plano-ley i,.inc-3d-ley i{width:10px;height:10px;border-radius:3px;border:1px solid;display:inline-block}'
+    + '.inc-ley-puestos{display:contents}'
+    + '.inc-ley-ico{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1px solid rgba(255,255,255,.85)}.inc-ley-ico svg{width:9px;height:9px;fill:currentColor;display:block}'
+    + '.inc-ley-n{display:inline-grid;place-items:center;min-width:15px;height:15px;padding:0 3px;border-radius:999px;border:1.5px solid #fff;color:#fff;font:700 9px/1 ' + INC_FUENTE + '}'
     + '.inc-3d-ley{position:absolute;left:calc(10px + var(--inc-izq,0px));top:calc(10px + var(--inc-sup,0px));z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 190px);font:500 11px ' + INC_FUENTE + ';color:#dbe8ff;padding:6px 10px;border-radius:10px;pointer-events:none;' + INC_VIDRIO + '}'
     // En los aparatos táctiles, lo que se toca, del tamaño del dedo.
     + '@media(pointer:coarse){.inc-pisos button,.inc-3d-pisos button{min-height:38px;padding:0 13px}.inc-ref-rapida button,.inc-capas button{min-height:36px}.inc-ficha-cab button{width:36px;height:36px}.inc-ficha-accion{min-height:44px}}';
@@ -1502,6 +1515,15 @@ function incEstilo3D() {
     + '.inc-3d-e.claro,.inc-3d-e.osc{color:rgba(11,27,51,.86);text-shadow:0 1px 1px rgba(255,255,255,.45)}'
     + '.inc-3d-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:999px;font:600 9.5px/1 ' + INC_FUENTE + ';color:#fff;border:1px solid rgba(255,255,255,.85);box-shadow:0 0 8px rgba(80,180,255,.3),0 1px 3px rgba(0,10,30,.3);text-shadow:none;opacity:.92}'
     + '.inc-3d-pill svg{width:10px;height:10px;fill:currentColor;display:block}'
+    + '.inc-3d-pill b{font-weight:inherit}'
+    // De lejos (en "Todos"), sólo el ícono; el código, al acercarse o al pasar el mouse.
+    + '.inc-3d-e.ico .inc-3d-cod{display:none}.inc-3d-e.ico .inc-3d-pill{padding:3px;gap:0}'
+    // Los que se pisan, juntos en un marcador con cuántos son (se toca para acercarse).
+    + '.inc-3d-e.agrupada{visibility:hidden!important}'
+    + '.inc-3d-e.grupo{pointer-events:auto;cursor:pointer}'
+    + '.inc-3d-grupo{display:inline-flex;align-items:center;gap:3px;padding:3px 7px 3px 5px;border-radius:999px;background:rgba(11,27,51,.9);color:#fff;font:700 10px/1 ' + INC_FUENTE + ';border:1.5px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(0,10,30,.45)}'
+    + '.inc-3d-grupo i{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}'
+    + '.inc-3d-e.grupo:hover .inc-3d-grupo{box-shadow:0 0 0 2px #7cc8ff,0 2px 8px rgba(0,10,30,.45)}'
     + '.inc-3d-chapa{display:grid;place-items:center;min-width:21px;height:21px;padding:0 5px;border-radius:999px;font:700 11.5px/1 ' + INC_FUENTE + ';color:#fff;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,10,30,.45);text-shadow:none}'
     // Si en un lugar hay de distinta gravedad: cuántas de cada una, cada una con su color.
     + '.inc-3d-chapa.multi{display:inline-flex;gap:2px;padding:2px;background:#fff;min-width:0}'
@@ -1544,7 +1566,7 @@ function incEstilo3D() {
     // En el celular la ayuda va arriba de los pisos (si no, se pisan).
     + '@media(max-width:560px){.inc-3d-ayuda{bottom:calc(58px + var(--inc-tapa-abajo,0px) + var(--inc-inf,0px))}'
     // La leyenda, más chica; en pantalla completa, abajo de los botones (si no, se pisan).
-    + '.inc-3d-btn-txt{display:none}.inc-3d-ley{max-width:calc(100% - 150px);font-size:10.5px;gap:2px 8px;padding:5px 8px}.inc-3d-full .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}}'
+    + '.inc-3d-btn-txt{display:none}.inc-3d-ley .inc-ley-puestos{display:none}.inc-3d-ley{max-width:calc(100% - 150px);font-size:10.5px;gap:2px 8px;padding:5px 8px}.inc-3d-full .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}}'
     // En los aparatos táctiles, lo que se toca, del tamaño del dedo (44 px).
     + '@media(pointer:coarse){.inc-3d-btn{min-width:44px;min-height:44px;font-size:13px}.inc-3d-det-x{width:36px;height:36px}.inc-3d-det-todas{min-height:38px}.inc-3d-capas-l button{min-height:44px}}';
   document.head.appendChild(st);
@@ -1576,7 +1598,7 @@ function incPlano3D(cont, op0) {
   const ayuda = document.createElement('div'); ayuda.className = 'inc-3d-ayuda'; ayuda.textContent = 'Arrastrá para girar · tocá un lugar';
   cont.appendChild(ayuda);
   const tip = document.createElement('div'); tip.className = 'inc-3d-tip'; cont.appendChild(tip);
-  const ley = document.createElement('div'); ley.innerHTML = incLeyendaHTML('inc-3d-ley', true); if (ley.firstChild) cont.appendChild(ley.firstChild);
+  const ley = document.createElement('div'); ley.innerHTML = incLeyendaHTML('inc-3d-ley', '3d'); if (ley.firstChild) cont.appendChild(ley.firstChild);
   const panel = document.createElement('div'); panel.className = 'inc-3d-det'; cont.appendChild(panel);
   const fichaEl = document.createElement('div'); cont.appendChild(fichaEl);
   const pisosEl = document.createElement('div'); cont.appendChild(pisosEl);
@@ -1710,7 +1732,7 @@ function incPlano3D(cont, op0) {
       p.mats = [matMarco, matHuella];
       p.pintar = (v, sel) => { matMarco.color.set(sel ? TM.sel : v ? sevColor(v) : base[0]); matHuella.color.set(v ? v.plano : base[0]); };
       p.latir = k => { matHuella.opacity = 0.22 + k * 0.5; };
-      p.hBase = h; p.hEt = h + 5; p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.puerta[0] + ';color:' + (T2.tintaTipo.puerta || '#ffffff') + '">' + incEsc(s.txt) + '</span>'; p.etClase = 'pill';
+      p.hBase = h; p.hEt = h + 5; p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.puerta[0] + ';color:' + (T2.tintaTipo.puerta || '#ffffff') + '">' + icoSVG('puerta') + '<b class="inc-3d-cod">' + incEsc(incTxtLugar(s)) + '</b></span>'; p.etClase = 'pill'; p.compacto = true;
     } else {
       let geo, rot = 0;
       // Con butacas: las plateas y lo que sube como ellas (el corner, del VIP, como la baja).
@@ -1761,7 +1783,7 @@ function incPlano3D(cont, op0) {
         p.pintar = (v, sel) => { matTop.color.set(base[0]); matLado.color.set(base[1]); matTop.emissive.set(v ? v.color : base[0]); matBorde.color.set(sel ? TM.sel : v ? v.plano : bordeBase); matBorde.opacity = v || sel ? 1 : opB; };
         p.latir = k => { matTop.emissiveIntensity = p.nivel ? k * 0.55 : k; };
       }
-      if (s.ico) { p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color[s.t][0] + ';color:' + (T2.tintaTipo[s.t] || '#ffffff') + '">' + icoSVG(s.ico) + incEsc(s.txt) + '</span>'; p.etClase = 'pill'; p.hEt = p.hBase + 6; }
+      if (s.ico) { p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color[s.t][0] + ';color:' + (T2.tintaTipo[s.t] || '#ffffff') + '">' + icoSVG(s.ico) + (s.txt ? '<b class="inc-3d-cod">' + incEsc(s.txt) + '</b>' : '') + '</span>'; p.etClase = 'pill'; p.hEt = p.hBase + 6; p.compacto = true; }
       else if (s.t === 'anillo' || s.t === 'back') { p.etHtml = incEsc(s.txt); p.etClase = 'piso'; p.hEt = p.hBase + 3; }
       else if (s.t === 'vip') { p.etHtml = '<span class="inc-3d-pill" style="background:' + T2.color.vip[0] + ';color:#0b1b33;letter-spacing:1px">' + incEsc(s.txt) + '</span>'; p.etClase = 'pill'; p.hEt = p.hBase + 4; }
       else if (s.t === 'calle') {
@@ -1892,9 +1914,13 @@ function incPlano3D(cont, op0) {
       });
       mats.push(matLosa, matCanto, matBordeL);
     }
-    const et = etiqueta('<span class="inc-3d-nivel" data-piso="' + k + '" title="Ver ' + incEsc(nombre.toLowerCase()) + '">' + incEsc(nombre) + '</span>', 'nivel', new T.Vector3(-140 + i * 35, 2, 180));   // al frente, en escalera (cada uno a la altura de su piso)
+    const xEt = -140 + i * 35;   // al frente, en escalera (cada uno a la altura de su piso)
+    const et = etiqueta('<span class="inc-3d-nivel" data-piso="' + k + '" title="Ver ' + incEsc(nombre.toLowerCase()) + '">' + incEsc(nombre) + '</span>', 'nivel', new T.Vector3(xEt, 2, 180));
     et.grupo = g;
-    pisos3d[k] = { g, mats, et, vista: '' };
+    // Una línea guía del nombre al anillo de su piso.
+    const guia = new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(xEt, 2, 180), new T.Vector3(xEt, 0.3, 158)]), new T.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 }));
+    g.add(guia);
+    pisos3d[k] = { g, mats, et, guia, vista: '' };
   });
   // Cómo se ve el piso de un nivel: en "Todos", de vidrio esmerilado (se ve lo
   // de los pisos de abajo); el elegido, lleno; los de abajo, apagados.
@@ -1904,7 +1930,13 @@ function incPlano3D(cont, op0) {
     nv.vista = vista;
     nv.mats.forEach(m => { if (m.userData.op0 === undefined) m.userData.op0 = m.opacity; m.transparent = vista !== 'lleno' || m.userData.op0 < 1; m.opacity = m.userData.op0 * VISTA_LOSA[vista]; m.depthWrite = vista === 'lleno'; m.needsUpdate = true; });
   };
-  capaEtq.addEventListener('click', e => { const b = e.target.closest ? e.target.closest('[data-piso]') : null; if (b) incElegirPiso(b.dataset.piso); });
+  capaEtq.addEventListener('click', e => {
+    const b = e.target.closest ? e.target.closest('[data-piso],[data-grupo]') : null; if (!b) return;
+    if (b.dataset.piso) { incElegirPiso(b.dataset.piso); return; }
+    const g = grupos[Number(b.dataset.grupo)]; if (!g) return;
+    const centro = g.reduce((a, o) => a.add(o.pos.clone().add(o.pieza.grupo.position)), new T.Vector3()).multiplyScalar(1 / g.length);
+    viajarAPunto(centro, Math.max(170, Math.min(DIST_CODIGO - 60, camara.position.distanceTo(controles ? controles.target : objetivo) * 0.5)));
+  });
 
 
   // La baliza de un lugar con incidencias: columna de luz, onda en la base y el número.
@@ -1965,11 +1997,47 @@ function incPlano3D(cont, op0) {
       const dist = camara.position.distanceTo(vec);
       vec.project(camara);
       const fuera = vec.z > 1 || vec.x < -1.15 || vec.x > 1.15 || vec.y < -1.15 || vec.y > 1.15;
-      if (fuera) { if (e.mostrado) { e.el.style.display = 'none'; e.mostrado = false; } return; }
+      if (fuera) { e.sx = null; if (e.mostrado) { e.el.style.display = 'none'; e.mostrado = false; } return; }
       if (!e.mostrado) { e.el.style.display = ''; e.mostrado = true; }
       const k = Math.max(0.7, Math.min(1.12, 470 / dist));
-      e.el.style.transform = 'translate(' + ((vec.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - vec.y) / 2 * h).toFixed(1) + 'px) translate(-50%,-50%) scale(' + k.toFixed(3) + ')';
+      e.sx = (vec.x + 1) / 2 * w; e.sy = (1 - vec.y) / 2 * h; e.dist = dist;
+      // Un puesto, en "Todos" y de lejos: sólo el ícono. Con algo abierto, elegido o con el mouse encima, también el código.
+      if (e.pieza && e.pieza.compacto) {
+        const p = e.pieza, ico = !pisoVista && dist > DIST_CODIGO && !p.nivel && !p.sel && p.id !== sobre;
+        if (e.ico !== ico) { e.ico = ico; e.el.classList.toggle('ico', ico); }
+      }
+      e.el.style.transform = 'translate(' + e.sx.toFixed(1) + 'px,' + e.sy.toFixed(1) + 'px) translate(-50%,-50%) scale(' + k.toFixed(3) + ')';
     });
+    agrupar();
+  };
+  // Los puestos que quedan uno encima del otro en la pantalla (sólo ícono, sin
+  // nada abierto) se juntan en un marcador con cuántos son y el color de cada
+  // tipo; tocarlo acerca la cámara ahí y se separan.
+  const DIST_CODIGO = 340, JUNTOS = 20, grupos = [], grupoEls = [];
+  const agrupar = () => {
+    const cand = etiquetas.filter(e => e.ico && e.sx != null && e.mostrado && e.el.style.visibility !== 'hidden');
+    const libres = new Set(cand), juntas = new Set();
+    grupos.length = 0;
+    cand.forEach(e => {
+      if (!libres.has(e)) return;
+      const g = cand.filter(o => libres.has(o) && Math.hypot(o.sx - e.sx, o.sy - e.sy) < JUNTOS);
+      if (g.length < 2) return;
+      g.forEach(o => { libres.delete(o); juntas.add(o); });
+      grupos.push(g);
+    });
+    etiquetas.forEach(e => { const en = juntas.has(e); if (!!e.agrupada !== en) { e.agrupada = en; e.el.classList.toggle('agrupada', en); } });
+    grupos.forEach((g, i) => {
+      let el = grupoEls[i];
+      if (!el) { el = document.createElement('div'); el.className = 'inc-3d-e grupo'; capaEtq.appendChild(el); grupoEls[i] = el; }
+      const tipos = [...new Set(g.map(o => o.pieza.t))].slice(0, 3), nombres = g.map(o => o.pieza.id).join(' · ');
+      if (el.dataset.clave !== nombres) {
+        el.dataset.clave = nombres; el.title = nombres + ' · tocá para acercarte';
+        el.innerHTML = '<span class="inc-3d-grupo" data-grupo="' + i + '">' + tipos.map(t => '<i style="background:' + T2.color[t][0] + '"></i>').join('') + g.length + '</span>';
+      }
+      const x = g.reduce((a, o) => a + o.sx, 0) / g.length, y = g.reduce((a, o) => a + o.sy, 0) / g.length;
+      el.style.display = ''; el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%)';
+    });
+    for (let i = grupos.length; i < grupoEls.length; i++) grupoEls[i].style.display = 'none';
   };
   const dibujar = () => { motor.render(escena, camara); ubicarEtiquetas(); ubicarAsas(); };
 
@@ -2037,13 +2105,14 @@ function incPlano3D(cont, op0) {
   const volver = () => { origen = camara.position.clone(); intro = 0; introDesde = null; viaje = null; if (controles) controles.enabled = false; };
   // Al elegir un lugar, la cámara va hasta él: desde donde se lo miraba, más cerca.
   let viaje = null, irA = '', selAnt = op0.sel || '';
-  const viajarA = p => {
+  const viajarAPunto = (obj, dist) => {
     if (!controles) return;
-    const obj = new T.Vector3(p.cx, p.hBase + (p.yAct || 0), p.cz), dir = camara.position.clone().sub(controles.target).normalize();
+    const dir = camara.position.clone().sub(controles.target).normalize();
     objetivo.y = objY;   // que la altura del piso no la mueva después
-    viaje = { p0: camara.position.clone(), o0: controles.target.clone(), p1: obj.clone().add(dir.multiplyScalar(270)), o1: obj, t: 0 };
+    viaje = { p0: camara.position.clone(), o0: controles.target.clone(), p1: obj.clone().add(dir.multiplyScalar(dist)), o1: obj.clone(), t: 0 };
     controles.autoRotate = false; ultimoToque = Date.now();
   };
+  const viajarA = p => viajarAPunto(new T.Vector3(p.cx, p.hBase + (p.yAct || 0), p.cz), 270);
 
   // Tamaño: el ancho del contenedor y un alto proporcionado; con
   // data-alto="pantalla" (en pantallas grandes), el alto que le da la página;
@@ -2245,7 +2314,7 @@ function incPlano3D(cont, op0) {
     m.transparent = on || m.userData.tr0; m.opacity = on ? 0.14 : m.userData.op0; m.depthWrite = !on; m.needsUpdate = true;
   });
   // Adónde mira la cámara (la altura) y cuánto se aleja: cambian con el piso elegido.
-  let objY = 0, pisoAnt = null, tAnt = null;
+  let objY = 0, pisoAnt = null, tAnt = null, pisoVista = '';
   const finIntro = new T.Vector3();
   const acercar = (a, b, k) => Math.abs(b - a) < 0.05 ? b : a + (b - a) * k;
 
@@ -2364,7 +2433,7 @@ function incPlano3D(cont, op0) {
         const nv = pisos3d[k];
         nv.g.visible = !pisoSel || i <= iSel;
         verLosa(nv, !pisoSel ? 'todos' : i < iSel ? 'abajo' : 'lleno');
-        nv.et.el.style.visibility = pisoSel ? 'hidden' : '';
+        nv.et.el.style.visibility = pisoSel ? 'hidden' : ''; nv.guia.visible = !pisoSel;
       });
       cintaG.visible = pisos3d.VIP.g.visible;
       altoFachadaObj = (pisoSel ? INC_3D_PISO[pisoSel] : INC_3D_PISO.P3) + ALTO_PARED;
@@ -2372,7 +2441,7 @@ function incPlano3D(cont, op0) {
       // La cámara mira a la altura del piso elegido (en "Todos", a media altura). Al cambiar de piso, va sola a mirarlo.
       objY = pisoSel ? INC_3D_PISO[pisoSel] : INC_3D_PISO.P3 * 0.35;
       if (pisoAnt !== null && pisoAnt !== pisoSel) { if (irA) irA = ''; else volver(); }
-      pisoAnt = pisoSel;
+      pisoAnt = pisoVista = pisoSel;
       // El lugar elegido: su ficha (en pantalla completa va en el detalle de al
       // costado) y la cámara que va hasta él. Editando, nada de eso.
       const fichaId = !editar && op.sel && piezas[op.sel] ? op.sel : '';
