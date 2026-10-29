@@ -5314,11 +5314,17 @@ function incBuscadorRefrescar(cont) {
 }
 function incBuscadorAccion(cont, a, el) {
   const b = cont._incBus || (cont._incBus = { abierto: false, q: '' });
-  if (a === 'tipo') { incElegirTipo(el.dataset.t); return; }   // se rehace el plano (y el panel con él)
+  if (a === 'tipo') { incSoltarSiOtroTipo(cont, el.dataset.t); incElegirTipo(el.dataset.t); return; }   // se rehace el plano (y el panel con él)
   if (a === 'ir') { incIrALugar(cont, el.dataset.id); return; }
   if (a === 'abrir') { b.abierto = !b.abierto; b.foco = b.abierto; }
   if (a === 'cerrar') b.abierto = false;
   incBuscadorRefrescar(cont);
+}
+// Al pasar a ver un solo tipo de puesto: si el lugar elegido es un puesto de
+// otro tipo (no se va a ver), se suelta (es volver a tocarlo).
+function incSoltarSiOtroTipo(cont, t) {
+  const op = cont._incOp || {}, s = op.sel && incLugaresArena.find(l => l.id === op.sel);
+  if (t && s && s.t !== t && op.onclick && typeof window[op.onclick] === 'function') window[op.onclick](op.sel);
 }
 // Elegir un lugar desde el buscador: lo mismo que tocarlo (la ficha, la
 // cámara, o en la tablet cargar ahí); si es de otro piso, a ese piso; si no es
@@ -5385,7 +5391,7 @@ const INC_LEYENDA_PISO = { campo: 'PB', baja: 'P1', vip: 'VIP', alta: 'P3' };
 // modo: '' (el plano: todo en cuadritos), true (sólo las zonas) o '3d' (las
 // zonas en cuadrito y los puestos con su ícono, como se ven en el estadio).
 // De los puestos, sólo los tipos que hay en el plano. Al final, qué es el
-// círculo de color: las incidencias abiertas. Cada cosa se toca (ver
+// círculo de las incidencias (blanco: ningún color del semáforo). Cada cosa se toca (ver
 // incLeyendaAccion); lo que se está mirando queda marcado.
 function incLeyendaHTML(clase, modo) {
   const col = INC_TEMA.color, hay = new Set(incLugaresArena.map(l => l.t)), tipoSel = incTipoElegido(), pisoSel = incPisoElegido();
@@ -5401,7 +5407,7 @@ function incLeyendaHTML(clase, modo) {
     : '<span' + (cl ? ' class="' + cl + '"' : '') + '>' + marca + n + '</span>';
   const cuadro = ([t, n]) => boton(t, n, '<i style="background:' + col[t][0] + ';border-color:' + col[t][1] + '"></i>');
   const icono = ([t, n]) => boton(t, n, '<b class="inc-ley-ico" style="background:' + col[t][0] + ';color:' + (INC_TEMA.tintaTipo[t] || '#ffffff') + '"><svg viewBox="0 0 24 24"><path d="' + INC_ICONOS[INC_TIPOS_LUGAR[t].ico] + '"/></svg></b>', 'inc-ley-p');
-  const abiertas = '<button type="button" class="inc-ley-b" data-ley="abiertas" title="Ir a la próxima incidencia abierta (de la más grave a la más leve)"><b class="inc-ley-n" style="background:' + INC_NIVELES[3].color + '"></b>Incidencias abiertas</button>';
+  const abiertas = '<button type="button" class="inc-ley-b" data-ley="abiertas" title="Ir a la próxima incidencia abierta (de la más grave a la más leve)"><b class="inc-ley-n"></b>Incidencias</button>';
   const items = INC_LEYENDA.filter(([t]) => zona(t) || (modo !== true && hay.has(t) && (modo !== '3d' || (INC_TIPOS_LUGAR[t] && INC_TIPOS_LUGAR[t].ico))));
   return '<div class="' + (clase || 'inc-plano-ley') + '">' + items.map(it => modo === '3d' && !zona(it[0]) ? icono(it) : cuadro(it)).join('') + (tocable ? abiertas : '') + '</div>';
 }
@@ -5426,6 +5432,7 @@ function incLeyendaAccion(cont, t) {
   if (de.length === 1) { incIrALugar(cont, de[0].id); return; }
   if (incTipoElegido() === t) { if (cont._incBus) cont._incBus.abierto = false; incElegirTipo(''); return; }
   cont._incBus = Object.assign(cont._incBus || {}, { abierto: true, q: '' });
+  incSoltarSiOtroTipo(cont, t);
   incElegirTipo(t);
 }
 // El plano en SVG. op: { armado, niveles, cuentas, porNivel, sel, onclick,
@@ -5713,7 +5720,8 @@ function incEstiloPlano() {
     + '.inc-plano-ley span,.inc-3d-ley span{display:inline-flex;align-items:center;gap:5px}'
     + '.inc-plano-ley i,.inc-3d-ley i{width:10px;height:10px;border-radius:3px;border:1px solid;display:inline-block}'
     + '.inc-ley-ico{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1px solid rgba(255,255,255,.85)}.inc-ley-ico svg{width:9px;height:9px;fill:currentColor;display:block}'
-    + '.inc-ley-n{display:inline-block;width:11px;height:11px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(11,27,51,.25)}'
+    // Las incidencias, en blanco con borde azul: ningún color del semáforo (ése es el de cada una, según su gravedad).
+    + '.inc-ley-n{display:inline-block;width:11px;height:11px;border-radius:50%;background:#ffffff;border:2px solid #2f80ed}'
     // Cada cosa de la leyenda se toca: lleva ahí (ver incLeyendaAccion).
     + '.inc-ley-b{display:inline-flex;align-items:center;gap:5px;margin:-2px -5px;padding:2px 5px;border:0;border-radius:6px;background:transparent;color:inherit;font:inherit;cursor:pointer}'
     + '.inc-plano-ley .inc-ley-b:hover{background:rgba(11,27,51,.07)}.inc-plano-ley .inc-ley-b.on{background:rgba(11,27,51,.12);font-weight:700}'
@@ -6612,7 +6620,7 @@ function incPlano3D(cont, op0) {
     m.transparent = on || m.userData.tr0; m.opacity = on ? 0.14 : m.userData.op0; m.depthWrite = !on; m.needsUpdate = true;
   });
   // Adónde mira la cámara (la altura) y cuánto se aleja: cambian con el piso elegido.
-  let objY = 0, pisoAnt = null, tAnt = null, pisoVista = '';
+  let objY = 0, pisoAnt = null, tipoAnt = null, tAnt = null, pisoVista = '';
   const finIntro = new T.Vector3();
   const acercar = (a, b, k) => Math.abs(b - a) < 0.05 ? b : a + (b - a) * k;
 
@@ -6742,10 +6750,14 @@ function incPlano3D(cont, op0) {
       cintaG.visible = pisos3d.VIP.g.visible;
       altoFachadaObj = (pisoSel ? INC_3D_PISO[pisoSel] : INC_3D_PISO.P3) + ALTO_PARED;
       if (altoFachada === null) { altoFachada = altoFachadaObj; fachadaG.scale.y = altoFachada; }
-      // La cámara mira a la altura del piso elegido (en "Todos", a media altura). Al cambiar de piso, va sola a mirarlo.
+      // La cámara mira a la altura del piso elegido (en "Todos", a media altura).
+      // Al cambiar de piso o el tipo de puesto que se mira, vuelve a mostrar
+      // todo (si estaba cerca de un lugar, se aleja y se ven todos los de ese
+      // tipo); salvo si se está yendo a un lugar o se acaba de elegir uno (va hasta él).
       objY = pisoSel ? INC_3D_PISO[pisoSel] : INC_3D_PISO.P3 * 0.35;
-      if (pisoAnt !== null && pisoAnt !== pisoSel) { if (irA) irA = ''; else volver(); }
-      pisoAnt = pisoVista = pisoSel;
+      const cambioVista = (pisoAnt !== null && pisoAnt !== pisoSel) || (tipoAnt !== null && tipoAnt !== tipoSel);
+      if (cambioVista) { if (irA) irA = ''; else if (elegido === selAnt || !piezas[elegido]) volver(); }
+      pisoAnt = pisoVista = pisoSel; tipoAnt = tipoSel;
       // El lugar elegido: su ficha (en pantalla completa va en el detalle de al
       // costado) y la cámara que va hasta él. Editando, nada de eso.
       const fichaId = !editar && op.sel && piezas[op.sel] ? op.sel : '';
@@ -6760,6 +6772,7 @@ function incPlano3D(cont, op0) {
     // Ir a un lugar (desde el buscador): a su piso si hace falta, y lo mismo que tocarlo.
     ir(id) {
       const pz = piezas[id]; if (!pz) return;
+      tipoAnt = editar ? '' : incTipoElegido();
       const pisoSel = incPisoElegido(), destino = pz.nivelDe;
       if (destino && ((pz.lugar && pisoSel !== destino) || (pisoSel && pisoSel !== destino))) { irA = id; incElegirPiso(destino); }
       if (enPantalla() && detLista) { selLocal = detSector = id; detAbierto = true; api.poner(ultimoOp); return; }
