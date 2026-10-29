@@ -187,7 +187,9 @@ tr:hover td{background:#fafaf8}
 #sec-control .t-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 #sec-control .t-grid>*{min-width:0}
 #sec-control .t-plano{border-radius:22px;padding:10px}
-#sec-control .t-plano .inc-adm-plano{border:0;padding:0;background:transparent}
+/* Sin la tarjeta blanca del plano 2D; el 3D conserva su fondo azul (también en pantalla completa), como en la gerencia. */
+#sec-control .t-plano .inc-adm-plano{border:0;padding:0}
+#sec-control .t-plano .inc-adm-plano:not(.inc-3d){background:transparent}
 #sec-control .t-lista{border-radius:22px;display:flex;flex-direction:column;overflow:hidden}
 #sec-control .t-lista-cab{padding:14px 14px 10px;border-bottom:1px solid var(--linea)}
 #sec-control .t-lista-t{font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--tinta)}
