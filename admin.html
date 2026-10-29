@@ -5016,9 +5016,10 @@ function incElegirPiso(p) {
   if (typeof window !== 'undefined' && typeof window.incPisoCambiado === 'function') window.incPisoCambiado();
 }
 // Lo que se muestra del plano, por aparato: los nombres de los sectores, los
-// puestos del anillo y las calles. Lo que tiene algo abierto se ve siempre.
-const INC_CAPAS = [['nombres', 'Nombres'], ['puestos', 'Puestos'], ['calles', 'Calles']];
-const INC_CAPAS_TODAS = { nombres: true, puestos: true, calles: true };
+// puestos del anillo, sus íconos (sin ellos, el puesto queda y no recarga) y las
+// calles. Lo que tiene algo abierto (o está elegido) se ve siempre.
+const INC_CAPAS = [['nombres', 'Nombres'], ['puestos', 'Puestos'], ['iconos', 'Íconos'], ['calles', 'Calles']];
+const INC_CAPAS_TODAS = { nombres: true, puestos: true, iconos: true, calles: true };
 function incCapas() {
   try { const c = JSON.parse(localStorage.getItem('incCapas') || '{}'); return Object.assign({}, INC_CAPAS_TODAS, c && typeof c === 'object' ? c : {}); }
   catch (_) { return Object.assign({}, INC_CAPAS_TODAS); }
@@ -5410,6 +5411,71 @@ function incFichaDatos(sector) {
   };
 }
 function incFichaChips(f) { return [f.tipo, f.rubro, f.pisoNombre, f.lado].filter(Boolean).map(d => '<span>' + incEsc(d) + '</span>').join(''); }
+// ── La tarjeta de una incidencia ──
+// La misma en todas las listas (al costado del plano, en pantalla completa, en el
+// panel). Cerrada, lo justo para leerla de un vistazo: qué pasó, cuán grave, dónde y
+// hace cuánto (el ícono es el de su categoría, del color de la gravedad). Tocada, se
+// despliega con todo: el lugar, qué se hizo, la nota, quién la cargó y cómo se resolvió.
+const INC_ICONOS_CAT = {
+  'Médica': 'M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z',
+  'Seguridad': 'M12 2 4 5v6c0 5.2 3.4 10 8 11 4.6-1 8-5.8 8-11V5z',
+  'Ubicación': 'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z',
+  'Infraestructura': 'M22.7 19 13.6 9.9c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1 0-1.4z',
+  'Personal': 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z',
+  'Otro': 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2zm0-4h-2V7h2z'
+};
+// "recién", "hace 12 min", "hace 1 h 5 min"; de otro día, la fecha y la hora.
+function incHace(iso) {
+  const t = new Date(iso).getTime(); if (!iso || isNaN(t)) return '';
+  if (incDia(iso) !== incDia(new Date().toISOString())) return incCuando(iso);
+  const m = Math.max(0, Math.floor((Date.now() - t) / 60000));
+  return m < 1 ? 'recién' : m < 60 ? 'hace ' + m + ' min' : 'hace ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '');
+}
+// op: { abierta (desplegada), sinLugar (la lista es de un solo lugar), nueva, onclick (la función de la página, con el id), pie (botones) }.
+function incTarjetaHTML(i, op) {
+  op = op || {};
+  incEstiloTarjetas();
+  const v = INC_NIVELES[i.nivel] || INC_NIVELES[1], resuelta = i.estado === 'resuelta', abierta = !!op.abierta, id = incEsc(i.id);
+  const f = incFichaDatos(i.sector), ico = INC_ICONOS_CAT[i.categoria] || INC_ICONOS_CAT.Otro;
+  const linea = '<b style="color:' + v.color + '">' + v.nombre + '</b>' + (resuelta ? ' · <span class="inc-tj-ok">Resuelta</span>' : '')
+    + (op.sinLugar ? '' : ' · ' + incEsc(i.sector) + (f && f.piso ? ' · ' + incEsc(f.piso) : ''));
+  const fila = (t, html) => html ? '<div class="inc-tj-f"><span>' + t + '</span><div>' + html + '</div></div>' : '';
+  const tardo = resuelta && i.resuelta_at && i.created_at ? new Date(i.resuelta_at) - new Date(i.created_at) : -1;
+  const det = !abierta ? '' : '<div class="inc-tj-det" onclick="event.stopPropagation()">'
+    + fila('Dónde', '<b>' + incEsc(i.sector) + '</b>' + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + (f ? '<div class="inc-tj-chips">' + incFichaChips(f) + '</div>' : ''))
+    + fila('Qué es', incEsc(i.categoria || ''))
+    + fila('Qué se hizo', (i.acciones || []).map(a => '<div class="inc-tj-acc">✓ ' + incEsc(a) + '</div>').join(''))
+    + fila('Nota', i.nota ? '<div class="inc-tj-nota">' + incEsc(i.nota) + '</div>' : '')
+    + fila('Cargada', incCuando(i.created_at) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : ''))
+    + (resuelta ? fila('Resuelta', incCuando(i.resuelta_at) + (i.resuelta_por_nombre ? ' · ' + incEsc(i.resuelta_por_nombre) : '') + (tardo >= 0 ? ' · en ' + incEsc(incMinutos(tardo)) : '')
+      + (i.resolucion ? '<div class="inc-tj-nota">' + incEsc(i.resolucion) + '</div>' : '')) : '')
+    + '</div>';
+  return '<div class="inc-card inc-tj' + (resuelta ? ' resuelta' : '') + (abierta ? ' abierta' : '') + (op.nueva ? ' nueva' : '') + '" data-inc="' + id + '" style="border-left-color:' + v.color + '"'
+    + (op.onclick ? ' onclick="' + op.onclick + '(\'' + id + '\')" onkeydown="if((event.key===\'Enter\'||event.key===\' \')&&event.target===this){event.preventDefault();this.click()}"' : '')
+    + ' role="button" tabindex="0" aria-expanded="' + abierta + '" title="' + (abierta ? 'Cerrar el detalle' : 'Ver el detalle' + (op.sinLugar ? '' : ' y el lugar en el plano')) + '">'
+    + '<div class="inc-tj-cab"><span class="inc-tj-ico" style="background:' + v.fondo + ';color:' + v.color + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ico + '"/></svg></span>'
+    + '<div class="inc-tj-txt"><div class="inc-tj-tipo">' + incEsc(i.tipo) + '</div><div class="inc-tj-linea">' + linea + '</div></div>'
+    + '<span class="inc-tj-hace" title="' + incEsc(incCuando(i.created_at)) + '">' + incEsc(incHace(i.created_at)) + '</span></div>'
+    + det + (op.pie || '') + '</div>';
+}
+function incEstiloTarjetas() {
+  if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloTj')) return;
+  const st = document.createElement('style'); st.id = 'incEstiloTj';
+  st.textContent = '.inc-tj{cursor:pointer;transition:box-shadow .15s,background .15s}.inc-tj:hover{box-shadow:0 3px 12px rgba(15,40,85,.12)}'
+    + '.inc-tj:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}.inc-tj.abierta{background:#fff;box-shadow:0 6px 20px rgba(15,40,85,.14)}'
+    + '.inc-tj-cab{display:flex;align-items:center;gap:11px}'
+    + '.inc-tj-ico{flex-shrink:0;width:36px;height:36px;border-radius:11px;display:grid;place-items:center}.inc-tj-ico svg{width:19px;height:19px;fill:currentColor}'
+    + '.inc-tj-txt{flex:1;min-width:0}.inc-tj-tipo{font-size:15px;font-weight:650;letter-spacing:-.2px;color:#0b1b33;line-height:1.25}'
+    + '.inc-tj-linea{font-size:12.5px;color:#43546e;margin-top:2px;line-height:1.35}.inc-tj-linea b{font-weight:650}.inc-tj-ok{color:#15803d;font-weight:600}'
+    + '.inc-tj-hace{flex-shrink:0;align-self:flex-start;font-size:12px;color:#5b6b82;font-variant-numeric:tabular-nums;white-space:nowrap;padding-top:2px}'
+    + '.inc-tj-hace::after{content:"▾";display:inline-block;margin-left:6px;transition:transform .15s}.inc-tj.abierta .inc-tj-hace::after{transform:rotate(180deg)}'
+    + '.inc-tj-det{margin-top:11px;padding-top:11px;border-top:1px solid rgba(11,27,51,.08);display:grid;gap:9px;cursor:auto}'
+    + '.inc-tj-f{display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;font-size:13px;color:#0b1b33;line-height:1.4}.inc-tj-f>span{color:#5b6b82;font-size:12px;padding-top:1px}'
+    + '.inc-tj-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.inc-tj-chips span{font-size:11.5px;background:rgba(11,27,51,.06);border-radius:999px;padding:2px 8px;color:#43546e}'
+    + '.inc-tj-acc{color:#15803d}.inc-tj-nota{white-space:pre-wrap}'
+    + '@media(prefers-reduced-motion:reduce){.inc-tj,.inc-tj-hace::after{transition:none}}';
+  document.head.appendChild(st);
+}
 // La ficha en HTML: el nombre con el ícono y el color de su tipo, qué es, el
 // piso y el lado, lo abierto ahí y, si la página deja, cargar una incidencia ahí.
 function incFichaHTML(sector, op, clase) {
@@ -5679,7 +5745,7 @@ function incPlanoSVG(op) {
       const rot = ((s.ang % 360) + 540) % 360 - 180, leer = rot > 90 ? rot - 180 : rot < -90 ? rot + 180 : rot;
       etq = [-1, 1].map(k => '<line x1="' + (cx - dx + k * nx).toFixed(1) + '" y1="' + (cy - dy + k * ny).toFixed(1) + '" x2="' + (cx + dx + k * nx).toFixed(1) + '" y2="' + (cy + dy + k * ny).toFixed(1) + '" stroke="#ffffff" stroke-opacity=".22" stroke-width=".6" stroke-dasharray="5 4" pointer-events="none"/>').join('')
         + '<text x="' + cx + '" y="' + (cy + 1.8) + '" font-size="5" font-weight="600" letter-spacing=".4" fill="' + tinta + '"' + suave + ' text-anchor="middle" transform="rotate(' + leer + ' ' + cx + ' ' + cy + ')" pointer-events="none">' + incEsc(s.txt) + '</text>';
-    } else if (s.ico) {
+    } else if (s.ico && (capas.iconos || n || sel)) {
       const ancho = w >= h, tam = ancho ? 7.5 : 7, ix = ancho ? cx - 5.5 : cx, iy = ancho ? cy : cy - 3.5;
       etq = '<path d="' + INC_ICONOS[s.ico] + '" transform="translate(' + (ix - tam / 2) + ' ' + (iy - tam / 2) + ') scale(' + (tam / 24) + ')" fill="' + tinta + '"' + suave + ' pointer-events="none"/>'
         + (s.txt ? '<text x="' + (ancho ? cx + 6 : cx) + '" y="' + (ancho ? cy + 1.8 : cy + 6.8) + '" font-size="5" font-weight="600" fill="' + tinta + '"' + suave + ' text-anchor="middle" pointer-events="none">' + incEsc(incTxtLugar(s)) + '</text>' : '');
@@ -6016,7 +6082,7 @@ function incEstilo3D() {
     + '@media(pointer:coarse){.inc-3d-asa{width:22px;height:22px;margin:-11px 0 0 -11px}}'
     + '.inc-3d-tip{position:absolute;z-index:4;pointer-events:none;' + INC_VIDRIO + ';color:#fff;font:600 12px ' + INC_FUENTE + ';padding:6px 10px;border-radius:8px;transform:translate(-50%,-140%);white-space:nowrap;opacity:0;transition:opacity .12s}'
     // El detalle, en pantalla completa: una ventana de vidrio que flota al costado (abajo, en el celular), sin ocupar todo el alto.
-    + '.inc-3d-det{position:absolute;z-index:5;top:calc(58px + var(--inc-sup,0px));right:calc(14px + var(--inc-der,0px));width:min(380px,calc(100% - 28px));max-height:calc(100% - 150px - var(--inc-sup,0px));display:none;flex-direction:column;background:rgba(244,248,253,.74);-webkit-backdrop-filter:blur(28px) saturate(180%);backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,.6);border-radius:18px;box-shadow:0 24px 60px rgba(0,8,26,.5),0 0 0 .5px rgba(0,8,26,.25);color:#0b1b33;overflow:hidden;font-family:' + INC_FUENTE + ';animation:incVentana .22s ease-out}'
+    + '.inc-3d-det{position:absolute;z-index:5;top:calc(58px + var(--inc-sup,0px));right:calc(14px + var(--inc-der,0px));width:min(400px,calc(100% - 28px));max-height:calc(100% - 150px - var(--inc-sup,0px));display:none;flex-direction:column;background:rgba(244,248,253,.74);-webkit-backdrop-filter:blur(28px) saturate(180%);backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,.6);border-radius:18px;box-shadow:0 24px 60px rgba(0,8,26,.5),0 0 0 .5px rgba(0,8,26,.25);color:#0b1b33;overflow:hidden;font-family:' + INC_FUENTE + ';animation:incVentana .22s ease-out}'
     + '@keyframes incVentana{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}'
     + '.inc-3d-full .inc-3d-det.abierto{display:flex}'
     + '.inc-3d-det-cab{display:flex;align-items:center;gap:8px;padding:12px 10px 10px 16px;border-bottom:1px solid rgba(11,27,51,.08)}'
@@ -6028,11 +6094,7 @@ function incEstilo3D() {
     + '.inc-3d-det-x:hover,.inc-3d-det-todas:hover{background:rgba(11,27,51,.14)}'
     + '.inc-3d-det .inc-3d-det-accion{margin:10px 12px 0;min-height:40px;border-radius:11px;border:0;background:#0b1b33;color:#fff}'
     + '.inc-3d-det-lista{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 12px 14px;display:flex;flex-direction:column;gap:8px}'
-    + '.inc-3d-det-card{background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.9);border-left:4px solid;border-radius:12px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,8,26,.06)}'
-    + '.inc-3d-det-card .t{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.inc-3d-det-card .t b{font-size:13.5px;flex:1;min-width:0}.inc-3d-det-card .t span{font-size:11.5px;color:#43546e}'
-    + '.inc-3d-det-card .d{font-size:12px;color:#43546e;margin-top:3px}'
-    + '.inc-3d-det-card .a{display:flex;flex-wrap:wrap;gap:2px 9px;margin-top:4px;font-size:12px;color:#15803d}'
-    + '.inc-3d-det-card .n{font-size:12.5px;margin-top:4px;white-space:pre-wrap}'
+    + '.inc-3d-det .inc-card{background:rgba(255,255,255,.84);border:1px solid rgba(255,255,255,.92);border-left:4px solid;border-radius:13px;padding:11px 12px;box-shadow:0 1px 2px rgba(0,8,26,.06)}.inc-3d-det .inc-card.abierta{background:#fff}'
     + '.inc-3d-det-vacio{font-size:13px;color:#43546e;text-align:center;padding:22px 10px}'
     + '@media' + INC_VENTANA_ABAJO + '{.inc-3d-det{left:max(calc(10px + var(--inc-izq,0px)),calc(50% - 330px));right:max(calc(10px + var(--inc-der,0px)),calc(50% - 330px));top:auto;bottom:calc(10px + var(--inc-inf,0px));width:auto;max-height:46%}}'
     // En el celular la ayuda va arriba de los pisos (si no, se pisan).
@@ -6695,7 +6757,7 @@ function incPlano3D(cont, op0) {
   // El detalle de las incidencias, para verlo sin salir de la pantalla
   // completa: lo abierto (de lo más grave a lo más leve) y, si se toca un
   // lugar, sólo lo de ese lugar.
-  let vivo = true, detLista = null, detSector = '', detAbierto = true, accion = null, selLocal = '', ultimoOp = op0, medirRef = null, falsa = false;
+  let vivo = true, detLista = null, detSector = '', detAbierto = true, detAbierta = '', enfocarInc = '', accion = null, selLocal = '', ultimoOp = op0, medirRef = null, falsa = false;
   // En pantalla completa: la del navegador o la de mentira (ver más abajo).
   const enPantalla = () => falsa || document.fullscreenElement === cont || document.webkitFullscreenElement === cont;
   const pintarDetalle = () => {
@@ -6708,25 +6770,35 @@ function incPlano3D(cont, op0) {
     const abiertas = incOrdenar(detLista.filter(i => i.estado !== 'resuelta' && de(i))), resueltas = detLista.filter(i => i.estado === 'resuelta' && de(i)).length;
     const total = detLista.filter(i => i.estado !== 'resuelta').length;
     btnDet.textContent = '☰ Incidencias' + (total ? ' · ' + total : '');
+    // Se rehace seguido (cada vez que llegan datos): que no se pierda por dónde se venía leyendo.
+    const listaAntes = panel.querySelector('.inc-3d-det-lista'), scrollAntes = listaAntes ? listaAntes.scrollTop : 0;
+    if (detAbierta && !abiertas.some(i => String(i.id) === detAbierta)) detAbierta = '';
     panel.innerHTML = '<div class="inc-3d-det-cab"><div class="inc-3d-det-tit"><strong>' + (detSector ? incEsc(detSector) : 'Abiertas ahora') + '</strong><span>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + (resueltas ? ' · ' + resueltas + ' resuelta' + (resueltas === 1 ? '' : 's') : '') + '</span></div>'
       + (detSector ? '<button type="button" class="inc-3d-det-todas" data-d="todas">Ver todas</button>' : '')
       + '<button type="button" class="inc-3d-det-x" data-d="cerrar" title="Cerrar" aria-label="Cerrar el detalle">✕</button></div>'
       + (detSector && incFichaDatos(detSector) ? '<div class="inc-ficha-datos">' + incFichaChips(incFichaDatos(detSector)) + '</div>' : '')
       + (accion && detSector ? '<button type="button" class="inc-3d-det-accion" data-d="accion">' + incEsc(accion.texto) + '</button>' : '')
-      + '<div class="inc-3d-det-lista">' + (abiertas.length ? abiertas.map(i => {
-        const v = INC_NIVELES[i.nivel] || INC_NIVELES[1];
-        return '<div class="inc-3d-det-card" style="border-left-color:' + v.color + '"><div class="t">' + incNivelChip(i.nivel) + '<b>' + incEsc(i.tipo) + '</b><span>' + incCuando(i.created_at) + '</span></div>'
-          + '<div class="d">' + incEsc(i.sector) + (incZona(i.sector) ? ' · ' + incZona(i.sector) : '') + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '') + '</div>'
-          + ((i.acciones || []).length ? '<div class="a">' + i.acciones.map(a => '<span>✓ ' + incEsc(a) + '</span>').join('') + '</div>' : '')
-          + (i.nota ? '<div class="n">' + incEsc(i.nota) + '</div>' : '') + '</div>';
-      }).join('') : '<div class="inc-3d-det-vacio">' + (detSector ? 'No hay nada abierto en ' + incEsc(detSector) + '.' : 'No hay incidencias abiertas.') + '</div>') + '</div>';
+      + '<div class="inc-3d-det-lista">' + (abiertas.length ? abiertas.map(i => incTarjetaHTML(i, { abierta: String(i.id) === detAbierta, sinLugar: !!detSector })).join('') : '<div class="inc-3d-det-vacio">' + (detSector ? 'No hay nada abierto en ' + incEsc(detSector) + '.' : 'No hay incidencias abiertas.') + '</div>') + '</div>';
+    const listaNueva = panel.querySelector('.inc-3d-det-lista'); if (listaNueva) listaNueva.scrollTop = scrollAntes;
+    // La tarjeta recién tocada: a la vista (y con el foco, si se llegó con el teclado).
+    if (enfocarInc) { const t = panel.querySelector('[data-inc="' + enfocarInc + '"]'); enfocarInc = ''; if (t) { if (t.scrollIntoView) t.scrollIntoView({ block: 'nearest' }); if (t.focus) t.focus({ preventScroll: true }); } }
     // La ventana cambió de tamaño: el estadio se acomoda en lo que queda libre.
     if (medirRef && (cambio || enPantalla())) medirRef(cambio && enPantalla());
   };
+  // Tocar una incidencia: se despliega con todo y la cámara va hasta su lugar (el
+  // listado sigue igual, para pasar a la siguiente); otra vez, se cierra y vuelve.
+  const tocarTarjeta = t => {
+    const id = t.dataset.inc, inc = (detLista || []).find(x => String(x.id) === id);
+    detAbierta = detAbierta === id ? '' : id; enfocarInc = id;
+    if (!detSector) selLocal = detAbierta && inc && piezas[inc.sector] ? inc.sector : '';
+    api.poner(ultimoOp);
+  };
+  panel.addEventListener('keydown', e => { const t = (e.key === 'Enter' || e.key === ' ') && e.target.closest && e.target.closest('[data-inc]'); if (t && !e.target.closest('button')) { e.preventDefault(); tocarTarjeta(t); } });
   panel.addEventListener('click', e => {
-    const b = e.target.closest('[data-d]'); if (!b) return;
+    const b = e.target.closest('[data-d]');
+    if (!b) { const t = e.target.closest('[data-inc]'); if (t && !e.target.closest('.inc-tj-det')) tocarTarjeta(t); return; }
     const d = b.dataset.d;
-    if (d === 'todas') { detSector = ''; selLocal = ''; api.poner(ultimoOp); }
+    if (d === 'todas') { detSector = ''; selLocal = ''; detAbierta = ''; api.poner(ultimoOp); }
     if (d === 'cerrar') { detAbierto = false; pintarDetalle(); }
     if (d === 'accion' && accion && typeof window[accion.fn] === 'function') {
       const lugar = detSector, fn = window[accion.fn], ir = () => fn(lugar);
@@ -6776,6 +6848,12 @@ function incPlano3D(cont, op0) {
   // Si la cámara todavía está entrando (recién abierto el plano), el viaje espera a que termine.
   let viajePendiente = null;
   const viajarA = p => { if (intro < 1 || abre < 1) { viajePendiente = p; if (abre < 1) entrar(); return; } viajarAPunto(new T.Vector3(p.cx, p.hBase + (p.yAct || 0), p.cz), 270); };
+  // Elegido un lugar de otro piso (o un puesto con el estadio completo), se pasa a
+  // su piso; al soltarlo, se vuelve al que se estaba mirando (si nadie cambió de
+  // piso mientras tanto). pisoPrevio: el de antes; pisoAuto: al que se pasó.
+  let pisoPrevio = null, pisoAuto = null;
+  const necesitaPiso = pz => { const d = pz && pz.nivelDe, a = incPisoElegido(); return !editar && !!d && a !== d && (!!pz.lugar || !!a); };
+  const irAlPisoDe = (pz, id) => { if (!necesitaPiso(pz)) return false; if (pisoPrevio === null) pisoPrevio = incPisoElegido(); pisoAuto = pz.nivelDe; irA = id; incElegirPiso(pz.nivelDe); return true; };
 
   // Tamaño: el ancho del contenedor y un alto proporcionado; con
   // data-alto="pantalla" (en pantallas grandes), el alto que le da la página;
@@ -6818,7 +6896,7 @@ function incPlano3D(cont, op0) {
     // Al entrar o salir, la cámara vuelve a encuadrar el estadio entero.
     medir(full !== estabaFull); estabaFull = full;
     // Al salir de pantalla completa se olvida lo elegido ahí.
-    if (!full && (selLocal || detSector)) { selLocal = ''; detSector = ''; api.poner(ultimoOp); }
+    if (!full && (selLocal || detSector)) { selLocal = ''; detSector = ''; detAbierta = ''; api.poner(ultimoOp); }
   };
   document.addEventListener('fullscreenchange', alCambiarPantalla);
   document.addEventListener('webkitfullscreenchange', alCambiarPantalla);
@@ -6913,8 +6991,8 @@ function incPlano3D(cont, op0) {
     if (abre < 1) { entrar(); return; }
     const id = sectorEn(e), pz = piezas[id];
     if (id && cont._incBus && cont._incBus.abierto) { cont._incBus.abierto = false; incBuscadorRefrescar(cont); }
-    if (pz && pz.lugar && pz.piso && !incPisoElegido() && !editar && (selLocal || (ultimoOp && ultimoOp.sel)) !== id) { irA = id; incElegirPiso(pz.piso); }
-    if (enPantalla() && detLista) { selLocal = detSector = (selLocal === id ? '' : id); detAbierto = true; api.poner(ultimoOp); return; }
+    if (pz && pz.lugar && pz.piso && !incPisoElegido() && !editar && (selLocal || (ultimoOp && ultimoOp.sel)) !== id) irAlPisoDe(pz, id);
+    if (enPantalla() && detLista) { selLocal = detSector = (detSector === id ? '' : id); detAbierta = ''; detAbierto = true; api.poner(ultimoOp); return; }
     if (id && onclick && typeof window[onclick] === 'function') window[onclick](id);
   });
   lienzo.addEventListener('pointermove', e => {
@@ -7139,7 +7217,8 @@ function incPlano3D(cont, op0) {
         const apagado = abajo && !p.lugar;
         p.grupo.visible = !fuera;
         if (p.apagado !== apagado) { p.apagado = apagado; apagar(p.mats, apagado); }
-        p.et.el.style.visibility = fuera || apagado || (!capas.nombres && !p.lugar && !n) ? 'hidden' : '';
+        const sinIcono = p.lugar && p.t !== 'calle' && !capas.iconos && !n && !p.sel;
+        p.et.el.style.visibility = fuera || apagado || sinIcono || (!capas.nombres && !p.lugar && !n) ? 'hidden' : '';
         // A qué altura va: los puestos, sobre el anillo de su piso; el estadio
         // (campo, plateas, VIP), donde está. Sube un poco si está elegido.
         p.yObj = p.lugar ? INC_3D_PISO[p.nivelDe] || 0 : 0;
@@ -7177,14 +7256,23 @@ function incPlano3D(cont, op0) {
       let volvio = false;
       if (cambioVista) { if (irA) irA = ''; else if (elegido === selAnt || !piezas[elegido]) { volver(); volvio = true; } }
       pisoAnt = pisoVista = pisoSel; tipoAnt = tipoSel;
+      // Si alguien cambió de piso a mano con un lugar elegido, al soltarlo no se vuelve.
+      if (pisoPrevio !== null && pisoSel !== pisoAuto) { pisoPrevio = null; pisoAuto = null; }
       // El lugar elegido: su ficha (en pantalla completa va en el detalle de al
       // costado) y la cámara que va hasta él. Editando, nada de eso.
       const fichaId = !editar && op.sel && piezas[op.sel] ? op.sel : '';
       fichaEl.innerHTML = fichaId ? incFichaHTML(fichaId, op, 'inc-ficha inc-3d-ficha') : '';
       if (elegido !== selAnt) {
-        // Elegido uno, la cámara va hasta él; soltado (otra vez o con la ✕), vuelve a la vista de siempre, al centro.
+        // Elegido uno, la cámara va hasta él (si es de otro piso, primero a su piso);
+        // soltado (otra vez o con la ✕), vuelve a la vista de siempre, al centro, y al piso de antes.
         const antes = selAnt; selAnt = elegido; const pe = piezas[elegido];
-        if (pe && !editar) viajarA(pe); else if (!elegido && antes && !editar && !volvio) volver();
+        if (pe && necesitaPiso(pe)) setTimeout(() => { if (!vivo || selAnt !== elegido) return; irAlPisoDe(pe, elegido); viajarA(pe); }, 0);
+        else if (pe && !editar) viajarA(pe);
+        else if (!elegido && antes && !editar) {
+          const previo = pisoPrevio, auto = pisoAuto; pisoPrevio = pisoAuto = null;
+          if (previo !== null && incPisoElegido() === auto && previo !== auto) setTimeout(() => { if (vivo) incElegirPiso(previo); }, 0);
+          else if (!volvio) volver();
+        }
       }
       // El elegido, con sus manijas (si se está editando y se ve).
       const ps = piezas[elegido]; asaSel = editar && ps && ps.forma && ps.grupo.visible ? ps : null;
@@ -7196,9 +7284,8 @@ function incPlano3D(cont, op0) {
     ir(id) {
       const pz = piezas[id]; if (!pz) return;
       tipoAnt = editar ? '' : incTipoElegido();
-      const pisoSel = incPisoElegido(), destino = pz.nivelDe;
-      if (destino && ((pz.lugar && pisoSel !== destino) || (pisoSel && pisoSel !== destino))) { irA = id; incElegirPiso(destino); }
-      if (enPantalla() && detLista) { selLocal = detSector = id; detAbierto = true; api.poner(ultimoOp); return; }
+      irAlPisoDe(pz, id);
+      if (enPantalla() && detLista) { selLocal = detSector = id; detAbierta = ''; detAbierto = true; api.poner(ultimoOp); return; }
       if (ultimoOp && ultimoOp.sel === id) { api.poner(ultimoOp); if (!editar) viajarA(pz); return; }
       if (onclick && typeof window[onclick] === 'function') window[onclick](id);
       // Si la página no lo marca como elegido (la tablet abre la carga), la cámara va igual.
@@ -7235,24 +7322,28 @@ function incPlano3D(cont, op0) {
   return api;
 }
 // ── Métricas del show ──
-// Las gráficas del tablero: números grandes arriba (cuántas, abiertas,
-// resueltas, cuánto tardan en resolverse, el momento más cargado), las
-// incidencias por franja horaria apiladas por gravedad, y por categoría y por
-// sector en barras. Sin librerías: SVG. Los colores de la gravedad están
-// validados para daltonismo con la leyenda, la separación entre segmentos y el
-// orden fijo (grave siempre arriba); las barras de una sola serie van en el
-// azul del Arena. Cada marca muestra su detalle al pasar el mouse o con el teclado.
+// Lo que sirve para operar el show y para el informe, sin repetir los números de
+// arriba (lo abierto por gravedad, lo resuelto y el total): cuál lleva más tiempo
+// abierta, cuánto se tarda en resolver y el momento más cargado; las incidencias por
+// franja horaria apiladas por gravedad, y por categoría y por sector en barras (con
+// cuántas siguen abiertas). Todo se toca: una categoría o una franja filtran el
+// listado; un sector, o la que lleva más tiempo abierta, va a su lugar en el plano.
+// Sin librerías: SVG. Los colores de la gravedad están validados para daltonismo con
+// la leyenda, la separación entre segmentos y el orden fijo (grave siempre arriba);
+// las barras de una sola serie van en el azul del Arena. Cada marca muestra su
+// detalle al pasar el mouse o con el teclado.
 const INC_GRAF_NIVEL = { 1: '#15803d', 2: '#d97706', 3: '#be123c' };
 const INC_GRAF_AZUL = '#2a78d6';
-function incMinutos(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min'; }
+function incMinutos(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min' : Math.floor(m / 1440) + ' d ' + Math.floor(m % 1440 / 60) + ' h'; }
 // Las franjas: si la lista cruza varios días, una por día; si no, de 15, 30,
-// 60 o 120 minutos, la más fina que deje 16 columnas o menos.
+// 60 o 120 minutos, la más fina que deje 16 columnas o menos. Cada una sabe de
+// cuándo a cuándo va (a, b: para filtrar el listado al tocarla).
 function incFranjas(lista) {
   const ok = (lista || []).filter(i => incDia(i.created_at));
   if (!ok.length) return [];
   const dias = [...new Set(ok.map(i => incDia(i.created_at)))].sort();
   const cuenta = (grupo, f) => ({ ...f, n: [1, 2, 3].map(nv => grupo.filter(i => (i.nivel || 1) === nv).length) });
-  if (dias.length > 1) return dias.map(d => cuenta(ok.filter(i => incDia(i.created_at) === d), { etq: d.slice(8, 10) + '/' + d.slice(5, 7), largo: 'El ' + d.slice(8, 10) + '/' + d.slice(5, 7) }));
+  if (dias.length > 1) return dias.map(d => { const a = new Date(d + 'T00:00:00').getTime(); return cuenta(ok.filter(i => incDia(i.created_at) === d), { etq: d.slice(8, 10) + '/' + d.slice(5, 7), largo: 'El ' + d.slice(8, 10) + '/' + d.slice(5, 7), a, b: a + 86400000 }); });
   const ts = ok.map(i => new Date(i.created_at).getTime()).sort((a, b) => a - b);
   const paso = [15, 30, 60, 120].find(p => (ts[ts.length - 1] - ts[0]) / (p * 60000) < 16) || 240;
   const pms = paso * 60000;
@@ -7262,9 +7353,16 @@ function incFranjas(lista) {
   for (let a = ini.getTime(); a <= ts[ts.length - 1]; a += pms) {
     const b = a + pms;
     franjas.push(cuenta(ok.filter(i => { const t = new Date(i.created_at).getTime(); return t >= a && t < b; }),
-      { etq: incHora(new Date(a).toISOString()), largo: incHora(new Date(a).toISOString()) + ' a ' + incHora(new Date(b).toISOString()) }));
+      { etq: incHora(new Date(a).toISOString()), largo: incHora(new Date(a).toISOString()) + ' a ' + incHora(new Date(b).toISOString()), a, b }));
   }
   return franjas;
+}
+// Una franja como valor ("a-b", en milisegundos): si una incidencia es de ahí, y cómo se llama.
+function incEnFranja(i, v) { const [a, b] = String(v || '').split('-').map(Number); const t = new Date(i.created_at).getTime(); return t >= a && t < b; }
+function incFranjaNombre(v) {
+  const [a, b] = String(v || '').split('-').map(Number); if (!a || !b) return '';
+  const ia = new Date(a).toISOString(), ib = new Date(b).toISOString(), d = incDia(ia);
+  return b - a >= 72e6 ? d.slice(8, 10) + '/' + d.slice(5, 7) : incHora(ia) + ' a ' + incHora(ib);
 }
 // Los números del show.
 function incMetricas(lista) {
@@ -7273,23 +7371,32 @@ function incMetricas(lista) {
   const tiempos = resueltas.map(i => new Date(i.resuelta_at) - new Date(i.created_at)).filter(x => x >= 0);
   const franjas = incFranjas(l);
   const pico = franjas.reduce((m, f) => { const n = f.n[0] + f.n[1] + f.n[2]; return n > (m ? m.total : 0) ? { ...f, total: n } : m; }, null);
-  const cuenta = clave => { const m = {}; l.forEach(i => { const k = clave(i) || '—'; m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es')); };
+  const cuenta = (clave, de) => { const m = {}; (de || l).forEach(i => { const k = clave(i) || '—'; m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es')); };
+  const abiertas = l.filter(i => i.estado !== 'resuelta');
   return {
     total: l.length,
-    abiertas: l.filter(i => i.estado !== 'resuelta').length,
-    graves: l.filter(i => i.estado !== 'resuelta' && (i.nivel || 1) === 3).length,
+    abiertas: abiertas.length,
+    graves: abiertas.filter(i => (i.nivel || 1) === 3).length,
     resueltas: l.filter(i => i.estado === 'resuelta').length,
     tMedio: tiempos.length ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length : null,
+    tMax: tiempos.length ? Math.max(...tiempos) : null,
+    // La que lleva más tiempo abierta (la que primero hay que mirar).
+    masVieja: abiertas.filter(i => incDia(i.created_at)).sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0] || null,
     pico, franjas,
     categorias: cuenta(i => i.categoria),
-    sectores: cuenta(i => i.sector)
+    sectores: cuenta(i => i.sector),
+    abiertasCat: Object.fromEntries(cuenta(i => i.categoria, abiertas)),
+    abiertasSec: Object.fromEntries(cuenta(i => i.sector, abiertas))
   };
 }
 // El detalle de una marca: la primera línea es el valor (va fuerte), después el rótulo.
 function incTip(lineas) { return ' tabindex="0" data-tip="' + incEsc(lineas.join('\n')).replace(/\n/g, '&#10;') + '"'; }
+// Lo que se toca: qué es (data-m) y cuál (data-v); con algo elegido, lo demás se apaga.
+function incTocable(m, v) { return m ? ' data-m="' + m + '" data-v="' + incEsc(v) + '" role="button"' : ''; }
+function incClaseMarca(v, sel) { return 'inc-marca inc-toca' + (sel ? (sel === v ? ' on' : ' apagada') : ''); }
 // Columnas apiladas: una por franja, de abajo hacia arriba leve, moderado, grave.
-function incGrafFranjas(franjas, anchoTotal) {
-  const W = Math.max(260, Math.round(anchoTotal || 640)), H = 220, izq = 30, der = 8, arriba = 18, abajo = 26, alto = H - arriba - abajo;
+function incGrafFranjas(franjas, anchoTotal, sel) {
+  const W = Math.max(260, Math.round(anchoTotal || 640)), H = 190, izq = 30, der = 8, arriba = 18, abajo = 26, alto = H - arriba - abajo;
   const max = Math.max(1, ...franjas.map(f => f.n[0] + f.n[1] + f.n[2]));
   const paso = max <= 5 ? 1 : max <= 10 ? 2 : max <= 25 ? 5 : 10, tope = Math.ceil(max / paso) * paso;
   const y = v => arriba + alto - (v / tope) * alto;
@@ -7299,7 +7406,7 @@ function incGrafFranjas(franjas, anchoTotal) {
   const cadaEtq = Math.ceil(franjas.length / Math.max(3, Math.floor((W - izq) / 64)));   // una etiqueta cada ~64px
   const masAlta = franjas.reduce((m, f, k) => (f.n[0] + f.n[1] + f.n[2]) > (m < 0 ? -1 : franjas[m].n[0] + franjas[m].n[1] + franjas[m].n[2]) ? k : m, -1);
   franjas.forEach((f, k) => {
-    const x = izq + slot * k + (slot - ancho) / 2, total = f.n[0] + f.n[1] + f.n[2];
+    const x = izq + slot * k + (slot - ancho) / 2, total = f.n[0] + f.n[1] + f.n[2], val = f.a + '-' + f.b;
     let base = y(0), barras = '';
     const visibles = [1, 2, 3].filter(nv => f.n[nv - 1]);
     visibles.forEach((nv, j) => {
@@ -7311,66 +7418,77 @@ function incGrafFranjas(franjas, anchoTotal) {
         : '<rect x="' + x + '" y="' + y0 + '" width="' + ancho + '" height="' + hh + '" fill="' + INC_GRAF_NIVEL[nv] + '"/>';
       base = y0 - 2;
     });
-    const tip = [total + ' incidencia' + (total === 1 ? '' : 's'), f.largo].concat([3, 2, 1].filter(nv => f.n[nv - 1]).map(nv => f.n[nv - 1] + ' ' + INC_NIVELES[nv].nombre.toLowerCase()));
-    g += '<g class="inc-marca"' + incTip(tip) + '><rect x="' + (izq + slot * k) + '" y="' + arriba + '" width="' + slot + '" height="' + alto + '" fill="transparent"/>' + barras
-      + (k === masAlta && total ? '<text x="' + (x + ancho / 2) + '" y="' + (y(total) - 5) + '" font-size="10.5" font-weight="600" fill="#111827" text-anchor="middle">' + total + '</text>' : '') + '</g>';
+    const tip = [total + ' incidencia' + (total === 1 ? '' : 's'), f.largo].concat([3, 2, 1].filter(nv => f.n[nv - 1]).map(nv => f.n[nv - 1] + ' ' + INC_NIVELES[nv].nombre.toLowerCase())).concat(total ? ['Tocá para verlas en el listado'] : []);
+    g += '<g class="' + (total ? incClaseMarca(val, sel) : 'inc-marca') + '"' + incTip(tip) + (total ? incTocable('franja', val) : '') + '><rect x="' + (izq + slot * k) + '" y="' + arriba + '" width="' + slot + '" height="' + alto + '" fill="transparent"/>' + barras
+      + ((k === masAlta || sel === val) && total ? '<text x="' + (x + ancho / 2) + '" y="' + (y(total) - 5) + '" font-size="10.5" font-weight="600" fill="#111827" text-anchor="middle">' + total + '</text>' : '') + '</g>';
     if (k % cadaEtq === 0) g += '<text x="' + (x + ancho / 2) + '" y="' + (H - 8) + '" font-size="10" fill="#6b7280" text-anchor="middle" style="font-variant-numeric:tabular-nums">' + incEsc(f.etq) + '</text>';
   });
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="Incidencias por franja horaria, por gravedad">' + g
     + '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="#d1d5db" stroke-width="1"/></svg>';
 }
-// Barras horizontales de una sola serie (azul), con el valor en la punta. Más
-// de 6 se juntan en "Otros".
-function incGrafBarras(pares, titulo, ancho) {
-  let filas = pares.slice(0, 6);
-  if (pares.length > 6) filas = filas.concat([['Otros (' + (pares.length - 6) + ')', pares.slice(6).reduce((t, p) => t + p[1], 0)]]);
-  const W = Math.max(240, Math.round(ancho || 320)), fila = 26, H = filas.length * fila + 4, etq = Math.min(150, Math.round(W * 0.38)), der = 26;
+// Barras horizontales de una sola serie (azul), con el valor en la punta (y, si
+// quedan, cuántas siguen abiertas). Más de 6: el resto en una línea de texto, sin
+// barra (si fuera una barra, sumaría varios y parecería el más grande).
+// op: { tipo (qué se toca: 'categoria' o 'sector'), sel (el elegido), abiertas ({ nombre: n }) }.
+function incGrafBarras(pares, titulo, ancho, op) {
+  op = op || {};
+  const filas = pares.slice(0, 6), resto = pares.slice(6), enResto = resto.reduce((t, p) => t + p[1], 0);
+  const ab = op.abiertas || {}, conAbiertas = filas.some(p => ab[p[0]]);
+  const W = Math.max(240, Math.round(ancho || 320)), fila = 26, H = (filas.length + (resto.length ? 1 : 0)) * fila + 4, etq = Math.min(150, Math.round(W * 0.38)), der = conAbiertas ? 92 : 26;
   const max = Math.max(1, ...filas.map(p => p[1])), largo = W - etq - der;
   const g = filas.map(([k, n], i) => {
-    const y = i * fila + 6, w = Math.max(3, (n / max) * largo), r = Math.min(4, w / 2);
-    return '<g class="inc-marca"' + incTip([n + ' incidencia' + (n === 1 ? '' : 's'), k]) + '><rect x="0" y="' + (y - 4) + '" width="' + W + '" height="' + fila + '" fill="transparent"/>'
+    const y = i * fila + 6, w = Math.max(3, (n / max) * largo), r = Math.min(4, w / 2), a = ab[k] || 0, toca = !!op.tipo;
+    const tip = [n + ' incidencia' + (n === 1 ? '' : 's'), k].concat(a ? [a + ' abierta' + (a === 1 ? '' : 's')] : []).concat(toca ? [op.tipo === 'sector' ? 'Tocá para verlo en el plano' : 'Tocá para verlas en el listado'] : []);
+    return '<g class="' + (toca ? incClaseMarca(k, op.sel) : 'inc-marca') + '"' + incTip(tip) + (toca ? incTocable(op.tipo, k) : '') + '><rect x="0" y="' + (y - 4) + '" width="' + W + '" height="' + fila + '" fill="transparent"/>'
       + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#4b5563" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
       + '<path d="M' + etq + ',' + y + 'H' + (etq + w - r) + 'Q' + (etq + w) + ',' + y + ' ' + (etq + w) + ',' + (y + r) + 'V' + (y + 14 - r) + 'Q' + (etq + w) + ',' + (y + 14) + ' ' + (etq + w - r) + ',' + (y + 14) + 'H' + etq + 'Z" fill="' + INC_GRAF_AZUL + '"/>'
-      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#111827">' + n + '</text></g>';
-  }).join('');
+      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#111827">' + n + (a ? '<tspan font-weight="400" fill="#6b7280"> · ' + a + ' abierta' + (a === 1 ? '' : 's') + '</tspan>' : '') + '</text></g>';
+  }).join('') + (resto.length ? '<text x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#6b7280" text-anchor="end">+ ' + resto.length + ' más</text>'
+    + '<text x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#6b7280">' + enResto + ' incidencia' + (enResto === 1 ? '' : 's') + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="' + incEsc(titulo) + '">' + g + '</svg>';
 }
 // ancho: el ancho disponible (el del contenedor); con él se calcula el de cada tarjeta.
-function incMetricasHTML(lista, ancho) {
-  const A = Math.round(ancho || 680), dosCol = A >= 700;
+// op: { fn (la función de la página que recibe qué se tocó y cuál), sel: { categoria, franja, sector, inc } }.
+function incMetricasHTML(lista, ancho, op) {
+  const A = Math.round(ancho || 680), dosCol = A >= 700, sel = (op && op.sel) || {};
   const anchoFranjas = A - 30, anchoBarras = dosCol ? Math.floor((A - 10) / 2) - 30 : A - 30;
   incEstiloMetricas();
   const m = incMetricas(lista);
   if (!m.total) return '<div class="inc-met-vacio">Las gráficas aparecen con la primera incidencia del show.</div>';
-  const tile = (etq, valor, sub) => '<div class="inc-tile"><div class="inc-tile-e">' + etq + '</div><div class="inc-tile-v">' + valor + '</div>' + (sub ? '<div class="inc-tile-s">' + sub + '</div>' : '') + '</div>';
-  const pct = Math.round(m.resueltas / m.total * 100);
+  // Un número: si lleva a algún lado, se toca (y dice adónde).
+  const tile = (etq, valor, sub, toca, v, ir) => (toca ? '<button type="button" class="inc-tile inc-toca' + (sel[toca] && sel[toca] === v ? ' on' : '') + '"' + incTocable(toca, v) + '>' : '<div class="inc-tile">')
+    + '<div class="inc-tile-e">' + etq + '</div><div class="inc-tile-v">' + valor + '</div>' + (sub ? '<div class="inc-tile-s">' + sub + '</div>' : '')
+    + (toca ? '<div class="inc-tile-ir">' + ir + ' →</div></button>' : '</div>');
+  const mv = m.masVieja, pico = m.pico, picoV = pico ? pico.a + '-' + pico.b : '';
   return '<div class="inc-met">'
     + '<div class="inc-tiles' + (A < 520 ? ' angosto' : '') + '">'
-    + tile('Incidencias', m.total, m.graves ? '<span class="inc-pt" style="background:' + INC_GRAF_NIVEL[3] + '"></span>' + m.graves + ' grave' + (m.graves === 1 ? '' : 's') + ' abierta' + (m.graves === 1 ? '' : 's') : 'Ninguna grave abierta')
-    + tile('Abiertas ahora', m.abiertas, m.abiertas ? 'Esperando resolución' : 'Todo resuelto')
-    + tile('Resueltas', pct + '%', m.resueltas + ' de ' + m.total)
-    + tile('Tiempo medio de resolución', m.tMedio == null ? '—' : incMinutos(m.tMedio), m.tMedio == null ? 'Todavía ninguna resuelta' : 'Desde que se carga hasta que se resuelve')
-    + tile('Momento más cargado', m.pico ? incEsc(m.pico.etq) : '—', m.pico ? m.pico.total + ' incidencia' + (m.pico.total === 1 ? '' : 's') + ' · ' + incEsc(m.pico.largo) : '')
+    + tile('Abierta hace más tiempo', mv ? incMinutos(Date.now() - new Date(mv.created_at)) : '—',
+      mv ? '<span class="inc-pt" style="background:' + INC_GRAF_NIVEL[mv.nivel || 1] + '"></span>' + incEsc(mv.tipo) + ' · ' + incEsc(mv.sector) : 'No hay nada abierto', mv ? 'inc' : '', mv ? mv.id : '', 'Ver en el plano')
+    + tile('Tiempo medio de resolución', m.tMedio == null ? '—' : incMinutos(m.tMedio),
+      m.tMedio == null ? 'Todavía ninguna resuelta' : m.resueltas + ' de ' + m.total + ' resueltas · la más lenta, ' + incMinutos(m.tMax))
+    + tile('Momento más cargado', pico ? incEsc(pico.etq) : '—', pico ? pico.total + ' incidencia' + (pico.total === 1 ? '' : 's') + ' · ' + incEsc(pico.largo) : '', pico && m.franjas.length > 1 ? 'franja' : '', picoV, 'Ver esas')
     + '</div>'
     + '<div class="inc-grafs' + (dosCol ? ' dos' : '') + '">'
-    + '<div class="inc-graf-card inc-graf-ancha"><div class="inc-graf-t">Incidencias por franja horaria</div>'
-    + '<div class="inc-leyenda">' + [3, 2, 1].map(nv => '<span><i style="background:' + INC_GRAF_NIVEL[nv] + '"></i>' + INC_NIVELES[nv].nombre + '</span>').join('') + '</div>'
-    + incGrafFranjas(m.franjas, anchoFranjas) + '</div>'
-    + '<div class="inc-graf-card"><div class="inc-graf-t">Por categoría</div>' + incGrafBarras(m.categorias, 'Incidencias por categoría', anchoBarras) + '</div>'
-    + '<div class="inc-graf-card"><div class="inc-graf-t">Sectores con más incidencias</div>' + incGrafBarras(m.sectores, 'Incidencias por sector', anchoBarras) + '</div>'
+    // Con una sola franja, la columna sola no dice nada: alcanza con el número de arriba.
+    + (m.franjas.length > 1 ? '<div class="inc-graf-card inc-graf-ancha"><div class="inc-graf-t">Incidencias por franja horaria<small>Tocá una franja para ver esas</small></div>'
+      + '<div class="inc-leyenda">' + [3, 2, 1].map(nv => '<span><i style="background:' + INC_GRAF_NIVEL[nv] + '"></i>' + INC_NIVELES[nv].nombre + '</span>').join('') + '</div>'
+      + incGrafFranjas(m.franjas, anchoFranjas, sel.franja) + '</div>' : '')
+    + '<div class="inc-graf-card"><div class="inc-graf-t">Por categoría<small>Tocá una para ver esas</small></div>' + incGrafBarras(m.categorias, 'Incidencias por categoría', anchoBarras, { tipo: 'categoria', sel: sel.categoria, abiertas: m.abiertasCat }) + '</div>'
+    + '<div class="inc-graf-card"><div class="inc-graf-t">Sectores con más incidencias<small>Tocá uno para verlo en el plano</small></div>' + incGrafBarras(m.sectores, 'Incidencias por sector', anchoBarras, { tipo: 'sector', sel: sel.sector, abiertas: m.abiertasSec }) + '</div>'
     + '</div></div>';
 }
-function incPintarMetricas(cont, lista) {
+function incPintarMetricas(cont, lista, op) {
   if (!cont) return;
-  cont._incMetLista = lista;
-  const dibujar = () => { cont._incMetAncho = cont.clientWidth; cont.innerHTML = incMetricasHTML(cont._incMetLista, cont.clientWidth); cont._incTipOn = false; incMetricasActivar(cont); };
+  cont._incMetLista = lista; cont._incMetOp = op || null;
+  const dibujar = () => { cont._incMetAncho = cont.clientWidth; cont.innerHTML = incMetricasHTML(cont._incMetLista, cont.clientWidth, cont._incMetOp); cont._incTipOn = false; incMetricasActivar(cont); };
   dibujar();
   if (!cont._incMetRO && typeof window !== 'undefined' && window.ResizeObserver) {
     cont._incMetRO = new ResizeObserver(() => { if (Math.abs(cont.clientWidth - (cont._incMetAncho || 0)) > 24) dibujar(); });
     cont._incMetRO.observe(cont);
   }
 }
-// El cartelito de detalle: sigue al mouse o aparece al llegar con el teclado.
+// El cartelito de detalle: sigue al mouse o aparece al llegar con el teclado. Y lo
+// que se toca (con el mouse, el dedo o Enter) se le avisa a la página.
 function incMetricasActivar(cont) {
   if (!cont || cont._incTipOn) return;
   cont._incTipOn = true;
@@ -7387,35 +7505,44 @@ function incMetricasActivar(cont) {
     tip.style.left = Math.min(Math.max(x - r.left, 70), r.width - 70) + 'px'; tip.style.top = (y - r.top) + 'px'; tip.style.opacity = '1';
   };
   const ocultar = () => { if (cont._incTip) cont._incTip.style.opacity = '0'; };
+  const tocar = el => { const op = cont._incMetOp; ocultar(); if (op && typeof window[op.fn] === 'function') window[op.fn](el.getAttribute('data-m'), el.getAttribute('data-v')); };
   cont.addEventListener('pointermove', e => { const m = e.target.closest && e.target.closest('.inc-marca'); if (m) mostrar(m, e.clientX, e.clientY); else ocultar(); });
   cont.addEventListener('pointerleave', ocultar);
   cont.addEventListener('focusin', e => { const m = e.target.closest && e.target.closest('.inc-marca'); if (!m) return; const b = m.getBoundingClientRect(); mostrar(m, b.left + b.width / 2, b.top); });
   cont.addEventListener('focusout', ocultar);
+  cont.addEventListener('click', e => { const el = e.target.closest && e.target.closest('[data-m]'); if (el && cont.contains(el)) tocar(el); });
+  cont.addEventListener('keydown', e => { if (e.key !== 'Enter' && e.key !== ' ') return; const el = e.target.closest && e.target.closest('[data-m]'); if (el && el.tagName !== 'BUTTON') { e.preventDefault(); tocar(el); } });
 }
 function incEstiloMetricas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloMet')) return;
   const st = document.createElement('style'); st.id = 'incEstiloMet';
   st.textContent = '.inc-met{position:relative}'
-    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}'
-    + '.inc-tiles.angosto{grid-template-columns:repeat(2,minmax(0,1fr))}.inc-tiles.angosto .inc-tile:last-child:nth-child(odd){grid-column:1/-1}'
-    + '.inc-tile{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden}'
+    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px}'
+    + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}'
+    + '.inc-tile{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden;text-align:left;font:inherit;color:inherit;width:100%;display:block}'
     + '.inc-tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(#38bdf8,#2a78d6)}'
+    + 'button.inc-tile{cursor:pointer;transition:box-shadow .15s}button.inc-tile:hover{box-shadow:0 3px 12px rgba(15,40,85,.12)}button.inc-tile:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}'
+    + '.inc-tile.on{box-shadow:inset 0 0 0 2px #2a78d6}'
     + '.inc-tile-e{font-size:11.5px;color:#6b7280}'
     + '.inc-tile-v{font-size:24px;font-weight:600;color:#111827;line-height:1.25;margin-top:2px}'
-    + '.inc-tile-s{font-size:11.5px;color:#4b5563;margin-top:2px;display:flex;align-items:center;gap:5px}'
-    + '.inc-pt{width:8px;height:8px;border-radius:50%;display:inline-block}'
+    + '.inc-tile-s{font-size:12px;color:#4b5563;margin-top:2px;display:flex;align-items:center;gap:5px;min-width:0}'
+    + '.inc-tile-ir{font-size:11.5px;font-weight:600;color:#2a78d6;margin-top:6px}'
+    + '.inc-pt{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}'
     + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.inc-grafs.dos{grid-template-columns:repeat(2,minmax(0,1fr))}'
     + '.inc-graf-ancha{grid-column:1/-1}'
     + '.inc-graf-card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px 14px;min-width:0}'
-    + '.inc-graf-t{font-size:13px;font-weight:600;color:#111827;margin-bottom:6px}'
+    + '.inc-graf-t{font-size:13px;font-weight:600;color:#111827;margin-bottom:6px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}'
+    + '.inc-graf-t small{font-size:11px;font-weight:500;color:#6b7280}'
     + '.inc-leyenda{display:flex;gap:14px;font-size:11.5px;color:#4b5563;margin-bottom:4px;flex-wrap:wrap}'
     + '.inc-leyenda span{display:inline-flex;align-items:center;gap:6px}.inc-leyenda i{width:10px;height:10px;border-radius:2px;display:inline-block}'
     + '.inc-graf{max-width:100%;height:auto;display:block;font-family:var(--inc-fuente,Poppins),sans-serif;overflow:visible}'
-    + '.inc-marca{outline:none;cursor:default}.inc-marca:hover path,.inc-marca:hover rect[fill]:not([fill="transparent"]),.inc-marca:focus path,.inc-marca:focus rect[fill]:not([fill="transparent"]){filter:brightness(1.12)}'
+    + '.inc-marca{outline:none;cursor:default;transition:opacity .15s}.inc-marca.inc-toca{cursor:pointer}.inc-marca:hover path,.inc-marca:hover rect[fill]:not([fill="transparent"]),.inc-marca:focus path,.inc-marca:focus rect[fill]:not([fill="transparent"]){filter:brightness(1.12)}'
+    + '.inc-marca.apagada{opacity:.32}.inc-marca.on text{font-weight:700}'
     + '.inc-marca:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}'
     + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#0f1117;color:#d1d5db;font:500 11.5px var(--inc-fuente,Poppins),sans-serif;padding:7px 10px;border-radius:8px;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s;box-shadow:0 6px 18px rgba(0,0,0,.18)}'
     + '.inc-met-tip .v{color:#fff;font-weight:700;font-size:13px}'
-    + '.inc-met-vacio{text-align:center;color:#6b7280;font-size:12.5px;padding:18px;border:1px dashed #d1d5db;border-radius:12px;background:#fff}';
+    + '.inc-met-vacio{text-align:center;color:#6b7280;font-size:12.5px;padding:18px;border:1px dashed #d1d5db;border-radius:12px;background:#fff}'
+    + '@media(prefers-reduced-motion:reduce){.inc-marca,button.inc-tile{transition:none}}';
   document.head.appendChild(st);
 }
 // ── fin INCIDENCIAS compartido ──
@@ -7425,6 +7552,8 @@ function incEstiloMetricas() {
 // filtra por día (una convocatoria del Arena puede tener muchas fechas), por
 // estado y por sector (tocando el plano).
 let incListaAdm = [], incTimerAdm = null, incFiltroAdm = 'abiertas', incSectorAdm = '', incDiaAdm = '';
+// La incidencia tocada (desplegada, y su lugar elegido en el plano); la categoría y la franja tocadas en las métricas.
+let incFocoAdm = '', incCatAdm = '', incFranjaAdm = '', incIrAFocoAdm = false;
 // Para el destello: las que ya se vieron y las que acaban de llegar.
 let incVistosAdm = null, incNuevosAdm = new Set();
 // ── Centro de Control: la sección ──
@@ -7882,7 +8011,7 @@ async function ccAbrirShow(id) {
   const q = document.getElementById('ccQuitar'); if (q) q.style.display = '';
   document.getElementById('incTitulo').textContent = x.nombre || '';
   document.getElementById('incSubtitulo').textContent = [resumenFechasTexto(x.fecha), x.venue].filter(Boolean).join(' · ');
-  incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = null; incVistosAdm = null; incNuevosAdm = new Set(); incNivelAdm = 0;
+  incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = null; incVistosAdm = null; incNuevosAdm = new Set(); incNivelAdm = 0; incFocoAdm = incCatAdm = incFranjaAdm = '';
   // El armado del campo, antes de dibujar: el 3D lo espera (la primera vez) y se arma una vez.
   const armados = incTraerDatos(incCargarArmados());
   renderCcShows();
@@ -7954,8 +8083,24 @@ const CC_ICO = {
 };
 // El armado es del show: al cambiarlo acá, lo ven igual la gerencia y la tablet.
 function incElegirArmadoAdm(a) { incGuardarArmado(ccConvId, a); renderIncidAdm(); }
-function incTocarSectorAdm(sector) { incSectorAdm = incSectorAdm === sector ? '' : sector; renderIncidAdm(); }
-function incFiltrarAdm(k, v) { if (k === 'estado') { incFiltroAdm = v; incNivelAdm = 0; } if (k === 'dia') incDiaAdm = v; if (k === 'sector') incSectorAdm = v; if (k === 'nivel') incNivelAdm = 0; renderIncidAdm(); }
+function incTocarSectorAdm(sector) {
+  // Si estaba elegido por una incidencia tocada en el listado, tocarlo (o la ✕ de su ficha) la suelta.
+  const f = incFocoAdm && incListaAdm.find(i => String(i.id) === incFocoAdm); incFocoAdm = '';
+  if (f && f.sector === sector && incSectorAdm !== sector) { renderIncidAdm(); return; }
+  incSectorAdm = incSectorAdm === sector ? '' : sector; renderIncidAdm();
+}
+function incFiltrarAdm(k, v) { if (k === 'estado') { incFiltroAdm = v; incNivelAdm = 0; } if (k === 'dia') incDiaAdm = v; if (k === 'sector') incSectorAdm = v; if (k === 'nivel') incNivelAdm = 0; if (k === 'categoria') incCatAdm = v; if (k === 'franja') incFranjaAdm = v; renderIncidAdm(); }
+// Tocar una incidencia del listado: se despliega con todo y el plano va hasta su lugar (el listado no se filtra); otra vez, se cierra.
+function incTocarIncAdm(id) { incFocoAdm = incFocoAdm === id ? '' : id; renderIncidAdm(); }
+// Tocar una métrica: como en la gerencia (categoría y franja filtran; sector y la que lleva más tiempo abierta van al plano).
+function incTocarMetricaAdm(tipo, v) {
+  if (tipo === 'categoria') { incCatAdm = incCatAdm === v ? '' : v; if (incCatAdm) { incFiltroAdm = 'todas'; incNivelAdm = 0; } }
+  if (tipo === 'franja') { incFranjaAdm = incFranjaAdm === v ? '' : v; if (incFranjaAdm) { incFiltroAdm = 'todas'; incNivelAdm = 0; } }
+  if (tipo === 'sector') { incFocoAdm = ''; incSectorAdm = incSectorAdm === v ? '' : v; if (incSectorAdm) { incFiltroAdm = 'todas'; incNivelAdm = 0; } }
+  if (tipo === 'inc') { incFocoAdm = v; incCatAdm = incFranjaAdm = incSectorAdm = ''; incNivelAdm = 0; incFiltroAdm = 'abiertas'; incIrAFocoAdm = true; }
+  renderIncidAdm();
+  const g = document.querySelector && document.querySelector('#sec-control .t-grid'); if (g && g.scrollIntoView) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 // Tocar un contador: el listado muestra esas.
 let incNivelAdm = 0;
 function incTocarStatAdm(k) {
@@ -7982,11 +8127,13 @@ function renderIncidAdm() {
   const seg = (items, actual, fn) => '<div class="cc-seg seg">' + items.map(([k, t]) => '<button class="' + (actual === k ? 'on' : '') + '" onclick="' + fn + '(\'' + k + '\')">' + (CC_ICO[k] || '') + t + '</button>').join('') + '</div>';
   document.getElementById('incArmadoAdm').innerHTML = seg([['3d', '3D'], ['2d', 'Plano']], vista, 'incElegirVistaAdm') + seg([['campos', 'Campo de pie'], ['asientos', 'Con asientos']], armado, 'incElegirArmadoAdm')
     + '<button class="bar-btn cc-editar" onclick="ccTab(\'plano\')" title="Agregar, mover o sacar puertas, gastronomía, baños…">✎ Editar plano</button>';
-  incMontarPlano(document.getElementById('incPlanoAdm'), { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: incSectorAdm, onclick: 'incTocarSectorAdm', titulo: ((ccShows.find(x => x.id === ccConvId) || convs.find(x => x.id === ccConvId)) || {}).nombre,
+  // La incidencia tocada: su lugar, elegido en el plano (la cámara va hasta ahí).
+  const focoI = incFocoAdm ? delDia.find(i => String(i.id) === incFocoAdm) : null; if (!focoI) incFocoAdm = '';
+  incMontarPlano(document.getElementById('incPlanoAdm'), { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: incSectorAdm || (focoI ? focoI.sector : ''), onclick: 'incTocarSectorAdm', titulo: ((ccShows.find(x => x.id === ccConvId) || convs.find(x => x.id === ccConvId)) || {}).nombre,
     detalle: delDia, accionPantalla: { texto: '+ Cargar incidencia acá', fn: 'incAbrirNuevaAdm' } });
   // Las métricas: del día elegido (lo mismo que cuentan los números de arriba).
   const met = document.getElementById('incMetricasAdm');
-  if (met) incPintarMetricas(met, delDia);
+  if (met) incPintarMetricas(met, delDia, { fn: 'incTocarMetricaAdm', sel: { categoria: incCatAdm, franja: incFranjaAdm, sector: incSectorAdm, inc: incFocoAdm } });
   document.getElementById('incLugaresAdm').innerHTML = incLugaresSueltos(delDia, armado).map(l => {
     const nv = res.niveles[l], c = res.cuentas[l] || 0, sel = incSectorAdm === l;
     return '<button class="inc-lugar" style="' + (nv ? 'background:' + INC_NIVELES[nv].fondo + ';border-color:' + INC_NIVELES[nv].color + ';color:' + INC_NIVELES[nv].color + ';' : '') + (sel ? 'outline:2px solid var(--r-ink);' : '')
@@ -8001,28 +8148,27 @@ function renderIncidAdm() {
     '<div class="cc-seg seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (incFiltroAdm === v ? 'on' : '') + '" onclick="incFiltrarAdm(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
     + (dias.length > 1 || (dias.length === 1 && incDiaAdm !== dias[0]) ? chip('dia', '', 'Todos los días', !incDiaAdm) + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), incDiaAdm === d)).join('') : '')
     + (incNivelAdm ? quitar('nivel', INC_NIVELES[incNivelAdm].nombre) : '')
-    + (incSectorAdm ? quitar('sector', incEsc(incSectorAdm)) + '<button class="chip prim" onclick="incAbrirNuevaAdm(incSectorAdm)">+ Cargar acá</button>' : '');
+    + (incSectorAdm ? quitar('sector', incEsc(incSectorAdm)) + '<button class="chip prim" onclick="incAbrirNuevaAdm(incSectorAdm)">+ Cargar acá</button>' : '')
+    + (incCatAdm ? quitar('categoria', incEsc(incCatAdm)) : '') + (incFranjaAdm ? quitar('franja', incEsc(incFranjaNombre(incFranjaAdm))) : '');
   const lista = incOrdenar(delDia).filter(i => incFiltroAdm === 'todas' || (incFiltroAdm === 'abiertas') === (i.estado !== 'resuelta'))
-    .filter(i => !incSectorAdm || i.sector === incSectorAdm).filter(i => !incNivelAdm || (i.nivel || 1) === incNivelAdm);
+    .filter(i => !incSectorAdm || i.sector === incSectorAdm).filter(i => !incNivelAdm || (i.nivel || 1) === incNivelAdm)
+    .filter(i => !incCatAdm || i.categoria === incCatAdm).filter(i => !incFranjaAdm || incEnFranja(i, incFranjaAdm));
   const cont = document.getElementById('incListaAdm');
   if (!lista.length) {
     cont.innerHTML = '<div class="vacio">' + (!incListaAdm.length ? 'Todavía no hay incidencias en este show. Las cargan los supervisores desde la tablet.'
       : incFiltroAdm === 'abiertas' ? 'No hay incidencias abiertas' + (incSectorAdm ? ' en ' + incEsc(incSectorAdm) : '') + '.' : 'Nada por acá.') + '</div>';
     return;
   }
+  // Cada tarjeta, con resolver (o reabrir) y borrar a mano, sin tener que desplegarla.
   cont.innerHTML = lista.map(i => {
-    const v = INC_NIVELES[i.nivel] || INC_NIVELES[1], resuelta = i.estado === 'resuelta';
-    return '<div class="inc-card' + (resuelta ? ' resuelta' : '') + (incNuevosAdm.has(i.id) ? ' nueva' : '') + '" style="border-left-color:' + v.color + '">'
-      + '<div class="inc-card-top">' + incNivelChip(i.nivel) + '<span class="inc-tipo">' + incEsc(i.tipo) + '</span><span class="inc-hora">' + incCuando(i.created_at) + '</span></div>'
-      + '<div class="inc-donde"><b>' + incEsc(i.sector) + '</b>' + (incZona(i.sector) ? ' · ' + incZona(i.sector) : '') + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '') + '</div>'
-      + ((i.acciones || []).length ? '<div class="inc-acc">' + i.acciones.map(a => '<span>✓ ' + incEsc(a) + '</span>').join('') + '</div>' : '')
-      + (i.nota ? '<div class="inc-nota">' + incEsc(i.nota) + '</div>' : '')
-      + (resuelta ? '<div class="inc-res"><strong>Resuelta ' + incCuando(i.resuelta_at) + '</strong>' + (i.resuelta_por_nombre ? ' por ' + incEsc(i.resuelta_por_nombre) : '') + ' · ' + incEsc(i.resolucion || '') + '</div>' : '')
-      + '<div class="inc-card-acts">'
-      + (resuelta ? '<button class="chip" onclick="incReabrirAdm(\'' + i.id + '\')">Reabrir</button>' : '<button class="chip prim" onclick="incResolverAdm(\'' + i.id + '\')">Resolver</button>')
-      + '<button class="chip" onclick="incBorrarAdm(\'' + i.id + '\')" title="Borrarla (si se cargó por error)">Borrar</button>'
-      + '</div></div>';
+    const resuelta = i.estado === 'resuelta', id = incEsc(i.id);
+    const pie = '<div class="inc-card-acts">'
+      + (resuelta ? '<button class="chip" onclick="event.stopPropagation();incReabrirAdm(\'' + id + '\')">Reabrir</button>' : '<button class="chip prim" onclick="event.stopPropagation();incResolverAdm(\'' + id + '\')">Resolver</button>')
+      + '<button class="chip" onclick="event.stopPropagation();incBorrarAdm(\'' + id + '\')" title="Borrarla (si se cargó por error)">Borrar</button></div>';
+    return incTarjetaHTML(i, { abierta: String(i.id) === incFocoAdm, nueva: incNuevosAdm.has(i.id), onclick: 'incTocarIncAdm', pie });
   }).join('');
+  // La tocada desde las métricas: a la vista en el listado.
+  if (incIrAFocoAdm) { incIrAFocoAdm = false; const t = cont.querySelector && cont.querySelector('[data-inc="' + incFocoAdm + '"]'); if (t && t.scrollIntoView) t.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
   incNuevosAdm = new Set();
 }
 async function incResolverAdm(id) {
