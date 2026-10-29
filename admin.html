@@ -655,6 +655,14 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .fb-res-1{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
 .fb-res-2{background:#fffbeb;border-color:#fde68a;color:#92400e}
 .fb-res-3{background:#fff1f2;border-color:#fecdd3;color:var(--alerta)}
+/* La vista previa de la planilla de feedback: qué entra (por color) y qué no. */
+.fbi-res{padding:11px 14px;border-radius:9px;background:#fafafa;border:1px solid var(--r-line);font-size:13px;line-height:1.7}
+.fbi-res .sem{vertical-align:middle;margin:0 2px 0 6px}
+.fbi-sub{font-size:12px;color:var(--r-muted)}
+.fbi-msg{font-size:12.5px;color:var(--r-muted);padding:6px 0}
+.fbi-mal{color:var(--alerta)}
+.fbi-prob{margin-top:10px;max-height:220px;overflow:auto;padding:10px 14px;border-radius:9px;background:#fffbeb;border:1px solid #fde68a;font-size:12px;color:#92400e;line-height:1.6}
+.fbi-prob-t{font-weight:600;margin-bottom:4px}
 
 
 /* Desglose de los criterios dentro del historial */
@@ -1044,6 +1052,8 @@ tr:hover td{background:#f9f9fb}
           <div class="nom-mas-menu" id="detMasMenu">
             <button class="btn btn-sm" id="btnPublicada" onclick="togglePublicada(currentConvId)">○ Publicar</button>
             <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()"><i class="ic ic-planilla"></i> Importar asistencia</button>
+            <button class="btn btn-sec btn-sm" onclick="bajarPlanillaFeedback()" title="Una planilla con los convocados para puntuar los cuatro criterios del 1 al 5"><i class="ic ic-planilla"></i> ↓ Planilla de feedback</button>
+            <button class="btn btn-sec btn-sm" onclick="openImportFeedback()" title="Subir la planilla de feedback completa: se cargan los puntajes y se recalcula el semáforo"><i class="ic ic-planilla"></i> Importar feedback</button>
             <button class="btn btn-sec btn-sm" onclick="openReporte()"><i class="ic ic-grafico"></i> Reporte</button>
             <button class="btn btn-sec btn-sm" onclick="openDispAdmin()"><i class="ic ic-calendario"></i> Disponibilidad</button>
             <button class="btn btn-sec btn-sm" onclick="openBulkMailConv()" title="Manda la confirmación con el contrato a todos los aprobados que todavía no lo tienen, con el puesto y el monto de cada uno"><i class="ic ic-doc"></i> Contratos a todos</button>
@@ -1888,6 +1898,22 @@ tr:hover td{background:#f9f9fb}
   </div>
 </div>
 
+<!-- Modal: Importar feedback -->
+<div class="modal-bg" id="mImportFb" style="display:none" onclick="bgClose('mImportFb',event)">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-title"><span><i class="ic ic-planilla"></i> Importar feedback</span><button class="mclose" onclick="closeM('mImportFb')">✕</button></div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">
+      Subí la planilla de feedback de esta convocatoria (se baja en <strong>⋯ Más → Planilla de feedback</strong>), en Excel o CSV. Cada fila con los cuatro criterios del 1 al 5 se carga como un feedback y el semáforo de cada persona se recalcula. Las filas en blanco no se cargan, y lo que ya estaba cargado no se repite.
+    </div>
+    <div class="fg"><input type="file" id="fbImpFile" accept=".xlsx,.csv,.txt" style="font-size:12px" onchange="leerPlanillaFeedback()"></div>
+    <div id="fbImpPrev"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mImportFb')">Cancelar</button>
+      <button class="btn btn-primary" id="fbImpBtn" onclick="doImportFeedback()" disabled>Cargar feedback</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Enviar confirmación por mail -->
 <div class="modal-bg" id="mMailConf" style="display:none" onclick="bgClose('mMailConf',event)">
   <div class="modal" style="max-width:580px">
@@ -2462,7 +2488,19 @@ async function loadAll() {
       }
       return { data: all };
     })(),
-    sb.from('feedbacks').select('*').order('created_at'),
+    (async () => {
+      // Paginado, como las postulaciones: con las planillas de feedback se pasan
+      // las 1000 enseguida, y sin todos el semáforo de algunos saldría mal.
+      let all = [], f = 0;
+      while (true) {
+        const { data, error } = await sb.from('feedbacks').select('*').order('created_at').range(f, f + 999);
+        if (error || !data?.length) break;
+        all = all.concat(data);
+        if (data.length < 1000) break;
+        f += 1000;
+      }
+      return { data: all };
+    })(),
     sb.from('user_profiles').select('*'),
     sb.from('supervisor_convocatorias').select('*'),
     (async () => {
@@ -8100,6 +8138,147 @@ async function doImportAsistencia() {
   if (!cambios.length) { toast('Ninguno de esos documentos está convocado acá'); return; }
   try { await sbUpsert('postulaciones', cambios); } catch (_) {}
   toast(`✓ ${cambios.length} asistencias actualizadas`);
+}
+
+// ── FEEDBACK DESDE UNA PLANILLA ──
+// Para no cargar uno por uno: se baja la planilla con los convocados del
+// show, cada supervisor puntúa los cuatro criterios del 1 al 5 (los mismos
+// del panel) y se sube. Antes de guardar se ve qué entra y qué no; lo que ya
+// estaba cargado igual no se repite; el semáforo de cada uno se recalcula con
+// todo lo que tiene. Las columnas se reconocen por el nombre.
+const FB_COLUMNAS = { cuil: /\b(cuil|cuit|dni|documento)\b/, actitud: /actitud/, consignas: /consigna/, presencia: /presencia/, iniciativa: /iniciativa/, comentario: /coment|observ/, evaluo: /evalu|supervis/ };
+function bajarPlanillaFeedback() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const puestoDe = id => ((c.puestos || []).find(p => p.id === id) || {}).nombre || '';
+  const gente = listaConvocados().map(x => { const p = people.find(q => q.id === x.personaId) || {}; return { cuil: p.cuit || x.cuit || '', nombre: p.nombre || x.nombre || '', puesto: puestoDe(x.puestoId) }; })
+    .sort((a, b) => a.puesto.localeCompare(b.puesto, 'es') || a.nombre.localeCompare(b.nombre, 'es'));
+  if (!gente.length) { toast('No hay nadie convocado para evaluar'); return; }
+  const filas = [['CUIL', 'Apellido y nombre', 'Puesto'].concat(FB_CRITERIOS.map(k => k.titulo), ['Comentario', 'Evaluó'])]
+    .concat(gente.map(g => [g.cuil, g.nombre, g.puesto, '', '', '', '', '', '']));
+  const archivo = 'feedback-' + (c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.xlsx';
+  descargarLibro(archivo, [{ nombre: 'Feedback', titulo: 'Feedback · ' + (c.nombre || ''), subtitulo: 'Cada criterio del 1 al 5, sin decimales · el promedio da el color: 3,5 o más verde, más de 2 amarillo, 2 o menos rojo · a quien no evaluaste, dejalo en blanco', filas }]);
+}
+let fbImport = null;   // lo leído de la planilla: qué se carga y qué no
+function openImportFeedback() {
+  fbImport = null;
+  document.getElementById('fbImpFile').value = '';
+  document.getElementById('fbImpPrev').innerHTML = '';
+  const b = document.getElementById('fbImpBtn'); b.disabled = true; b.textContent = 'Cargar feedback';
+  showM('mImportFb');
+}
+// Lo que dice una celda de Excel (texto con formato, fórmula, fecha o número).
+function textoDeCelda(v) {
+  if (v === null || v === undefined) return '';
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (typeof v === 'object') { if (v.richText) return v.richText.map(t => t.text).join(''); if ('result' in v) return textoDeCelda(v.result); if ('text' in v) return String(v.text); return ''; }
+  return String(v);
+}
+// Un CSV con comas o punto y coma, y con comillas (un comentario puede tener comas).
+function csvAFilas(txt) {
+  const t = String(txt || '').replace(/^\uFEFF/, ''), primera = t.split(/\r?\n/)[0] || '';
+  const sep = (primera.match(/;/g) || []).length > (primera.match(/,/g) || []).length ? ';' : ',';
+  const filas = []; let fila = [], campo = '', comillas = false;
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (comillas) { if (ch === '"') { if (t[i + 1] === '"') { campo += '"'; i++; } else comillas = false; } else campo += ch; continue; }
+    if (ch === '"') comillas = true;
+    else if (ch === sep) { fila.push(campo); campo = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; fila.push(campo); filas.push(fila); fila = []; campo = ''; }
+    else campo += ch;
+  }
+  if (campo || fila.length) { fila.push(campo); filas.push(fila); }
+  return filas;
+}
+// El archivo como filas de texto: un Excel (la hoja que tenga la columna de CUIL) o un CSV.
+async function filasDeArchivo(f) {
+  if (/\.xlsx$/i.test(f.name)) {
+    const libro = new ExcelJS.Workbook(); await libro.xlsx.load(await f.arrayBuffer());
+    for (const hoja of libro.worksheets) {
+      const filas = [];
+      hoja.eachRow({ includeEmpty: true }, fila => { filas.push((fila.values || []).slice(1).map(textoDeCelda)); });
+      if (filas.some(r => r.some(x => FB_COLUMNAS.cuil.test(nomPelar(x))))) return filas;
+    }
+    return [];
+  }
+  return csvAFilas(await f.text());
+}
+// Qué se carga y qué no: cada fila con los cuatro criterios (enteros del 1 al
+// 5) de alguien de la nómina. Las vacías no cuentan; lo que ya estaba cargado
+// igual (o repetido en la planilla), no se repite.
+function analizarPlanillaFeedback(filas, convId) {
+  const iCab = filas.findIndex(r => r.some(x => FB_COLUMNAS.cuil.test(nomPelar(x))) && r.some(x => FB_COLUMNAS.actitud.test(nomPelar(x))));
+  if (iCab < 0) return { error: 'No encontré las columnas: tiene que haber una de CUIL y las de los cuatro criterios (actitud, consignas, presencia, iniciativa).' };
+  const cab = filas[iCab].map(x => nomPelar(x)), col = {};
+  Object.entries(FB_COLUMNAS).forEach(([k, re]) => { const i = cab.findIndex(x => re.test(x)); if (i >= 0) col[k] = i; });
+  const faltan = FB_CRITERIOS.filter(k => col[k.id] === undefined).map(k => k.titulo);
+  if (faltan.length) return { error: 'Faltan columnas: ' + faltan.join(', ') + '.' };
+  const cargar = [], problemas = [], vistos = new Set(); let enBlanco = 0;
+  const clave = (pid, v, com) => pid + '|' + FB_CRITERIOS.map(k => v[k.id]).join(',') + '|' + com;
+  const ya = new Set(feedbacks.filter(f => (f.conv_id || null) === (convId || null) && f.actitud != null).map(f => clave(f.persona_id, f, f.comentario || '')));
+  filas.slice(iCab + 1).forEach((r, j) => {
+    const nro = iCab + j + 2, celda = k => col[k] === undefined ? '' : String(r[col[k]] == null ? '' : r[col[k]]).trim();
+    const doc = docNucleo(celda('cuil')), crudos = FB_CRITERIOS.map(k => celda(k.id)), com = celda('comentario');
+    if (!crudos.some(Boolean) && !com) { if (doc) enBlanco++; return; }
+    const pers = doc ? people.find(p => docNucleo(p.cuit) === doc) : null;
+    const quien = pers ? pers.nombre : (celda('cuil') || 'sin CUIL');
+    if (!doc) { problemas.push({ nro, quien, que: 'no tiene CUIL' }); return; }
+    if (!pers) { problemas.push({ nro, quien, que: 'no está en la nómina' }); return; }
+    const v = {}, malos = [];
+    FB_CRITERIOS.forEach((k, i) => { const n = Number(crudos[i].replace(',', '.')); if (crudos[i] === '' || !Number.isInteger(n) || n < 1 || n > 5) malos.push(k.titulo.toLowerCase()); else v[k.id] = n; });
+    if (malos.length) { problemas.push({ nro, quien, que: malos.length === FB_CRITERIOS.length ? 'no tiene los puntajes' : 'falta o no va del 1 al 5: ' + malos.join(', ') }); return; }
+    const k = clave(pers.id, v, com);
+    if (ya.has(k) || vistos.has(k)) { problemas.push({ nro, quien, que: 'ya estaba cargado' }); return; }
+    vistos.add(k);
+    const prom = FB_CRITERIOS.reduce((t, x) => t + v[x.id], 0) / FB_CRITERIOS.length;
+    cargar.push({ nro, persona: pers, v, comentario: com, evaluo: celda('evaluo'), prom, color: colorDePromedio(prom), convocado: posts.some(x => x.convId === convId && x.personaId === pers.id) });
+  });
+  return { cargar, problemas, enBlanco };
+}
+async function leerPlanillaFeedback() {
+  const f = document.getElementById('fbImpFile').files[0], prev = document.getElementById('fbImpPrev'), btn = document.getElementById('fbImpBtn');
+  fbImport = null; btn.disabled = true; btn.textContent = 'Cargar feedback';
+  if (!f) { prev.innerHTML = ''; return; }
+  prev.innerHTML = '<div class="fbi-msg">Leyendo la planilla…</div>';
+  let filas;
+  try { filas = await filasDeArchivo(f); } catch (err) { prev.innerHTML = '<div class="fbi-msg fbi-mal">No pude leer el archivo: ' + e(err && err.message || err) + '</div>'; return; }
+  const r = analizarPlanillaFeedback(filas, currentConvId);
+  if (r.error) { prev.innerHTML = '<div class="fbi-msg fbi-mal">' + e(r.error) + '</div>'; return; }
+  fbImport = r;
+  prev.innerHTML = fbVistaPreviaHTML(r);
+  btn.disabled = !r.cargar.length;
+  btn.textContent = r.cargar.length ? 'Cargar ' + r.cargar.length + ' feedback' + (r.cargar.length === 1 ? '' : 's') : 'Cargar feedback';
+}
+function fbVistaPreviaHTML(r) {
+  const por = k => r.cargar.filter(x => x.color === k).length, fuera = r.cargar.filter(x => !x.convocado).length, n = r.problemas.length;
+  return '<div class="fbi-res">' + (r.cargar.length
+      ? '<strong>' + r.cargar.length + '</strong> para cargar:<span class="sem sem-1">1</span>' + por(1) + ' en verde<span class="sem sem-2">2</span>' + por(2) + ' en amarillo<span class="sem sem-3">3</span>' + por(3) + ' en rojo'
+      : 'No hay ninguna fila para cargar.')
+    + (r.enBlanco ? '<div class="fbi-sub">' + r.enBlanco + ' en blanco (sin evaluar): no se cargan.</div>' : '')
+    + (fuera ? '<div class="fbi-sub">' + fuera + ' no estaba' + (fuera === 1 ? '' : 'n') + ' convocado' + (fuera === 1 ? '' : 's') + ' en esta convocatoria: se carga' + (fuera === 1 ? '' : 'n') + ' igual.</div>' : '') + '</div>'
+    + (n ? '<div class="fbi-prob"><div class="fbi-prob-t">' + n + ' fila' + (n === 1 ? '' : 's') + ' que no se carga' + (n === 1 ? '' : 'n') + '</div>'
+      + r.problemas.slice(0, 40).map(p => '<div>Fila ' + p.nro + ' · ' + e(p.quien) + ' — ' + e(p.que) + '</div>').join('')
+      + (n > 40 ? '<div>… y ' + (n - 40) + ' más</div>' : '') + '</div>' : '');
+}
+async function doImportFeedback() {
+  const r = fbImport; if (!r || !r.cargar.length) return;
+  const btn = document.getElementById('fbImpBtn'); btn.disabled = true; btn.textContent = 'Cargando…';
+  const nuevos = r.cargar.map(x => ({ id: uid(), persona_id: x.persona.id, conv_id: currentConvId || null, supervisor_id: currentUserId || null, supervisor_nombre: x.evaluo || 'Planilla de feedback', puntaje: x.color, comentario: x.comentario || null, actitud: x.v.actitud, consignas: x.v.consignas, presencia: x.v.presencia, iniciativa: x.v.iniciativa }));
+  // De a tandas; cada tanda que entra ya cuenta (si una falla, al volver a
+  // subir la planilla lo que entró figura como "ya estaba cargado").
+  const hechos = [], ahora = new Date().toISOString(); let fallo = false;
+  for (let i = 0; i < nuevos.length; i += 200) {
+    const tanda = nuevos.slice(i, i + 200);
+    try { await sbInsert('feedbacks', tanda); } catch (_) { fallo = true; break; }
+    tanda.forEach(f => { feedbacks.push(Object.assign({ created_at: ahora }, f)); hechos.push(f); });
+  }
+  // El semáforo de cada uno, de nuevo con todo lo que tiene; se guarda de a un color por vez.
+  const porColor = { 1: [], 2: [], 3: [] };
+  [...new Set(hechos.map(f => f.persona_id))].forEach(id => { const p = people.find(x => x.id === id); if (!p) return; const sem = calcSemaforo(id); if ((p.semaforo || 1) !== sem || p.semaforo == null) { p.semaforo = sem; porColor[sem].push(id); } });
+  try { for (const k of [1, 2, 3]) await sbUpdateIn('personas', porColor[k], { semaforo: k }); } catch (_) {}
+  nomRefresh();
+  if (fallo) { toast('Se cargaron ' + hechos.length + ' de ' + nuevos.length + '. Volvé a subir la planilla: lo que ya entró no se repite.'); fbImport = null; btn.textContent = 'Cargar feedback'; return; }
+  closeM('mImportFb');
+  toast('✓ ' + hechos.length + ' feedback' + (hechos.length === 1 ? '' : 's') + ' cargado' + (hechos.length === 1 ? '' : 's'));
 }
 
 async function changePostSt(id, sel) { const p = posts.find(x => x.id === id); if (p) { p.estado = sel.value; sel.className = 'ssp ' + sel.value; renderGestList(); renderPuestos(); renderDetStats(); try { await sbUpdate('postulaciones', id, { estado: sel.value }); } catch (_) {} } }
