@@ -6756,13 +6756,18 @@ function incPlano3D(cont, op0) {
       // tipo); salvo si se está yendo a un lugar o se acaba de elegir uno (va hasta él).
       objY = pisoSel ? INC_3D_PISO[pisoSel] : INC_3D_PISO.P3 * 0.35;
       const cambioVista = (pisoAnt !== null && pisoAnt !== pisoSel) || (tipoAnt !== null && tipoAnt !== tipoSel);
-      if (cambioVista) { if (irA) irA = ''; else if (elegido === selAnt || !piezas[elegido]) volver(); }
+      let volvio = false;
+      if (cambioVista) { if (irA) irA = ''; else if (elegido === selAnt || !piezas[elegido]) { volver(); volvio = true; } }
       pisoAnt = pisoVista = pisoSel; tipoAnt = tipoSel;
       // El lugar elegido: su ficha (en pantalla completa va en el detalle de al
       // costado) y la cámara que va hasta él. Editando, nada de eso.
       const fichaId = !editar && op.sel && piezas[op.sel] ? op.sel : '';
       fichaEl.innerHTML = fichaId ? incFichaHTML(fichaId, op, 'inc-ficha inc-3d-ficha') : '';
-      if (elegido !== selAnt) { selAnt = elegido; const pe = piezas[elegido]; if (pe && !editar) viajarA(pe); }
+      if (elegido !== selAnt) {
+        // Elegido uno, la cámara va hasta él; soltado (otra vez o con la ✕), vuelve a la vista de siempre, al centro.
+        const antes = selAnt; selAnt = elegido; const pe = piezas[elegido];
+        if (pe && !editar) viajarA(pe); else if (!elegido && antes && !editar && !volvio) volver();
+      }
       // El elegido, con sus manijas (si se está editando y se ve).
       const ps = piezas[elegido]; asaSel = editar && ps && ps.forma && ps.grupo.visible ? ps : null;
       if (!agarre) { medida = null; pintarFantasma(); }
