@@ -1229,7 +1229,20 @@ async function incGuardarArmado(convId, a) {
 }
 // Mientras se mira un show: si el panel guardó otro plano o alguien cambió el
 // armado, se ve en todos sin volver a entrar. Devuelve si cambió algo.
-async function incRefrescarPlano() { const r = await Promise.all([incCargarPlanoArena(), incCargarArmados()]); return r[0] || r[1]; }
+// Lo que el 3D espera, la primera vez, antes de armarse (el plano guardado y el
+// armado del campo): así no se arma dos veces al entrar. Las páginas lo piden
+// antes de dibujar el show; cuando llega, se arma con lo que haya.
+let incDatosPendientes = 0, incDatosListos = false;
+function incTraerDatos(p) {
+  incDatosPendientes++;
+  return Promise.resolve(p).finally(() => {
+    if (--incDatosPendientes) return;
+    incDatosListos = true;
+    // Después de que la página redibuje con lo nuevo (si cambió algo); si no, con lo que tenía.
+    setTimeout(() => incPlanos.forEach(cont => { if (cont._incEspera && cont.isConnected && cont._incOp) incMontarPlano(cont, cont._incOp); }), 0);
+  });
+}
+async function incRefrescarPlano() { return incTraerDatos(Promise.all([incCargarPlanoArena(), incCargarArmados()]).then(r => r[0] || r[1])); }
 // La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
 // "Platea baja · P1", "PB" (el campo) o "Anillo · P1" (los puestos).
 function incZona(sector) {
@@ -1683,10 +1696,18 @@ function incMontarPlano(cont, op) {
     });
   }
   const quiere3D = (op.vista || incVistaPreferida()) === '3d' && incHayWebGL();
-  if (quiere3D && window.THREE && (incListo3D || !incCarga3D)) {
+  const hay3D = quiere3D && window.THREE && (incListo3D || !incCarga3D);
+  // Mientras baja el 3D, o (la primera vez) mientras llegan el plano guardado y el
+  // armado del campo: la espera, del mismo tamaño. Ni el 2D un momento, ni el 3D dos veces.
+  if (quiere3D && !cont._inc3d && !op.editar && (!hay3D || (!incDatosListos && incDatosPendientes > 0))) {
+    incEsperar3D(cont);
+    if (!hay3D) incCargar3D().then(() => { if (cont._incEspera && cont.isConnected && cont._incOp) incMontarPlano(cont, cont._incOp); });
+    return;
+  }
+  if (hay3D) {
     try {
       if (cont._inc3d && (cont._inc3d.armado !== op.armado || cont._inc3d.version !== incVersionPlano)) { cont._inc3d.destruir(); cont._inc3d = null; cont._incRehecho = true; }
-      if (!cont._inc3d) { cont.innerHTML = ''; cont._inc3d = incPlano3D(cont, op); }
+      if (!cont._inc3d) { cont._incEspera = false; cont.innerHTML = ''; cont._inc3d = incPlano3D(cont, op); }
       cont._inc3d.poner(op);
       return;
     } catch (err) {
@@ -1696,9 +1717,20 @@ function incMontarPlano(cont, op) {
     }
   }
   if (cont._inc3d) { cont._inc3d.destruir(); cont._inc3d = null; }
+  if (cont._incEspera) { cont._incEspera = false; cont.classList.remove('inc-3d'); cont.style.height = ''; }
   cont.innerHTML = incPlanoSVG(op) + (op.sel && !op.editar ? incFichaHTML(op.sel, op, 'inc-ficha') : '') + '<div class="inc-plano-pie"><div class="inc-plano-ctl">' + (op.sinPisos ? '' : incPisosHTML()) + (op.editar ? '' : incBuscarBotonHTML()) + '<span class="inc-plano-mostrar">Mostrar' + incCapasHTML() + '</span></div>' + incLeyendaHTML() + '</div><div class="inc-bus-lugar" data-clase="inc-bus"></div>';
   incBuscadorRefrescar(cont);
   if (quiere3D && !incSin3D) incCargar3D().then(ok => { if (ok && cont._incOp && (cont._incOp.vista || incVistaPreferida()) === '3d') incMontarPlano(cont, cont._incOp); });
+}
+// La espera del 3D (mientras baja o mientras llegan los datos): el mismo fondo y el mismo alto.
+function incEsperar3D(cont) {
+  cont._incEspera = true;
+  if (cont.querySelector && cont.querySelector('.inc-3d-espera')) return;
+  incEstilo3D();
+  cont.classList.add('inc-3d');
+  const fijo = cont.dataset && cont.dataset.alto === 'pantalla' && window.innerWidth >= 960;
+  cont.style.height = fijo ? '' : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680)) + 'px';
+  cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
 // La leyenda de abajo del plano 2D (y la del 3D, encima).
 function incEstiloPlano() {
@@ -1780,6 +1812,9 @@ function incEstilo3D() {
   if (document.getElementById('incEstilo3D')) return;
   const st = document.createElement('style'); st.id = 'incEstilo3D';
   st.textContent = '.inc-3d{position:relative;padding:0!important;border-radius:14px;overflow:hidden;border:none!important;background:radial-gradient(120% 85% at 50% 0%,#1b3d6b 0%,#0f2a4d 52%,#071a33 100%)}'
+    + '.inc-3d-espera{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;color:rgba(226,236,250,.8);font:500 13px ' + INC_FUENTE + '}'
+    + '.inc-3d-espera span{width:16px;height:16px;border-radius:50%;border:2px solid rgba(226,236,250,.25);border-top-color:#e2ecfa;animation:inc3dGira .8s linear infinite}'
+    + '@keyframes inc3dGira{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.inc-3d-espera span{animation:none}}'
     // Pantalla completa (la del navegador o, donde no la hay, la de mentira): toda la pantalla, encima de todo.
     + '.inc-3d.inc-3d-full{position:fixed!important;left:0;top:0;right:0;bottom:0;width:100vw!important;height:100vh!important;height:100dvh!important;min-height:0!important;margin:0!important;border-radius:0;z-index:2147483000;--inc-sup:env(safe-area-inset-top,0px);--inc-der:env(safe-area-inset-right,0px);--inc-izq:env(safe-area-inset-left,0px);--inc-inf:env(safe-area-inset-bottom,0px)}'
     + 'html.inc-3d-bloqueo,html.inc-3d-bloqueo body{overflow:hidden!important;overscroll-behavior:none}'
@@ -2352,9 +2387,12 @@ function incPlano3D(cont, op0) {
     const hojas = new T.Mesh(new T.IcosahedronGeometry(7, 1), new T.MeshStandardMaterial({ color: 0x3f7f35, roughness: 0.85, flatShading: true })); hojas.position.set(207, 31, 146); hojas.scale.set(1.2, 0.4, 1.2); alrededorG.add(hojas);
   }
   // Cuánto está abierto (0: cerrado, como por fuera; 1: abierto, el plano por dentro).
-  // Se presenta cada vez que se entra; si se rehizo sin salir, o se está editando, ya abierto.
-  let abre = cont._incRehecho || op0.editar ? 1 : 0, abreDesde = null, abreAnt = -1;
-  cont._incRehecho = false;
+  // Se presenta cada vez que se entra; si se rehizo sin salir, o se está editando, ya
+  // abierto. Si se rehizo mientras se presentaba (llegó el plano guardado, cambió el
+  // armado), la presentación sigue desde donde iba.
+  const fuera = cont._incRehecho && !op0.editar ? cont._incFuera : null;
+  let abre = (cont._incRehecho && !fuera) || op0.editar ? 1 : 0, abreDesde = null, abreAnt = -1;
+  cont._incRehecho = false; cont._incFuera = null;
   const pintarAbre = () => {
     const k = abre * abre * (3 - 2 * abre);
     lamas.visible = k < 1; lamas.scale.y = Math.max(0.001, ALTO_EDIFICIO * (1 - k));
@@ -2573,6 +2611,12 @@ function incPlano3D(cont, op0) {
     controles.autoRotateSpeed = 0.35;
   }
   let intro = 0, introDesde = null, origen = desde.clone(), ultimoToque = Date.now();
+  if (fuera) {
+    // La cámara de la presentación de antes: si ya había llegado, quieta (o girando) ahí; si venía volando, sigue el vuelo.
+    camara.position.copy(fuera.pos); camara.lookAt(fuera.mira); ultimoToque = fuera.toque;
+    if (fuera.intro >= 1) { intro = 1; if (controles) { controles.target.copy(fuera.mira); controles.enabled = !fuera.abriendo; controles.autoRotate = fuera.gira && !fuera.abriendo; } }
+    else { origen = fuera.pos.clone(); mirarDesde = fuera.mira.clone(); }
+  }
   if (cont._incCam && abre >= 1) {
     // La cámara de antes (no gira de costado: el objetivo sólo cambia de altura con el piso).
     objetivo.copy(cont._incCam.obj);
@@ -2831,6 +2875,8 @@ function incPlano3D(cont, op0) {
   const entrar = () => { if (abre < 1 && abreDesde === null) abreDesde = (performance.now() - t0) / 1000; };
   const camIni = new T.Vector3(), mirarIni = new T.Vector3();
   let abriendo = false;
+  // Si se estaba abriendo cuando se rehízo, sigue abriéndose (desde el mismo punto).
+  if (fuera && fuera.abreDesde !== null) { abre = fuera.abre; abreDesde = fuera.abreDesde; abriendo = fuera.abriendo; camIni.copy(fuera.camIni); mirarIni.copy(fuera.mirarIni); }
   // Cada cuadro: la cámara de entrada, la fachada que sube o baja con el piso,
   // el latido, las balizas, las luces y la cinta que corre.
   const t0 = performance.now();
@@ -3022,7 +3068,15 @@ function incPlano3D(cont, op0) {
     destruir() {
       vivo = false;
       // La cámara queda para la próxima (si se rehace, no vuelve a entrar volando).
-      if (intro >= 1) cont._incCam = { pos: camara.position.clone(), obj: controles ? controles.target.clone() : objetivo.clone() };
+      // Si se estaba presentando, cómo iba (para seguir desde ahí): la cámara, adónde
+      // miraba, si giraba sola y, si se estaba abriendo, por dónde iba.
+      if (abre < 1) {
+        const mira = controles && controles.enabled ? controles.target.clone() : camara.position.clone().add(camara.getWorldDirection(new T.Vector3()).multiplyScalar(camara.position.distanceTo(objetivoFuera)));
+        cont._incFuera = { pos: camara.position.clone(), mira, intro, gira: !!(controles && controles.autoRotate), toque: ultimoToque, abre, abreDesde: abreDesde === null ? null : abreDesde - (performance.now() - t0) / 1000, abriendo, camIni: camIni.clone(), mirarIni: mirarIni.clone() };
+      } else {
+        cont._incFuera = null;
+        if (intro >= 1) cont._incCam = { pos: camara.position.clone(), obj: controles ? controles.target.clone() : objetivo.clone() };
+      }
       cont.removeEventListener('pointerdown', alAgarrar, true);
       window.removeEventListener('pointermove', alLlevar); window.removeEventListener('pointerup', alSoltar);
       if (ro) ro.disconnect();
@@ -3237,11 +3291,13 @@ async function openIncid() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   document.getElementById('incSub').textContent = c.nombre;
   incLista = []; incVistos = null; incNuevos = new Set();
+  // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
+  // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
+  const plano = incRefrescarPlano();
   renderIncid();
   showScreen('screenIncid');
   await cargarIncid();
-  // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado del campo del show.
-  if (await incRefrescarPlano()) renderIncid();
+  if (await plano) renderIncid();
   clearInterval(incTimer);
   incTimer = setInterval(() => {
     if (!document.getElementById('screenIncid').classList.contains('active')) { clearInterval(incTimer); return; }
