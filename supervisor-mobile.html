@@ -871,7 +871,8 @@ function incPisoElegido() { try { const p = localStorage.getItem('incPiso') || '
 const incPlanos = new Set();
 function incElegirPiso(p) {
   try { localStorage.setItem('incPiso', p || ''); } catch (_) {}
-  incPlanos.forEach(cont => { if (!cont.isConnected) { incPlanos.delete(cont); return; } if (cont._incOp) incMontarPlano(cont, cont._incOp); });
+  // Si se estaba presentando el Arena por fuera, elegir un piso (o el estadio completo) hace entrar.
+  incPlanos.forEach(cont => { if (!cont.isConnected) { incPlanos.delete(cont); return; } cont._incEntrar = true; if (cont._incOp) incMontarPlano(cont, cont._incOp); });
   if (typeof window !== 'undefined' && typeof window.incPisoCambiado === 'function') window.incPisoCambiado();
 }
 // Lo que se muestra del plano, por aparato: los nombres de los sectores, los
@@ -895,7 +896,7 @@ function incCapasHTML(clase) {
 }
 function incPisosHTML(clase) {
   const p = incPisoElegido();
-  return '<div class="' + (clase || 'inc-pisos') + '" role="group" aria-label="Ver un piso">' + [['', 'Todos']].concat(INC_PISOS.map(x => [x[0], x[0]])).map(([k, t]) =>
+  return '<div class="' + (clase || 'inc-pisos') + '" role="group" aria-label="Ver un piso">' + [['', 'Estadio completo']].concat(INC_PISOS.map(x => [x[0], x[0]])).map(([k, t]) =>
     '<button type="button" class="' + (p === k ? 'on' : '') + '" onclick="incElegirPiso(\'' + k + '\')" title="' + (k ? (INC_PISOS.find(x => x[0] === k) || [])[1] : 'Todos los pisos') + '">' + t + '</button>').join('') + '</div>';
 }
 // Los tipos de puesto: nombre, ícono y tamaño con el que nace uno nuevo.
@@ -1684,7 +1685,7 @@ function incMontarPlano(cont, op) {
   const quiere3D = (op.vista || incVistaPreferida()) === '3d' && incHayWebGL();
   if (quiere3D && window.THREE && (incListo3D || !incCarga3D)) {
     try {
-      if (cont._inc3d && (cont._inc3d.armado !== op.armado || cont._inc3d.version !== incVersionPlano)) { cont._inc3d.destruir(); cont._inc3d = null; }
+      if (cont._inc3d && (cont._inc3d.armado !== op.armado || cont._inc3d.version !== incVersionPlano)) { cont._inc3d.destruir(); cont._inc3d = null; cont._incRehecho = true; }
       if (!cont._inc3d) { cont.innerHTML = ''; cont._inc3d = incPlano3D(cont, op); }
       cont._inc3d.poner(op);
       return;
@@ -1824,7 +1825,7 @@ function incEstilo3D() {
     + '.inc-3d-vistas-l>button{display:flex;align-items:center;min-height:36px;padding:0 11px;border:0;border-radius:8px;background:transparent;color:#eaf3ff;font:600 12.5px ' + INC_FUENTE + ';text-align:left;cursor:pointer}'
     + '.inc-3d-vistas-l>button:hover{background:rgba(255,255,255,.08)}.inc-3d-vistas-l>button.on{background:rgba(255,255,255,.16)}'
     + '.inc-3d-vistas-l>button.on::after{content:"✓";margin-left:auto;padding-left:12px;color:#7cc8ff}'
-    + '.inc-3d-vistas-p{display:flex;gap:3px;padding:2px 6px 6px}'
+    + '.inc-3d-vistas-p{display:flex;flex-wrap:wrap;gap:3px;padding:2px 6px 6px}.inc-3d-vistas-p button:first-child{flex-basis:100%}'
     + '.inc-3d-vistas-p button{flex:1;min-height:32px;border:0;border-radius:8px;background:rgba(255,255,255,.08);color:#eaf3ff;font:600 12px ' + INC_FUENTE + ';cursor:pointer}'
     + '.inc-3d-vistas-p button.on{background:rgba(255,255,255,.92);color:#0b1b33}'
     + '.inc-3d-capas-l{display:flex;flex-direction:column;gap:2px}'
@@ -2286,38 +2287,44 @@ function incPlano3D(cont, op0) {
     if (typeof document !== 'undefined' && document.fonts && document.fonts.load)
       document.fonts.load('600 70px Poppins').then(() => { x.fillStyle = '#1b1f26'; x.fillRect(0, 0, 1024, 128); x.fillStyle = '#ffffff'; x.fillText('movistar arena', 512, 66); tc.needsUpdate = true; }).catch(() => {});
   }
-  // Los árboles de las veredas (Humboldt, Corrientes y Muñecas), sin tapar las puertas.
+  // Lo de alrededor (sólo en la presentación): los árboles de las veredas
+  // (Humboldt, Corrientes y Muñecas, sin tapar las puertas), la chimenea y la palmera.
+  const alrededorG = new T.Group(); escena.add(alrededorG);
   {
     const matTronco = new T.MeshStandardMaterial({ color: 0x6b4a33, roughness: 0.9 });
     const verdes = [0x4f8f3e, 0x5e9c45, 0x447d36].map(col => new T.MeshStandardMaterial({ color: col, roughness: 0.85, flatShading: true }));
     const geoTronco = new T.CylinderGeometry(0.7, 1, 10, 6), geoCopa = new T.IcosahedronGeometry(6, 1);
     const arbol = (px, py, i) => {
       const k = 0.85 + ((i * 37) % 30) / 100, cx = px - 210, cz = py - 146;
-      const tronco = new T.Mesh(geoTronco, matTronco); tronco.position.set(cx, 5 * k, cz); tronco.scale.setScalar(k); escena.add(tronco);
-      const copa = new T.Mesh(geoCopa, verdes[i % 3]); copa.position.set(cx, 14 * k, cz); copa.scale.set(k, k * 0.9, k); escena.add(copa);
+      const tronco = new T.Mesh(geoTronco, matTronco); tronco.position.set(cx, 5 * k, cz); tronco.scale.setScalar(k); alrededorG.add(tronco);
+      const copa = new T.Mesh(geoCopa, verdes[i % 3]); copa.position.set(cx, 14 * k, cz); copa.scale.set(k, k * 0.9, k); alrededorG.add(copa);
     };
     const puertas = incLugaresArena.filter(l => l.t === 'puerta');
     const libre = (px, py) => !puertas.some(d => Math.hypot(d.cx - px, d.cy - py) < 22);
     let i = 0;
     for (let px = 80; px <= 340; px += 30) if (Math.abs(px - 210) > 32 && libre(px, 318)) arbol(px, 331, i++);
-    for (let py = -24; py <= 300; py += 34) { if (libre(398, py)) arbol(410, py, i++); if (libre(22, py)) arbol(9, py, i++); }
+    for (let py = -24; py <= 300; py += 34) { if (libre(398, py) && py < 220) arbol(410, py, i++); if (libre(22, py)) arbol(9, py, i++); }
   }
-  // La chimenea de ladrillo y la palmera, en la esquina de Humboldt y Corrientes.
+  // La chimenea de ladrillo y la palmera: del lado de Corrientes, a la vista desde
+  // Humboldt pero metidas adentro del terreno (no sobre la vereda).
   {
     const matLadrillo = new T.MeshStandardMaterial({ color: 0xa4552f, roughness: 0.9 });
-    const chimenea = new T.Mesh(new T.CylinderGeometry(3, 4.2, 92, 16), matLadrillo); chimenea.position.set(201, 46, 185); escena.add(chimenea);
+    const chimenea = new T.Mesh(new T.CylinderGeometry(3, 4.2, 92, 16), matLadrillo); chimenea.position.set(204, 46, 124); alrededorG.add(chimenea);
     const matAro = new T.MeshStandardMaterial({ color: 0x7c3b1f, roughness: 0.9 });
-    [70, 88].forEach(y => { const aro = new T.Mesh(new T.CylinderGeometry(3.6, 3.6, 2, 16), matAro); aro.position.set(201, y, 185); escena.add(aro); });
-    const palma = new T.Mesh(new T.CylinderGeometry(0.6, 0.9, 30, 6), new T.MeshStandardMaterial({ color: 0x8a6d4d, roughness: 0.9 })); palma.position.set(184, 15, 190); escena.add(palma);
-    const hojas = new T.Mesh(new T.IcosahedronGeometry(7, 1), new T.MeshStandardMaterial({ color: 0x3f7f35, roughness: 0.85, flatShading: true })); hojas.position.set(184, 31, 190); hojas.scale.set(1.2, 0.4, 1.2); escena.add(hojas);
+    [70, 88].forEach(y => { const aro = new T.Mesh(new T.CylinderGeometry(3.6, 3.6, 2, 16), matAro); aro.position.set(204, y, 124); alrededorG.add(aro); });
+    const palma = new T.Mesh(new T.CylinderGeometry(0.6, 0.9, 30, 6), new T.MeshStandardMaterial({ color: 0x8a6d4d, roughness: 0.9 })); palma.position.set(207, 15, 146); alrededorG.add(palma);
+    const hojas = new T.Mesh(new T.IcosahedronGeometry(7, 1), new T.MeshStandardMaterial({ color: 0x3f7f35, roughness: 0.85, flatShading: true })); hojas.position.set(207, 31, 146); hojas.scale.set(1.2, 0.4, 1.2); alrededorG.add(hojas);
   }
-  // Cuánto está abierto (0: cerrado, como por fuera; 1: abierto, el plano por
-  // dentro). Si el 3D se vuelve a armar (cambió el plano) o se está editando, abierto.
-  let abre = cont._incCam || op0.editar ? 1 : 0, abreDesde = null, abreAnt = -1;
+  // Cuánto está abierto (0: cerrado, como por fuera; 1: abierto, el plano por dentro).
+  // Se presenta cada vez que se entra; si se rehizo sin salir, o se está editando, ya abierto.
+  let abre = cont._incRehecho || op0.editar ? 1 : 0, abreDesde = null, abreAnt = -1;
+  cont._incRehecho = false;
   const pintarAbre = () => {
     const k = abre * abre * (3 - 2 * abre);
     lamas.visible = k < 1; lamas.scale.y = Math.max(0.001, ALTO_EDIFICIO * (1 - k));
     entradaG.visible = k < 1; entradaG.scale.y = Math.max(0.001, 1 - k);
+    alrededorG.visible = k < 1; alrededorG.scale.y = Math.max(0.001, 1 - k);
+    if (!editar) ayuda.textContent = k < 1 ? 'Arrastrá para girar · tocá para entrar' : 'Arrastrá para girar · tocá un lugar';
     // El techo se levanta y se va apagando (más rápido que lo que sube).
     const fuera = Math.max(0, 1 - k * 1.6);
     techoG.visible = fuera > 0; techoG.position.y = ALTO_EDIFICIO + 46 * k; matBordeTecho.opacity = 0.9 * fuera;
@@ -2530,7 +2537,7 @@ function incPlano3D(cont, op0) {
     controles.autoRotateSpeed = 0.35;
   }
   let intro = 0, introDesde = null, origen = desde.clone(), ultimoToque = Date.now();
-  if (cont._incCam) {
+  if (cont._incCam && abre >= 1) {
     // La cámara de antes (no gira de costado: el objetivo sólo cambia de altura con el piso).
     objetivo.copy(cont._incCam.obj);
     camara.position.copy(cont._incCam.pos); camara.lookAt(cont._incCam.obj); intro = 1;
@@ -2548,7 +2555,7 @@ function incPlano3D(cont, op0) {
   };
   // Si la cámara todavía está entrando (recién abierto el plano), el viaje espera a que termine.
   let viajePendiente = null;
-  const viajarA = p => { if (intro < 1 || abre < 1) { viajePendiente = p; if (abre < 1 && abreDesde !== null) abreDesde = Math.min(abreDesde, (performance.now() - t0) / 1000); return; } viajarAPunto(new T.Vector3(p.cx, p.hBase + (p.yAct || 0), p.cz), 270); };
+  const viajarA = p => { if (intro < 1 || abre < 1) { viajePendiente = p; if (abre < 1) entrar(); return; } viajarAPunto(new T.Vector3(p.cx, p.hBase + (p.yAct || 0), p.cz), 270); };
 
   // Tamaño: el ancho del contenedor y un alto proporcionado; con
   // data-alto="pantalla" (en pantallas grandes), el alto que le da la página;
@@ -2568,7 +2575,7 @@ function incPlano3D(cont, op0) {
     cont.style.setProperty('--inc-tapa-abajo', tapaH + 'px');
     ayuda.style.left = Math.round((w - tapaW) / 2) + 'px';
     // En un plano angosto, la ayuda va arriba de los pisos (si no, se pisan).
-    ayuda.classList.toggle('arriba', w - tapaW < 820);
+    ayuda.classList.toggle('arriba', w - tapaW < 1000);
     motor.setSize(w, h, false); camara.aspect = w / h;
     if (tapaW || tapaH) camara.setViewOffset(w, h, tapaW / 2, tapaH / 2, w, h); else camara.clearViewOffset();
     camara.updateProjectionMatrix();
@@ -2644,13 +2651,13 @@ function incPlano3D(cont, op0) {
     vistasEl.innerHTML = '<div class="inc-3d-vistas-l"><div class="inc-3d-vistas-t">Vista</div>'
       + (editar ? '' : '<button type="button" data-x="1" title="Verlo cerrado, como es por fuera, y que se abra">Por fuera (presentación)</button>')
       + INC_3D_VISTAS.map(([k, n]) => '<button type="button" data-v="' + k + '" class="' + (k === vistaSel ? 'on' : '') + '">' + n + '</button>').join('')
-      + '<div class="inc-3d-vistas-t">Piso</div><div class="inc-3d-vistas-p">' + [['', 'Todos']].concat(INC_PISOS.map(x => [x[0], x[0]])).map(([k, n]) => '<button type="button" data-vp="' + k + '" class="' + (k === p ? 'on' : '') + '">' + n + '</button>').join('') + '</div></div>';
+      + '<div class="inc-3d-vistas-t">Piso</div><div class="inc-3d-vistas-p">' + [['', 'Estadio completo']].concat(INC_PISOS.map(x => [x[0], x[0]])).map(([k, n]) => '<button type="button" data-vp="' + k + '" class="' + (k === p ? 'on' : '') + '">' + n + '</button>').join('') + '</div></div>';
   };
-  const elegirVista = k => { vistaSel = cont._incVista = k; medir(); volver(); };
+  const elegirVista = k => { vistaSel = cont._incVista = k; medir(); if (abre < 1) entrar(); else volver(); };
   vistasEl.addEventListener('click', e => {
     const b = e.target.closest ? e.target.closest('button') : null; if (!b) return;
     cerrarMenus();
-    if (b.dataset.x) { abre = 0; abreDesde = null; volver(); return; }
+    if (b.dataset.x) { presentar(); return; }
     if (b.dataset.v) elegirVista(b.dataset.v);
     else if (b.dataset.vp !== undefined) { if (b.dataset.vp === incPisoElegido()) volver(); else incElegirPiso(b.dataset.vp); }
   });
@@ -2677,11 +2684,13 @@ function incPlano3D(cont, op0) {
     const hit = rayo.intersectObjects(toques).find(x => { const q = piezas[x.object.userData.id]; return q && q.grupo.visible; });
     return hit ? hit.object.userData.id : '';
   };
-  lienzo.addEventListener('pointerdown', e => { cerrarMenus(); if (abre < 1 && abreDesde !== null) abreDesde = Math.min(abreDesde, (performance.now() - t0) / 1000); abajo = { x: e.clientX, y: e.clientY, t: Date.now() }; ultimoToque = Date.now(); if (controles) controles.autoRotate = false; });
+  lienzo.addEventListener('pointerdown', e => { cerrarMenus(); abajo = { x: e.clientX, y: e.clientY, t: Date.now() }; ultimoToque = Date.now(); if (controles) controles.autoRotate = false; });
   lienzo.addEventListener('pointerup', e => {
     if (!abajo) return;
     const lejos = Math.hypot(e.clientX - abajo.x, e.clientY - abajo.y) > 8, largo = Date.now() - abajo.t > 700; abajo = null;
     if (lejos || largo) return;
+    // Por fuera: tocar el estadio (sin arrastrar) es entrar.
+    if (abre < 1) { entrar(); return; }
     const id = sectorEn(e), pz = piezas[id];
     if (id && cont._incBus && cont._incBus.abierto) { cont._incBus.abierto = false; incBuscadorRefrescar(cont); }
     if (pz && pz.lugar && pz.piso && !incPisoElegido() && !editar && (selLocal || (ultimoOp && ultimoOp.sel)) !== id) { irA = id; incElegirPiso(pz.piso); }
@@ -2779,18 +2788,27 @@ function incPlano3D(cont, op0) {
   const finIntro = new T.Vector3();
   const acercar = (a, b, k) => Math.abs(b - a) < 0.05 ? b : a + (b - a) * k;
 
+  // La presentación otra vez: desde lejos, cerrado, y se abre solo.
+  let estuvoOculto = false, tituloVisto = null;
+  const presentar = () => { abre = 0; abreDesde = null; abreAnt = -1; viajePendiente = null; ultimoToque = Date.now(); camara.position.copy(desde); volver(); };
+  // Entrar: se abre ya (desde donde se lo esté mirando).
+  const entrar = () => { if (abre < 1 && abreDesde === null) abreDesde = (performance.now() - t0) / 1000; };
+  const camIni = new T.Vector3(), mirarIni = new T.Vector3();
+  let abriendo = false;
   // Cada cuadro: la cámara de entrada, la fachada que sube o baja con el piso,
   // el latido, las balizas, las luces y la cinta que corre.
   const t0 = performance.now();
   const cuadro = ahora => {
     if (!vivo) return;
     requestAnimationFrame(cuadro);
-    if (!cont.isConnected || !cont.getClientRects().length) return;   // no se ve: no se dibuja (anda también en pantalla completa)
+    if (!cont.isConnected || !cont.getClientRects().length) { estuvoOculto = true; return; }   // no se ve: no se dibuja (anda también en pantalla completa)
+    // Se salió y se volvió a entrar (otra pantalla, otra sección): otra vez la presentación.
+    if (estuvoOculto) { estuvoOculto = false; if (!editar) presentar(); }
     const t = (ahora - t0) / 1000, dt = tAnt === null ? 0 : Math.min(0.1, t - tAnt), paso = Math.min(1, dt * 6);
     tAnt = t;
     // Al separar o juntar los pisos, la cámara sube o baja con ellos.
     const dy = acercar(objetivo.y, objY, paso) - objetivo.y;
-    if (dy) { objetivo.y += dy; if (intro >= 1 && controles && !viaje) { controles.target.y += dy; camara.position.y += dy; } }
+    if (dy) { objetivo.y += dy; if (intro >= 1 && controles && !viaje && abre >= 1) { controles.target.y += dy; camara.position.y += dy; } }
     if (intro < 1) {
       if (introDesde === null) introDesde = t;
       intro = Math.min(1, (t - introDesde) / 1.6);
@@ -2800,6 +2818,7 @@ function incPlano3D(cont, op0) {
       finIntro.copy(presenta ? haciaFuera : hacia); if (!presenta) finIntro.y += objetivo.y;
       // Va de a poco también hacia dónde mira (si antes miraba otro lugar, no gira de golpe).
       camara.position.lerpVectors(origen, finIntro, k); camara.lookAt(mirarDesde ? vecMirar.lerpVectors(mirarDesde, presenta ? objetivoFuera : objetivo, k) : presenta ? objetivoFuera : objetivo);
+      if (intro >= 1 && presenta && controles) { mirarDesde = null; controles.target.copy(objetivoFuera); controles.enabled = true; controles.autoRotate = true; }
       if (intro >= 1 && !presenta) { mirarDesde = null; if (controles) { controles.target.copy(objetivo); controles.enabled = true; } if (viajePendiente) { const p = viajePendiente; viajePendiente = null; viajarA(p); } }
     }
     if (viaje && intro >= 1) {
@@ -2810,12 +2829,17 @@ function incPlano3D(cont, op0) {
     }
     // La presentación: un momento por fuera y después se abre solo.
     if (abre < 1 && intro >= 1) {
-      if (abreDesde === null) abreDesde = t + 1;
-      if (t >= abreDesde) abre = Math.min(1, (t - abreDesde) / 1.6);
-      const k = abre * abre * (3 - 2 * abre);
-      camFin.copy(hacia); camFin.y += objetivo.y;
-      camara.position.lerpVectors(haciaFuera, camFin, k); camara.lookAt(mirarFin.lerpVectors(objetivoFuera, objetivo, k));
-      if (abre >= 1) { mirarDesde = null; if (controles) { controles.target.copy(objetivo); controles.enabled = true; } if (viajePendiente) { const p = viajePendiente; viajePendiente = null; viajarA(p); } }
+      // 30 segundos sin que nadie lo toque: se abre solo.
+      if (abreDesde === null && Date.now() - ultimoToque > 30000) abreDesde = t;
+      if (abreDesde !== null && t >= abreDesde) {
+        // Al empezar a abrirse, desde donde se lo estaba mirando (si se lo giró, desde ahí).
+        if (!abriendo) { abriendo = true; camIni.copy(camara.position); mirarIni.copy(controles ? controles.target : objetivoFuera); if (controles) { controles.enabled = false; controles.autoRotate = false; } }
+        abre = Math.min(1, (t - abreDesde) / 1.6);
+        const k = abre * abre * (3 - 2 * abre);
+        camFin.copy(hacia); camFin.y += objetivo.y;
+        camara.position.lerpVectors(camIni, camFin, k); camara.lookAt(mirarFin.lerpVectors(mirarIni, objetivo, k));
+      }
+      if (abre >= 1) { abriendo = false; mirarDesde = null; if (controles) { controles.target.copy(objetivo); controles.enabled = true; } if (viajePendiente) { const p = viajePendiente; viajePendiente = null; viajarA(p); } }
     }
     if (abre !== abreAnt) { abreAnt = abre; pintarAbre(); }
     // La fachada sube o baja (se corta a la altura del piso elegido) de a poco.
@@ -2860,6 +2884,10 @@ function incPlano3D(cont, op0) {
     armado: op0.armado, version,
     // Pinta los lugares según lo abierto y pone, saca o renueva las balizas.
     poner(op) {
+      // Se eligió un piso (o el estadio completo): si se estaba presentando, a entrar.
+      if (cont._incEntrar) { cont._incEntrar = false; entrar(); }
+      // Otro show: otra vez la presentación.
+      if (op.titulo !== undefined) { if (tituloVisto !== null && op.titulo !== tituloVisto && !op.editar) presentar(); tituloVisto = op.titulo; }
       ultimoOp = op; onclick = op.onclick; accion = op.accionPantalla || null; detLista = Array.isArray(op.detalle) ? op.detalle : null; editar = op.editar || null;
       if (editar) { ayuda.textContent = 'Arrastrá un puesto para moverlo · sus esquinas, para el tamaño'; if (controles) controles.autoRotate = false; }
       if (op.titulo !== undefined) pintarCinta(op.titulo);
