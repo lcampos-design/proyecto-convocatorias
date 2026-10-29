@@ -2783,7 +2783,8 @@ function incPlano3D(cont, op0) {
     alCambiarPantalla();
   };
   const entrarPantalla = () => {
-    detAbierto = true; pintarDetalle();
+    // Las incidencias, cerradas: se abren con "☰ Incidencias" (o tocando un lugar).
+    detAbierto = false; pintarDetalle();
     const pedir = cont.requestFullscreen || cont.webkitRequestFullscreen;
     if (!pedir) { ponerFalsa(true); return; }
     try { const r = pedir.call(cont); if (r && r.catch) r.catch(() => ponerFalsa(true)); } catch (_) { ponerFalsa(true); return; }
@@ -3302,7 +3303,7 @@ function incGrafBarras(pares, titulo, ancho, op) {
     return '<g class="' + (toca ? incClaseMarca(k, op.sel) : 'inc-marca') + '"' + incTip(tip) + (toca ? incTocable(op.tipo, k) : '') + '><rect x="0" y="' + (y - 4) + '" width="' + W + '" height="' + fila + '" fill="transparent"/>'
       + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#4b5563" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
       + '<path d="M' + etq + ',' + y + 'H' + (etq + w - r) + 'Q' + (etq + w) + ',' + y + ' ' + (etq + w) + ',' + (y + r) + 'V' + (y + 14 - r) + 'Q' + (etq + w) + ',' + (y + 14) + ' ' + (etq + w - r) + ',' + (y + 14) + 'H' + etq + 'Z" fill="' + INC_GRAF_AZUL + '"/>'
-      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#111827">' + n + (a ? '<tspan font-weight="400" fill="#6b7280"> · ' + a + ' abierta' + (a === 1 ? '' : 's') + '</tspan>' : '') + '</text></g>';
+      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#111827">' + n + (a ? '<tspan font-weight="400" fill="#6b7280"> · ' + (a === n ? (n === 1 ? 'abierta' : 'todas abiertas') : a + ' abierta' + (a === 1 ? '' : 's')) + '</tspan>' : '') + '</text></g>';
   }).join('') + (resto.length ? '<text x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#6b7280" text-anchor="end">+ ' + resto.length + ' más</text>'
     + '<text x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#6b7280">' + enResto + ' incidencia' + (enResto === 1 ? '' : 's') + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="' + incEsc(titulo) + '">' + g + '</svg>';
