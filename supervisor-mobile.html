@@ -936,10 +936,10 @@ const INC_LUGARES_BASE = [
   // Gastronomía, planta baja. Lado Cancha (izquierda): los externos 1 y 2
   // donde están los locales del plano, el interno y el eventual hacia el fondo.
   { id: 'Cancha externo 1 (Paty)', t: 'gastro', txt: 'CE1', cx: 36, cy: 61, w: 17, h: 22, ang: 0, piso: 'PB' },
-  { id: 'Puerta 8', t: 'puerta', txt: 'P8', cx: 22, cy: 82, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Puerta 8', t: 'puerta', txt: 'P8', cx: 22, cy: 92, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Baños 1', t: 'banio', txt: '1', cx: 36, cy: 107, w: 17, h: 28, ang: 0, piso: 'PB' },
   { id: 'Baños 2', t: 'banio', txt: '2', cx: 36, cy: 140, w: 17, h: 28, ang: 0, piso: 'PB' },
-  { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 22, cy: 163, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 22, cy: 184, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Cancha externo 2 (Pepsi)', t: 'gastro', txt: 'CE2', cx: 36, cy: 191, w: 17, h: 25, ang: 0, piso: 'PB' },
   { id: 'Cancha interno 2 (Patagonia)', t: 'gastro', txt: 'CI2', cx: 38, cy: 220, w: 17, h: 18, ang: 0, piso: 'PB' },
   { id: 'Cancha 3 (eventual)', t: 'gastro', txt: 'C3', cx: 36, cy: 241, w: 15, h: 12, ang: 0, piso: 'PB' },
@@ -950,10 +950,10 @@ const INC_LUGARES_BASE = [
   { id: 'Sede externo 2 (7UP)', t: 'gastro', txt: 'SE2', cx: 384, cy: 191, w: 17, h: 25, ang: 0, piso: 'PB' },
   { id: 'Sede externo 3 (Día)', t: 'gastro', txt: 'SE3', cx: 384, cy: 218, w: 15, h: 12, ang: 0, piso: 'PB' },
   { id: 'Sede interno 2 (Smirnoff)', t: 'gastro', txt: 'SI2', cx: 382, cy: 238, w: 17, h: 18, ang: 0, piso: 'PB' },
-  { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 163, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 184, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Baños 3', t: 'banio', txt: '3', cx: 384, cy: 140, w: 17, h: 28, ang: 0, piso: 'PB' },
   { id: 'Baños 4', t: 'banio', txt: '4', cx: 384, cy: 107, w: 17, h: 28, ang: 0, piso: 'PB' },
-  { id: 'Puerta 9', t: 'puerta', txt: 'P9', cx: 398, cy: 82, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Puerta 9', t: 'puerta', txt: 'P9', cx: 398, cy: 92, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Sede externo 1 (Kit Kat)', t: 'gastro', txt: 'SE1', cx: 384, cy: 61, w: 17, h: 22, ang: 0, piso: 'PB' },
   { id: 'Producción', t: 'servicio', txt: 'PROD', cx: 384, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
   // Gastronomía, primer piso: las cuatro barras externas (algunos días figuran
@@ -973,7 +973,8 @@ const INC_LUGARES_BASE = [
   { id: 'Beer Garden', t: 'gastro', txt: 'BEER', cx: 165, cy: 304, w: 26, h: 14, ang: 0, piso: 'P3' },
   { id: 'Fernetería', t: 'gastro', txt: 'FER', cx: 255, cy: 304, w: 26, h: 14, ang: 0, piso: 'P3' }
 ].concat(INC_CALLES_BASE, [
-  // Los baños de arriba, como en el cartel de evacuación del Arena (el 1, el más
+  // Los baños de arriba, como en el cartel de evacuación del Arena (medidos
+  // sobre la foto; el 1, el más
   // cerca del escenario): en P1, dos por costado a los lados de la barra del
   // medio; en el VIP, tres por costado sobre la pared de afuera; en P3, uno por
   // costado junto a la 301 y la 317.
@@ -982,11 +983,11 @@ const INC_LUGARES_BASE = [
   { id: 'Baños Sede 1 (P1)', t: 'banio', txt: 'S1', cx: 384, cy: 101, w: 17, h: 22, ang: 0, piso: 'P1' },
   { id: 'Baños Sede 2 (P1)', t: 'banio', txt: 'S2', cx: 384, cy: 151, w: 17, h: 22, ang: 0, piso: 'P1' },
   { id: 'Baños Cancha 1 (VIP)', t: 'banio', txt: 'C1', cx: 36, cy: 66, w: 17, h: 22, ang: 0, piso: 'VIP' },
-  { id: 'Baños Cancha 2 (VIP)', t: 'banio', txt: 'C2', cx: 36, cy: 133, w: 17, h: 22, ang: 0, piso: 'VIP' },
-  { id: 'Baños Cancha 3 (VIP)', t: 'banio', txt: 'C3', cx: 36, cy: 200, w: 17, h: 22, ang: 0, piso: 'VIP' },
-  { id: 'Baños Sede 1 (VIP)', t: 'banio', txt: 'S1', cx: 384, cy: 66, w: 17, h: 22, ang: 0, piso: 'VIP' },
-  { id: 'Baños Sede 2 (VIP)', t: 'banio', txt: 'S2', cx: 384, cy: 133, w: 17, h: 22, ang: 0, piso: 'VIP' },
-  { id: 'Baños Sede 3 (VIP)', t: 'banio', txt: 'S3', cx: 384, cy: 200, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Cancha 2 (VIP)', t: 'banio', txt: 'C2', cx: 36, cy: 152, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Cancha 3 (VIP)', t: 'banio', txt: 'C3', cx: 36, cy: 236, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Sede 1 (VIP)', t: 'banio', txt: 'S1', cx: 384, cy: 52, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Sede 2 (VIP)', t: 'banio', txt: 'S2', cx: 384, cy: 143, w: 17, h: 22, ang: 0, piso: 'VIP' },
+  { id: 'Baños Sede 3 (VIP)', t: 'banio', txt: 'S3', cx: 384, cy: 230, w: 17, h: 22, ang: 0, piso: 'VIP' },
   { id: 'Baños Cancha (P3)', t: 'banio', txt: 'C', cx: 36, cy: 20, w: 17, h: 22, ang: 0, piso: 'P3' },
   { id: 'Baños Sede (P3)', t: 'banio', txt: 'S', cx: 384, cy: 20, w: 17, h: 22, ang: 0, piso: 'P3' }
 ]);
