@@ -4725,7 +4725,7 @@ const INC_REFERENCIAS_DE = {
 function incReferenciasDe(sector) {
   if (!sector) return INC_REFERENCIAS;
   if (/^Campo [A-N]$/.test(sector)) return INC_REFERENCIAS_DE.asientos;
-  if (/^Corner · /.test(sector)) return INC_REFERENCIAS_DE.corner;
+  if (/^Corner /.test(sector)) return INC_REFERENCIAS_DE.corner;
   const s = incSectoresPlano('campos').find(x => x.id === sector), t = s ? s.t : '';
   return INC_REFERENCIAS_DE[t === 'baja' || t === 'alta' ? 'platea' : t] || INC_REFERENCIAS;
 }
@@ -4862,11 +4862,12 @@ const INC_PLANO_ZONAS = [
   // del VIP, que hoy son la 101 y la 119 (junto al escenario, donde empieza la platea baja),
   // lo más cerca del escenario. Lado Cancha a la izquierda, lado Sede a la derecha.
   // Los corners son de butacas: suben en filas como la platea baja (gradas).
+  // Se llaman como en el cartel del Arena: Diamante (el 101) y Trébol (el 119).
   { id: 'Palcos · Cancha', txt: 'PALCOS', t: 'vip', p: '92.5,30 99.5,30 99.5,221.5 92.5,224', lx: 96, ly: 126, rot: -90, piso: 'VIP' },
   { id: 'Palcos · Sede', txt: 'PALCOS', t: 'vip', p: '320.5,30 327.5,30 327.5,224 320.5,221.5', lx: 324, ly: 126, rot: 90, piso: 'VIP' },
   { id: 'Lounge', txt: 'LOUNGE', t: 'vip', p: '92.5,224 127,257 293,257 327.5,224 320.5,221.5 290,253 130,253 99.5,221.5', lx: 210, ly: 255, piso: 'VIP' },
-  { id: 'Corner · Cancha', txt: 'CORNER 101', t: 'vip', r: [100, 18, 40, 22], piso: 'VIP', gradas: 'baja' },
-  { id: 'Corner · Sede', txt: 'CORNER 119', t: 'vip', r: [280, 18, 40, 22], piso: 'VIP', gradas: 'baja' }
+  { id: 'Corner Diamante', txt: 'DIAMANTE 101', t: 'vip', r: [100, 18, 40, 22], piso: 'VIP', gradas: 'baja' },
+  { id: 'Corner Trébol', txt: 'TRÉBOL 119', t: 'vip', r: [280, 18, 40, 22], piso: 'VIP', gradas: 'baja' }
 ];
 // Los pisos del Arena: el campo en planta baja, la platea baja en el 1, la
 // alta en el 3 y el VIP entre las dos. Cada puesto del anillo dice el suyo.
@@ -4915,11 +4916,14 @@ const INC_TIPOS_LUGAR = {
   // Las calles de afuera, para reportar filas e ingresos: no son de ningún piso.
   calle: { nombre: 'Calle', w: 300, h: 18 }
 };
-// Las calles principales de afuera. Ubicadas a ojo alrededor del estadio: se acomodan desde el panel.
+// Lo de afuera, como en el cartel de evacuación del Arena: Humboldt al
+// fondo, Corrientes del lado Sede, Muñecas del lado Cancha y, detrás del
+// escenario, las vías del FFCC San Martín. Ubicadas a ojo: se acomodan desde el panel.
 const INC_CALLES_BASE = [
   { id: 'Calle Humboldt', t: 'calle', txt: 'HUMBOLDT', cx: 210, cy: 350, w: 400, h: 18, ang: 0 },
   { id: 'Av. Corrientes', t: 'calle', txt: 'AV. CORRIENTES', cx: 430, cy: 137, w: 384, h: 20, ang: 90 },
-  { id: 'Av. Dorrego', t: 'calle', txt: 'AV. DORREGO', cx: 210, cy: -68, w: 400, h: 18, ang: 0 }
+  { id: 'Calle Muñecas', t: 'calle', txt: 'MUÑECAS', cx: -10, cy: 137, w: 384, h: 18, ang: 90 },
+  { id: 'Vías FFCC San Martín', t: 'calle', txt: 'VÍAS FFCC SAN MARTÍN', cx: 210, cy: -68, w: 400, h: 18, ang: 0 }
 ];
 // Los puestos de siempre (si todavía no se guardó otro plano). Planta baja,
 // como en el plano del Arena: en cada costado, desde el escenario, camarines
@@ -4928,17 +4932,20 @@ const INC_CALLES_BASE = [
 // gastronomía de cada piso sale de las planillas de convocatoria de junio de
 // 2026 (con su código); el lugar exacto de las internas y las chicas es
 // aproximado. Lado Cancha a la izquierda, lado Sede (da a Corrientes) a la
-// derecha; el externo 1, el más cerca del escenario. cx, cy: el centro; w: el largo
+// derecha; el externo 1, el más cerca del escenario. Las puertas de los
+// costados, con el número del cartel del Arena: la 8 y la 6 del lado Cancha,
+// la 9 y la 7 del lado Sede (la 8 y la 9, las más cerca del escenario); las
+// de Humboldt (3, 4 y 5) no figuran en el cartel. cx, cy: el centro; w: el largo
 // (en las puertas, a lo largo de la fachada); h: el ancho; ang: el giro.
 const INC_LUGARES_BASE = [
   { id: 'Camarines', t: 'servicio', txt: 'CAM', cx: 36, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
   // Gastronomía, planta baja. Lado Cancha (izquierda): los externos 1 y 2
   // donde están los locales del plano, el interno y el eventual hacia el fondo.
   { id: 'Cancha externo 1 (Paty)', t: 'gastro', txt: 'CE1', cx: 36, cy: 61, w: 17, h: 22, ang: 0, piso: 'PB' },
-  { id: 'Puerta 1', t: 'puerta', txt: 'P1', cx: 22, cy: 82, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Puerta 8', t: 'puerta', txt: 'P8', cx: 22, cy: 82, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Baños 1', t: 'banio', txt: '1', cx: 36, cy: 107, w: 17, h: 28, ang: 0, piso: 'PB' },
   { id: 'Baños 2', t: 'banio', txt: '2', cx: 36, cy: 140, w: 17, h: 28, ang: 0, piso: 'PB' },
-  { id: 'Puerta 2', t: 'puerta', txt: 'P2', cx: 22, cy: 163, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 22, cy: 163, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Cancha externo 2 (Pepsi)', t: 'gastro', txt: 'CE2', cx: 36, cy: 191, w: 17, h: 25, ang: 0, piso: 'PB' },
   { id: 'Cancha interno 2 (Patagonia)', t: 'gastro', txt: 'CI2', cx: 38, cy: 220, w: 17, h: 18, ang: 0, piso: 'PB' },
   { id: 'Cancha 3 (eventual)', t: 'gastro', txt: 'C3', cx: 36, cy: 241, w: 15, h: 12, ang: 0, piso: 'PB' },
@@ -4949,10 +4956,10 @@ const INC_LUGARES_BASE = [
   { id: 'Sede externo 2 (7UP)', t: 'gastro', txt: 'SE2', cx: 384, cy: 191, w: 17, h: 25, ang: 0, piso: 'PB' },
   { id: 'Sede externo 3 (Día)', t: 'gastro', txt: 'SE3', cx: 384, cy: 218, w: 15, h: 12, ang: 0, piso: 'PB' },
   { id: 'Sede interno 2 (Smirnoff)', t: 'gastro', txt: 'SI2', cx: 382, cy: 238, w: 17, h: 18, ang: 0, piso: 'PB' },
-  { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 398, cy: 163, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 163, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Baños 3', t: 'banio', txt: '3', cx: 384, cy: 140, w: 17, h: 28, ang: 0, piso: 'PB' },
   { id: 'Baños 4', t: 'banio', txt: '4', cx: 384, cy: 107, w: 17, h: 28, ang: 0, piso: 'PB' },
-  { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 82, w: 22, h: 12, ang: 90, piso: 'PB' },
+  { id: 'Puerta 9', t: 'puerta', txt: 'P9', cx: 398, cy: 82, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Sede externo 1 (Kit Kat)', t: 'gastro', txt: 'SE1', cx: 384, cy: 61, w: 17, h: 22, ang: 0, piso: 'PB' },
   { id: 'Producción', t: 'servicio', txt: 'PROD', cx: 384, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
   // Gastronomía, primer piso: las cuatro barras externas (algunos días figuran
