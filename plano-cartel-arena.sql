@@ -7,7 +7,9 @@
 --   · Las puertas de los costados son la 6, 7, 8 y 9. Lado Cancha: la 8
 --     (cerca del escenario) y la 6. Lado Sede: la 9 y la 7. En el plano se
 --     llamaban 1 y 2 (Cancha) y 7 y 6 (Sede).
---   · Detrás del escenario están las vías del FFCC San Martín, no Av. Dorrego.
+--   · Detrás del escenario la calle sigue siendo Av. Dorrego (el cartel
+--     marca las vías del FFCC San Martín; la primera versión de este archivo
+--     la renombraba, pero no había nada con ese nombre y no cambió nada).
 --   · Del lado Cancha está la calle Muñecas (se suma al plano guardado).
 --   · Los corners se llaman Diamante (el 101, lado Cancha) y Trébol (el 119,
 --     lado Sede).
@@ -40,7 +42,7 @@ begin
     select 'arena_plano'::text as tabla, p.id::text as fila_id, to_jsonb(p) as antes from public.arena_plano p
     union all
     select 'incidencias', i.id::text, to_jsonb(i) from public.incidencias i
-     where i.sector in ('Puerta 1', 'Puerta 2', 'Puerta 6', 'Puerta 7', 'Corner · Cancha', 'Corner · Sede', 'Av. Dorrego');
+     where i.sector in ('Puerta 1', 'Puerta 2', 'Puerta 6', 'Puerta 7', 'Corner · Cancha', 'Corner · Sede');
   revoke all on respaldo.plano_cartel_2026_10 from public, anon, authenticated;
 
   -- Las incidencias, cada una a su nombre nuevo, todas a la vez (sin
@@ -51,9 +53,8 @@ begin
       when 'Puerta 6' then 'Puerta 7'
       when 'Puerta 7' then 'Puerta 9'
       when 'Corner · Cancha' then 'Corner Diamante'
-      when 'Corner · Sede' then 'Corner Trébol'
-      when 'Av. Dorrego' then 'Vías FFCC San Martín' end
-   where sector in ('Puerta 1', 'Puerta 2', 'Puerta 6', 'Puerta 7', 'Corner · Cancha', 'Corner · Sede', 'Av. Dorrego');
+      when 'Corner · Sede' then 'Corner Trébol' end
+   where sector in ('Puerta 1', 'Puerta 2', 'Puerta 6', 'Puerta 7', 'Corner · Cancha', 'Corner · Sede');
 
   -- El plano guardado (si hay): lo mismo en cada puesto, el nombre y el
   -- cartel; y la calle Muñecas, si ya tenía calles y no está (si no tenía
@@ -65,7 +66,6 @@ begin
           when 'Puerta 2' then x.e || '{"id": "Puerta 6", "txt": "P6"}'::jsonb
           when 'Puerta 6' then x.e || '{"id": "Puerta 7", "txt": "P7"}'::jsonb
           when 'Puerta 7' then x.e || '{"id": "Puerta 9", "txt": "P9"}'::jsonb
-          when 'Av. Dorrego' then x.e || '{"id": "Vías FFCC San Martín", "txt": "VÍAS FFCC SAN MARTÍN"}'::jsonb
           else x.e end order by x.n), '[]'::jsonb)
       from jsonb_array_elements(p.lugares) with ordinality x(e, n))
       || case when exists (select 1 from jsonb_array_elements(p.lugares) e where e->>'t' = 'calle')
