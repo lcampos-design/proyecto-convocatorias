@@ -6410,47 +6410,56 @@ function incPlano3D(cont, op0) {
   techoG.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(afuera.map(q => q.clone().setY(2.05))), matBordeTecho));
   techoG.position.y = ALTO_EDIFICIO;
   // La entrada de Humboldt, como es: la marquesina oscura que sobresale con el
-  // nombre en grande, las columnas de hormigón que la sostienen, detrás el
-  // frente vidriado con la franja magenta de las puertas, y adelante los
-  // escalones y la valla.
+  // logo en blanco, las columnas de hormigón que la sostienen, detrás el frente
+  // de vidrio (transparente, con su perfilería) y adelante los escalones. Y la
+  // "M" grande en la fachada, como en las fotos. Los logos son los oficiales
+  // (logo-movistar-arena.png y logo-movistar-m.png); si no cargan, queda el nombre escrito.
   const entradaG = new T.Group(); escena.add(entradaG);
   {
     const zf = Math.max(...afuera.map(q => q.z)) + 0.4, ANCHO = 128;
-    // El frente vidriado: el vidrio oscuro con su perfilería y, abajo, la franja magenta de las puertas.
-    const lv = lienzoDe(1024, 256), v = lv.getContext('2d'), gv = v.createLinearGradient(0, 0, 0, 256);
-    gv.addColorStop(0, '#2c3a4c'); gv.addColorStop(1, '#141b26'); v.fillStyle = gv; v.fillRect(0, 0, 1024, 256);
-    v.fillStyle = 'rgba(190,215,240,.14)'; for (let i = 0; i < 1024; i += 64) v.fillRect(i, 0, 64, 120);
-    v.fillStyle = '#3a4350'; for (let i = 0; i < 1024; i += 64) v.fillRect(i, 0, 4, 256); v.fillRect(0, 118, 1024, 6);
-    v.fillStyle = '#c2347a'; v.fillRect(0, 176, 1024, 80);
-    v.fillStyle = 'rgba(20,24,32,.85)'; for (let i = 40; i < 1024; i += 128) v.fillRect(i, 186, 44, 70);
+    // El frente de vidrio: transparente, con la perfilería.
+    const lv = lienzoDe(1024, 256), v = lv.getContext('2d');
+    v.fillStyle = 'rgba(150,185,220,.22)'; v.fillRect(0, 0, 1024, 256);
+    v.fillStyle = 'rgba(58,67,80,.95)'; for (let i = 0; i < 1024; i += 64) v.fillRect(i, 0, 4, 256); v.fillRect(0, 118, 1024, 6); v.fillRect(0, 0, 1024, 5); v.fillRect(0, 251, 1024, 5);
     const tv = textura(lv); tv.anisotropy = anis;
-    const vidrio = new T.Mesh(new T.PlaneGeometry(ANCHO - 8, 28.5), new T.MeshBasicMaterial({ map: tv })); vidrio.position.set(0, 14.25, zf + 0.3); entradaG.add(vidrio);
-    // La marquesina: oscura, sobresale sobre la vereda, con el nombre en grande al frente.
+    const vidrio = new T.Mesh(new T.PlaneGeometry(ANCHO - 8, 28.5), new T.MeshBasicMaterial({ map: tv, transparent: true, depthWrite: false, side: T.DoubleSide }));
+    vidrio.position.set(0, 14.25, zf + 0.3); vidrio.renderOrder = 2; entradaG.add(vidrio);
+    // La marquesina: oscura, sobresale sobre la vereda, con el logo en blanco al frente.
     const matMarq = new T.MeshStandardMaterial({ color: 0x2a2e35, roughness: 0.6, metalness: 0.3 });
-    const marq = new T.Mesh(new T.BoxGeometry(ANCHO, 9, 11), matMarq); marq.position.set(0, 33, zf + 5.5); entradaG.add(marq);
-    const lc = lienzoDe(1024, 96), x = lc.getContext('2d');
+    const marq = new T.Mesh(new T.BoxGeometry(ANCHO, 14, 11), matMarq); marq.position.set(0, 35.5, zf + 5.5); entradaG.add(marq);
+    const lc = lienzoDe(2048, 200), x = lc.getContext('2d'), logo = new Image();
     const pintarNombre = () => {
-      x.fillStyle = '#2a2e35'; x.fillRect(0, 0, 1024, 96);
-      x.fillStyle = '#f1f2f4'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '600 74px Poppins, sans-serif';
-      x.fillText('movistar arena', 512, 50);
+      x.fillStyle = '#2a2e35'; x.fillRect(0, 0, 2048, 200);
+      if (logo.complete && logo.naturalWidth) {
+        const alto = 140, ancho = alto * logo.naturalWidth / logo.naturalHeight;
+        x.imageSmoothingQuality = 'high'; x.drawImage(logo, (2048 - ancho) / 2, (200 - alto) / 2, ancho, alto);
+      } else {
+        x.fillStyle = '#f1f2f4'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '600 120px Poppins, sans-serif';
+        x.fillText('movistar arena', 1024, 104);
+      }
     };
     pintarNombre();
     const tc = textura(lc); tc.anisotropy = anis;
-    const nombre = new T.Mesh(new T.PlaneGeometry(ANCHO - 6, 8), new T.MeshBasicMaterial({ map: tc })); nombre.position.set(0, 33, zf + 11.05); entradaG.add(nombre);
-    // Si Poppins llega después, el nombre se vuelve a escribir con ella.
+    const nombre = new T.Mesh(new T.PlaneGeometry(ANCHO - 6, 12), new T.MeshBasicMaterial({ map: tc })); nombre.position.set(0, 35.5, zf + 11.05); entradaG.add(nombre);
+    logo.onload = () => { pintarNombre(); tc.needsUpdate = true; };
+    logo.src = 'logo-movistar-arena.png';
+    // Si Poppins llega después (y no está el logo), el nombre se vuelve a escribir con ella.
     if (typeof document !== 'undefined' && document.fonts && document.fonts.load)
-      document.fonts.load('600 74px Poppins').then(() => { pintarNombre(); tc.needsUpdate = true; }).catch(() => {});
+      document.fonts.load('600 120px Poppins').then(() => { pintarNombre(); tc.needsUpdate = true; }).catch(() => {});
     // Las columnas de hormigón, de la vereda a la marquesina.
     const matCol = new T.MeshStandardMaterial({ color: 0xbdb9b2, roughness: 0.85 });
     [-48, -16, 16, 48].forEach(cx => { const col = new T.Mesh(new T.BoxGeometry(4.5, 28.5, 4.5), matCol); col.position.set(cx, 14.25, zf + 8); entradaG.add(col); });
-    // Los escalones (el más alto, junto a la puerta) y la valla blanca adelante.
+    // Los escalones (el más alto, junto a la puerta).
     const matEsc = new T.MeshStandardMaterial({ color: 0xa9a7a2, roughness: 0.9 });
     [0, 1, 2].forEach(i => { const alto = 1.5 - i * 0.5, esc = new T.Mesh(new T.BoxGeometry(ANCHO + 4, alto, 2.6), matEsc); esc.position.set(0, alto / 2, zf + 1.3 + i * 2.6); entradaG.add(esc); });
-    const pv = [], zv = zf + 15;
-    for (let px = -60; px <= 60; px += 5) pv.push(px, 0, zv, px, 4, zv);
-    pv.push(-60, 4, zv, 60, 4, zv, -60, 2, zv, 60, 2, zv);
-    const gvalla = new T.BufferGeometry(); gvalla.setAttribute('position', new T.Float32BufferAttribute(pv, 3));
-    entradaG.add(new T.LineSegments(gvalla, new T.LineBasicMaterial({ color: 0xf4f6f8 })));
+    // La "M" grande en la fachada: sobre Humboldt, del lado Cancha, y en los dos costados, cerca de Humboldt.
+    const xs = afuera.map(q => q.x), xMin = Math.min(...xs) - 0.2, xMax = Math.max(...xs) + 0.2;
+    const matM = new T.MeshBasicMaterial({ transparent: true, depthWrite: false, side: T.DoubleSide, opacity: 0 });
+    new T.TextureLoader().load('logo-movistar-m.png', t => { t.anisotropy = anis; desechar.push(t); matM.map = t; matM.opacity = 1; matM.needsUpdate = true; });
+    const geoM = new T.PlaneGeometry(24, 24 * 1068 / 1440);
+    [[-118, 48, zf + 0.15, 0], [xMin, 48, 112, -Math.PI / 2], [xMax, 48, 112, Math.PI / 2]].forEach(([px, py, pz, giro]) => {
+      const m = new T.Mesh(geoM, matM); m.position.set(px, py, pz); m.rotation.y = giro; m.renderOrder = 3; entradaG.add(m);
+    });
   }
   // Lo de alrededor (sólo en la presentación): los árboles de las veredas
   // (Humboldt, Corrientes y Muñecas, sin tapar las puertas), la chimenea y la palmera.
