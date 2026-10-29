@@ -558,7 +558,9 @@ function incNormalizarLugares(lista) {
     const piso = calle ? '' : INC_PISOS.some(x => x[0] === l.piso) ? l.piso : (l.t === 'puerta' ? 'PB' : 'P1');
     // Las calles van afuera del estadio, son largas y llevan el nombre entero.
     const lim = incLimitesLugar(l.t);
-    return { id, t: l.t, txt: String(l.txt == null ? '' : l.txt).trim().slice(0, calle ? 24 : 6), cx: num(l.cx, -40, 460, 210), cy: num(l.cy, -90, 390, 304), w: num(l.w, lim.w[0], lim.w[1], tipo.w), h: num(l.h, lim.h[0], lim.h[1], tipo.h), ang: num(l.ang, -180, 180, 0), piso };
+    // El rubro (barra, cerveza, comidas…), si lo tiene: sale en la ficha.
+    const rubro = calle ? '' : String(l.rubro == null ? '' : l.rubro).trim().slice(0, 40);
+    return Object.assign({ id, t: l.t, txt: String(l.txt == null ? '' : l.txt).trim().slice(0, calle ? 24 : 6), cx: num(l.cx, -40, 460, 210), cy: num(l.cy, -90, 390, 304), w: num(l.w, lim.w[0], lim.w[1], tipo.w), h: num(l.h, lim.h[0], lim.h[1], tipo.h), ang: num(l.ang, -180, 180, 0), piso }, rubro ? { rubro } : {});
   }).filter(Boolean).slice(0, 80);
 }
 let incLugaresArena = incNormalizarLugares(INC_LUGARES_BASE), incVersionPlano = 0;
@@ -659,7 +661,7 @@ async function incCargarPlanoArena() {
 }
 // Un puesto como forma del plano (un rectángulo girado).
 function incLugarForma(l) {
-  return { id: l.id, txt: l.txt, t: l.t, ico: INC_TIPOS_LUGAR[l.t].ico, p: incRectRot(l.cx, l.cy, l.w, l.h, l.ang * Math.PI / 180), lx: l.cx, ly: l.cy, w: l.w, h: l.h, ang: l.ang, piso: l.piso, lugar: true };
+  return { id: l.id, txt: l.txt, t: l.t, ico: INC_TIPOS_LUGAR[l.t].ico, p: incRectRot(l.cx, l.cy, l.w, l.h, l.ang * Math.PI / 180), lx: l.cx, ly: l.cy, w: l.w, h: l.h, ang: l.ang, piso: l.piso, rubro: l.rubro || '', lugar: true };
 }
 // La fachada de vidrio que cierra el anillo, y la cinta LED que da la vuelta
 // entre la platea baja y la alta.
@@ -717,6 +719,46 @@ function incZona(sector) {
   const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
   if (!s) return '';
   return s.t === 'baja' ? 'Platea baja · P1' : s.t === 'alta' ? 'Platea alta · P3' : s.t === 'campo' ? 'PB' : s.t === 'calle' ? 'Afuera' : s.t === 'vip' ? 'Premium · ' + incPisoDe(s) : s.lugar ? 'Anillo · ' + s.piso : '';
+}
+// La ficha de un lugar (al tocarlo en el panel o en la gerencia): qué es, su
+// código, de qué piso es y de qué lado queda (Cancha a la izquierda, Sede a la
+// derecha; el fondo da a Humboldt).
+function incFichaDatos(sector) {
+  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
+  if (!s) return null;
+  const zonas = { baja: 'Platea baja', alta: 'Platea alta', vip: 'Premium', campo: 'Campo', anillo: 'Anillo', back: 'Backstage' };
+  const x = s.lx !== undefined ? s.lx : s.r[0] + s.r[2] / 2, y = s.ly !== undefined ? s.ly : s.r[1] + s.r[3] / 2;
+  const lado = s.t === 'calle' ? 'Afuera' : s.t === 'back' ? 'Detrás del escenario' : s.t === 'campo' ? ''
+    : s.lugar ? (y > 285 ? 'Fondo · Humboldt' : x < 60 ? 'Lado Cancha' : x > 360 ? 'Lado Sede' : '')
+    : (x < 150 ? 'Lado Cancha' : x > 270 ? 'Lado Sede' : y > 206 ? 'Fondo · Humboldt' : '');
+  const piso = incPisoDe(s) || (s.t === 'anillo' || s.t === 'back' ? 'PB' : '');
+  return {
+    id: s.id, t: s.t, ico: s.ico || '', tipo: s.lugar ? INC_TIPOS_LUGAR[s.t].nombre : zonas[s.t] || '',
+    // El código (CE1, SE01…) o el número del sector (104, A); los nombres largos no.
+    codigo: s.t === 'calle' ? '' : s.lugar || String(s.txt).length <= 4 ? s.txt : '',
+    piso, pisoNombre: (INC_PISOS.find(p => p[0] === piso) || [])[1] || '', lado, rubro: s.rubro || ''
+  };
+}
+function incFichaChips(f) { return [f.tipo, f.rubro, f.pisoNombre, f.lado].filter(Boolean).map(d => '<span>' + incEsc(d) + '</span>').join(''); }
+// La ficha en HTML: el nombre con el ícono y el color de su tipo, qué es, el
+// piso y el lado, lo abierto ahí y, si la página deja, cargar una incidencia ahí.
+function incFichaHTML(sector, op, clase) {
+  const f = incFichaDatos(sector); if (!f) return '';
+  const col = INC_TEMA.color[f.t] ? INC_TEMA.color[f.t][0] : INC_TEMA.color.anillo[0], tinta = INC_TEMA.tintaTipo[f.t] || '#ffffff';
+  const n = (op.cuentas || {})[sector] || 0, pn = (op.porNivel || {})[sector] || {}, peor = [3, 2, 1].find(k => pn[k]) || (op.niveles || {})[sector] || 1;
+  return '<div class="' + clase + '" data-ficha="' + incEsc(sector) + '">'
+    + '<div class="inc-ficha-cab">' + (f.ico || f.codigo ? '<span class="inc-ficha-ico" style="background:' + col + ';color:' + tinta + '">' + (f.ico ? '<svg viewBox="0 0 24 24"><path d="' + INC_ICONOS[f.ico] + '"/></svg>' : '') + incEsc(f.codigo) + '</span>' : '')
+    + '<strong>' + incEsc(f.id) + '</strong><button type="button" data-f="cerrar" title="Cerrar" aria-label="Cerrar la ficha">✕</button></div>'
+    + '<div class="inc-ficha-datos">' + incFichaChips(f) + '</div>'
+    + '<div class="inc-ficha-abiertas">' + (n ? '<i style="background:' + INC_NIVELES[peor].color + '"></i>' + incEsc(incAbiertasTexto(n, pn)) : 'Nada abierto ahora') + '</div>'
+    + (op.accionPantalla ? '<button type="button" class="inc-ficha-accion" data-f="accion">' + incEsc(op.accionPantalla.texto) + '</button>' : '')
+    + '</div>';
+}
+// Los botones de la ficha: cerrarla (es volver a tocar el lugar) o cargar ahí.
+function incAccionFicha(op, f, sector) {
+  if (!op || !sector) return;
+  if (f === 'cerrar' && op.onclick && typeof window[op.onclick] === 'function') window[op.onclick](sector);
+  if (f === 'accion' && op.accionPantalla && typeof window[op.accionPantalla.fn] === 'function') window[op.accionPantalla.fn](sector);
 }
 // Los botones de abajo del plano: los lugares que no están dibujados, y
 // cualquier lugar con incidencias que el plano no tenga (por ejemplo, las
@@ -935,6 +977,10 @@ function incMontarPlano(cont, op) {
   cont._incOp = op;
   incPlanos.add(cont);
   incEstiloPlano();
+  if (!cont._incFicha && cont.addEventListener) {
+    cont._incFicha = true;
+    cont.addEventListener('click', e => { const b = e.target.closest ? e.target.closest('[data-ficha] [data-f]') : null; if (b) incAccionFicha(cont._incOp, b.dataset.f, b.closest('[data-ficha]').dataset.ficha); });
+  }
   const quiere3D = (op.vista || incVistaPreferida()) === '3d' && incHayWebGL();
   if (quiere3D && window.THREE && (incListo3D || !incCarga3D)) {
     try {
@@ -949,7 +995,7 @@ function incMontarPlano(cont, op) {
     }
   }
   if (cont._inc3d) { cont._inc3d.destruir(); cont._inc3d = null; }
-  cont.innerHTML = incPlanoSVG(op) + '<div class="inc-plano-pie">' + incLeyendaHTML() + '<div class="inc-plano-ctl">' + incCapasHTML() + (op.sinPisos ? '' : incPisosHTML()) + '</div></div>';
+  cont.innerHTML = incPlanoSVG(op) + (op.sel && !op.editar ? incFichaHTML(op.sel, op, 'inc-ficha') : '') + '<div class="inc-plano-pie">' + incLeyendaHTML() + '<div class="inc-plano-ctl">' + incCapasHTML() + (op.sinPisos ? '' : incPisosHTML()) + '</div></div>';
   if (quiere3D && !incSin3D) incCargar3D().then(ok => { if (ok && cont._incOp && (cont._incOp.vista || incVistaPreferida()) === '3d') incMontarPlano(cont, cont._incOp); });
 }
 // La leyenda de abajo del plano 2D (y la del 3D, encima).
@@ -964,6 +1010,22 @@ function incEstiloPlano() {
     + '.inc-3d-pisos button{border:0;background:transparent;font:600 12px ' + INC_FUENTE + ';color:#cfe0f7;padding:6px 11px;border-radius:8px;cursor:pointer}'
     + '.inc-3d-pisos button.on{background:rgba(255,255,255,.92);color:#0b1b33}'
     + '.inc-plano-ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}'
+    // La ficha del lugar elegido.
+    + '.inc-ficha{display:flex;flex-direction:column;gap:7px;margin-top:8px;padding:11px 12px;border-radius:14px;background:#fff;border:1px solid rgba(11,27,51,.1);box-shadow:0 1px 3px rgba(11,27,51,.08);font-family:' + INC_FUENTE + ';color:#0b1b33}'
+    + '.inc-ficha-cab{display:flex;align-items:center;gap:8px}'
+    + '.inc-ficha-cab strong{flex:1;min-width:0;font-size:14px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+    + '.inc-ficha-ico{display:inline-flex;align-items:center;gap:3px;flex-shrink:0;padding:4px 8px;border-radius:999px;font:700 10.5px/1 ' + INC_FUENTE + '}'
+    + '.inc-ficha-ico svg{width:12px;height:12px;fill:currentColor;display:block}'
+    + '.inc-ficha-cab button{flex-shrink:0;width:28px;height:28px;border:0;border-radius:50%;background:rgba(11,27,51,.08);color:#0b1b33;font-size:12px;cursor:pointer}'
+    + '.inc-ficha-datos{display:flex;flex-wrap:wrap;gap:4px}'
+    + '.inc-ficha-datos span{font-size:11.5px;color:#43546e;background:rgba(11,27,51,.06);border-radius:999px;padding:3px 9px}'
+    + '.inc-ficha-abiertas{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#43546e}'
+    + '.inc-ficha-abiertas i{width:9px;height:9px;border-radius:50%;flex-shrink:0}'
+    + '.inc-ficha-accion{min-height:38px;border:0;border-radius:10px;background:#0b1b33;color:#fff;font:600 12.5px ' + INC_FUENTE + ';cursor:pointer}'
+    + '.inc-3d-ficha{position:absolute;z-index:5;top:calc(56px + var(--inc-sup,0px));right:calc(10px + var(--inc-der,0px));width:min(300px,calc(100% - 20px));margin:0;background:rgba(244,248,253,.84);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.6);box-shadow:0 18px 44px rgba(0,8,26,.45);animation:incVentana .22s ease-out}'
+    + '.inc-3d-full .inc-3d-ficha{display:none}'
+    + '.inc-3d-det .inc-ficha-datos{padding:0 16px 2px}'
+    + '@media' + INC_VENTANA_ABAJO + '{.inc-3d-ficha{top:auto;left:calc(10px + var(--inc-izq,0px));right:calc(10px + var(--inc-der,0px));bottom:calc(60px + var(--inc-inf,0px));width:auto}}'
     + '.inc-capas{display:inline-flex;flex-wrap:wrap;gap:4px}'
     + '.inc-capas button{border:1px solid rgba(11,27,51,.14);background:rgba(255,255,255,.7);font:600 12px ' + INC_FUENTE + ';color:#6b7b94;padding:5px 11px;border-radius:999px;cursor:pointer;text-decoration:line-through;text-decoration-color:rgba(107,123,148,.6)}'
     + '.inc-capas button.on{background:#0b1b33;border-color:#0b1b33;color:#fff;text-decoration:none}'
@@ -974,7 +1036,7 @@ function incEstiloPlano() {
     + '.inc-plano-ley i,.inc-3d-ley i{width:10px;height:10px;border-radius:3px;border:1px solid;display:inline-block}'
     + '.inc-3d-ley{position:absolute;left:calc(10px + var(--inc-izq,0px));top:calc(10px + var(--inc-sup,0px));z-index:2;display:flex;flex-wrap:wrap;gap:3px 10px;max-width:calc(100% - 190px);font:500 11px ' + INC_FUENTE + ';color:#dbe8ff;padding:6px 10px;border-radius:10px;pointer-events:none;' + INC_VIDRIO + '}'
     // En los aparatos táctiles, lo que se toca, del tamaño del dedo.
-    + '@media(pointer:coarse){.inc-pisos button,.inc-3d-pisos button{min-height:38px;padding:0 13px}.inc-ref-rapida button,.inc-capas button{min-height:36px}}';
+    + '@media(pointer:coarse){.inc-pisos button,.inc-3d-pisos button{min-height:38px;padding:0 13px}.inc-ref-rapida button,.inc-capas button{min-height:36px}.inc-ficha-cab button{width:36px;height:36px}.inc-ficha-accion{min-height:44px}}';
   document.head.appendChild(st);
 }
 function incEstilo3D() {
@@ -1079,6 +1141,7 @@ function incPlano3D(cont, op0) {
   const tip = document.createElement('div'); tip.className = 'inc-3d-tip'; cont.appendChild(tip);
   const ley = document.createElement('div'); ley.innerHTML = incLeyendaHTML('inc-3d-ley', true); if (ley.firstChild) cont.appendChild(ley.firstChild);
   const panel = document.createElement('div'); panel.className = 'inc-3d-det'; cont.appendChild(panel);
+  const fichaEl = document.createElement('div'); cont.appendChild(fichaEl);
   const pisosEl = document.createElement('div'); cont.appendChild(pisosEl);
   const capasEl = document.createElement('div'); capasEl.className = 'inc-3d-capas'; cont.appendChild(capasEl);
   const btnCapas = btns.querySelector('[data-a="capas"]');
@@ -1492,6 +1555,7 @@ function incPlano3D(cont, op0) {
     panel.innerHTML = '<div class="inc-3d-det-cab"><div class="inc-3d-det-tit"><strong>' + (detSector ? incEsc(detSector) : 'Abiertas ahora') + '</strong><span>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + (resueltas ? ' · ' + resueltas + ' resuelta' + (resueltas === 1 ? '' : 's') : '') + '</span></div>'
       + (detSector ? '<button type="button" class="inc-3d-det-todas" data-d="todas">Ver todas</button>' : '')
       + '<button type="button" class="inc-3d-det-x" data-d="cerrar" title="Cerrar" aria-label="Cerrar el detalle">✕</button></div>'
+      + (detSector && incFichaDatos(detSector) ? '<div class="inc-ficha-datos">' + incFichaChips(incFichaDatos(detSector)) + '</div>' : '')
       + (accion && detSector ? '<button type="button" class="inc-3d-det-accion" data-d="accion">' + incEsc(accion.texto) + '</button>' : '')
       + '<div class="inc-3d-det-lista">' + (abiertas.length ? abiertas.map(i => {
         const v = INC_NIVELES[i.nivel] || INC_NIVELES[1];
@@ -1522,7 +1586,7 @@ function incPlano3D(cont, op0) {
     controles = new T.OrbitControls(camara, lienzo);
     Object.assign(controles, { enableDamping: true, dampingFactor: 0.08, enablePan: false, minDistance: 160, maxDistance: 720, minPolarAngle: 0.12, maxPolarAngle: 1.32, rotateSpeed: 0.7, zoomSpeed: 0.8 });
     controles.target.copy(objetivo); controles.enabled = false;
-    controles.addEventListener('start', () => { ayuda.style.opacity = '0'; controles.autoRotate = false; ultimoToque = Date.now(); });
+    controles.addEventListener('start', () => { ayuda.style.opacity = '0'; controles.autoRotate = false; ultimoToque = Date.now(); viaje = null; });
     controles.addEventListener('end', () => { ultimoToque = Date.now(); });
     controles.autoRotateSpeed = 0.35;
   }
@@ -1533,7 +1597,16 @@ function incPlano3D(cont, op0) {
     camara.position.copy(cont._incCam.pos); camara.lookAt(cont._incCam.obj); intro = 1;
     if (controles) { controles.target.copy(cont._incCam.obj); controles.enabled = true; }
   }
-  const volver = () => { origen = camara.position.clone(); intro = 0; introDesde = null; if (controles) controles.enabled = false; };
+  const volver = () => { origen = camara.position.clone(); intro = 0; introDesde = null; viaje = null; if (controles) controles.enabled = false; };
+  // Al elegir un lugar, la cámara va hasta él: desde donde se lo miraba, más cerca.
+  let viaje = null, irA = '', selAnt = op0.sel || '';
+  const viajarA = p => {
+    if (!controles) return;
+    const obj = new T.Vector3(p.cx, p.hBase + (p.yAct || 0), p.cz), dir = camara.position.clone().sub(controles.target).normalize();
+    objetivo.y = objY;   // que la altura del piso no la mueva después
+    viaje = { p0: camara.position.clone(), o0: controles.target.clone(), p1: obj.clone().add(dir.multiplyScalar(270)), o1: obj, t: 0 };
+    controles.autoRotate = false; ultimoToque = Date.now();
+  };
 
   // Tamaño: el ancho del contenedor y un alto proporcionado; con
   // data-alto="pantalla" (en pantallas grandes), el alto que le da la página;
@@ -1643,7 +1716,8 @@ function incPlano3D(cont, op0) {
     if (!abajo) return;
     const lejos = Math.hypot(e.clientX - abajo.x, e.clientY - abajo.y) > 8, largo = Date.now() - abajo.t > 700; abajo = null;
     if (lejos || largo) return;
-    const id = sectorEn(e);
+    const id = sectorEn(e), pz = piezas[id];
+    if (pz && pz.lugar && pz.piso && !incPisoElegido() && !editar && (selLocal || (ultimoOp && ultimoOp.sel)) !== id) { irA = id; incElegirPiso(pz.piso); }
     if (enPantalla() && detLista) { selLocal = detSector = (selLocal === id ? '' : id); detAbierto = true; api.poner(ultimoOp); return; }
     if (id && onclick && typeof window[onclick] === 'function') window[onclick](id);
   });
@@ -1749,7 +1823,7 @@ function incPlano3D(cont, op0) {
     tAnt = t;
     // Al separar o juntar los pisos, la cámara sube o baja con ellos.
     const dy = acercar(objetivo.y, objY, paso) - objetivo.y;
-    if (dy) { objetivo.y += dy; if (intro >= 1 && controles) { controles.target.y += dy; camara.position.y += dy; } }
+    if (dy) { objetivo.y += dy; if (intro >= 1 && controles && !viaje) { controles.target.y += dy; camara.position.y += dy; } }
     if (intro < 1) {
       if (introDesde === null) introDesde = t;
       intro = Math.min(1, (t - introDesde) / 1.6);
@@ -1757,6 +1831,12 @@ function incPlano3D(cont, op0) {
       finIntro.copy(hacia); finIntro.y += objetivo.y;
       camara.position.lerpVectors(origen, finIntro, k); camara.lookAt(objetivo);
       if (intro >= 1 && controles) { controles.target.copy(objetivo); controles.enabled = true; }
+    }
+    if (viaje && intro >= 1) {
+      viaje.t = Math.min(1, viaje.t + dt / 0.9);
+      const k = 1 - Math.pow(1 - viaje.t, 3);
+      camara.position.lerpVectors(viaje.p0, viaje.p1, k); controles.target.lerpVectors(viaje.o0, viaje.o1, k);
+      if (viaje.t >= 1) viaje = null;
     }
     // La fachada sube o baja (se corta a la altura del piso elegido) de a poco.
     if (altoFachada !== null && altoFachada !== altoFachadaObj) { altoFachada = acercar(altoFachada, altoFachadaObj, paso); fachadaG.scale.y = altoFachada; }
@@ -1854,8 +1934,13 @@ function incPlano3D(cont, op0) {
       if (altoFachada === null) { altoFachada = altoFachadaObj; fachadaG.scale.y = altoFachada; }
       // La cámara mira a la altura del piso elegido (en "Todos", a media altura). Al cambiar de piso, va sola a mirarlo.
       objY = pisoSel ? INC_3D_PISO[pisoSel] : INC_3D_PISO.P3 * 0.35;
-      if (pisoAnt !== null && pisoAnt !== pisoSel) volver();
+      if (pisoAnt !== null && pisoAnt !== pisoSel) { if (irA) irA = ''; else volver(); }
       pisoAnt = pisoSel;
+      // El lugar elegido: su ficha (en pantalla completa va en el detalle de al
+      // costado) y la cámara que va hasta él. Editando, nada de eso.
+      const fichaId = !editar && op.sel && piezas[op.sel] ? op.sel : '';
+      fichaEl.innerHTML = fichaId ? incFichaHTML(fichaId, op, 'inc-ficha inc-3d-ficha') : '';
+      if (elegido !== selAnt) { selAnt = elegido; const pe = piezas[elegido]; if (pe && !editar && intro >= 1) viajarA(pe); }
       // El elegido, con sus manijas (si se está editando y se ve).
       const ps = piezas[elegido]; asaSel = editar && ps && ps.forma && ps.grupo.visible ? ps : null;
       if (!agarre) { medida = null; pintarFantasma(); }
