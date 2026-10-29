@@ -1319,11 +1319,14 @@ function incPlanoSVG(op) {
 // completa (el iPhone), el plano se agranda igual a toda la pantalla.
 // three.js se carga recién cuando hace falta (pesa). Si el aparato no
 // tiene WebGL o el 3D falla, queda el plano en 2D: nunca se queda sin plano.
-const INC_3D_ALTURA = { campo: 1.4, baja: [3, 11], alta: [16, 29], vip: 13, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13, calle: 0.5 };
-// Los pisos, como en Los Sims: a qué altura está de verdad el anillo de cada
-// uno y, en "Todos", a cuál va para verlos a todos juntos, uno arriba del otro.
-// Al elegir un piso, los de arriba se sacan (como el techo) y los de abajo quedan apagados.
-const INC_3D_PISO = { PB: { real: 0, sep: 0 }, P1: { real: 11, sep: 60 }, VIP: { real: 13, sep: 120 }, P3: { real: 29, sep: 180 } };
+const INC_3D_ALTURA = { campo: 1.4, baja: [3, 17], alta: [30, 45], vip: 26, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13, calle: 0.5 };
+// Los pisos, como en un edificio: a qué altura está el anillo de cada uno. El
+// de P1, arriba de la platea baja (el corner, a la misma altura); el del VIP,
+// un poco más arriba, a la altura de los palcos y el lounge (como un palco de
+// cancha); el de P3, arriba de la alta. El estadio (campo, plateas, VIP) no se mueve nunca.
+// En "Todos" los pisos de arriba son de vidrio esmerilado (se ve lo de todos);
+// al elegir uno, lo de arriba se saca (como el techo en Los Sims) y lo de abajo queda apagado.
+const INC_3D_PISO = { PB: 0, P1: 17, VIP: 26, P3: 45 };
 // Los colores del 3D: arriba y costado de cada tipo (los mismos tonos que el
 // plano), el contorno LED de cada uno, el halo de abajo, el vidrio de la
 // fachada y las luces (casi blancas, apenas frías: si fueran celestes, los
@@ -1660,6 +1663,9 @@ function incPlano3D(cont, op0) {
         const g = gradas(pts, dir, h0, h1), dc = cx * dir.x - cz * dir.y;
         geo = g.geo;
         p.hBase = (g.filas.find(f => dc >= f.a - 0.01 && dc <= f.b + 0.01) || g.filas[g.filas.length - 1]).h;
+      } else if (s.t === 'vip') {
+        // Los palcos y el lounge, como palcos de cancha: una caja colgada un poco más arriba que P1.
+        p.hBase = INC_3D_ALTURA.vip; geo = extruir(pts, 7); geo.translate(0, p.hBase - 7, 0);
       } else { p.hBase = INC_3D_ALTURA[s.t]; geo = extruir(pts, p.hBase); }
       const mapa = sentado ? butacas(rot) : s.t === 'campo' && /^Campo [A-N]$/.test(s.id) ? butacas(0) : null;
       const matTop = new T.MeshStandardMaterial({ color: base[0], map: mapa, roughness: 0.55, metalness: 0.2, emissive: base[0], emissiveIntensity: TM.brillo });
@@ -1783,47 +1789,58 @@ function incPlano3D(cont, op0) {
   // El lienzo no se vuelve a dibujar solo: si Poppins llegó después, la cinta se repinta con ella.
   if (typeof document !== 'undefined' && document.fonts && document.fonts.load)
     document.fonts.load('600 30px Poppins').then(() => { const b = tituloCinta; tituloCinta = null; pintarCinta(b); }).catch(() => {});
-  const cintaLed = new T.Mesh(pared(INC_CINTA.map(([x, y]) => new T.Vector3(x - 210, 0, y - 146)), 12, 17, false, 5 * 32), new T.MeshBasicMaterial({ map: texCinta }));
-  // Va con el VIP (da la vuelta delante de los palcos): sube y se saca con él.
+  const cintaLed = new T.Mesh(pared(INC_CINTA.map(([x, y]) => new T.Vector3(x - 210, 0, y - 146)), INC_3D_ALTURA.vip - 5, INC_3D_ALTURA.vip, false, 5 * 32), new T.MeshBasicMaterial({ map: texCinta }));
+  // Va con el VIP (da la vuelta delante de los palcos): se saca con él.
   const cintaG = new T.Group(); cintaG.add(cintaLed); escena.add(cintaG);
 
-  // La fachada de vidrio que cierra el anillo, con una línea arriba y otra abajo.
+  // La fachada de vidrio, como la de un edificio: desde abajo hasta arriba del
+  // último piso, con sus parantes y una línea arriba y otra abajo. Al elegir un
+  // piso se corta a la altura de ese piso (como las paredes en Los Sims) para
+  // ver adentro. Se arma de alto 1 y se estira.
   const fach = INC_FACHADA.map(([x, y]) => new T.Vector3(x - 210, 0, y - 146));
-  escena.add(new T.Mesh(pared(fach, 0, 10, true, 1), new T.MeshBasicMaterial({ color: TM.vidrio[0], transparent: true, opacity: TM.vidrio[1], side: T.DoubleSide, depthWrite: false })));
-  TM.fachada.forEach(([y, color, op]) => escena.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(fach.map(q => q.clone().setY(y))), new T.LineBasicMaterial({ color, transparent: true, opacity: op }))));
+  const fachadaG = new T.Group(); escena.add(fachadaG);
+  fachadaG.add(new T.Mesh(pared(fach, 0, 1, true, 1), new T.MeshBasicMaterial({ color: TM.vidrio[0], transparent: true, opacity: TM.vidrio[1], side: T.DoubleSide, depthWrite: false })));
+  fachadaG.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(fach.map(q => q.clone().setY(1))), new T.LineBasicMaterial({ color: TM.fachada[0][1], transparent: true, opacity: TM.fachada[0][2] })));
+  escena.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(fach.map(q => q.clone().setY(TM.fachada[1][0]))), new T.LineBasicMaterial({ color: TM.fachada[1][1], transparent: true, opacity: TM.fachada[1][2] })));
   {
     const v = [];
-    fach.forEach((a, i) => { const b = fach[(i + 1) % fach.length], n = Math.floor(a.distanceTo(b) / 16); for (let k = 1; k < n; k++) { const q = a.clone().lerp(b, k / n); v.push(q.x, 0, q.z, q.x, 10, q.z); } });
+    fach.forEach((a, i) => { const b = fach[(i + 1) % fach.length], n = Math.floor(a.distanceTo(b) / 16); for (let k = 1; k < n; k++) { const q = a.clone().lerp(b, k / n); v.push(q.x, 0, q.z, q.x, 1, q.z); } });
     const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(v, 3));
-    escena.add(new T.LineSegments(g, new T.LineBasicMaterial({ color: TM.parantes[0], transparent: true, opacity: TM.parantes[1] })));
+    fachadaG.add(new T.LineSegments(g, new T.LineBasicMaterial({ color: TM.parantes[0], transparent: true, opacity: TM.parantes[1] })));
   }
+  const ALTO_PARED = 10;   // lo que sube la fachada arriba del piso de más arriba que se ve
+  let altoFachada = null, altoFachadaObj = INC_3D_PISO.P3 + ALTO_PARED;
 
-  // Los pisos de arriba (P1, VIP y P3): el piso del anillo con su borde de luz
-  // y, por fuera, una pared de vidrio baja, cortada como en Los Sims para ver
-  // adentro. Cada piso lleva su nombre: en "Todos", se toca para ir a ese piso.
-  const losas = [], pisos3d = {};
-  INC_PISOS.forEach(([k, nombre]) => {
+  // Los pisos de arriba (P1, VIP y P3): el piso del anillo, a su altura, con
+  // su borde de luz (en la fachada se ve como la línea de cada piso). Cada
+  // piso lleva su nombre: en "Todos", se toca para ir a ese piso.
+  const pisos3d = {};
+  INC_PISOS.forEach(([k, nombre], i) => {
     const g = new T.Group(), mats = [];
-    escena.add(g);
+    g.position.y = INC_3D_PISO[k]; escena.add(g);
     if (k !== 'PB') {
       const matLosa = new T.MeshStandardMaterial({ color: TM.color.anillo[0], roughness: 0.6, metalness: 0.2, emissive: TM.color.anillo[0], emissiveIntensity: TM.brillo });
       const matCanto = new T.MeshStandardMaterial({ color: TM.color.anillo[1], roughness: 0.5, metalness: 0.35 });
       const matBordeL = new T.LineBasicMaterial({ color: TM.borde.anillo, transparent: true, opacity: TM.opBorde.anillo });
       INC_PLANO_ZONAS.filter(s => s.t === 'anillo').forEach(s => {
         const geo = extruir(forma2D(s), 1.4); geo.translate(0, -1.4, 0);
-        const losa = new T.Mesh(geo, [matLosa, matCanto]); losa.userData.piso = k; g.add(losa); losas.push(losa);
+        g.add(new T.Mesh(geo, [matLosa, matCanto]));
         g.add(new T.LineSegments(new T.EdgesGeometry(geo, 25), matBordeL));
       });
-      const matVidrio = new T.MeshBasicMaterial({ color: TM.vidrio[0], transparent: true, opacity: TM.vidrio[1] * 1.6, side: T.DoubleSide, depthWrite: false });
-      g.add(new T.Mesh(pared(fach, 0, 5, true, 1), matVidrio));
-      const matLinea = new T.LineBasicMaterial({ color: TM.fachada[0][1], transparent: true, opacity: 0.6 });
-      g.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(fach.map(q => q.clone().setY(5))), matLinea));
-      mats.push(matLosa, matCanto, matBordeL, matVidrio, matLinea);
+      mats.push(matLosa, matCanto, matBordeL);
     }
-    const et = etiqueta('<span class="inc-3d-nivel" data-piso="' + k + '" title="Ver ' + incEsc(nombre.toLowerCase()) + '">' + incEsc(nombre) + '</span>', 'nivel', new T.Vector3(-214, 3, 166));
+    const et = etiqueta('<span class="inc-3d-nivel" data-piso="' + k + '" title="Ver ' + incEsc(nombre.toLowerCase()) + '">' + incEsc(nombre) + '</span>', 'nivel', new T.Vector3(-140 + i * 35, 2, 180));   // al frente, en escalera (cada uno a la altura de su piso)
     et.grupo = g;
-    pisos3d[k] = { g, mats, et, yAct: null, yObj: 0 };
+    pisos3d[k] = { g, mats, et, vista: '' };
   });
+  // Cómo se ve el piso de un nivel: en "Todos", de vidrio esmerilado (se ve lo
+  // de los pisos de abajo); el elegido, lleno; los de abajo, apagados.
+  const VISTA_LOSA = { todos: 0.3, lleno: 1, abajo: 0.14 };
+  const verLosa = (nv, vista) => {
+    if (nv.vista === vista) return;
+    nv.vista = vista;
+    nv.mats.forEach(m => { if (m.userData.op0 === undefined) m.userData.op0 = m.opacity; m.transparent = vista !== 'lleno' || m.userData.op0 < 1; m.opacity = m.userData.op0 * VISTA_LOSA[vista]; m.depthWrite = vista === 'lleno'; m.needsUpdate = true; });
+  };
   capaEtq.addEventListener('click', e => { const b = e.target.closest ? e.target.closest('[data-piso]') : null; if (b) incElegirPiso(b.dataset.piso); });
 
 
@@ -1936,8 +1953,6 @@ function incPlano3D(cont, op0) {
 
   // Cámara: entra volando desde arriba hasta la vista de la platea 309, mirando al escenario.
   const objetivo = new T.Vector3(0, 0, 14), haciaBase = new T.Vector3(0, 318, 440), hacia = haciaBase.clone(), desde = new T.Vector3(300, 820, 780);
-  // En "Todos" (los pisos separados), de más lejos y en diagonal, como en Los Sims: así se ve cada piso con lo suyo.
-  const haciaTodosBase = new T.Vector3(250, 380, 520), haciaTodos = haciaTodosBase.clone();
   camara.position.copy(desde); camara.lookAt(objetivo);
   let controles = null;
   if (T.OrbitControls) {
@@ -1979,8 +1994,8 @@ function incPlano3D(cont, op0) {
     camara.updateProjectionMatrix();
     // El encuadre de entrada: que el estadio entre entero en lo libre (en una pantalla angosta, un poco más lejos).
     const f = Math.max(1, 1.45 * h / Math.max(1, w - tapaW), h / Math.max(1, h - tapaH));
-    hacia.copy(haciaBase).multiplyScalar(f); haciaTodos.copy(haciaTodosBase).multiplyScalar(f);
-    if (controles) controles.maxDistance = 900 * f;
+    hacia.copy(haciaBase).multiplyScalar(f);
+    if (controles) controles.maxDistance = 720 * f;
     if (reencuadrar === true) volver();
   };
   medirRef = medir;
@@ -2060,19 +2075,12 @@ function incPlano3D(cont, op0) {
     const hit = rayo.intersectObjects(toques).find(x => { const q = piezas[x.object.userData.id]; return q && q.grupo.visible; });
     return hit ? hit.object.userData.id : '';
   };
-  // En "Todos", el piso de un nivel de arriba que quedó bajo el dedo (si no hay un lugar más cerca): se toca para ir a ese piso.
-  const pisoEn = () => {
-    if (incPisoElegido() || editar) return '';
-    const hit = rayo.intersectObjects(toques.concat(losas)).find(x => x.object.userData.piso ? x.object.parent.visible : !!(piezas[x.object.userData.id] && piezas[x.object.userData.id].grupo.visible));
-    return hit && hit.object.userData.piso ? hit.object.userData.piso : '';
-  };
   lienzo.addEventListener('pointerdown', e => { if (capasEl.classList.contains('abierto')) { capasEl.classList.remove('abierto'); btnCapas.setAttribute('aria-expanded', 'false'); } abajo = { x: e.clientX, y: e.clientY, t: Date.now() }; ultimoToque = Date.now(); if (controles) controles.autoRotate = false; });
   lienzo.addEventListener('pointerup', e => {
     if (!abajo) return;
     const lejos = Math.hypot(e.clientX - abajo.x, e.clientY - abajo.y) > 8, largo = Date.now() - abajo.t > 700; abajo = null;
     if (lejos || largo) return;
-    const id = sectorEn(e), piso = pisoEn();
-    if (piso) { incElegirPiso(piso); return; }
+    const id = sectorEn(e);
     if (enPantalla() && detLista) { selLocal = detSector = (selLocal === id ? '' : id); detAbierto = true; api.poner(ultimoOp); return; }
     if (id && onclick && typeof window[onclick] === 'function') window[onclick](id);
   });
@@ -2080,18 +2088,12 @@ function incPlano3D(cont, op0) {
     if (e.pointerType !== 'mouse' || abajo || Date.now() - ultimoMov < 40) return;
     ultimoMov = Date.now();
     sobre = sectorEn(e);
-    const piso = sobre ? '' : pisoEn();
     lienzo.style.cursor = sobre && editar && piezas[sobre] && piezas[sobre].forma ? 'move' : sobre && onclick ? 'pointer' : 'grab';
     if (sobre) {
       const p = piezas[sobre], r = lienzo.getBoundingClientRect();
       tip.textContent = sobre + (p.n ? ' · ' + incAbiertasTexto(p.n, p.pn) : '');
       tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; tip.style.opacity = '1';
-    } else if (piso) {
-      const r = lienzo.getBoundingClientRect();
-      tip.textContent = (INC_PISOS.find(x => x[0] === piso) || [])[1] + ' · tocá para verlo';
-      tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; tip.style.opacity = '1';
     } else tip.style.opacity = '0';
-    if (piso) lienzo.style.cursor = 'pointer';
   });
   lienzo.addEventListener('pointerleave', () => { sobre = ''; tip.style.opacity = '0'; });
 
@@ -2169,12 +2171,12 @@ function incPlano3D(cont, op0) {
     m.transparent = on || m.userData.tr0; m.opacity = on ? 0.14 : m.userData.op0; m.depthWrite = !on; m.needsUpdate = true;
   });
   // Adónde mira la cámara (la altura) y cuánto se aleja: cambian con el piso elegido.
-  let objY = 0, enTodos = false, pisoAnt = null, tAnt = null;
+  let objY = 0, pisoAnt = null, tAnt = null;
   const finIntro = new T.Vector3();
   const acercar = (a, b, k) => Math.abs(b - a) < 0.05 ? b : a + (b - a) * k;
 
-  // Cada cuadro: la cámara de entrada, los pisos que se separan o se juntan, el
-  // latido, las balizas, las luces y la cinta que corre.
+  // Cada cuadro: la cámara de entrada, la fachada que sube o baja con el piso,
+  // el latido, las balizas, las luces y la cinta que corre.
   const t0 = performance.now();
   const cuadro = ahora => {
     if (!vivo) return;
@@ -2189,12 +2191,12 @@ function incPlano3D(cont, op0) {
       if (introDesde === null) introDesde = t;
       intro = Math.min(1, (t - introDesde) / 1.6);
       const k = 1 - Math.pow(1 - intro, 3);
-      finIntro.copy(enTodos ? haciaTodos : hacia); finIntro.y += objetivo.y;
+      finIntro.copy(hacia); finIntro.y += objetivo.y;
       camara.position.lerpVectors(origen, finIntro, k); camara.lookAt(objetivo);
       if (intro >= 1 && controles) { controles.target.copy(objetivo); controles.enabled = true; }
     }
-    Object.values(pisos3d).forEach(nv => { if (nv.yAct !== nv.yObj) { nv.yAct = acercar(nv.yAct, nv.yObj, paso); nv.g.position.y = nv.yAct; } });
-    cintaG.position.y = pisos3d.VIP.yAct - INC_3D_PISO.VIP.real;
+    // La fachada sube o baja (se corta a la altura del piso elegido) de a poco.
+    if (altoFachada !== null && altoFachada !== altoFachadaObj) { altoFachada = acercar(altoFachada, altoFachadaObj, paso); fachadaG.scale.y = altoFachada; }
     Object.values(piezas).forEach(p => {
       if (p.yAct !== p.yObj) {
         p.yAct = acercar(p.yAct, p.yObj, paso);
@@ -2259,10 +2261,9 @@ function incPlano3D(cont, op0) {
         p.grupo.visible = !fuera;
         if (p.apagado !== apagado) { p.apagado = apagado; apagar(p.mats, apagado); }
         p.et.el.style.visibility = fuera || apagado || (!capas.nombres && !p.lugar && !n) ? 'hidden' : '';
-        // A qué altura va: los puestos, sobre el anillo de su piso; las plateas y el
-        // VIP, donde están (separados, suben con su piso). Sube un poco si está elegido.
-        const alt = INC_3D_PISO[p.nivelDe] || INC_3D_PISO.PB;
-        p.yObj = p.lugar ? (pisoSel ? alt.real : alt.sep) : (pisoSel ? 0 : alt.sep - alt.real);
+        // A qué altura va: los puestos, sobre el anillo de su piso; el estadio
+        // (campo, plateas, VIP), donde está. Sube un poco si está elegido.
+        p.yObj = p.lugar ? INC_3D_PISO[p.nivelDe] || 0 : 0;
         if (p.yAct === null) p.yAct = p.yObj;
         p.sube = p.sel ? 3 : 0;
         const sube = p.sube;
@@ -2276,20 +2277,20 @@ function incPlano3D(cont, op0) {
         }
         if (p.baliza) { const ver = !fuera && !apagado; p.baliza.position.set(p.cx, p.hBase + p.yAct + sube, p.bz); p.baliza.userData.chapa.pos.set(p.cx, p.hBase + p.yAct + sube + 70, p.bz); p.baliza.visible = ver; p.baliza.userData.chapa.el.style.visibility = ver ? '' : 'hidden'; }
       });
-      // Los pisos de arriba: en "Todos", separados y con su nombre; con uno
-      // elegido, a su altura, sin los de más arriba y con los de abajo apagados.
+      // Los pisos de arriba: en "Todos", de vidrio esmerilado y con su nombre;
+      // con uno elegido, lleno, sin los de más arriba y con los de abajo apagados.
+      // La fachada, hasta arriba del último piso que se ve.
       INC_PISOS.forEach(([k], i) => {
-        const nv = pisos3d[k], alt = INC_3D_PISO[k];
-        nv.yObj = pisoSel ? alt.real : alt.sep;
-        if (nv.yAct === null) { nv.yAct = nv.yObj; nv.g.position.y = nv.yAct; }
+        const nv = pisos3d[k];
         nv.g.visible = !pisoSel || i <= iSel;
-        const apagado = !!pisoSel && i < iSel;
-        if (nv.apagado !== apagado) { nv.apagado = apagado; apagar(nv.mats, apagado); }
+        verLosa(nv, !pisoSel ? 'todos' : i < iSel ? 'abajo' : 'lleno');
         nv.et.el.style.visibility = pisoSel ? 'hidden' : '';
       });
       cintaG.visible = pisos3d.VIP.g.visible;
-      // La cámara mira a la altura del piso elegido; en "Todos", al medio de los pisos. Al cambiar de piso, va sola a mirarlo.
-      objY = pisoSel ? INC_3D_PISO[pisoSel].real : INC_3D_PISO.P3.sep * 0.45; enTodos = !pisoSel;
+      altoFachadaObj = (pisoSel ? INC_3D_PISO[pisoSel] : INC_3D_PISO.P3) + ALTO_PARED;
+      if (altoFachada === null) { altoFachada = altoFachadaObj; fachadaG.scale.y = altoFachada; }
+      // La cámara mira a la altura del piso elegido (en "Todos", a media altura). Al cambiar de piso, va sola a mirarlo.
+      objY = pisoSel ? INC_3D_PISO[pisoSel] : INC_3D_PISO.P3 * 0.35;
       if (pisoAnt !== null && pisoAnt !== pisoSel) volver();
       pisoAnt = pisoSel;
       // El elegido, con sus manijas (si se está editando y se ve).
