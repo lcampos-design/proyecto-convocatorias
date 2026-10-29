@@ -1046,6 +1046,17 @@ const INC_3D_ALTURA = { campo: 1.4, baja: [3, 17], alta: [30, 45], vip: 26, anil
 // En "Todos" los pisos de arriba son de vidrio esmerilado (se ve lo de todos);
 // al elegir uno, lo de arriba se saca (como el techo en Los Sims) y lo de abajo queda apagado.
 const INC_3D_PISO = { PB: 0, P1: 17, VIP: 26, P3: 45 };
+// Las vistas del botón "Vista": la de entrada (desde la platea 309, mirando al
+// escenario), desde arriba como un plano, desde el escenario, desde Humboldt
+// (más baja, de frente) y desde cada costado. Lo que se elige queda al cambiar de piso.
+const INC_3D_VISTAS = [
+  ['general', 'General', [0, 318, 440]],
+  ['planta', 'Desde arriba', [0, 650, 85]],
+  ['escenario', 'Desde el escenario', [0, 270, -480]],
+  ['humboldt', 'Desde Humboldt', [0, 150, 560]],
+  ['cancha', 'Lado Cancha', [-560, 230, 40]],
+  ['sede', 'Lado Sede', [560, 230, 40]]
+];
 // Los colores del 3D: arriba y costado de cada tipo (los mismos tonos que el
 // plano), el contorno LED de cada uno, el halo de abajo, el vidrio de la
 // fachada y las luces (casi blancas, apenas frías: si fueran celestes, los
@@ -1235,6 +1246,15 @@ function incEstilo3D() {
     // Las capas: qué se muestra (nombres, puestos, calles), con interruptores como los de la Mac.
     + '.inc-3d-capas{position:absolute;top:calc(56px + var(--inc-sup,0px));right:calc(10px + var(--inc-der,0px));z-index:7;display:none;padding:5px;border-radius:12px;' + INC_VIDRIO + '}'
     + '.inc-3d-capas.abierto{display:block}'
+    // El menú de vistas: la lista y, abajo, los pisos.
+    + '.inc-3d-vistas-l{display:flex;flex-direction:column;gap:2px;min-width:200px}'
+    + '.inc-3d-vistas-t{padding:6px 11px 3px;color:#9fbbe3;font:700 10px ' + INC_FUENTE + ';letter-spacing:1px;text-transform:uppercase}'
+    + '.inc-3d-vistas-l>button{display:flex;align-items:center;min-height:36px;padding:0 11px;border:0;border-radius:8px;background:transparent;color:#eaf3ff;font:600 12.5px ' + INC_FUENTE + ';text-align:left;cursor:pointer}'
+    + '.inc-3d-vistas-l>button:hover{background:rgba(255,255,255,.08)}.inc-3d-vistas-l>button.on{background:rgba(255,255,255,.16)}'
+    + '.inc-3d-vistas-l>button.on::after{content:"✓";margin-left:auto;padding-left:12px;color:#7cc8ff}'
+    + '.inc-3d-vistas-p{display:flex;gap:3px;padding:2px 6px 6px}'
+    + '.inc-3d-vistas-p button{flex:1;min-height:32px;border:0;border-radius:8px;background:rgba(255,255,255,.08);color:#eaf3ff;font:600 12px ' + INC_FUENTE + ';cursor:pointer}'
+    + '.inc-3d-vistas-p button.on{background:rgba(255,255,255,.92);color:#0b1b33}'
     + '.inc-3d-capas-l{display:flex;flex-direction:column;gap:2px}'
     + '.inc-3d-capas-l button{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:160px;min-height:36px;padding:0 9px 0 11px;border:0;border-radius:8px;background:transparent;color:#eaf3ff;font:600 12.5px ' + INC_FUENTE + ';cursor:pointer;text-align:left}'
     + '.inc-3d-capas-l button:hover{background:rgba(255,255,255,.08)}'
@@ -1272,7 +1292,7 @@ function incEstilo3D() {
     // La leyenda, más chica; en pantalla completa, abajo de los botones (si no, se pisan).
     + '.inc-3d-btn-txt{display:none}.inc-3d-ley .inc-ley-puestos{display:none}.inc-3d-ley{max-width:calc(100% - 150px);font-size:10.5px;gap:2px 8px;padding:5px 8px}.inc-3d-full .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}}'
     // En los aparatos táctiles, lo que se toca, del tamaño del dedo (44 px).
-    + '@media(pointer:coarse){.inc-3d-btn{min-width:44px;min-height:44px;font-size:13px}.inc-3d-det-x{width:36px;height:36px}.inc-3d-det-todas{min-height:38px}.inc-3d-capas-l button{min-height:44px}}';
+    + '@media(pointer:coarse){.inc-3d-btn{min-width:44px;min-height:44px;font-size:13px}.inc-3d-det-x{width:36px;height:36px}.inc-3d-det-todas{min-height:38px}.inc-3d-capas-l button{min-height:44px}.inc-3d-vistas-l>button{min-height:44px}.inc-3d-vistas-p button{min-height:40px}}';
   document.head.appendChild(st);
 }
 function incPlano3D(cont, op0) {
@@ -1296,7 +1316,7 @@ function incPlano3D(cont, op0) {
   btns.innerHTML = '<button type="button" class="inc-3d-btn inc-3d-btn-det" data-a="detalle" title="Ver u ocultar el detalle de las incidencias">☰ Incidencias</button>'
     + '<button type="button" class="inc-3d-btn" data-a="buscar" title="Buscar un puesto o un sector, o ver un solo tipo" aria-label="Buscar" aria-expanded="false">' + INC_LUPA + '</button>'
     + '<button type="button" class="inc-3d-btn" data-a="capas" title="Qué mostrar: nombres, puestos, calles" aria-label="Capas: qué mostrar" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 2.5 8 12 13l9.5-5z"/><path d="m2.5 12.5 9.5 5 9.5-5"/><path d="m2.5 17 9.5 5 9.5-5"/></svg></button>'
-    + '<button type="button" class="inc-3d-btn" data-a="vista" title="Volver a la vista de entrada" aria-label="Volver a la vista de entrada">⟲<span class="inc-3d-btn-txt"> Vista</span></button>'
+    + '<button type="button" class="inc-3d-btn" data-a="vista" title="Vistas: general, desde arriba, desde el escenario, desde Humboldt, de costado y cada piso" aria-label="Vistas" aria-haspopup="true" aria-expanded="false">⟲<span class="inc-3d-btn-txt"> Vista</span></button>'
     + '<button type="button" class="inc-3d-btn" data-a="pantalla" title="Pantalla completa">⛶</button>';
   cont.appendChild(btns);
   const btnDet = btns.querySelector('[data-a="detalle"]');
@@ -1308,6 +1328,7 @@ function incPlano3D(cont, op0) {
   const fichaEl = document.createElement('div'); cont.appendChild(fichaEl);
   const pisosEl = document.createElement('div'); cont.appendChild(pisosEl);
   const capasEl = document.createElement('div'); capasEl.className = 'inc-3d-capas'; cont.appendChild(capasEl);
+  const vistasEl = document.createElement('div'); vistasEl.className = 'inc-3d-capas inc-3d-vistas'; cont.appendChild(vistasEl);
   const btnCapas = btns.querySelector('[data-a="capas"]'), btnBus = btns.querySelector('[data-a="buscar"]');
   const busEl = document.createElement('div'); busEl.className = 'inc-bus-lugar'; busEl.dataset.clase = 'inc-bus inc-3d-bus'; cont.appendChild(busEl);
   const version = incVersionPlano;
@@ -1790,7 +1811,9 @@ function incPlano3D(cont, op0) {
   });
 
   // Cámara: entra volando desde arriba hasta la vista de la platea 309, mirando al escenario.
-  const objetivo = new T.Vector3(0, 0, 14), haciaBase = new T.Vector3(0, 318, 440), hacia = haciaBase.clone(), desde = new T.Vector3(300, 820, 780);
+  const objetivo = new T.Vector3(0, 0, 14), hacia = new T.Vector3(0, 318, 440), desde = new T.Vector3(300, 820, 780);
+  let vistaSel = cont._incVista || 'general', mirarDesde = null;
+  const vecMirar = new T.Vector3();
   camara.position.copy(desde); camara.lookAt(objetivo);
   let controles = null;
   if (T.OrbitControls) {
@@ -1808,7 +1831,7 @@ function incPlano3D(cont, op0) {
     camara.position.copy(cont._incCam.pos); camara.lookAt(cont._incCam.obj); intro = 1;
     if (controles) { controles.target.copy(cont._incCam.obj); controles.enabled = true; }
   }
-  const volver = () => { origen = camara.position.clone(); intro = 0; introDesde = null; viaje = null; if (controles) controles.enabled = false; };
+  const volver = () => { origen = camara.position.clone(); mirarDesde = controles ? controles.target.clone() : objetivo.clone(); intro = 0; introDesde = null; viaje = null; if (controles) controles.enabled = false; };
   // Al elegir un lugar, la cámara va hasta él: desde donde se lo miraba, más cerca.
   let viaje = null, irA = '', selAnt = op0.sel || '';
   const viajarAPunto = (obj, dist) => {
@@ -1842,7 +1865,8 @@ function incPlano3D(cont, op0) {
     camara.updateProjectionMatrix();
     // El encuadre de entrada: que el estadio entre entero en lo libre (en una pantalla angosta, un poco más lejos).
     const f = Math.max(1, 1.45 * h / Math.max(1, w - tapaW), h / Math.max(1, h - tapaH));
-    hacia.copy(haciaBase).multiplyScalar(f);
+    const v = (INC_3D_VISTAS.find(x => x[0] === vistaSel) || INC_3D_VISTAS[0])[2];
+    hacia.set(v[0], v[1], v[2]).multiplyScalar(f);
     if (controles) controles.maxDistance = 720 * f;
     if (reencuadrar === true) volver();
   };
@@ -1904,11 +1928,29 @@ function incPlano3D(cont, op0) {
   window.addEventListener('popstate', alAtras);
   document.addEventListener('keydown', alTecla);
 
+  // El menú de vistas: cada vista (la cámara viaja hasta ahí) y los pisos.
+  const btnVista = btns.querySelector('[data-a="vista"]');
+  const pintarVistas = () => {
+    const p = incPisoElegido();
+    vistasEl.innerHTML = '<div class="inc-3d-vistas-l"><div class="inc-3d-vistas-t">Vista</div>'
+      + INC_3D_VISTAS.map(([k, n]) => '<button type="button" data-v="' + k + '" class="' + (k === vistaSel ? 'on' : '') + '">' + n + '</button>').join('')
+      + '<div class="inc-3d-vistas-t">Piso</div><div class="inc-3d-vistas-p">' + [['', 'Todos']].concat(INC_PISOS.map(x => [x[0], x[0]])).map(([k, n]) => '<button type="button" data-vp="' + k + '" class="' + (k === p ? 'on' : '') + '">' + n + '</button>').join('') + '</div></div>';
+  };
+  const elegirVista = k => { vistaSel = cont._incVista = k; medir(); volver(); };
+  vistasEl.addEventListener('click', e => {
+    const b = e.target.closest ? e.target.closest('button') : null; if (!b) return;
+    cerrarMenus();
+    if (b.dataset.v) elegirVista(b.dataset.v);
+    else if (b.dataset.vp !== undefined) { if (b.dataset.vp === incPisoElegido()) volver(); else incElegirPiso(b.dataset.vp); }
+  });
+  const cerrarMenus = () => {
+    [[capasEl, btnCapas], [vistasEl, btnVista]].forEach(([m, b]) => { if (m.classList.contains('abierto')) { m.classList.remove('abierto'); b.setAttribute('aria-expanded', 'false'); } });
+  };
   btns.addEventListener('click', e => {
     const a = e.target.closest('button') && e.target.closest('button').dataset.a;
-    if (a === 'vista') volver();
+    if (a === 'vista') { const ab = !vistasEl.classList.contains('abierto'); cerrarMenus(); if (ab) { pintarVistas(); vistasEl.classList.add('abierto'); btnVista.setAttribute('aria-expanded', 'true'); } }
     if (a === 'buscar') incBuscadorAccion(cont, 'abrir');
-    if (a === 'capas') { const ab = capasEl.classList.toggle('abierto'); btnCapas.setAttribute('aria-expanded', String(ab)); }
+    if (a === 'capas') { const ab = !capasEl.classList.contains('abierto'); cerrarMenus(); if (ab) { capasEl.classList.add('abierto'); btnCapas.setAttribute('aria-expanded', 'true'); } }
     if (a === 'detalle') { detAbierto = !detAbierto; pintarDetalle(); }
     if (a === 'pantalla') { if (enPantalla()) salirPantalla(); else entrarPantalla(); }
   });
@@ -1924,7 +1966,7 @@ function incPlano3D(cont, op0) {
     const hit = rayo.intersectObjects(toques).find(x => { const q = piezas[x.object.userData.id]; return q && q.grupo.visible; });
     return hit ? hit.object.userData.id : '';
   };
-  lienzo.addEventListener('pointerdown', e => { if (capasEl.classList.contains('abierto')) { capasEl.classList.remove('abierto'); btnCapas.setAttribute('aria-expanded', 'false'); } abajo = { x: e.clientX, y: e.clientY, t: Date.now() }; ultimoToque = Date.now(); if (controles) controles.autoRotate = false; });
+  lienzo.addEventListener('pointerdown', e => { cerrarMenus(); abajo = { x: e.clientX, y: e.clientY, t: Date.now() }; ultimoToque = Date.now(); if (controles) controles.autoRotate = false; });
   lienzo.addEventListener('pointerup', e => {
     if (!abajo) return;
     const lejos = Math.hypot(e.clientX - abajo.x, e.clientY - abajo.y) > 8, largo = Date.now() - abajo.t > 700; abajo = null;
@@ -2043,8 +2085,9 @@ function incPlano3D(cont, op0) {
       intro = Math.min(1, (t - introDesde) / 1.6);
       const k = 1 - Math.pow(1 - intro, 3);
       finIntro.copy(hacia); finIntro.y += objetivo.y;
-      camara.position.lerpVectors(origen, finIntro, k); camara.lookAt(objetivo);
-      if (intro >= 1 && controles) { controles.target.copy(objetivo); controles.enabled = true; }
+      // Va de a poco también hacia dónde mira (si antes miraba otro lugar, no gira de golpe).
+      camara.position.lerpVectors(origen, finIntro, k); camara.lookAt(mirarDesde ? vecMirar.lerpVectors(mirarDesde, objetivo, k) : objetivo);
+      if (intro >= 1) { mirarDesde = null; if (controles) { controles.target.copy(objetivo); controles.enabled = true; } }
     }
     if (viaje && intro >= 1) {
       viaje.t = Math.min(1, viaje.t + dt / 0.9);
