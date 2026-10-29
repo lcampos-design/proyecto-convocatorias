@@ -6359,6 +6359,111 @@ function incPlano3D(cont, op0) {
   const ALTO_PARED = 10;   // lo que sube la fachada arriba del piso de más arriba que se ve
   let altoFachada = null, altoFachadaObj = INC_3D_PISO.P3 + ALTO_PARED;
 
+  // ── El Arena por fuera, como presentación ──
+  // Al abrir el plano se ve cerrado, como es: la fachada de lamas plateadas con
+  // la onda oscura en diagonal y los ventanales, el techo gris claro y el cartel
+  // sobre la entrada de Humboldt. Enseguida el techo se levanta y la fachada baja
+  // (como las paredes en Los Sims) y queda el plano por dentro. Los árboles de
+  // las veredas, la chimenea y la palmera de la esquina quedan siempre.
+  const ALTO_EDIFICIO = 64;
+  // Un poco más afuera que el vidrio (que no se pisen).
+  const afuera = fach.map(q => new T.Vector3(q.x * 1.007, 0, (q.z + 9) * 1.007 - 9));
+  const lienzoLamas = lienzoDe(1024, 512);
+  {
+    const x = lienzoLamas.getContext('2d');
+    x.fillStyle = '#1d222a'; x.fillRect(0, 0, 1024, 512);
+    // Las lamas verticales, plateadas, con su brillo.
+    for (let i = 0; i < 1024; i += 16) {
+      const g = x.createLinearGradient(i, 0, i + 13, 0);
+      g.addColorStop(0, '#8e969f'); g.addColorStop(0.45, '#eef1f4'); g.addColorStop(1, '#a3abb3');
+      x.fillStyle = g; x.fillRect(i + 2, 0, 12, 512);
+    }
+    // La onda oscura en diagonal: ahí las lamas giran y se ven oscuras.
+    for (let i = 0; i < 1024; i += 16) {
+      const f = i / 1024, medio = 512 * (0.82 - 0.62 * f), alto = 110 + 70 * Math.sin(f * Math.PI);
+      x.fillStyle = 'rgba(28,32,40,.8)'; x.fillRect(i + 2, medio - alto / 2, 12, alto);
+    }
+    // Los ventanales, la planta baja oscura y el borde de arriba.
+    x.fillStyle = 'rgba(12,16,24,.94)'; x.fillRect(0, 150, 1024, 54);
+    x.fillStyle = 'rgba(150,190,230,.28)'; for (let i = 5; i < 1024; i += 34) x.fillRect(i, 155, 28, 44);
+    x.fillStyle = '#151a21'; x.fillRect(0, 446, 1024, 66);
+    x.fillStyle = 'rgba(150,190,230,.18)'; for (let i = 8; i < 1024; i += 52) x.fillRect(i, 456, 40, 50);
+    x.fillStyle = '#2b3038'; x.fillRect(0, 0, 1024, 8);
+  }
+  const texLamas = textura(lienzoLamas); texLamas.wrapS = T.RepeatWrapping; texLamas.anisotropy = anis;
+  const matLamas = new T.MeshBasicMaterial({ map: texLamas, side: T.DoubleSide });
+  const lamas = new T.Mesh(pared(afuera, 0, 1, true, 160), matLamas); escena.add(lamas);
+  // El techo, gris claro y casi plano, con su borde.
+  const techoG = new T.Group(); escena.add(techoG);
+  // Los paneles del techo, apenas marcados (una baldosa cada 80).
+  const lienzoTecho = lienzoDe(256, 256);
+  { const x = lienzoTecho.getContext('2d'); x.fillStyle = '#ffffff'; x.fillRect(0, 0, 256, 256); x.fillStyle = 'rgba(70,80,95,.09)'; for (let i = 0; i < 256; i += 32) x.fillRect(0, i, 256, 2); x.fillStyle = 'rgba(70,80,95,.05)'; x.fillRect(126, 0, 3, 256); }
+  const texTecho = textura(lienzoTecho); texTecho.wrapS = texTecho.wrapT = T.RepeatWrapping; texTecho.repeat.set(1 / 80, 1 / 80); texTecho.anisotropy = anis;
+  const matCubierta = new T.MeshStandardMaterial({ color: 0xa9b0b9, map: texTecho, roughness: 0.9, metalness: 0.05, transparent: true });
+  const cubierta = new T.Mesh(extruir(afuera.map(q => new T.Vector2(q.x, -q.z)), 2), matCubierta); techoG.add(cubierta);
+  // El borde (más oscuro, como en la foto) y unos equipos arriba.
+  const matCanto = new T.MeshStandardMaterial({ color: 0x40464f, roughness: 0.7, transparent: true });
+  techoG.add(new T.Mesh(pared(afuera.map(q => q.clone().setY(0)), 0.5, 4.5, true, 1), new T.MeshBasicMaterial({ color: 0x3a4048, side: T.DoubleSide, transparent: true })));
+  [[-120, -80, 16, 10], [-90, -80, 10, 10], [110, -60, 18, 12], [40, 120, 14, 8], [-40, 120, 14, 8]].forEach(([x, z, w, d]) => { const eq = new T.Mesh(new T.BoxGeometry(w, 5, d), matCanto); eq.position.set(x, 4.5, z); techoG.add(eq); });
+  const matBordeTecho = new T.LineBasicMaterial({ color: 0x7d8690, transparent: true, opacity: 0.9 });
+  techoG.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(afuera.map(q => q.clone().setY(2.05))), matBordeTecho));
+  techoG.position.y = ALTO_EDIFICIO;
+  // La entrada de Humboldt: el cartel oscuro con el nombre y las columnas.
+  const entradaG = new T.Group(); escena.add(entradaG);
+  {
+    const lc = lienzoDe(1024, 128), x = lc.getContext('2d');
+    x.fillStyle = '#1b1f26'; x.fillRect(0, 0, 1024, 128);
+    x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '600 70px Poppins, sans-serif';
+    x.fillText('movistar arena', 512, 66);
+    const tc = textura(lc); tc.anisotropy = anis;
+    const zf = Math.max(...afuera.map(q => q.z)) + 0.4;
+    const cartel = new T.Mesh(new T.PlaneGeometry(96, 12), new T.MeshBasicMaterial({ map: tc })); cartel.position.set(0, 36, zf); entradaG.add(cartel);
+    const matCol = new T.MeshStandardMaterial({ color: 0x2b3038, roughness: 0.6, metalness: 0.3 });
+    [-42, -14, 14, 42].forEach(cx => { const col = new T.Mesh(new T.BoxGeometry(3.4, 30, 3.4), matCol); col.position.set(cx, 15, zf + 4); entradaG.add(col); });
+    // Si Poppins llega después, el cartel se vuelve a escribir con ella.
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.load)
+      document.fonts.load('600 70px Poppins').then(() => { x.fillStyle = '#1b1f26'; x.fillRect(0, 0, 1024, 128); x.fillStyle = '#ffffff'; x.fillText('movistar arena', 512, 66); tc.needsUpdate = true; }).catch(() => {});
+  }
+  // Los árboles de las veredas (Humboldt, Corrientes y Muñecas), sin tapar las puertas.
+  {
+    const matTronco = new T.MeshStandardMaterial({ color: 0x6b4a33, roughness: 0.9 });
+    const verdes = [0x4f8f3e, 0x5e9c45, 0x447d36].map(col => new T.MeshStandardMaterial({ color: col, roughness: 0.85, flatShading: true }));
+    const geoTronco = new T.CylinderGeometry(0.7, 1, 10, 6), geoCopa = new T.IcosahedronGeometry(6, 1);
+    const arbol = (px, py, i) => {
+      const k = 0.85 + ((i * 37) % 30) / 100, cx = px - 210, cz = py - 146;
+      const tronco = new T.Mesh(geoTronco, matTronco); tronco.position.set(cx, 5 * k, cz); tronco.scale.setScalar(k); escena.add(tronco);
+      const copa = new T.Mesh(geoCopa, verdes[i % 3]); copa.position.set(cx, 14 * k, cz); copa.scale.set(k, k * 0.9, k); escena.add(copa);
+    };
+    const puertas = incLugaresArena.filter(l => l.t === 'puerta');
+    const libre = (px, py) => !puertas.some(d => Math.hypot(d.cx - px, d.cy - py) < 22);
+    let i = 0;
+    for (let px = 80; px <= 340; px += 30) if (Math.abs(px - 210) > 32 && libre(px, 318)) arbol(px, 331, i++);
+    for (let py = -24; py <= 300; py += 34) { if (libre(398, py)) arbol(410, py, i++); if (libre(22, py)) arbol(9, py, i++); }
+  }
+  // La chimenea de ladrillo y la palmera, en la esquina de Humboldt y Corrientes.
+  {
+    const matLadrillo = new T.MeshStandardMaterial({ color: 0xa4552f, roughness: 0.9 });
+    const chimenea = new T.Mesh(new T.CylinderGeometry(3, 4.2, 92, 16), matLadrillo); chimenea.position.set(201, 46, 185); escena.add(chimenea);
+    const matAro = new T.MeshStandardMaterial({ color: 0x7c3b1f, roughness: 0.9 });
+    [70, 88].forEach(y => { const aro = new T.Mesh(new T.CylinderGeometry(3.6, 3.6, 2, 16), matAro); aro.position.set(201, y, 185); escena.add(aro); });
+    const palma = new T.Mesh(new T.CylinderGeometry(0.6, 0.9, 30, 6), new T.MeshStandardMaterial({ color: 0x8a6d4d, roughness: 0.9 })); palma.position.set(184, 15, 190); escena.add(palma);
+    const hojas = new T.Mesh(new T.IcosahedronGeometry(7, 1), new T.MeshStandardMaterial({ color: 0x3f7f35, roughness: 0.85, flatShading: true })); hojas.position.set(184, 31, 190); hojas.scale.set(1.2, 0.4, 1.2); escena.add(hojas);
+  }
+  // Cuánto está abierto (0: cerrado, como por fuera; 1: abierto, el plano por
+  // dentro). Si el 3D se vuelve a armar (cambió el plano) o se está editando, abierto.
+  let abre = cont._incCam || op0.editar ? 1 : 0, abreDesde = null, abreAnt = -1;
+  const pintarAbre = () => {
+    const k = abre * abre * (3 - 2 * abre);
+    lamas.visible = k < 1; lamas.scale.y = Math.max(0.001, ALTO_EDIFICIO * (1 - k));
+    entradaG.visible = k < 1; entradaG.scale.y = Math.max(0.001, 1 - k);
+    // El techo se levanta y se va apagando (más rápido que lo que sube).
+    const fuera = Math.max(0, 1 - k * 1.6);
+    techoG.visible = fuera > 0; techoG.position.y = ALTO_EDIFICIO + 46 * k; matBordeTecho.opacity = 0.9 * fuera;
+    techoG.traverse(o => { if (o.material) o.material.opacity = fuera; });
+    fachadaG.visible = k > 0.35;
+    capaEtq.style.opacity = k < 0.55 ? '0' : k >= 1 ? '' : String(((k - 0.55) / 0.45).toFixed(2));
+  };
+
   // Los pisos de arriba (P1, VIP y P3): el piso del anillo, a su altura, con
   // su borde de luz (en la fachada se ve como la línea de cada piso). Cada
   // piso lleva su nombre: en "Todos", se toca para ir a ese piso.
@@ -6547,6 +6652,8 @@ function incPlano3D(cont, op0) {
   });
 
   // Cámara: entra volando desde arriba hasta la vista de la platea 309, mirando al escenario.
+  // Para la presentación (por fuera): más baja y en diagonal, como la foto aérea.
+  const haciaFueraBase = new T.Vector3(300, 175, 470), haciaFuera = haciaFueraBase.clone(), objetivoFuera = new T.Vector3(0, 22, 0), camFin = new T.Vector3(), mirarFin = new T.Vector3();
   const objetivo = new T.Vector3(0, 0, 14), hacia = new T.Vector3(0, 318, 440), desde = new T.Vector3(300, 820, 780);
   let vistaSel = cont._incVista || 'general', mirarDesde = null;
   const vecMirar = new T.Vector3();
@@ -6579,7 +6686,7 @@ function incPlano3D(cont, op0) {
   };
   // Si la cámara todavía está entrando (recién abierto el plano), el viaje espera a que termine.
   let viajePendiente = null;
-  const viajarA = p => { if (intro < 1) { viajePendiente = p; return; } viajarAPunto(new T.Vector3(p.cx, p.hBase + (p.yAct || 0), p.cz), 270); };
+  const viajarA = p => { if (intro < 1 || abre < 1) { viajePendiente = p; if (abre < 1 && abreDesde !== null) abreDesde = Math.min(abreDesde, (performance.now() - t0) / 1000); return; } viajarAPunto(new T.Vector3(p.cx, p.hBase + (p.yAct || 0), p.cz), 270); };
 
   // Tamaño: el ancho del contenedor y un alto proporcionado; con
   // data-alto="pantalla" (en pantallas grandes), el alto que le da la página;
@@ -6606,7 +6713,7 @@ function incPlano3D(cont, op0) {
     // El encuadre de entrada: que el estadio entre entero en lo libre (en una pantalla angosta, un poco más lejos).
     const f = Math.max(1, 1.45 * h / Math.max(1, w - tapaW), h / Math.max(1, h - tapaH));
     const v = (INC_3D_VISTAS.find(x => x[0] === vistaSel) || INC_3D_VISTAS[0])[2];
-    hacia.set(v[0], v[1], v[2]).multiplyScalar(f);
+    hacia.set(v[0], v[1], v[2]).multiplyScalar(f); haciaFuera.copy(haciaFueraBase).multiplyScalar(f);
     if (controles) controles.maxDistance = 720 * f;
     if (reencuadrar === true) volver();
   };
@@ -6673,6 +6780,7 @@ function incPlano3D(cont, op0) {
   const pintarVistas = () => {
     const p = incPisoElegido();
     vistasEl.innerHTML = '<div class="inc-3d-vistas-l"><div class="inc-3d-vistas-t">Vista</div>'
+      + (editar ? '' : '<button type="button" data-x="1" title="Verlo cerrado, como es por fuera, y que se abra">Por fuera (presentación)</button>')
       + INC_3D_VISTAS.map(([k, n]) => '<button type="button" data-v="' + k + '" class="' + (k === vistaSel ? 'on' : '') + '">' + n + '</button>').join('')
       + '<div class="inc-3d-vistas-t">Piso</div><div class="inc-3d-vistas-p">' + [['', 'Todos']].concat(INC_PISOS.map(x => [x[0], x[0]])).map(([k, n]) => '<button type="button" data-vp="' + k + '" class="' + (k === p ? 'on' : '') + '">' + n + '</button>').join('') + '</div></div>';
   };
@@ -6680,6 +6788,7 @@ function incPlano3D(cont, op0) {
   vistasEl.addEventListener('click', e => {
     const b = e.target.closest ? e.target.closest('button') : null; if (!b) return;
     cerrarMenus();
+    if (b.dataset.x) { abre = 0; abreDesde = null; volver(); return; }
     if (b.dataset.v) elegirVista(b.dataset.v);
     else if (b.dataset.vp !== undefined) { if (b.dataset.vp === incPisoElegido()) volver(); else incElegirPiso(b.dataset.vp); }
   });
@@ -6706,7 +6815,7 @@ function incPlano3D(cont, op0) {
     const hit = rayo.intersectObjects(toques).find(x => { const q = piezas[x.object.userData.id]; return q && q.grupo.visible; });
     return hit ? hit.object.userData.id : '';
   };
-  lienzo.addEventListener('pointerdown', e => { cerrarMenus(); abajo = { x: e.clientX, y: e.clientY, t: Date.now() }; ultimoToque = Date.now(); if (controles) controles.autoRotate = false; });
+  lienzo.addEventListener('pointerdown', e => { cerrarMenus(); if (abre < 1 && abreDesde !== null) abreDesde = Math.min(abreDesde, (performance.now() - t0) / 1000); abajo = { x: e.clientX, y: e.clientY, t: Date.now() }; ultimoToque = Date.now(); if (controles) controles.autoRotate = false; });
   lienzo.addEventListener('pointerup', e => {
     if (!abajo) return;
     const lejos = Math.hypot(e.clientX - abajo.x, e.clientY - abajo.y) > 8, largo = Date.now() - abajo.t > 700; abajo = null;
@@ -6824,10 +6933,12 @@ function incPlano3D(cont, op0) {
       if (introDesde === null) introDesde = t;
       intro = Math.min(1, (t - introDesde) / 1.6);
       const k = 1 - Math.pow(1 - intro, 3);
-      finIntro.copy(hacia); finIntro.y += objetivo.y;
+      // Si se está presentando (cerrado), a la vista de afuera; si no, a la de siempre.
+      const presenta = abre < 1;
+      finIntro.copy(presenta ? haciaFuera : hacia); if (!presenta) finIntro.y += objetivo.y;
       // Va de a poco también hacia dónde mira (si antes miraba otro lugar, no gira de golpe).
-      camara.position.lerpVectors(origen, finIntro, k); camara.lookAt(mirarDesde ? vecMirar.lerpVectors(mirarDesde, objetivo, k) : objetivo);
-      if (intro >= 1) { mirarDesde = null; if (controles) { controles.target.copy(objetivo); controles.enabled = true; } if (viajePendiente) { const p = viajePendiente; viajePendiente = null; viajarA(p); } }
+      camara.position.lerpVectors(origen, finIntro, k); camara.lookAt(mirarDesde ? vecMirar.lerpVectors(mirarDesde, presenta ? objetivoFuera : objetivo, k) : presenta ? objetivoFuera : objetivo);
+      if (intro >= 1 && !presenta) { mirarDesde = null; if (controles) { controles.target.copy(objetivo); controles.enabled = true; } if (viajePendiente) { const p = viajePendiente; viajePendiente = null; viajarA(p); } }
     }
     if (viaje && intro >= 1) {
       viaje.t = Math.min(1, viaje.t + dt / 0.9);
@@ -6835,6 +6946,16 @@ function incPlano3D(cont, op0) {
       camara.position.lerpVectors(viaje.p0, viaje.p1, k); controles.target.lerpVectors(viaje.o0, viaje.o1, k);
       if (viaje.t >= 1) viaje = null;
     }
+    // La presentación: un momento por fuera y después se abre solo.
+    if (abre < 1 && intro >= 1) {
+      if (abreDesde === null) abreDesde = t + 1;
+      if (t >= abreDesde) abre = Math.min(1, (t - abreDesde) / 1.6);
+      const k = abre * abre * (3 - 2 * abre);
+      camFin.copy(hacia); camFin.y += objetivo.y;
+      camara.position.lerpVectors(haciaFuera, camFin, k); camara.lookAt(mirarFin.lerpVectors(objetivoFuera, objetivo, k));
+      if (abre >= 1) { mirarDesde = null; if (controles) { controles.target.copy(objetivo); controles.enabled = true; } if (viajePendiente) { const p = viajePendiente; viajePendiente = null; viajarA(p); } }
+    }
+    if (abre !== abreAnt) { abreAnt = abre; pintarAbre(); }
     // La fachada sube o baja (se corta a la altura del piso elegido) de a poco.
     if (altoFachada !== null && altoFachada !== altoFachadaObj) { altoFachada = acercar(altoFachada, altoFachadaObj, paso); fachadaG.scale.y = altoFachada; }
     Object.values(piezas).forEach(p => {
@@ -6849,6 +6970,7 @@ function incPlano3D(cont, op0) {
       const latido = 0.5 + 0.5 * Math.sin(t * vel);
       p.latir(0.22 + 0.24 * latido + (brillo ? 0.08 : 0));
       if (p.baliza) {
+        p.baliza.visible = p.balizaVer !== false && abre >= 0.9;
         const u = p.baliza.userData;
         if (u.nace === null) u.nace = t;
         const k = Math.min(1, (t - u.nace) / 0.7), rebote = 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);
@@ -6920,7 +7042,7 @@ function incPlano3D(cont, op0) {
           if (nv) { p.baliza = baliza(nv, n, desg); escena.add(p.baliza); }
           p.clave = clave;
         }
-        if (p.baliza) { const ver = !fuera && !apagado; p.baliza.position.set(p.cx, p.hBase + p.yAct + sube, p.bz); p.baliza.userData.chapa.pos.set(p.cx, p.hBase + p.yAct + sube + 70, p.bz); p.baliza.visible = ver; p.baliza.userData.chapa.el.style.visibility = ver ? '' : 'hidden'; }
+        if (p.baliza) { const ver = !fuera && !apagado; p.baliza.position.set(p.cx, p.hBase + p.yAct + sube, p.bz); p.baliza.userData.chapa.pos.set(p.cx, p.hBase + p.yAct + sube + 70, p.bz); p.baliza.visible = ver && abre >= 0.9; p.balizaVer = ver; p.baliza.userData.chapa.el.style.visibility = ver ? '' : 'hidden'; }
       });
       // Los pisos de arriba: en "Todos", de vidrio esmerilado y con su nombre;
       // con uno elegido, lleno, sin los de más arriba y con los de abajo apagados.
