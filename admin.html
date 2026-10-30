@@ -6,7 +6,7 @@
 <title>Gestión — Recital</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f2;color:#1a1a1a;font-size:14px;min-height:100vh}
@@ -131,74 +131,107 @@ tr:hover td{background:#fafaf8}
 .cc-plano-bar .cc-editar{margin-left:auto}
 /* Las pestañas del Centro de Control, en un selector. */
 .cc-tabs button{padding:0 13px}
-/* ── El Centro de Control con el diseño de la vista de la gerencia ──
-   El fondo gris claro con la marca de SBS apenas marcada; las tarjetas de
-   vidrio; los números como widgets; las botoneras de a dos; los filtros en
-   pastillas; las incidencias en tarjetas. Lo mismo, con la misma letra. */
-#sec-control{--tinta:#0b1b33;--tinta-2:#43546e;--tinta-3:#6b7b94;--azul:#1f6fe5;--vidrio:rgba(255,255,255,.56);--vidrio-fuerte:rgba(255,255,255,.74);--vidrio-borde:rgba(255,255,255,.72);--linea:rgba(11,27,51,.08);--desenfoque:saturate(180%) blur(24px);--sombra:inset 0 1px 0 rgba(255,255,255,.7),0 10px 30px rgba(15,40,85,.1),0 1px 3px rgba(15,40,85,.06);position:relative;isolation:isolate;background:#eceef1;color:var(--tinta);min-height:calc(100vh - 56px);letter-spacing:-.01em}
-#sec-control::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('fondo-sbs.jpg') center/cover no-repeat;opacity:.07}
-#sec-control::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(120% 80% at 50% 0%,rgba(255,255,255,.55),rgba(236,238,241,0) 70%)}
-#sec-control .ctrlbar{background:rgba(255,255,255,.5);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border-bottom:1px solid var(--linea)}
-#sec-control .cc-show,#sec-control .cc-sumar-fila,#sec-control .stat,#sec-control .t-plano,#sec-control .t-lista,#sec-control .cc-plano-izq,#sec-control .cc-plano-der,#sec-control #ccAccesos>div{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:var(--sombra)}
-#sec-control .cc-show,#sec-control .cc-sumar-fila{border-radius:16px;padding:12px 14px;transition:background .15s,transform .15s}
-#sec-control .cc-show:hover{background:var(--vidrio-fuerte);transform:translateY(-1px)}
-#sec-control .cc-show.on{background:rgba(255,255,255,.88);box-shadow:0 0 0 2px var(--tinta),var(--sombra)}
-#sec-control .cc-show-n{font-size:14px;color:var(--tinta);letter-spacing:-.2px}
-#sec-control .cc-show-f,#sec-control .cc-show-s{color:var(--tinta-3)}
-#sec-control .cc-grupo{text-transform:none;letter-spacing:0;font-size:12px;color:var(--tinta-2)}
-#sec-control .cc-show-chips .inc-cuenta{background:rgba(11,27,51,.06);color:var(--tinta-2)}
-#sec-control .cc-tablero{background:transparent;border:0;box-shadow:none;padding:0}
-#sec-control .cc-show-t{font-size:20px;font-weight:700;letter-spacing:-.4px;color:var(--tinta)}
-#sec-control .cc-plano-izq,#sec-control .cc-plano-der{border-radius:22px}
-#sec-control .cc-met-t{text-transform:none;letter-spacing:0;font-size:13px;color:var(--tinta-2);border-top:0;padding-top:0;margin:26px 4px 10px}
-#sec-control #incMetricasAdm .inc-tile,#sec-control #incMetricasAdm .inc-graf-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:var(--sombra);border-radius:16px}
-/* Los botones de la barra del show: de vidrio; cargar, en tinta. */
-#sec-control .bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 13px;border-radius:10px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.62);color:var(--tinta);font:600 12.5px Poppins,sans-serif;cursor:pointer;flex-shrink:0;box-shadow:0 1px 2px rgba(15,40,85,.08);transition:background .15s}
-#sec-control .bar-btn:hover{background:rgba(255,255,255,.9)}
-#sec-control .bar-btn.ico{width:36px;padding:0;font-size:15px}
-#sec-control .bar-btn.prim{background:var(--tinta);border-color:var(--tinta);color:#fff}
-#sec-control .bar-btn.prim:hover{background:#13294a}
-#sec-control .cc-tablero-top .inc-vivo{color:#15803d;font-weight:600;font-size:12px;background:rgba(21,128,61,.1);padding:5px 10px;border-radius:999px}
-#sec-control .cc-tablero-top .inc-vivo.mal{color:#9f1239;background:rgba(159,18,57,.1)}
-/* Los números, como los widgets de la gerencia. */
-#sec-control .t-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-#sec-control .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;flex:1 1 560px;max-width:860px}
-#sec-control .stat{--c:#0b1b33;border-radius:16px;padding:10px 14px 11px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:6px;min-width:0;min-height:66px;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s}
-#sec-control .stat-t{display:flex;align-items:center;gap:6px;max-width:100%;font-size:12px;font-weight:600;color:var(--tinta-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#sec-control .stat-t i{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--c);box-shadow:0 0 0 3px rgba(11,27,51,.06);margin:3px 0 3px 3px}
-#sec-control .stat-n{display:flex;align-items:baseline;gap:5px;min-width:0}
-#sec-control .stat b{font-size:25px;line-height:1;font-weight:700;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
-#sec-control .stat small{font-size:12px;color:var(--tinta-3);font-weight:500;white-space:nowrap}
-#sec-control .stat:hover{background:var(--vidrio-fuerte);transform:translateY(-1px)}
-#sec-control .stat.on{background:rgba(255,255,255,.88);box-shadow:0 0 0 2px var(--c),var(--sombra)}
-#sec-control .stat.pulso{animation:incPulsoStat 1.3s ease-in-out infinite}
-@keyframes incPulsoStat{0%,100%{box-shadow:0 0 0 0 rgba(159,18,57,.45),var(--sombra)}50%{box-shadow:0 0 0 6px rgba(159,18,57,0),var(--sombra)}}
-@media(max-width:700px){#sec-control .stats{grid-template-columns:repeat(6,minmax(0,1fr));flex-basis:100%;max-width:none}#sec-control .stat{grid-column:span 2}#sec-control .stat:nth-child(n+4){grid-column:span 3}}
-#sec-control .herr{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-/* Las botoneras de a dos, como en la gerencia (las pestañas, la vista, el armado, los pisos del editor). */
-#sec-control .cc-seg,#sec-control .cc-plano-pisos{display:inline-flex;background:rgba(11,27,51,.07);border:1px solid rgba(255,255,255,.55);border-radius:11px;padding:3px;gap:2px}
-#sec-control .cc-seg button,#sec-control .cc-plano-pisos button{border:0;background:transparent;font:600 12.5px Poppins,sans-serif;color:var(--tinta-2);padding:0 13px;min-height:32px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
-#sec-control .cc-seg button:hover,#sec-control .cc-plano-pisos button:hover{color:var(--tinta)}
-#sec-control .cc-seg button.on,#sec-control .cc-plano-pisos button.on{background:rgba(255,255,255,.95);color:var(--tinta);box-shadow:0 1px 3px rgba(11,27,51,.16),0 0 0 .5px rgba(11,27,51,.06)}
+/* ── El Centro de Control: el diseño "Credencial" (propuesta AX), el mismo de la gerencia ──
+   Azul marino de fondo; el pase del show, los tickets, el informe y la ficha del
+   puesto, en laminado claro; "en vivo" y lo elegido, en el azul de AX. Sin vidrio,
+   desenfoque, degradés ni sombras; radios de 6 (controles) y 12 (credenciales).
+   Los colores del panel (--r-ink, --r-muted, --r-line) se dan vuelta acá adentro:
+   lo de antes que los usa queda claro sobre oscuro; en lo laminado, vuelven a la tinta. */
+#sec-control{--navy:#0D1A2E;--panel:#13243E;--borde:#3A4C66;--linea:#1E2F49;--claro:#F2EFE6;--claro-2:#A9B6CA;--claro-3:#D6DEE9;--lam:#F2EFE6;--tinta:#141A26;--tinta-2:#4B5565;--perf:#CFC8B6;--ax:#0062FF;--ax-hover:#2F7BFF;--ax-activo:#0050D6;--ax-texto:#5B96FF;--grave:#D62839;--medio:#E8890C;--ok:#12877A;--r1:6px;--r2:12px;--mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;--r-ink:#F2EFE6;--r-ink2:#D6DEE9;--r-muted:#A9B6CA;--r-line:#3A4C66;--r-line2:#1E2F49;position:relative;background:var(--navy);color:var(--claro);min-height:calc(100vh - 56px)}
+#sec-control .pase,#sec-control .cc-plano-der,#sec-control .cc-show.on,#sec-control .cc-plano-ayuda{--r-ink:#141A26;--r-ink2:#4B5565;--r-muted:#4B5565;--r-line:#CFC8B6;--r-line2:#CFC8B6}
+#sec-control .rot{font:500 10.5px var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--ax-texto)}
+#sec-control .ranura{position:relative}
+#sec-control .ranura::before{content:'';position:absolute;top:10px;left:50%;width:54px;height:8px;margin-left:-27px;border-radius:4px;background:var(--navy)}
+/* La barra de la sección: el título, las pestañas y "Vista de la gerencia". */
+#sec-control .ctrlbar{background:var(--navy);border-bottom:1px solid var(--linea);color:var(--claro)}
+#sec-control .ctrlbar a.btn,#sec-control .btn-sec{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border-radius:var(--r1);border:1.5px solid var(--borde);background:transparent;color:var(--claro);font:500 13px Poppins,sans-serif;box-shadow:none}
+#sec-control .ctrlbar a.btn:hover,#sec-control .btn-sec:hover{border-color:var(--claro-2);background:transparent}
+#sec-control .btn-primary{border-radius:var(--r1);background:var(--ax);border:0;color:#fff;box-shadow:none}
+#sec-control .btn-primary:hover{background:var(--ax-hover)}
+#sec-control .cc-plano-der .btn-sec,#sec-control .pase .btn-sec{border-color:var(--tinta);color:var(--tinta)}
+/* Las botoneras de a dos (las pestañas, la vista, el armado, los pisos del editor): el elegido, en azul. */
+#sec-control .cc-seg,#sec-control .cc-plano-pisos{display:inline-flex;background:transparent;border:1.5px solid var(--borde);border-radius:var(--r1);padding:3px;gap:2px}
+#sec-control .cc-seg button,#sec-control .cc-plano-pisos button{border:0;background:transparent;font:500 13px Poppins,sans-serif;color:var(--claro-3);padding:0 13px;min-height:36px;border-radius:4px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;box-shadow:none;transition:background .15s,color .15s}
+#sec-control .cc-seg button:hover,#sec-control .cc-plano-pisos button:hover{color:#fff;background:rgba(91,150,255,.12)}
+#sec-control .cc-seg button.on,#sec-control .cc-plano-pisos button.on{background:var(--ax);color:#fff;box-shadow:none}
+#sec-control .cc-plano-pisos button{font-family:var(--mono);font-size:12px;letter-spacing:.4px}
 #sec-control .cc-seg svg{width:15px;height:15px;flex-shrink:0}
-#sec-control .cc-seg.chico button{font-size:12px;padding:0 11px}
-#sec-control .ctrlbar a.btn{display:inline-flex;align-items:center;min-height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.62);color:var(--tinta);font-weight:600;box-shadow:0 1px 2px rgba(15,40,85,.08)}
-/* El plano grande y, al costado, el listado. */
+#sec-control .cc-seg.chico button{font-size:12.5px;padding:0 11px}
+/* La lista de shows: el elegido, una credencial; los demás, con borde. */
+#sec-control .cc-show{border:1.5px solid var(--borde);background:transparent;border-radius:var(--r2);padding:12px 14px;color:var(--claro);box-shadow:none;transition:border-color .15s}
+#sec-control .cc-show:hover{border-color:var(--claro-2)}
+#sec-control .cc-show.on{background:var(--lam);border-color:var(--lam);color:var(--tinta);box-shadow:none}
+#sec-control .cc-show-n{font-size:14.5px;font-weight:500}
+#sec-control .cc-show-f{font:400 11px var(--mono);color:var(--r-muted)}
+#sec-control .cc-grupo{font:500 10.5px var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--ax-texto)}
+#sec-control .cc-hoy{font:600 9.5px var(--mono);letter-spacing:1px;background:var(--ax);border-radius:4px;padding:3px 6px}
+#sec-control .cc-sumar{width:100%;border-style:dashed}
+#sec-control .inc-cuenta{border-radius:var(--r1)}
+#sec-control .cc-show-chips .inc-cuenta{background:rgba(242,239,230,.1);color:var(--claro-3)}
+#sec-control .cc-show.on .cc-show-chips .inc-cuenta{background:rgba(20,26,38,.07);color:var(--tinta-2)}
+#sec-control .cc-show-chips .inc-cuenta strong{font-family:var(--mono)}
+#sec-control .empty{color:var(--claro-2)}
+/* El tablero del show: el pase arriba; el plano y, al costado, los tickets; abajo, el informe. */
+#sec-control .cc-tablero{background:transparent;border:0;box-shadow:none;padding:0}
+#sec-control .pase{background:var(--lam);color:var(--tinta);border-radius:var(--r2);padding:26px 18px 16px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px}
+#sec-control .pase-id{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:2px}
+#sec-control .pase-k{font:500 10.5px var(--mono);letter-spacing:1.4px;text-transform:uppercase;color:var(--tinta-2)}
+#sec-control .cc-show-t{font-size:26px;font-weight:600;letter-spacing:-.6px;line-height:1.15;color:var(--tinta);overflow-wrap:anywhere}
+#sec-control .cc-show-s{font:400 12px var(--mono);color:var(--tinta-2)}
+#sec-control .pase-centro{flex:3 1 480px;min-width:0;display:flex;flex-direction:column;gap:10px}
+#sec-control .pase-acc{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#sec-control .estado{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:10px 14px;border-radius:var(--r1);background:var(--ok);color:#fff;font-size:14px;font-weight:500}
+#sec-control .estado.grave{background:var(--grave)}#sec-control .estado.medio{background:var(--medio);color:var(--tinta)}
+#sec-control .estado svg{width:19px;height:19px;flex-shrink:0}
+#sec-control .estado small{font-size:12.5px;font-weight:400}
+#sec-control .estado .hace{margin-left:auto;font:600 12px var(--mono);letter-spacing:.6px;white-space:nowrap}
+#sec-control .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+#sec-control .stat{--c:var(--tinta);display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:0 0 9px;border:1.5px solid var(--tinta);border-radius:var(--r1);background:transparent;color:var(--tinta);overflow:hidden;text-align:left;font:inherit;cursor:pointer;min-width:0;min-height:66px}
+#sec-control .stat::before{content:'';display:block;width:100%;height:7px;background:var(--c);margin-bottom:3px}
+#sec-control .stat-n{order:1;padding:0 10px;display:flex;align-items:baseline;gap:5px;min-width:0}
+#sec-control .stat-t{order:2;padding:0 10px;font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--tinta)}
+#sec-control .stat-t i{display:none}
+#sec-control .stat b{font:600 26px/1 var(--mono)}
+#sec-control .stat small{font-size:11px;color:var(--tinta-2)}
+#sec-control .stat:hover{background:rgba(20,26,38,.05)}
+#sec-control .stat.on{outline:2.5px solid var(--ax);outline-offset:-1px}
+#sec-control .stat.pulso::before{animation:incLatido 1.2s infinite}
+@media(max-width:700px){#sec-control .stats{grid-template-columns:repeat(6,minmax(0,1fr))}#sec-control .stat{grid-column:span 2}#sec-control .stat:nth-child(n+4){grid-column:span 3}#sec-control .stat small{display:none}}
+#sec-control .pase-datos{flex:1 1 100%;display:flex;flex-wrap:wrap;border-top:1px dashed var(--perf);padding-top:10px;gap:6px 0}
+#sec-control .pase-dato{display:flex;flex-direction:column;gap:1px;padding:0 18px 0 0;margin-right:18px;border-right:1px dashed var(--perf)}
+#sec-control .pase-dato:last-child{border-right:0}
+#sec-control .pase-dato span{font:500 10px var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--tinta-2)}
+#sec-control .pase-dato b{font:600 19px var(--mono)}
+#sec-control .pase-dato small{font:400 11.5px Poppins,sans-serif;color:var(--tinta-2)}
+/* Los botones del pase: cargar, en el azul de AX; los demás, con borde de tinta. */
+#sec-control .bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 14px;border-radius:var(--r1);border:1.5px solid var(--tinta);background:transparent;color:var(--tinta);font:500 13.5px Poppins,sans-serif;cursor:pointer;flex-shrink:0;box-shadow:none}
+#sec-control .bar-btn:hover{background:rgba(20,26,38,.06)}
+#sec-control .bar-btn.ico{width:44px;padding:0;font-size:16px}
+#sec-control .bar-btn.prim{background:var(--ax);border-color:var(--ax);color:#fff;font-weight:600}
+#sec-control .bar-btn.prim:hover{background:var(--ax-hover)}
+#sec-control .t-plano .bar-btn{border-color:var(--borde);color:var(--claro)}#sec-control .t-plano .bar-btn:hover{border-color:var(--claro-2);background:transparent}
+#sec-control .inc-vivo{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px 0 10px;border-radius:var(--r1);background:var(--ax);color:#fff;font:600 12px var(--mono);letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+#sec-control .inc-vivo::before{background:#fff}
+#sec-control .inc-vivo.mal{background:var(--medio);color:var(--tinta)}#sec-control .inc-vivo.mal::before{background:var(--tinta);animation:none}
+#sec-control .herr{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* El plano grande y, al costado, los tickets. */
 #sec-control .t-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 #sec-control .t-grid>*{min-width:0}
-#sec-control .t-plano{border-radius:22px;padding:10px}
+#sec-control .t-plano{border-radius:var(--r2);background:var(--panel);padding:10px;--tj-muesca:var(--panel)}
+#sec-control .t-plano-cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:2px 2px 10px 6px}
+#sec-control .t-plano-cab .rot{margin-right:auto}
 /* Sin la tarjeta blanca del plano 2D; el 3D conserva su fondo azul (también en pantalla completa), como en la gerencia. */
 #sec-control .t-plano .inc-adm-plano{border:0;padding:0}
 #sec-control .t-plano .inc-adm-plano:not(.inc-3d){background:transparent}
-#sec-control .t-lista{border-radius:22px;display:flex;flex-direction:column;overflow:hidden}
+#sec-control .t-lista{border-radius:var(--r2);background:var(--panel);display:flex;flex-direction:column;overflow:hidden;--tj-muesca:var(--panel)}
 #sec-control .t-lista-cab{padding:14px 14px 10px;border-bottom:1px solid var(--linea)}
-#sec-control .t-lista-t{font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--tinta)}
-#sec-control .t-lista-t small{font-size:12px;font-weight:500;color:var(--tinta-3)}
+#sec-control .t-lista-t{font-size:16px;font-weight:600;margin-bottom:10px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;color:var(--claro)}
+#sec-control .t-lista-t small{font:400 11px var(--mono);letter-spacing:.8px;text-transform:uppercase;color:var(--claro-2)}
 #sec-control .t-lista-cuerpo{padding:12px}
 @media(min-width:1200px){
-  #sec-control .t-grid{grid-template-columns:minmax(0,1fr) 360px;align-items:start}
-  #incPlanoAdm{height:calc(100vh - 290px);min-height:500px}
-  #sec-control .t-lista{position:sticky;top:12px;height:calc(100vh - 210px);min-height:560px}
+  #sec-control .t-grid{grid-template-columns:minmax(0,1fr) 380px;align-items:start}
+  #incPlanoAdm{height:calc(100vh - 250px);min-height:500px}
+  #sec-control .t-lista{position:sticky;top:12px;height:calc(100vh - 150px);min-height:560px}
   #sec-control .t-lista-cuerpo{flex:1;overflow-y:auto}
 }
 @media(min-width:1600px){#sec-control .t-grid{grid-template-columns:minmax(0,1fr) 420px}}
@@ -206,36 +239,45 @@ tr:hover td{background:#fafaf8}
 #incPlanoAdm:not(.inc-3d),#ccPlanoPrevia:not(.inc-3d){display:flex;flex-direction:column}
 #incPlanoAdm:not(.inc-3d)>svg,#ccPlanoPrevia:not(.inc-3d)>svg{flex:1 1 0;min-height:0;height:auto!important}
 #sec-control .fila{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-#sec-control .chip{display:inline-flex;align-items:center;gap:4px;min-height:30px;font:600 12px Poppins,sans-serif;background:rgba(255,255,255,.62);border:1px solid rgba(11,27,51,.1);color:var(--tinta-2);border-radius:999px;padding:0 12px;cursor:pointer;white-space:nowrap}
-#sec-control .chip:hover{background:rgba(255,255,255,.9);color:var(--tinta)}
-#sec-control .chip.on,#sec-control .chip.prim{background:var(--tinta);border-color:var(--tinta);color:#fff}
+#sec-control .chip{display:inline-flex;align-items:center;gap:4px;min-height:32px;font:500 12px Poppins,sans-serif;background:transparent;border:1.5px solid var(--borde);color:var(--claro-3);border-radius:var(--r1);padding:0 11px;cursor:pointer;white-space:nowrap}
+#sec-control .chip:hover{border-color:var(--claro-2);color:#fff}
+#sec-control .chip.on,#sec-control .chip.prim{background:var(--ax);border-color:var(--ax);color:#fff}
 #sec-control .chip-x{border:0;background:none;color:inherit;cursor:pointer;font-size:11px;padding:0 0 0 2px}
-#sec-control .vacio{text-align:center;padding:40px 18px;color:var(--tinta-2);font-size:13px}
+#sec-control .inc-card-acts .chip{min-height:36px;padding:0 12px;border-color:var(--perf);color:var(--tinta)}
+#sec-control .inc-card-acts .chip.prim{background:var(--tinta);border-color:var(--tinta);color:var(--claro)}
+#sec-control .vacio{text-align:center;padding:40px 18px;color:var(--claro-2);font-size:13px;border:1.5px dashed var(--borde);border-radius:var(--r2)}
 #sec-control .inc-lugares{margin:10px 2px 2px;align-items:center}
-#sec-control .inc-lugares-t{font-size:12px;font-weight:600;color:var(--tinta-3);margin-right:4px}
-#sec-control .inc-lugar{min-height:34px;font:600 12.5px Poppins,sans-serif;background:rgba(255,255,255,.62);border:1px solid rgba(11,27,51,.1);color:var(--tinta);border-radius:10px;padding:0 12px}
-/* Las incidencias, en tarjetas como las de la gerencia. */
-#sec-control .inc-card{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.85);border-left:4px solid #cbd5e1;border-radius:14px;padding:11px 13px;margin-bottom:8px;box-shadow:0 1px 2px rgba(15,40,85,.05)}
-#sec-control .inc-card.resuelta{opacity:.75}
-#sec-control .inc-tipo{font-size:14.5px;color:var(--tinta);letter-spacing:-.2px}
-#sec-control .inc-hora{font-size:12.5px;color:var(--tinta-3)}
-#sec-control .inc-donde{font-size:12.5px;color:var(--tinta-2)}
-#sec-control .inc-donde b{color:var(--tinta)}
-#sec-control .inc-acc{font-size:12.5px;color:#15803d}
-#sec-control .inc-nota{font-size:13.5px;color:var(--tinta)}
-#sec-control .inc-res{font-size:13px;color:var(--tinta-2);background:rgba(11,27,51,.05);border-radius:9px;padding:7px 10px}
-#sec-control .inc-card-acts .chip{min-height:28px;padding:0 11px}
-#sec-control .inc-card.nueva{animation:incLlegaGer 1.6s ease-out}
-@keyframes incLlegaGer{0%{transform:translateY(-10px);opacity:0}25%{transform:none;opacity:1;background:#fff3bf}100%{background:rgba(255,255,255,.72)}}
-/* El editor del plano: lo de agregar, en pastillas; los títulos, con la letra de la gerencia. */
+#sec-control .cc-met-t{margin:28px 4px 10px;border-top:0;padding-top:0}
+#incMetricasAdm{--tj-muesca:var(--navy)}
+/* El editor del plano: a la izquierda, el editor y la vista previa (azul marino); a la derecha, la ficha del puesto (laminado). */
+#sec-control .cc-plano-izq{background:var(--panel);border:0;border-radius:var(--r2);box-shadow:none;color:var(--claro)}
+#sec-control .cc-plano-der{background:var(--lam);border:0;border-radius:var(--r2);box-shadow:none;color:var(--tinta)}
 #sec-control .cc-plano-barra{border-bottom:1px solid var(--linea)}
-#sec-control .cc-plano-barra .btn{min-height:32px;border-radius:999px;background:rgba(255,255,255,.62);border:1px solid rgba(11,27,51,.1);color:var(--tinta-2);font-weight:600}
-#sec-control .cc-plano-barra .btn:hover{background:rgba(255,255,255,.9);color:var(--tinta)}
-#sec-control .cc-plano-barra .btn.on{background:var(--tinta);border-color:var(--tinta);color:#fff}
-#sec-control .cc-plano-t{text-transform:none;letter-spacing:0;font-size:12px;color:var(--tinta-2)}
-#sec-control .cc-plano-grupo{text-transform:none;letter-spacing:0;font-size:11.5px}
-#sec-control .cc-plano-previa-t{font-size:14px;font-weight:700;letter-spacing:-.2px;color:var(--tinta)}
-#sec-control .cc-ayuda-btn{background:rgba(255,255,255,.62);border-color:rgba(11,27,51,.1)}
+#sec-control .cc-plano-barra .btn{min-height:40px;border-radius:var(--r1);background:transparent;border:1.5px solid var(--borde);color:var(--claro);font-weight:500}
+#sec-control .cc-plano-barra .btn:hover{border-color:var(--claro-2);color:#fff}
+#sec-control .cc-plano-barra .btn.on{background:var(--ax);border-color:var(--ax);color:#fff}
+#sec-control .cc-plano-barra .btn i{border-radius:2px;box-shadow:none}
+#sec-control .cc-plano-t{font:500 10.5px var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--ax-texto)}
+#sec-control .cc-plano-previa-t{font-size:13px;font-weight:500;color:var(--claro)}
+#sec-control .cc-plano-previa-t label{color:var(--claro-2)}
+#sec-control .cc-ayuda-btn{border:1.5px solid var(--borde);background:transparent;border-radius:var(--r1);color:var(--claro-3)}
+#sec-control .cc-plano-ed.con-ayuda .cc-ayuda-btn{background:var(--ax);border-color:var(--ax);color:#fff}
+#sec-control .cc-plano-ayuda{background:var(--lam);border:0;border-radius:var(--r2);box-shadow:none;color:var(--tinta)}
+#sec-control .cc-plano-aviso{background:rgba(0,98,255,.14);border:1.5px solid rgba(91,150,255,.45);color:var(--claro-3);border-radius:var(--r1)}
+#sec-control .cc-plano-guardar{background:var(--medio);border:0;color:var(--tinta);border-radius:var(--r1)}
+#sec-control .cc-plano-guardar .btn-sec{border-color:var(--tinta);color:var(--tinta);min-height:34px}
+#sec-control .cc-plano-flota{background:var(--tinta);border:1.5px solid var(--borde);border-radius:var(--r1);box-shadow:none}
+#sec-control .cc-plano-flota button{border-radius:4px}
+#sec-control .cc-plano-lista button{background:transparent;border:1.5px solid var(--perf);border-radius:var(--r1);color:var(--tinta)}
+#sec-control .cc-plano-lista button:hover{border-color:var(--tinta);background:transparent}
+#sec-control .cc-plano-lista small{background:rgba(20,26,38,.07);color:var(--tinta-2);border-radius:4px}
+#sec-control .cc-plano-grupo{font-family:var(--mono);letter-spacing:1.2px;color:var(--tinta-2)}
+#sec-control .cc-plano-der input[type=text],#sec-control .cc-plano-der input[type=number],#sec-control .cc-plano-der select,#sec-control .cc-plano-der textarea,#sec-control .cc-plano-der .fi{background:#fff;border:1.5px solid var(--perf);border-radius:var(--r1);color:var(--tinta)}
+#sec-control .cc-plano-der input:focus,#sec-control .cc-plano-der select:focus,#sec-control .cc-plano-der textarea:focus{border-color:var(--tinta);outline:none}
+#sec-control .cc-plano-estado.pend{color:#9A5B00}
+/* Los accesos de la gerencia. */
+#sec-control #ccAccesos .sup-card{background:var(--panel);border:1.5px solid var(--borde);border-radius:var(--r2);box-shadow:none;color:var(--claro)}
+#sec-control #ccAccesos .sup-name{color:var(--claro)}#sec-control #ccAccesos .sup-email{color:var(--claro-2)}
 /* Editor del plano del Arena */
 .cc-plano{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;padding:16px 22px;align-items:start}
 @media(max-width:1000px){.cc-plano{grid-template-columns:minmax(0,1fr)}}
@@ -1263,9 +1305,14 @@ tr:hover td{background:#f9f9fb}
   <div id="ccShows" class="cc-layout">
     <div class="cc-lista" id="ccListaShows"><div class="empty">Cargando…</div></div>
     <div class="cc-tablero" id="ccTablero">
-      <div class="cc-tablero-top">
-        <div style="flex:1;min-width:0"><div class="cc-show-t" id="incTitulo">—</div><div class="cc-show-s" id="incSubtitulo"></div></div>
-        <div style="display:flex;gap:8px;align-items:center">
+      <!-- El pase del show: quién y cuándo, la franja de estado, lo abierto por gravedad y las acciones. -->
+      <section class="pase ranura cc-tablero-top" aria-label="El show">
+        <div class="pase-id"><span class="pase-k">AX · Audience Experience</span><div class="cc-show-t" id="incTitulo">—</div><div class="cc-show-s" id="incSubtitulo"></div></div>
+        <div class="pase-centro">
+          <div class="estado" id="incEstadoAdm" role="status"></div>
+          <div class="stats" id="incResumenAdm"></div>
+        </div>
+        <div class="pase-acc">
           <span class="inc-vivo" id="incVivo">En vivo</span>
           <button class="bar-btn prim" onclick="incAbrirNuevaAdm()" title="Cargar una incidencia desde el panel (la ven también la gerencia y los supervisores)">+ Cargar incidencia</button>
           <button class="bar-btn ico" onclick="cargarIncidAdm()" title="Actualizar ahora" aria-label="Actualizar ahora">↻</button>
@@ -1277,14 +1324,12 @@ tr:hover td{background:#f9f9fb}
             </div>
           </div>
         </div>
-      </div>
-      <!-- Como en la vista de la gerencia: arriba los números y la botonera; el plano grande y, al costado, el listado. -->
-      <div class="t-cab">
-        <div class="stats" id="incResumenAdm"></div>
-        <div class="herr" id="incArmadoAdm"></div>
-      </div>
+        <div class="pase-datos" id="incPaseDatosAdm"></div>
+      </section>
+      <!-- Como en la gerencia: el plano grande (con su botonera) y, al costado, los tickets. -->
       <div class="t-grid">
         <section class="t-plano">
+          <div class="t-plano-cab"><span class="rot">Plano</span><div class="herr" id="incArmadoAdm"></div></div>
           <div class="inc-adm-plano" id="incPlanoAdm" data-alto="pantalla"></div>
           <div class="inc-lugares" id="incLugaresAdm"></div>
         </section>
@@ -1296,7 +1341,7 @@ tr:hover td{background:#f9f9fb}
           <div class="t-lista-cuerpo" id="incListaAdm"></div>
         </aside>
       </div>
-      <div class="cc-met-t">Métricas del show</div>
+      <div class="cc-met-t rot">Informe del show</div>
       <div id="incMetricasAdm"></div>
     </div>
   </div>
@@ -4816,10 +4861,13 @@ function esAprobado(p) { return !!p && (p.estado === 'aprobado' || p.estado === 
 // lo vigila): lo que carga el supervisor en la tablet y lo que ve el panel
 // tienen que hablar el mismo idioma. Sin datos del público: sólo qué pasó,
 // dónde y qué se hizo.
+// Como en la propuesta AX: leve (en gris), medio y grave, con lo que corresponde
+// hacer en cada uno. color: el fuerte (bordes, el 3D, el número en blanco encima);
+// fondo y plano: los suaves; talon: el del talón del ticket, con su letra.
 const INC_NIVELES = {
-  1: { nombre: 'Leve',     ayuda: 'Se resuelve en el lugar',                   color: '#15803d', fondo: '#dcfce7', plano: '#86efac' },
-  2: { nombre: 'Moderado', ayuda: 'Hace falta otra área',                      color: '#a16207', fondo: '#fef6da', plano: '#fcd34d' },
-  3: { nombre: 'Grave',    ayuda: 'Interviene alguien de afuera o hay riesgo', color: '#9f1239', fondo: '#ffe9ee', plano: '#fb7185' }
+  1: { nombre: 'Leve',  ayuda: 'Se resuelve en el lugar y queda registrado',            color: '#667080', fondo: '#ECEEF1', plano: '#C3CAD3', talon: '#B9C1CC', talonTinta: '#141A26' },
+  2: { nombre: 'Medio', ayuda: 'Se deriva a quien corresponde y se avisa a su equipo', color: '#B45309', fondo: '#FDF0DC', plano: '#F5B65A', talon: '#E8890C', talonTinta: '#141A26' },
+  3: { nombre: 'Grave', ayuda: 'Aviso inmediato al responsable del Arena',              color: '#D62839', fondo: '#FDE7EA', plano: '#F26D7D', talon: '#D62839', talonTinta: '#FFFFFF' }
 };
 // Cada categoría: sus tipos (con el nivel que traen por defecto) y el
 // check-list de lo que corresponde hacer. Es una propuesta para arrancar:
@@ -4835,6 +4883,9 @@ const INC_CATALOGO = [
     acciones: ['Se avisó a mantenimiento', 'Se señalizó o se cerró el paso', 'Se limpió', 'Se liberó el paso'] },
   { cat: 'Personal', tipos: [['Falta personal en el sector', 2], ['Personal descompuesto', 2], ['Problema de conducta o uniforme', 1]],
     acciones: ['Se cubrió con otra persona', 'Se avisó a coordinación', 'Se relevó a la persona'] },
+  // Las asistencias a personas con discapacidad (la propuesta AX las informa aparte).
+  { cat: 'Asistencia', tipos: [['Acompañamiento a ubicación accesible', 1], ['Salida diferenciada', 1], ['Asistencia a persona con discapacidad', 1]],
+    acciones: ['Se acompañó a la ubicación accesible', 'Se coordinó la salida diferenciada', 'Se avisó a Atención al Cliente'] },
   { cat: 'Otro', tipos: [['Otra incidencia', 1]],
     acciones: ['Se avisó a coordinación', 'Se resolvió en el lugar'] }
 ];
@@ -5422,6 +5473,7 @@ const INC_ICONOS_CAT = {
   'Ubicación': 'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z',
   'Infraestructura': 'M22.7 19 13.6 9.9c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1 0-1.4z',
   'Personal': 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z',
+  'Asistencia': 'M12 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm7 9v-2c-1.54.02-3.09-.75-4.07-1.83l-1.29-1.43a1.98 1.98 0 0 0-1.6-.72c-1.06.08-1.83 1-1.83 2.06V15c0 1.1.9 2 2 2h5v5h2v-5.5c0-1.1-.9-2-2-2h-3v-3.45c1.29 1.07 3.25 1.94 5 1.95zm-6.17 5A3 3 0 0 1 10 20a3 3 0 0 1-3-3c0-1.31.84-2.41 2-2.83V12.1A5 5 0 0 0 5 17a5 5 0 0 0 5 5 5 5 0 0 0 4.9-4h-2.07z',
   'Otro': 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2zm0-4h-2V7h2z'
 };
 // "recién", "hace 12 min", "hace 1 h 5 min"; de otro día, la fecha y la hora.
@@ -5431,50 +5483,97 @@ function incHace(iso) {
   const m = Math.max(0, Math.floor((Date.now() - t) / 60000));
   return m < 1 ? 'recién' : m < 60 ? 'hace ' + m + ' min' : 'hace ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '');
 }
+// A quién se derivó (como lo pide la propuesta AX): sale de lo que se hizo
+// ("Se avisó a seguridad" → Seguridad), sin que la tablet cargue nada más.
+const INC_DERIVA = [[/seguridad/i, 'Seguridad'], [/socorrismo|enfermer[ií]a|SAME|ambulancia/i, 'Servicio médico'], [/polic[ií]a/i, 'Policía'], [/mantenimiento/i, 'Mantenimiento'], [/boleter[ií]a/i, 'Boletería'], [/coordinaci[oó]n/i, 'Coordinación'], [/Atenci[oó]n al Cliente/i, 'Atención al Cliente']];
+function incDerivadoA(i) { const a = []; (i && i.acciones || []).forEach(x => INC_DERIVA.forEach(([re, n]) => { if (re.test(x) && !a.includes(n)) a.push(n); })); return a; }
+// Lo que lleva abierta, corto, para el talón: "04′", "1:35"; de otro día, la fecha.
+function incCorto(iso) {
+  const t = new Date(iso).getTime(); if (!iso || isNaN(t)) return '';
+  const d = incDia(iso); if (d !== incDia(new Date().toISOString())) return d.slice(8, 10) + '/' + d.slice(5, 7);
+  const m = Math.max(0, Math.floor((Date.now() - t) / 60000));
+  return m < 60 ? String(m).padStart(2, '0') + '′' : Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+}
+// El ticket: a la izquierda el talón, del color de la gravedad, con el ícono de la
+// categoría, cuánto lleva abierta y la gravedad; del otro lado de la perforación, qué
+// pasó, dónde (con el piso) y si se derivó. Tocado, se despliega con todo.
 // op: { abierta (desplegada), sinLugar (la lista es de un solo lugar), nueva, onclick (la función de la página, con el id), pie (botones) }.
 function incTarjetaHTML(i, op) {
   op = op || {};
   incEstiloTarjetas();
   const v = INC_NIVELES[i.nivel] || INC_NIVELES[1], resuelta = i.estado === 'resuelta', abierta = !!op.abierta, id = incEsc(i.id);
-  const f = incFichaDatos(i.sector), ico = INC_ICONOS_CAT[i.categoria] || INC_ICONOS_CAT.Otro;
-  const linea = '<b style="color:' + v.color + '">' + v.nombre + '</b>' + (resuelta ? ' · <span class="inc-tj-ok">Resuelta</span>' : '')
-    + (op.sinLugar ? '' : ' · ' + incEsc(i.sector) + (f && f.piso ? ' · ' + incEsc(f.piso) : ''));
+  const f = incFichaDatos(i.sector), ico = INC_ICONOS_CAT[i.categoria] || INC_ICONOS_CAT.Otro, deriva = incDerivadoA(i);
+  const lugar = op.sinLugar ? '' : '<div class="inc-tj-linea">' + incEsc(i.sector) + (f && f.piso ? ' · ' + incEsc(f.piso) : '') + '</div>';
+  const estado = resuelta ? '<div class="inc-tj-estado ok">✓ Resuelta ' + incEsc(incCuando(i.resuelta_at)) + '</div>'
+    : deriva.length ? '<div class="inc-tj-estado ok">→ Derivado a ' + incEsc(deriva.join(', ')) + '</div>'
+    : (i.acciones || []).length ? '<div class="inc-tj-estado">✓ ' + incEsc(i.acciones[0]) + '</div>'
+    : (i.nivel || 1) >= 2 ? '<div class="inc-tj-estado mal">Sin derivar todavía</div>' : '';
   const fila = (t, html) => html ? '<div class="inc-tj-f"><span>' + t + '</span><div>' + html + '</div></div>' : '';
   const tardo = resuelta && i.resuelta_at && i.created_at ? new Date(i.resuelta_at) - new Date(i.created_at) : -1;
   const det = !abierta ? '' : '<div class="inc-tj-det" onclick="event.stopPropagation()">'
     + fila('Dónde', '<b>' + incEsc(i.sector) + '</b>' + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + (f ? '<div class="inc-tj-chips">' + incFichaChips(f) + '</div>' : ''))
-    + fila('Qué es', incEsc(i.categoria || ''))
-    + fila('Qué se hizo', (i.acciones || []).map(a => '<div class="inc-tj-acc">✓ ' + incEsc(a) + '</div>').join(''))
+    + fila('Qué es', incEsc(i.categoria || '') + ' · ' + v.nombre)
+    + fila('Qué se hizo', (i.acciones || []).map(a => '<div class="inc-tj-acc">✓ ' + incEsc(a) + '</div>').join('') || ((i.nivel || 1) >= 2 && !resuelta ? '<span class="inc-tj-mal">Nadie la tomó todavía</span>' : ''))
+    + fila('Derivado a', deriva.map(incEsc).join(', '))
     + fila('Nota', i.nota ? '<div class="inc-tj-nota">' + incEsc(i.nota) + '</div>' : '')
     + fila('Cargada', incCuando(i.created_at) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : ''))
     + (resuelta ? fila('Resuelta', incCuando(i.resuelta_at) + (i.resuelta_por_nombre ? ' · ' + incEsc(i.resuelta_por_nombre) : '') + (tardo >= 0 ? ' · en ' + incEsc(incMinutos(tardo)) : '')
       + (i.resolucion ? '<div class="inc-tj-nota">' + incEsc(i.resolucion) + '</div>' : '')) : '')
     + '</div>';
-  return '<div class="inc-card inc-tj' + (resuelta ? ' resuelta' : '') + (abierta ? ' abierta' : '') + (op.nueva ? ' nueva' : '') + '" data-inc="' + id + '" style="border-left-color:' + v.color + '"'
+  return '<div class="inc-card inc-tj' + (resuelta ? ' resuelta' : '') + (abierta ? ' abierta' : '') + (op.nueva ? ' nueva' : '') + '" data-inc="' + id + '" style="--tj-c:' + v.talon + ';--tj-t:' + v.talonTinta + '"'
     + (op.onclick ? ' onclick="' + op.onclick + '(\'' + id + '\')" onkeydown="if((event.key===\'Enter\'||event.key===\' \')&&event.target===this){event.preventDefault();this.click()}"' : '')
     + ' role="button" tabindex="0" aria-expanded="' + abierta + '" title="' + (abierta ? 'Cerrar el detalle' : 'Ver el detalle' + (op.sinLugar ? '' : ' y el lugar en el plano')) + '">'
-    + '<div class="inc-tj-cab"><span class="inc-tj-ico" style="background:' + v.fondo + ';color:' + v.color + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ico + '"/></svg></span>'
-    + '<div class="inc-tj-txt"><div class="inc-tj-tipo">' + incEsc(i.tipo) + '</div><div class="inc-tj-linea">' + linea + '</div></div>'
-    + '<span class="inc-tj-hace" title="' + incEsc(incCuando(i.created_at)) + '">' + incEsc(incHace(i.created_at)) + '</span></div>'
+    + '<div class="inc-tj-cab"><span class="inc-tj-talon" title="' + (resuelta ? 'Resuelta' : 'Abierta desde las ' + incEsc(incHora(i.created_at))) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ico + '"/></svg>'
+    + '<b>' + (resuelta ? '✓' : incEsc(incCorto(i.created_at))) + '</b><small>' + v.nombre.toUpperCase() + '</small></span>'
+    + '<div class="inc-tj-txt"><div class="inc-tj-tipo">' + incEsc(i.tipo) + '</div>' + lugar + estado + '</div></div>'
     + det + (op.pie || '') + '</div>';
 }
 function incEstiloTarjetas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloTj')) return;
   const st = document.createElement('style'); st.id = 'incEstiloTj';
-  st.textContent = '.inc-tj{cursor:pointer;transition:box-shadow .15s,background .15s}.inc-tj:hover{box-shadow:0 3px 12px rgba(15,40,85,.12)}'
-    + '.inc-tj:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}.inc-tj.abierta{background:#fff;box-shadow:0 6px 20px rgba(15,40,85,.14)}'
-    + '.inc-tj-cab{display:flex;align-items:center;gap:11px}'
-    + '.inc-tj-ico{flex-shrink:0;width:36px;height:36px;border-radius:11px;display:grid;place-items:center}.inc-tj-ico svg{width:19px;height:19px;fill:currentColor}'
-    + '.inc-tj-txt{flex:1;min-width:0}.inc-tj-tipo{font-size:15px;font-weight:500;letter-spacing:-.1px;color:#0b1b33;line-height:1.25}'
-    + '.inc-tj-linea{font-size:12.5px;color:#43546e;margin-top:2px;line-height:1.35}.inc-tj-linea b{font-weight:400}.inc-tj-det b{font-weight:500}.inc-tj-ok{color:#15803d}'
-    + '.inc-tj-hace{flex-shrink:0;align-self:flex-start;font-size:12px;color:#5b6b82;font-variant-numeric:tabular-nums;white-space:nowrap;padding-top:2px}'
-    + '.inc-tj-hace::after{content:"▾";display:inline-block;margin-left:6px;transition:transform .15s}.inc-tj.abierta .inc-tj-hace::after{transform:rotate(180deg)}'
-    + '.inc-tj-det{margin-top:11px;padding-top:11px;border-top:1px solid rgba(11,27,51,.08);display:grid;gap:9px;cursor:auto}'
-    + '.inc-tj-f{display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;font-size:13px;color:#0b1b33;line-height:1.4}.inc-tj-f>span{color:#5b6b82;font-size:12px;padding-top:1px}'
-    + '.inc-tj-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.inc-tj-chips span{font-size:11.5px;background:rgba(11,27,51,.06);border-radius:999px;padding:2px 8px;color:#43546e}'
-    + '.inc-tj-acc{color:#15803d}.inc-tj-nota{white-space:pre-wrap}'
-    + '@media(prefers-reduced-motion:reduce){.inc-tj,.inc-tj-hace::after{transition:none}}';
+  const MONO = "'IBM Plex Mono',ui-monospace,monospace";
+  st.textContent = '.inc-tj{position:relative;display:block;margin:0 0 10px;padding:0;border:0;border-radius:12px;background:#F2EFE6;color:#141A26;box-shadow:none;overflow:visible;cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .15s}'
+    + '.inc-tj:hover{outline-color:rgba(91,150,255,.55)}.inc-tj:focus-visible{outline-color:#5B96FF}.inc-tj.abierta{outline-color:#0062FF}.inc-tj.resuelta{opacity:.8}'
+    + '.inc-tj-cab{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr)}'
+    + '.inc-tj-cab::before,.inc-tj-cab::after{content:"";position:absolute;left:62px;width:16px;height:16px;border-radius:50%;background:var(--tj-muesca,#13243E)}.inc-tj-cab::before{top:-8px}.inc-tj-cab::after{bottom:-8px}.inc-tj.abierta .inc-tj-cab::after,.inc-tj:has(.inc-card-acts) .inc-tj-cab::after{display:none}'
+    + '.inc-tj-talon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 4px;border-radius:12px 0 0 12px;background:var(--tj-c);color:var(--tj-t);text-align:center}'
+    + '.inc-tj.abierta .inc-tj-talon,.inc-tj:has(.inc-card-acts) .inc-tj-talon{border-radius:12px 0 0 0}'
+    + '.inc-tj-talon svg{width:20px;height:20px;fill:currentColor}.inc-tj-talon b{font:600 14px/1 ' + MONO + '}.inc-tj-talon small{font:500 9px/1.2 ' + MONO + ';letter-spacing:.8px}'
+    + '.inc-tj-txt{display:flex;flex-direction:column;gap:3px;min-width:0;padding:11px 14px;border-left:2px dashed #CFC8B6}'
+    + '.inc-tj-tipo{font-size:15px;font-weight:500;line-height:1.25;color:#141A26}'
+    + '.inc-tj-linea{font-size:12.5px;color:#4B5565}'
+    + '.inc-tj-estado{font-size:12px;color:#4B5565}.inc-tj-estado.ok{color:#0F6E63}.inc-tj-estado.mal,.inc-tj-mal{color:#9A2232;font-weight:600}'
+    + '.inc-tj-det{margin:0 14px;padding:12px 0 14px;border-top:1px dashed #CFC8B6;display:grid;gap:8px;cursor:auto}'
+    + '.inc-tj-f{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;font-size:13px;line-height:1.4;color:#141A26}.inc-tj-f>span{color:#4B5565;font-size:12px;padding-top:1px}.inc-tj-f b{font-weight:500}'
+    + '.inc-tj-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.inc-tj-chips span{font-size:11.5px;border:1px solid #CFC8B6;border-radius:6px;padding:2px 8px;color:#4B5565}'
+    + '.inc-tj-acc{color:#0F6E63}.inc-tj-nota{white-space:pre-wrap}'
+    + '.inc-tj .inc-card-acts{display:flex;gap:6px;justify-content:flex-start;margin:0;padding:10px 12px 12px;border-top:1px dashed #CFC8B6}'
+    + '.inc-tj.nueva{animation:incTjLlega 1.8s ease-out}@keyframes incTjLlega{0%{transform:translateY(-8px);opacity:0}25%{transform:none;opacity:1;outline-color:#0062FF}100%{outline-color:transparent}}'
+    + '@media(prefers-reduced-motion:reduce){.inc-tj{transition:none}.inc-tj.nueva{animation:none}}';
   document.head.appendChild(st);
+}
+// El pase del show (la gerencia y el panel): la franja de estado, para saber de un
+// vistazo cómo está la sala. Si hay graves, roja (cuántas, el aviso al responsable
+// del Arena y la más vieja); si hay medias, ámbar; si no, verde azulado: todo en orden.
+function incEstadoSalaHTML(abiertas) {
+  const peor = [3, 2].find(nv => abiertas.some(i => (i.nivel || 1) === nv));
+  if (!peor) {
+    const n = abiertas.length;
+    return { clase: '', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>Todo en orden</span><small>' + (n ? n + ' leve' + (n === 1 ? '' : 's') + ' abierta' + (n === 1 ? '' : 's') : 'Nada abierto') + '</small>' };
+  }
+  const de = abiertas.filter(i => (i.nivel || 1) === peor), vieja = de.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
+  const nom = peor === 3 ? ['grave', 'graves'] : ['media', 'medias'];
+  return { clase: peor === 3 ? 'grave' : 'medio', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.6"/></svg>'
+    + '<span>' + de.length + ' ' + nom[de.length === 1 ? 0 : 1] + ' abierta' + (de.length === 1 ? '' : 's') + '</span>'
+    + '<small>' + (peor === 3 ? 'Aviso inmediato al responsable del Arena · ' : '') + 'la más vieja: ' + incEsc(vieja.tipo) + ', ' + incEsc(vieja.sector) + '</small>'
+    + '<span class="hace">HACE ' + incEsc(incMinutos(Date.now() - new Date(vieja.created_at)).toUpperCase()) + '</span>' };
+}
+// Abajo del pase: lo abierto, las asistencias (personas con discapacidad) y lo derivado.
+function incPaseDatosHTML(lista) {
+  const abiertas = lista.filter(i => i.estado !== 'resuelta').length, asist = lista.filter(i => i.categoria === 'Asistencia').length, deriv = lista.filter(i => incDerivadoA(i).length).length;
+  return '<div class="pase-dato"><span>Abiertas</span><b>' + abiertas + '</b></div>'
+    + '<div class="pase-dato"><span>Asistencias</span><b>' + asist + '</b><small>accesibilidad</small></div>'
+    + '<div class="pase-dato"><span>Derivadas</span><b>' + deriv + '</b><small>a quien corresponde</small></div>';
 }
 // La ficha en HTML: el nombre con el ícono y el color de su tipo, qué es, el
 // piso y el lado, lo abierto ahí y, si la página deja, cargar una incidencia ahí.
@@ -5883,6 +5982,8 @@ function incGuardarVista(v) { try { localStorage.setItem('incVista', v); } catch
 function incMontarPlano(cont, op) {
   if (!cont) return;
   cont._incOp = op;
+  if (cont.classList && cont.classList.toggle) cont.classList.toggle('inc-ax', !!op.ax);
+  if (op.ax) incEstiloAx();
   incPlanos.add(cont);
   incEstiloPlano();
   if (!cont._incFicha && cont.addEventListener) {
@@ -5937,6 +6038,52 @@ function incEsperar3D(cont) {
   const fijo = cont.dataset && cont.dataset.alto === 'pantalla' && window.innerWidth >= 960;
   cont.style.height = fijo ? '' : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680)) + 'px';
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
+}
+// El estilo nuevo de los controles del plano (diseño "Credencial", propuesta AX):
+// sin vidrio ni desenfoque; paneles azul marino con borde, radio de 6 px, lo
+// elegido en el azul de AX y los números en monoespaciada. Sólo con op.ax.
+function incEstiloAx() {
+  if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloAx')) return;
+  const st = document.createElement('style'); st.id = 'incEstiloAx';
+  const MONO = "'IBM Plex Mono',ui-monospace,monospace", PANEL = 'background:rgba(13,26,46,.94);-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #3A4C66;border-radius:6px;box-shadow:none;';
+  st.textContent = '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F2EFE6;min-width:44px;min-height:44px;font:500 13px ' + INC_FUENTE + '}'
+    + '.inc-ax .inc-3d-btn:hover{border-color:#5B96FF;background:rgba(13,26,46,.98)}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid #5B96FF;outline-offset:2px}'
+    + '.inc-ax .inc-3d-btn.on{background:#0062FF;border-color:#0062FF;color:#fff}'
+    + '.inc-ax .inc-3d-ley{' + PANEL + 'color:#D6DEE9}'
+    // Que no la tapen los botones (ahora de 44 px): cuatro botones y sus espacios.
+    + '.inc-ax .inc-3d-ley{max-width:calc(100% - 226px)}'
+    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#D6DEE9}'
+    + '.inc-ax .inc-3d-pisos{' + PANEL + 'gap:4px;padding:4px}'
+    + '.inc-ax .inc-3d-pisos button{border-radius:4px;color:#F2EFE6;font:600 11.5px ' + MONO + ';letter-spacing:.4px;min-height:38px;padding:0 12px}'
+    + '.inc-ax .inc-3d-pisos button:hover{background:rgba(91,150,255,.14)}.inc-ax .inc-3d-pisos button.on{background:#0062FF;color:#fff;box-shadow:none}'
+    + '.inc-ax .inc-3d-capas{' + PANEL + 'background:#0D1A2E}'
+    + '.inc-ax .inc-3d-capas-l button,.inc-ax .inc-3d-vistas-l>button{border-radius:4px;color:#F2EFE6}'
+    + '.inc-ax .inc-3d-capas-l button::after{width:18px;height:18px;border-radius:4px;background:transparent;border:1.5px solid #5B6B82;box-sizing:border-box}'
+    + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:#0062FF;border-color:#0062FF;color:#fff;font-size:12px;line-height:1}'
+    + '.inc-ax .inc-3d-vistas-t{color:#5B96FF;font-family:' + MONO + ';letter-spacing:1.4px}'
+    + '.inc-ax .inc-3d-vistas-l>button.on{background:rgba(0,98,255,.2)}.inc-ax .inc-3d-vistas-l>button.on::after{color:#5B96FF}'
+    + '.inc-ax .inc-3d-vistas-p button{border-radius:4px;font-family:' + MONO + ';letter-spacing:.6px}.inc-ax .inc-3d-vistas-p button.on{background:#0062FF;color:#fff}'
+    // La ficha de un lugar: una credencial clara.
+    + '.inc-ax .inc-ficha,.inc-ax .inc-3d-ficha{background:#F2EFE6;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:12px;box-shadow:none;color:#141A26}'
+    + '.inc-ax .inc-ficha-ico{border-radius:6px}.inc-ax .inc-ficha-datos span{border:1px solid #CFC8B6;background:transparent;border-radius:6px;color:#4B5565}'
+    + '.inc-ax .inc-ficha-abiertas{color:#4B5565}.inc-ax .inc-ficha-accion{border-radius:6px;background:#0062FF;color:#fff}'
+    // El detalle de pantalla completa: azul marino, con los tickets.
+    + '.inc-ax .inc-3d-det{background:#0D1A2E;-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #3A4C66;border-radius:12px;box-shadow:none;color:#F2EFE6;--tj-muesca:#0D1A2E}'
+    + '.inc-ax .inc-3d-det-cab{border-bottom:1px solid #1E2F49}.inc-ax .inc-3d-det-tit span{color:#A9B6CA;font-family:' + MONO + ';font-size:11.5px;letter-spacing:.4px}'
+    + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:6px;border:1.5px solid #3A4C66;background:transparent;color:#F2EFE6}'
+    + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{border-color:#5B96FF;background:transparent}'
+    + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:6px;background:#0062FF}'
+    + '.inc-ax .inc-3d-det .inc-ficha-datos span{border:1px solid #3A4C66;background:transparent;border-radius:6px;color:#D6DEE9}'
+    + '.inc-ax .inc-3d-det-vacio{color:#A9B6CA}'
+    // El plano 2D: los pisos, "Mostrar", buscar y la leyenda, sobre el panel azul marino.
+    + '.inc-ax .inc-pisos{background:transparent;border:1.5px solid #3A4C66;border-radius:6px;padding:3px;gap:3px}'
+    + '.inc-ax .inc-pisos button{border-radius:4px;color:#F2EFE6;font:600 11.5px ' + MONO + ';letter-spacing:.4px}'
+    + '.inc-ax .inc-pisos button.on{background:#0062FF;color:#fff;box-shadow:none}'
+    + '.inc-ax .inc-plano-mostrar{color:#A9B6CA}'
+    + '.inc-ax .inc-capas button,.inc-ax .inc-bus-btn{border:1.5px solid #3A4C66;background:transparent;color:#F2EFE6;border-radius:6px}'
+    + '.inc-ax .inc-capas button.on,.inc-ax .inc-bus-btn.on{background:#0062FF;border-color:#0062FF;color:#fff}'
+    + '.inc-ax .inc-ley{color:#D6DEE9}';
+  document.head.appendChild(st);
 }
 // La leyenda de abajo del plano 2D (y la del 3D, encima).
 function incEstiloPlano() {
@@ -6094,7 +6241,7 @@ function incEstilo3D() {
     + '.inc-3d-det-x:hover,.inc-3d-det-todas:hover{background:rgba(11,27,51,.14)}'
     + '.inc-3d-det .inc-3d-det-accion{margin:10px 12px 0;min-height:40px;border-radius:11px;border:0;background:#0b1b33;color:#fff}'
     + '.inc-3d-det-lista{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 12px 14px;display:flex;flex-direction:column;gap:8px}'
-    + '.inc-3d-det .inc-card{background:rgba(255,255,255,.84);border:1px solid rgba(255,255,255,.92);border-left:4px solid;border-radius:13px;padding:11px 12px;box-shadow:0 1px 2px rgba(0,8,26,.06)}.inc-3d-det .inc-card.abierta{background:#fff}'
+    + '.inc-3d-det .inc-card{margin:0}'
     + '.inc-3d-det-vacio{font-size:13px;color:#43546e;text-align:center;padding:22px 10px}'
     + '@media' + INC_VENTANA_ABAJO + '{.inc-3d-det{left:max(calc(10px + var(--inc-izq,0px)),calc(50% - 330px));right:max(calc(10px + var(--inc-der,0px)),calc(50% - 330px));top:auto;bottom:calc(10px + var(--inc-inf,0px));width:auto;max-height:46%}}'
     // En el celular la ayuda va arriba de los pisos (si no, se pisan).
@@ -7333,8 +7480,8 @@ function incPlano3D(cont, op0) {
 // la leyenda, la separación entre segmentos y el orden fijo (grave siempre arriba);
 // las barras de una sola serie van en el azul del Arena. Cada marca muestra su
 // detalle al pasar el mouse o con el teclado.
-const INC_GRAF_NIVEL = { 1: '#15803d', 2: '#d97706', 3: '#be123c' };
-const INC_GRAF_AZUL = '#2a78d6';
+const INC_GRAF_NIVEL = { 1: '#A3ACB8', 2: '#E8890C', 3: '#D62839' };
+const INC_GRAF_AZUL = '#141A26';   // las barras de una sola serie, en tinta (el informe es una hoja clara)
 function incMinutos(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min' : Math.floor(m / 1440) + ' d ' + Math.floor(m % 1440 / 60) + ' h'; }
 // Las franjas: si la lista cruza varios días, una por día; si no, de 15, 30,
 // 60 o 120 minutos, la más fina que deje 16 columnas o menos. Cada una sabe de
@@ -7517,33 +7664,34 @@ function incMetricasActivar(cont) {
 function incEstiloMetricas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloMet')) return;
   const st = document.createElement('style'); st.id = 'incEstiloMet';
-  st.textContent = '.inc-met{position:relative}'
-    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px}'
-    + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}'
-    + '.inc-tile{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden;text-align:left;font:inherit;color:inherit;width:100%;display:block}'
-    + '.inc-tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(#38bdf8,#2a78d6)}'
-    + 'button.inc-tile{cursor:pointer;transition:box-shadow .15s}button.inc-tile:hover{box-shadow:0 3px 12px rgba(15,40,85,.12)}button.inc-tile:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}'
-    + '.inc-tile.on{box-shadow:inset 0 0 0 2px #2a78d6}'
-    + '.inc-tile-e{font-size:11.5px;color:#6b7280}'
-    + '.inc-tile-v{font-size:24px;font-weight:600;color:#111827;line-height:1.25;margin-top:2px}'
-    + '.inc-tile-s{font-size:12px;color:#4b5563;margin-top:2px;display:flex;align-items:center;gap:5px;min-width:0}'
-    + '.inc-tile-ir{font-size:11.5px;font-weight:600;color:#2a78d6;margin-top:6px}'
-    + '.inc-pt{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}'
-    + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.inc-grafs.dos{grid-template-columns:repeat(2,minmax(0,1fr))}'
+  const MONO = "'IBM Plex Mono',ui-monospace,monospace";
+  st.textContent = '.inc-met{position:relative;background:#F2EFE6;color:#141A26;border-radius:12px;padding:16px 18px 18px}'
+    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;margin-bottom:16px;border-bottom:1px dashed #CFC8B6}'
+    + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}.inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px dashed #CFC8B6;padding-left:0}.inc-tiles.angosto .inc-tile:last-child{border-bottom:0}'
+    + '.inc-tile{background:transparent;border:0;border-right:1px dashed #CFC8B6;border-radius:0;padding:4px 16px 14px;position:relative;text-align:left;font:inherit;color:inherit;width:100%;display:block}'
+    + '.inc-tile:first-child{padding-left:0}.inc-tile:last-child{border-right:0}'
+    + 'button.inc-tile{cursor:pointer}button.inc-tile:hover .inc-tile-ir{text-decoration:underline}button.inc-tile:focus-visible{outline:2px solid #0062FF;outline-offset:2px}'
+    + '.inc-tile.on{box-shadow:inset 0 -3px 0 #0062FF}'
+    + '.inc-tile-e{font-size:12px;color:#4B5565}'
+    + '.inc-tile-v{font:600 26px/1.15 ' + MONO + ';color:#141A26;margin-top:3px}'
+    + '.inc-tile-s{font-size:12.5px;color:#4B5565;margin-top:3px;display:flex;align-items:center;gap:6px;min-width:0}'
+    + '.inc-tile-ir{font-size:12px;font-weight:600;color:#0050D6;margin-top:6px}'
+    + '.inc-pt{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0}'
+    + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}.inc-grafs.dos{grid-template-columns:repeat(2,minmax(0,1fr))}'
     + '.inc-graf-ancha{grid-column:1/-1}'
-    + '.inc-graf-card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px 14px;min-width:0}'
-    + '.inc-graf-t{font-size:13px;font-weight:600;color:#111827;margin-bottom:6px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}'
-    + '.inc-graf-t small{font-size:11px;font-weight:500;color:#6b7280}'
-    + '.inc-leyenda{display:flex;gap:14px;font-size:11.5px;color:#4b5563;margin-bottom:4px;flex-wrap:wrap}'
+    + '.inc-graf-card{background:transparent;border:0;border-radius:0;padding:0;min-width:0}'
+    + '.inc-graf-t{font:500 11px ' + MONO + ';letter-spacing:.6px;color:#4B5565;margin-bottom:10px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}'
+    + '.inc-graf-t small{font:400 11px ' + INC_FUENTE + ';letter-spacing:0;color:#4B5565}'
+    + '.inc-leyenda{display:flex;gap:14px;font-size:11.5px;color:#4B5565;margin-bottom:6px;flex-wrap:wrap}'
     + '.inc-leyenda span{display:inline-flex;align-items:center;gap:6px}.inc-leyenda i{width:10px;height:10px;border-radius:2px;display:inline-block}'
     + '.inc-graf{max-width:100%;height:auto;display:block;font-family:var(--inc-fuente,Poppins),sans-serif;overflow:visible}'
-    + '.inc-marca{outline:none;cursor:default;transition:opacity .15s}.inc-marca.inc-toca{cursor:pointer}.inc-marca:hover path,.inc-marca:hover rect[fill]:not([fill="transparent"]),.inc-marca:focus path,.inc-marca:focus rect[fill]:not([fill="transparent"]){filter:brightness(1.12)}'
-    + '.inc-marca.apagada{opacity:.32}.inc-marca.on text{font-weight:700}'
-    + '.inc-marca:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}'
-    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#0f1117;color:#d1d5db;font:500 11.5px var(--inc-fuente,Poppins),sans-serif;padding:7px 10px;border-radius:8px;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s;box-shadow:0 6px 18px rgba(0,0,0,.18)}'
-    + '.inc-met-tip .v{color:#fff;font-weight:700;font-size:13px}'
-    + '.inc-met-vacio{text-align:center;color:#6b7280;font-size:12.5px;padding:18px;border:1px dashed #d1d5db;border-radius:12px;background:#fff}'
-    + '@media(prefers-reduced-motion:reduce){.inc-marca,button.inc-tile{transition:none}}';
+    + '.inc-marca{outline:none;cursor:default;transition:opacity .15s}.inc-marca.inc-toca{cursor:pointer}.inc-marca:hover path,.inc-marca:hover rect[fill]:not([fill="transparent"]),.inc-marca:focus path,.inc-marca:focus rect[fill]:not([fill="transparent"]){filter:brightness(1.25)}'
+    + '.inc-marca.apagada{opacity:.3}.inc-marca.on text{font-weight:700}'
+    + '.inc-marca:focus-visible{outline:2px solid #0062FF;outline-offset:2px}'
+    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#141A26;color:#D6DEE9;font:500 11.5px var(--inc-fuente,Poppins),sans-serif;padding:7px 10px;border-radius:6px;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s}'
+    + '.inc-met-tip .v{color:#fff;font-weight:600;font-size:13px}'
+    + '.inc-met-vacio{text-align:center;color:#4B5565;font-size:12.5px;padding:18px;border:1.5px dashed #CFC8B6;border-radius:12px;background:#F2EFE6}'
+    + '@media(prefers-reduced-motion:reduce){.inc-marca{transition:none}}';
   document.head.appendChild(st);
 }
 // ── fin INCIDENCIAS compartido ──
@@ -7724,7 +7872,7 @@ function incPisoCambiado() {
 function ccPlanoPrevia() {
   const cont = document.getElementById('ccPlanoPrevia'); if (!cont || ccTabActual !== 'plano') return;
   const ej = (document.getElementById('ccPlanoSim') || {}).checked ? ccPlanoEjemplo() : { niveles: {}, cuentas: {} };
-  incMontarPlano(cont, { armado: 'campos', niveles: ej.niveles, cuentas: ej.cuentas, sel: ccPlanoSel, onclick: 'ccPlanoTocar', titulo: 'Vista previa', vista: '3d', editar: { mover: 'ccPlanoMoverA', medir: 'ccPlanoMedirA' } });
+  incMontarPlano(cont, { ax: true, armado: 'campos', niveles: ej.niveles, cuentas: ej.cuentas, sel: ccPlanoSel, onclick: 'ccPlanoTocar', titulo: 'Vista previa', vista: '3d', editar: { mover: 'ccPlanoMoverA', medir: 'ccPlanoMedirA' } });
 }
 // Desde la vista previa 3D: el puesto que se llevó a otro lado, o que se estiró.
 const ccLimitar = (v, a, b) => Math.round(Math.min(b, Math.max(a, v)) * 2) / 2;
@@ -8123,11 +8271,14 @@ function renderIncidAdm() {
   // Los contadores se tocan: el listado muestra esas (grave, moderado, leve, resueltas, todas).
   const elegido = incNivelAdm ? String(incNivelAdm) : (incFiltroAdm === 'resueltas' || incFiltroAdm === 'todas' ? incFiltroAdm : '');
   // Como en la gerencia: el punto de color y qué es, arriba; el número grande (y "abiertas"), abajo.
-  const nombres = { 3: 'Graves', 2: 'Moderadas', 1: 'Leves' };
+  const nombres = { 3: 'Graves', 2: 'Medias', 1: 'Leves' };
   const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat' + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="incTocarStatAdm(\'' + clave + '\')" title="Ver ' + (txt + (sufijo ? ' ' + sufijo : '')).toLowerCase() + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
-  document.getElementById('incResumenAdm').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', INC_NIVELES[nv].color, nv === 3 && n(3), String(nv))).join('')
-    + stat(delDia.length - abiertas.length, 'Resueltas', '', '#94a3b8', false, 'resueltas') + stat(delDia.length, 'En total', '', '#0b1b33', false, 'todas');
+  document.getElementById('incResumenAdm').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', INC_NIVELES[nv].talon, nv === 3 && n(3), String(nv))).join('')
+    + stat(delDia.length - abiertas.length, 'Resueltas', '', '#12877A', false, 'resueltas') + stat(delDia.length, 'En total', '', '#141A26', false, 'todas');
+  const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('incEstadoAdm');
+  if (estEl) { estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html; }
+  const datosEl = document.getElementById('incPaseDatosAdm'); if (datosEl) datosEl.innerHTML = incPaseDatosHTML(delDia);
   const vista = incVistaPreferida();
   // La botonera, igual que la de la gerencia: dos grupos con íconos.
   const seg = (items, actual, fn) => '<div class="cc-seg seg">' + items.map(([k, t]) => '<button class="' + (actual === k ? 'on' : '') + '" onclick="' + fn + '(\'' + k + '\')">' + (CC_ICO[k] || '') + t + '</button>').join('') + '</div>';
@@ -8135,16 +8286,13 @@ function renderIncidAdm() {
     + '<button class="bar-btn cc-editar" onclick="ccTab(\'plano\')" title="Agregar, mover o sacar puertas, gastronomía, baños…">✎ Editar plano</button>';
   // La incidencia tocada: su lugar, elegido en el plano (la cámara va hasta ahí).
   const focoI = incFocoAdm ? delDia.find(i => String(i.id) === incFocoAdm) : null; if (!focoI) incFocoAdm = '';
-  incMontarPlano(document.getElementById('incPlanoAdm'), { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: incSectorAdm || (focoI ? focoI.sector : ''), onclick: 'incTocarSectorAdm', titulo: ((ccShows.find(x => x.id === ccConvId) || convs.find(x => x.id === ccConvId)) || {}).nombre,
+  incMontarPlano(document.getElementById('incPlanoAdm'), { ax: true, armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: incSectorAdm || (focoI ? focoI.sector : ''), onclick: 'incTocarSectorAdm', titulo: ((ccShows.find(x => x.id === ccConvId) || convs.find(x => x.id === ccConvId)) || {}).nombre,
     detalle: delDia, accionPantalla: { texto: '+ Cargar incidencia acá', fn: 'incAbrirNuevaAdm' } });
   // Las métricas: del día elegido (lo mismo que cuentan los números de arriba).
   const met = document.getElementById('incMetricasAdm');
   if (met) incPintarMetricas(met, delDia, { fn: 'incTocarMetricaAdm', sel: { categoria: incCatAdm, franja: incFranjaAdm, sector: incSectorAdm, inc: incFocoAdm } });
-  document.getElementById('incLugaresAdm').innerHTML = incLugaresSueltos(delDia, armado).map(l => {
-    const nv = res.niveles[l], c = res.cuentas[l] || 0, sel = incSectorAdm === l;
-    return '<button class="inc-lugar" style="' + (nv ? 'background:' + INC_NIVELES[nv].fondo + ';border-color:' + INC_NIVELES[nv].color + ';color:' + INC_NIVELES[nv].color + ';' : '') + (sel ? 'outline:2px solid var(--r-ink);' : '')
-      + '" onclick="incTocarSectorAdm(\'' + incEsc(l) + '\')">' + incEsc(l) + (c ? ' <strong>' + c + '</strong>' : '') + '</button>';
-  }).join('');
+  // Sin "Fuera del plano": lo que pasó en un lugar que el plano no muestra ya está en el listado.
+  document.getElementById('incLugaresAdm').innerHTML = '';
   // Filtros: día, estado y, si se tocó el plano, el sector.
   const dias = [...new Set(incListaAdm.map(i => incDia(i.created_at)).filter(Boolean))].sort().reverse();
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="incFiltrarAdm(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
