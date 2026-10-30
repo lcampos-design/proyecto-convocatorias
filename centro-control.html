@@ -81,6 +81,8 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .in:focus{border-color:var(--crema)}
 /* Lo que autocompleta el navegador, también azul oscuro (si no, lo pinta celeste). */
 .in:-webkit-autofill,.in:-webkit-autofill:hover,.in:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px var(--fondo) inset;-webkit-text-fill-color:var(--crema);caret-color:var(--crema)}
+/* Y con la misma letra: hasta que se toca la página, el navegador lo muestra con la suya. */
+.in:-webkit-autofill::first-line{font-family:var(--inc-fuente);font-size:16px}
 .btn-ok{width:100%;min-height:50px;background:var(--crema);color:var(--fondo);border:0;border-radius:0;font:600 15px var(--inc-fuente);letter-spacing:0;cursor:pointer}
 .btn-ok:hover{background:#fff}
 .btn-ok:disabled{background:var(--bloque-2);color:var(--gris);cursor:default}
