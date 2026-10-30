@@ -7636,7 +7636,7 @@ let incVistosAdm = null, incNuevosAdm = new Set();
 // A la izquierda los shows del Arena (los mismos que ve la gerencia, por
 // ger_convocatorias, con lo abierto de cada uno); a la derecha el tablero del
 // elegido. Mientras la sección está abierta, todo se actualiza cada 15 segundos.
-let ccConvId = null, ccShows = [], ccTabActual = 'shows';
+let ccConvId = null, ccShows = [], ccTabActual = 'shows', ccFechaSel = '', ccCuentasFuncion = {};
 function ccTab(t) {
   ccTabActual = t;
   [['shows', 'ccShows', 'ccTabShows'], ['plano', 'ccPlano', 'ccTabPlano'], ['accesos', 'ccAccesos', 'ccTabAccesos']].forEach(([k, sec, btn]) => {
@@ -7652,7 +7652,7 @@ async function renderCentroControl() {
   ccTab(ccTabActual);
   await ccCargarPlanoGuardado();
   await ccCargarShows();
-  if (!ccConvId) { const s0 = ccElegirInicial(); if (s0) await ccAbrirShow(s0.id); else ccSinShows(); }
+  if (!ccConvId) { const s0 = ccElegirInicial(); if (s0) await ccAbrirShow(s0.x.id, s0.f); else ccSinShows(); }
   else { renderIncidAdm(); cargarIncidAdm(); }
   clearInterval(incTimerAdm);
   incTimerAdm = setInterval(() => {
@@ -7677,6 +7677,16 @@ async function ccCargarShows() {
   ccShows = (!error && Array.isArray(data)) ? data
     : convs.filter(c => c.centro_control && !c.archivada).map(c => ({ id: c.id, nombre: c.nombre, fecha: c.fecha, venue: c.venue }));
   renderCcShows();
+  // Los shows de varias fechas: lo de cada fecha (la cuenta que trae el show es de todas juntas).
+  ccCuentasFuncion = {};
+  const varias = ccShows.filter(x => ccFechas(x).length > 1);
+  if (varias.length) {
+    try {
+      const r = await sb.from('incidencias').select('conv_id,nivel,estado,created_at').in('conv_id', varias.map(x => x.id));
+      ((r && r.data) || []).forEach(i => { const x = varias.find(y => y.id === i.conv_id); if (!x) return; const k = x.id + '|' + incFechaDeFuncion(i, ccFechas(x)), c = ccCuentasFuncion[k] || (ccCuentasFuncion[k] = { total: 0, 1: 0, 2: 0, 3: 0 }); c.total++; if (i.estado !== 'resuelta') c[i.nivel || 1]++; });
+    } catch (err) { console.error('cuentas por fecha', err); }
+    renderCcShows();
+  }
 }
 // Sumar un show: la lista de convocatorias que todavía no están, primero las
 // del Arena y, dentro, las que vienen antes que las que ya pasaron.
@@ -7707,13 +7717,15 @@ async function ccSumarShow(id) {
 async function ccQuitarShow() {
   if (!ccConvId) return;
   const x = ccShows.find(y => y.id === ccConvId) || convs.find(y => y.id === ccConvId) || {};
-  if (!confirm('¿Sacar "' + (x.nombre || 'este show') + '" del Centro de Control?\n\nLa gerencia deja de verlo y los supervisores ya no cargan incidencias en ese show. Las que ya se cargaron quedan guardadas.')) return;
+  // Se saca el show entero: con varias fechas, todas.
+  const nf = ccFechas(x).length;
+  if (!confirm('¿Sacar "' + (x.nombre || 'este show') + '"' + (nf > 1 ? ' (sus ' + nf + ' fechas)' : '') + ' del Centro de Control?\n\nLa gerencia deja de verlo y los supervisores ya no cargan incidencias en ese show. Las que ya se cargaron quedan guardadas.')) return;
   const { error } = await sb.from('convocatorias').update({ centro_control: false }).eq('id', ccConvId);
   if (error) { await avisarError('No se pudo sacar: ', error); return; }
   const c = convs.find(y => y.id === ccConvId); if (c) c.centro_control = false;
   ccConvId = null; toast('Quitado del Centro de Control');
   await ccCargarShows();
-  const s0 = ccElegirInicial(); if (s0) await ccAbrirShow(s0.id); else ccSinShows();
+  const s0 = ccElegirInicial(); if (s0) await ccAbrirShow(s0.x.id, s0.f); else ccSinShows();
 }
 
 // ── El plano del Arena: los puestos del anillo ──
@@ -8044,39 +8056,47 @@ async function incGuardarNuevaAdm() {
   } finally { btn.disabled = false; }
 }
 function ccFechas(x) { return String((x && x.fecha) || '').split(',').map(f => f.trim()).filter(Boolean).sort(); }
-// La fecha de la función de una incidencia (la data es por show): si el show tiene una sola
-// fecha, ésa; si tiene varias, la de su día, salvo que sea de madrugada (antes de las 6) y el
-// día anterior sea fecha del show (el show siguió después de las 0).
-function incFechaFuncionAdm(i) {
-  const fs = ccFechas(ccShows.find(x => x.id === ccConvId)), d = incDia(i && i.created_at);
-  if (!d) return '';
-  if (fs.length === 1) return fs[0];
+// Cada fecha es un show (las quincenas del Arena tienen un show por fecha; un evento externo,
+// como BTS, el mismo show en varias fechas): la lista y el tablero van por fecha.
+// La fecha de la función de una incidencia: con una sola fecha, ésa; con varias, la de su día
+// (la madrugada, antes de las 6, es de la función de la noche anterior); si cae en un día que
+// no es del show, la fecha más cercana.
+function incFechaDeFuncion(i, fs) {
+  const d = incDia(i && i.created_at);
+  if (!d || fs.length <= 1) return fs[0] || d;
   const antes = incDia(new Date(new Date(i.created_at).getTime() - 6 * 3600000).toISOString());
-  return antes !== d && fs.includes(antes) ? antes : d;
+  if (antes !== d && fs.includes(antes)) return antes;
+  if (fs.includes(d)) return d;
+  const dist = f => Math.abs(new Date(f + 'T12:00:00') - new Date(d + 'T12:00:00'));
+  return fs.reduce((m, f) => dist(f) < dist(m) ? f : m, fs[0]);
 }
-function ccGrupo(x) { const fs = ccFechas(x), hoy = hoyLocalISO(); return fs.includes(hoy) ? 'hoy' : (fs.length && fs[0] > hoy) ? 'proximos' : 'anteriores'; }
-// El show de hoy; si no hay, el próximo; si no, el último que pasó.
+function incFechaFuncionAdm(i) { return incFechaDeFuncion(i, ccFechas(ccShows.find(x => x.id === ccConvId))); }
+// Las funciones (una por fecha de cada show) y la que conviene abrir de un show: la de hoy, la próxima o la última.
+function ccFunciones() { return ccShows.flatMap(x => { const fs = ccFechas(x); return (fs.length ? fs : ['']).map(f => ({ x, f, varias: fs.length > 1 })); }); }
+function ccFechaInicial(x) { const fs = ccFechas(x), hoy = hoyLocalISO(); return fs.includes(hoy) ? hoy : fs.find(f => f > hoy) || fs[fs.length - 1] || ''; }
+// La función que se abre al entrar: la de hoy; si no hay, la próxima; si no, la última que pasó.
 function ccElegirInicial() {
-  const hoy = ccShows.filter(x => ccGrupo(x) === 'hoy');
-  if (hoy.length) return hoy[0];
-  const prox = ccShows.filter(x => ccGrupo(x) === 'proximos').sort((a, b) => ccFechas(a)[0].localeCompare(ccFechas(b)[0]));
-  if (prox.length) return prox[0];
-  return ccShows.slice().sort((a, b) => (ccFechas(b).slice(-1)[0] || '').localeCompare(ccFechas(a).slice(-1)[0] || ''))[0] || null;
+  const hoy = hoyLocalISO(), fs = ccFunciones();
+  return fs.find(e => e.f === hoy) || fs.filter(e => e.f > hoy).sort((a, b) => a.f.localeCompare(b.f))[0] || fs.filter(e => e.f).sort((a, b) => b.f.localeCompare(a.f))[0] || fs[0] || null;
 }
 function renderCcShows() {
   const cont = document.getElementById('ccListaShows'); if (!cont) return;
   const sumar = '<button class="btn btn-sm btn-sec cc-sumar" onclick="ccAbrirSumar()">+ Sumar show</button>';
   if (!ccShows.length) { cont.innerHTML = sumar + '<div class="empty">Todavía no hay shows en el Centro de Control. Sumá los que van a usar este procedimiento: la gerencia ve sólo esos y los supervisores cargan incidencias sólo en esos.</div>'; return; }
-  const chips = x => {
+  // Lo abierto de una función: la de un show de una sola fecha la trae el show; la de uno de varias, se cuenta aparte.
+  const chips = ({ x, f, varias }) => {
     if (!('total' in x)) return '';
+    if (varias) { const n = ccCuentasFuncion[x.id + '|' + f] || { total: 0 }; x = { total: n.total, abiertas_1: n[1], abiertas_2: n[2], abiertas_3: n[3] }; }
     const c = [3, 2, 1].filter(nv => x['abiertas_' + nv]).map(nv => '<span class="inc-cuenta" style="background:' + INC_NIVELES[nv].fondo + ';color:' + INC_NIVELES[nv].color + '"><strong>' + x['abiertas_' + nv] + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('');
     return '<div class="cc-show-chips">' + (c || '<span class="inc-cuenta">' + (x.total ? 'Sin abiertas · ' + x.total + ' en total' : 'Sin incidencias') + '</span>') + '</div>';
   };
-  const tarjeta = x => '<button class="cc-show' + (x.id === ccConvId ? ' on' : '') + '" onclick="ccAbrirShow(\'' + x.id + '\')"><div class="cc-show-n">' + e(x.nombre || '') + (ccGrupo(x) === 'hoy' ? '<span class="cc-hoy">Hoy</span>' : '') + '</div>'
-    + '<div class="cc-show-f">' + e(resumenFechasTexto(x.fecha) || 'Sin fechas') + '</div>' + chips(x) + '</button>';
-  const g = k => ccShows.filter(x => ccGrupo(x) === k);
-  const prox = g('proximos').sort((a, b) => ccFechas(a)[0].localeCompare(ccFechas(b)[0]));
-  const ant = g('anteriores').sort((a, b) => (ccFechas(b).slice(-1)[0] || '').localeCompare(ccFechas(a).slice(-1)[0] || ''));
+  // Una tarjeta por función (cada fecha es un show).
+  const hoy = hoyLocalISO();
+  const tarjeta = f => '<button class="cc-show' + (f.x.id === ccConvId && f.f === ccFechaSel ? ' on' : '') + '" onclick="ccAbrirShow(\'' + f.x.id + '\',\'' + f.f + '\')"><div class="cc-show-n">' + e(f.x.nombre || '') + (f.f === hoy ? '<span class="cc-hoy">Hoy</span>' : '') + '</div>'
+    + '<div class="cc-show-f">' + e(resumenFechasTexto(f.f) || 'Sin fechas') + '</div>' + chips(f) + '</button>';
+  const todas = ccFunciones(), g = k => todas.filter(f => k === 'hoy' ? f.f === hoy : k === 'proximos' ? f.f > hoy : f.f < hoy);
+  const prox = g('proximos').sort((a, b) => a.f.localeCompare(b.f));
+  const ant = g('anteriores').sort((a, b) => b.f.localeCompare(a.f));
   cont.innerHTML = sumar + (g('hoy').length ? '<div class="cc-grupo">Hoy</div>' + g('hoy').map(tarjeta).join('') : '')
     + (prox.length ? '<div class="cc-grupo">Próximos</div>' + prox.map(tarjeta).join('') : '')
     + (ant.length ? '<div class="cc-grupo">Anteriores</div>' + ant.map(tarjeta).join('') : '');
@@ -8091,13 +8111,14 @@ function ccSinShows() {
   ['incResumenAdm', 'incArmadoAdm', 'incPlanoAdm', 'incLugaresAdm', 'incFiltrosAdm', 'incListaAdm', 'incMetricasAdm'].forEach(k => { const el = document.getElementById(k); if (el) el.innerHTML = ''; });
   const q = document.getElementById('ccQuitar'); if (q) q.style.display = 'none';
 }
-async function ccAbrirShow(id) {
+async function ccAbrirShow(id, fecha) {
   const x = ccShows.find(y => y.id === id) || convs.find(y => y.id === id); if (!x) return;
-  ccConvId = id;
+  // La fecha es el show: el tablero, el resumen y el informe son de ella.
+  ccConvId = id; ccFechaSel = fecha !== undefined ? fecha : ccFechaInicial(x);
   const q = document.getElementById('ccQuitar'); if (q) q.style.display = '';
   document.getElementById('incTitulo').textContent = x.nombre || '';
-  document.getElementById('incSubtitulo').textContent = [resumenFechasTexto(x.fecha), x.venue].filter(Boolean).join(' · ');
-  incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = null; incVistosAdm = null; incNuevosAdm = new Set(); incNivelAdm = 0; incFocoAdm = incCatAdm = incFranjaAdm = '';
+  document.getElementById('incSubtitulo').textContent = [ccFechaSel ? resumenFechasTexto(ccFechaSel) : resumenFechasTexto(x.fecha), x.venue].filter(Boolean).join(' · ');
+  incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = ccFechaSel; incVistosAdm = null; incNuevosAdm = new Set(); incNivelAdm = 0; incFocoAdm = incCatAdm = incFranjaAdm = '';
   // El armado del campo, antes de dibujar: el 3D lo espera (la primera vez) y se arma una vez.
   const armados = incTraerDatos(incCargarArmados());
   renderCcShows();
@@ -8153,8 +8174,6 @@ async function cargarIncidAdm() {
   incListaAdm = data || [];
   incNuevosAdm = incVistosAdm ? new Set(incListaAdm.filter(i => !incVistosAdm.has(i.id)).map(i => i.id)) : new Set();
   incVistosAdm = new Set(incListaAdm.map(i => i.id));
-  // La primera vez arranca en el día de hoy si hubo algo hoy; si no, en todos.
-  if (incDiaAdm === null) { const hoy = hoyLocalISO(); incDiaAdm = incListaAdm.some(i => incFechaFuncionAdm(i) === hoy) ? hoy : ''; }
   renderIncidAdm();
 }
 // Las del día elegido ('' = todos los días).
@@ -8175,7 +8194,7 @@ function incTocarSectorAdm(sector) {
   if (f && f.sector === sector && incSectorAdm !== sector) { renderIncidAdm(); return; }
   incSectorAdm = incSectorAdm === sector ? '' : sector; renderIncidAdm();
 }
-function incFiltrarAdm(k, v) { if (k === 'estado') { incFiltroAdm = v; incNivelAdm = 0; } if (k === 'dia') incDiaAdm = v; if (k === 'sector') incSectorAdm = v; if (k === 'nivel') incNivelAdm = 0; if (k === 'categoria') incCatAdm = v; if (k === 'franja') incFranjaAdm = v; renderIncidAdm(); }
+function incFiltrarAdm(k, v) { if (k === 'estado') { incFiltroAdm = v; incNivelAdm = 0; } if (k === 'sector') incSectorAdm = v; if (k === 'nivel') incNivelAdm = 0; if (k === 'categoria') incCatAdm = v; if (k === 'franja') incFranjaAdm = v; renderIncidAdm(); }
 // Tocar una incidencia del listado: se despliega con todo y el plano va hasta su lugar (el listado no se filtra); otra vez, se cierra.
 function incTocarIncAdm(id) { incFocoAdm = incFocoAdm === id ? '' : id; renderIncidAdm(); }
 // Tocar una métrica: como en la gerencia (categoría y franja filtran; sector y la que lleva más tiempo abierta van al plano).
@@ -8228,13 +8247,11 @@ function renderIncidAdm() {
   // Sin "Fuera del plano": lo que pasó en un lugar que el plano no muestra ya está en el listado.
   document.getElementById('incLugaresAdm').innerHTML = '';
   // Filtros: día, estado y, si se tocó el plano, el sector.
-  const dias = [...new Set(incListaAdm.map(incFechaFuncionAdm).filter(Boolean))].sort().reverse();
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="incFiltrarAdm(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
   const quitar = (k, t) => '<span class="chip on">' + t + ' <button type="button" class="chip-x" onclick="incFiltrarAdm(\'' + k + '\',\'\')" aria-label="Sacar el filtro">✕</button></span>';
   document.getElementById('incListaT').innerHTML = 'Incidencias<small>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + ' · ' + delDia.length + ' en total</small>';
   document.getElementById('incFiltrosAdm').innerHTML =
     '<div class="cc-seg seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (incFiltroAdm === v ? 'on' : '') + '" onclick="incFiltrarAdm(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
-    + (dias.length > 1 || (dias.length === 1 && incDiaAdm !== dias[0]) ? chip('dia', '', 'Todos los días', !incDiaAdm) + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), incDiaAdm === d)).join('') : '')
     + (incNivelAdm ? quitar('nivel', INC_NIVELES[incNivelAdm].nombre) : '')
     + (incSectorAdm ? quitar('sector', incEsc(incSectorAdm)) + '<button class="chip prim" onclick="incAbrirNuevaAdm(incSectorAdm)">+ Cargar acá</button>' : '')
     + (incCatAdm ? quitar('categoria', incEsc(incCatAdm)) : '') + (incFranjaAdm ? quitar('franja', incEsc(incFranjaNombre(incFranjaAdm))) : '');
