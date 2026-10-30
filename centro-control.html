@@ -26,7 +26,7 @@
   /* La gravedad: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
   --celeste:#019DF4;   /* el celeste de la marca (las cifras del resumen del show y el informe) */
   --celeste-osc:#003150;--celeste-letra:#019DF4;   /* el resumen del show: fondo oscuro y la letra en el celeste (4,6 a 1) */
-  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#7A6600;--media-letra:#FFF0B8;--leve:#4E5560;--leve-letra:#E4E7EC;
+  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#9C7100;--media-letra:#FFF6D6;--leve:#4E5560;--leve-letra:#E4E7EC;
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
@@ -200,7 +200,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .pantalla .inc-met-tip{background:var(--fondo);color:var(--crema-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--crema)}
 .pantalla .inc-met-vacio{background:var(--celeste-osc);border:0;border-radius:0;color:var(--celeste-letra)}
 /* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad. */
-.pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFF0B8}
+.pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFF6D6}
 .pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px}
 .pantalla .inc-tj:hover{outline-color:rgba(244,241,234,.45)}.pantalla .inc-tj.abierta{outline-color:var(--crema)}
 .pantalla .inc-tj-cab{grid-template-columns:78px minmax(0,1fr)}
@@ -2139,13 +2139,7 @@ function incPlano3D(cont, op0) {
       oscura.addColorStop(0, '#262b33'); oscura.addColorStop(0.45, '#3b424c'); oscura.addColorStop(1, '#2a3038');
       for (let j = 0; j < FILAS; j++) { x.fillStyle = enOnda(i / 2048, (j + 0.5) * FILA) ? oscura : plata; x.fillRect(i + 2, j * FILA + 1, 12, FILA - 2); }
     }
-    // Los ventanales: aberturas sueltas, con su marco oscuro y la perfilería (no una franja).
-    const ventanal = (x0, y0, w, alto, paso) => {
-      x.fillStyle = '#0b0f16'; x.fillRect(x0, y0, w, alto);
-      x.fillStyle = 'rgba(140,180,220,.34)'; for (let i = x0 + 6; i + paso - 6 <= x0 + w; i += paso) x.fillRect(i, y0 + 6, paso - 6, alto - 12);
-      x.fillStyle = '#0b0f16'; x.fillRect(x0, y0 + alto / 2 - 2, w, 4);
-    };
-    ventanal(1180, 110, 336, 150, 48); ventanal(300, 80, 128, 228, 42);
+    // Sin ventanales en la textura (caían donde fuera, debajo de las M): los que van, van sueltos, en su lugar.
     // La planta baja oscura y el borde de arriba.
     x.fillStyle = '#151a21'; x.fillRect(0, 446, 2048, 66);
     x.fillStyle = 'rgba(150,190,230,.18)'; for (let i = 8; i < 2048; i += 52) x.fillRect(i, 456, 40, 50);
@@ -2219,22 +2213,22 @@ function incPlano3D(cont, op0) {
     // Los escalones (el más alto, junto a la puerta).
     const matEsc = new T.MeshStandardMaterial({ color: 0xa9a7a2, roughness: 0.9 });
     [0, 1, 2].forEach(i => { const alto = 1.5 - i * 0.5, esc = new T.Mesh(new T.BoxGeometry(ANCHO + 4, alto, 2.6), matEsc); esc.position.set(0, alto / 2, zf + 1.3 + i * 2.6); entradaG.add(esc); });
-    // Las "M" grandes, como en las fotos: en el frente, una arriba cerca de la
-    // esquina con Cancha (con el ventanal alto debajo); en el costado Cancha, una
-    // arriba en la punta de Dorrego; en el costado de la Sede, la grande en el medio
-    // y una chica cerca de Humboldt. Atrás va el cartel con el logo.
+    // Las "M" grandes, como en las fotos: en el costado de Muñecas (Cancha), una
+    // arriba pegada a la esquina de Humboldt (con el ventanal alto debajo) y otra en
+    // la punta de Dorrego; en el de Corrientes (Sede), la grande, cerca de la punta de
+    // Dorrego. En el frente no hay (está el logo de la marquesina). Atrás va el cartel con el logo.
     const xs = afuera.map(q => q.x), xMin = Math.min(...xs) - 0.2, xMax = Math.max(...xs) + 0.2;
     const matM = new T.MeshBasicMaterial({ transparent: true, depthWrite: false, side: T.DoubleSide, opacity: 0 });
     new T.TextureLoader().load('logo-movistar-m.png', t => { t.anisotropy = anis; desechar.push(t); matM.map = t; matM.opacity = 1; matM.needsUpdate = true; });
-    [[-116, 50, zf + 0.15, 0, 26], [xMin, 50, -150, -Math.PI / 2, 30], [xMax, 48, 96, Math.PI / 2, 24], [xMax, 42, -40, Math.PI / 2, 36]].forEach(([px, py, pz, giro, ancho]) => {
+    [[xMin, 50, 100, -Math.PI / 2, 26], [xMin, 50, -150, -Math.PI / 2, 30], [xMax, 44, -130, Math.PI / 2, 36]].forEach(([px, py, pz, giro, ancho]) => {
       const m = new T.Mesh(new T.PlaneGeometry(ancho, ancho * 1068 / 1440), matM); m.position.set(px, py, pz); m.rotation.y = giro; m.renderOrder = 3; entradaG.add(m);
     });
-    // El ventanal alto del frente, debajo de esa M: dos pisos de vidrio con su perfilería.
+    // El ventanal alto de Muñecas, debajo de la M de la esquina: dos pisos de vidrio con su perfilería.
     const lvA = lienzoDe(256, 256), vA = lvA.getContext('2d');
     vA.fillStyle = '#0b0f16'; vA.fillRect(0, 0, 256, 256);
     vA.fillStyle = 'rgba(140,180,220,.34)'; for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) vA.fillRect(10 + i * 80, 10 + j * 122, 76, 114);
     const tvA = textura(lvA); tvA.anisotropy = anis;
-    const ventanalAlto = new T.Mesh(new T.PlaneGeometry(26, 26), new T.MeshBasicMaterial({ map: tvA })); ventanalAlto.position.set(-116, 24, zf + 0.2); entradaG.add(ventanalAlto);
+    const ventanalAlto = new T.Mesh(new T.PlaneGeometry(26, 26), new T.MeshBasicMaterial({ map: tvA })); ventanalAlto.position.set(xMin - 0.2, 24, 100); ventanalAlto.rotation.y = -Math.PI / 2; entradaG.add(ventanalAlto);
     // Atrás, sobre Dorrego: el cartel con el logo, arriba (un poco hacia el lado Cancha), como en las fotos.
     const zAtras = Math.min(...afuera.map(q => q.z)) - 0.4;
     const la = lienzoDe(1024, 256), xa = la.getContext('2d');
@@ -3433,7 +3427,7 @@ function render() {
   // Cada contador es un botón: muestra esas en el listado.
   const elegido = nivelSel ? String(nivelSel) : (filtro === 'resueltas' || filtro === 'todas' ? filtro : '');
   // Como un widget: el punto de color y qué es, arriba; el número grande (y "abiertas"), abajo.
-  const NIVEL_COLOR = { 3: '#A11D21', 2: '#7A6600', 1: '#4E5560' };
+  const NIVEL_COLOR = { 3: '#A11D21', 2: '#9C7100', 1: '#4E5560' };
   const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat k-' + clave + (num ? '' : ' cero') + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="tocarStat(\'' + clave + '\')" title="Ver ' + ({ 3: 'las graves abiertas', 2: 'las de gravedad media abiertas', 1: 'las leves abiertas', resueltas: 'las resueltas', todas: 'todas' })[clave] + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
   document.getElementById('resumen').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', NIVEL_COLOR[nv], nv === 3 && n(3), String(nv))).join('')
