@@ -6,7 +6,7 @@
 <title>Gestión — Recital</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Yellowtail&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f2;color:#1a1a1a;font-size:14px;min-height:100vh}
@@ -131,172 +131,191 @@ tr:hover td{background:#fafaf8}
 .cc-plano-bar .cc-editar{margin-left:auto}
 /* Las pestañas del Centro de Control, en un selector. */
 .cc-tabs button{padding:0 13px}
-/* ── El Centro de Control: el diseño "Credencial" (propuesta AX), el mismo de la gerencia ──
-   Azul marino de fondo; el pase del show, los tickets, el informe y la ficha del
-   puesto, en laminado claro; "en vivo" y lo elegido, en el azul de AX. Sin vidrio,
-   desenfoque, degradés ni sombras; radios de 6 (controles) y 12 (credenciales).
-   Los colores del panel (--r-ink, --r-muted, --r-line) se dan vuelta acá adentro:
-   lo de antes que los usa queda claro sobre oscuro; en lo laminado, vuelven a la tinta. */
-#sec-control{--navy:#0D1A2E;--panel:#13243E;--borde:#3A4C66;--linea:#1E2F49;--claro:#F2EFE6;--claro-2:#A9B6CA;--claro-3:#D6DEE9;--lam:#F2EFE6;--tinta:#141A26;--tinta-2:#4B5565;--perf:#CFC8B6;--ax:#0062FF;--ax-hover:#2F7BFF;--ax-activo:#0050D6;--ax-texto:#5B96FF;--grave:#D62839;--medio:#E8890C;--ok:#12877A;--r1:6px;--r2:12px;--num:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--r-ink:#F2EFE6;--r-ink2:#D6DEE9;--r-muted:#A9B6CA;--r-line:#3A4C66;--r-line2:#1E2F49;--vidrio:rgba(255,255,255,.06);--vidrio-hover:rgba(255,255,255,.12);--vidrio-borde:rgba(255,255,255,.16);--vidrio-borde-hover:rgba(255,255,255,.32);--vidrio-brillo:inset 0 1px 0 rgba(255,255,255,.14);--desenfoque:blur(14px) saturate(150%);--caja:linear-gradient(155deg,rgba(255,255,255,.1),rgba(255,255,255,.025) 55%),rgba(19,36,62,.55);--caja-borde:rgba(255,255,255,.14);--caja-sombra:inset 0 1px 0 rgba(255,255,255,.14),0 14px 34px rgba(3,10,24,.35);--desenfoque-caja:blur(20px) saturate(150%);--azul-v:linear-gradient(180deg,#3D88FF,#0062FF);--azul-v-borde:rgba(150,190,255,.55);--azul-v-sombra:inset 0 1px 0 rgba(255,255,255,.35),0 4px 14px rgba(0,98,255,.38);position:relative;isolation:isolate;overflow:clip;background:var(--navy);color:var(--claro);min-height:calc(100vh - 56px)}
-/* Los reflectores: tres haces de luz desde arriba, como en un show (se mecen despacio), y un brillo azul arriba. */
-#sec-control::before{content:'';position:absolute;left:-20%;right:-20%;top:-60px;height:110vh;z-index:-1;pointer-events:none;background:conic-gradient(from 150deg at 14% 0%,rgba(91,150,255,0) 0deg,rgba(91,150,255,.42) 8deg,rgba(91,150,255,0) 16deg),conic-gradient(from 172deg at 50% -4%,rgba(242,239,230,0) 0deg,rgba(242,239,230,.16) 6deg,rgba(242,239,230,0) 12deg),conic-gradient(from 196deg at 86% 0%,rgba(0,98,255,0) 0deg,rgba(0,98,255,.48) 8deg,rgba(0,98,255,0) 16deg);filter:blur(10px);transform-origin:50% 0;animation:incReflector 16s ease-in-out infinite alternate}
-#sec-control::after{content:'';position:absolute;left:0;right:0;top:0;height:70vh;z-index:-1;pointer-events:none;background:radial-gradient(70% 60% at 50% -5%,rgba(0,98,255,.22),rgba(0,98,255,0) 70%)}
-@keyframes incReflector{0%{transform:rotate(-1.5deg)}100%{transform:rotate(1.5deg)}}
-@media(prefers-reduced-motion:reduce){#sec-control::before,#sec-control .destello::after,#sec-control .cc-show.on::after{animation:none}}
-/* El destello: dos reflejos en diagonal que cruzan las cajas de vidrio cada tanto. */
-#sec-control .destello,#sec-control .cc-show.on{overflow:hidden}#sec-control .destello::after,#sec-control .cc-show.on::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(115deg,rgba(255,255,255,0) 38%,rgba(255,255,255,.16) 42%,rgba(255,255,255,0) 45.5%,rgba(255,255,255,0) 48%,rgba(255,255,255,.09) 50.5%,rgba(255,255,255,0) 53%);transform:translateX(-120%);animation:incDestello 12s ease-in-out infinite}
-@keyframes incDestello{0%,82%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
-/* Adentro de las cajas de vidrio, la letra clara: la tinta y la perforación se dan vuelta. */
-#sec-control .pase,#sec-control .cc-plano-der,#sec-control .cc-show.on,#sec-control .cc-plano-ayuda{--tinta:var(--claro);--tinta-2:var(--claro-2);--perf:rgba(255,255,255,.14)}
-#sec-control .rot{font:500 11.5px var(--num);letter-spacing:0;color:var(--ax-texto)}
-#sec-control .ranura{position:relative}
-#sec-control .ranura::before{content:'';position:absolute;top:9px;left:50%;width:46px;height:6px;margin-left:-23px;border-radius:4px;background:rgba(13,26,46,.82);box-shadow:inset 0 1px 2px rgba(0,0,0,.45)}
+/* ── El Centro de Control: el diseño "Afiche" (cianotipo / plano técnico), el mismo de la gerencia ──
+   El azul marino del Arena como papel de plano, con un grano muy suave; bloques planos y
+   rectos, sin redondeos, sombras, desenfoque ni degradés. Títulos en Poppins muy pesada y
+   en mayúsculas, con una palabra manuscrita (Yellowtail) de acento; datos y botones en
+   Space Mono. El único color fuerte es la gravedad, en bloques, y se lee también por la
+   forma (■ ▲ ○). Lo elegido, en bloque crema. Los colores del panel (--r-ink, --r-muted,
+   --r-line) se dan vuelta acá adentro: lo de antes que los usa queda claro sobre azul. */
+#sec-control{--inc-fuente:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--mono:'Space Mono',ui-monospace,'Courier New',monospace;--mano:'Yellowtail',cursive;--fondo:#09203C;--bloque:#17365F;--bloque-2:#1E4372;--crema:#F4F1EA;--crema-2:#ECE7DD;--gris:#C9C2B5;--linea:rgba(244,241,234,.22);--grave:#C42A1C;--media:#F0A202;--r-ink:#F4F1EA;--r-ink2:#ECE7DD;--r-muted:#C9C2B5;--r-line:rgba(244,241,234,.22);--r-line2:rgba(244,241,234,.12);--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#F0A202;position:relative;background:var(--fondo) url(grano.png);color:var(--crema);min-height:calc(100vh - 56px)}
+#sec-control .mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
+#sec-control .rot{font:700 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gris)}
+#sec-control .sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;font:900 36px/.9 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;color:var(--crema)}
+#sec-control .sec-t .mano{font-size:.9em;transform:rotate(-5deg) translateY(-.06em)}
 /* La barra de la sección: el título, las pestañas y "Vista de la gerencia". */
-#sec-control .ctrlbar{background:rgba(13,26,46,.6);-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%);border-bottom:1px solid rgba(255,255,255,.08);color:var(--claro)}
-#sec-control .ctrlbar a.btn,#sec-control .btn-sec{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 12px;border-radius:var(--r1);border:1px solid var(--vidrio-borde);background:var(--vidrio);color:var(--claro);font:500 13px Poppins,sans-serif;box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .ctrlbar a.btn:hover,#sec-control .btn-sec:hover{border-color:var(--vidrio-borde-hover);background:var(--vidrio-hover)}
-#sec-control .btn-primary{border-radius:var(--r1);background:var(--azul-v);border:1px solid var(--azul-v-borde);color:#fff;box-shadow:var(--azul-v-sombra)}
-#sec-control .btn-primary:hover{background:linear-gradient(180deg,#5A9AFF,#2F7BFF)}
-#sec-control .cc-plano-der .btn-sec,#sec-control .pase .btn-sec{border-color:var(--tinta);color:var(--claro);background:var(--vidrio);border:1px solid var(--vidrio-borde);box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-/* Las botoneras de a dos (las pestañas, la vista, el armado, los pisos del editor): el elegido, en azul. */
-#sec-control .cc-seg,#sec-control .cc-plano-pisos{display:inline-flex;background:var(--vidrio);border:1px solid var(--vidrio-borde);border-radius:var(--r1);padding:2px;gap:2px;box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .cc-seg button,#sec-control .cc-plano-pisos button{border:0;background:transparent;font:500 12.5px Poppins,sans-serif;color:var(--claro-3);padding:0 12px;min-height:32px;border-radius:4px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;box-shadow:none;transition:background .15s,color .15s}
-#sec-control .cc-seg button:hover,#sec-control .cc-plano-pisos button:hover{color:#fff;background:rgba(255,255,255,.1)}
-#sec-control .cc-seg button.on,#sec-control .cc-plano-pisos button.on{background:var(--azul-v);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 2px 10px rgba(0,98,255,.35)}
-#sec-control .cc-plano-pisos button{font-family:var(--num);font-size:12px;letter-spacing:0}
+#sec-control .ctrlbar{background:var(--fondo);border-bottom:2px solid var(--crema);color:var(--crema)}
+#sec-control .ctrlbar a.btn,#sec-control .btn-sec{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:0;border-radius:0;background:var(--bloque);color:var(--crema);font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;box-shadow:none}
+#sec-control .ctrlbar a.btn:hover,#sec-control .btn-sec:hover{background:var(--bloque-2)}
+#sec-control .btn-primary{border:0;border-radius:0;background:var(--crema);color:var(--fondo);box-shadow:none;font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+#sec-control .btn-primary:hover{background:#fff}
+/* Las botoneras (las pestañas, la vista, el armado, los pisos del editor): bloques de a uno; el elegido, en crema. */
+#sec-control .cc-seg,#sec-control .cc-plano-pisos{display:inline-flex;background:transparent;border:0;border-radius:0;padding:0;gap:4px;box-shadow:none}
+#sec-control .cc-seg button,#sec-control .cc-plano-pisos button{border:0;border-radius:0;background:var(--bloque);font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--crema);padding:0 14px;min-height:40px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;box-shadow:none;transition:background .15s}
+#sec-control .cc-seg button:hover,#sec-control .cc-plano-pisos button:hover{background:var(--bloque-2)}
+#sec-control .cc-seg button.on,#sec-control .cc-plano-pisos button.on{background:var(--crema);color:var(--fondo);box-shadow:none}
 #sec-control .cc-seg svg{width:14px;height:14px;flex-shrink:0}
-#sec-control .cc-seg.chico button{font-size:12.5px;padding:0 11px}
-/* La lista de shows: el elegido, una credencial; los demás, con borde. */
-#sec-control .cc-show{border:1px solid var(--vidrio-borde);background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border-radius:var(--r2);padding:10px 12px;color:var(--claro);box-shadow:var(--vidrio-brillo);transition:background .15s,border-color .15s}
-#sec-control .cc-show:hover{border-color:var(--vidrio-borde-hover);background:var(--vidrio-hover)}
-#sec-control .cc-show.on{background:var(--caja);border-color:rgba(91,150,255,.55);color:var(--tinta);box-shadow:var(--caja-sombra);border:1px solid var(--caja-borde);-webkit-backdrop-filter:var(--desenfoque-caja);backdrop-filter:var(--desenfoque-caja)}
-#sec-control .cc-show-n{font-size:14px;font-weight:500}
-#sec-control .cc-show-f{font:400 11px var(--num);color:var(--r-muted)}
-#sec-control .cc-grupo{font:500 11.5px var(--num);letter-spacing:0;color:var(--ax-texto)}
-#sec-control .cc-hoy{font:600 10px var(--num);letter-spacing:0;background:var(--azul-v);border-radius:4px;padding:3px 6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
-#sec-control .cc-sumar{width:100%;border-style:dashed}
-#sec-control .inc-cuenta{border-radius:var(--r1)}
-#sec-control .cc-show-chips .inc-cuenta{background:rgba(242,239,230,.1);color:var(--claro-3)}
-#sec-control .cc-show.on .cc-show-chips .inc-cuenta{background:rgba(255,255,255,.08);color:var(--tinta-2)}
-/* Lo abierto por gravedad, teñido de su color. */
-#sec-control .cc-show .cc-show-chips .inc-cuenta.nivel{background:color-mix(in srgb,var(--c) 24%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 60%,transparent);color:var(--claro)}
-#sec-control .cc-show-chips .inc-cuenta strong{font-family:var(--num)}
-#sec-control .empty{color:var(--claro-2)}
-/* El tablero del show: el pase arriba; el plano y, al costado, los tickets; abajo, el informe. */
+#sec-control .cc-seg.chico button{padding:0 12px}
+/* La lista de shows: bloques planos; el elegido, en crema. */
+#sec-control .cc-show{border:0;border-radius:0;background:var(--bloque);padding:12px 14px;color:var(--crema);box-shadow:none;transition:background .15s}
+#sec-control .cc-show:hover{background:var(--bloque-2)}
+#sec-control .cc-show.on{background:var(--crema);color:var(--fondo)}
+#sec-control .cc-show-n{font:800 14.5px/1.15 var(--inc-fuente);text-transform:uppercase}
+#sec-control .cc-show-f{font:400 11px var(--mono);color:var(--gris)}
+#sec-control .cc-show.on .cc-show-n{color:var(--fondo)}#sec-control .cc-show.on .cc-show-f{color:rgba(9,32,60,.75)}
+#sec-control .cc-grupo{font:700 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gris)}
+#sec-control .cc-hoy{font:700 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;background:var(--crema);color:var(--fondo);border-radius:0;padding:3px 6px;box-shadow:none}
+#sec-control .cc-hoy::before{background:var(--fondo);border-radius:0}
+#sec-control .cc-show.on .cc-hoy{background:var(--fondo);color:var(--crema)}#sec-control .cc-show.on .cc-hoy::before{background:var(--crema)}
+#sec-control .cc-sumar{width:100%;background:transparent;border:2px dashed var(--linea)}
+#sec-control .inc-cuenta{font:400 11px var(--mono);padding:4px 8px;border-radius:0;background:var(--fondo);color:var(--gris)}
+#sec-control .inc-cuenta strong{font-weight:700;margin-right:5px;color:var(--crema)}
+/* Lo abierto por gravedad: un bloque del color de su gravedad (la leve, con contorno). */
+#sec-control .inc-cuenta.n3{background:var(--grave);color:var(--crema)}
+#sec-control .inc-cuenta.n2{background:var(--media);color:var(--fondo)}#sec-control .inc-cuenta.n2 strong{color:var(--fondo)}
+#sec-control .inc-cuenta.n1{background:transparent;color:var(--crema);outline:1.5px solid var(--crema);outline-offset:-1.5px}
+#sec-control .cc-show.on .inc-cuenta{background:rgba(9,32,60,.1);color:var(--fondo)}#sec-control .cc-show.on .inc-cuenta strong{color:var(--fondo)}
+#sec-control .cc-show.on .inc-cuenta.n3{background:var(--grave);color:var(--crema)}#sec-control .cc-show.on .inc-cuenta.n3 strong{color:var(--crema)}
+#sec-control .cc-show.on .inc-cuenta.n2{background:var(--media)}
+#sec-control .cc-show.on .inc-cuenta.n1{background:transparent;outline-color:var(--fondo)}
+#sec-control .empty{color:var(--gris);font-family:var(--mono)}
+/* El tablero del show: el nombre y el estado de la sala arriba; el plano y, al costado, los tickets; abajo, el informe. */
 #sec-control .cc-tablero{background:transparent;border:0;box-shadow:none;padding:0}
-#sec-control .pase{background:var(--caja);color:var(--tinta);border-radius:var(--r2);padding:22px 16px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 22px;border:1px solid var(--caja-borde);box-shadow:var(--caja-sombra);-webkit-backdrop-filter:var(--desenfoque-caja);backdrop-filter:var(--desenfoque-caja)}
-#sec-control .pase-id{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:2px}
-#sec-control .pase-k{font:500 11.5px var(--num);letter-spacing:0;color:var(--tinta-2)}
-#sec-control .cc-show-t{font-size:22px;font-weight:600;letter-spacing:-.5px;line-height:1.15;color:var(--tinta);overflow-wrap:anywhere}
-#sec-control .cc-show-s{font:400 11.5px var(--num);color:var(--tinta-2)}
-#sec-control .pase-centro{flex:3 1 480px;min-width:0;display:flex;flex-direction:column;gap:8px}
-#sec-control .pase-acc{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-#sec-control .estado{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:8px 12px;border-radius:var(--r1);color:#fff;font-size:13px;font-weight:500;background-color:var(--ok);background-image:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0));box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
-#sec-control .estado.grave{background-color:var(--grave)}#sec-control .estado.medio{background-color:var(--medio);color:#141A26}
-#sec-control .estado svg{width:17px;height:17px;flex-shrink:0}
-#sec-control .estado small{font-size:12px;font-weight:400}
-#sec-control .estado .hace{margin-left:auto;font:600 12px var(--num);letter-spacing:0;white-space:nowrap}
-#sec-control .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-#sec-control .stat{--c:var(--tinta);display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:0 0 7px;border:1px solid rgba(255,255,255,.1);border-radius:var(--r1);background:rgba(255,255,255,.05);color:var(--tinta);overflow:hidden;text-align:left;font:inherit;cursor:pointer;min-width:0;min-height:54px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
-#sec-control .stat::before{content:'';display:block;width:100%;height:5px;background:var(--c);margin-bottom:3px}
-#sec-control .stat-n{order:1;padding:0 9px;display:flex;align-items:baseline;gap:5px;min-width:0}
-#sec-control .stat-t{order:2;padding:0 9px;font-size:11.5px;font-weight:500;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--tinta)}
-#sec-control .stat-t i{display:none}
-#sec-control .stat b{font:600 20px/1 var(--num)}
-#sec-control .stat small{font-size:11px;color:var(--tinta-2)}
-#sec-control .stat:hover{background:rgba(255,255,255,.1)}
-#sec-control .stat.on{outline:2px solid var(--ax);outline-offset:-1px}
-#sec-control .stat.pulso::before{animation:incLatido 1.2s infinite}
-@media(max-width:700px){#sec-control .stats{grid-template-columns:repeat(6,minmax(0,1fr))}#sec-control .stat{grid-column:span 2}#sec-control .stat:nth-child(n+4){grid-column:span 3}#sec-control .stat small{display:none}}
-#sec-control .pase-datos{flex:1 1 100%;display:flex;flex-wrap:wrap;border-top:1px dashed var(--perf);padding-top:8px;gap:6px 0}
-#sec-control .pase-dato{display:flex;flex-direction:column;gap:1px;padding:0 18px 0 0;margin-right:18px;border-right:1px dashed var(--perf)}
+#sec-control .pase{display:flex;flex-wrap:wrap;align-items:stretch;gap:4px;margin-bottom:30px}
+#sec-control .pase-id{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:0 20px 0 0}
+#sec-control .pase-k{font:700 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gris)}
+#sec-control .cc-show-t{font:900 clamp(40px,5vw,84px)/.85 var(--inc-fuente);letter-spacing:-.035em;text-transform:uppercase;color:var(--crema);overflow-wrap:anywhere}
+#sec-control .cc-show-s{font:400 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--gris);padding-top:10px;border-top:4px solid var(--crema)}
+#sec-control .pase-centro{flex:2 1 480px;min-width:0;display:flex;flex-direction:column;gap:4px}
+#sec-control .pase-acc{flex:1 1 100%;display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding-top:4px}
+/* El estado de la sala: un bloque; rojo si hay graves, ámbar si hay medias, crema si está todo en orden. */
+#sec-control .estado{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:14px 16px;border-radius:0;background:var(--crema);color:var(--fondo);box-shadow:none}
+#sec-control .estado svg{grid-column:1;grid-row:1/3;width:26px;height:26px}
+#sec-control .estado>span:not(.hace){grid-column:2;grid-row:1;font:900 26px/.95 var(--inc-fuente);text-transform:uppercase;letter-spacing:-.005em}
+#sec-control .estado .hace{grid-column:3;grid-row:1;margin:0;font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;align-self:start}
+#sec-control .estado small{grid-column:2/4;grid-row:2;font:400 11px/1.45 var(--mono);letter-spacing:.03em}
+#sec-control .estado.grave{background:var(--grave);color:var(--crema)}#sec-control .estado.medio{background:var(--media);color:var(--fondo)}
+/* Lo abierto por gravedad: un bloque por nivel, con su forma (■ ▲ ○), lo resuelto y el total. */
+#sec-control .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+#sec-control .stat{--c:var(--gris);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;min-height:80px;padding:10px 12px;border:0;border-radius:0;background:var(--bloque);color:var(--crema);text-align:left;font:inherit;cursor:pointer;min-width:0;box-shadow:none;transition:background .15s}
+#sec-control .stat:hover{background:var(--bloque-2)}
+#sec-control .stat-t{display:flex;align-items:center;gap:7px;max-width:100%;font:700 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:inherit}
+#sec-control .stat-t i{display:block;flex-shrink:0;width:11px;height:11px;background:var(--c)}
+#sec-control .stat:nth-child(1) .stat-t i{outline:1px solid var(--crema)}
+#sec-control .stat:nth-child(2) .stat-t i{width:13px;clip-path:polygon(50% 0,100% 100%,0 100%)}
+#sec-control .stat:nth-child(3) .stat-t i{background:transparent;border:2px solid var(--c);border-radius:50%}
+#sec-control .stat:nth-child(4) .stat-t i{width:6px;background:transparent;border:solid var(--c);border-width:0 2px 2px 0;transform:rotate(45deg) translateY(-2px)}
+#sec-control .stat:nth-child(5) .stat-t i{height:2px}
+#sec-control .stat-n{display:flex;align-items:baseline;gap:6px;min-width:0}
+#sec-control .stat b{font:900 40px/.85 var(--inc-fuente)}
+#sec-control .stat small{font:400 10.5px var(--mono);color:var(--gris)}
+#sec-control .stat.on{background:var(--crema);color:var(--fondo)}#sec-control .stat.on small{color:var(--fondo)}
+#sec-control .stat.on:nth-child(3) .stat-t i,#sec-control .stat.on:nth-child(4) .stat-t i{border-color:var(--fondo)}#sec-control .stat.on:nth-child(5) .stat-t i{background:var(--fondo)}
+#sec-control .stat.pulso .stat-t i{animation:incLatido 1.2s infinite}
+@media(max-width:700px){#sec-control .pase-id{padding:0 0 12px}#sec-control .stats{grid-template-columns:repeat(6,minmax(0,1fr))}#sec-control .stat{grid-column:span 2}#sec-control .stat:nth-child(n+4){grid-column:span 3}#sec-control .stat small{display:none}}
+#sec-control .pase-datos{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:6px 0;padding-top:8px;border:0}
+#sec-control .pase-dato{display:flex;align-items:baseline;gap:8px;padding:0 16px 0 0;margin-right:16px;border-right:1px solid var(--linea)}
 #sec-control .pase-dato:last-child{border-right:0}
-#sec-control .pase-dato span{font:500 11px var(--num);letter-spacing:0;color:var(--tinta-2)}
-#sec-control .pase-dato b{font:600 16px var(--num)}
-#sec-control .pase-dato small{font:400 11px Poppins,sans-serif;color:var(--tinta-2)}
-/* Los botones del pase: cargar, en el azul de AX; los demás, con borde de tinta. */
-#sec-control .bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:0 12px;border-radius:var(--r1);border:1px solid var(--vidrio-borde);background:var(--vidrio);color:var(--claro);font:500 13px Poppins,sans-serif;cursor:pointer;flex-shrink:0;box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .bar-btn:hover{background:var(--vidrio-hover);border-color:var(--vidrio-borde-hover)}
-#sec-control .bar-btn.ico{width:38px;padding:0;font-size:16px}
-#sec-control .bar-btn.prim{background:var(--azul-v);border-color:var(--azul-v-borde);color:#fff;font-weight:600;box-shadow:var(--azul-v-sombra)}
-#sec-control .bar-btn.prim:hover{background:linear-gradient(180deg,#5A9AFF,#2F7BFF)}
-#sec-control .t-plano .bar-btn{border-color:var(--borde);color:var(--claro);background:var(--vidrio);border:1px solid var(--vidrio-borde);box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}#sec-control .t-plano .bar-btn:hover{border-color:var(--vidrio-borde-hover);background:var(--vidrio-hover)}
-#sec-control .inc-vivo{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 11px 0 9px;border-radius:var(--r1);background:var(--azul-v);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 18px rgba(0,98,255,.5);color:#fff;font:600 12.5px var(--num);letter-spacing:0;white-space:nowrap;border:1px solid var(--azul-v-borde)}
-#sec-control .inc-vivo::before{background:#fff}
-#sec-control .inc-vivo.mal{background:var(--medio);color:var(--tinta);border-color:rgba(255,255,255,.3)}#sec-control .inc-vivo.mal::before{background:var(--tinta);animation:none}
-#sec-control .herr{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#sec-control .pase-dato span{font:700 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gris)}
+#sec-control .pase-dato b{font:900 18px var(--inc-fuente)}
+#sec-control .pase-dato small{font:400 10.5px var(--mono);color:var(--gris)}
+/* Los botones: bloques planos; cargar, en crema. */
+#sec-control .bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:0;background:var(--bloque);color:var(--crema);font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;flex-shrink:0;box-shadow:none}
+#sec-control .bar-btn:hover{background:var(--bloque-2)}
+#sec-control .bar-btn.ico{width:40px;padding:0;font-size:16px}
+#sec-control .bar-btn.prim{background:var(--crema);color:var(--fondo)}#sec-control .bar-btn.prim:hover{background:#fff}
+#sec-control .inc-vivo{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;border:0;border-radius:0;background:var(--crema);color:var(--fondo);font:700 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;box-shadow:none}
+#sec-control .inc-vivo::before{background:var(--fondo);border-radius:0}
+#sec-control .inc-vivo.mal{background:var(--media);color:var(--fondo)}#sec-control .inc-vivo.mal::before{animation:none}
+#sec-control .herr{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 /* El plano grande y, al costado, los tickets. */
-#sec-control .t-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+#sec-control .t-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
 #sec-control .t-grid>*{min-width:0}
-#sec-control .t-plano{border-radius:var(--r2);background:rgba(19,36,62,.58);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);padding:10px;--tj-muesca:var(--panel)}
-#sec-control .t-plano-cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 0 8px 2px}
-/* Sin la tarjeta blanca del plano 2D; el 3D conserva su fondo azul (también en pantalla completa), como en la gerencia. */
+#sec-control .t-plano{border:0;border-radius:0;background:transparent;box-shadow:none;padding:0;--tj-muesca:var(--fondo)}
+#sec-control .t-plano-cab{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 0 12px}
 #sec-control .t-plano .inc-adm-plano{border:0;padding:0}
 #sec-control .t-plano .inc-adm-plano:not(.inc-3d){background:transparent}
-#sec-control .t-lista{border-radius:var(--r2);background:rgba(19,36,62,.58);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);display:flex;flex-direction:column;overflow:hidden;--tj-muesca:var(--panel)}
-#sec-control .t-lista-cab{padding:12px 12px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
-#sec-control .t-lista-t{font-size:15px;font-weight:600;margin-bottom:8px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;color:var(--claro)}
-#sec-control .t-lista-t small{font:400 11.5px var(--num);letter-spacing:0;color:var(--claro-2)}
-#sec-control .t-lista-cuerpo{padding:10px}
+#sec-control .t-lista{border:0;border-radius:0;background:transparent;box-shadow:none;display:flex;flex-direction:column;--tj-muesca:var(--fondo)}
+#sec-control .t-lista-cab{padding:0 0 10px;border:0}
+#sec-control .t-lista-t{margin-bottom:14px}
+#sec-control .t-lista-t small{margin-left:auto;font:400 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--gris)}
+#sec-control .t-lista-cab .cc-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+#sec-control .t-lista-cuerpo{padding:0}
 @media(min-width:1200px){
-  #sec-control .t-grid{grid-template-columns:minmax(0,1fr) 380px;align-items:start}
+  #sec-control .t-grid{grid-template-columns:minmax(0,1fr) 400px;align-items:start}
   #incPlanoAdm{height:calc(100vh - 250px);min-height:500px}
   #sec-control .t-lista{position:sticky;top:12px;height:calc(100vh - 150px);min-height:560px}
   #sec-control .t-lista-cuerpo{flex:1;overflow-y:auto}
 }
-@media(min-width:1600px){#sec-control .t-grid{grid-template-columns:minmax(0,1fr) 420px}}
+@media(min-width:1600px){#sec-control .t-grid{grid-template-columns:minmax(0,1fr) 440px}}
 /* En el plano 2D, el dibujo ocupa lo que queda arriba de los controles y la leyenda. */
 #incPlanoAdm:not(.inc-3d),#ccPlanoPrevia:not(.inc-3d){display:flex;flex-direction:column}
 #incPlanoAdm:not(.inc-3d)>svg,#ccPlanoPrevia:not(.inc-3d)>svg{flex:1 1 0;min-height:0;height:auto!important}
-#sec-control .fila{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-#sec-control .chip{display:inline-flex;align-items:center;gap:4px;min-height:30px;font:500 12px Poppins,sans-serif;background:var(--vidrio);border:1px solid var(--vidrio-borde);color:var(--claro-3);border-radius:var(--r1);padding:0 11px;cursor:pointer;white-space:nowrap;box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .chip:hover{border-color:var(--vidrio-borde-hover);color:#fff;background:var(--vidrio-hover)}
-#sec-control .chip.on,#sec-control .chip.prim{background:var(--azul-v);border-color:var(--azul-v-borde);color:#fff;box-shadow:var(--azul-v-sombra)}
+#sec-control .fila{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+#sec-control .chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;font:700 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;background:var(--bloque);border:0;color:var(--crema);border-radius:0;padding:0 12px;cursor:pointer;white-space:nowrap;box-shadow:none}
+#sec-control .chip:hover{background:var(--bloque-2)}
+#sec-control .chip.on,#sec-control .chip.prim{background:var(--crema);color:var(--fondo)}
 #sec-control .chip-x{border:0;background:none;color:inherit;cursor:pointer;font-size:11px;padding:0 0 0 2px}
-#sec-control .inc-card-acts .chip{min-height:34px;padding:0 12px;border-color:var(--perf);color:var(--claro);background:var(--vidrio);border:1px solid var(--vidrio-borde);box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .inc-card-acts .chip.prim{background:var(--azul-v);border-color:var(--azul-v-borde);color:#fff;box-shadow:var(--azul-v-sombra)}
-#sec-control .vacio{text-align:center;padding:32px 18px;color:var(--claro-2);font-size:13px;border:1.5px dashed var(--borde);border-radius:var(--r2);background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .inc-lugares{margin:10px 2px 2px;align-items:center}
-#sec-control .cc-met-t{margin:22px 4px 8px;border-top:0;padding-top:0;text-transform:none;letter-spacing:0}
-#incMetricasAdm{--tj-muesca:var(--navy)}
-/* Los tickets (los pone el plano), de vidrio azul marino con la letra clara; el talón, con brillo. */
-#sec-control{--tj-tinta:#F2EFE6;--tj-tinta2:#A9B6CA;--tj-perf:rgba(255,255,255,.16);--tj-ok:#5FD4C4;--tj-mal:#FF8A96}
-#sec-control .inc-tj{background:var(--caja);border:1px solid var(--caja-borde);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 18px rgba(3,10,24,.3);-webkit-backdrop-filter:var(--desenfoque-caja);backdrop-filter:var(--desenfoque-caja);margin-bottom:8px}
-/* Nada en mayúsculas en la sección (las reglas generales del panel las ponen en algunos rótulos). */
-#sec-control .cc-grupo,#sec-control .cc-plano-t,#sec-control .cc-plano-grupo,#sec-control .cc-met-t,#sec-control .fg label,#sec-control .lbl,#sec-control th,#sec-control .stat-label{text-transform:none;letter-spacing:0}
+#sec-control .inc-card-acts .chip{min-height:36px;padding:0 14px;background:var(--fondo);color:var(--crema)}
+#sec-control .inc-card-acts .chip:hover{background:var(--bloque-2)}
+#sec-control .inc-card-acts .chip.prim{background:var(--crema);color:var(--fondo)}
+#sec-control .vacio{text-align:center;padding:32px 18px;color:var(--gris);font:400 12px/1.5 var(--mono);border:2px dashed var(--linea);border-radius:0;background:transparent}
+#sec-control .inc-lugares{margin:10px 0 0;align-items:center}
+#sec-control .cc-met-t{margin:42px 0 16px;border:0;padding:0}
+#incMetricasAdm{--tj-muesca:var(--fondo)}
+/* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad y con su forma (■ ▲ ○). */
+#sec-control .inc-tj{background:var(--bloque);border:0;border-radius:0;box-shadow:none;margin-bottom:4px;outline-offset:-2px}
+#sec-control .inc-tj:hover{outline-color:rgba(244,241,234,.45)}#sec-control .inc-tj.abierta{outline-color:var(--crema)}
+#sec-control .inc-tj-cab{grid-template-columns:78px minmax(0,1fr)}
+#sec-control .inc-tj-cab::before,#sec-control .inc-tj-cab::after{display:none}
+#sec-control .inc-card.inc-tj .inc-tj-talon{border-radius:0;padding:10px 6px;gap:6px}
+#sec-control .inc-tj[data-nivel="3"] .inc-tj-talon{background:var(--grave);color:var(--crema)}
+#sec-control .inc-tj[data-nivel="2"] .inc-tj-talon{background:var(--media);color:var(--fondo)}
+#sec-control .inc-tj[data-nivel="1"] .inc-tj-talon{background:var(--fondo);color:var(--crema);outline:2px solid var(--crema);outline-offset:-2px}
+#sec-control .inc-tj .inc-tj-talon b{font:900 24px/.9 var(--inc-fuente)}
+#sec-control .inc-tj .inc-tj-talon small{font:700 9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+#sec-control .inc-tj[data-nivel="3"] .inc-tj-talon small::before{content:'■ '}
+#sec-control .inc-tj[data-nivel="2"] .inc-tj-talon small::before{content:'▲ '}
+#sec-control .inc-tj[data-nivel="1"] .inc-tj-talon small::before{content:'○ '}
+#sec-control .inc-tj .inc-tj-txt{border-left:0;padding:11px 14px;gap:4px}
+#sec-control .inc-tj .inc-tj-tipo{font:700 15px/1.2 var(--inc-fuente)}
+#sec-control .inc-tj .inc-tj-linea{font:400 11px var(--mono)}
+#sec-control .inc-tj .inc-tj-estado{font:700 11px var(--mono)}
+#sec-control .inc-tj .inc-tj-f>span{font:700 9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+#sec-control .inc-tj .inc-tj-chips span{border-radius:0;font-family:var(--mono)}
 /* En lo táctil, todo lo que se toca, de 44 px. */
-@media(pointer:coarse){#sec-control .bar-btn,#sec-control .ctrlbar a.btn,#sec-control .btn-sec{min-height:44px}#sec-control .bar-btn.ico{width:44px}#sec-control .cc-seg button,#sec-control .cc-plano-pisos button{min-height:40px}#sec-control .chip{min-height:40px}}
-/* El editor del plano: a la izquierda, el editor y la vista previa (azul marino); a la derecha, la ficha del puesto (laminado). */
-#sec-control .cc-plano-izq{border-radius:var(--r2);background:rgba(19,36,62,.58);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);color:var(--claro)}
-#sec-control .cc-plano-der{background:var(--caja);border:1px solid var(--caja-borde);border-radius:var(--r2);box-shadow:var(--caja-sombra);color:var(--tinta);-webkit-backdrop-filter:var(--desenfoque-caja);backdrop-filter:var(--desenfoque-caja)}
-#sec-control .cc-plano-barra{border-bottom:1px solid rgba(255,255,255,.08)}
-#sec-control .cc-plano-barra .btn{min-height:36px;border-radius:var(--r1);background:var(--vidrio);border:1px solid var(--vidrio-borde);color:var(--claro);font-weight:500;box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .cc-plano-barra .btn:hover{border-color:var(--vidrio-borde-hover);color:#fff;background:var(--vidrio-hover)}
-#sec-control .cc-plano-barra .btn.on{background:var(--azul-v);border-color:var(--azul-v-borde);color:#fff;box-shadow:var(--azul-v-sombra)}
-#sec-control .cc-plano-barra .btn i{border-radius:2px;box-shadow:none}
-#sec-control .cc-plano-t{font:500 11.5px var(--num);letter-spacing:0;color:var(--ax-texto)}
-#sec-control .cc-plano-previa-t{font-size:13px;font-weight:500;color:var(--claro)}
-#sec-control .cc-plano-previa-t label{color:var(--claro-2)}
-#sec-control .cc-ayuda-btn{border:1px solid var(--vidrio-borde);background:var(--vidrio);border-radius:var(--r1);color:var(--claro-3);box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .cc-plano-ed.con-ayuda .cc-ayuda-btn{background:var(--azul-v);border-color:var(--azul-v-borde);color:#fff;box-shadow:var(--azul-v-sombra)}
-#sec-control .cc-plano-ayuda{background:var(--caja);border:1px solid var(--caja-borde);border-radius:var(--r2);box-shadow:var(--caja-sombra);color:var(--tinta);-webkit-backdrop-filter:var(--desenfoque-caja);backdrop-filter:var(--desenfoque-caja)}
-#sec-control .cc-plano-aviso{background:rgba(0,98,255,.14);border:1.5px solid rgba(91,150,255,.45);color:var(--claro-3);border-radius:var(--r1);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .cc-plano-guardar{background:var(--medio);border:0;color:#141A26;border-radius:var(--r1);background-image:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,0));box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
-#sec-control .cc-plano-guardar .btn-sec{color:#141A26;min-height:34px;background:rgba(255,255,255,.55);border:1px solid rgba(20,26,38,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
-#sec-control .cc-plano-flota{background:rgba(20,26,38,.78);border:1px solid var(--vidrio-borde);border-radius:var(--r1);box-shadow:var(--vidrio-brillo),0 8px 22px rgba(3,10,24,.4);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .cc-plano-flota button{border-radius:4px}
-#sec-control .cc-plano-lista button{background:var(--vidrio);border:1px solid var(--vidrio-borde);border-radius:var(--r1);color:var(--claro);box-shadow:var(--vidrio-brillo);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control .cc-plano-lista button:hover{border-color:var(--vidrio-borde-hover);background:var(--vidrio-hover)}
-#sec-control .cc-plano-lista small{background:rgba(255,255,255,.08);color:var(--tinta-2);border-radius:4px}
-#sec-control .cc-plano-grupo{font-family:var(--num);letter-spacing:0;color:var(--tinta-2);text-transform:none;font-size:11.5px}
-#sec-control .cc-plano-der input[type=text],#sec-control .cc-plano-der input[type=number],#sec-control .cc-plano-der select,#sec-control .cc-plano-der textarea,#sec-control .cc-plano-der .fi{background:rgba(255,255,255,.06);border:1.5px solid var(--perf);border-radius:var(--r1);color:var(--tinta)}
-#sec-control .cc-plano-der input:focus,#sec-control .cc-plano-der select:focus,#sec-control .cc-plano-der textarea:focus{border-color:var(--tinta);outline:none}
-#sec-control .cc-plano-estado.pend{color:#9A5B00}
+@media(pointer:coarse){#sec-control .bar-btn,#sec-control .ctrlbar a.btn,#sec-control .btn-sec,#sec-control .inc-vivo{min-height:44px}#sec-control .bar-btn.ico{width:44px}#sec-control .cc-seg button,#sec-control .cc-plano-pisos button{min-height:44px}#sec-control .chip{min-height:40px}}
+/* El editor del plano: a la izquierda, el editor y la vista previa; a la derecha, la ficha del puesto. */
+#sec-control .cc-plano-izq,#sec-control .cc-plano-der{border:0;border-radius:0;background:var(--bloque);box-shadow:none;color:var(--crema)}
+#sec-control .cc-plano-barra{border-bottom:2px solid var(--crema)}
+#sec-control .cc-plano-barra .btn{min-height:38px;border:0;border-radius:0;background:var(--fondo);color:var(--crema);font:700 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;box-shadow:none}
+#sec-control .cc-plano-barra .btn:hover{background:var(--bloque-2)}
+#sec-control .cc-plano-barra .btn.on{background:var(--crema);color:var(--fondo)}
+#sec-control .cc-plano-barra .btn i{border-radius:0;box-shadow:none}
+#sec-control .cc-plano-t{font:700 10.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gris)}
+#sec-control .cc-plano-previa-t{font:700 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--crema)}
+#sec-control .cc-plano-previa-t label{color:var(--gris)}
+#sec-control .cc-ayuda-btn{border:0;background:var(--fondo);border-radius:0;color:var(--crema);box-shadow:none}
+#sec-control .cc-plano-ed.con-ayuda .cc-ayuda-btn{background:var(--crema);color:var(--fondo)}
+#sec-control .cc-plano-ayuda{border:0;border-radius:0;background:var(--fondo);box-shadow:none;color:var(--crema)}
+#sec-control .cc-plano-aviso{border:0;border-radius:0;background:var(--bloque-2);color:var(--crema-2);font-family:var(--mono)}
+#sec-control .cc-plano-guardar{border:0;border-radius:0;background:var(--crema);color:var(--fondo);box-shadow:none}
+#sec-control .cc-plano-guardar .btn-sec{background:var(--fondo);color:var(--crema);min-height:34px}
+#sec-control .cc-plano-flota{border:0;border-radius:0;background:var(--fondo);box-shadow:none}
+#sec-control .cc-plano-flota button{border-radius:0}
+#sec-control .cc-plano-lista button{border:0;border-radius:0;background:var(--fondo);color:var(--crema);box-shadow:none}
+#sec-control .cc-plano-lista button:hover{background:var(--bloque-2)}
+#sec-control .cc-plano-lista small{background:var(--bloque);color:var(--gris);border-radius:0;font-family:var(--mono)}
+#sec-control .cc-plano-grupo{font:700 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--gris)}
+#sec-control .cc-plano-der input[type=text],#sec-control .cc-plano-der input[type=number],#sec-control .cc-plano-der select,#sec-control .cc-plano-der textarea,#sec-control .cc-plano-der .fi{background:var(--fondo);border:2px solid var(--linea);border-radius:0;color:var(--crema)}
+#sec-control .cc-plano-der input:focus,#sec-control .cc-plano-der select:focus,#sec-control .cc-plano-der textarea:focus{border-color:var(--crema);outline:none}
+#sec-control .cc-plano-estado.pend{color:var(--media)}
 /* Los accesos de la gerencia. */
-#sec-control #ccAccesos .sup-card{background:var(--vidrio);border:1px solid var(--vidrio-borde);border-radius:var(--r2);box-shadow:var(--vidrio-brillo);color:var(--claro);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque)}
-#sec-control #ccAccesos .sup-name{color:var(--claro)}#sec-control #ccAccesos .sup-email{color:var(--claro-2)}
-/* Poppins en todo; las cifras que cambian (minutos, contadores, horas), de ancho fijo. */
-#sec-control .stat b,#sec-control .pase-dato b,#sec-control .estado .hace,#sec-control .inc-vivo,#sec-control .inc-cuenta strong,#sec-control .bar-s,#sec-control .show-f,#sec-control .pase-f,#sec-control .t-lista-t small,#sec-control .cc-show-f,#sec-control .cc-show-s{font-variant-numeric:tabular-nums}
+#sec-control #ccAccesos .sup-card{border:0;border-radius:0;background:var(--bloque);box-shadow:none;color:var(--crema)}
+#sec-control #ccAccesos .sup-name{color:var(--crema)}#sec-control #ccAccesos .sup-email{color:var(--gris);font-family:var(--mono)}
+/* Las cifras que cambian (minutos, contadores, horas), de ancho fijo. */
+#sec-control .stat b,#sec-control .pase-dato b,#sec-control .estado .hace,#sec-control .inc-vivo,#sec-control .inc-cuenta strong,#sec-control .t-lista-t small,#sec-control .cc-show-f,#sec-control .cc-show-s{font-variant-numeric:tabular-nums}
+@media(prefers-reduced-motion:reduce){#sec-control *,#sec-control *::before,#sec-control *::after{animation:none!important;transition:none!important}}
 /* Editor del plano del Arena */
 .cc-plano{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;padding:16px 22px;align-items:start}
 @media(max-width:1000px){.cc-plano{grid-template-columns:minmax(0,1fr)}}
@@ -1325,7 +1344,7 @@ tr:hover td{background:#f9f9fb}
     <div class="cc-lista" id="ccListaShows"><div class="empty">Cargando…</div></div>
     <div class="cc-tablero" id="ccTablero">
       <!-- El pase del show: quién y cuándo, la franja de estado, lo abierto por gravedad y las acciones. -->
-      <section class="pase ranura destello cc-tablero-top" aria-label="El show">
+      <section class="pase cc-tablero-top" aria-label="El show">
         <div class="pase-id"><span class="pase-k">AX · Audience Experience</span><div class="cc-show-t" id="incTitulo">—</div><div class="cc-show-s" id="incSubtitulo"></div></div>
         <div class="pase-centro">
           <div class="estado" id="incEstadoAdm" role="status"></div>
@@ -1348,19 +1367,19 @@ tr:hover td{background:#f9f9fb}
       <!-- Como en la gerencia: el plano grande (con su botonera) y, al costado, los tickets. -->
       <div class="t-grid">
         <section class="t-plano">
-          <div class="t-plano-cab"><div class="herr" id="incArmadoAdm"></div></div>
+          <div class="t-plano-cab"><h2 class="sec-t"><span class="mano">el</span>Plano</h2><div class="herr" id="incArmadoAdm"></div></div>
           <div class="inc-adm-plano" id="incPlanoAdm" data-alto="pantalla"></div>
           <div class="inc-lugares" id="incLugaresAdm"></div>
         </section>
         <aside class="t-lista">
           <div class="t-lista-cab">
-            <div class="t-lista-t" id="incListaT">Incidencias</div>
+            <h2 class="t-lista-t sec-t" id="incListaT"><span class="mano">las</span>Incidencias</h2>
             <div class="fila" id="incFiltrosAdm"></div>
           </div>
           <div class="t-lista-cuerpo" id="incListaAdm"></div>
         </aside>
       </div>
-      <div class="cc-met-t rot">Informe del show</div>
+      <h2 class="cc-met-t sec-t"><span class="mano">cómo va</span>el show</h2>
       <div id="incMetricasAdm"></div>
     </div>
   </div>
@@ -5539,7 +5558,7 @@ function incTarjetaHTML(i, op) {
     + (resuelta ? fila('Resuelta', incCuando(i.resuelta_at) + (i.resuelta_por_nombre ? ' · ' + incEsc(i.resuelta_por_nombre) : '') + (tardo >= 0 ? ' · en ' + incEsc(incMinutos(tardo)) : '')
       + (i.resolucion ? '<div class="inc-tj-nota">' + incEsc(i.resolucion) + '</div>' : '')) : '')
     + '</div>';
-  return '<div class="inc-card inc-tj' + (resuelta ? ' resuelta' : '') + (abierta ? ' abierta' : '') + (op.nueva ? ' nueva' : '') + '" data-inc="' + id + '" style="--tj-c:' + v.talon + ';--tj-t:' + v.talonTinta + '"'
+  return '<div class="inc-card inc-tj' + (resuelta ? ' resuelta' : '') + (abierta ? ' abierta' : '') + (op.nueva ? ' nueva' : '') + '" data-inc="' + id + '" data-nivel="' + (INC_NIVELES[i.nivel] ? i.nivel : 1) + '" style="--tj-c:' + v.talon + ';--tj-t:' + v.talonTinta + '"'
     + (op.onclick ? ' onclick="' + op.onclick + '(\'' + id + '\')" onkeydown="if((event.key===\'Enter\'||event.key===\' \')&&event.target===this){event.preventDefault();this.click()}"' : '')
     + ' role="button" tabindex="0" aria-expanded="' + abierta + '" title="' + (abierta ? 'Cerrar el detalle' : 'Ver el detalle' + (op.sinLugar ? '' : ' y el lugar en el plano')) + '">'
     + '<div class="inc-tj-cab"><span class="inc-tj-talon" title="' + (resuelta ? 'Resuelta' : 'Abierta desde las ' + incEsc(incHora(i.created_at))) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ico + '"/></svg>'
@@ -6058,70 +6077,63 @@ function incEsperar3D(cont) {
   cont.style.height = fijo ? '' : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680)) + 'px';
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
-// El estilo nuevo de los controles del plano (diseño "Credencial", propuesta AX):
-// paneles de vidrio azul marino sobre el 3D, radio de 6 px y lo elegido en el azul
-// de AX. Sólo con op.ax (la gerencia y el panel; la tablet queda como está).
+// El estilo de los controles del plano en la gerencia y el panel (diseño "Afiche",
+// cianotipo): bloques planos y rectos, sin vidrio, sombras ni degradés; las letras de
+// los botones en mono y en mayúsculas; lo elegido, en bloque crema. El fondo del 3D,
+// azul plano con la cuadrícula de un plano. Sólo con op.ax (la tablet queda como está).
 function incEstiloAx() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloAx')) return;
   const st = document.createElement('style'); st.id = 'incEstiloAx';
-  const MONO = INC_FUENTE, PANEL = 'background:rgba(13,26,46,.6);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1);';
-  st.textContent = '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F2EFE6;min-width:38px;min-height:38px;font:500 12.5px ' + INC_FUENTE + '}'
-    + '.inc-ax .inc-3d-btn:hover{border-color:rgba(255,255,255,.32);background:rgba(255,255,255,.12)}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid #5B96FF;outline-offset:2px}'
-    + '.inc-ax .inc-3d-btn.on{background:linear-gradient(180deg,#3D88FF,#0062FF);border-color:rgba(150,190,255,.55);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 14px rgba(0,98,255,.4)}'
-    + '.inc-ax .inc-3d-ley{' + PANEL + 'color:#D6DEE9}'
-    // Que no la tapen los botones (ahora de 44 px): cuatro botones y sus espacios.
-    + '.inc-ax .inc-3d-ley{max-width:calc(100% - 226px)}'
+  const MONO = "'Space Mono',ui-monospace,'Courier New',monospace", PANEL = 'background:#09203C;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;';
+  const BOTON = 'font:700 11px ' + MONO + ';letter-spacing:.08em;text-transform:uppercase;';
+  const GRILLA = 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Cpath d=%22M24 0H0V24%22 fill=%22none%22 stroke=%22%23F4F1EA%22 stroke-opacity=%22.07%22/%3E%3C/svg%3E")';
+  st.textContent = '.inc-ax.inc-3d{border-radius:0;background:#17365F ' + GRILLA + '}'
+    + '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F4F1EA;min-width:40px;min-height:40px;' + BOTON + '}'
+    + '.inc-ax .inc-3d-btn:hover{background:#1E4372}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
+    + '.inc-ax .inc-3d-btn.on{background:#F4F1EA;color:#09203C}'
     // Arriba del estadio, sólo los botones: la leyenda va adentro del menú de capas.
     + '.inc-ax>.inc-3d-ley{display:none}'
-    + '.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){display:grid;grid-template-columns:auto auto;gap:0 6px;align-items:start;max-height:calc(100% - 70px);overflow:auto}'
-    + '.inc-ax .inc-3d-menu-t{font:500 11.5px ' + INC_FUENTE + ';color:#5B96FF;padding:6px 10px 4px}'
+    + '.inc-ax .inc-3d-capas{' + PANEL + 'padding:6px}'
+    + '.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){display:grid;grid-template-columns:auto auto;gap:0 8px;align-items:start;max-height:calc(100% - 70px);overflow:auto}'
+    + '.inc-ax .inc-3d-menu-t{font:700 10px ' + MONO + ';letter-spacing:.16em;text-transform:uppercase;color:#C9C2B5;padding:8px 10px 6px}'
     + '.inc-ax .inc-3d-ref-l{display:flex;flex-direction:column;gap:2px}'
-    + '.inc-ax .inc-3d-ref-l .inc-ley-b,.inc-ax .inc-3d-ref-l>span{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 11px;border:0;border-radius:4px;background:transparent;color:#F2EFE6;font:500 12.5px ' + INC_FUENTE + ';text-align:left;cursor:pointer;white-space:nowrap}'
-    + '.inc-ax .inc-3d-ref-l .inc-ley-b:hover{background:rgba(255,255,255,.08)}.inc-ax .inc-3d-ref-l .inc-ley-b.on{background:rgba(0,98,255,.22)}'
-    + '.inc-ax .inc-3d-ref-l i{width:12px;height:12px;border-radius:3px;border:1px solid;display:inline-block;flex-shrink:0}'
+    + '.inc-ax .inc-3d-ref-l .inc-ley-b,.inc-ax .inc-3d-ref-l>span{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 10px;border:0;border-radius:0;background:transparent;color:#F4F1EA;' + BOTON + 'text-align:left;cursor:pointer;white-space:nowrap}'
+    + '.inc-ax .inc-3d-ref-l .inc-ley-b:hover{background:#17365F}.inc-ax .inc-3d-ref-l .inc-ley-b.on{background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-3d-ref-l i{width:12px;height:12px;border-radius:0;border:1px solid;display:inline-block;flex-shrink:0}'
     + '@media(max-width:560px){.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){grid-template-columns:minmax(0,1fr)}}'
-    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#D6DEE9}'
-    + '@media(pointer:coarse){.inc-ax .inc-3d-btn{min-width:44px;min-height:44px}.inc-ax .inc-3d-pisos button{min-height:38px}}'
-    // Los reflectores: haces de luz desde arriba, detrás del estadio (se mecen despacio).
-    + '.inc-ax.inc-3d{isolation:isolate}'
-    + '.inc-ax.inc-3d::before{content:"";position:absolute;left:-15%;right:-15%;top:-12%;bottom:0;z-index:-1;pointer-events:none;'
-    + 'background:conic-gradient(from 154deg at 22% 0%,rgba(91,150,255,0) 0deg,rgba(91,150,255,.3) 7deg,rgba(91,150,255,0) 14deg),'
-    + 'conic-gradient(from 174deg at 50% 0%,rgba(242,239,230,0) 0deg,rgba(242,239,230,.12) 5deg,rgba(242,239,230,0) 10deg),'
-    + 'conic-gradient(from 192deg at 78% 0%,rgba(0,98,255,0) 0deg,rgba(0,98,255,.36) 7deg,rgba(0,98,255,0) 14deg);'
-    + 'filter:blur(10px);transform-origin:50% 0;animation:incReflector3d 18s ease-in-out infinite alternate}'
-    + '@keyframes incReflector3d{0%{transform:rotate(2deg)}100%{transform:rotate(-2deg)}}'
-    + '@media(prefers-reduced-motion:reduce){.inc-ax.inc-3d::before{animation:none}}'
+    + '.inc-ax .inc-3d-capas-l button,.inc-ax .inc-3d-vistas-l>button{border-radius:0;color:#F4F1EA;' + BOTON + '}'
+    + '.inc-ax .inc-3d-capas-l button:hover,.inc-ax .inc-3d-vistas-l>button:hover{background:#17365F}'
+    + '.inc-ax .inc-3d-capas-l button::after{width:16px;height:16px;border-radius:0;background:transparent;border:2px solid #C9C2B5;box-sizing:border-box}'
+    + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:#F4F1EA;border-color:#F4F1EA;color:#09203C;font-size:11px;line-height:1}'
+    + '.inc-ax .inc-3d-vistas-t{color:#C9C2B5;font:700 10px ' + MONO + ';letter-spacing:.16em;text-transform:uppercase}'
+    + '.inc-ax .inc-3d-vistas-l>button.on{background:#F4F1EA;color:#09203C}.inc-ax .inc-3d-vistas-l>button.on::after{color:#09203C}'
+    + '.inc-ax .inc-3d-vistas-p button{border-radius:0;' + BOTON + '}.inc-ax .inc-3d-vistas-p button.on{background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#C9C2B5;font:400 10.5px ' + MONO + ';letter-spacing:.06em;text-transform:uppercase}'
     + '.inc-ax .inc-3d-pisos{' + PANEL + 'gap:4px;padding:4px}'
-    + '.inc-ax .inc-3d-pisos button{border-radius:4px;color:#F2EFE6;font:600 11.5px ' + MONO + ';letter-spacing:0;min-height:32px;padding:0 11px}'
-    + '.inc-ax .inc-3d-pisos button:hover{background:rgba(91,150,255,.14)}.inc-ax .inc-3d-pisos button.on{background:linear-gradient(180deg,#3D88FF,#0062FF);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}'
-    + '.inc-ax .inc-3d-capas{' + PANEL + 'background:rgba(13,26,46,.82)}'
-    + '.inc-ax .inc-3d-capas-l button,.inc-ax .inc-3d-vistas-l>button{border-radius:4px;color:#F2EFE6}'
-    + '.inc-ax .inc-3d-capas-l button::after{width:18px;height:18px;border-radius:4px;background:transparent;border:1.5px solid #5B6B82;box-sizing:border-box}'
-    + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:#0062FF;border-color:#0062FF;color:#fff;font-size:12px;line-height:1}'
-    + '.inc-ax .inc-3d-vistas-t{color:#5B96FF;font-family:' + MONO + ';letter-spacing:0}'
-    + '.inc-ax .inc-3d-vistas-l>button.on{background:rgba(0,98,255,.2)}.inc-ax .inc-3d-vistas-l>button.on::after{color:#5B96FF}'
-    + '.inc-ax .inc-3d-vistas-p button{border-radius:4px;font-family:' + MONO + ';letter-spacing:0}.inc-ax .inc-3d-vistas-p button.on{background:#0062FF;color:#fff}'
-    // La ficha de un lugar: vidrio azul marino, con la letra clara.
-    + '.inc-ax .inc-ficha,.inc-ax .inc-3d-ficha{background:linear-gradient(155deg,rgba(255,255,255,.1),rgba(255,255,255,.025) 55%),rgba(13,26,46,.82);-webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 14px 34px rgba(3,10,24,.45);color:#F2EFE6}'
-    + '.inc-ax .inc-ficha-ico{border-radius:6px}.inc-ax .inc-ficha-datos span{border:1px solid rgba(255,255,255,.16);background:transparent;border-radius:6px;color:#D6DEE9}'
-    + '.inc-ax .inc-ficha-cab button{background:rgba(255,255,255,.1);color:#F2EFE6}'
-    + '.inc-ax .inc-ficha-abiertas{color:#A9B6CA}.inc-ax .inc-ficha-accion{border-radius:6px;background:linear-gradient(180deg,#3D88FF,#0062FF);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);color:#fff}'
-    // El detalle de pantalla completa: azul marino, con los tickets.
-    + '.inc-ax .inc-3d-det{background:rgba(13,26,46,.78);-webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1);color:#F2EFE6;--tj-muesca:#0D1A2E}'
-    + '.inc-ax .inc-3d-det-cab{border-bottom:1px solid #1E2F49}.inc-ax .inc-3d-det-tit span{color:#A9B6CA;font-family:' + MONO + ';font-size:11.5px;letter-spacing:.4px}'
-    + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:6px;border:1.5px solid #3A4C66;background:transparent;color:#F2EFE6}'
-    + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{border-color:#5B96FF;background:transparent}'
-    + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:6px;background:#0062FF}'
-    + '.inc-ax .inc-3d-det .inc-ficha-datos span{border:1px solid #3A4C66;background:transparent;border-radius:6px;color:#D6DEE9}'
-    + '.inc-ax .inc-3d-det-vacio{color:#A9B6CA}'
-    // El plano 2D: los pisos, "Mostrar", buscar y la leyenda, sobre el panel azul marino.
-    + '.inc-ax .inc-pisos{background:transparent;border:1.5px solid #3A4C66;border-radius:6px;padding:3px;gap:3px}'
-    + '.inc-ax .inc-pisos button{border-radius:4px;color:#F2EFE6;font:600 11.5px ' + MONO + ';letter-spacing:.4px}'
-    + '.inc-ax .inc-pisos button.on{background:#0062FF;color:#fff;box-shadow:none}'
-    + '.inc-ax .inc-plano-mostrar{color:#A9B6CA}'
-    + '.inc-ax .inc-capas button,.inc-ax .inc-bus-btn{border:1.5px solid #3A4C66;background:transparent;color:#F2EFE6;border-radius:6px}'
-    + '.inc-ax .inc-capas button.on,.inc-ax .inc-bus-btn.on{background:#0062FF;border-color:#0062FF;color:#fff}'
-    + '.inc-ax .inc-ley{color:#D6DEE9}';
+    + '.inc-ax .inc-3d-pisos button{border-radius:0;background:#17365F;color:#F4F1EA;' + BOTON + 'min-height:34px;padding:0 12px}'
+    + '.inc-ax .inc-3d-pisos button:hover{background:#1E4372}.inc-ax .inc-3d-pisos button.on{background:#F4F1EA;color:#09203C;box-shadow:none}'
+    + '@media(pointer:coarse){.inc-ax .inc-3d-btn{min-width:44px;min-height:44px}.inc-ax .inc-3d-pisos button{min-height:40px}}'
+    // La ficha de un lugar: un bloque azul marino, con la letra clara.
+    + '.inc-ax .inc-ficha,.inc-ax .inc-3d-ficha{' + PANEL + 'color:#F4F1EA}'
+    + '.inc-ax .inc-ficha-ico{border-radius:0}.inc-ax .inc-ficha-datos span{border:1px solid rgba(244,241,234,.3);background:transparent;border-radius:0;color:#ECE7DD;font-family:' + MONO + '}'
+    + '.inc-ax .inc-ficha-cab button{background:#17365F;color:#F4F1EA;border-radius:0}'
+    + '.inc-ax .inc-ficha-abiertas{color:#C9C2B5}.inc-ax .inc-ficha-accion{border-radius:0;background:#F4F1EA;color:#09203C;box-shadow:none;' + BOTON + '}'
+    // El detalle de pantalla completa: un bloque azul marino, con los tickets.
+    + '.inc-ax .inc-3d-det{' + PANEL + 'color:#F4F1EA;--tj-muesca:#09203C}'
+    + '.inc-ax .inc-3d-det-cab{border-bottom:2px solid #F4F1EA}.inc-ax .inc-3d-det-tit span{color:#C9C2B5;font:400 10.5px ' + MONO + ';letter-spacing:.06em;text-transform:uppercase}'
+    + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:0;border:0;background:#17365F;color:#F4F1EA}'
+    + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{background:#1E4372}'
+    + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:0;background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-3d-det .inc-ficha-datos span{border:1px solid rgba(244,241,234,.3);background:transparent;border-radius:0;color:#ECE7DD}'
+    + '.inc-ax .inc-3d-det-vacio{color:#C9C2B5}'
+    // El plano 2D: los pisos, "Mostrar", buscar y la leyenda.
+    + '.inc-ax .inc-pisos{background:transparent;border:0;border-radius:0;padding:0;gap:4px}'
+    + '.inc-ax .inc-pisos button{border-radius:0;background:#17365F;color:#F4F1EA;' + BOTON + '}'
+    + '.inc-ax .inc-pisos button.on{background:#F4F1EA;color:#09203C;box-shadow:none}'
+    + '.inc-ax .inc-plano-mostrar{color:#C9C2B5}'
+    + '.inc-ax .inc-capas button,.inc-ax .inc-bus-btn{border:0;background:#17365F;color:#F4F1EA;border-radius:0}'
+    + '.inc-ax .inc-capas button.on,.inc-ax .inc-bus-btn.on{background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-ley{color:#ECE7DD}';
   document.head.appendChild(st);
 }
 // La leyenda de abajo del plano 2D (y la del 3D, encima).
@@ -7522,8 +7534,9 @@ function incPlano3D(cont, op0) {
 // la leyenda, la separación entre segmentos y el orden fijo (grave siempre arriba);
 // las barras de una sola serie van en el azul del Arena. Cada marca muestra su
 // detalle al pasar el mouse o con el teclado.
-const INC_GRAF_NIVEL = { 1: '#A3ACB8', 2: '#E8890C', 3: '#F26D7D' };   // el rojo, más claro: sobre el azul marino se tiene que ver
-const INC_GRAF_AZUL = '#5B96FF';   // las barras de una sola serie, en el azul de AX (la hoja es de vidrio azul marino)
+const INC_GRAF_NIVEL = { 1: '#C9C2B5', 2: '#F0A202', 3: '#EE4B36' };   // el rojo de las marcas, más claro: sobre el azul se tiene que ver
+const INC_GRAF_AZUL = '#ECE7DD';   // las barras de una sola serie, en crema (el único color fuerte es la gravedad)
+const INC_GRAF_RADIO = 0;   // las puntas de las barras, rectas (diseño "Afiche": nada redondeado)
 function incMinutos(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min' : Math.floor(m / 1440) + ' d ' + Math.floor(m % 1440 / 60) + ' h'; }
 // Las franjas: si la lista cruza varios días, una por día; si no, de 15, 30,
 // 60 o 120 minutos, la más fina que deje 16 columnas o menos. Cada una sabe de
@@ -7592,7 +7605,7 @@ function incGrafFranjas(franjas, anchoTotal, sel) {
   const y = v => arriba + alto - (v / tope) * alto;
   const slot = (W - izq - der) / Math.max(1, franjas.length), ancho = Math.min(24, slot * 0.62);
   let g = '';
-  for (let v = 0; v <= tope; v += paso) g += '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="rgba(255,255,255,.08)" stroke-width="1"/><text x="' + (izq - 6) + '" y="' + (y(v) + 3.5) + '" font-size="10" fill="#A9B6CA" text-anchor="end" style="font-variant-numeric:tabular-nums">' + v + '</text>';
+  for (let v = 0; v <= tope; v += paso) g += '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="rgba(244,241,234,.1)" stroke-width="1"/><text x="' + (izq - 6) + '" y="' + (y(v) + 3.5) + '" font-size="10" fill="#C9C2B5" text-anchor="end" style="font-variant-numeric:tabular-nums">' + v + '</text>';
   const cadaEtq = Math.ceil(franjas.length / Math.max(3, Math.floor((W - izq) / 64)));   // una etiqueta cada ~64px
   const masAlta = franjas.reduce((m, f, k) => (f.n[0] + f.n[1] + f.n[2]) > (m < 0 ? -1 : franjas[m].n[0] + franjas[m].n[1] + franjas[m].n[2]) ? k : m, -1);
   franjas.forEach((f, k) => {
@@ -7604,17 +7617,17 @@ function incGrafFranjas(franjas, anchoTotal, sel) {
       const hh = Math.max(1, h - (j > 0 ? 2 : 0));            // 2px de aire entre segmentos
       const y0 = base - hh;
       barras += tope2
-        ? '<path d="M' + x + ',' + base + 'V' + (y0 + Math.min(4, hh)) + 'Q' + x + ',' + y0 + ' ' + (x + Math.min(4, ancho / 2)) + ',' + y0 + 'H' + (x + ancho - Math.min(4, ancho / 2)) + 'Q' + (x + ancho) + ',' + y0 + ' ' + (x + ancho) + ',' + (y0 + Math.min(4, hh)) + 'V' + base + 'Z" fill="' + INC_GRAF_NIVEL[nv] + '"/>'
+        ? '<path d="M' + x + ',' + base + 'V' + (y0 + Math.min(INC_GRAF_RADIO, hh)) + 'Q' + x + ',' + y0 + ' ' + (x + Math.min(INC_GRAF_RADIO, ancho / 2)) + ',' + y0 + 'H' + (x + ancho - Math.min(INC_GRAF_RADIO, ancho / 2)) + 'Q' + (x + ancho) + ',' + y0 + ' ' + (x + ancho) + ',' + (y0 + Math.min(INC_GRAF_RADIO, hh)) + 'V' + base + 'Z" fill="' + INC_GRAF_NIVEL[nv] + '"/>'
         : '<rect x="' + x + '" y="' + y0 + '" width="' + ancho + '" height="' + hh + '" fill="' + INC_GRAF_NIVEL[nv] + '"/>';
       base = y0 - 2;
     });
     const tip = [total + ' incidencia' + (total === 1 ? '' : 's'), f.largo].concat([3, 2, 1].filter(nv => f.n[nv - 1]).map(nv => f.n[nv - 1] + ' ' + INC_NIVELES[nv].nombre.toLowerCase())).concat(total ? ['Tocá para verlas en el listado'] : []);
     g += '<g class="' + (total ? incClaseMarca(val, sel) : 'inc-marca') + '"' + incTip(tip) + (total ? incTocable('franja', val) : '') + '><rect x="' + (izq + slot * k) + '" y="' + arriba + '" width="' + slot + '" height="' + alto + '" fill="transparent"/>' + barras
-      + ((k === masAlta || sel === val) && total ? '<text x="' + (x + ancho / 2) + '" y="' + (y(total) - 5) + '" font-size="10.5" font-weight="600" fill="#F2EFE6" text-anchor="middle">' + total + '</text>' : '') + '</g>';
-    if (k % cadaEtq === 0) g += '<text x="' + (x + ancho / 2) + '" y="' + (H - 8) + '" font-size="10" fill="#A9B6CA" text-anchor="middle" style="font-variant-numeric:tabular-nums">' + incEsc(f.etq) + '</text>';
+      + ((k === masAlta || sel === val) && total ? '<text x="' + (x + ancho / 2) + '" y="' + (y(total) - 5) + '" font-size="10.5" font-weight="600" fill="#F4F1EA" text-anchor="middle">' + total + '</text>' : '') + '</g>';
+    if (k % cadaEtq === 0) g += '<text x="' + (x + ancho / 2) + '" y="' + (H - 8) + '" font-size="10" fill="#C9C2B5" text-anchor="middle" style="font-variant-numeric:tabular-nums">' + incEsc(f.etq) + '</text>';
   });
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="Incidencias por franja horaria, por gravedad">' + g
-    + '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="rgba(255,255,255,.22)" stroke-width="1"/></svg>';
+    + '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="rgba(244,241,234,.35)" stroke-width="1"/></svg>';
 }
 // Barras horizontales de una sola serie (azul), con el valor en la punta (y, si
 // quedan, cuántas siguen abiertas). Más de 6: el resto en una línea de texto, sin
@@ -7627,14 +7640,14 @@ function incGrafBarras(pares, titulo, ancho, op) {
   const W = Math.max(240, Math.round(ancho || 320)), fila = 26, H = (filas.length + (resto.length ? 1 : 0)) * fila + 4, etq = Math.min(150, Math.round(W * 0.38)), der = conAbiertas ? 92 : 26;
   const max = Math.max(1, ...filas.map(p => p[1])), largo = W - etq - der;
   const g = filas.map(([k, n], i) => {
-    const y = i * fila + 6, w = Math.max(3, (n / max) * largo), r = Math.min(4, w / 2), a = ab[k] || 0, toca = !!op.tipo;
+    const y = i * fila + 6, w = Math.max(3, (n / max) * largo), r = Math.min(INC_GRAF_RADIO, w / 2), a = ab[k] || 0, toca = !!op.tipo;
     const tip = [n + ' incidencia' + (n === 1 ? '' : 's'), k].concat(a ? [a + ' abierta' + (a === 1 ? '' : 's')] : []).concat(toca ? [op.tipo === 'sector' ? 'Tocá para verlo en el plano' : 'Tocá para verlas en el listado'] : []);
     return '<g class="' + (toca ? incClaseMarca(k, op.sel) : 'inc-marca') + '"' + incTip(tip) + (toca ? incTocable(op.tipo, k) : '') + '><rect x="0" y="' + (y - 4) + '" width="' + W + '" height="' + fila + '" fill="transparent"/>'
-      + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#A9B6CA" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
+      + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#C9C2B5" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
       + '<path d="M' + etq + ',' + y + 'H' + (etq + w - r) + 'Q' + (etq + w) + ',' + y + ' ' + (etq + w) + ',' + (y + r) + 'V' + (y + 14 - r) + 'Q' + (etq + w) + ',' + (y + 14) + ' ' + (etq + w - r) + ',' + (y + 14) + 'H' + etq + 'Z" fill="' + INC_GRAF_AZUL + '"/>'
-      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#F2EFE6">' + n + (a ? '<tspan font-weight="400" fill="#A9B6CA"> · ' + (a === n ? (n === 1 ? 'abierta' : 'todas abiertas') : a + ' abierta' + (a === 1 ? '' : 's')) + '</tspan>' : '') + '</text></g>';
-  }).join('') + (resto.length ? '<text x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#A9B6CA" text-anchor="end">+ ' + resto.length + ' más</text>'
-    + '<text x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#A9B6CA">' + enResto + ' incidencia' + (enResto === 1 ? '' : 's') + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
+      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#F4F1EA">' + n + (a ? '<tspan font-weight="400" fill="#C9C2B5"> · ' + (a === n ? (n === 1 ? 'abierta' : 'todas abiertas') : a + ' abierta' + (a === 1 ? '' : 's')) + '</tspan>' : '') + '</text></g>';
+  }).join('') + (resto.length ? '<text x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#C9C2B5" text-anchor="end">+ ' + resto.length + ' más</text>'
+    + '<text x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#C9C2B5">' + enResto + ' incidencia' + (enResto === 1 ? '' : 's') + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="' + incEsc(titulo) + '">' + g + '</svg>';
 }
 // ancho: el ancho disponible (el del contenedor); con él se calcula el de cada tarjeta.
@@ -7706,33 +7719,34 @@ function incMetricasActivar(cont) {
 function incEstiloMetricas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloMet')) return;
   const st = document.createElement('style'); st.id = 'incEstiloMet';
-  const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
-  st.textContent = '.inc-met{position:relative;background:linear-gradient(155deg,rgba(255,255,255,.1),rgba(255,255,255,.025) 55%),rgba(19,36,62,.55);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.14);color:#F2EFE6;border-radius:12px;padding:16px 18px 18px}'
-    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;margin-bottom:16px;border-bottom:1px dashed rgba(255,255,255,.14)}'
-    + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}.inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px dashed rgba(255,255,255,.14);padding-left:0}.inc-tiles.angosto .inc-tile:last-child{border-bottom:0}'
-    + '.inc-tile{background:transparent;border:0;border-right:1px dashed rgba(255,255,255,.14);border-radius:0;padding:4px 16px 14px;position:relative;text-align:left;font:inherit;color:inherit;width:100%;display:block}'
+  // Diseño "Afiche": un bloque plano azul; los rótulos y los datos en mono, en mayúsculas; las cifras, muy pesadas.
+  const MONO = "'Space Mono',ui-monospace,'Courier New',monospace", LINEA = 'rgba(244,241,234,.22)';
+  st.textContent = '.inc-met{position:relative;background:#17365F;color:#F4F1EA;border-radius:0;padding:18px 20px 20px}'
+    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;margin-bottom:18px;border-bottom:1px solid ' + LINEA + '}'
+    + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}.inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px solid ' + LINEA + ';padding-left:0}.inc-tiles.angosto .inc-tile:last-child{border-bottom:0}'
+    + '.inc-tile{background:transparent;border:0;border-right:1px solid ' + LINEA + ';border-radius:0;padding:4px 18px 16px;position:relative;text-align:left;font:inherit;color:inherit;width:100%;display:block}'
     + '.inc-tile:first-child{padding-left:0}.inc-tile:last-child{border-right:0}'
-    + 'button.inc-tile{cursor:pointer}button.inc-tile:hover .inc-tile-ir{text-decoration:underline}button.inc-tile:focus-visible{outline:2px solid #0062FF;outline-offset:2px}'
-    + '.inc-tile.on{box-shadow:inset 0 -3px 0 #5B96FF}'
-    + '.inc-tile-e{font-size:12px;color:#A9B6CA}'
-    + '.inc-tile-v{font:600 26px/1.15 ' + MONO + ';font-variant-numeric:tabular-nums;color:#F2EFE6;margin-top:3px}'
-    + '.inc-tile-s{font-size:12.5px;color:#A9B6CA;margin-top:3px;display:flex;align-items:center;gap:6px;min-width:0}'
-    + '.inc-tile-ir{font-size:12px;font-weight:600;color:#5B96FF;margin-top:6px}'
-    + '.inc-pt{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0}'
-    + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}.inc-grafs.dos{grid-template-columns:repeat(2,minmax(0,1fr))}'
+    + 'button.inc-tile{cursor:pointer}button.inc-tile:hover .inc-tile-ir{text-decoration:underline}button.inc-tile:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
+    + '.inc-tile.on{box-shadow:inset 0 -4px 0 #F4F1EA}'
+    + '.inc-tile-e{font:700 10px ' + MONO + ';letter-spacing:.12em;text-transform:uppercase;color:#C9C2B5}'
+    + '.inc-tile-v{font:900 40px/1 ' + INC_FUENTE + ';font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:#F4F1EA;margin-top:8px}'
+    + '.inc-tile-s{font:400 11px ' + MONO + ';color:#ECE7DD;margin-top:6px;display:flex;align-items:center;gap:6px;min-width:0}'
+    + '.inc-tile-ir{font:700 10.5px ' + MONO + ';letter-spacing:.1em;text-transform:uppercase;color:#F4F1EA;margin-top:8px}'
+    + '.inc-pt{width:8px;height:8px;border-radius:0;display:inline-block;flex-shrink:0}'
+    + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}.inc-grafs.dos{grid-template-columns:repeat(2,minmax(0,1fr))}'
     + '.inc-graf-ancha{grid-column:1/-1}'
     + '.inc-graf-card{background:transparent;border:0;border-radius:0;padding:0;min-width:0}'
-    + '.inc-graf-t{font:500 11px ' + MONO + ';letter-spacing:.6px;color:#A9B6CA;margin-bottom:10px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}'
-    + '.inc-graf-t small{font:400 11px ' + INC_FUENTE + ';letter-spacing:0;color:#A9B6CA}'
-    + '.inc-leyenda{display:flex;gap:14px;font-size:11.5px;color:#A9B6CA;margin-bottom:6px;flex-wrap:wrap}'
-    + '.inc-leyenda span{display:inline-flex;align-items:center;gap:6px}.inc-leyenda i{width:10px;height:10px;border-radius:2px;display:inline-block}'
-    + '.inc-graf{max-width:100%;height:auto;display:block;font-family:var(--inc-fuente,Poppins),sans-serif;overflow:visible}'
+    + '.inc-graf-t{font:700 10px ' + MONO + ';letter-spacing:.12em;text-transform:uppercase;color:#C9C2B5;margin-bottom:10px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}'
+    + '.inc-graf-t small{font:400 10.5px ' + MONO + ';letter-spacing:0;text-transform:none;color:#C9C2B5}'
+    + '.inc-leyenda{display:flex;gap:14px;font:400 10.5px ' + MONO + ';letter-spacing:.06em;text-transform:uppercase;color:#C9C2B5;margin-bottom:6px;flex-wrap:wrap}'
+    + '.inc-leyenda span{display:inline-flex;align-items:center;gap:6px}.inc-leyenda i{width:10px;height:10px;border-radius:0;display:inline-block}'
+    + '.inc-graf{max-width:100%;height:auto;display:block;font-family:' + MONO + ';overflow:visible}'
     + '.inc-marca{outline:none;cursor:default;transition:opacity .15s}.inc-marca.inc-toca{cursor:pointer}.inc-marca:hover path,.inc-marca:hover rect[fill]:not([fill="transparent"]),.inc-marca:focus path,.inc-marca:focus rect[fill]:not([fill="transparent"]){filter:brightness(1.25)}'
     + '.inc-marca.apagada{opacity:.3}.inc-marca.on text{font-weight:700}'
-    + '.inc-marca:focus-visible{outline:2px solid #0062FF;outline-offset:2px}'
-    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#0D1A2E;border:1px solid rgba(255,255,255,.16);color:#D6DEE9;font:500 11.5px var(--inc-fuente,Poppins),sans-serif;padding:7px 10px;border-radius:6px;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s}'
-    + '.inc-met-tip .v{color:#fff;font-weight:600;font-size:13px}'
-    + '.inc-met-vacio{text-align:center;color:#A9B6CA;font-size:12.5px;padding:18px;border:1.5px dashed rgba(255,255,255,.16);border-radius:12px;background:rgba(19,36,62,.55)}'
+    + '.inc-marca:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
+    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#09203C;color:#ECE7DD;font:400 11px ' + MONO + ';padding:7px 10px;border-radius:0;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s}'
+    + '.inc-met-tip .v{color:#F4F1EA;font-weight:700;font-size:12.5px}'
+    + '.inc-met-vacio{text-align:center;color:#C9C2B5;font:400 12px ' + MONO + ';padding:18px;border:2px dashed ' + LINEA + ';border-radius:0;background:transparent}'
     + '@media(prefers-reduced-motion:reduce){.inc-marca{transition:none}}';
   document.head.appendChild(st);
 }
@@ -8174,7 +8188,7 @@ function renderCcShows() {
   if (!ccShows.length) { cont.innerHTML = sumar + '<div class="empty">Todavía no hay shows en el Centro de Control. Sumá los que van a usar este procedimiento: la gerencia ve sólo esos y los supervisores cargan incidencias sólo en esos.</div>'; return; }
   const chips = x => {
     if (!('total' in x)) return '';
-    const c = [3, 2, 1].filter(nv => x['abiertas_' + nv]).map(nv => '<span class="inc-cuenta nivel" style="--c:' + INC_NIVELES[nv].talon + '"><strong>' + x['abiertas_' + nv] + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('');
+    const c = [3, 2, 1].filter(nv => x['abiertas_' + nv]).map(nv => '<span class="inc-cuenta n' + nv + '"><strong>' + x['abiertas_' + nv] + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('');
     return '<div class="cc-show-chips">' + (c || '<span class="inc-cuenta">' + (x.total ? 'Sin abiertas · ' + x.total + ' en total' : 'Sin incidencias') + '</span>') + '</div>';
   };
   const tarjeta = x => '<button class="cc-show' + (x.id === ccConvId ? ' on' : '') + '" onclick="ccAbrirShow(\'' + x.id + '\')"><div class="cc-show-n">' + e(x.nombre || '') + (ccGrupo(x) === 'hoy' ? '<span class="cc-hoy">Hoy</span>' : '') + '</div>'
@@ -8200,8 +8214,10 @@ async function ccAbrirShow(id) {
   const x = ccShows.find(y => y.id === id) || convs.find(y => y.id === id); if (!x) return;
   ccConvId = id;
   const q = document.getElementById('ccQuitar'); if (q) q.style.display = '';
-  document.getElementById('incTitulo').textContent = x.nombre || '';
-  document.getElementById('incSubtitulo').textContent = [resumenFechasTexto(x.fecha), x.venue].filter(Boolean).join(' · ');
+  // Como en la gerencia: el nombre enorme (lo de antes de " — ") y, abajo, el lugar y las fechas.
+  const partes = String(x.nombre || '').split(' — ');
+  document.getElementById('incTitulo').textContent = partes[0];
+  document.getElementById('incSubtitulo').textContent = [partes.slice(1).join(' — ') || x.venue, resumenFechasTexto(x.fecha)].filter(Boolean).join(' · ');
   incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = null; incVistosAdm = null; incNuevosAdm = new Set(); incNivelAdm = 0; incFocoAdm = incCatAdm = incFranjaAdm = '';
   // El armado del campo, antes de dibujar: el 3D lo espera (la primera vez) y se arma una vez.
   const armados = incTraerDatos(incCargarArmados());
@@ -8314,10 +8330,12 @@ function renderIncidAdm() {
   const elegido = incNivelAdm ? String(incNivelAdm) : (incFiltroAdm === 'resueltas' || incFiltroAdm === 'todas' ? incFiltroAdm : '');
   // Como en la gerencia: el punto de color y qué es, arriba; el número grande (y "abiertas"), abajo.
   const nombres = { 3: 'Graves', 2: 'Medias', 1: 'Leves' };
+  // Los colores de la gravedad en este diseño (la forma de cada uno la pone el estilo).
+  const NIVEL_COLOR = { 3: '#C42A1C', 2: '#F0A202', 1: '#F4F1EA' };
   const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat' + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="incTocarStatAdm(\'' + clave + '\')" title="Ver ' + (txt + (sufijo ? ' ' + sufijo : '')).toLowerCase() + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
-  document.getElementById('incResumenAdm').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', INC_NIVELES[nv].talon, nv === 3 && n(3), String(nv))).join('')
-    + stat(delDia.length - abiertas.length, 'Resueltas', '', '#12877A', false, 'resueltas') + stat(delDia.length, 'En total', '', '#5B96FF', false, 'todas');
+  document.getElementById('incResumenAdm').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', NIVEL_COLOR[nv], nv === 3 && n(3), String(nv))).join('')
+    + stat(delDia.length - abiertas.length, 'Resueltas', '', '#C9C2B5', false, 'resueltas') + stat(delDia.length, 'En total', '', '#C9C2B5', false, 'todas');
   const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('incEstadoAdm');
   if (estEl) { estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html; }
   const datosEl = document.getElementById('incPaseDatosAdm'); if (datosEl) datosEl.innerHTML = incPaseDatosHTML(delDia);
@@ -8339,7 +8357,7 @@ function renderIncidAdm() {
   const dias = [...new Set(incListaAdm.map(i => incDia(i.created_at)).filter(Boolean))].sort().reverse();
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="incFiltrarAdm(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
   const quitar = (k, t) => '<span class="chip on">' + t + ' <button type="button" class="chip-x" onclick="incFiltrarAdm(\'' + k + '\',\'\')" aria-label="Sacar el filtro">✕</button></span>';
-  document.getElementById('incListaT').innerHTML = 'Incidencias<small>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + ' · ' + delDia.length + ' en total</small>';
+  document.getElementById('incListaT').innerHTML = '<span class="mano">las</span>Incidencias<small>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + ' · ' + delDia.length + ' en total</small>';
   document.getElementById('incFiltrosAdm').innerHTML =
     '<div class="cc-seg seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (incFiltroAdm === v ? 'on' : '') + '" onclick="incFiltrarAdm(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
     + (dias.length > 1 || (dias.length === 1 && incDiaAdm !== dias[0]) ? chip('dia', '', 'Todos los días', !incDiaAdm) + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), incDiaAdm === d)).join('') : '')
