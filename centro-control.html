@@ -25,7 +25,7 @@
   --crema:#F4F1EA;--crema-2:#ECE7DD;--gris:#C9C2B5;--linea:rgba(244,241,234,.22);
   /* La gravedad: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
   --celeste:#019DF4;   /* el celeste de la marca (las cifras del resumen del show y el informe) */
-  --celeste-osc:#00466F;--celeste-letra:#BDE6FF;   /* el resumen del show, como la gravedad */
+  --celeste-osc:#003150;--celeste-letra:#019DF4;   /* el resumen del show: fondo oscuro y la letra en el celeste (4,6 a 1) */
   --grave:#A11D21;--grave-letra:#FFD2CF;--media:#7A6600;--media-letra:#FFF0B8;--leve:#4E5560;--leve-letra:#E4E7EC;
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -38,6 +38,8 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 /* Los rótulos: mono, en mayúsculas espaciadas. */
 .rot{font:600 12.5px var(--inc-fuente);letter-spacing:0;color:var(--gris)}
 /* Los títulos de sección: enteros en la letra manuscrita, grandes (a igual tamaño se ve más chica que Poppins). */
+/* En la manuscrita, el tilde que va después de una mayúscula choca con su último trazo (la é de "Métricas"): un poco de aire. */
+.tilde-aire{margin-left:.1em}
 .sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 .28em;font:400 56px/1.05 var(--mano);letter-spacing:0;padding-top:.05em}
 .sec-t .mano{font-size:1em;transform:none}
 /* La barra de arriba: el logo y la marca (AX, Show Business Solutions, la frase) y, a la derecha, en vivo, actualizar, el informe y salir. */
@@ -179,7 +181,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .met-t{margin:44px 0 16px}
 #metricas{--tj-muesca:var(--fondo)}
 /* El resumen del show (lo pone el plano): un bloque celeste, para que corte con el resto, como las cajas de gravedad: de fondo, el celeste oscuro; la letra, el mismo celeste, claro; las cifras (muy pesadas) y las barras, en el celeste de la marca. */
-.pantalla .inc-met{--met-linea:rgba(189,230,255,.2);background:var(--celeste-osc);color:var(--celeste-letra);padding:18px 20px 20px}
+.pantalla .inc-met{--met-linea:rgba(1,157,244,.28);background:var(--celeste-osc);color:var(--celeste-letra);padding:18px 20px 20px}
 .pantalla .inc-met-intro{color:var(--celeste-letra);font-size:13px;margin-bottom:16px}
 .pantalla .inc-tiles{gap:0;margin-bottom:18px;border-bottom:1px solid var(--met-linea)}
 .pantalla .inc-tile{background:transparent;border:0;border-right:1px solid var(--met-linea);border-radius:0;padding:4px 18px 16px}
@@ -193,7 +195,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .pantalla .inc-tile-ir{font:600 12.5px var(--inc-fuente);color:var(--celeste-letra)}
 .pantalla .inc-graf-card{background:transparent;border:0;border-radius:0;padding:0}
 .pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:var(--celeste-letra);margin-bottom:8px}
-.pantalla .inc-g-t{fill:#BDE6FF}.pantalla .inc-g-s{fill:#BDE6FF}.pantalla .inc-g-barra{fill:#019DF4}
+.pantalla .inc-g-t{fill:#019DF4}.pantalla .inc-g-s{fill:#019DF4}.pantalla .inc-g-barra{fill:#019DF4}
 .pantalla .inc-marca:focus-visible{outline-color:var(--celeste-letra)}
 .pantalla .inc-met-tip{background:var(--fondo);color:var(--crema-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--crema)}
 .pantalla .inc-met-vacio{background:var(--celeste-osc);border:0;border-radius:0;color:var(--celeste-letra)}
@@ -294,7 +296,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
         <div class="t-lista-cuerpo" id="lista"></div>
       </aside>
     </div>
-    <h2 class="met-t sec-t"><span class="mano">Métricas</span></h2>
+    <h2 class="met-t sec-t"><span class="mano">M<span class="tilde-aire">é</span>tricas</span></h2>
     <div id="metricas"></div>
   </div>
 </div>
