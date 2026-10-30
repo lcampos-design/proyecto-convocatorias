@@ -1729,7 +1729,9 @@ function incPlanoSVG(op) {
 // completa (el iPhone), el plano se agranda igual a toda la pantalla.
 // three.js se carga recién cuando hace falta (pesa). Si el aparato no
 // tiene WebGL o el 3D falla, queda el plano en 2D: nunca se queda sin plano.
-const INC_3D_ALTURA = { campo: 1.4, baja: [3, 17], alta: [30, 45], vip: 26, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13, calle: 0.5 };
+// La platea baja arranca a 7, como en el Arena: abajo, la pared del campo (con sus
+// columnas y las salidas) y la cinta LED de adelante.
+const INC_3D_ALTURA = { campo: 1.4, baja: [7, 17], alta: [30, 45], vip: 26, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13, calle: 0.5 };
 // Los pisos, como en un edificio: a qué altura está el anillo de cada uno. El
 // de P1, arriba de la platea baja (el corner, a la misma altura); el del VIP,
 // un poco más arriba, a la altura de los palcos y el lounge (como un palco de
@@ -2341,8 +2343,9 @@ function incPlano3D(cont, op0) {
   const matTruss = new T.MeshStandardMaterial({ color: 0x2c3e5c, roughness: 0.4, metalness: 0.8 });
   [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(1.6, 50, 1.6), matTruss); t.position.set(x, 25, z); escena.add(t); });
   [[0, -114, 110, 0], [0, -164, 110, 0], [-54, -139, 52, Math.PI / 2], [54, -139, 52, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 1.8, 1.8), matTruss); t.position.set(x, 50, z); t.rotation.y = r; escena.add(t); });
-  // Los telones: negros y traslúcidos, al fondo (detrás de la pantalla) y a
-  // los costados, colgados de la armazón hasta el piso. Sin techo: que no sea una caja.
+  // Los telones: negros y traslúcidos (que se vea el backstage), al fondo (detrás
+  // de la pantalla, más ancho que la armazón, como en el Arena) y a los costados,
+  // colgados desde arriba hasta el piso. Sin techo: que no sea una caja.
   {
     const c = lienzoDe(512, 8), x = c.getContext('2d');
     // Los pliegues: franjas que se oscurecen y se aclaran (14 cada 108 de ancho).
@@ -2350,11 +2353,11 @@ function incPlano3D(cont, op0) {
     const texTelon = textura(c); texTelon.wrapS = T.RepeatWrapping;
     const matTelon = new T.MeshBasicMaterial({ map: texTelon, transparent: true, side: T.DoubleSide, depthWrite: false });
     const telon = (ancho, px, pz, giro) => {
-      const g = new T.PlaneGeometry(ancho, 50), uv = g.attributes.uv;
+      const g = new T.PlaneGeometry(ancho, 60), uv = g.attributes.uv;
       for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * ancho / 108);   // el mismo ancho de pliegue en todos
-      const m = new T.Mesh(g, matTelon); m.position.set(px, 25, pz); m.rotation.y = giro || 0; m.renderOrder = 2; escena.add(m);
+      const m = new T.Mesh(g, matTelon); m.position.set(px, 30, pz); m.rotation.y = giro || 0; m.renderOrder = 2; escena.add(m);
     };
-    telon(108, 0, -164.4);                  // el del fondo
+    telon(150, 0, -164.4);                  // el del fondo
     telon(50, -54.4, -139, Math.PI / 2);    // los de los costados
     telon(50, 54.4, -139, Math.PI / 2);
   }
@@ -2374,6 +2377,24 @@ function incPlano3D(cont, op0) {
   marcoLed.position.set(0, 26, -162.2); escena.add(marcoLed);
   // Un borde de luz abajo de la pantalla.
   { const t = new T.Mesh(new T.BoxGeometry(96, 0.5, 0.5), matLuz); t.position.set(0, 11.8, -161.3); escena.add(t); }
+  // A los costados del escenario, como en el Arena: dos pantallas (con el mismo
+  // azul de los LED), un poco giradas hacia el público, y el sonido colgado del
+  // techo: una columna de cajas negras que se curva hacia el público.
+  {
+    const matMarcoCostado = new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 });
+    [-1, 1].forEach(k => {
+      const g = new T.Group(); g.position.set(k * 74, 34, -118); g.rotation.y = -k * 0.28; escena.add(g);
+      const pant = new T.Mesh(new T.PlaneGeometry(30, 17), new T.MeshBasicMaterial({ map: texLed })); pant.position.z = 0.8; g.add(pant);
+      g.add(new T.Mesh(new T.BoxGeometry(32, 19, 1.4), matMarcoCostado));
+    });
+    const matCaja = new T.MeshStandardMaterial({ color: 0x0a0e15, roughness: 0.55, metalness: 0.3 }), geoCaja = new T.BoxGeometry(6, 2.3, 4.2);
+    const matCable = new T.LineBasicMaterial({ color: 0x2c3e5c, transparent: true, opacity: 0.6 });
+    [-1, 1].forEach(k => {
+      const cx = k * 60, cz = -110;
+      for (let i = 0; i < 8; i++) { const c = new T.Mesh(geoCaja, matCaja); c.position.set(cx, 60 - i * 2.45, cz + i * i * 0.05); c.rotation.x = i * 0.045; escena.add(c); }
+      escena.add(new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(cx, 61.2, cz), new T.Vector3(cx, 74, cz)]), matCable));
+    });
+  }
   // La consola (FOH) al fondo del campo, de referencia (no se toca: tocar sigue eligiendo el campo).
   {
     const [fx, fy, fw, fh] = INC_FOH, cx = fx + fw / 2 - 210, cz = fy + fh / 2 - 146;
@@ -2409,6 +2430,34 @@ function incPlano3D(cont, op0) {
   const cintaLed = new T.Mesh(pared(INC_CINTA.map(([x, y]) => new T.Vector3(x - 210, 0, y - 146)), INC_3D_ALTURA.vip - 5, INC_3D_ALTURA.vip, false, 5 * 32), new T.MeshBasicMaterial({ map: texCinta }));
   // Va con el VIP (da la vuelta delante de los palcos): se saca con él.
   const cintaG = new T.Group(); cintaG.add(cintaLed); escena.add(cintaG);
+  // Adelante de la platea baja, como en el Arena: abajo, la pared del campo
+  // (oscura, con las salidas y sus carteles verdes, y las columnas de hormigón
+  // un poco adelante) y arriba otra cinta LED que da la vuelta, con el mismo
+  // texto. Van con la platea baja (P1): se sacan y se apagan con ella.
+  const FRENTE_BAJA = [[140.4, 18], [140.4, 205.8], [144.2, 209.6], [275.8, 209.6], [279.6, 205.8], [279.6, 18]].map(([x, y]) => new T.Vector3(x - 210, 0, y - 146));
+  const ALTO_PARED_CAMPO = INC_3D_ALTURA.baja[0] - 2.4;   // hasta donde empieza la cinta
+  const frenteG = new T.Group(); escena.add(frenteG);
+  const lienzoPared = lienzoDe(512, 64);
+  {
+    const x = lienzoPared.getContext('2d');
+    x.fillStyle = '#0a1120'; x.fillRect(0, 0, 512, 64);
+    [128, 384].forEach(c => { x.fillStyle = '#03060c'; x.fillRect(c - 34, 20, 68, 44); x.fillStyle = '#1fbf6a'; x.fillRect(c - 16, 7, 32, 8); });
+    x.fillStyle = 'rgba(79,127,184,.5)'; x.fillRect(0, 0, 512, 2);
+  }
+  const texPared = textura(lienzoPared); texPared.wrapS = T.RepeatWrapping; texPared.anisotropy = anis;
+  const matMuroCampo = new T.MeshStandardMaterial({ map: texPared, roughness: 0.8 });
+  frenteG.add(new T.Mesh(pared(FRENTE_BAJA, 0, ALTO_PARED_CAMPO, false, 48), matMuroCampo));
+  const altoCintaBaja = INC_3D_ALTURA.baja[0] + 1 - ALTO_PARED_CAMPO;
+  const matCintaBaja = new T.MeshBasicMaterial({ map: texCinta });   // como la de arriba: se ve del lado del campo
+  frenteG.add(new T.Mesh(pared(FRENTE_BAJA, ALTO_PARED_CAMPO, ALTO_PARED_CAMPO + altoCintaBaja, false, altoCintaBaja * 32), matCintaBaja));
+  const matColCampo = new T.MeshStandardMaterial({ color: 0x8e949d, roughness: 0.85 }), geoColCampo = new T.BoxGeometry(2.2, ALTO_PARED_CAMPO, 2.2);
+  for (let i = 0; i < FRENTE_BAJA.length - 1; i++) {
+    const a = FRENTE_BAJA[i], b = FRENTE_BAJA[i + 1], L = a.distanceTo(b), n = Math.floor(L / 24);
+    if (L < 20) continue;
+    const d = b.clone().sub(a).normalize(), haciaCampo = new T.Vector3(d.z, 0, -d.x).multiplyScalar(1.6);
+    for (let k = 1; k < n; k++) { const col = new T.Mesh(geoColCampo, matColCampo); col.position.copy(a.clone().lerp(b, k / n).add(haciaCampo)).setY(ALTO_PARED_CAMPO / 2); frenteG.add(col); }
+  }
+  const matsFrente = [matMuroCampo, matCintaBaja, matColCampo];
 
   // La fachada de vidrio, como la de un edificio: desde abajo hasta arriba del
   // último piso, con sus parantes y una línea arriba y otra abajo. Al elegir un
@@ -2435,33 +2484,40 @@ function incPlano3D(cont, op0) {
   // (como las paredes en Los Sims) y queda el plano por dentro. Los árboles de
   // las veredas, la chimenea y la palmera de la esquina quedan siempre.
   const ALTO_EDIFICIO = 64;
-  // Un poco más afuera que el vidrio (que no se pisen).
-  const afuera = fach.map(q => new T.Vector3(q.x * 1.007, 0, (q.z + 9) * 1.007 - 9));
-  const lienzoLamas = lienzoDe(1024, 512);
+  // Por fuera, las esquinas de Humboldt redondeadas, como las del Arena (el plano
+  // las tiene en diagonal). Un poco más afuera que el vidrio (que no se pisen).
+  const R_ESQ = 56, arco = (cx, cy, a0, a1) => Array.from({ length: 9 }, (_, i) => { const a = a0 + (a1 - a0) * i / 8; return [cx + R_ESQ * Math.cos(a), cy + R_ESQ * Math.sin(a)]; });
+  const contorno = [[20, -46]].concat(arco(20 + R_ESQ, 320 - R_ESQ, Math.PI, Math.PI / 2), arco(400 - R_ESQ, 320 - R_ESQ, Math.PI / 2, 0), [[400, -46]]);
+  const afuera = contorno.map(([x, y]) => new T.Vector3((x - 210) * 1.007, 0, (y - 146 + 9) * 1.007 - 9));
+  const lienzoLamas = lienzoDe(2048, 512);
   {
-    const x = lienzoLamas.getContext('2d');
-    x.fillStyle = '#1d222a'; x.fillRect(0, 0, 1024, 512);
-    // Las lamas verticales, plateadas, con su brillo.
-    for (let i = 0; i < 1024; i += 16) {
-      const g = x.createLinearGradient(i, 0, i + 13, 0);
-      g.addColorStop(0, '#8e969f'); g.addColorStop(0.45, '#eef1f4'); g.addColorStop(1, '#a3abb3');
-      x.fillStyle = g; x.fillRect(i + 2, 0, 12, 512);
+    const x = lienzoLamas.getContext('2d'), FILAS = 10, FILA = 512 / FILAS;
+    x.fillStyle = '#1d222a'; x.fillRect(0, 0, 2048, 512);
+    // Las lamas verticales, plateadas, en paneles (10 de alto, con su junta). La
+    // onda oscura en diagonal va por panel, escalonada como en el Arena: ahí las
+    // lamas giran y se ven oscuras (y una más finita, arriba de la grande).
+    const enOnda = (f, y) => { const medio = 512 * (0.86 - 0.66 * f), alto = 120 + 80 * Math.sin(f * Math.PI); return Math.abs(y - medio) < alto / 2 || Math.abs(y - (medio - 150)) < 22; };
+    for (let i = 0; i < 2048; i += 16) {
+      const plata = x.createLinearGradient(i, 0, i + 13, 0), oscura = x.createLinearGradient(i, 0, i + 13, 0);
+      plata.addColorStop(0, '#7b838c'); plata.addColorStop(0.45, '#cfd4da'); plata.addColorStop(1, '#8c949d');
+      oscura.addColorStop(0, '#262b33'); oscura.addColorStop(0.45, '#3b424c'); oscura.addColorStop(1, '#2a3038');
+      for (let j = 0; j < FILAS; j++) { x.fillStyle = enOnda(i / 2048, (j + 0.5) * FILA) ? oscura : plata; x.fillRect(i + 2, j * FILA + 1, 12, FILA - 2); }
     }
-    // La onda oscura en diagonal: ahí las lamas giran y se ven oscuras.
-    for (let i = 0; i < 1024; i += 16) {
-      const f = i / 1024, medio = 512 * (0.82 - 0.62 * f), alto = 110 + 70 * Math.sin(f * Math.PI);
-      x.fillStyle = 'rgba(28,32,40,.8)'; x.fillRect(i + 2, medio - alto / 2, 12, alto);
-    }
-    // Los ventanales, la planta baja oscura y el borde de arriba.
-    x.fillStyle = 'rgba(12,16,24,.94)'; x.fillRect(0, 150, 1024, 54);
-    x.fillStyle = 'rgba(150,190,230,.28)'; for (let i = 5; i < 1024; i += 34) x.fillRect(i, 155, 28, 44);
-    x.fillStyle = '#151a21'; x.fillRect(0, 446, 1024, 66);
-    x.fillStyle = 'rgba(150,190,230,.18)'; for (let i = 8; i < 1024; i += 52) x.fillRect(i, 456, 40, 50);
-    x.fillStyle = '#2b3038'; x.fillRect(0, 0, 1024, 8);
+    // Los ventanales: aberturas sueltas, con su marco oscuro y la perfilería (no una franja).
+    const ventanal = (x0, y0, w, alto, paso) => {
+      x.fillStyle = '#0b0f16'; x.fillRect(x0, y0, w, alto);
+      x.fillStyle = 'rgba(140,180,220,.34)'; for (let i = x0 + 6; i + paso - 6 <= x0 + w; i += paso) x.fillRect(i, y0 + 6, paso - 6, alto - 12);
+      x.fillStyle = '#0b0f16'; x.fillRect(x0, y0 + alto / 2 - 2, w, 4);
+    };
+    ventanal(1180, 110, 336, 150, 48); ventanal(300, 80, 128, 228, 42);
+    // La planta baja oscura y el borde de arriba.
+    x.fillStyle = '#151a21'; x.fillRect(0, 446, 2048, 66);
+    x.fillStyle = 'rgba(150,190,230,.18)'; for (let i = 8; i < 2048; i += 52) x.fillRect(i, 456, 40, 50);
+    x.fillStyle = '#2b3038'; x.fillRect(0, 0, 2048, 8);
   }
   const texLamas = textura(lienzoLamas); texLamas.wrapS = T.RepeatWrapping; texLamas.anisotropy = anis;
   const matLamas = new T.MeshBasicMaterial({ map: texLamas, side: T.DoubleSide });
-  const lamas = new T.Mesh(pared(afuera, 0, 1, true, 160), matLamas); escena.add(lamas);
+  const lamas = new T.Mesh(pared(afuera, 0, 1, true, 320), matLamas); escena.add(lamas);
   // El techo, gris claro y casi plano, con su borde.
   const techoG = new T.Group(); escena.add(techoG);
   // Los paneles del techo, apenas marcados (una baldosa cada 80).
@@ -2477,14 +2533,15 @@ function incPlano3D(cont, op0) {
   const matBordeTecho = new T.LineBasicMaterial({ color: 0x7d8690, transparent: true, opacity: 0.9 });
   techoG.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(afuera.map(q => q.clone().setY(2.05))), matBordeTecho));
   techoG.position.y = ALTO_EDIFICIO;
-  // La entrada de Humboldt, como es: la marquesina oscura que sobresale con el
-  // logo en blanco, las columnas de hormigón que la sostienen, detrás el frente
-  // de vidrio (transparente, con su perfilería) y adelante los escalones. Y la
+  // La entrada de Humboldt, como es: la marquesina negra y ancha que sobresale
+  // con el logo en blanco, arriba el ventanal del hall, las columnas de hormigón
+  // que la sostienen, detrás el frente de vidrio (transparente, con su
+  // perfilería) y adelante los escalones. Y la
   // "M" grande en la fachada, como en las fotos. Los logos son los oficiales
   // (logo-movistar-arena.png y logo-movistar-m.png); si no cargan, queda el nombre escrito.
   const entradaG = new T.Group(); escena.add(entradaG);
   {
-    const zf = Math.max(...afuera.map(q => q.z)) + 0.4, ANCHO = 128;
+    const zf = Math.max(...afuera.map(q => q.z)) + 0.4, ANCHO = 196;
     // El frente de vidrio: transparente, con la perfilería.
     const lv = lienzoDe(1024, 256), v = lv.getContext('2d');
     v.fillStyle = 'rgba(150,185,220,.22)'; v.fillRect(0, 0, 1024, 256);
@@ -2492,23 +2549,29 @@ function incPlano3D(cont, op0) {
     const tv = textura(lv); tv.anisotropy = anis;
     const vidrio = new T.Mesh(new T.PlaneGeometry(ANCHO - 8, 28.5), new T.MeshBasicMaterial({ map: tv, transparent: true, depthWrite: false, side: T.DoubleSide }));
     vidrio.position.set(0, 14.25, zf + 0.3); vidrio.renderOrder = 2; entradaG.add(vidrio);
-    // La marquesina: oscura, sobresale sobre la vereda, con el logo en blanco al frente.
-    const matMarq = new T.MeshStandardMaterial({ color: 0x2a2e35, roughness: 0.6, metalness: 0.3 });
-    const marq = new T.Mesh(new T.BoxGeometry(ANCHO, 14, 11), matMarq); marq.position.set(0, 35.5, zf + 5.5); entradaG.add(marq);
-    const lc = lienzoDe(2048, 200), x = lc.getContext('2d'), logo = new Image();
+    // La marquesina: negra, sobresale sobre la vereda, con el logo en blanco al frente.
+    const matMarq = new T.MeshStandardMaterial({ color: 0x15181c, roughness: 0.6, metalness: 0.3 });
+    const marq = new T.Mesh(new T.BoxGeometry(ANCHO, 18, 11), matMarq); marq.position.set(0, 37.5, zf + 5.5); entradaG.add(marq);
+    const lc = lienzoDe(2048, 176), x = lc.getContext('2d'), logo = new Image();
     const pintarNombre = () => {
-      x.fillStyle = '#2a2e35'; x.fillRect(0, 0, 2048, 200);
+      x.fillStyle = '#15181c'; x.fillRect(0, 0, 2048, 176);
       if (logo.complete && logo.naturalWidth) {
-        const alto = 140, ancho = alto * logo.naturalWidth / logo.naturalHeight;
-        x.imageSmoothingQuality = 'high'; x.drawImage(logo, (2048 - ancho) / 2, (200 - alto) / 2, ancho, alto);
+        const alto = 120, ancho = alto * logo.naturalWidth / logo.naturalHeight;
+        x.imageSmoothingQuality = 'high'; x.drawImage(logo, (2048 - ancho) / 2, (176 - alto) / 2, ancho, alto);
       } else {
-        x.fillStyle = '#f1f2f4'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '600 120px Poppins, sans-serif';
-        x.fillText('movistar arena', 1024, 104);
+        x.fillStyle = '#f1f2f4'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '600 110px Poppins, sans-serif';
+        x.fillText('movistar arena', 1024, 92);
       }
     };
     pintarNombre();
     const tc = textura(lc); tc.anisotropy = anis;
-    const nombre = new T.Mesh(new T.PlaneGeometry(ANCHO - 6, 12), new T.MeshBasicMaterial({ map: tc })); nombre.position.set(0, 35.5, zf + 11.05); entradaG.add(nombre);
+    const nombre = new T.Mesh(new T.PlaneGeometry(ANCHO - 10, 16), new T.MeshBasicMaterial({ map: tc })); nombre.position.set(0, 37.5, zf + 11.05); entradaG.add(nombre);
+    // Arriba de la marquesina, el ventanal del hall (como en la foto de la entrada).
+    const lw = lienzoDe(1024, 128), w = lw.getContext('2d');
+    w.fillStyle = '#10161f'; w.fillRect(0, 0, 1024, 128);
+    w.fillStyle = 'rgba(140,180,220,.32)'; for (let i = 6; i < 1024; i += 52) w.fillRect(i, 8, 46, 112);
+    const tw = textura(lw); tw.anisotropy = anis;
+    const ventanalHall = new T.Mesh(new T.PlaneGeometry(ANCHO - 24, 12), new T.MeshBasicMaterial({ map: tw })); ventanalHall.position.set(0, 53.5, zf + 0.25); entradaG.add(ventanalHall);
     logo.onload = () => { pintarNombre(); tc.needsUpdate = true; };
     logo.src = 'logo-movistar-arena.png';
     // Si Poppins llega después (y no está el logo), el nombre se vuelve a escribir con ella.
@@ -2516,7 +2579,7 @@ function incPlano3D(cont, op0) {
       document.fonts.load('600 120px Poppins').then(() => { pintarNombre(); tc.needsUpdate = true; }).catch(() => {});
     // Las columnas de hormigón, de la vereda a la marquesina.
     const matCol = new T.MeshStandardMaterial({ color: 0xbdb9b2, roughness: 0.85 });
-    [-48, -16, 16, 48].forEach(cx => { const col = new T.Mesh(new T.BoxGeometry(4.5, 28.5, 4.5), matCol); col.position.set(cx, 14.25, zf + 8); entradaG.add(col); });
+    [-84, -50, -17, 17, 50, 84].forEach(cx => { const col = new T.Mesh(new T.BoxGeometry(4.5, 28.5, 4.5), matCol); col.position.set(cx, 14.25, zf + 8); entradaG.add(col); });
     // Los escalones (el más alto, junto a la puerta).
     const matEsc = new T.MeshStandardMaterial({ color: 0xa9a7a2, roughness: 0.9 });
     [0, 1, 2].forEach(i => { const alto = 1.5 - i * 0.5, esc = new T.Mesh(new T.BoxGeometry(ANCHO + 4, alto, 2.6), matEsc); esc.position.set(0, alto / 2, zf + 1.3 + i * 2.6); entradaG.add(esc); });
@@ -2525,7 +2588,7 @@ function incPlano3D(cont, op0) {
     const matM = new T.MeshBasicMaterial({ transparent: true, depthWrite: false, side: T.DoubleSide, opacity: 0 });
     new T.TextureLoader().load('logo-movistar-m.png', t => { t.anisotropy = anis; desechar.push(t); matM.map = t; matM.opacity = 1; matM.needsUpdate = true; });
     const geoM = new T.PlaneGeometry(24, 24 * 1068 / 1440);
-    [[-118, 48, zf + 0.15, 0], [xMin, 48, 112, -Math.PI / 2], [xMax, 48, 112, Math.PI / 2]].forEach(([px, py, pz, giro]) => {
+    [[-118, 48, zf + 0.15, 0], [xMin, 48, 96, -Math.PI / 2], [xMax, 48, 96, Math.PI / 2]].forEach(([px, py, pz, giro]) => {
       const m = new T.Mesh(geoM, matM); m.position.set(px, py, pz); m.rotation.y = giro; m.renderOrder = 3; entradaG.add(m);
     });
   }
@@ -2544,7 +2607,7 @@ function incPlano3D(cont, op0) {
     const puertas = incLugaresArena.filter(l => l.t === 'puerta');
     const libre = (px, py) => !puertas.some(d => Math.hypot(d.cx - px, d.cy - py) < 22);
     let i = 0;
-    for (let px = 80; px <= 340; px += 30) if (Math.abs(px - 210) > 70 && libre(px, 318)) arbol(px, 331, i++);
+    for (let px = 80; px <= 340; px += 30) if (Math.abs(px - 210) > 104 && libre(px, 318)) arbol(px, 331, i++);
     for (let py = -24; py <= 300; py += 34) { if (libre(398, py) && py < 220) arbol(410, py, i++); if (libre(22, py)) arbol(9, py, i++); }
   }
   // La chimenea de ladrillo y la palmera: del lado de Corrientes, a la vista desde
@@ -3218,6 +3281,8 @@ function incPlano3D(cont, op0) {
         nv.et.el.style.visibility = pisoSel ? 'hidden' : ''; nv.guia.visible = !pisoSel;
       });
       cintaG.visible = pisos3d.VIP.g.visible;
+      frenteG.visible = pisos3d.P1.g.visible;
+      { const ap = !!pisoSel && iSel > ordenPiso('P1'); if (frenteG.userData.apagado !== ap) { frenteG.userData.apagado = ap; apagar(matsFrente, ap); } }
       altoFachadaObj = (pisoSel ? INC_3D_PISO[pisoSel] : INC_3D_PISO.P3) + ALTO_PARED;
       if (altoFachada === null) { altoFachada = altoFachadaObj; fachadaG.scale.y = altoFachada; }
       // La cámara mira a la altura del piso elegido (en "Todos", a media altura).
