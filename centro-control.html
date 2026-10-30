@@ -46,7 +46,7 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 .bar-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .bar-t{font:800 14.5px/1.1 var(--inc-fuente);letter-spacing:0;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .bar-s{font:400 12px var(--inc-fuente);color:var(--gris);white-space:nowrap}
-.bar .rot{font-weight:400}.bar .rot b{font-weight:800}
+.bar .rot{font-weight:400}.bar .rot b{font-weight:800}.bar .rot .mano{font-size:1.35em;color:var(--crema)}
 /* En el celular, la marca en dos renglones (entera, sin puntos suspensivos). */
 @media(max-width:560px){.bar-t{white-space:normal;font-size:12.5px;line-height:1.05}}
 .bar-acc{display:flex;gap:4px;align-items:center;flex-shrink:0}
@@ -233,7 +233,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
   <button class="atras" id="btnAtras" onclick="volverShows()" style="display:none" aria-label="Volver a los shows">←</button>
   <img class="bar-logo" src="logo-sbs-calado.png" alt="SBS">
   <div class="bar-txt">
-    <span class="rot"><b>AX</b> · Sala en vivo</span>
+    <span class="rot"><b>AX</b> · <span class="mano">Sala en vivo</span></span>
     <span class="bar-t">Show Business Solutions</span>
     <span class="bar-s">Hands on everything</span>
   </div>
