@@ -2219,14 +2219,22 @@ function incPlano3D(cont, op0) {
     // Los escalones (el más alto, junto a la puerta).
     const matEsc = new T.MeshStandardMaterial({ color: 0xa9a7a2, roughness: 0.9 });
     [0, 1, 2].forEach(i => { const alto = 1.5 - i * 0.5, esc = new T.Mesh(new T.BoxGeometry(ANCHO + 4, alto, 2.6), matEsc); esc.position.set(0, alto / 2, zf + 1.3 + i * 2.6); entradaG.add(esc); });
-    // Las "M" grandes, como en las fotos: en el costado de la Sede, una cerca de
-    // Humboldt y otra, más grande, en el medio. En el frente no hay (está el logo de la marquesina).
-    const xMax = Math.max(...afuera.map(q => q.x)) + 0.2;
+    // Las "M" grandes, como en las fotos: en el frente, una arriba cerca de la
+    // esquina con Cancha (con el ventanal alto debajo); en el costado Cancha, una
+    // arriba en la punta de Dorrego; en el costado de la Sede, la grande en el medio
+    // y una chica cerca de Humboldt. Atrás va el cartel con el logo.
+    const xs = afuera.map(q => q.x), xMin = Math.min(...xs) - 0.2, xMax = Math.max(...xs) + 0.2;
     const matM = new T.MeshBasicMaterial({ transparent: true, depthWrite: false, side: T.DoubleSide, opacity: 0 });
     new T.TextureLoader().load('logo-movistar-m.png', t => { t.anisotropy = anis; desechar.push(t); matM.map = t; matM.opacity = 1; matM.needsUpdate = true; });
-    [[48, 96, 24], [42, -40, 36]].forEach(([py, pz, ancho]) => {
-      const m = new T.Mesh(new T.PlaneGeometry(ancho, ancho * 1068 / 1440), matM); m.position.set(xMax, py, pz); m.rotation.y = Math.PI / 2; m.renderOrder = 3; entradaG.add(m);
+    [[-116, 50, zf + 0.15, 0, 26], [xMin, 50, -150, -Math.PI / 2, 30], [xMax, 48, 96, Math.PI / 2, 24], [xMax, 42, -40, Math.PI / 2, 36]].forEach(([px, py, pz, giro, ancho]) => {
+      const m = new T.Mesh(new T.PlaneGeometry(ancho, ancho * 1068 / 1440), matM); m.position.set(px, py, pz); m.rotation.y = giro; m.renderOrder = 3; entradaG.add(m);
     });
+    // El ventanal alto del frente, debajo de esa M: dos pisos de vidrio con su perfilería.
+    const lvA = lienzoDe(256, 256), vA = lvA.getContext('2d');
+    vA.fillStyle = '#0b0f16'; vA.fillRect(0, 0, 256, 256);
+    vA.fillStyle = 'rgba(140,180,220,.34)'; for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) vA.fillRect(10 + i * 80, 10 + j * 122, 76, 114);
+    const tvA = textura(lvA); tvA.anisotropy = anis;
+    const ventanalAlto = new T.Mesh(new T.PlaneGeometry(26, 26), new T.MeshBasicMaterial({ map: tvA })); ventanalAlto.position.set(-116, 24, zf + 0.2); entradaG.add(ventanalAlto);
     // Atrás, sobre Dorrego: el cartel con el logo, arriba (un poco hacia el lado Cancha), como en las fotos.
     const zAtras = Math.min(...afuera.map(q => q.z)) - 0.4;
     const la = lienzoDe(1024, 256), xa = la.getContext('2d');
