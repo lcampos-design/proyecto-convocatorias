@@ -44,8 +44,9 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 .bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--bloque);border-bottom:2px solid var(--crema)}
 .bar-logo{width:34px;height:34px;flex-shrink:0;display:block}
 .bar-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.bar-t{font:800 14.5px/1.1 var(--inc-fuente);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bar-t{font:800 14.5px/1.1 var(--inc-fuente);letter-spacing:0;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .bar-s{font:700 12px var(--inc-fuente);color:var(--gris);white-space:nowrap}
+.bar .rot{font-weight:400}.bar .rot b{font-weight:800}
 /* En el celular, la marca en dos renglones (entera, sin puntos suspensivos). */
 @media(max-width:560px){.bar-t{white-space:normal;font-size:12.5px;line-height:1.05}}
 .bar-acc{display:flex;gap:4px;align-items:center;flex-shrink:0}
@@ -61,7 +62,7 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 .atras:hover{background:var(--bloque-2)}
 button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-offset:2px}
 @media(max-width:760px){.bar-s{display:none}#btnActualizar{display:none}}
-@media(max-width:560px){#btnSalir span,.bar-acc .bar-btn span{display:none}#btnSalir,.bar-acc .bar-btn{width:44px;padding:0}}
+@media(max-width:560px){#btnSalir span,.bar-acc .bar-btn span,.bar .rot{display:none}#btnSalir,.bar-acc .bar-btn{width:44px;padding:0}}
 .wrap{max-width:1180px;margin:0 auto;padding:28px max(18px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
 .pantalla{display:none}.pantalla.on{display:block}
 /* El ingreso: un bloque plano. */
@@ -231,6 +232,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
   <button class="atras" id="btnAtras" onclick="volverShows()" style="display:none" aria-label="Volver a los shows">←</button>
   <img class="bar-logo" src="logo-sbs-calado.png" alt="SBS">
   <div class="bar-txt">
+    <span class="rot"><b>AX</b> · Sala en vivo</span>
     <span class="bar-t">Show Business Solutions</span>
     <span class="bar-s">Hands on everything</span>
   </div>
