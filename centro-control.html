@@ -3279,6 +3279,9 @@ async function cargarShows() {
   }));
   renderShows();
 }
+// El nombre sin "— Movistar Arena" (todos los shows son del Arena: lo dice el título).
+function esElArena(t) { return /^\s*movistar arena\s*$/i.test(String(t || '')); }
+function sinArena(n) { return String(n || '').split(' — ').filter((p, i) => !i || !esElArena(p)).join(' — '); }
 function fechasDe(s) { return String(s.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort(); }
 // Cada fecha es un show (las quincenas del Arena tienen un show por fecha; un evento externo,
 // como BTS, el mismo show en varias fechas): la lista y el tablero van por fecha.
@@ -3332,8 +3335,8 @@ function renderShows() {
   funciones().forEach(e => { if (e.f === hoy) grupos.hoy.push(e); else if (e.f && e.f > hoy) grupos.proximos.push(e); else grupos.anteriores.push(e); });
   grupos.proximos.sort((a, b) => a.f.localeCompare(b.f));
   grupos.anteriores.sort((a, b) => b.f.localeCompare(a.f));
-  const tarjeta = (e, vivo) => '<div class="show' + (vivo ? ' hoy' : '') + '" onclick="abrirShow(\'' + e.s.id + '\',\'' + e.f + '\')"><div class="show-main"><div class="show-n">' + incEsc(e.s.nombre) + (vivo ? '<span class="vivo-pill">Hoy</span>' : '') + '</div>'
-    + '<div class="show-f">' + (e.f ? resumenFechas({ fecha: e.f }) : 'Sin fechas') + (e.s.venue ? ' · ' + incEsc(e.s.venue) : '') + '</div><div class="show-chips">' + chipsAbiertas(e) + '</div></div><span class="flecha">›</span></div>';
+  const tarjeta = (e, vivo) => '<div class="show' + (vivo ? ' hoy' : '') + '" onclick="abrirShow(\'' + e.s.id + '\',\'' + e.f + '\')"><div class="show-main"><div class="show-n">' + incEsc(sinArena(e.s.nombre)) + (vivo ? '<span class="vivo-pill">Hoy</span>' : '') + '</div>'
+    + '<div class="show-f">' + (e.f ? resumenFechas({ fecha: e.f }) : 'Sin fechas') + '</div><div class="show-chips">' + chipsAbiertas(e) + '</div></div><span class="flecha">›</span></div>';
   const body = document.getElementById('showsBody');
   if (!shows.length) { body.innerHTML = '<div class="vacio">Todavía no hay shows en el Centro de Control. Cuando el equipo de SBS sume uno, aparece acá.</div>'; return; }
   const bloque = (t, l, vivo) => l.length ? '<div class="grupo">' + t + '</div><div class="shows-grid">' + l.map(s => tarjeta(s, vivo)).join('') + '</div>' : '';
@@ -3436,8 +3439,10 @@ function render() {
   const showAct = shows.find(x => x.id === showId) || {};
   // El nombre enorme (lo de antes de " — "); si el show es hoy, "en vivo" a mano al lado.
   const partes = String(showAct.nombre || '').split(' — ');
-  document.getElementById('paseN').innerHTML = incEsc(partes[0]) + (dia === hoyISO() ? '<span class="mano">en vivo</span>' : '');
-  document.getElementById('paseF').textContent = [partes.slice(1).join(' — ') || showAct.venue, dia ? resumenFechas({ fecha: dia }) : resumenFechas(showAct)].filter(Boolean).join(' · ');
+  // Sólo el nombre y la fecha: todos los shows son del Arena (sin "Movistar Arena") y el
+  // "en vivo" a mano salía porque la fecha es hoy, no porque el show esté en curso.
+  document.getElementById('paseN').innerHTML = incEsc(partes[0]);
+  document.getElementById('paseF').textContent = [partes.slice(1).filter(p => !esElArena(p)).join(' — '), dia ? resumenFechas({ fecha: dia }) : resumenFechas(showAct)].filter(Boolean).join(' · ');
   ajustarNombre();
   const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('estado');
   estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html;
