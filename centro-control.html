@@ -24,7 +24,7 @@
   --fondo:#09203C;--bloque:#17365F;--bloque-2:#1E4372;
   --crema:#F4F1EA;--crema-2:#ECE7DD;--gris:#C9C2B5;--linea:rgba(244,241,234,.22);
   /* La gravedad: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
-  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#856000;--media-letra:#FFE7A3;--leve:#4E5560;--leve-letra:#E4E7EC;
+  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#7A6600;--media-letra:#FFF0B8;--leve:#4E5560;--leve-letra:#E4E7EC;
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
@@ -123,15 +123,15 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .stat:hover{filter:brightness(1.12)}
 .stat-t{display:flex;align-items:center;gap:7px;max-width:100%;font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-t i{display:none}
-/* Lo abierto, en bloques del color de su gravedad: fondo oscuro, letra clara (en cero, apagados). */
-.stat.k-3:not(.cero){background:var(--grave);color:var(--grave-letra)}
-.stat.k-2:not(.cero){background:var(--media);color:var(--media-letra)}
-.stat.k-1:not(.cero){background:var(--leve);color:var(--leve-letra)}
+/* Lo abierto, en bloques del color de su gravedad (siempre, aunque esté en cero): fondo oscuro, letra clara. Lo resuelto y el total, en cero, apagados. */
 .stat.cero{color:var(--gris)}
+.stat.k-3{background:var(--grave);color:var(--grave-letra)}
+.stat.k-2{background:var(--media);color:var(--media-letra)}
+.stat.k-1{background:var(--leve);color:var(--leve-letra)}
 .stat-n{display:flex;align-items:baseline;gap:6px;min-width:0}
 .stat b{font:900 44px/.85 var(--inc-fuente)}
 .stat small{font:400 10.5px var(--inc-fuente);color:var(--gris)}
-.stat:not(.cero) small{color:inherit;opacity:.8}
+.stat:not(.cero) small,.stat.k-3 small,.stat.k-2 small,.stat.k-1 small{color:inherit;opacity:.8}
 /* El que se tocó (filtra la lista): un borde crema. */
 .stat.on{outline:3px solid var(--crema);outline-offset:-3px}
 /* La grave abierta: un cuadradito que late, como el de "en vivo". */
@@ -191,7 +191,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .pantalla .inc-met-tip{background:var(--fondo);color:var(--crema-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--crema)}
 .pantalla .inc-met-vacio{background:#0062FF;border:0;border-radius:0;color:var(--crema)}
 /* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad. */
-.pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFE7A3}
+.pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFF0B8}
 .pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px}
 .pantalla .inc-tj:hover{outline-color:rgba(244,241,234,.45)}.pantalla .inc-tj.abierta{outline-color:var(--crema)}
 .pantalla .inc-tj-cab{grid-template-columns:78px minmax(0,1fr)}
@@ -3305,7 +3305,7 @@ function render() {
   // Cada contador es un botón: muestra esas en el listado.
   const elegido = nivelSel ? String(nivelSel) : (filtro === 'resueltas' || filtro === 'todas' ? filtro : '');
   // Como un widget: el punto de color y qué es, arriba; el número grande (y "abiertas"), abajo.
-  const NIVEL_COLOR = { 3: '#A11D21', 2: '#856000', 1: '#4E5560' };
+  const NIVEL_COLOR = { 3: '#A11D21', 2: '#7A6600', 1: '#4E5560' };
   const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat k-' + clave + (num ? '' : ' cero') + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="tocarStat(\'' + clave + '\')" title="Ver ' + ({ 3: 'las graves abiertas', 2: 'las de gravedad media abiertas', 1: 'las leves abiertas', resueltas: 'las resueltas', todas: 'todas' })[clave] + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
   document.getElementById('resumen').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', NIVEL_COLOR[nv], nv === 3 && n(3), String(nv))).join('')
