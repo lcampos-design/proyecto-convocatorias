@@ -46,7 +46,7 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 .bar-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .bar-t{font:800 14.5px/1.1 var(--inc-fuente);letter-spacing:0;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .bar-s{font:400 12px var(--inc-fuente);color:var(--gris);white-space:nowrap}
-.bar .rot{font-weight:400}.bar .rot b{font-weight:800}.bar .rot .mano{font-size:1.35em;color:var(--crema)}
+.bar .rot{font-weight:400}.bar .rot b{font-weight:800}.bar .rot .mano{font-size:1.35em}
 /* En el celular, la marca en dos renglones (entera, sin puntos suspensivos). */
 @media(max-width:560px){.bar-t{white-space:normal;font-size:12.5px;line-height:1.05}}
 .bar-acc{display:flex;gap:4px;align-items:center;flex-shrink:0}
@@ -288,13 +288,13 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
       </section>
       <aside class="t-lista">
         <div class="t-lista-cab">
-          <h2 class="t-lista-t sec-t" id="listaT"><span class="mano">Las</span>incidencias</h2>
+          <h2 class="t-lista-t sec-t" id="listaT"><span class="mano">Incidencias</span></h2>
           <div class="fila" id="filtros"></div>
         </div>
         <div class="t-lista-cuerpo" id="lista"></div>
       </aside>
     </div>
-    <h2 class="met-t sec-t"><span class="mano">Cómo va</span>el show</h2>
+    <h2 class="met-t sec-t"><span class="mano">Métricas</span></h2>
     <div id="metricas"></div>
   </div>
 </div>
@@ -3369,7 +3369,7 @@ function render() {
   document.getElementById('lugares').innerHTML = '';
   // Al costado, el listado: abiertas, resueltas o todas; el día; y el lugar tocado en el plano.
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="filtrar(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
-  document.getElementById('listaT').innerHTML = '<span class="mano">Las</span>incidencias';
+  document.getElementById('listaT').innerHTML = '<span class="mano">Incidencias</span>';
   document.getElementById('filtros').innerHTML = '<div class="seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (filtro === v ? 'on' : '') + '" onclick="filtrar(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
     + (nivelSel ? '<span class="chip on">' + INC_NIVELES[nivelSel].nombre + ' <span onclick="event.stopPropagation();filtrar(\'nivel\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
     + (sectorSel ? '<span class="chip on">' + incEsc(sectorSel) + ' <span onclick="event.stopPropagation();filtrar(\'sector\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
