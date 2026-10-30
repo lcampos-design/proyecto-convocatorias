@@ -37,12 +37,13 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 /* Los títulos de sección: muy pesados, en mayúsculas, con la palabra manuscrita delante. */
 .sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;font:900 40px/.9 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase}
 .sec-t .mano{font-size:.9em;transform:rotate(-5deg) translateY(-.06em)}
-/* La barra de arriba: el logo, qué show y, a la derecha, en vivo, actualizar, el informe y salir. */
+/* La barra de arriba: el logo y la marca (AX, Show Business Solutions, la frase) y, a la derecha, en vivo, actualizar, el informe y salir. */
 .bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--fondo);border-bottom:2px solid var(--crema)}
 .bar-logo{width:34px;height:34px;flex-shrink:0;display:block}
 .bar-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.bar-t{font:700 15px/1.1 var(--inc-fuente);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.bar-s{font:400 11px var(--inc-fuente);color:var(--gris);white-space:nowrap}
+.bar-t{font:800 14.5px/1.1 var(--inc-fuente);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bar-s{font:400 12px var(--inc-fuente);color:var(--gris);white-space:nowrap}
+.bar .rot{font-weight:800}
 .bar-acc{display:flex;gap:4px;align-items:center;flex-shrink:0}
 .bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:0;background:var(--bloque);color:var(--crema);font:600 13px var(--inc-fuente);letter-spacing:0;cursor:pointer;flex-shrink:0;transition:background .15s}
 .bar-btn:hover{background:var(--bloque-2)}
@@ -221,9 +222,9 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
   <button class="atras" id="btnAtras" onclick="volverShows()" style="display:none" aria-label="Volver a los shows">←</button>
   <img class="bar-logo" src="logo-sbs-blanco.png" alt="SBS">
   <div class="bar-txt">
-    <span class="rot">AX · Sala en vivo</span>
-    <span class="bar-t" id="barT">Centro de Control</span>
-    <span class="bar-s" id="barS"></span>
+    <span class="rot">AX</span>
+    <span class="bar-t">Show Business Solutions</span>
+    <span class="bar-s">Hands on everything</span>
   </div>
   <div class="bar-acc" id="barAcc" style="display:none">
     <span class="inc-vivo" id="vivo">En vivo</span>
@@ -3200,8 +3201,6 @@ function renderShows() {
 async function abrirShow(id) {
   const s = shows.find(x => x.id === id); if (!s) return;
   showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = null; vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = '';
-  document.getElementById('barT').textContent = s.nombre;
-  document.getElementById('barS').textContent = resumenFechas(s);
   pantalla('pShow');
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
@@ -3219,8 +3218,6 @@ async function abrirShow(id) {
 }
 function volverShows() {
   clearInterval(timer); showId = null;
-  document.getElementById('barT').textContent = 'Centro de Control';
-  document.getElementById('barS').textContent = '';
   pantalla('pShows'); cargarShows();
 }
 async function cargarIncidencias() {
@@ -3351,6 +3348,9 @@ function informe() {
   const html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe de incidencias · ' + incEsc(s.nombre) + '</title>'
     + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"><style>'
     + 'body{font-family:Poppins,sans-serif;color:#141A26;margin:28px;font-size:11px;font-variant-numeric:tabular-nums}'
+    // La pieza de marca de SBS de fondo, como marca de agua: en gris y muy suave, en cada hoja (y que la impresora no la saque).
+    + 'html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:url(' + location.origin + '/fondo-sbs.jpg) center/cover no-repeat;opacity:.07;filter:grayscale(1)}'
     + '.k{font-size:10.5px;font-weight:600;color:#0062FF}'
     + 'h1{font-size:20px;font-weight:600;letter-spacing:-.3px;margin:3px 0 0}h2{font-size:11.5px;font-weight:400;color:#4B5565;margin:2px 0 0}'
     + 'h3{font-size:11px;font-weight:600;color:#0062FF;margin:0 0 6px}'
