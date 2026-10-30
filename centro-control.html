@@ -24,7 +24,8 @@
   --fondo:#09203C;--bloque:#17365F;--bloque-2:#1E4372;
   --crema:#F4F1EA;--crema-2:#ECE7DD;--gris:#C9C2B5;--linea:rgba(244,241,234,.22);
   /* La gravedad: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
-  --celeste:#019DF4;   /* el celeste de la marca (el del resumen del show y el informe) */
+  --celeste:#019DF4;   /* el celeste de la marca (las cifras del resumen del show y el informe) */
+  --celeste-osc:#00466F;--celeste-letra:#BDE6FF;   /* el resumen del show, como la gravedad */
   --grave:#A11D21;--grave-letra:#FFD2CF;--media:#7A6600;--media-letra:#FFF0B8;--leve:#4E5560;--leve-letra:#E4E7EC;
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -172,25 +173,25 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 @keyframes incLatido{0%,100%{opacity:1}50%{opacity:.25}}
 .met-t{margin:44px 0 16px}
 #metricas{--tj-muesca:var(--fondo)}
-/* El resumen del show (lo pone el plano): un bloque celeste, para que corte con el resto; la letra y las barras, en azul marino (sobre el celeste, la blanca no se lee); las cifras, muy pesadas. */
-.pantalla .inc-met{--met-linea:rgba(9,32,60,.25);background:var(--celeste);color:var(--fondo);padding:18px 20px 20px}
-.pantalla .inc-met-intro{color:var(--fondo);font-size:13px;margin-bottom:16px}
+/* El resumen del show (lo pone el plano): un bloque celeste, para que corte con el resto, como las cajas de gravedad: de fondo, el celeste oscuro; la letra, el mismo celeste, claro; las cifras (muy pesadas) y las barras, en el celeste de la marca. */
+.pantalla .inc-met{--met-linea:rgba(189,230,255,.2);background:var(--celeste-osc);color:var(--celeste-letra);padding:18px 20px 20px}
+.pantalla .inc-met-intro{color:var(--celeste-letra);font-size:13px;margin-bottom:16px}
 .pantalla .inc-tiles{gap:0;margin-bottom:18px;border-bottom:1px solid var(--met-linea)}
 .pantalla .inc-tile{background:transparent;border:0;border-right:1px solid var(--met-linea);border-radius:0;padding:4px 18px 16px}
 .pantalla .inc-tile::before{display:none}
 .pantalla .inc-tile:first-child{padding-left:0}.pantalla .inc-tile:last-child{border-right:0}
 .pantalla .inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px solid var(--met-linea);padding-left:0}.pantalla .inc-tiles.angosto .inc-tile:last-child{border-bottom:0}
-.pantalla button.inc-tile:hover{box-shadow:none}.pantalla .inc-tile.on{box-shadow:inset 0 -4px 0 var(--fondo)}
-.pantalla .inc-tile-e{font:600 13px var(--inc-fuente);color:var(--fondo)}
-.pantalla .inc-tile-v{font:900 42px/1 var(--inc-fuente);letter-spacing:-.02em;color:var(--fondo);margin-top:8px}
-.pantalla .inc-tile-s{font:400 12.5px var(--inc-fuente);color:var(--fondo);margin-top:6px}
-.pantalla .inc-tile-ir{font:600 12.5px var(--inc-fuente);color:var(--fondo)}
+.pantalla button.inc-tile:hover{box-shadow:none}.pantalla .inc-tile.on{box-shadow:inset 0 -4px 0 var(--celeste)}
+.pantalla .inc-tile-e{font:600 13px var(--inc-fuente);color:var(--celeste-letra)}
+.pantalla .inc-tile-v{font:900 42px/1 var(--inc-fuente);letter-spacing:-.02em;color:var(--celeste);margin-top:8px}
+.pantalla .inc-tile-s{font:400 12.5px var(--inc-fuente);color:var(--celeste-letra);margin-top:6px}
+.pantalla .inc-tile-ir{font:600 12.5px var(--inc-fuente);color:var(--celeste-letra)}
 .pantalla .inc-graf-card{background:transparent;border:0;border-radius:0;padding:0}
-.pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:var(--fondo);margin-bottom:8px}
-.pantalla .inc-g-t{fill:#09203C}.pantalla .inc-g-s{fill:#09203C}.pantalla .inc-g-barra{fill:#09203C}
-.pantalla .inc-marca:focus-visible{outline-color:var(--fondo)}
+.pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:var(--celeste-letra);margin-bottom:8px}
+.pantalla .inc-g-t{fill:#BDE6FF}.pantalla .inc-g-s{fill:#BDE6FF}.pantalla .inc-g-barra{fill:#019DF4}
+.pantalla .inc-marca:focus-visible{outline-color:var(--celeste-letra)}
 .pantalla .inc-met-tip{background:var(--fondo);color:var(--crema-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--crema)}
-.pantalla .inc-met-vacio{background:var(--celeste);border:0;border-radius:0;color:var(--fondo)}
+.pantalla .inc-met-vacio{background:var(--celeste-osc);border:0;border-radius:0;color:var(--celeste-letra)}
 /* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad. */
 .pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFF0B8}
 .pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px}
@@ -3114,7 +3115,7 @@ function incEstiloMetricas() {
 // ── Centro de Control: lo que ve la gerencia del Movistar Arena ──
 // Sólo lectura. Todo sale de dos funciones de la base (ger_convocatorias y
 // ger_incidencias), que no devuelven nada a quien no es gerencia o admin.
-let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', dia = null, timer = null;
+let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', dia = null, timer = null, cuentasFuncion = {}, yaEntro = false;
 // La incidencia tocada (desplegada, y su lugar elegido en el plano); la categoría y la franja tocadas en las métricas.
 let focoInc = '', catSel = '', franjaSel = '', irAFoco = false;
 let vistos = null, nuevos = new Set(), nivelSel = 0;
@@ -3175,30 +3176,48 @@ async function cargarShows() {
   }
   shows = data || [];
   renderShows();
-  // Si hay un show hoy, entra directo: es lo que se quiere ver.
-  const deHoy = shows.filter(s => fechasDe(s).includes(hoyISO()));
-  if (deHoy.length === 1 && !showId) abrirShow(deHoy[0].id);
+  // Si hay un show hoy, entra directo: es lo que se quiere ver (sólo al entrar: si vuelve a la lista, se queda ahí).
+  const deHoy = funciones().filter(e => e.f === hoyISO());
+  if (!yaEntro && deHoy.length === 1 && !showId) abrirShow(deHoy[0].s.id, deHoy[0].f);
+  yaEntro = true;
+  // Los shows de varias fechas: lo de cada fecha (la cuenta que trae el show es de todas juntas).
+  cuentasFuncion = {};
+  await Promise.all(shows.filter(s => fechasDe(s).length > 1).map(async s => {
+    const r = await sb.rpc('ger_incidencias', { p_conv_id: s.id });
+    ((r && r.data) || []).forEach(i => { const k = s.id + '|' + fechaDeFuncion(i, fechasDe(s)), c = cuentasFuncion[k] || (cuentasFuncion[k] = { total: 0, 1: 0, 2: 0, 3: 0 }); c.total++; if (i.estado !== 'resuelta') c[i.nivel || 1]++; });
+  }));
+  renderShows();
 }
 function fechasDe(s) { return String(s.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort(); }
-// La fecha de la función de una incidencia (la data es por show): si el show tiene una sola
-// fecha, ésa; si tiene varias, la de su día, salvo que sea de madrugada (antes de las 6) y el
-// día anterior sea fecha del show (el show siguió después de las 0).
-function fechaFuncion(i) {
-  const fs = fechasDe(shows.find(x => x.id === showId) || {}), d = incDia(i && i.created_at);
-  if (!d) return '';
-  if (fs.length === 1) return fs[0];
+// Cada fecha es un show (las quincenas del Arena tienen un show por fecha; un evento externo,
+// como BTS, el mismo show en varias fechas): la lista y el tablero van por fecha.
+// La fecha de la función de una incidencia: con una sola fecha, ésa; con varias, la de su día
+// (la madrugada, antes de las 6, es de la función de la noche anterior); si cae en un día que
+// no es del show, la fecha más cercana.
+function fechaDeFuncion(i, fs) {
+  const d = incDia(i && i.created_at);
+  if (!d || fs.length <= 1) return fs[0] || d;
   const antes = incDia(new Date(new Date(i.created_at).getTime() - 6 * 3600000).toISOString());
-  return antes !== d && fs.includes(antes) ? antes : d;
+  if (antes !== d && fs.includes(antes)) return antes;
+  if (fs.includes(d)) return d;
+  const dist = f => Math.abs(new Date(f + 'T12:00:00') - new Date(d + 'T12:00:00'));
+  return fs.reduce((m, f) => dist(f) < dist(m) ? f : m, fs[0]);
 }
+function fechaFuncion(i) { return fechaDeFuncion(i, fechasDe(shows.find(x => x.id === showId) || {})); }
+// Las funciones (una por fecha de cada show) y la que conviene abrir de un show: la de hoy, la próxima o la última.
+function funciones() { return shows.flatMap(s => { const fs = fechasDe(s); return (fs.length ? fs : ['']).map(f => ({ s, f, varias: fs.length > 1 })); }); }
+function fechaInicial(s) { const fs = fechasDe(s), hoy = hoyISO(); return fs.includes(hoy) ? hoy : fs.find(f => f > hoy) || fs[fs.length - 1] || ''; }
 function resumenFechas(s) {
   const fs = fechasDe(s); if (!fs.length) return 'Sin fechas';
   const dm = f => f.slice(8, 10) + '/' + f.slice(5, 7);
   return fs.length === 1 ? dm(fs[0]) + '/' + fs[0].slice(0, 4) : dm(fs[0]) + ' al ' + dm(fs[fs.length - 1]) + ' · ' + fs.length + ' fechas';
 }
-function chipsAbiertas(s) {
-  const c = [3, 2, 1].filter(nv => s['abiertas_' + nv]).map(nv =>
-    '<span class="inc-cuenta n' + nv + '"><strong>' + s['abiertas_' + nv] + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('');
-  return c || (s.total ? '<span class="inc-cuenta">Sin abiertas · ' + s.total + ' en total</span>' : '<span class="inc-cuenta">Sin incidencias</span>');
+// Lo abierto de una función: la de un show de una sola fecha la trae el show; la de uno de varias, se cuenta acá.
+function chipsAbiertas(e) {
+  const s = e.s, c = e.varias ? (cuentasFuncion[s.id + '|' + e.f] || { total: 0, 1: 0, 2: 0, 3: 0 }) : { total: s.total, 1: s.abiertas_1, 2: s.abiertas_2, 3: s.abiertas_3 };
+  const t = [3, 2, 1].filter(nv => c[nv]).map(nv =>
+    '<span class="inc-cuenta n' + nv + '"><strong>' + c[nv] + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('');
+  return t || (c.total ? '<span class="inc-cuenta">Sin abiertas · ' + c.total + ' en total</span>' : '<span class="inc-cuenta">Sin incidencias</span>');
 }
 // El nombre enorme del show, a la medida: arranca del tamaño del estilo y lo achica hasta
 // que cada palabra entra entera (sin cortarla) y no pasa de dos renglones.
@@ -3218,19 +3237,21 @@ if (typeof window !== 'undefined' && window.addEventListener) {
 function renderShows() {
   const hoy = hoyISO();
   const grupos = { hoy: [], proximos: [], anteriores: [] };
-  shows.forEach(s => { const fs = fechasDe(s); if (fs.includes(hoy)) grupos.hoy.push(s); else if (fs.length && fs[0] > hoy) grupos.proximos.push(s); else grupos.anteriores.push(s); });
-  grupos.proximos.sort((a, b) => fechasDe(a)[0].localeCompare(fechasDe(b)[0]));
-  grupos.anteriores.sort((a, b) => (fechasDe(b).slice(-1)[0] || '').localeCompare(fechasDe(a).slice(-1)[0] || ''));
-  const tarjeta = (s, vivo) => '<div class="show' + (vivo ? ' hoy' : '') + '" onclick="abrirShow(\'' + s.id + '\')"><div class="show-main"><div class="show-n">' + incEsc(s.nombre) + (vivo ? '<span class="vivo-pill">Hoy</span>' : '') + '</div>'
-    + '<div class="show-f">' + resumenFechas(s) + (s.venue ? ' · ' + incEsc(s.venue) : '') + '</div><div class="show-chips">' + chipsAbiertas(s) + '</div></div><span class="flecha">›</span></div>';
+  // Una tarjeta por función (cada fecha es un show).
+  funciones().forEach(e => { if (e.f === hoy) grupos.hoy.push(e); else if (e.f && e.f > hoy) grupos.proximos.push(e); else grupos.anteriores.push(e); });
+  grupos.proximos.sort((a, b) => a.f.localeCompare(b.f));
+  grupos.anteriores.sort((a, b) => b.f.localeCompare(a.f));
+  const tarjeta = (e, vivo) => '<div class="show' + (vivo ? ' hoy' : '') + '" onclick="abrirShow(\'' + e.s.id + '\',\'' + e.f + '\')"><div class="show-main"><div class="show-n">' + incEsc(e.s.nombre) + (vivo ? '<span class="vivo-pill">Hoy</span>' : '') + '</div>'
+    + '<div class="show-f">' + (e.f ? resumenFechas({ fecha: e.f }) : 'Sin fechas') + (e.s.venue ? ' · ' + incEsc(e.s.venue) : '') + '</div><div class="show-chips">' + chipsAbiertas(e) + '</div></div><span class="flecha">›</span></div>';
   const body = document.getElementById('showsBody');
   if (!shows.length) { body.innerHTML = '<div class="vacio">Todavía no hay shows en el Centro de Control. Cuando el equipo de SBS sume uno, aparece acá.</div>'; return; }
   const bloque = (t, l, vivo) => l.length ? '<div class="grupo">' + t + '</div><div class="shows-grid">' + l.map(s => tarjeta(s, vivo)).join('') + '</div>' : '';
   body.innerHTML = bloque('Hoy', grupos.hoy, true) + bloque('Próximos', grupos.proximos) + bloque('Anteriores', grupos.anteriores);
 }
-async function abrirShow(id) {
+async function abrirShow(id, fecha) {
   const s = shows.find(x => x.id === id); if (!s) return;
-  showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = null; vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = '';
+  // La fecha es el show: el tablero, el resumen y el informe son de ella.
+  showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = fecha !== undefined ? fecha : fechaInicial(s); vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = '';
   pantalla('pShow');
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
@@ -3258,7 +3279,6 @@ async function cargarIncidencias() {
   lista = data || [];
   nuevos = vistos ? new Set(lista.filter(i => !vistos.has(i.id)).map(i => i.id)) : new Set();
   vistos = new Set(lista.map(i => i.id));
-  if (dia === null) dia = lista.some(i => fechaFuncion(i) === hoyISO()) ? hoyISO() : '';
   render();
 }
 function delDia() { return dia ? lista.filter(i => fechaFuncion(i) === dia) : lista; }
@@ -3271,7 +3291,7 @@ function tocarSector(sector) {
   if (f && f.sector === sector && sectorSel !== sector) { render(); return; }
   sectorSel = sectorSel === sector ? '' : sector; render();
 }
-function filtrar(k, v) { if (k === 'estado') { filtro = v; nivelSel = 0; } if (k === 'dia') dia = v; if (k === 'sector') sectorSel = v; if (k === 'nivel') nivelSel = 0; if (k === 'categoria') catSel = v; if (k === 'franja') franjaSel = v; render(); }
+function filtrar(k, v) { if (k === 'estado') { filtro = v; nivelSel = 0; } if (k === 'sector') sectorSel = v; if (k === 'nivel') nivelSel = 0; if (k === 'categoria') catSel = v; if (k === 'franja') franjaSel = v; render(); }
 // Tocar una incidencia del listado: se despliega con todo y el plano va hasta su lugar (el listado no se filtra); otra vez, se cierra.
 function tocarInc(id) { focoInc = focoInc === id ? '' : id; render(); }
 // Tocar una métrica: una categoría o una franja filtran el listado (todas, abiertas y
@@ -3325,8 +3345,8 @@ function render() {
   const showAct = shows.find(x => x.id === showId) || {};
   // El nombre enorme (lo de antes de " — "); si el show es hoy, "en vivo" a mano al lado.
   const partes = String(showAct.nombre || '').split(' — ');
-  document.getElementById('paseN').innerHTML = incEsc(partes[0]) + (fechasDe(showAct).includes(hoyISO()) ? '<span class="mano">en vivo</span>' : '');
-  document.getElementById('paseF').textContent = [partes.slice(1).join(' — ') || showAct.venue, resumenFechas(showAct)].filter(Boolean).join(' · ');
+  document.getElementById('paseN').innerHTML = incEsc(partes[0]) + (dia === hoyISO() ? '<span class="mano">en vivo</span>' : '');
+  document.getElementById('paseF').textContent = [partes.slice(1).join(' — ') || showAct.venue, dia ? resumenFechas({ fecha: dia }) : resumenFechas(showAct)].filter(Boolean).join(' · ');
   ajustarNombre();
   const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('estado');
   estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html;
@@ -3343,11 +3363,9 @@ function render() {
   // Sin "Fuera del plano": lo que pasó en un lugar que el plano no muestra ya está en el listado.
   document.getElementById('lugares').innerHTML = '';
   // Al costado, el listado: abiertas, resueltas o todas; el día; y el lugar tocado en el plano.
-  const dias = [...new Set(lista.map(fechaFuncion).filter(Boolean))].sort().reverse();
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="filtrar(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
   document.getElementById('listaT').innerHTML = '<span class="mano">Las</span>incidencias';
   document.getElementById('filtros').innerHTML = '<div class="seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (filtro === v ? 'on' : '') + '" onclick="filtrar(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
-    + (dias.length > 1 || (dias.length === 1 && dia !== dias[0]) ? chip('dia', '', 'Todos los días', !dia) + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), dia === d)).join('') : '')
     + (nivelSel ? '<span class="chip on">' + INC_NIVELES[nivelSel].nombre + ' <span onclick="event.stopPropagation();filtrar(\'nivel\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
     + (sectorSel ? '<span class="chip on">' + incEsc(sectorSel) + ' <span onclick="event.stopPropagation();filtrar(\'sector\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
     + (catSel ? '<span class="chip on">' + incEsc(catSel) + ' <span onclick="event.stopPropagation();filtrar(\'categoria\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
