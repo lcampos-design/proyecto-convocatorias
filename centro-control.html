@@ -72,7 +72,8 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .login-marcas{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 20px}
 .login-logo{width:68px;height:68px;display:block}
 .login-m{height:50px;width:auto;display:block}
-.login-y{font:300 30px/1 var(--inc-fuente);color:var(--gris)}
+/* La ×: dibujada, de trazo firme y puntas redondas, como las curvas de la M. */
+.login-y{width:18px;height:18px;flex-shrink:0;display:block}.login-y path{stroke:var(--crema);stroke-width:3.6;stroke-linecap:round;fill:none}
 .login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;text-align:center;margin:0 0 26px}
 .login-t .mano{display:block;font-size:.78em;margin-top:8px;transform:rotate(-4deg)}
 .lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin-bottom:6px}
@@ -81,8 +82,6 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .in:focus{border-color:var(--crema)}
 /* Lo que autocompleta el navegador, también azul oscuro (si no, lo pinta celeste). */
 .in:-webkit-autofill,.in:-webkit-autofill:hover,.in:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px var(--fondo) inset;-webkit-text-fill-color:var(--crema);caret-color:var(--crema)}
-/* Y con la misma letra: hasta que se toca la página, el navegador lo muestra con la suya. */
-.in:-webkit-autofill::first-line{font-family:var(--inc-fuente);font-size:16px}
 .btn-ok{width:100%;min-height:50px;background:var(--crema);color:var(--fondo);border:0;border-radius:0;font:600 15px var(--inc-fuente);letter-spacing:0;cursor:pointer}
 .btn-ok:hover{background:#fff}
 .btn-ok:disabled{background:var(--bloque-2);color:var(--gris);cursor:default}
@@ -250,7 +249,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 <div class="pantalla on" id="pLogin">
   <div class="login">
     <div class="login-card">
-      <div class="login-marcas"><img class="login-logo" src="logo-sbs-calado.png" alt="SBS"><span class="login-y" aria-hidden="true">×</span><img class="login-m" src="logo-movistar-m.png" alt="Movistar Arena"></div>
+      <div class="login-marcas"><img class="login-logo" src="logo-sbs-calado.png" alt="SBS"><svg class="login-y" viewBox="0 0 18 18" aria-hidden="true"><path d="M2.5 2.5 15.5 15.5M15.5 2.5 2.5 15.5"/></svg><img class="login-m" src="logo-movistar-m.png" alt="Movistar Arena"></div>
       <div class="login-t">Centro de Control<span class="mano">Sala en vivo</span></div>
       <label class="lbl" for="lgEmail">Email</label>
       <input class="in" type="email" id="lgEmail" autocomplete="username" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')ingresar()">
