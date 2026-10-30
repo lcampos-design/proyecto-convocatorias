@@ -36,9 +36,9 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 .mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
 /* Los rótulos: mono, en mayúsculas espaciadas. */
 .rot{font:600 12.5px var(--inc-fuente);letter-spacing:0;color:var(--gris)}
-/* Los títulos de sección: muy pesados, en mayúsculas, con la palabra manuscrita delante. */
-.sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;font:900 40px/.9 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase}
-.sec-t .mano{font-size:.9em;transform:rotate(-5deg) translateY(-.06em)}
+/* Los títulos de sección: enteros en la letra manuscrita, grandes (a igual tamaño se ve más chica que Poppins). */
+.sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 .28em;font:400 56px/1.05 var(--mano);letter-spacing:0;padding-top:.05em}
+.sec-t .mano{font-size:1em;transform:none}
 /* La barra de arriba: el logo y la marca (AX, Show Business Solutions, la frase) y, a la derecha, en vivo, actualizar, el informe y salir. */
 .bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--fondo);border-bottom:2px solid var(--crema)}
 .bar-logo{width:34px;height:34px;flex-shrink:0;display:block}
@@ -215,7 +215,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
   .seg button{min-height:44px}
   .chip{min-height:40px;padding:0 14px}
 }
-@media(max-width:520px){.wrap{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.tablero{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.sec-t{font-size:32px}.stat b{font-size:34px}}
+@media(max-width:520px){.wrap{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.tablero{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.sec-t{font-size:44px}.stat b{font-size:34px}}
 /* Las cifras que cambian (minutos, contadores, horas), de ancho fijo. */
 .stat b,.estado .hace,.inc-vivo,.inc-cuenta strong,.bar-s,.show-f,.pase-f{font-variant-numeric:tabular-nums}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
