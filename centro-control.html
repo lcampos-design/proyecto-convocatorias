@@ -26,7 +26,7 @@
   /* La gravedad: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
   --celeste:#019DF4;   /* el celeste de la marca (las cifras del resumen del show y el informe) */
   --celeste-osc:#003150;--celeste-letra:#019DF4;   /* el resumen del show: fondo oscuro y la letra en el celeste (4,6 a 1) */
-  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#765A00;--media-letra:#FFD700;--leve:#4E5560;--leve-letra:#E4E7EC;
+  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC;
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
@@ -3427,7 +3427,7 @@ function render() {
   // Cada contador es un botón: muestra esas en el listado.
   const elegido = nivelSel ? String(nivelSel) : (filtro === 'resueltas' || filtro === 'todas' ? filtro : '');
   // Como un widget: el punto de color y qué es, arriba; el número grande (y "abiertas"), abajo.
-  const NIVEL_COLOR = { 3: '#A11D21', 2: '#765A00', 1: '#4E5560' };
+  const NIVEL_COLOR = { 3: '#A11D21', 2: '#B8900A', 1: '#4E5560' };
   const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat k-' + clave + (num ? '' : ' cero') + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="tocarStat(\'' + clave + '\')" title="Ver ' + ({ 3: 'las graves abiertas', 2: 'las de gravedad media abiertas', 1: 'las leves abiertas', resueltas: 'las resueltas', todas: 'todas' })[clave] + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
   document.getElementById('resumen').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', NIVEL_COLOR[nv], nv === 3 && n(3), String(nv))).join('')
