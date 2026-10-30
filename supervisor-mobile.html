@@ -1335,7 +1335,7 @@ function incTarjetaHTML(i, op) {
     + (resuelta ? fila('Resuelta', incCuando(i.resuelta_at) + (i.resuelta_por_nombre ? ' · ' + incEsc(i.resuelta_por_nombre) : '') + (tardo >= 0 ? ' · en ' + incEsc(incMinutos(tardo)) : '')
       + (i.resolucion ? '<div class="inc-tj-nota">' + incEsc(i.resolucion) + '</div>' : '')) : '')
     + '</div>';
-  return '<div class="inc-card inc-tj' + (resuelta ? ' resuelta' : '') + (abierta ? ' abierta' : '') + (op.nueva ? ' nueva' : '') + '" data-inc="' + id + '" style="--tj-c:' + v.talon + ';--tj-t:' + v.talonTinta + '"'
+  return '<div class="inc-card inc-tj' + (resuelta ? ' resuelta' : '') + (abierta ? ' abierta' : '') + (op.nueva ? ' nueva' : '') + '" data-inc="' + id + '" data-nivel="' + (INC_NIVELES[i.nivel] ? i.nivel : 1) + '" style="--tj-c:' + v.talon + ';--tj-t:' + v.talonTinta + '"'
     + (op.onclick ? ' onclick="' + op.onclick + '(\'' + id + '\')" onkeydown="if((event.key===\'Enter\'||event.key===\' \')&&event.target===this){event.preventDefault();this.click()}"' : '')
     + ' role="button" tabindex="0" aria-expanded="' + abierta + '" title="' + (abierta ? 'Cerrar el detalle' : 'Ver el detalle' + (op.sinLugar ? '' : ' y el lugar en el plano')) + '">'
     + '<div class="inc-tj-cab"><span class="inc-tj-talon" title="' + (resuelta ? 'Resuelta' : 'Abierta desde las ' + incEsc(incHora(i.created_at))) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ico + '"/></svg>'
@@ -1854,70 +1854,63 @@ function incEsperar3D(cont) {
   cont.style.height = fijo ? '' : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680)) + 'px';
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
-// El estilo nuevo de los controles del plano (diseño "Credencial", propuesta AX):
-// paneles de vidrio azul marino sobre el 3D, radio de 6 px y lo elegido en el azul
-// de AX. Sólo con op.ax (la gerencia y el panel; la tablet queda como está).
+// El estilo de los controles del plano en la gerencia y el panel (diseño "Afiche",
+// cianotipo): bloques planos y rectos, sin vidrio, sombras ni degradés; las letras de
+// los botones en mono y en mayúsculas; lo elegido, en bloque crema. El fondo del 3D,
+// azul plano con la cuadrícula de un plano. Sólo con op.ax (la tablet queda como está).
 function incEstiloAx() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloAx')) return;
   const st = document.createElement('style'); st.id = 'incEstiloAx';
-  const MONO = INC_FUENTE, PANEL = 'background:rgba(13,26,46,.6);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1);';
-  st.textContent = '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F2EFE6;min-width:38px;min-height:38px;font:500 12.5px ' + INC_FUENTE + '}'
-    + '.inc-ax .inc-3d-btn:hover{border-color:rgba(255,255,255,.32);background:rgba(255,255,255,.12)}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid #5B96FF;outline-offset:2px}'
-    + '.inc-ax .inc-3d-btn.on{background:linear-gradient(180deg,#3D88FF,#0062FF);border-color:rgba(150,190,255,.55);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 14px rgba(0,98,255,.4)}'
-    + '.inc-ax .inc-3d-ley{' + PANEL + 'color:#D6DEE9}'
-    // Que no la tapen los botones (ahora de 44 px): cuatro botones y sus espacios.
-    + '.inc-ax .inc-3d-ley{max-width:calc(100% - 226px)}'
+  const MONO = "'Space Mono',ui-monospace,'Courier New',monospace", PANEL = 'background:#09203C;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;';
+  const BOTON = 'font:700 11px ' + MONO + ';letter-spacing:.08em;text-transform:uppercase;';
+  const GRILLA = 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Cpath d=%22M24 0H0V24%22 fill=%22none%22 stroke=%22%23F4F1EA%22 stroke-opacity=%22.07%22/%3E%3C/svg%3E")';
+  st.textContent = '.inc-ax.inc-3d{border-radius:0;background:#17365F ' + GRILLA + '}'
+    + '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F4F1EA;min-width:40px;min-height:40px;' + BOTON + '}'
+    + '.inc-ax .inc-3d-btn:hover{background:#1E4372}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
+    + '.inc-ax .inc-3d-btn.on{background:#F4F1EA;color:#09203C}'
     // Arriba del estadio, sólo los botones: la leyenda va adentro del menú de capas.
     + '.inc-ax>.inc-3d-ley{display:none}'
-    + '.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){display:grid;grid-template-columns:auto auto;gap:0 6px;align-items:start;max-height:calc(100% - 70px);overflow:auto}'
-    + '.inc-ax .inc-3d-menu-t{font:500 11.5px ' + INC_FUENTE + ';color:#5B96FF;padding:6px 10px 4px}'
+    + '.inc-ax .inc-3d-capas{' + PANEL + 'padding:6px}'
+    + '.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){display:grid;grid-template-columns:auto auto;gap:0 8px;align-items:start;max-height:calc(100% - 70px);overflow:auto}'
+    + '.inc-ax .inc-3d-menu-t{font:700 10px ' + MONO + ';letter-spacing:.16em;text-transform:uppercase;color:#C9C2B5;padding:8px 10px 6px}'
     + '.inc-ax .inc-3d-ref-l{display:flex;flex-direction:column;gap:2px}'
-    + '.inc-ax .inc-3d-ref-l .inc-ley-b,.inc-ax .inc-3d-ref-l>span{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 11px;border:0;border-radius:4px;background:transparent;color:#F2EFE6;font:500 12.5px ' + INC_FUENTE + ';text-align:left;cursor:pointer;white-space:nowrap}'
-    + '.inc-ax .inc-3d-ref-l .inc-ley-b:hover{background:rgba(255,255,255,.08)}.inc-ax .inc-3d-ref-l .inc-ley-b.on{background:rgba(0,98,255,.22)}'
-    + '.inc-ax .inc-3d-ref-l i{width:12px;height:12px;border-radius:3px;border:1px solid;display:inline-block;flex-shrink:0}'
+    + '.inc-ax .inc-3d-ref-l .inc-ley-b,.inc-ax .inc-3d-ref-l>span{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 10px;border:0;border-radius:0;background:transparent;color:#F4F1EA;' + BOTON + 'text-align:left;cursor:pointer;white-space:nowrap}'
+    + '.inc-ax .inc-3d-ref-l .inc-ley-b:hover{background:#17365F}.inc-ax .inc-3d-ref-l .inc-ley-b.on{background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-3d-ref-l i{width:12px;height:12px;border-radius:0;border:1px solid;display:inline-block;flex-shrink:0}'
     + '@media(max-width:560px){.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){grid-template-columns:minmax(0,1fr)}}'
-    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#D6DEE9}'
-    + '@media(pointer:coarse){.inc-ax .inc-3d-btn{min-width:44px;min-height:44px}.inc-ax .inc-3d-pisos button{min-height:38px}}'
-    // Los reflectores: haces de luz desde arriba, detrás del estadio (se mecen despacio).
-    + '.inc-ax.inc-3d{isolation:isolate}'
-    + '.inc-ax.inc-3d::before{content:"";position:absolute;left:-15%;right:-15%;top:-12%;bottom:0;z-index:-1;pointer-events:none;'
-    + 'background:conic-gradient(from 154deg at 22% 0%,rgba(91,150,255,0) 0deg,rgba(91,150,255,.3) 7deg,rgba(91,150,255,0) 14deg),'
-    + 'conic-gradient(from 174deg at 50% 0%,rgba(242,239,230,0) 0deg,rgba(242,239,230,.12) 5deg,rgba(242,239,230,0) 10deg),'
-    + 'conic-gradient(from 192deg at 78% 0%,rgba(0,98,255,0) 0deg,rgba(0,98,255,.36) 7deg,rgba(0,98,255,0) 14deg);'
-    + 'filter:blur(10px);transform-origin:50% 0;animation:incReflector3d 18s ease-in-out infinite alternate}'
-    + '@keyframes incReflector3d{0%{transform:rotate(2deg)}100%{transform:rotate(-2deg)}}'
-    + '@media(prefers-reduced-motion:reduce){.inc-ax.inc-3d::before{animation:none}}'
+    + '.inc-ax .inc-3d-capas-l button,.inc-ax .inc-3d-vistas-l>button{border-radius:0;color:#F4F1EA;' + BOTON + '}'
+    + '.inc-ax .inc-3d-capas-l button:hover,.inc-ax .inc-3d-vistas-l>button:hover{background:#17365F}'
+    + '.inc-ax .inc-3d-capas-l button::after{width:16px;height:16px;border-radius:0;background:transparent;border:2px solid #C9C2B5;box-sizing:border-box}'
+    + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:#F4F1EA;border-color:#F4F1EA;color:#09203C;font-size:11px;line-height:1}'
+    + '.inc-ax .inc-3d-vistas-t{color:#C9C2B5;font:700 10px ' + MONO + ';letter-spacing:.16em;text-transform:uppercase}'
+    + '.inc-ax .inc-3d-vistas-l>button.on{background:#F4F1EA;color:#09203C}.inc-ax .inc-3d-vistas-l>button.on::after{color:#09203C}'
+    + '.inc-ax .inc-3d-vistas-p button{border-radius:0;' + BOTON + '}.inc-ax .inc-3d-vistas-p button.on{background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#C9C2B5;font:400 10.5px ' + MONO + ';letter-spacing:.06em;text-transform:uppercase}'
     + '.inc-ax .inc-3d-pisos{' + PANEL + 'gap:4px;padding:4px}'
-    + '.inc-ax .inc-3d-pisos button{border-radius:4px;color:#F2EFE6;font:600 11.5px ' + MONO + ';letter-spacing:0;min-height:32px;padding:0 11px}'
-    + '.inc-ax .inc-3d-pisos button:hover{background:rgba(91,150,255,.14)}.inc-ax .inc-3d-pisos button.on{background:linear-gradient(180deg,#3D88FF,#0062FF);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}'
-    + '.inc-ax .inc-3d-capas{' + PANEL + 'background:rgba(13,26,46,.82)}'
-    + '.inc-ax .inc-3d-capas-l button,.inc-ax .inc-3d-vistas-l>button{border-radius:4px;color:#F2EFE6}'
-    + '.inc-ax .inc-3d-capas-l button::after{width:18px;height:18px;border-radius:4px;background:transparent;border:1.5px solid #5B6B82;box-sizing:border-box}'
-    + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:#0062FF;border-color:#0062FF;color:#fff;font-size:12px;line-height:1}'
-    + '.inc-ax .inc-3d-vistas-t{color:#5B96FF;font-family:' + MONO + ';letter-spacing:0}'
-    + '.inc-ax .inc-3d-vistas-l>button.on{background:rgba(0,98,255,.2)}.inc-ax .inc-3d-vistas-l>button.on::after{color:#5B96FF}'
-    + '.inc-ax .inc-3d-vistas-p button{border-radius:4px;font-family:' + MONO + ';letter-spacing:0}.inc-ax .inc-3d-vistas-p button.on{background:#0062FF;color:#fff}'
-    // La ficha de un lugar: vidrio azul marino, con la letra clara.
-    + '.inc-ax .inc-ficha,.inc-ax .inc-3d-ficha{background:linear-gradient(155deg,rgba(255,255,255,.1),rgba(255,255,255,.025) 55%),rgba(13,26,46,.82);-webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 14px 34px rgba(3,10,24,.45);color:#F2EFE6}'
-    + '.inc-ax .inc-ficha-ico{border-radius:6px}.inc-ax .inc-ficha-datos span{border:1px solid rgba(255,255,255,.16);background:transparent;border-radius:6px;color:#D6DEE9}'
-    + '.inc-ax .inc-ficha-cab button{background:rgba(255,255,255,.1);color:#F2EFE6}'
-    + '.inc-ax .inc-ficha-abiertas{color:#A9B6CA}.inc-ax .inc-ficha-accion{border-radius:6px;background:linear-gradient(180deg,#3D88FF,#0062FF);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);color:#fff}'
-    // El detalle de pantalla completa: azul marino, con los tickets.
-    + '.inc-ax .inc-3d-det{background:rgba(13,26,46,.78);-webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1);color:#F2EFE6;--tj-muesca:#0D1A2E}'
-    + '.inc-ax .inc-3d-det-cab{border-bottom:1px solid #1E2F49}.inc-ax .inc-3d-det-tit span{color:#A9B6CA;font-family:' + MONO + ';font-size:11.5px;letter-spacing:.4px}'
-    + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:6px;border:1.5px solid #3A4C66;background:transparent;color:#F2EFE6}'
-    + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{border-color:#5B96FF;background:transparent}'
-    + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:6px;background:#0062FF}'
-    + '.inc-ax .inc-3d-det .inc-ficha-datos span{border:1px solid #3A4C66;background:transparent;border-radius:6px;color:#D6DEE9}'
-    + '.inc-ax .inc-3d-det-vacio{color:#A9B6CA}'
-    // El plano 2D: los pisos, "Mostrar", buscar y la leyenda, sobre el panel azul marino.
-    + '.inc-ax .inc-pisos{background:transparent;border:1.5px solid #3A4C66;border-radius:6px;padding:3px;gap:3px}'
-    + '.inc-ax .inc-pisos button{border-radius:4px;color:#F2EFE6;font:600 11.5px ' + MONO + ';letter-spacing:.4px}'
-    + '.inc-ax .inc-pisos button.on{background:#0062FF;color:#fff;box-shadow:none}'
-    + '.inc-ax .inc-plano-mostrar{color:#A9B6CA}'
-    + '.inc-ax .inc-capas button,.inc-ax .inc-bus-btn{border:1.5px solid #3A4C66;background:transparent;color:#F2EFE6;border-radius:6px}'
-    + '.inc-ax .inc-capas button.on,.inc-ax .inc-bus-btn.on{background:#0062FF;border-color:#0062FF;color:#fff}'
-    + '.inc-ax .inc-ley{color:#D6DEE9}';
+    + '.inc-ax .inc-3d-pisos button{border-radius:0;background:#17365F;color:#F4F1EA;' + BOTON + 'min-height:34px;padding:0 12px}'
+    + '.inc-ax .inc-3d-pisos button:hover{background:#1E4372}.inc-ax .inc-3d-pisos button.on{background:#F4F1EA;color:#09203C;box-shadow:none}'
+    + '@media(pointer:coarse){.inc-ax .inc-3d-btn{min-width:44px;min-height:44px}.inc-ax .inc-3d-pisos button{min-height:40px}}'
+    // La ficha de un lugar: un bloque azul marino, con la letra clara.
+    + '.inc-ax .inc-ficha,.inc-ax .inc-3d-ficha{' + PANEL + 'color:#F4F1EA}'
+    + '.inc-ax .inc-ficha-ico{border-radius:0}.inc-ax .inc-ficha-datos span{border:1px solid rgba(244,241,234,.3);background:transparent;border-radius:0;color:#ECE7DD;font-family:' + MONO + '}'
+    + '.inc-ax .inc-ficha-cab button{background:#17365F;color:#F4F1EA;border-radius:0}'
+    + '.inc-ax .inc-ficha-abiertas{color:#C9C2B5}.inc-ax .inc-ficha-accion{border-radius:0;background:#F4F1EA;color:#09203C;box-shadow:none;' + BOTON + '}'
+    // El detalle de pantalla completa: un bloque azul marino, con los tickets.
+    + '.inc-ax .inc-3d-det{' + PANEL + 'color:#F4F1EA;--tj-muesca:#09203C}'
+    + '.inc-ax .inc-3d-det-cab{border-bottom:2px solid #F4F1EA}.inc-ax .inc-3d-det-tit span{color:#C9C2B5;font:400 10.5px ' + MONO + ';letter-spacing:.06em;text-transform:uppercase}'
+    + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:0;border:0;background:#17365F;color:#F4F1EA}'
+    + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{background:#1E4372}'
+    + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:0;background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-3d-det .inc-ficha-datos span{border:1px solid rgba(244,241,234,.3);background:transparent;border-radius:0;color:#ECE7DD}'
+    + '.inc-ax .inc-3d-det-vacio{color:#C9C2B5}'
+    // El plano 2D: los pisos, "Mostrar", buscar y la leyenda.
+    + '.inc-ax .inc-pisos{background:transparent;border:0;border-radius:0;padding:0;gap:4px}'
+    + '.inc-ax .inc-pisos button{border-radius:0;background:#17365F;color:#F4F1EA;' + BOTON + '}'
+    + '.inc-ax .inc-pisos button.on{background:#F4F1EA;color:#09203C;box-shadow:none}'
+    + '.inc-ax .inc-plano-mostrar{color:#C9C2B5}'
+    + '.inc-ax .inc-capas button,.inc-ax .inc-bus-btn{border:0;background:#17365F;color:#F4F1EA;border-radius:0}'
+    + '.inc-ax .inc-capas button.on,.inc-ax .inc-bus-btn.on{background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-ley{color:#ECE7DD}';
   document.head.appendChild(st);
 }
 // La leyenda de abajo del plano 2D (y la del 3D, encima).
@@ -3318,8 +3311,9 @@ function incPlano3D(cont, op0) {
 // la leyenda, la separación entre segmentos y el orden fijo (grave siempre arriba);
 // las barras de una sola serie van en el azul del Arena. Cada marca muestra su
 // detalle al pasar el mouse o con el teclado.
-const INC_GRAF_NIVEL = { 1: '#A3ACB8', 2: '#E8890C', 3: '#F26D7D' };   // el rojo, más claro: sobre el azul marino se tiene que ver
-const INC_GRAF_AZUL = '#5B96FF';   // las barras de una sola serie, en el azul de AX (la hoja es de vidrio azul marino)
+const INC_GRAF_NIVEL = { 1: '#C9C2B5', 2: '#F0A202', 3: '#EE4B36' };   // el rojo de las marcas, más claro: sobre el azul se tiene que ver
+const INC_GRAF_AZUL = '#ECE7DD';   // las barras de una sola serie, en crema (el único color fuerte es la gravedad)
+const INC_GRAF_RADIO = 0;   // las puntas de las barras, rectas (diseño "Afiche": nada redondeado)
 function incMinutos(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min' : Math.floor(m / 1440) + ' d ' + Math.floor(m % 1440 / 60) + ' h'; }
 // Las franjas: si la lista cruza varios días, una por día; si no, de 15, 30,
 // 60 o 120 minutos, la más fina que deje 16 columnas o menos. Cada una sabe de
@@ -3388,7 +3382,7 @@ function incGrafFranjas(franjas, anchoTotal, sel) {
   const y = v => arriba + alto - (v / tope) * alto;
   const slot = (W - izq - der) / Math.max(1, franjas.length), ancho = Math.min(24, slot * 0.62);
   let g = '';
-  for (let v = 0; v <= tope; v += paso) g += '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="rgba(255,255,255,.08)" stroke-width="1"/><text x="' + (izq - 6) + '" y="' + (y(v) + 3.5) + '" font-size="10" fill="#A9B6CA" text-anchor="end" style="font-variant-numeric:tabular-nums">' + v + '</text>';
+  for (let v = 0; v <= tope; v += paso) g += '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="rgba(244,241,234,.1)" stroke-width="1"/><text x="' + (izq - 6) + '" y="' + (y(v) + 3.5) + '" font-size="10" fill="#C9C2B5" text-anchor="end" style="font-variant-numeric:tabular-nums">' + v + '</text>';
   const cadaEtq = Math.ceil(franjas.length / Math.max(3, Math.floor((W - izq) / 64)));   // una etiqueta cada ~64px
   const masAlta = franjas.reduce((m, f, k) => (f.n[0] + f.n[1] + f.n[2]) > (m < 0 ? -1 : franjas[m].n[0] + franjas[m].n[1] + franjas[m].n[2]) ? k : m, -1);
   franjas.forEach((f, k) => {
@@ -3400,17 +3394,17 @@ function incGrafFranjas(franjas, anchoTotal, sel) {
       const hh = Math.max(1, h - (j > 0 ? 2 : 0));            // 2px de aire entre segmentos
       const y0 = base - hh;
       barras += tope2
-        ? '<path d="M' + x + ',' + base + 'V' + (y0 + Math.min(4, hh)) + 'Q' + x + ',' + y0 + ' ' + (x + Math.min(4, ancho / 2)) + ',' + y0 + 'H' + (x + ancho - Math.min(4, ancho / 2)) + 'Q' + (x + ancho) + ',' + y0 + ' ' + (x + ancho) + ',' + (y0 + Math.min(4, hh)) + 'V' + base + 'Z" fill="' + INC_GRAF_NIVEL[nv] + '"/>'
+        ? '<path d="M' + x + ',' + base + 'V' + (y0 + Math.min(INC_GRAF_RADIO, hh)) + 'Q' + x + ',' + y0 + ' ' + (x + Math.min(INC_GRAF_RADIO, ancho / 2)) + ',' + y0 + 'H' + (x + ancho - Math.min(INC_GRAF_RADIO, ancho / 2)) + 'Q' + (x + ancho) + ',' + y0 + ' ' + (x + ancho) + ',' + (y0 + Math.min(INC_GRAF_RADIO, hh)) + 'V' + base + 'Z" fill="' + INC_GRAF_NIVEL[nv] + '"/>'
         : '<rect x="' + x + '" y="' + y0 + '" width="' + ancho + '" height="' + hh + '" fill="' + INC_GRAF_NIVEL[nv] + '"/>';
       base = y0 - 2;
     });
     const tip = [total + ' incidencia' + (total === 1 ? '' : 's'), f.largo].concat([3, 2, 1].filter(nv => f.n[nv - 1]).map(nv => f.n[nv - 1] + ' ' + INC_NIVELES[nv].nombre.toLowerCase())).concat(total ? ['Tocá para verlas en el listado'] : []);
     g += '<g class="' + (total ? incClaseMarca(val, sel) : 'inc-marca') + '"' + incTip(tip) + (total ? incTocable('franja', val) : '') + '><rect x="' + (izq + slot * k) + '" y="' + arriba + '" width="' + slot + '" height="' + alto + '" fill="transparent"/>' + barras
-      + ((k === masAlta || sel === val) && total ? '<text x="' + (x + ancho / 2) + '" y="' + (y(total) - 5) + '" font-size="10.5" font-weight="600" fill="#F2EFE6" text-anchor="middle">' + total + '</text>' : '') + '</g>';
-    if (k % cadaEtq === 0) g += '<text x="' + (x + ancho / 2) + '" y="' + (H - 8) + '" font-size="10" fill="#A9B6CA" text-anchor="middle" style="font-variant-numeric:tabular-nums">' + incEsc(f.etq) + '</text>';
+      + ((k === masAlta || sel === val) && total ? '<text x="' + (x + ancho / 2) + '" y="' + (y(total) - 5) + '" font-size="10.5" font-weight="600" fill="#F4F1EA" text-anchor="middle">' + total + '</text>' : '') + '</g>';
+    if (k % cadaEtq === 0) g += '<text x="' + (x + ancho / 2) + '" y="' + (H - 8) + '" font-size="10" fill="#C9C2B5" text-anchor="middle" style="font-variant-numeric:tabular-nums">' + incEsc(f.etq) + '</text>';
   });
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="Incidencias por franja horaria, por gravedad">' + g
-    + '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="rgba(255,255,255,.22)" stroke-width="1"/></svg>';
+    + '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="rgba(244,241,234,.35)" stroke-width="1"/></svg>';
 }
 // Barras horizontales de una sola serie (azul), con el valor en la punta (y, si
 // quedan, cuántas siguen abiertas). Más de 6: el resto en una línea de texto, sin
@@ -3423,14 +3417,14 @@ function incGrafBarras(pares, titulo, ancho, op) {
   const W = Math.max(240, Math.round(ancho || 320)), fila = 26, H = (filas.length + (resto.length ? 1 : 0)) * fila + 4, etq = Math.min(150, Math.round(W * 0.38)), der = conAbiertas ? 92 : 26;
   const max = Math.max(1, ...filas.map(p => p[1])), largo = W - etq - der;
   const g = filas.map(([k, n], i) => {
-    const y = i * fila + 6, w = Math.max(3, (n / max) * largo), r = Math.min(4, w / 2), a = ab[k] || 0, toca = !!op.tipo;
+    const y = i * fila + 6, w = Math.max(3, (n / max) * largo), r = Math.min(INC_GRAF_RADIO, w / 2), a = ab[k] || 0, toca = !!op.tipo;
     const tip = [n + ' incidencia' + (n === 1 ? '' : 's'), k].concat(a ? [a + ' abierta' + (a === 1 ? '' : 's')] : []).concat(toca ? [op.tipo === 'sector' ? 'Tocá para verlo en el plano' : 'Tocá para verlas en el listado'] : []);
     return '<g class="' + (toca ? incClaseMarca(k, op.sel) : 'inc-marca') + '"' + incTip(tip) + (toca ? incTocable(op.tipo, k) : '') + '><rect x="0" y="' + (y - 4) + '" width="' + W + '" height="' + fila + '" fill="transparent"/>'
-      + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#A9B6CA" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
+      + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#C9C2B5" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
       + '<path d="M' + etq + ',' + y + 'H' + (etq + w - r) + 'Q' + (etq + w) + ',' + y + ' ' + (etq + w) + ',' + (y + r) + 'V' + (y + 14 - r) + 'Q' + (etq + w) + ',' + (y + 14) + ' ' + (etq + w - r) + ',' + (y + 14) + 'H' + etq + 'Z" fill="' + INC_GRAF_AZUL + '"/>'
-      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#F2EFE6">' + n + (a ? '<tspan font-weight="400" fill="#A9B6CA"> · ' + (a === n ? (n === 1 ? 'abierta' : 'todas abiertas') : a + ' abierta' + (a === 1 ? '' : 's')) + '</tspan>' : '') + '</text></g>';
-  }).join('') + (resto.length ? '<text x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#A9B6CA" text-anchor="end">+ ' + resto.length + ' más</text>'
-    + '<text x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#A9B6CA">' + enResto + ' incidencia' + (enResto === 1 ? '' : 's') + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
+      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#F4F1EA">' + n + (a ? '<tspan font-weight="400" fill="#C9C2B5"> · ' + (a === n ? (n === 1 ? 'abierta' : 'todas abiertas') : a + ' abierta' + (a === 1 ? '' : 's')) + '</tspan>' : '') + '</text></g>';
+  }).join('') + (resto.length ? '<text x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#C9C2B5" text-anchor="end">+ ' + resto.length + ' más</text>'
+    + '<text x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#C9C2B5">' + enResto + ' incidencia' + (enResto === 1 ? '' : 's') + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="' + incEsc(titulo) + '">' + g + '</svg>';
 }
 // ancho: el ancho disponible (el del contenedor); con él se calcula el de cada tarjeta.
@@ -3502,33 +3496,34 @@ function incMetricasActivar(cont) {
 function incEstiloMetricas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloMet')) return;
   const st = document.createElement('style'); st.id = 'incEstiloMet';
-  const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
-  st.textContent = '.inc-met{position:relative;background:linear-gradient(155deg,rgba(255,255,255,.1),rgba(255,255,255,.025) 55%),rgba(19,36,62,.55);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.14);color:#F2EFE6;border-radius:12px;padding:16px 18px 18px}'
-    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;margin-bottom:16px;border-bottom:1px dashed rgba(255,255,255,.14)}'
-    + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}.inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px dashed rgba(255,255,255,.14);padding-left:0}.inc-tiles.angosto .inc-tile:last-child{border-bottom:0}'
-    + '.inc-tile{background:transparent;border:0;border-right:1px dashed rgba(255,255,255,.14);border-radius:0;padding:4px 16px 14px;position:relative;text-align:left;font:inherit;color:inherit;width:100%;display:block}'
+  // Diseño "Afiche": un bloque plano azul; los rótulos y los datos en mono, en mayúsculas; las cifras, muy pesadas.
+  const MONO = "'Space Mono',ui-monospace,'Courier New',monospace", LINEA = 'rgba(244,241,234,.22)';
+  st.textContent = '.inc-met{position:relative;background:#17365F;color:#F4F1EA;border-radius:0;padding:18px 20px 20px}'
+    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;margin-bottom:18px;border-bottom:1px solid ' + LINEA + '}'
+    + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}.inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px solid ' + LINEA + ';padding-left:0}.inc-tiles.angosto .inc-tile:last-child{border-bottom:0}'
+    + '.inc-tile{background:transparent;border:0;border-right:1px solid ' + LINEA + ';border-radius:0;padding:4px 18px 16px;position:relative;text-align:left;font:inherit;color:inherit;width:100%;display:block}'
     + '.inc-tile:first-child{padding-left:0}.inc-tile:last-child{border-right:0}'
-    + 'button.inc-tile{cursor:pointer}button.inc-tile:hover .inc-tile-ir{text-decoration:underline}button.inc-tile:focus-visible{outline:2px solid #0062FF;outline-offset:2px}'
-    + '.inc-tile.on{box-shadow:inset 0 -3px 0 #5B96FF}'
-    + '.inc-tile-e{font-size:12px;color:#A9B6CA}'
-    + '.inc-tile-v{font:600 26px/1.15 ' + MONO + ';font-variant-numeric:tabular-nums;color:#F2EFE6;margin-top:3px}'
-    + '.inc-tile-s{font-size:12.5px;color:#A9B6CA;margin-top:3px;display:flex;align-items:center;gap:6px;min-width:0}'
-    + '.inc-tile-ir{font-size:12px;font-weight:600;color:#5B96FF;margin-top:6px}'
-    + '.inc-pt{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0}'
-    + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}.inc-grafs.dos{grid-template-columns:repeat(2,minmax(0,1fr))}'
+    + 'button.inc-tile{cursor:pointer}button.inc-tile:hover .inc-tile-ir{text-decoration:underline}button.inc-tile:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
+    + '.inc-tile.on{box-shadow:inset 0 -4px 0 #F4F1EA}'
+    + '.inc-tile-e{font:700 10px ' + MONO + ';letter-spacing:.12em;text-transform:uppercase;color:#C9C2B5}'
+    + '.inc-tile-v{font:900 40px/1 ' + INC_FUENTE + ';font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:#F4F1EA;margin-top:8px}'
+    + '.inc-tile-s{font:400 11px ' + MONO + ';color:#ECE7DD;margin-top:6px;display:flex;align-items:center;gap:6px;min-width:0}'
+    + '.inc-tile-ir{font:700 10.5px ' + MONO + ';letter-spacing:.1em;text-transform:uppercase;color:#F4F1EA;margin-top:8px}'
+    + '.inc-pt{width:8px;height:8px;border-radius:0;display:inline-block;flex-shrink:0}'
+    + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}.inc-grafs.dos{grid-template-columns:repeat(2,minmax(0,1fr))}'
     + '.inc-graf-ancha{grid-column:1/-1}'
     + '.inc-graf-card{background:transparent;border:0;border-radius:0;padding:0;min-width:0}'
-    + '.inc-graf-t{font:500 11px ' + MONO + ';letter-spacing:.6px;color:#A9B6CA;margin-bottom:10px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}'
-    + '.inc-graf-t small{font:400 11px ' + INC_FUENTE + ';letter-spacing:0;color:#A9B6CA}'
-    + '.inc-leyenda{display:flex;gap:14px;font-size:11.5px;color:#A9B6CA;margin-bottom:6px;flex-wrap:wrap}'
-    + '.inc-leyenda span{display:inline-flex;align-items:center;gap:6px}.inc-leyenda i{width:10px;height:10px;border-radius:2px;display:inline-block}'
-    + '.inc-graf{max-width:100%;height:auto;display:block;font-family:var(--inc-fuente,Poppins),sans-serif;overflow:visible}'
+    + '.inc-graf-t{font:700 10px ' + MONO + ';letter-spacing:.12em;text-transform:uppercase;color:#C9C2B5;margin-bottom:10px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}'
+    + '.inc-graf-t small{font:400 10.5px ' + MONO + ';letter-spacing:0;text-transform:none;color:#C9C2B5}'
+    + '.inc-leyenda{display:flex;gap:14px;font:400 10.5px ' + MONO + ';letter-spacing:.06em;text-transform:uppercase;color:#C9C2B5;margin-bottom:6px;flex-wrap:wrap}'
+    + '.inc-leyenda span{display:inline-flex;align-items:center;gap:6px}.inc-leyenda i{width:10px;height:10px;border-radius:0;display:inline-block}'
+    + '.inc-graf{max-width:100%;height:auto;display:block;font-family:' + MONO + ';overflow:visible}'
     + '.inc-marca{outline:none;cursor:default;transition:opacity .15s}.inc-marca.inc-toca{cursor:pointer}.inc-marca:hover path,.inc-marca:hover rect[fill]:not([fill="transparent"]),.inc-marca:focus path,.inc-marca:focus rect[fill]:not([fill="transparent"]){filter:brightness(1.25)}'
     + '.inc-marca.apagada{opacity:.3}.inc-marca.on text{font-weight:700}'
-    + '.inc-marca:focus-visible{outline:2px solid #0062FF;outline-offset:2px}'
-    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#0D1A2E;border:1px solid rgba(255,255,255,.16);color:#D6DEE9;font:500 11.5px var(--inc-fuente,Poppins),sans-serif;padding:7px 10px;border-radius:6px;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s}'
-    + '.inc-met-tip .v{color:#fff;font-weight:600;font-size:13px}'
-    + '.inc-met-vacio{text-align:center;color:#A9B6CA;font-size:12.5px;padding:18px;border:1.5px dashed rgba(255,255,255,.16);border-radius:12px;background:rgba(19,36,62,.55)}'
+    + '.inc-marca:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
+    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#09203C;color:#ECE7DD;font:400 11px ' + MONO + ';padding:7px 10px;border-radius:0;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s}'
+    + '.inc-met-tip .v{color:#F4F1EA;font-weight:700;font-size:12.5px}'
+    + '.inc-met-vacio{text-align:center;color:#C9C2B5;font:400 12px ' + MONO + ';padding:18px;border:2px dashed ' + LINEA + ';border-radius:0;background:transparent}'
     + '@media(prefers-reduced-motion:reduce){.inc-marca{transition:none}}';
   document.head.appendChild(st);
 }
