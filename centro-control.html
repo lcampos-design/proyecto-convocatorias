@@ -45,6 +45,8 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 .bar-t{font:800 14.5px/1.1 var(--inc-fuente);letter-spacing:0;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .bar-s{font:400 12px var(--inc-fuente);color:var(--gris);white-space:nowrap}
 .bar .rot{font-weight:400}.bar .rot b{font-weight:800}
+/* En el celular, la marca en dos renglones (entera, sin puntos suspensivos). */
+@media(max-width:560px){.bar-t{white-space:normal;font-size:12.5px;line-height:1.05}}
 .bar-acc{display:flex;gap:4px;align-items:center;flex-shrink:0}
 .bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:0;background:var(--bloque);color:var(--crema);font:600 13px var(--inc-fuente);letter-spacing:0;cursor:pointer;flex-shrink:0;transition:background .15s}
 .bar-btn:hover{background:var(--bloque-2)}
@@ -103,8 +105,9 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .tablero{max-width:1880px;margin:0 auto;padding:20px max(18px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
 .pase{display:flex;flex-wrap:wrap;align-items:stretch;gap:4px;margin-bottom:34px}
 .pase-id{flex:1 1 380px;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:0 24px 0 0}
-.pase-n{font:900 clamp(56px,9vw,150px)/.82 var(--inc-fuente);letter-spacing:-.04em;text-transform:uppercase;overflow-wrap:anywhere}
-.pase-n .mano{font-size:.36em;margin-left:.2em;transform:rotate(-8deg) translateY(-.45em)}
+/* El nombre del show: las palabras nunca se cortan; el tamaño lo ajusta ajustarNombre() (cada palabra entera, dos renglones como mucho); aire arriba para las tildes. */
+.pase-n{font:900 clamp(52px,12vw,150px)/.9 var(--inc-fuente);letter-spacing:-.035em;text-transform:uppercase;overflow-wrap:normal;word-break:normal;hyphens:none;padding-top:.1em}
+.pase-n .mano{font-size:max(.36em,24px);margin-left:.2em;transform:rotate(-8deg) translateY(-.45em)}
 .pase-f{font:400 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);padding-top:10px;border-top:4px solid var(--crema)}
 .pase-centro{flex:1 1 520px;min-width:0;display:flex;flex-direction:column;gap:4px}
 /* El estado de la sala: un bloque; rojo si hay graves, amarillo si hay medias (fondo oscuro, letra clara), crema si está todo en orden. */
@@ -3186,6 +3189,21 @@ function chipsAbiertas(s) {
     '<span class="inc-cuenta n' + nv + '"><strong>' + s['abiertas_' + nv] + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('');
   return c || (s.total ? '<span class="inc-cuenta">Sin abiertas · ' + s.total + ' en total</span>' : '<span class="inc-cuenta">Sin incidencias</span>');
 }
+// El nombre enorme del show, a la medida: arranca del tamaño del estilo y lo achica hasta
+// que cada palabra entra entera (sin cortarla) y no pasa de dos renglones.
+function ajustarNombre() {
+  const el = document.getElementById('paseN');
+  if (!el || typeof getComputedStyle !== 'function' || !el.getBoundingClientRect) return;
+  el.style.fontSize = '';
+  let tam = parseFloat(getComputedStyle(el).fontSize) || 0;
+  const renglones = () => el.getBoundingClientRect().height / (tam * 0.9);
+  while (tam > 32 && (el.scrollWidth > el.clientWidth + 1 || renglones() > 2.4)) { tam -= 4; el.style.fontSize = tam + 'px'; }
+}
+if (typeof window !== 'undefined' && window.addEventListener) {
+  let esperaNombre = null;
+  window.addEventListener('resize', () => { clearTimeout(esperaNombre); esperaNombre = setTimeout(ajustarNombre, 120); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarNombre);
+}
 function renderShows() {
   const hoy = hoyISO();
   const grupos = { hoy: [], proximos: [], anteriores: [] };
@@ -3298,6 +3316,7 @@ function render() {
   const partes = String(showAct.nombre || '').split(' — ');
   document.getElementById('paseN').innerHTML = incEsc(partes[0]) + (fechasDe(showAct).includes(hoyISO()) ? '<span class="mano">en vivo</span>' : '');
   document.getElementById('paseF').textContent = [partes.slice(1).join(' — ') || showAct.venue, resumenFechas(showAct)].filter(Boolean).join(' · ');
+  ajustarNombre();
   const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('estado');
   estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html;
   // La botonera: 3D o plano, y cómo está armado el campo.
