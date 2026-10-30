@@ -6,7 +6,7 @@
 <title>Gestión — Recital</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f4f2;color:#1a1a1a;font-size:14px;min-height:100vh}
@@ -137,13 +137,21 @@ tr:hover td{background:#fafaf8}
    desenfoque, degradés ni sombras; radios de 6 (controles) y 12 (credenciales).
    Los colores del panel (--r-ink, --r-muted, --r-line) se dan vuelta acá adentro:
    lo de antes que los usa queda claro sobre oscuro; en lo laminado, vuelven a la tinta. */
-#sec-control{--navy:#0D1A2E;--panel:#13243E;--borde:#3A4C66;--linea:#1E2F49;--claro:#F2EFE6;--claro-2:#A9B6CA;--claro-3:#D6DEE9;--lam:#F2EFE6;--tinta:#141A26;--tinta-2:#4B5565;--perf:#CFC8B6;--ax:#0062FF;--ax-hover:#2F7BFF;--ax-activo:#0050D6;--ax-texto:#5B96FF;--grave:#D62839;--medio:#E8890C;--ok:#12877A;--r1:6px;--r2:12px;--mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;--r-ink:#F2EFE6;--r-ink2:#D6DEE9;--r-muted:#A9B6CA;--r-line:#3A4C66;--r-line2:#1E2F49;position:relative;background:var(--navy);color:var(--claro);min-height:calc(100vh - 56px)}
+#sec-control{--navy:#0D1A2E;--panel:#13243E;--borde:#3A4C66;--linea:#1E2F49;--claro:#F2EFE6;--claro-2:#A9B6CA;--claro-3:#D6DEE9;--lam:#F2EFE6;--tinta:#141A26;--tinta-2:#4B5565;--perf:#CFC8B6;--ax:#0062FF;--ax-hover:#2F7BFF;--ax-activo:#0050D6;--ax-texto:#5B96FF;--grave:#D62839;--medio:#E8890C;--ok:#12877A;--r1:6px;--r2:12px;--num:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--r-ink:#F2EFE6;--r-ink2:#D6DEE9;--r-muted:#A9B6CA;--r-line:#3A4C66;--r-line2:#1E2F49;position:relative;isolation:isolate;overflow:clip;background:var(--navy);color:var(--claro);min-height:calc(100vh - 56px)}
+/* Los reflectores: tres haces de luz desde arriba, como en un show (se mecen despacio), y un brillo azul arriba. */
+#sec-control::before{content:'';position:absolute;left:-20%;right:-20%;top:-60px;height:110vh;z-index:-1;pointer-events:none;background:conic-gradient(from 150deg at 14% 0%,rgba(91,150,255,0) 0deg,rgba(91,150,255,.42) 8deg,rgba(91,150,255,0) 16deg),conic-gradient(from 172deg at 50% -4%,rgba(242,239,230,0) 0deg,rgba(242,239,230,.16) 6deg,rgba(242,239,230,0) 12deg),conic-gradient(from 196deg at 86% 0%,rgba(0,98,255,0) 0deg,rgba(0,98,255,.48) 8deg,rgba(0,98,255,0) 16deg);filter:blur(10px);transform-origin:50% 0;animation:incReflector 16s ease-in-out infinite alternate}
+#sec-control::after{content:'';position:absolute;left:0;right:0;top:0;height:70vh;z-index:-1;pointer-events:none;background:radial-gradient(70% 60% at 50% -5%,rgba(0,98,255,.22),rgba(0,98,255,0) 70%)}
+@keyframes incReflector{0%{transform:rotate(-1.5deg)}100%{transform:rotate(1.5deg)}}
+@media(prefers-reduced-motion:reduce){#sec-control::before,#sec-control .destello::after{animation:none}}
+/* El destello: una luz que cruza lo laminado cada tanto. */
+#sec-control .destello{overflow:hidden}#sec-control .destello::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(110deg,rgba(255,255,255,0) 44%,rgba(255,255,255,.34) 50%,rgba(255,255,255,0) 56%);transform:translateX(-120%);animation:incDestello 14s ease-in-out infinite}
+@keyframes incDestello{0%,84%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
 #sec-control .pase,#sec-control .cc-plano-der,#sec-control .cc-show.on,#sec-control .cc-plano-ayuda{--r-ink:#141A26;--r-ink2:#4B5565;--r-muted:#4B5565;--r-line:#CFC8B6;--r-line2:#CFC8B6}
-#sec-control .rot{font:500 10.5px var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--ax-texto)}
+#sec-control .rot{font:500 10.5px var(--num);letter-spacing:1.6px;text-transform:uppercase;color:var(--ax-texto)}
 #sec-control .ranura{position:relative}
 #sec-control .ranura::before{content:'';position:absolute;top:10px;left:50%;width:54px;height:8px;margin-left:-27px;border-radius:4px;background:var(--navy)}
 /* La barra de la sección: el título, las pestañas y "Vista de la gerencia". */
-#sec-control .ctrlbar{background:var(--navy);border-bottom:1px solid var(--linea);color:var(--claro)}
+#sec-control .ctrlbar{background:rgba(13,26,46,.6);-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%);border-bottom:1px solid rgba(255,255,255,.08);color:var(--claro)}
 #sec-control .ctrlbar a.btn,#sec-control .btn-sec{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border-radius:var(--r1);border:1.5px solid var(--borde);background:transparent;color:var(--claro);font:500 13px Poppins,sans-serif;box-shadow:none}
 #sec-control .ctrlbar a.btn:hover,#sec-control .btn-sec:hover{border-color:var(--claro-2);background:transparent}
 #sec-control .btn-primary{border-radius:var(--r1);background:var(--ax);border:0;color:#fff;box-shadow:none}
@@ -154,44 +162,44 @@ tr:hover td{background:#fafaf8}
 #sec-control .cc-seg button,#sec-control .cc-plano-pisos button{border:0;background:transparent;font:500 13px Poppins,sans-serif;color:var(--claro-3);padding:0 13px;min-height:36px;border-radius:4px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;box-shadow:none;transition:background .15s,color .15s}
 #sec-control .cc-seg button:hover,#sec-control .cc-plano-pisos button:hover{color:#fff;background:rgba(91,150,255,.12)}
 #sec-control .cc-seg button.on,#sec-control .cc-plano-pisos button.on{background:var(--ax);color:#fff;box-shadow:none}
-#sec-control .cc-plano-pisos button{font-family:var(--mono);font-size:12px;letter-spacing:.4px}
+#sec-control .cc-plano-pisos button{font-family:var(--num);font-size:12px;letter-spacing:.4px}
 #sec-control .cc-seg svg{width:15px;height:15px;flex-shrink:0}
 #sec-control .cc-seg.chico button{font-size:12.5px;padding:0 11px}
 /* La lista de shows: el elegido, una credencial; los demás, con borde. */
-#sec-control .cc-show{border:1.5px solid var(--borde);background:transparent;border-radius:var(--r2);padding:12px 14px;color:var(--claro);box-shadow:none;transition:border-color .15s}
+#sec-control .cc-show{border:1.5px solid var(--borde);background:rgba(19,36,62,.5);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:var(--r2);padding:12px 14px;color:var(--claro);box-shadow:none;transition:border-color .15s}
 #sec-control .cc-show:hover{border-color:var(--claro-2)}
 #sec-control .cc-show.on{background:var(--lam);border-color:var(--lam);color:var(--tinta);box-shadow:none}
 #sec-control .cc-show-n{font-size:14.5px;font-weight:500}
-#sec-control .cc-show-f{font:400 11px var(--mono);color:var(--r-muted)}
-#sec-control .cc-grupo{font:500 10.5px var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--ax-texto)}
-#sec-control .cc-hoy{font:600 9.5px var(--mono);letter-spacing:1px;background:var(--ax);border-radius:4px;padding:3px 6px}
+#sec-control .cc-show-f{font:400 11px var(--num);color:var(--r-muted)}
+#sec-control .cc-grupo{font:500 10.5px var(--num);letter-spacing:1.6px;text-transform:uppercase;color:var(--ax-texto)}
+#sec-control .cc-hoy{font:600 9.5px var(--num);letter-spacing:1px;background:var(--ax);border-radius:4px;padding:3px 6px}
 #sec-control .cc-sumar{width:100%;border-style:dashed}
 #sec-control .inc-cuenta{border-radius:var(--r1)}
 #sec-control .cc-show-chips .inc-cuenta{background:rgba(242,239,230,.1);color:var(--claro-3)}
 #sec-control .cc-show.on .cc-show-chips .inc-cuenta{background:rgba(20,26,38,.07);color:var(--tinta-2)}
-#sec-control .cc-show-chips .inc-cuenta strong{font-family:var(--mono)}
+#sec-control .cc-show-chips .inc-cuenta strong{font-family:var(--num)}
 #sec-control .empty{color:var(--claro-2)}
 /* El tablero del show: el pase arriba; el plano y, al costado, los tickets; abajo, el informe. */
 #sec-control .cc-tablero{background:transparent;border:0;box-shadow:none;padding:0}
 #sec-control .pase{background:var(--lam);color:var(--tinta);border-radius:var(--r2);padding:26px 18px 16px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:14px 24px}
 #sec-control .pase-id{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:2px}
-#sec-control .pase-k{font:500 10.5px var(--mono);letter-spacing:1.4px;text-transform:uppercase;color:var(--tinta-2)}
+#sec-control .pase-k{font:500 10.5px var(--num);letter-spacing:1.4px;text-transform:uppercase;color:var(--tinta-2)}
 #sec-control .cc-show-t{font-size:26px;font-weight:600;letter-spacing:-.6px;line-height:1.15;color:var(--tinta);overflow-wrap:anywhere}
-#sec-control .cc-show-s{font:400 12px var(--mono);color:var(--tinta-2)}
+#sec-control .cc-show-s{font:400 12px var(--num);color:var(--tinta-2)}
 #sec-control .pase-centro{flex:3 1 480px;min-width:0;display:flex;flex-direction:column;gap:10px}
 #sec-control .pase-acc{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 #sec-control .estado{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:10px 14px;border-radius:var(--r1);background:var(--ok);color:#fff;font-size:14px;font-weight:500}
 #sec-control .estado.grave{background:var(--grave)}#sec-control .estado.medio{background:var(--medio);color:var(--tinta)}
 #sec-control .estado svg{width:19px;height:19px;flex-shrink:0}
 #sec-control .estado small{font-size:12.5px;font-weight:400}
-#sec-control .estado .hace{margin-left:auto;font:600 12px var(--mono);letter-spacing:.6px;white-space:nowrap}
+#sec-control .estado .hace{margin-left:auto;font:600 12px var(--num);letter-spacing:.6px;white-space:nowrap}
 #sec-control .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
 #sec-control .stat{--c:var(--tinta);display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:0 0 9px;border:1.5px solid var(--tinta);border-radius:var(--r1);background:transparent;color:var(--tinta);overflow:hidden;text-align:left;font:inherit;cursor:pointer;min-width:0;min-height:66px}
 #sec-control .stat::before{content:'';display:block;width:100%;height:7px;background:var(--c);margin-bottom:3px}
 #sec-control .stat-n{order:1;padding:0 10px;display:flex;align-items:baseline;gap:5px;min-width:0}
 #sec-control .stat-t{order:2;padding:0 10px;font-size:10.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--tinta)}
 #sec-control .stat-t i{display:none}
-#sec-control .stat b{font:600 26px/1 var(--mono)}
+#sec-control .stat b{font:600 26px/1 var(--num)}
 #sec-control .stat small{font-size:11px;color:var(--tinta-2)}
 #sec-control .stat:hover{background:rgba(20,26,38,.05)}
 #sec-control .stat.on{outline:2.5px solid var(--ax);outline-offset:-1px}
@@ -200,8 +208,8 @@ tr:hover td{background:#fafaf8}
 #sec-control .pase-datos{flex:1 1 100%;display:flex;flex-wrap:wrap;border-top:1px dashed var(--perf);padding-top:10px;gap:6px 0}
 #sec-control .pase-dato{display:flex;flex-direction:column;gap:1px;padding:0 18px 0 0;margin-right:18px;border-right:1px dashed var(--perf)}
 #sec-control .pase-dato:last-child{border-right:0}
-#sec-control .pase-dato span{font:500 10px var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--tinta-2)}
-#sec-control .pase-dato b{font:600 19px var(--mono)}
+#sec-control .pase-dato span{font:500 10px var(--num);letter-spacing:1.2px;text-transform:uppercase;color:var(--tinta-2)}
+#sec-control .pase-dato b{font:600 19px var(--num)}
 #sec-control .pase-dato small{font:400 11.5px Poppins,sans-serif;color:var(--tinta-2)}
 /* Los botones del pase: cargar, en el azul de AX; los demás, con borde de tinta. */
 #sec-control .bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 14px;border-radius:var(--r1);border:1.5px solid var(--tinta);background:transparent;color:var(--tinta);font:500 13.5px Poppins,sans-serif;cursor:pointer;flex-shrink:0;box-shadow:none}
@@ -210,23 +218,23 @@ tr:hover td{background:#fafaf8}
 #sec-control .bar-btn.prim{background:var(--ax);border-color:var(--ax);color:#fff;font-weight:600}
 #sec-control .bar-btn.prim:hover{background:var(--ax-hover)}
 #sec-control .t-plano .bar-btn{border-color:var(--borde);color:var(--claro)}#sec-control .t-plano .bar-btn:hover{border-color:var(--claro-2);background:transparent}
-#sec-control .inc-vivo{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px 0 10px;border-radius:var(--r1);background:var(--ax);color:#fff;font:600 12px var(--mono);letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+#sec-control .inc-vivo{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px 0 10px;border-radius:var(--r1);background:var(--ax);box-shadow:0 0 18px rgba(0,98,255,.55);color:#fff;font:600 12px var(--num);letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
 #sec-control .inc-vivo::before{background:#fff}
 #sec-control .inc-vivo.mal{background:var(--medio);color:var(--tinta)}#sec-control .inc-vivo.mal::before{background:var(--tinta);animation:none}
 #sec-control .herr{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 /* El plano grande y, al costado, los tickets. */
 #sec-control .t-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 #sec-control .t-grid>*{min-width:0}
-#sec-control .t-plano{border-radius:var(--r2);background:var(--panel);padding:10px;--tj-muesca:var(--panel)}
+#sec-control .t-plano{border-radius:var(--r2);background:rgba(19,36,62,.58);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);padding:10px;--tj-muesca:var(--panel)}
 #sec-control .t-plano-cab{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:2px 2px 10px 6px}
 #sec-control .t-plano-cab .rot{margin-right:auto}
 /* Sin la tarjeta blanca del plano 2D; el 3D conserva su fondo azul (también en pantalla completa), como en la gerencia. */
 #sec-control .t-plano .inc-adm-plano{border:0;padding:0}
 #sec-control .t-plano .inc-adm-plano:not(.inc-3d){background:transparent}
-#sec-control .t-lista{border-radius:var(--r2);background:var(--panel);display:flex;flex-direction:column;overflow:hidden;--tj-muesca:var(--panel)}
+#sec-control .t-lista{border-radius:var(--r2);background:rgba(19,36,62,.58);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);display:flex;flex-direction:column;overflow:hidden;--tj-muesca:var(--panel)}
 #sec-control .t-lista-cab{padding:14px 14px 10px;border-bottom:1px solid var(--linea)}
 #sec-control .t-lista-t{font-size:16px;font-weight:600;margin-bottom:10px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;color:var(--claro)}
-#sec-control .t-lista-t small{font:400 11px var(--mono);letter-spacing:.8px;text-transform:uppercase;color:var(--claro-2)}
+#sec-control .t-lista-t small{font:400 11px var(--num);letter-spacing:.8px;text-transform:uppercase;color:var(--claro-2)}
 #sec-control .t-lista-cuerpo{padding:12px}
 @media(min-width:1200px){
   #sec-control .t-grid{grid-template-columns:minmax(0,1fr) 380px;align-items:start}
@@ -250,14 +258,14 @@ tr:hover td{background:#fafaf8}
 #sec-control .cc-met-t{margin:28px 4px 10px;border-top:0;padding-top:0}
 #incMetricasAdm{--tj-muesca:var(--navy)}
 /* El editor del plano: a la izquierda, el editor y la vista previa (azul marino); a la derecha, la ficha del puesto (laminado). */
-#sec-control .cc-plano-izq{background:var(--panel);border:0;border-radius:var(--r2);box-shadow:none;color:var(--claro)}
+#sec-control .cc-plano-izq{border-radius:var(--r2);background:rgba(19,36,62,.58);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);border:1px solid rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);color:var(--claro)}
 #sec-control .cc-plano-der{background:var(--lam);border:0;border-radius:var(--r2);box-shadow:none;color:var(--tinta)}
 #sec-control .cc-plano-barra{border-bottom:1px solid var(--linea)}
 #sec-control .cc-plano-barra .btn{min-height:40px;border-radius:var(--r1);background:transparent;border:1.5px solid var(--borde);color:var(--claro);font-weight:500}
 #sec-control .cc-plano-barra .btn:hover{border-color:var(--claro-2);color:#fff}
 #sec-control .cc-plano-barra .btn.on{background:var(--ax);border-color:var(--ax);color:#fff}
 #sec-control .cc-plano-barra .btn i{border-radius:2px;box-shadow:none}
-#sec-control .cc-plano-t{font:500 10.5px var(--mono);letter-spacing:1.6px;text-transform:uppercase;color:var(--ax-texto)}
+#sec-control .cc-plano-t{font:500 10.5px var(--num);letter-spacing:1.6px;text-transform:uppercase;color:var(--ax-texto)}
 #sec-control .cc-plano-previa-t{font-size:13px;font-weight:500;color:var(--claro)}
 #sec-control .cc-plano-previa-t label{color:var(--claro-2)}
 #sec-control .cc-ayuda-btn{border:1.5px solid var(--borde);background:transparent;border-radius:var(--r1);color:var(--claro-3)}
@@ -271,13 +279,15 @@ tr:hover td{background:#fafaf8}
 #sec-control .cc-plano-lista button{background:transparent;border:1.5px solid var(--perf);border-radius:var(--r1);color:var(--tinta)}
 #sec-control .cc-plano-lista button:hover{border-color:var(--tinta);background:transparent}
 #sec-control .cc-plano-lista small{background:rgba(20,26,38,.07);color:var(--tinta-2);border-radius:4px}
-#sec-control .cc-plano-grupo{font-family:var(--mono);letter-spacing:1.2px;color:var(--tinta-2)}
+#sec-control .cc-plano-grupo{font-family:var(--num);letter-spacing:1.2px;color:var(--tinta-2)}
 #sec-control .cc-plano-der input[type=text],#sec-control .cc-plano-der input[type=number],#sec-control .cc-plano-der select,#sec-control .cc-plano-der textarea,#sec-control .cc-plano-der .fi{background:#fff;border:1.5px solid var(--perf);border-radius:var(--r1);color:var(--tinta)}
 #sec-control .cc-plano-der input:focus,#sec-control .cc-plano-der select:focus,#sec-control .cc-plano-der textarea:focus{border-color:var(--tinta);outline:none}
 #sec-control .cc-plano-estado.pend{color:#9A5B00}
 /* Los accesos de la gerencia. */
 #sec-control #ccAccesos .sup-card{background:var(--panel);border:1.5px solid var(--borde);border-radius:var(--r2);box-shadow:none;color:var(--claro)}
 #sec-control #ccAccesos .sup-name{color:var(--claro)}#sec-control #ccAccesos .sup-email{color:var(--claro-2)}
+/* Poppins en todo; las cifras que cambian (minutos, contadores, horas), de ancho fijo. */
+#sec-control .stat b,#sec-control .pase-dato b,#sec-control .estado .hace,#sec-control .inc-vivo,#sec-control .inc-cuenta strong,#sec-control .bar-s,#sec-control .show-f,#sec-control .pase-f,#sec-control .t-lista-t small,#sec-control .cc-show-f,#sec-control .cc-show-s{font-variant-numeric:tabular-nums}
 /* Editor del plano del Arena */
 .cc-plano{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;padding:16px 22px;align-items:start}
 @media(max-width:1000px){.cc-plano{grid-template-columns:minmax(0,1fr)}}
@@ -1306,7 +1316,7 @@ tr:hover td{background:#f9f9fb}
     <div class="cc-lista" id="ccListaShows"><div class="empty">Cargando…</div></div>
     <div class="cc-tablero" id="ccTablero">
       <!-- El pase del show: quién y cuándo, la franja de estado, lo abierto por gravedad y las acciones. -->
-      <section class="pase ranura cc-tablero-top" aria-label="El show">
+      <section class="pase ranura destello cc-tablero-top" aria-label="El show">
         <div class="pase-id"><span class="pase-k">AX · Audience Experience</span><div class="cc-show-t" id="incTitulo">—</div><div class="cc-show-s" id="incSubtitulo"></div></div>
         <div class="pase-centro">
           <div class="estado" id="incEstadoAdm" role="status"></div>
@@ -5531,14 +5541,14 @@ function incTarjetaHTML(i, op) {
 function incEstiloTarjetas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloTj')) return;
   const st = document.createElement('style'); st.id = 'incEstiloTj';
-  const MONO = "'IBM Plex Mono',ui-monospace,monospace";
+  const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
   st.textContent = '.inc-tj{position:relative;display:block;margin:0 0 10px;padding:0;border:0;border-radius:12px;background:#F2EFE6;color:#141A26;box-shadow:none;overflow:visible;cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .15s}'
     + '.inc-tj:hover{outline-color:rgba(91,150,255,.55)}.inc-tj:focus-visible{outline-color:#5B96FF}.inc-tj.abierta{outline-color:#0062FF}.inc-tj.resuelta{opacity:.8}'
     + '.inc-tj-cab{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr)}'
     + '.inc-tj-cab::before,.inc-tj-cab::after{content:"";position:absolute;left:62px;width:16px;height:16px;border-radius:50%;background:var(--tj-muesca,#13243E)}.inc-tj-cab::before{top:-8px}.inc-tj-cab::after{bottom:-8px}.inc-tj.abierta .inc-tj-cab::after,.inc-tj:has(.inc-card-acts) .inc-tj-cab::after{display:none}'
     + '.inc-tj-talon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 4px;border-radius:12px 0 0 12px;background:var(--tj-c);color:var(--tj-t);text-align:center}'
     + '.inc-tj.abierta .inc-tj-talon,.inc-tj:has(.inc-card-acts) .inc-tj-talon{border-radius:12px 0 0 0}'
-    + '.inc-tj-talon svg{width:20px;height:20px;fill:currentColor}.inc-tj-talon b{font:600 14px/1 ' + MONO + '}.inc-tj-talon small{font:500 9px/1.2 ' + MONO + ';letter-spacing:.8px}'
+    + '.inc-tj-talon svg{width:20px;height:20px;fill:currentColor}.inc-tj-talon b{font:600 14px/1 ' + MONO + ';font-variant-numeric:tabular-nums}.inc-tj-talon small{font:500 9px/1.2 ' + MONO + ';letter-spacing:.8px}'
     + '.inc-tj-txt{display:flex;flex-direction:column;gap:3px;min-width:0;padding:11px 14px;border-left:2px dashed #CFC8B6}'
     + '.inc-tj-tipo{font-size:15px;font-weight:500;line-height:1.25;color:#141A26}'
     + '.inc-tj-linea{font-size:12.5px;color:#4B5565}'
@@ -6040,12 +6050,12 @@ function incEsperar3D(cont) {
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
 // El estilo nuevo de los controles del plano (diseño "Credencial", propuesta AX):
-// sin vidrio ni desenfoque; paneles azul marino con borde, radio de 6 px, lo
-// elegido en el azul de AX y los números en monoespaciada. Sólo con op.ax.
+// paneles de vidrio azul marino sobre el 3D, radio de 6 px y lo elegido en el azul
+// de AX. Sólo con op.ax (la gerencia y el panel; la tablet queda como está).
 function incEstiloAx() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloAx')) return;
   const st = document.createElement('style'); st.id = 'incEstiloAx';
-  const MONO = "'IBM Plex Mono',ui-monospace,monospace", PANEL = 'background:rgba(13,26,46,.94);-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #3A4C66;border-radius:6px;box-shadow:none;';
+  const MONO = INC_FUENTE, PANEL = 'background:rgba(13,26,46,.6);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1);';
   st.textContent = '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F2EFE6;min-width:44px;min-height:44px;font:500 13px ' + INC_FUENTE + '}'
     + '.inc-ax .inc-3d-btn:hover{border-color:#5B96FF;background:rgba(13,26,46,.98)}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid #5B96FF;outline-offset:2px}'
     + '.inc-ax .inc-3d-btn.on{background:#0062FF;border-color:#0062FF;color:#fff}'
@@ -6053,6 +6063,15 @@ function incEstiloAx() {
     // Que no la tapen los botones (ahora de 44 px): cuatro botones y sus espacios.
     + '.inc-ax .inc-3d-ley{max-width:calc(100% - 226px)}'
     + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#D6DEE9}'
+    // Los reflectores: haces de luz desde arriba, detrás del estadio (se mecen despacio).
+    + '.inc-ax.inc-3d{isolation:isolate}'
+    + '.inc-ax.inc-3d::before{content:"";position:absolute;left:-15%;right:-15%;top:-12%;bottom:0;z-index:-1;pointer-events:none;'
+    + 'background:conic-gradient(from 154deg at 22% 0%,rgba(91,150,255,0) 0deg,rgba(91,150,255,.3) 7deg,rgba(91,150,255,0) 14deg),'
+    + 'conic-gradient(from 174deg at 50% 0%,rgba(242,239,230,0) 0deg,rgba(242,239,230,.12) 5deg,rgba(242,239,230,0) 10deg),'
+    + 'conic-gradient(from 192deg at 78% 0%,rgba(0,98,255,0) 0deg,rgba(0,98,255,.36) 7deg,rgba(0,98,255,0) 14deg);'
+    + 'filter:blur(10px);transform-origin:50% 0;animation:incReflector3d 18s ease-in-out infinite alternate}'
+    + '@keyframes incReflector3d{0%{transform:rotate(2deg)}100%{transform:rotate(-2deg)}}'
+    + '@media(prefers-reduced-motion:reduce){.inc-ax.inc-3d::before{animation:none}}'
     + '.inc-ax .inc-3d-pisos{' + PANEL + 'gap:4px;padding:4px}'
     + '.inc-ax .inc-3d-pisos button{border-radius:4px;color:#F2EFE6;font:600 11.5px ' + MONO + ';letter-spacing:.4px;min-height:38px;padding:0 12px}'
     + '.inc-ax .inc-3d-pisos button:hover{background:rgba(91,150,255,.14)}.inc-ax .inc-3d-pisos button.on{background:#0062FF;color:#fff;box-shadow:none}'
@@ -6068,7 +6087,7 @@ function incEstiloAx() {
     + '.inc-ax .inc-ficha-ico{border-radius:6px}.inc-ax .inc-ficha-datos span{border:1px solid #CFC8B6;background:transparent;border-radius:6px;color:#4B5565}'
     + '.inc-ax .inc-ficha-abiertas{color:#4B5565}.inc-ax .inc-ficha-accion{border-radius:6px;background:#0062FF;color:#fff}'
     // El detalle de pantalla completa: azul marino, con los tickets.
-    + '.inc-ax .inc-3d-det{background:#0D1A2E;-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #3A4C66;border-radius:12px;box-shadow:none;color:#F2EFE6;--tj-muesca:#0D1A2E}'
+    + '.inc-ax .inc-3d-det{background:rgba(13,26,46,.78);-webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1);color:#F2EFE6;--tj-muesca:#0D1A2E}'
     + '.inc-ax .inc-3d-det-cab{border-bottom:1px solid #1E2F49}.inc-ax .inc-3d-det-tit span{color:#A9B6CA;font-family:' + MONO + ';font-size:11.5px;letter-spacing:.4px}'
     + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:6px;border:1.5px solid #3A4C66;background:transparent;color:#F2EFE6}'
     + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{border-color:#5B96FF;background:transparent}'
@@ -7664,7 +7683,7 @@ function incMetricasActivar(cont) {
 function incEstiloMetricas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloMet')) return;
   const st = document.createElement('style'); st.id = 'incEstiloMet';
-  const MONO = "'IBM Plex Mono',ui-monospace,monospace";
+  const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
   st.textContent = '.inc-met{position:relative;background:#F2EFE6;color:#141A26;border-radius:12px;padding:16px 18px 18px}'
     + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;margin-bottom:16px;border-bottom:1px dashed #CFC8B6}'
     + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}.inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px dashed #CFC8B6;padding-left:0}.inc-tiles.angosto .inc-tile:last-child{border-bottom:0}'
@@ -7673,7 +7692,7 @@ function incEstiloMetricas() {
     + 'button.inc-tile{cursor:pointer}button.inc-tile:hover .inc-tile-ir{text-decoration:underline}button.inc-tile:focus-visible{outline:2px solid #0062FF;outline-offset:2px}'
     + '.inc-tile.on{box-shadow:inset 0 -3px 0 #0062FF}'
     + '.inc-tile-e{font-size:12px;color:#4B5565}'
-    + '.inc-tile-v{font:600 26px/1.15 ' + MONO + ';color:#141A26;margin-top:3px}'
+    + '.inc-tile-v{font:600 26px/1.15 ' + MONO + ';font-variant-numeric:tabular-nums;color:#141A26;margin-top:3px}'
     + '.inc-tile-s{font-size:12.5px;color:#4B5565;margin-top:3px;display:flex;align-items:center;gap:6px;min-width:0}'
     + '.inc-tile-ir{font-size:12px;font-weight:600;color:#0050D6;margin-top:6px}'
     + '.inc-pt{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0}'

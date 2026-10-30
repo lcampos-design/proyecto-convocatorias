@@ -1346,14 +1346,14 @@ function incTarjetaHTML(i, op) {
 function incEstiloTarjetas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloTj')) return;
   const st = document.createElement('style'); st.id = 'incEstiloTj';
-  const MONO = "'IBM Plex Mono',ui-monospace,monospace";
+  const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
   st.textContent = '.inc-tj{position:relative;display:block;margin:0 0 10px;padding:0;border:0;border-radius:12px;background:#F2EFE6;color:#141A26;box-shadow:none;overflow:visible;cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .15s}'
     + '.inc-tj:hover{outline-color:rgba(91,150,255,.55)}.inc-tj:focus-visible{outline-color:#5B96FF}.inc-tj.abierta{outline-color:#0062FF}.inc-tj.resuelta{opacity:.8}'
     + '.inc-tj-cab{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr)}'
     + '.inc-tj-cab::before,.inc-tj-cab::after{content:"";position:absolute;left:62px;width:16px;height:16px;border-radius:50%;background:var(--tj-muesca,#13243E)}.inc-tj-cab::before{top:-8px}.inc-tj-cab::after{bottom:-8px}.inc-tj.abierta .inc-tj-cab::after,.inc-tj:has(.inc-card-acts) .inc-tj-cab::after{display:none}'
     + '.inc-tj-talon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 4px;border-radius:12px 0 0 12px;background:var(--tj-c);color:var(--tj-t);text-align:center}'
     + '.inc-tj.abierta .inc-tj-talon,.inc-tj:has(.inc-card-acts) .inc-tj-talon{border-radius:12px 0 0 0}'
-    + '.inc-tj-talon svg{width:20px;height:20px;fill:currentColor}.inc-tj-talon b{font:600 14px/1 ' + MONO + '}.inc-tj-talon small{font:500 9px/1.2 ' + MONO + ';letter-spacing:.8px}'
+    + '.inc-tj-talon svg{width:20px;height:20px;fill:currentColor}.inc-tj-talon b{font:600 14px/1 ' + MONO + ';font-variant-numeric:tabular-nums}.inc-tj-talon small{font:500 9px/1.2 ' + MONO + ';letter-spacing:.8px}'
     + '.inc-tj-txt{display:flex;flex-direction:column;gap:3px;min-width:0;padding:11px 14px;border-left:2px dashed #CFC8B6}'
     + '.inc-tj-tipo{font-size:15px;font-weight:500;line-height:1.25;color:#141A26}'
     + '.inc-tj-linea{font-size:12.5px;color:#4B5565}'
@@ -1855,12 +1855,12 @@ function incEsperar3D(cont) {
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
 // El estilo nuevo de los controles del plano (diseño "Credencial", propuesta AX):
-// sin vidrio ni desenfoque; paneles azul marino con borde, radio de 6 px, lo
-// elegido en el azul de AX y los números en monoespaciada. Sólo con op.ax.
+// paneles de vidrio azul marino sobre el 3D, radio de 6 px y lo elegido en el azul
+// de AX. Sólo con op.ax (la gerencia y el panel; la tablet queda como está).
 function incEstiloAx() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloAx')) return;
   const st = document.createElement('style'); st.id = 'incEstiloAx';
-  const MONO = "'IBM Plex Mono',ui-monospace,monospace", PANEL = 'background:rgba(13,26,46,.94);-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #3A4C66;border-radius:6px;box-shadow:none;';
+  const MONO = INC_FUENTE, PANEL = 'background:rgba(13,26,46,.6);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:6px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1);';
   st.textContent = '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F2EFE6;min-width:44px;min-height:44px;font:500 13px ' + INC_FUENTE + '}'
     + '.inc-ax .inc-3d-btn:hover{border-color:#5B96FF;background:rgba(13,26,46,.98)}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid #5B96FF;outline-offset:2px}'
     + '.inc-ax .inc-3d-btn.on{background:#0062FF;border-color:#0062FF;color:#fff}'
@@ -1868,6 +1868,15 @@ function incEstiloAx() {
     // Que no la tapen los botones (ahora de 44 px): cuatro botones y sus espacios.
     + '.inc-ax .inc-3d-ley{max-width:calc(100% - 226px)}'
     + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#D6DEE9}'
+    // Los reflectores: haces de luz desde arriba, detrás del estadio (se mecen despacio).
+    + '.inc-ax.inc-3d{isolation:isolate}'
+    + '.inc-ax.inc-3d::before{content:"";position:absolute;left:-15%;right:-15%;top:-12%;bottom:0;z-index:-1;pointer-events:none;'
+    + 'background:conic-gradient(from 154deg at 22% 0%,rgba(91,150,255,0) 0deg,rgba(91,150,255,.3) 7deg,rgba(91,150,255,0) 14deg),'
+    + 'conic-gradient(from 174deg at 50% 0%,rgba(242,239,230,0) 0deg,rgba(242,239,230,.12) 5deg,rgba(242,239,230,0) 10deg),'
+    + 'conic-gradient(from 192deg at 78% 0%,rgba(0,98,255,0) 0deg,rgba(0,98,255,.36) 7deg,rgba(0,98,255,0) 14deg);'
+    + 'filter:blur(10px);transform-origin:50% 0;animation:incReflector3d 18s ease-in-out infinite alternate}'
+    + '@keyframes incReflector3d{0%{transform:rotate(2deg)}100%{transform:rotate(-2deg)}}'
+    + '@media(prefers-reduced-motion:reduce){.inc-ax.inc-3d::before{animation:none}}'
     + '.inc-ax .inc-3d-pisos{' + PANEL + 'gap:4px;padding:4px}'
     + '.inc-ax .inc-3d-pisos button{border-radius:4px;color:#F2EFE6;font:600 11.5px ' + MONO + ';letter-spacing:.4px;min-height:38px;padding:0 12px}'
     + '.inc-ax .inc-3d-pisos button:hover{background:rgba(91,150,255,.14)}.inc-ax .inc-3d-pisos button.on{background:#0062FF;color:#fff;box-shadow:none}'
@@ -1883,7 +1892,7 @@ function incEstiloAx() {
     + '.inc-ax .inc-ficha-ico{border-radius:6px}.inc-ax .inc-ficha-datos span{border:1px solid #CFC8B6;background:transparent;border-radius:6px;color:#4B5565}'
     + '.inc-ax .inc-ficha-abiertas{color:#4B5565}.inc-ax .inc-ficha-accion{border-radius:6px;background:#0062FF;color:#fff}'
     // El detalle de pantalla completa: azul marino, con los tickets.
-    + '.inc-ax .inc-3d-det{background:#0D1A2E;-webkit-backdrop-filter:none;backdrop-filter:none;border:1.5px solid #3A4C66;border-radius:12px;box-shadow:none;color:#F2EFE6;--tj-muesca:#0D1A2E}'
+    + '.inc-ax .inc-3d-det{background:rgba(13,26,46,.78);-webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.1);color:#F2EFE6;--tj-muesca:#0D1A2E}'
     + '.inc-ax .inc-3d-det-cab{border-bottom:1px solid #1E2F49}.inc-ax .inc-3d-det-tit span{color:#A9B6CA;font-family:' + MONO + ';font-size:11.5px;letter-spacing:.4px}'
     + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:6px;border:1.5px solid #3A4C66;background:transparent;color:#F2EFE6}'
     + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{border-color:#5B96FF;background:transparent}'
@@ -3479,7 +3488,7 @@ function incMetricasActivar(cont) {
 function incEstiloMetricas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloMet')) return;
   const st = document.createElement('style'); st.id = 'incEstiloMet';
-  const MONO = "'IBM Plex Mono',ui-monospace,monospace";
+  const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
   st.textContent = '.inc-met{position:relative;background:#F2EFE6;color:#141A26;border-radius:12px;padding:16px 18px 18px}'
     + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;margin-bottom:16px;border-bottom:1px dashed #CFC8B6}'
     + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}.inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px dashed #CFC8B6;padding-left:0}.inc-tiles.angosto .inc-tile:last-child{border-bottom:0}'
@@ -3488,7 +3497,7 @@ function incEstiloMetricas() {
     + 'button.inc-tile{cursor:pointer}button.inc-tile:hover .inc-tile-ir{text-decoration:underline}button.inc-tile:focus-visible{outline:2px solid #0062FF;outline-offset:2px}'
     + '.inc-tile.on{box-shadow:inset 0 -3px 0 #0062FF}'
     + '.inc-tile-e{font-size:12px;color:#4B5565}'
-    + '.inc-tile-v{font:600 26px/1.15 ' + MONO + ';color:#141A26;margin-top:3px}'
+    + '.inc-tile-v{font:600 26px/1.15 ' + MONO + ';font-variant-numeric:tabular-nums;color:#141A26;margin-top:3px}'
     + '.inc-tile-s{font-size:12.5px;color:#4B5565;margin-top:3px;display:flex;align-items:center;gap:6px;min-width:0}'
     + '.inc-tile-ir{font-size:12px;font-weight:600;color:#0050D6;margin-top:6px}'
     + '.inc-pt{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0}'
