@@ -67,15 +67,15 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 /* El ingreso: un bloque plano. */
 .login{min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:var(--bloque);color:var(--crema);padding:28px 24px 24px;width:100%;max-width:400px}
-.login-logo{width:52px;height:52px;display:block;margin:0 0 18px}
-.login-k{font:600 12.5px var(--inc-fuente);letter-spacing:0;color:var(--gris)}
-.login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;margin-top:8px}
-.login-t .mano{display:block;font-size:.78em;margin-top:6px;transform:rotate(-4deg)}
-.login-s{font:400 11.5px var(--inc-fuente);color:var(--gris);margin:12px 0 22px}
+.login-logo{width:68px;height:68px;display:block;margin:0 auto 18px}
+.login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;text-align:center;margin:0 0 26px}
+.login-t .mano{display:block;font-size:.78em;margin-top:8px;transform:rotate(-4deg)}
 .lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin-bottom:6px}
 /* 16 px: en el iPhone, con menos, la página se agranda sola al tocar el campo. */
 .in{width:100%;min-height:46px;padding:10px 12px;border:2px solid var(--linea);border-radius:0;font:16px var(--inc-fuente);outline:none;margin-bottom:16px;background:var(--fondo);color:var(--crema)}
 .in:focus{border-color:var(--crema)}
+/* Lo que autocompleta el navegador, también azul oscuro (si no, lo pinta celeste). */
+.in:-webkit-autofill,.in:-webkit-autofill:hover,.in:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px var(--fondo) inset;-webkit-text-fill-color:var(--crema);caret-color:var(--crema)}
 .btn-ok{width:100%;min-height:50px;background:var(--crema);color:var(--fondo);border:0;border-radius:0;font:600 15px var(--inc-fuente);letter-spacing:0;cursor:pointer}
 .btn-ok:hover{background:#fff}
 .btn-ok:disabled{background:var(--bloque-2);color:var(--gris);cursor:default}
@@ -244,9 +244,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
   <div class="login">
     <div class="login-card">
       <img class="login-logo" src="logo-sbs-blanco.png" alt="SBS">
-      <div class="login-k">AX · Acceso de la gerencia</div>
       <div class="login-t">Centro de Control<span class="mano">sala en vivo</span></div>
-      <div class="login-s">Movistar Arena · Show Business Solutions</div>
       <label class="lbl" for="lgEmail">Email</label>
       <input class="in" type="email" id="lgEmail" autocomplete="username" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')ingresar()">
       <label class="lbl" for="lgPass">Contraseña</label>
@@ -260,7 +258,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 <!-- Los shows del Arena -->
 <div class="pantalla" id="pShows">
   <div class="wrap">
-    <h1 class="titulo sec-t"><span class="mano">Los</span>Shows del Movistar Arena</h1>
+    <h1 class="titulo sec-t"><span class="mano">Los</span>shows del Movistar Arena</h1>
     <div class="titulo-s">Elegí un show para ver la sala en vivo.</div>
     <div id="showsBody"><div class="vacio">Cargando…</div></div>
   </div>
@@ -278,13 +276,13 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
     </section>
     <div class="t-grid">
       <section class="t-plano">
-        <div class="t-plano-cab"><h2 class="sec-t"><span class="mano">El</span>Plano</h2><div class="herr" id="vistas"></div></div>
+        <div class="t-plano-cab"><h2 class="sec-t"><span class="mano">El</span>plano</h2><div class="herr" id="vistas"></div></div>
         <div id="plano" data-alto="pantalla"></div>
         <div class="inc-lugares" id="lugares"></div>
       </section>
       <aside class="t-lista">
         <div class="t-lista-cab">
-          <h2 class="t-lista-t sec-t" id="listaT"><span class="mano">Las</span>Incidencias</h2>
+          <h2 class="t-lista-t sec-t" id="listaT"><span class="mano">Las</span>incidencias</h2>
           <div class="fila" id="filtros"></div>
         </div>
         <div class="t-lista-cuerpo" id="lista"></div>
@@ -3347,7 +3345,7 @@ function render() {
   // Al costado, el listado: abiertas, resueltas o todas; el día; y el lugar tocado en el plano.
   const dias = [...new Set(lista.map(fechaFuncion).filter(Boolean))].sort().reverse();
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="filtrar(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
-  document.getElementById('listaT').innerHTML = '<span class="mano">Las</span>Incidencias';
+  document.getElementById('listaT').innerHTML = '<span class="mano">Las</span>incidencias';
   document.getElementById('filtros').innerHTML = '<div class="seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (filtro === v ? 'on' : '') + '" onclick="filtrar(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
     + (dias.length > 1 || (dias.length === 1 && dia !== dias[0]) ? chip('dia', '', 'Todos los días', !dia) + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), dia === d)).join('') : '')
     + (nivelSel ? '<span class="chip on">' + INC_NIVELES[nivelSel].nombre + ' <span onclick="event.stopPropagation();filtrar(\'nivel\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
