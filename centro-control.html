@@ -26,7 +26,7 @@
   /* La gravedad: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
   --celeste:#019DF4;   /* el celeste de la marca (las cifras del resumen del show y el informe) */
   --celeste-osc:#003150;--celeste-letra:#019DF4;   /* el resumen del show: fondo oscuro y la letra en el celeste (4,6 a 1) */
-  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#9C7100;--media-letra:#FFF6D6;--leve:#4E5560;--leve-letra:#E4E7EC;
+  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#FFD700;--media-letra:#3D3200;--leve:#4E5560;--leve-letra:#E4E7EC;
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
@@ -200,7 +200,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .pantalla .inc-met-tip{background:var(--fondo);color:var(--crema-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--crema)}
 .pantalla .inc-met-vacio{background:var(--celeste-osc);border:0;border-radius:0;color:var(--celeste-letra)}
 /* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad. */
-.pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFF6D6}
+.pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFD700}
 .pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px}
 .pantalla .inc-tj:hover{outline-color:rgba(244,241,234,.45)}.pantalla .inc-tj.abierta{outline-color:var(--crema)}
 .pantalla .inc-tj-cab{grid-template-columns:78px minmax(0,1fr)}
@@ -317,7 +317,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'sbs-cent
 // fondo y plano: los suaves; talon: el del talón del ticket, con su letra.
 const INC_NIVELES = {
   1: { nombre: 'Leve',  ayuda: 'Se resuelve en el lugar y queda registrado',            color: '#667080', fondo: '#ECEEF1', plano: '#C3CAD3', talon: '#B9C1CC', talonTinta: '#141A26' },
-  2: { nombre: 'Medio', ayuda: 'Se deriva a quien corresponde y se avisa a su equipo', color: '#B45309', fondo: '#FDF0DC', plano: '#F5B65A', talon: '#E8890C', talonTinta: '#141A26' },
+  2: { nombre: 'Medio', ayuda: 'Se deriva a quien corresponde y se avisa a su equipo', color: '#8A6900', fondo: '#FFF6CC', plano: '#FFD700', talon: '#FFD700', talonTinta: '#3D3200' },
   3: { nombre: 'Grave', ayuda: 'Aviso inmediato al responsable del Arena',              color: '#D62839', fondo: '#FDE7EA', plano: '#F26D7D', talon: '#D62839', talonTinta: '#FFFFFF' }
 };
 // Cada categoría: sus tipos (con el nivel que traen por defecto) y el
@@ -3427,7 +3427,7 @@ function render() {
   // Cada contador es un botón: muestra esas en el listado.
   const elegido = nivelSel ? String(nivelSel) : (filtro === 'resueltas' || filtro === 'todas' ? filtro : '');
   // Como un widget: el punto de color y qué es, arriba; el número grande (y "abiertas"), abajo.
-  const NIVEL_COLOR = { 3: '#A11D21', 2: '#9C7100', 1: '#4E5560' };
+  const NIVEL_COLOR = { 3: '#A11D21', 2: '#FFD700', 1: '#4E5560' };
   const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat k-' + clave + (num ? '' : ' cero') + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="tocarStat(\'' + clave + '\')" title="Ver ' + ({ 3: 'las graves abiertas', 2: 'las de gravedad media abiertas', 1: 'las leves abiertas', resueltas: 'las resueltas', todas: 'todas' })[clave] + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
   document.getElementById('resumen').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', NIVEL_COLOR[nv], nv === 3 && n(3), String(nv))).join('')
