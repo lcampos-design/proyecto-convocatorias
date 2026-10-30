@@ -33,7 +33,7 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 /* La palabra manuscrita de acento: nunca en datos ni en botones. */
 .mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
 /* Los rótulos: mono, en mayúsculas espaciadas. */
-.rot{font:600 10.5px var(--inc-fuente);letter-spacing:.16em;text-transform:uppercase;color:var(--gris)}
+.rot{font:600 12.5px var(--inc-fuente);letter-spacing:0;color:var(--gris)}
 /* Los títulos de sección: muy pesados, en mayúsculas, con la palabra manuscrita delante. */
 .sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;font:900 40px/.9 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase}
 .sec-t .mano{font-size:.9em;transform:rotate(-5deg) translateY(-.06em)}
@@ -41,15 +41,15 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 .bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--fondo);border-bottom:2px solid var(--crema)}
 .bar-logo{width:34px;height:34px;flex-shrink:0;display:block}
 .bar-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.bar-t{font:800 15px/1.1 var(--inc-fuente);letter-spacing:.01em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bar-t{font:700 15px/1.1 var(--inc-fuente);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .bar-s{font:400 11px var(--inc-fuente);color:var(--gris);white-space:nowrap}
 .bar-acc{display:flex;gap:4px;align-items:center;flex-shrink:0}
-.bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:0;background:var(--bloque);color:var(--crema);font:600 11.5px var(--inc-fuente);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;flex-shrink:0;transition:background .15s}
+.bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:0;background:var(--bloque);color:var(--crema);font:600 13px var(--inc-fuente);letter-spacing:0;cursor:pointer;flex-shrink:0;transition:background .15s}
 .bar-btn:hover{background:var(--bloque-2)}
 .bar-btn.prim{background:var(--crema);color:var(--fondo)}.bar-btn.prim:hover{background:#fff}
 .bar-btn.ico{width:40px;padding:0}
 .bar-btn svg{width:17px;height:17px;flex-shrink:0}
-.inc-vivo{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;background:var(--crema);color:var(--fondo);font:600 11.5px var(--inc-fuente);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.inc-vivo{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;background:var(--crema);color:var(--fondo);font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap}
 .inc-vivo::before{content:'';width:8px;height:8px;background:var(--fondo);animation:incLatido 1.6s infinite}
 .inc-vivo.mal{background:var(--media)}.inc-vivo.mal::before{animation:none}
 .atras{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border:0;border-radius:0;background:var(--bloque);color:var(--crema);font-size:18px;cursor:pointer}
@@ -63,31 +63,31 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .login{min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:var(--bloque);color:var(--crema);padding:28px 24px 24px;width:100%;max-width:400px}
 .login-logo{width:52px;height:52px;display:block;margin:0 0 18px}
-.login-k{font:600 10.5px var(--inc-fuente);letter-spacing:.16em;text-transform:uppercase;color:var(--gris)}
+.login-k{font:600 12.5px var(--inc-fuente);letter-spacing:0;color:var(--gris)}
 .login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;margin-top:8px}
 .login-t .mano{display:block;font-size:.78em;margin-top:6px;transform:rotate(-4deg)}
 .login-s{font:400 11.5px var(--inc-fuente);color:var(--gris);margin:12px 0 22px}
-.lbl{display:block;font:600 10.5px var(--inc-fuente);letter-spacing:.14em;text-transform:uppercase;color:var(--gris);margin-bottom:6px}
+.lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin-bottom:6px}
 /* 16 px: en el iPhone, con menos, la página se agranda sola al tocar el campo. */
 .in{width:100%;min-height:46px;padding:10px 12px;border:2px solid var(--linea);border-radius:0;font:16px var(--inc-fuente);outline:none;margin-bottom:16px;background:var(--fondo);color:var(--crema)}
 .in:focus{border-color:var(--crema)}
-.btn-ok{width:100%;min-height:50px;background:var(--crema);color:var(--fondo);border:0;border-radius:0;font:600 13px var(--inc-fuente);letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.btn-ok{width:100%;min-height:50px;background:var(--crema);color:var(--fondo);border:0;border-radius:0;font:600 15px var(--inc-fuente);letter-spacing:0;cursor:pointer}
 .btn-ok:hover{background:#fff}
 .btn-ok:disabled{background:var(--bloque-2);color:var(--gris);cursor:default}
 .err{display:none;background:var(--grave);color:var(--crema);padding:10px 12px;font:400 12px var(--inc-fuente);margin-bottom:14px}
 /* Los shows: bloques planos; el de hoy, con el contorno crema. */
 .titulo{margin:0 0 8px}
 .titulo-s{font:400 12px var(--inc-fuente);color:var(--gris)}
-.grupo{font:600 10.5px var(--inc-fuente);letter-spacing:.16em;text-transform:uppercase;color:var(--gris);margin:28px 0 8px}
+.grupo{font:600 13.5px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin:28px 0 8px}
 .shows-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:4px}
 .show{padding:14px 16px;min-height:78px;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--bloque);color:var(--crema);transition:background .15s}
 .show:hover{background:var(--bloque-2)}
 .show.hoy{outline:2px solid var(--crema);outline-offset:-2px}
 .show-main{flex:1;min-width:0}
-.show-n{font:800 16px/1.15 var(--inc-fuente);text-transform:uppercase;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.show-n{font:700 16px/1.2 var(--inc-fuente);display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
 .show-f{font:400 11px var(--inc-fuente);color:var(--gris);margin-top:5px}
 .show-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
-.vivo-pill{font:600 10px var(--inc-fuente);letter-spacing:.12em;text-transform:uppercase;color:var(--fondo);background:var(--crema);padding:3px 7px;display:inline-flex;align-items:center;gap:5px}
+.vivo-pill{font:600 11.5px var(--inc-fuente);letter-spacing:0;color:var(--fondo);background:var(--crema);padding:3px 7px;display:inline-flex;align-items:center;gap:5px}
 .vivo-pill::before{content:'';width:6px;height:6px;background:var(--fondo);animation:incLatido 1.4s infinite}
 .flecha{color:var(--gris);font-size:22px}
 .vacio{text-align:center;padding:32px 18px;color:var(--gris);font:400 12px/1.5 var(--inc-fuente);border:2px dashed var(--linea)}
@@ -101,23 +101,22 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .tablero{max-width:1880px;margin:0 auto;padding:20px max(18px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
 .pase{display:flex;flex-wrap:wrap;align-items:stretch;gap:4px;margin-bottom:34px}
 .pase-id{flex:1 1 380px;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:0 24px 0 0}
-.pase-k{font:600 10.5px var(--inc-fuente);letter-spacing:.16em;text-transform:uppercase;color:var(--gris)}
 .pase-n{font:900 clamp(56px,9vw,150px)/.82 var(--inc-fuente);letter-spacing:-.04em;text-transform:uppercase;overflow-wrap:anywhere}
 .pase-n .mano{font-size:.36em;margin-left:.2em;transform:rotate(-8deg) translateY(-.45em)}
-.pase-f{font:400 12px var(--inc-fuente);letter-spacing:.06em;text-transform:uppercase;color:var(--gris);padding-top:10px;border-top:4px solid var(--crema)}
+.pase-f{font:400 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);padding-top:10px;border-top:4px solid var(--crema)}
 .pase-centro{flex:1 1 520px;min-width:0;display:flex;flex-direction:column;gap:4px}
 /* El estado de la sala: un bloque; rojo si hay graves, ámbar si hay medias, crema si está todo en orden. */
 .estado{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:16px 18px;background:var(--crema);color:var(--fondo)}
 .estado svg{grid-column:1;grid-row:1/3;width:28px;height:28px}
 .estado>span:not(.hace){grid-column:2;grid-row:1;font:900 30px/.95 var(--inc-fuente);text-transform:uppercase;letter-spacing:-.005em}
-.estado .hace{grid-column:3;grid-row:1;font:600 11.5px var(--inc-fuente);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;align-self:start}
+.estado .hace{grid-column:3;grid-row:1;font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap;align-self:start}
 .estado small{grid-column:2/4;grid-row:2;font:400 11.5px/1.45 var(--inc-fuente);letter-spacing:.03em}
 .estado.grave{background:var(--grave);color:var(--crema)}.estado.medio{background:var(--media);color:var(--fondo)}
 /* Lo abierto por gravedad (un bloque por nivel), lo resuelto y el total. */
 .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
 .stat{--c:var(--gris);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;min-height:86px;padding:11px 12px;border:0;border-radius:0;background:var(--bloque);color:var(--crema);text-align:left;font:inherit;cursor:pointer;min-width:0;transition:background .15s}
 .stat:hover{filter:brightness(1.12)}
-.stat-t{display:flex;align-items:center;gap:7px;max-width:100%;font:600 10.5px var(--inc-fuente);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-t{display:flex;align-items:center;gap:7px;max-width:100%;font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-t i{display:none}
 /* Lo abierto, en bloques del color de su gravedad (en cero, apagados); la leve, con contorno. */
 .stat.k-3:not(.cero){background:var(--grave);color:var(--crema)}
@@ -132,18 +131,12 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .stat.on{outline:3px solid var(--crema);outline-offset:-3px}.stat.k-2.on:not(.cero){outline-color:var(--fondo)}
 /* La grave abierta: un cuadradito que late, como el de "en vivo". */
 .stat.pulso .stat-t::before{content:'';width:8px;height:8px;flex-shrink:0;background:currentColor;animation:incLatido 1.2s infinite}
-.pase-datos{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:6px 0;padding-top:8px}
-.pase-dato{display:flex;align-items:baseline;gap:8px;padding:0 16px 0 0;margin-right:16px;border-right:1px solid var(--linea)}
-.pase-dato:last-child{border-right:0}
-.pase-dato span{font:600 10px var(--inc-fuente);letter-spacing:.14em;text-transform:uppercase;color:var(--gris)}
-.pase-dato b{font:900 18px var(--inc-fuente)}
-.pase-dato small{font:400 10.5px var(--inc-fuente);color:var(--gris)}
 /* En el celular: los números de a tres arriba y dos abajo. */
 @media(max-width:700px){.pase-id{padding:0 0 12px}.stats{grid-template-columns:repeat(6,minmax(0,1fr))}.stat{grid-column:span 2}.stat:nth-child(n+4){grid-column:span 3}.stat small{display:none}.estado>span:not(.hace){font-size:24px}}
 /* Las botoneras: bloques planos de a uno; el elegido, en crema. */
 .herr{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 .seg{display:inline-flex;gap:4px}
-.seg button{border:0;border-radius:0;background:var(--bloque);font:600 11px var(--inc-fuente);letter-spacing:.1em;text-transform:uppercase;color:var(--crema);padding:0 14px;min-height:40px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;transition:background .15s}
+.seg button{border:0;border-radius:0;background:var(--bloque);font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--crema);padding:0 14px;min-height:40px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;transition:background .15s}
 .seg button:hover{background:var(--bloque-2)}
 .seg button.on{background:var(--crema);color:var(--fondo)}
 .seg button svg{width:14px;height:14px;flex-shrink:0}
@@ -155,7 +148,6 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .t-lista{display:flex;flex-direction:column;--tj-muesca:var(--fondo)}
 .t-lista-cab{padding:0 0 10px}
 .t-lista-t{margin-bottom:14px}
-.t-lista-t small{margin-left:auto;font:400 11px var(--inc-fuente);letter-spacing:.06em;text-transform:uppercase;color:var(--gris)}
 .t-lista-cab .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
 .t-lista-cuerpo{padding:0}
 @media(min-width:960px){
@@ -167,13 +159,32 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 }
 @media(min-width:1500px){.t-grid{grid-template-columns:minmax(0,1fr) 460px}}
 .fila{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;font:600 10.5px var(--inc-fuente);letter-spacing:.08em;text-transform:uppercase;background:var(--bloque);border:0;color:var(--crema);border-radius:0;padding:0 12px;cursor:pointer;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;font:600 12.5px var(--inc-fuente);letter-spacing:0;background:var(--bloque);border:0;color:var(--crema);border-radius:0;padding:0 12px;cursor:pointer;white-space:nowrap}
 .chip:hover{background:var(--bloque-2)}
 .chip.on{background:var(--crema);color:var(--fondo)}
 .inc-lugares{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0 0;align-items:center}
 @keyframes incLatido{0%,100%{opacity:1}50%{opacity:.25}}
 .met-t{margin:44px 0 16px}
 #metricas{--tj-muesca:var(--fondo)}
+/* El resumen del show (lo pone el plano): un bloque plano azul; las cifras, muy pesadas. */
+.pantalla .inc-met{background:var(--bloque);color:var(--crema);padding:18px 20px 20px}
+.pantalla .inc-met-intro{color:var(--gris);font-size:13px;margin-bottom:16px}
+.pantalla .inc-tiles{gap:0;margin-bottom:18px;border-bottom:1px solid var(--linea)}
+.pantalla .inc-tile{background:transparent;border:0;border-right:1px solid var(--linea);border-radius:0;padding:4px 18px 16px}
+.pantalla .inc-tile::before{display:none}
+.pantalla .inc-tile:first-child{padding-left:0}.pantalla .inc-tile:last-child{border-right:0}
+.pantalla .inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px solid var(--linea);padding-left:0}.pantalla .inc-tiles.angosto .inc-tile:last-child{border-bottom:0}
+.pantalla button.inc-tile:hover{box-shadow:none}.pantalla .inc-tile.on{box-shadow:inset 0 -4px 0 var(--crema)}
+.pantalla .inc-tile-e{font:600 13px var(--inc-fuente);color:var(--gris)}
+.pantalla .inc-tile-v{font:900 42px/1 var(--inc-fuente);letter-spacing:-.02em;color:var(--crema);margin-top:8px}
+.pantalla .inc-tile-s{font:400 12.5px var(--inc-fuente);color:var(--crema-2);margin-top:6px}
+.pantalla .inc-tile-ir{font:600 12.5px var(--inc-fuente);color:var(--crema)}
+.pantalla .inc-graf-card{background:transparent;border:0;border-radius:0;padding:0}
+.pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:var(--crema);margin-bottom:8px}
+.pantalla .inc-g-t{fill:#F4F1EA}.pantalla .inc-g-s{fill:#C9C2B5}.pantalla .inc-g-barra{fill:#ECE7DD}
+.pantalla .inc-marca:focus-visible{outline-color:var(--crema)}
+.pantalla .inc-met-tip{background:var(--fondo);color:var(--crema-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--crema)}
+.pantalla .inc-met-vacio{background:transparent;border:2px dashed var(--linea);border-radius:0;color:var(--gris)}
 /* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad. */
 .pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#F0A202}
 .pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px}
@@ -185,12 +196,12 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .pantalla .inc-tj[data-nivel="2"] .inc-tj-talon{background:var(--media);color:var(--fondo)}
 .pantalla .inc-tj[data-nivel="1"] .inc-tj-talon{background:var(--fondo);color:var(--crema);outline:2px solid var(--crema);outline-offset:-2px}
 .pantalla .inc-tj .inc-tj-talon b{font:900 24px/.9 var(--inc-fuente)}
-.pantalla .inc-tj .inc-tj-talon small{font:600 9.5px var(--inc-fuente);letter-spacing:.1em;text-transform:uppercase}
+.pantalla .inc-tj .inc-tj-talon small{font:600 11.5px var(--inc-fuente);letter-spacing:0}
 .pantalla .inc-tj .inc-tj-txt{border-left:0;padding:11px 14px;gap:4px}
 .pantalla .inc-tj .inc-tj-tipo{font:700 15px/1.2 var(--inc-fuente)}
 .pantalla .inc-tj .inc-tj-linea{font:400 11px var(--inc-fuente)}
 .pantalla .inc-tj .inc-tj-estado{font:600 11px var(--inc-fuente)}
-.pantalla .inc-tj .inc-tj-f>span{font:600 9.5px var(--inc-fuente);letter-spacing:.1em;text-transform:uppercase}
+.pantalla .inc-tj .inc-tj-f>span{font:600 12px var(--inc-fuente);letter-spacing:0}
 .pantalla .inc-tj .inc-tj-chips span{border-radius:0;font-family:var(--inc-fuente)}
 /* En los aparatos táctiles, todo lo que se toca, de 44 px (lo que pide la accesibilidad). */
 @media(pointer:coarse){
@@ -200,7 +211,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 }
 @media(max-width:520px){.wrap{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.tablero{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.sec-t{font-size:32px}.stat b{font-size:34px}}
 /* Las cifras que cambian (minutos, contadores, horas), de ancho fijo. */
-.stat b,.pase-dato b,.estado .hace,.inc-vivo,.inc-cuenta strong,.bar-s,.show-f,.pase-f,.t-lista-t small{font-variant-numeric:tabular-nums}
+.stat b,.estado .hace,.inc-vivo,.inc-cuenta strong,.bar-s,.show-f,.pase-f{font-variant-numeric:tabular-nums}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -253,12 +264,11 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 <div class="pantalla" id="pShow">
   <div class="tablero">
     <section class="pase" aria-label="El show">
-      <div class="pase-id"><span class="pase-k">AX · Audience Experience</span><span class="pase-n" id="paseN"></span><span class="pase-f" id="paseF"></span></div>
+      <div class="pase-id"><span class="pase-n" id="paseN"></span><span class="pase-f" id="paseF"></span></div>
       <div class="pase-centro">
         <div class="estado" id="estado" role="status"></div>
         <div class="stats" id="resumen"></div>
       </div>
-      <div class="pase-datos" id="paseDatos"></div>
     </section>
     <div class="t-grid">
       <section class="t-plano">
@@ -981,28 +991,22 @@ function incEstiloTarjetas() {
     + '@media(prefers-reduced-motion:reduce){.inc-tj{transition:none}.inc-tj.nueva{animation:none}}';
   document.head.appendChild(st);
 }
-// El pase del show (la gerencia y el panel): la franja de estado, para saber de un
-// vistazo cómo está la sala. Si hay graves, roja (cuántas, el aviso al responsable
-// del Arena y la más vieja); si hay medias, ámbar; si no, verde azulado: todo en orden.
+// El estado de la sala (la gerencia), para saber de un vistazo cómo está. Si hay
+// graves, rojo: cuántas, el aviso al responsable del Arena y desde cuándo; si hay
+// medias, ámbar, lo mismo sin el aviso; si no, todo en orden. Dice qué son ("2
+// incidencias de gravedad media", no "2 medias") y nada más (sin "la más vieja").
 function incEstadoSalaHTML(abiertas) {
   const peor = [3, 2].find(nv => abiertas.some(i => (i.nivel || 1) === nv));
   if (!peor) {
-    const n = abiertas.length;
-    return { clase: '', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>Todo en orden</span><small>' + (n ? n + ' leve' + (n === 1 ? '' : 's') + ' abierta' + (n === 1 ? '' : 's') : 'Nada abierto') + '</small>' };
+    const n = abiertas.length, s = n === 1 ? '' : 's';
+    return { clase: '', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>Todo en orden</span><small>' + (n ? n + ' incidencia' + s + ' leve' + s + ' abierta' + s : 'Nada abierto') + '</small>' };
   }
   const de = abiertas.filter(i => (i.nivel || 1) === peor), vieja = de.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
-  const nom = peor === 3 ? ['grave', 'graves'] : ['media', 'medias'];
+  const s = de.length === 1 ? '' : 's';
   return { clase: peor === 3 ? 'grave' : 'medio', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.6"/></svg>'
-    + '<span>' + de.length + ' ' + nom[de.length === 1 ? 0 : 1] + ' abierta' + (de.length === 1 ? '' : 's') + '</span>'
-    + '<small>' + (peor === 3 ? 'Aviso inmediato al responsable del Arena · ' : '') + 'la más vieja: ' + incEsc(vieja.tipo) + ', ' + incEsc(vieja.sector) + '</small>'
-    + '<span class="hace">Hace ' + incEsc(incMinutos(Date.now() - new Date(vieja.created_at))) + '</span>' };
-}
-// Abajo del pase: lo abierto, las asistencias (personas con discapacidad) y lo derivado.
-function incPaseDatosHTML(lista) {
-  const abiertas = lista.filter(i => i.estado !== 'resuelta').length, asist = lista.filter(i => i.categoria === 'Asistencia').length, deriv = lista.filter(i => incDerivadoA(i).length).length;
-  return '<div class="pase-dato"><span>Abiertas</span><b>' + abiertas + '</b></div>'
-    + '<div class="pase-dato"><span>Asistencias</span><b>' + asist + '</b><small>accesibilidad</small></div>'
-    + '<div class="pase-dato"><span>Derivadas</span><b>' + deriv + '</b><small>a quien corresponde</small></div>';
+    + '<span>' + de.length + ' incidencia' + s + (peor === 3 ? ' grave' + s : ' de gravedad media') + '</span>'
+    + (peor === 3 ? '<small>Aviso inmediato al responsable del Arena</small>' : '')
+    + '<span class="hace">Desde hace ' + incEsc(incMinutos(Date.now() - new Date(vieja.created_at))) + '</span>' };
 }
 // La ficha en HTML: el nombre con el ícono y el color de su tipo, qué es, el
 // piso y el lado, lo abierto ahí y, si la página deja, cargar una incidencia ahí.
@@ -1470,13 +1474,13 @@ function incEsperar3D(cont) {
 }
 // El estilo de los controles del plano en la gerencia y el panel (diseño "Afiche",
 // cianotipo): bloques planos y rectos, sin vidrio, sombras ni degradés; las letras de
-// los botones en Poppins seminegrita y en mayúsculas; lo elegido, en bloque crema. El fondo del 3D,
+// los botones en Poppins seminegrita (sin mayúsculas); lo elegido, en bloque crema. El fondo del 3D,
 // azul plano con la cuadrícula de un plano. Sólo con op.ax (la tablet queda como está).
 function incEstiloAx() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloAx')) return;
   const st = document.createElement('style'); st.id = 'incEstiloAx';
   const LETRA = INC_FUENTE, PANEL = 'background:#09203C;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;';
-  const BOTON = 'font:600 11px ' + LETRA + ';letter-spacing:.08em;text-transform:uppercase;';
+  const BOTON = 'font:600 12.5px ' + LETRA + ';';
   const GRILLA = 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Cpath d=%22M24 0H0V24%22 fill=%22none%22 stroke=%22%23F4F1EA%22 stroke-opacity=%22.07%22/%3E%3C/svg%3E")';
   st.textContent = '.inc-ax.inc-3d{border-radius:0;background:#17365F ' + GRILLA + '}'
     + '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F4F1EA;min-width:40px;min-height:40px;' + BOTON + '}'
@@ -1486,7 +1490,7 @@ function incEstiloAx() {
     + '.inc-ax>.inc-3d-ley{display:none}'
     + '.inc-ax .inc-3d-capas{' + PANEL + 'padding:6px}'
     + '.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){display:grid;grid-template-columns:auto auto;gap:0 8px;align-items:start;max-height:calc(100% - 70px);overflow:auto}'
-    + '.inc-ax .inc-3d-menu-t{font:600 10px ' + LETRA + ';letter-spacing:.16em;text-transform:uppercase;color:#C9C2B5;padding:8px 10px 6px}'
+    + '.inc-ax .inc-3d-menu-t{font:600 12.5px ' + LETRA + ';color:#C9C2B5;padding:8px 10px 6px}'
     + '.inc-ax .inc-3d-ref-l{display:flex;flex-direction:column;gap:2px}'
     + '.inc-ax .inc-3d-ref-l .inc-ley-b,.inc-ax .inc-3d-ref-l>span{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 10px;border:0;border-radius:0;background:transparent;color:#F4F1EA;' + BOTON + 'text-align:left;cursor:pointer;white-space:nowrap}'
     + '.inc-ax .inc-3d-ref-l .inc-ley-b:hover{background:#17365F}.inc-ax .inc-3d-ref-l .inc-ley-b.on{background:#F4F1EA;color:#09203C}'
@@ -1496,10 +1500,10 @@ function incEstiloAx() {
     + '.inc-ax .inc-3d-capas-l button:hover,.inc-ax .inc-3d-vistas-l>button:hover{background:#17365F}'
     + '.inc-ax .inc-3d-capas-l button::after{width:16px;height:16px;border-radius:0;background:transparent;border:2px solid #C9C2B5;box-sizing:border-box}'
     + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:#F4F1EA;border-color:#F4F1EA;color:#09203C;font-size:11px;line-height:1}'
-    + '.inc-ax .inc-3d-vistas-t{color:#C9C2B5;font:600 10px ' + LETRA + ';letter-spacing:.16em;text-transform:uppercase}'
+    + '.inc-ax .inc-3d-vistas-t{color:#C9C2B5;font:600 12.5px ' + LETRA + '}'
     + '.inc-ax .inc-3d-vistas-l>button.on{background:#F4F1EA;color:#09203C}.inc-ax .inc-3d-vistas-l>button.on::after{color:#09203C}'
     + '.inc-ax .inc-3d-vistas-p button{border-radius:0;' + BOTON + '}.inc-ax .inc-3d-vistas-p button.on{background:#F4F1EA;color:#09203C}'
-    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#C9C2B5;font:400 10.5px ' + LETRA + ';letter-spacing:.06em;text-transform:uppercase}'
+    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#C9C2B5;font:400 12.5px ' + LETRA + '}'
     + '.inc-ax .inc-3d-pisos{' + PANEL + 'gap:4px;padding:4px}'
     + '.inc-ax .inc-3d-pisos button{border-radius:0;background:#17365F;color:#F4F1EA;' + BOTON + 'min-height:34px;padding:0 12px}'
     + '.inc-ax .inc-3d-pisos button:hover{background:#1E4372}.inc-ax .inc-3d-pisos button.on{background:#F4F1EA;color:#09203C;box-shadow:none}'
@@ -1511,7 +1515,7 @@ function incEstiloAx() {
     + '.inc-ax .inc-ficha-abiertas{color:#C9C2B5}.inc-ax .inc-ficha-accion{border-radius:0;background:#F4F1EA;color:#09203C;box-shadow:none;' + BOTON + '}'
     // El detalle de pantalla completa: un bloque azul marino, con los tickets.
     + '.inc-ax .inc-3d-det{' + PANEL + 'color:#F4F1EA;--tj-muesca:#09203C}'
-    + '.inc-ax .inc-3d-det-cab{border-bottom:2px solid #F4F1EA}.inc-ax .inc-3d-det-tit span{color:#C9C2B5;font:400 10.5px ' + LETRA + ';letter-spacing:.06em;text-transform:uppercase}'
+    + '.inc-ax .inc-3d-det-cab{border-bottom:2px solid #F4F1EA}.inc-ax .inc-3d-det-tit span{color:#C9C2B5;font:400 12.5px ' + LETRA + '}'
     + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:0;border:0;background:#17365F;color:#F4F1EA}'
     + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{background:#1E4372}'
     + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:0;background:#F4F1EA;color:#09203C}'
@@ -2915,19 +2919,12 @@ function incPlano3D(cont, op0) {
   return api;
 }
 // ── Métricas del show ──
-// Lo que sirve para operar el show y para el informe, sin repetir los números de
-// arriba (lo abierto por gravedad, lo resuelto y el total): cuál lleva más tiempo
-// abierta, cuánto se tarda en resolver y el momento más cargado; las incidencias por
-// franja horaria apiladas por gravedad, y por categoría y por sector en barras (con
-// cuántas siguen abiertas). Todo se toca: una categoría o una franja filtran el
-// listado; un sector, o la que lleva más tiempo abierta, va a su lugar en el plano.
-// Sin librerías: SVG. Los colores de la gravedad están validados para daltonismo con
-// la leyenda, la separación entre segmentos y el orden fijo (grave siempre arriba);
-// las barras de una sola serie van en el azul del Arena. Cada marca muestra su
-// detalle al pasar el mouse o con el teclado.
-const INC_GRAF_NIVEL = { 1: '#C9C2B5', 2: '#F0A202', 3: '#EE4B36' };   // el rojo de las marcas, más claro: sobre el azul se tiene que ver
-const INC_GRAF_AZUL = '#ECE7DD';   // las barras de una sola serie, en crema (el único color fuerte es la gravedad)
-const INC_GRAF_RADIO = 0;   // las puntas de las barras, rectas (diseño "Afiche": nada redondeado)
+// El resumen del show para quien lo mira (la gerencia y el panel), con lo que sirve:
+// cuánto se resolvió y qué tan rápido, cuánto se derivó y a quién, el momento más
+// cargado, y en qué categorías y lugares pasa más, en porcentajes. Sin repetir lo de
+// arriba (lo abierto por gravedad) ni el detalle por horario. Se toca: una categoría o
+// el momento más cargado filtran el listado; un lugar va a su lugar en el plano. Sin
+// librerías: SVG; los colores, por clases (el panel, claros; la gerencia pone los suyos).
 function incMinutos(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min' : Math.floor(m / 1440) + ' d ' + Math.floor(m % 1440 / 60) + ' h'; }
 // Las franjas: si la lista cruza varios días, una por día; si no, de 15, 30,
 // 60 o 120 minutos, la más fina que deje 16 columnas o menos. Cada una sabe de
@@ -2965,7 +2962,9 @@ function incMetricas(lista) {
   const tiempos = resueltas.map(i => new Date(i.resuelta_at) - new Date(i.created_at)).filter(x => x >= 0);
   const franjas = incFranjas(l);
   const pico = franjas.reduce((m, f) => { const n = f.n[0] + f.n[1] + f.n[2]; return n > (m ? m.total : 0) ? { ...f, total: n } : m; }, null);
-  const cuenta = (clave, de) => { const m = {}; (de || l).forEach(i => { const k = clave(i) || '—'; m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es')); };
+  const cuenta = clave => { const m = {}; l.forEach(i => { const k = clave(i) || '—'; m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es')); };
+  // A quién se derivó: una incidencia puede ir a más de uno.
+  const aQuien = {}; l.forEach(i => incDerivadoA(i).forEach(d => { aQuien[d] = (aQuien[d] || 0) + 1; }));
   const abiertas = l.filter(i => i.estado !== 'resuelta');
   return {
     total: l.length,
@@ -2974,101 +2973,68 @@ function incMetricas(lista) {
     resueltas: l.filter(i => i.estado === 'resuelta').length,
     tMedio: tiempos.length ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length : null,
     tMax: tiempos.length ? Math.max(...tiempos) : null,
-    // La que lleva más tiempo abierta (la que primero hay que mirar).
-    masVieja: abiertas.filter(i => incDia(i.created_at)).sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0] || null,
     pico, franjas,
+    derivadas: l.filter(i => incDerivadoA(i).length).length,
+    aQuien: Object.entries(aQuien).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es')),
     categorias: cuenta(i => i.categoria),
-    sectores: cuenta(i => i.sector),
-    abiertasCat: Object.fromEntries(cuenta(i => i.categoria, abiertas)),
-    abiertasSec: Object.fromEntries(cuenta(i => i.sector, abiertas))
+    sectores: cuenta(i => i.sector)
   };
 }
+// Un porcentaje redondo ("38%"); sin base, una raya.
+function incPct(n, de) { return de ? Math.round(n * 100 / de) + '%' : '—'; }
 // El detalle de una marca: la primera línea es el valor (va fuerte), después el rótulo.
 function incTip(lineas) { return ' tabindex="0" data-tip="' + incEsc(lineas.join('\n')).replace(/\n/g, '&#10;') + '"'; }
 // Lo que se toca: qué es (data-m) y cuál (data-v); con algo elegido, lo demás se apaga.
 function incTocable(m, v) { return m ? ' data-m="' + m + '" data-v="' + incEsc(v) + '" role="button"' : ''; }
 function incClaseMarca(v, sel) { return 'inc-marca inc-toca' + (sel ? (sel === v ? ' on' : ' apagada') : ''); }
-// Columnas apiladas: una por franja, de abajo hacia arriba leve, moderado, grave.
-function incGrafFranjas(franjas, anchoTotal, sel) {
-  const W = Math.max(260, Math.round(anchoTotal || 640)), H = 190, izq = 30, der = 8, arriba = 18, abajo = 26, alto = H - arriba - abajo;
-  const max = Math.max(1, ...franjas.map(f => f.n[0] + f.n[1] + f.n[2]));
-  const paso = max <= 5 ? 1 : max <= 10 ? 2 : max <= 25 ? 5 : 10, tope = Math.ceil(max / paso) * paso;
-  const y = v => arriba + alto - (v / tope) * alto;
-  const slot = (W - izq - der) / Math.max(1, franjas.length), ancho = Math.min(24, slot * 0.62);
-  let g = '';
-  for (let v = 0; v <= tope; v += paso) g += '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="rgba(244,241,234,.1)" stroke-width="1"/><text x="' + (izq - 6) + '" y="' + (y(v) + 3.5) + '" font-size="10" fill="#C9C2B5" text-anchor="end" style="font-variant-numeric:tabular-nums">' + v + '</text>';
-  const cadaEtq = Math.ceil(franjas.length / Math.max(3, Math.floor((W - izq) / 64)));   // una etiqueta cada ~64px
-  const masAlta = franjas.reduce((m, f, k) => (f.n[0] + f.n[1] + f.n[2]) > (m < 0 ? -1 : franjas[m].n[0] + franjas[m].n[1] + franjas[m].n[2]) ? k : m, -1);
-  franjas.forEach((f, k) => {
-    const x = izq + slot * k + (slot - ancho) / 2, total = f.n[0] + f.n[1] + f.n[2], val = f.a + '-' + f.b;
-    let base = y(0), barras = '';
-    const visibles = [1, 2, 3].filter(nv => f.n[nv - 1]);
-    visibles.forEach((nv, j) => {
-      const h = (f.n[nv - 1] / tope) * alto, tope2 = j === visibles.length - 1;
-      const hh = Math.max(1, h - (j > 0 ? 2 : 0));            // 2px de aire entre segmentos
-      const y0 = base - hh;
-      barras += tope2
-        ? '<path d="M' + x + ',' + base + 'V' + (y0 + Math.min(INC_GRAF_RADIO, hh)) + 'Q' + x + ',' + y0 + ' ' + (x + Math.min(INC_GRAF_RADIO, ancho / 2)) + ',' + y0 + 'H' + (x + ancho - Math.min(INC_GRAF_RADIO, ancho / 2)) + 'Q' + (x + ancho) + ',' + y0 + ' ' + (x + ancho) + ',' + (y0 + Math.min(INC_GRAF_RADIO, hh)) + 'V' + base + 'Z" fill="' + INC_GRAF_NIVEL[nv] + '"/>'
-        : '<rect x="' + x + '" y="' + y0 + '" width="' + ancho + '" height="' + hh + '" fill="' + INC_GRAF_NIVEL[nv] + '"/>';
-      base = y0 - 2;
-    });
-    const tip = [total + ' incidencia' + (total === 1 ? '' : 's'), f.largo].concat([3, 2, 1].filter(nv => f.n[nv - 1]).map(nv => f.n[nv - 1] + ' ' + INC_NIVELES[nv].nombre.toLowerCase())).concat(total ? ['Tocá para verlas en el listado'] : []);
-    g += '<g class="' + (total ? incClaseMarca(val, sel) : 'inc-marca') + '"' + incTip(tip) + (total ? incTocable('franja', val) : '') + '><rect x="' + (izq + slot * k) + '" y="' + arriba + '" width="' + slot + '" height="' + alto + '" fill="transparent"/>' + barras
-      + ((k === masAlta || sel === val) && total ? '<text x="' + (x + ancho / 2) + '" y="' + (y(total) - 5) + '" font-size="10.5" font-weight="600" fill="#F4F1EA" text-anchor="middle">' + total + '</text>' : '') + '</g>';
-    if (k % cadaEtq === 0) g += '<text x="' + (x + ancho / 2) + '" y="' + (H - 8) + '" font-size="10" fill="#C9C2B5" text-anchor="middle" style="font-variant-numeric:tabular-nums">' + incEsc(f.etq) + '</text>';
-  });
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="Incidencias por franja horaria, por gravedad">' + g
-    + '<line x1="' + izq + '" x2="' + (W - der) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="rgba(244,241,234,.35)" stroke-width="1"/></svg>';
-}
-// Barras horizontales de una sola serie (azul), con el valor en la punta (y, si
-// quedan, cuántas siguen abiertas). Más de 6: el resto en una línea de texto, sin
-// barra (si fuera una barra, sumaría varios y parecería el más grande).
-// op: { tipo (qué se toca: 'categoria' o 'sector'), sel (el elegido), abiertas ({ nombre: n }) }.
+// Barras horizontales de una sola serie, con el porcentaje y cuántas en la punta. Más
+// de 6: el resto en una línea de texto, sin barra (si fuera una barra, sumaría varios
+// y parecería el más grande). op: { tipo (qué se toca: 'categoria' o 'sector'), sel
+// (el elegido), total (sobre cuánto es el porcentaje) }.
 function incGrafBarras(pares, titulo, ancho, op) {
   op = op || {};
   const filas = pares.slice(0, 6), resto = pares.slice(6), enResto = resto.reduce((t, p) => t + p[1], 0);
-  const ab = op.abiertas || {}, conAbiertas = filas.some(p => ab[p[0]]);
-  const W = Math.max(240, Math.round(ancho || 320)), fila = 26, H = (filas.length + (resto.length ? 1 : 0)) * fila + 4, etq = Math.min(150, Math.round(W * 0.38)), der = conAbiertas ? 92 : 26;
-  const max = Math.max(1, ...filas.map(p => p[1])), largo = W - etq - der;
+  const total = op.total || pares.reduce((t, p) => t + p[1], 0);
+  const W = Math.max(240, Math.round(ancho || 320)), fila = 26, H = (filas.length + (resto.length ? 1 : 0)) * fila + 4, etq = Math.min(150, Math.round(W * 0.38)), der = 74;
+  const max = Math.max(1, ...filas.map(p => p[1])), largo = W - etq - der, corte = Math.floor(etq / 6.8);
   const g = filas.map(([k, n], i) => {
-    const y = i * fila + 6, w = Math.max(3, (n / max) * largo), r = Math.min(INC_GRAF_RADIO, w / 2), a = ab[k] || 0, toca = !!op.tipo;
-    const tip = [n + ' incidencia' + (n === 1 ? '' : 's'), k].concat(a ? [a + ' abierta' + (a === 1 ? '' : 's')] : []).concat(toca ? [op.tipo === 'sector' ? 'Tocá para verlo en el plano' : 'Tocá para verlas en el listado'] : []);
+    const y = i * fila + 6, w = Math.max(3, (n / max) * largo), toca = !!op.tipo, pct = incPct(n, total);
+    const tip = [pct + ' · ' + n + ' incidencia' + (n === 1 ? '' : 's'), k].concat(toca ? [op.tipo === 'sector' ? 'Tocá para verlo en el plano' : 'Tocá para verlas en el listado'] : []);
     return '<g class="' + (toca ? incClaseMarca(k, op.sel) : 'inc-marca') + '"' + incTip(tip) + (toca ? incTocable(op.tipo, k) : '') + '><rect x="0" y="' + (y - 4) + '" width="' + W + '" height="' + fila + '" fill="transparent"/>'
-      + '<text x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11" fill="#C9C2B5" text-anchor="end">' + incEsc(k.length > Math.floor(etq / 6.6) ? k.slice(0, Math.floor(etq / 6.6) - 1) + '…' : k) + '</text>'
-      + '<path d="M' + etq + ',' + y + 'H' + (etq + w - r) + 'Q' + (etq + w) + ',' + y + ' ' + (etq + w) + ',' + (y + r) + 'V' + (y + 14 - r) + 'Q' + (etq + w) + ',' + (y + 14) + ' ' + (etq + w - r) + ',' + (y + 14) + 'H' + etq + 'Z" fill="' + INC_GRAF_AZUL + '"/>'
-      + '<text x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11" font-weight="600" fill="#F4F1EA">' + n + (a ? '<tspan font-weight="400" fill="#C9C2B5"> · ' + (a === n ? (n === 1 ? 'abierta' : 'todas abiertas') : a + ' abierta' + (a === 1 ? '' : 's')) + '</tspan>' : '') + '</text></g>';
-  }).join('') + (resto.length ? '<text x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#C9C2B5" text-anchor="end">+ ' + resto.length + ' más</text>'
-    + '<text x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11" fill="#C9C2B5">' + enResto + ' incidencia' + (enResto === 1 ? '' : 's') + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
+      + '<text class="inc-g-s" x="' + (etq - 8) + '" y="' + (y + 11) + '" font-size="11.5" text-anchor="end">' + incEsc(k.length > corte ? k.slice(0, corte - 1) + '…' : k) + '</text>'
+      + '<rect class="inc-g-barra" x="' + etq + '" y="' + y + '" width="' + w + '" height="14"/>'
+      + '<text class="inc-g-t" x="' + (etq + w + 6) + '" y="' + (y + 11) + '" font-size="11.5" font-weight="600">' + pct + '<tspan class="inc-g-s" font-weight="400"> · ' + n + '</tspan></text></g>';
+  }).join('') + (resto.length ? '<text class="inc-g-s" x="' + (etq - 8) + '" y="' + (filas.length * fila + 17) + '" font-size="11" text-anchor="end">+ ' + resto.length + ' más</text>'
+    + '<text class="inc-g-s" x="' + etq + '" y="' + (filas.length * fila + 17) + '" font-size="11">' + incPct(enResto, total) + ' · ' + enResto + ' entre ' + (resto.length === 1 ? 'el otro' : 'los otros ' + resto.length) + '</text>' : '');
   return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="inc-graf" role="img" aria-label="' + incEsc(titulo) + '">' + g + '</svg>';
 }
-// ancho: el ancho disponible (el del contenedor); con él se calcula el de cada tarjeta.
-// op: { fn (la función de la página que recibe qué se tocó y cuál), sel: { categoria, franja, sector, inc } }.
+// ancho: el ancho disponible (el del contenedor); con él se calcula el de cada gráfica.
+// op: { fn (la función de la página que recibe qué se tocó y cuál), sel: { categoria, franja, sector } }.
 function incMetricasHTML(lista, ancho, op) {
-  const A = Math.round(ancho || 680), dosCol = A >= 700, sel = (op && op.sel) || {};
-  const anchoFranjas = A - 30, anchoBarras = dosCol ? Math.floor((A - 10) / 2) - 30 : A - 30;
+  const A = Math.round(ancho || 680), sel = (op && op.sel) || {};
   incEstiloMetricas();
   const m = incMetricas(lista);
-  if (!m.total) return '<div class="inc-met-vacio">Las gráficas aparecen con la primera incidencia del show.</div>';
+  if (!m.total) return '<div class="inc-met-vacio">El resumen del show aparece con la primera incidencia.</div>';
   // Un número: si lleva a algún lado, se toca (y dice adónde).
   const tile = (etq, valor, sub, toca, v, ir) => (toca ? '<button type="button" class="inc-tile inc-toca' + (sel[toca] && sel[toca] === v ? ' on' : '') + '"' + incTocable(toca, v) + '>' : '<div class="inc-tile">')
     + '<div class="inc-tile-e">' + etq + '</div><div class="inc-tile-v">' + valor + '</div>' + (sub ? '<div class="inc-tile-s">' + sub + '</div>' : '')
     + (toca ? '<div class="inc-tile-ir">' + ir + ' →</div></button>' : '</div>');
-  const mv = m.masVieja, pico = m.pico, picoV = pico ? pico.a + '-' + pico.b : '';
+  // El momento más cargado, sólo si hay más de una franja (con una sola, no dice nada).
+  const pico = m.franjas.length > 1 ? m.pico : null, aQuien = m.aQuien.slice(0, 2).map(([k, n]) => k + ' ' + n).join(' · ');
+  const grafs = [['Por categoría', m.categorias, { tipo: 'categoria', sel: sel.categoria, total: m.total }],
+    m.aQuien.length ? ['A quién se derivó', m.aQuien, { total: m.derivadas }] : null,
+    ['Dónde pasa más', m.sectores, { tipo: 'sector', sel: sel.sector, total: m.total }]].filter(Boolean);
+  const cols = Math.min(grafs.length, A >= 980 ? 3 : A >= 660 ? 2 : 1), anchoBarras = Math.floor((A - 24 * (cols - 1)) / cols) - 30;
   return '<div class="inc-met">'
+    + '<p class="inc-met-intro">Cómo viene el show: cuánto se resolvió y qué tan rápido, cuánto se derivó y a quién, y dónde pasa más.</p>'
     + '<div class="inc-tiles' + (A < 520 ? ' angosto' : '') + '">'
-    + tile('Abierta hace más tiempo', mv ? incMinutos(Date.now() - new Date(mv.created_at)) : '—',
-      mv ? '<span class="inc-pt" style="background:' + INC_GRAF_NIVEL[mv.nivel || 1] + '"></span>' + incEsc(mv.tipo) + ' · ' + incEsc(mv.sector) : 'No hay nada abierto', mv ? 'inc' : '', mv ? mv.id : '', 'Ver en el plano')
-    + tile('Tiempo medio de resolución', m.tMedio == null ? '—' : incMinutos(m.tMedio),
-      m.tMedio == null ? 'Todavía ninguna resuelta' : m.resueltas + ' de ' + m.total + ' resueltas · la más lenta, ' + incMinutos(m.tMax))
-    + tile('Momento más cargado', pico ? incEsc(pico.etq) : '—', pico ? pico.total + ' incidencia' + (pico.total === 1 ? '' : 's') + ' · ' + incEsc(pico.largo) : '', pico && m.franjas.length > 1 ? 'franja' : '', picoV, 'Ver esas')
+    + tile('Resueltas', incPct(m.resueltas, m.total), m.resueltas + ' de ' + m.total + ' incidencias')
+    + tile('Tiempo medio de resolución', m.tMedio == null ? '—' : incMinutos(m.tMedio), m.tMedio == null ? 'Todavía ninguna resuelta' : 'La más lenta, ' + incMinutos(m.tMax))
+    + tile('Derivadas', incPct(m.derivadas, m.total), m.derivadas ? m.derivadas + ' de ' + m.total + ' · ' + incEsc(aQuien) : 'Ninguna, por ahora')
+    + (pico ? tile('Momento más cargado', incEsc(pico.etq), incPct(pico.total, m.total) + ' de las incidencias (' + pico.total + '), ' + incEsc(pico.largo.replace(/^El /, 'el ')), 'franja', pico.a + '-' + pico.b, 'Ver esas') : '')
     + '</div>'
-    + '<div class="inc-grafs' + (dosCol ? ' dos' : '') + '">'
-    // Con una sola franja, la columna sola no dice nada: alcanza con el número de arriba.
-    + (m.franjas.length > 1 ? '<div class="inc-graf-card inc-graf-ancha"><div class="inc-graf-t">Incidencias por franja horaria<small>Tocá una franja para ver esas</small></div>'
-      + '<div class="inc-leyenda">' + [3, 2, 1].map(nv => '<span><i style="background:' + INC_GRAF_NIVEL[nv] + '"></i>' + INC_NIVELES[nv].nombre + '</span>').join('') + '</div>'
-      + incGrafFranjas(m.franjas, anchoFranjas, sel.franja) + '</div>' : '')
-    + '<div class="inc-graf-card"><div class="inc-graf-t">Por categoría<small>Tocá una para ver esas</small></div>' + incGrafBarras(m.categorias, 'Incidencias por categoría', anchoBarras, { tipo: 'categoria', sel: sel.categoria, abiertas: m.abiertasCat }) + '</div>'
-    + '<div class="inc-graf-card"><div class="inc-graf-t">Sectores con más incidencias<small>Tocá uno para verlo en el plano</small></div>' + incGrafBarras(m.sectores, 'Incidencias por sector', anchoBarras, { tipo: 'sector', sel: sel.sector, abiertas: m.abiertasSec }) + '</div>'
+    + '<div class="inc-grafs' + (cols > 1 ? ' c' + cols : '') + '">'
+    + grafs.map(([t, pares, o]) => '<div class="inc-graf-card"><div class="inc-graf-t">' + t + '</div>' + incGrafBarras(pares, t, anchoBarras, o) + '</div>').join('')
     + '</div></div>';
 }
 function incPintarMetricas(cont, lista, op) {
@@ -3110,35 +3076,31 @@ function incMetricasActivar(cont) {
 function incEstiloMetricas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloMet')) return;
   const st = document.createElement('style'); st.id = 'incEstiloMet';
-  // Diseño "Afiche": un bloque plano azul; los rótulos en mayúsculas espaciadas; las cifras, muy pesadas (Poppins en todo).
-  const LETRA = INC_FUENTE, LINEA = 'rgba(244,241,234,.22)';
-  st.textContent = '.inc-met{position:relative;background:#17365F;color:#F4F1EA;border-radius:0;padding:18px 20px 20px}'
-    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;margin-bottom:18px;border-bottom:1px solid ' + LINEA + '}'
-    + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}.inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px solid ' + LINEA + ';padding-left:0}.inc-tiles.angosto .inc-tile:last-child{border-bottom:0}'
-    + '.inc-tile{background:transparent;border:0;border-right:1px solid ' + LINEA + ';border-radius:0;padding:4px 18px 16px;position:relative;text-align:left;font:inherit;color:inherit;width:100%;display:block}'
-    + '.inc-tile:first-child{padding-left:0}.inc-tile:last-child{border-right:0}'
-    + 'button.inc-tile{cursor:pointer}button.inc-tile:hover .inc-tile-ir{text-decoration:underline}button.inc-tile:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
-    + '.inc-tile.on{box-shadow:inset 0 -4px 0 #F4F1EA}'
-    + '.inc-tile-e{font:600 10px ' + LETRA + ';letter-spacing:.12em;text-transform:uppercase;color:#C9C2B5}'
-    + '.inc-tile-v{font:900 40px/1 ' + INC_FUENTE + ';font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:#F4F1EA;margin-top:8px}'
-    + '.inc-tile-s{font:400 11px ' + LETRA + ';color:#ECE7DD;margin-top:6px;display:flex;align-items:center;gap:6px;min-width:0}'
-    + '.inc-tile-ir{font:600 10.5px ' + LETRA + ';letter-spacing:.1em;text-transform:uppercase;color:#F4F1EA;margin-top:8px}'
-    + '.inc-pt{width:8px;height:8px;border-radius:0;display:inline-block;flex-shrink:0}'
-    + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}.inc-grafs.dos{grid-template-columns:repeat(2,minmax(0,1fr))}'
-    + '.inc-graf-ancha{grid-column:1/-1}'
-    + '.inc-graf-card{background:transparent;border:0;border-radius:0;padding:0;min-width:0}'
-    + '.inc-graf-t{font:600 10px ' + LETRA + ';letter-spacing:.12em;text-transform:uppercase;color:#C9C2B5;margin-bottom:10px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}'
-    + '.inc-graf-t small{font:400 10.5px ' + LETRA + ';letter-spacing:0;text-transform:none;color:#C9C2B5}'
-    + '.inc-leyenda{display:flex;gap:14px;font:400 10.5px ' + LETRA + ';letter-spacing:.06em;text-transform:uppercase;color:#C9C2B5;margin-bottom:6px;flex-wrap:wrap}'
-    + '.inc-leyenda span{display:inline-flex;align-items:center;gap:6px}.inc-leyenda i{width:10px;height:10px;border-radius:0;display:inline-block}'
-    + '.inc-graf{max-width:100%;height:auto;display:block;font-family:' + LETRA + ';overflow:visible}'
-    + '.inc-marca{outline:none;cursor:default;transition:opacity .15s}.inc-marca.inc-toca{cursor:pointer}.inc-marca:hover path,.inc-marca:hover rect[fill]:not([fill="transparent"]),.inc-marca:focus path,.inc-marca:focus rect[fill]:not([fill="transparent"]){filter:brightness(1.25)}'
-    + '.inc-marca.apagada{opacity:.3}.inc-marca.on text{font-weight:700}'
-    + '.inc-marca:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
-    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#09203C;color:#ECE7DD;font:400 11px ' + LETRA + ';padding:7px 10px;border-radius:0;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s}'
-    + '.inc-met-tip .v{color:#F4F1EA;font-weight:700;font-size:12.5px}'
-    + '.inc-met-vacio{text-align:center;color:#C9C2B5;font:400 12px ' + LETRA + ';padding:18px;border:2px dashed ' + LINEA + ';border-radius:0;background:transparent}'
-    + '@media(prefers-reduced-motion:reduce){.inc-marca{transition:none}}';
+  // El estilo de siempre (claro, el del panel); la gerencia le pone el suyo encima.
+  st.textContent = '.inc-met{position:relative}'
+    + '.inc-met-intro{font-size:12.5px;color:#4b5563;margin:0 0 10px}'
+    + '.inc-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px}'
+    + '.inc-tiles.angosto{grid-template-columns:minmax(0,1fr)}'
+    + '.inc-tile{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden;text-align:left;font:inherit;color:inherit;width:100%;display:block}'
+    + '.inc-tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(#38bdf8,#2a78d6)}'
+    + 'button.inc-tile{cursor:pointer;transition:box-shadow .15s}button.inc-tile:hover{box-shadow:0 3px 12px rgba(15,40,85,.12)}button.inc-tile:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}'
+    + '.inc-tile.on{box-shadow:inset 0 0 0 2px #2a78d6}'
+    + '.inc-tile-e{font-size:11.5px;color:#6b7280}'
+    + '.inc-tile-v{font-size:24px;font-weight:600;color:#111827;line-height:1.25;margin-top:2px;font-variant-numeric:tabular-nums}'
+    + '.inc-tile-s{font-size:12px;color:#4b5563;margin-top:2px;min-width:0}'
+    + '.inc-tile-ir{font-size:11.5px;font-weight:600;color:#2a78d6;margin-top:6px}'
+    + '.inc-grafs{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.inc-grafs.c2{grid-template-columns:repeat(2,minmax(0,1fr))}.inc-grafs.c3{grid-template-columns:repeat(3,minmax(0,1fr))}'
+    + '.inc-graf-card{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px 14px;min-width:0}'
+    + '.inc-graf-t{font-size:13px;font-weight:600;color:#111827;margin-bottom:6px}'
+    + '.inc-graf{max-width:100%;height:auto;display:block;font-family:var(--inc-fuente,Poppins),sans-serif;overflow:visible}'
+    + '.inc-g-t{fill:#111827}.inc-g-s{fill:#6b7280}.inc-g-barra{fill:#2a78d6}'
+    + '.inc-marca{outline:none;cursor:default;transition:opacity .15s}.inc-marca.inc-toca{cursor:pointer}.inc-marca:hover .inc-g-barra,.inc-marca:focus .inc-g-barra{filter:brightness(1.12)}'
+    + '.inc-marca.apagada{opacity:.32}.inc-marca.on text{font-weight:700}'
+    + '.inc-marca:focus-visible{outline:2px solid #2a78d6;outline-offset:2px}'
+    + '.inc-met-tip{position:absolute;z-index:5;pointer-events:none;background:#0f1117;color:#d1d5db;font:500 11.5px var(--inc-fuente,Poppins),sans-serif;padding:7px 10px;border-radius:8px;transform:translate(-50%,-115%);white-space:nowrap;opacity:0;transition:opacity .1s;box-shadow:0 6px 18px rgba(0,0,0,.18)}'
+    + '.inc-met-tip .v{color:#fff;font-weight:700;font-size:13px}'
+    + '.inc-met-vacio{text-align:center;color:#6b7280;font-size:12.5px;padding:18px;border:1px dashed #d1d5db;border-radius:12px;background:#fff}'
+    + '@media(prefers-reduced-motion:reduce){.inc-marca,button.inc-tile{transition:none}}';
   document.head.appendChild(st);
 }
 // ── fin INCIDENCIAS compartido ──
@@ -3323,12 +3285,12 @@ function render() {
   const abiertas = delD.filter(i => i.estado !== 'resuelta');
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
   // Arriba, los números: lo abierto por gravedad (el grave late), lo resuelto y el total.
-  const nombres = { 3: 'Graves', 2: 'Medias', 1: 'Leves' };
+  const nombres = { 3: 'Grave', 2: 'Medio', 1: 'Leve' };
   // Cada contador es un botón: muestra esas en el listado.
   const elegido = nivelSel ? String(nivelSel) : (filtro === 'resueltas' || filtro === 'todas' ? filtro : '');
   // Como un widget: el punto de color y qué es, arriba; el número grande (y "abiertas"), abajo.
   const NIVEL_COLOR = { 3: '#C42A1C', 2: '#F0A202', 1: '#F4F1EA' };
-  const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat k-' + clave + (num ? '' : ' cero') + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="tocarStat(\'' + clave + '\')" title="Ver ' + (txt + (sufijo ? ' ' + sufijo : '')).toLowerCase() + ' en el listado">'
+  const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat k-' + clave + (num ? '' : ' cero') + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="tocarStat(\'' + clave + '\')" title="Ver ' + ({ 3: 'las graves abiertas', 2: 'las de gravedad media abiertas', 1: 'las leves abiertas', resueltas: 'las resueltas', todas: 'todas' })[clave] + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
   document.getElementById('resumen').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', NIVEL_COLOR[nv], nv === 3 && n(3), String(nv))).join('')
     + stat(delD.length - abiertas.length, 'Resueltas', '', '#C9C2B5', false, 'resueltas') + stat(delD.length, 'En total', '', '#C9C2B5', false, 'todas');
@@ -3340,7 +3302,6 @@ function render() {
   document.getElementById('paseF').textContent = [partes.slice(1).join(' — ') || showAct.venue, resumenFechas(showAct)].filter(Boolean).join(' · ');
   const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('estado');
   estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html;
-  document.getElementById('paseDatos').innerHTML = incPaseDatosHTML(delD);
   // La botonera: 3D o plano, y cómo está armado el campo.
   const vista = incVistaPreferida();
   const seg = (items, actual, fn) => '<div class="seg">' + items.map(([k, t]) => '<button class="' + (actual === k ? 'on' : '') + '" onclick="' + fn + '(\'' + k + '\')">' + (ICO[k] || '') + t + '</button>').join('') + '</div>';
@@ -3356,7 +3317,7 @@ function render() {
   // Al costado, el listado: abiertas, resueltas o todas; el día; y el lugar tocado en el plano.
   const dias = [...new Set(lista.map(i => incDia(i.created_at)).filter(Boolean))].sort().reverse();
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="filtrar(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
-  document.getElementById('listaT').innerHTML = '<span class="mano">las</span>Incidencias<small>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + ' · ' + delD.length + ' en total</small>';
+  document.getElementById('listaT').innerHTML = '<span class="mano">las</span>Incidencias';
   document.getElementById('filtros').innerHTML = '<div class="seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (filtro === v ? 'on' : '') + '" onclick="filtrar(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
     + (dias.length > 1 || (dias.length === 1 && dia !== dias[0]) ? chip('dia', '', 'Todos los días', !dia) + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), dia === d)).join('') : '')
     + (nivelSel ? '<span class="chip on">' + INC_NIVELES[nivelSel].nombre + ' <span onclick="event.stopPropagation();filtrar(\'nivel\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
