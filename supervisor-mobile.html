@@ -2344,8 +2344,8 @@ function incPlano3D(cont, op0) {
   [[-54, -114], [54, -114], [-54, -164], [54, -164]].forEach(([x, z]) => { const t = new T.Mesh(new T.BoxGeometry(1.6, 50, 1.6), matTruss); t.position.set(x, 25, z); escena.add(t); });
   [[0, -114, 110, 0], [0, -164, 110, 0], [-54, -139, 52, Math.PI / 2], [54, -139, 52, Math.PI / 2]].forEach(([x, z, l, r]) => { const t = new T.Mesh(new T.BoxGeometry(l, 1.8, 1.8), matTruss); t.position.set(x, 50, z); t.rotation.y = r; escena.add(t); });
   // Los telones: negros y traslúcidos (que se vea el backstage), al fondo (detrás
-  // de la pantalla, más ancho que la armazón, como en el Arena) y a los costados,
-  // colgados desde arriba hasta el piso. Sin techo: que no sea una caja.
+  // de la pantalla, del ancho del escenario) y a los costados, colgados de la
+  // armazón hasta el piso. Sin techo: que no sea una caja.
   {
     const c = lienzoDe(512, 8), x = c.getContext('2d');
     // Los pliegues: franjas que se oscurecen y se aclaran (14 cada 108 de ancho).
@@ -2353,11 +2353,11 @@ function incPlano3D(cont, op0) {
     const texTelon = textura(c); texTelon.wrapS = T.RepeatWrapping;
     const matTelon = new T.MeshBasicMaterial({ map: texTelon, transparent: true, side: T.DoubleSide, depthWrite: false });
     const telon = (ancho, px, pz, giro) => {
-      const g = new T.PlaneGeometry(ancho, 60), uv = g.attributes.uv;
+      const g = new T.PlaneGeometry(ancho, 50), uv = g.attributes.uv;
       for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * ancho / 108);   // el mismo ancho de pliegue en todos
-      const m = new T.Mesh(g, matTelon); m.position.set(px, 30, pz); m.rotation.y = giro || 0; m.renderOrder = 2; escena.add(m);
+      const m = new T.Mesh(g, matTelon); m.position.set(px, 25, pz); m.rotation.y = giro || 0; m.renderOrder = 2; escena.add(m);
     };
-    telon(150, 0, -164.4);                  // el del fondo
+    telon(108, 0, -164.4);                  // el del fondo
     telon(50, -54.4, -139, Math.PI / 2);    // los de los costados
     telon(50, 54.4, -139, Math.PI / 2);
   }
@@ -2377,15 +2377,15 @@ function incPlano3D(cont, op0) {
   marcoLed.position.set(0, 26, -162.2); escena.add(marcoLed);
   // Un borde de luz abajo de la pantalla.
   { const t = new T.Mesh(new T.BoxGeometry(96, 0.5, 0.5), matLuz); t.position.set(0, 11.8, -161.3); escena.add(t); }
-  // A los costados del escenario, como en el Arena: dos pantallas (con el mismo
-  // azul de los LED), un poco giradas hacia el público, y el sonido colgado del
+  // A los costados del escenario, como en el Arena: dos pantallas verticales, altas
+  // (con el mismo azul de los LED), un poco giradas hacia el público, y el sonido colgado del
   // techo: una columna de cajas negras que se curva hacia el público.
   {
     const matMarcoCostado = new T.MeshStandardMaterial({ color: 0x050b18, roughness: 0.5 });
     [-1, 1].forEach(k => {
-      const g = new T.Group(); g.position.set(k * 74, 34, -118); g.rotation.y = -k * 0.28; escena.add(g);
-      const pant = new T.Mesh(new T.PlaneGeometry(30, 17), new T.MeshBasicMaterial({ map: texLed })); pant.position.z = 0.8; g.add(pant);
-      g.add(new T.Mesh(new T.BoxGeometry(32, 19, 1.4), matMarcoCostado));
+      const g = new T.Group(); g.position.set(k * 74, 40, -118); g.rotation.y = -k * 0.28; escena.add(g);
+      const pant = new T.Mesh(new T.PlaneGeometry(16, 27), new T.MeshBasicMaterial({ map: texLed })); pant.position.z = 0.8; g.add(pant);
+      g.add(new T.Mesh(new T.BoxGeometry(18, 29, 1.4), matMarcoCostado));
     });
     const matCaja = new T.MeshStandardMaterial({ color: 0x0a0e15, roughness: 0.55, metalness: 0.3 }), geoCaja = new T.BoxGeometry(6, 2.3, 4.2);
     const matCable = new T.LineBasicMaterial({ color: 0x2c3e5c, transparent: true, opacity: 0.6 });
@@ -2583,14 +2583,31 @@ function incPlano3D(cont, op0) {
     // Los escalones (el más alto, junto a la puerta).
     const matEsc = new T.MeshStandardMaterial({ color: 0xa9a7a2, roughness: 0.9 });
     [0, 1, 2].forEach(i => { const alto = 1.5 - i * 0.5, esc = new T.Mesh(new T.BoxGeometry(ANCHO + 4, alto, 2.6), matEsc); esc.position.set(0, alto / 2, zf + 1.3 + i * 2.6); entradaG.add(esc); });
-    // La "M" grande en la fachada: sobre Humboldt, del lado Cancha, y en los dos costados, cerca de Humboldt.
-    const xs = afuera.map(q => q.x), xMin = Math.min(...xs) - 0.2, xMax = Math.max(...xs) + 0.2;
+    // Las "M" grandes, como en las fotos: en el costado de la Sede, una cerca de
+    // Humboldt y otra, más grande, en el medio. En el frente no hay (está el logo de la marquesina).
+    const xMax = Math.max(...afuera.map(q => q.x)) + 0.2;
     const matM = new T.MeshBasicMaterial({ transparent: true, depthWrite: false, side: T.DoubleSide, opacity: 0 });
     new T.TextureLoader().load('logo-movistar-m.png', t => { t.anisotropy = anis; desechar.push(t); matM.map = t; matM.opacity = 1; matM.needsUpdate = true; });
-    const geoM = new T.PlaneGeometry(24, 24 * 1068 / 1440);
-    [[-118, 48, zf + 0.15, 0], [xMin, 48, 96, -Math.PI / 2], [xMax, 48, 96, Math.PI / 2]].forEach(([px, py, pz, giro]) => {
-      const m = new T.Mesh(geoM, matM); m.position.set(px, py, pz); m.rotation.y = giro; m.renderOrder = 3; entradaG.add(m);
+    [[48, 96, 24], [42, -40, 36]].forEach(([py, pz, ancho]) => {
+      const m = new T.Mesh(new T.PlaneGeometry(ancho, ancho * 1068 / 1440), matM); m.position.set(xMax, py, pz); m.rotation.y = Math.PI / 2; m.renderOrder = 3; entradaG.add(m);
     });
+    // Atrás, sobre Dorrego: el cartel con el logo, arriba (un poco hacia el lado Cancha), como en las fotos.
+    const zAtras = Math.min(...afuera.map(q => q.z)) - 0.4;
+    const la = lienzoDe(1024, 256), xa = la.getContext('2d');
+    const pintarAtras = () => {
+      xa.fillStyle = '#15181c'; xa.fillRect(0, 0, 1024, 256);
+      if (logo.complete && logo.naturalWidth) {
+        const alto = 110, ancho = alto * logo.naturalWidth / logo.naturalHeight;
+        xa.imageSmoothingQuality = 'high'; xa.drawImage(logo, (1024 - ancho) / 2, (256 - alto) / 2, ancho, alto);
+      } else {
+        xa.fillStyle = '#f1f2f4'; xa.textAlign = 'center'; xa.textBaseline = 'middle'; xa.font = '600 96px Poppins, sans-serif';
+        xa.fillText('movistar arena', 512, 132);
+      }
+    };
+    pintarAtras();
+    const ta = textura(la); ta.anisotropy = anis;
+    const cartelAtras = new T.Mesh(new T.PlaneGeometry(60, 15), new T.MeshBasicMaterial({ map: ta })); cartelAtras.position.set(-30, 54, zAtras); cartelAtras.rotation.y = Math.PI; entradaG.add(cartelAtras);
+    logo.addEventListener('load', () => { pintarAtras(); ta.needsUpdate = true; });
   }
   // Lo de alrededor (sólo en la presentación): los árboles de las veredas
   // (Humboldt, Corrientes y Muñecas, sin tapar las puertas), la chimenea y la palmera.
