@@ -260,7 +260,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 <!-- Los shows del Arena -->
 <div class="pantalla" id="pShows">
   <div class="wrap">
-    <h1 class="titulo sec-t"><span class="mano">los</span>Shows del Movistar Arena</h1>
+    <h1 class="titulo sec-t"><span class="mano">Los</span>Shows del Movistar Arena</h1>
     <div class="titulo-s">Elegí un show para ver la sala en vivo.</div>
     <div id="showsBody"><div class="vacio">Cargando…</div></div>
   </div>
@@ -278,19 +278,19 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
     </section>
     <div class="t-grid">
       <section class="t-plano">
-        <div class="t-plano-cab"><h2 class="sec-t"><span class="mano">el</span>Plano</h2><div class="herr" id="vistas"></div></div>
+        <div class="t-plano-cab"><h2 class="sec-t"><span class="mano">El</span>Plano</h2><div class="herr" id="vistas"></div></div>
         <div id="plano" data-alto="pantalla"></div>
         <div class="inc-lugares" id="lugares"></div>
       </section>
       <aside class="t-lista">
         <div class="t-lista-cab">
-          <h2 class="t-lista-t sec-t" id="listaT"><span class="mano">las</span>Incidencias</h2>
+          <h2 class="t-lista-t sec-t" id="listaT"><span class="mano">Las</span>Incidencias</h2>
           <div class="fila" id="filtros"></div>
         </div>
         <div class="t-lista-cuerpo" id="lista"></div>
       </aside>
     </div>
-    <h2 class="met-t sec-t"><span class="mano">cómo va</span>el show</h2>
+    <h2 class="met-t sec-t"><span class="mano">Cómo va</span>el show</h2>
     <div id="metricas"></div>
   </div>
 </div>
@@ -3347,7 +3347,7 @@ function render() {
   // Al costado, el listado: abiertas, resueltas o todas; el día; y el lugar tocado en el plano.
   const dias = [...new Set(lista.map(fechaFuncion).filter(Boolean))].sort().reverse();
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="filtrar(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
-  document.getElementById('listaT').innerHTML = '<span class="mano">las</span>Incidencias';
+  document.getElementById('listaT').innerHTML = '<span class="mano">Las</span>Incidencias';
   document.getElementById('filtros').innerHTML = '<div class="seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (filtro === v ? 'on' : '') + '" onclick="filtrar(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
     + (dias.length > 1 || (dias.length === 1 && dia !== dias[0]) ? chip('dia', '', 'Todos los días', !dia) + dias.map(d => chip('dia', d, d.slice(8, 10) + '/' + d.slice(5, 7), dia === d)).join('') : '')
     + (nivelSel ? '<span class="chip on">' + INC_NIVELES[nivelSel].nombre + ' <span onclick="event.stopPropagation();filtrar(\'nivel\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
