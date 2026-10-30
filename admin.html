@@ -7442,7 +7442,7 @@ function incPlano3D(cont, op0) {
 // el momento más cargado filtran el listado; un lugar va a su lugar en el plano. Sin
 // librerías: SVG; los colores, por clases (el panel, claros; la gerencia pone los suyos).
 function incMinutos(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min' : Math.floor(m / 1440) + ' d ' + Math.floor(m % 1440 / 60) + ' h'; }
-// Las franjas: si la lista cruza varios días, una por día; si no, de 15, 30,
+// Las franjas: si la lista abarca varios días (más de 18 horas), una por día; si no, de 15, 30,
 // 60 o 120 minutos, la más fina que deje 16 columnas o menos. Cada una sabe de
 // cuándo a cuándo va (a, b: para filtrar el listado al tocarla).
 function incFranjas(lista) {
@@ -7450,7 +7450,9 @@ function incFranjas(lista) {
   if (!ok.length) return [];
   const dias = [...new Set(ok.map(i => incDia(i.created_at)))].sort();
   const cuenta = (grupo, f) => ({ ...f, n: [1, 2, 3].map(nv => grupo.filter(i => (i.nivel || 1) === nv).length) });
-  if (dias.length > 1) return dias.map(d => { const a = new Date(d + 'T00:00:00').getTime(); return cuenta(ok.filter(i => incDia(i.created_at) === d), { etq: d.slice(8, 10) + '/' + d.slice(5, 7), largo: 'El ' + d.slice(8, 10) + '/' + d.slice(5, 7), a, b: a + 86400000 }); });
+  const ts0 = ok.map(i => new Date(i.created_at).getTime());
+  // Un show que cruza la medianoche sigue en franjas de horario; una por día, sólo si pasan más de 18 horas.
+  if (dias.length > 1 && Math.max(...ts0) - Math.min(...ts0) > 18 * 3600000) return dias.map(d => { const a = new Date(d + 'T00:00:00').getTime(); return cuenta(ok.filter(i => incDia(i.created_at) === d), { etq: d.slice(8, 10) + '/' + d.slice(5, 7), largo: 'El ' + d.slice(8, 10) + '/' + d.slice(5, 7), a, b: a + 86400000 }); });
   const ts = ok.map(i => new Date(i.created_at).getTime()).sort((a, b) => a - b);
   const paso = [15, 30, 60, 120].find(p => (ts[ts.length - 1] - ts[0]) / (p * 60000) < 16) || 240;
   const pms = paso * 60000;
@@ -8042,6 +8044,16 @@ async function incGuardarNuevaAdm() {
   } finally { btn.disabled = false; }
 }
 function ccFechas(x) { return String((x && x.fecha) || '').split(',').map(f => f.trim()).filter(Boolean).sort(); }
+// La fecha de la función de una incidencia (la data es por show): si el show tiene una sola
+// fecha, ésa; si tiene varias, la de su día, salvo que sea de madrugada (antes de las 6) y el
+// día anterior sea fecha del show (el show siguió después de las 0).
+function incFechaFuncionAdm(i) {
+  const fs = ccFechas(ccShows.find(x => x.id === ccConvId)), d = incDia(i && i.created_at);
+  if (!d) return '';
+  if (fs.length === 1) return fs[0];
+  const antes = incDia(new Date(new Date(i.created_at).getTime() - 6 * 3600000).toISOString());
+  return antes !== d && fs.includes(antes) ? antes : d;
+}
 function ccGrupo(x) { const fs = ccFechas(x), hoy = hoyLocalISO(); return fs.includes(hoy) ? 'hoy' : (fs.length && fs[0] > hoy) ? 'proximos' : 'anteriores'; }
 // El show de hoy; si no hay, el próximo; si no, el último que pasó.
 function ccElegirInicial() {
@@ -8142,11 +8154,11 @@ async function cargarIncidAdm() {
   incNuevosAdm = incVistosAdm ? new Set(incListaAdm.filter(i => !incVistosAdm.has(i.id)).map(i => i.id)) : new Set();
   incVistosAdm = new Set(incListaAdm.map(i => i.id));
   // La primera vez arranca en el día de hoy si hubo algo hoy; si no, en todos.
-  if (incDiaAdm === null) { const hoy = hoyLocalISO(); incDiaAdm = incListaAdm.some(i => incDia(i.created_at) === hoy) ? hoy : ''; }
+  if (incDiaAdm === null) { const hoy = hoyLocalISO(); incDiaAdm = incListaAdm.some(i => incFechaFuncionAdm(i) === hoy) ? hoy : ''; }
   renderIncidAdm();
 }
 // Las del día elegido ('' = todos los días).
-function incDelDiaAdm() { return incDiaAdm ? incListaAdm.filter(i => incDia(i.created_at) === incDiaAdm) : incListaAdm; }
+function incDelDiaAdm() { return incDiaAdm ? incListaAdm.filter(i => incFechaFuncionAdm(i) === incDiaAdm) : incListaAdm; }
 function incElegirVistaAdm(v) { incGuardarVista(v); renderIncidAdm(); }
 // Los íconos de la botonera del tablero.
 const CC_ICO = {
@@ -8216,7 +8228,7 @@ function renderIncidAdm() {
   // Sin "Fuera del plano": lo que pasó en un lugar que el plano no muestra ya está en el listado.
   document.getElementById('incLugaresAdm').innerHTML = '';
   // Filtros: día, estado y, si se tocó el plano, el sector.
-  const dias = [...new Set(incListaAdm.map(i => incDia(i.created_at)).filter(Boolean))].sort().reverse();
+  const dias = [...new Set(incListaAdm.map(incFechaFuncionAdm).filter(Boolean))].sort().reverse();
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="incFiltrarAdm(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
   const quitar = (k, t) => '<span class="chip on">' + t + ' <button type="button" class="chip-x" onclick="incFiltrarAdm(\'' + k + '\',\'\')" aria-label="Sacar el filtro">✕</button></span>';
   document.getElementById('incListaT').innerHTML = 'Incidencias<small>' + abiertas.length + ' abierta' + (abiertas.length === 1 ? '' : 's') + ' · ' + delDia.length + ' en total</small>';

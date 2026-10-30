@@ -24,6 +24,7 @@
   --fondo:#09203C;--bloque:#17365F;--bloque-2:#1E4372;
   --crema:#F4F1EA;--crema-2:#ECE7DD;--gris:#C9C2B5;--linea:rgba(244,241,234,.22);
   /* La gravedad: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
+  --celeste:#019DF4;   /* el celeste de la marca (el del resumen del show y el informe) */
   --grave:#A11D21;--grave-letra:#FFD2CF;--media:#7A6600;--media-letra:#FFF0B8;--leve:#4E5560;--leve-letra:#E4E7EC;
 }
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -171,25 +172,25 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 @keyframes incLatido{0%,100%{opacity:1}50%{opacity:.25}}
 .met-t{margin:44px 0 16px}
 #metricas{--tj-muesca:var(--fondo)}
-/* El resumen del show (lo pone el plano): un bloque en el azul de AX, para que corte con el resto; las cifras, muy pesadas. */
-.pantalla .inc-met{--met-linea:rgba(255,255,255,.35);background:#0062FF;color:#fff;padding:18px 20px 20px}
-.pantalla .inc-met-intro{color:var(--crema);font-size:13px;margin-bottom:16px}
+/* El resumen del show (lo pone el plano): un bloque celeste, para que corte con el resto; la letra y las barras, en azul marino (sobre el celeste, la blanca no se lee); las cifras, muy pesadas. */
+.pantalla .inc-met{--met-linea:rgba(9,32,60,.25);background:var(--celeste);color:var(--fondo);padding:18px 20px 20px}
+.pantalla .inc-met-intro{color:var(--fondo);font-size:13px;margin-bottom:16px}
 .pantalla .inc-tiles{gap:0;margin-bottom:18px;border-bottom:1px solid var(--met-linea)}
 .pantalla .inc-tile{background:transparent;border:0;border-right:1px solid var(--met-linea);border-radius:0;padding:4px 18px 16px}
 .pantalla .inc-tile::before{display:none}
 .pantalla .inc-tile:first-child{padding-left:0}.pantalla .inc-tile:last-child{border-right:0}
 .pantalla .inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px solid var(--met-linea);padding-left:0}.pantalla .inc-tiles.angosto .inc-tile:last-child{border-bottom:0}
-.pantalla button.inc-tile:hover{box-shadow:none}.pantalla .inc-tile.on{box-shadow:inset 0 -4px 0 var(--crema)}
-.pantalla .inc-tile-e{font:600 13px var(--inc-fuente);color:var(--crema)}
-.pantalla .inc-tile-v{font:900 42px/1 var(--inc-fuente);letter-spacing:-.02em;color:#fff;margin-top:8px}
-.pantalla .inc-tile-s{font:400 12.5px var(--inc-fuente);color:var(--crema);margin-top:6px}
-.pantalla .inc-tile-ir{font:600 12.5px var(--inc-fuente);color:#fff}
+.pantalla button.inc-tile:hover{box-shadow:none}.pantalla .inc-tile.on{box-shadow:inset 0 -4px 0 var(--fondo)}
+.pantalla .inc-tile-e{font:600 13px var(--inc-fuente);color:var(--fondo)}
+.pantalla .inc-tile-v{font:900 42px/1 var(--inc-fuente);letter-spacing:-.02em;color:var(--fondo);margin-top:8px}
+.pantalla .inc-tile-s{font:400 12.5px var(--inc-fuente);color:var(--fondo);margin-top:6px}
+.pantalla .inc-tile-ir{font:600 12.5px var(--inc-fuente);color:var(--fondo)}
 .pantalla .inc-graf-card{background:transparent;border:0;border-radius:0;padding:0}
-.pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:#fff;margin-bottom:8px}
-.pantalla .inc-g-t{fill:#FFFFFF}.pantalla .inc-g-s{fill:#F4F1EA}.pantalla .inc-g-barra{fill:#09203C}
-.pantalla .inc-marca:focus-visible{outline-color:var(--crema)}
+.pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:var(--fondo);margin-bottom:8px}
+.pantalla .inc-g-t{fill:#09203C}.pantalla .inc-g-s{fill:#09203C}.pantalla .inc-g-barra{fill:#09203C}
+.pantalla .inc-marca:focus-visible{outline-color:var(--fondo)}
 .pantalla .inc-met-tip{background:var(--fondo);color:var(--crema-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--crema)}
-.pantalla .inc-met-vacio{background:#0062FF;border:0;border-radius:0;color:var(--crema)}
+.pantalla .inc-met-vacio{background:var(--celeste);border:0;border-radius:0;color:var(--fondo)}
 /* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad. */
 .pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFF0B8}
 .pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px}
@@ -2931,7 +2932,7 @@ function incPlano3D(cont, op0) {
 // el momento más cargado filtran el listado; un lugar va a su lugar en el plano. Sin
 // librerías: SVG; los colores, por clases (el panel, claros; la gerencia pone los suyos).
 function incMinutos(ms) { const m = Math.round(ms / 60000); return m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min' : Math.floor(m / 1440) + ' d ' + Math.floor(m % 1440 / 60) + ' h'; }
-// Las franjas: si la lista cruza varios días, una por día; si no, de 15, 30,
+// Las franjas: si la lista abarca varios días (más de 18 horas), una por día; si no, de 15, 30,
 // 60 o 120 minutos, la más fina que deje 16 columnas o menos. Cada una sabe de
 // cuándo a cuándo va (a, b: para filtrar el listado al tocarla).
 function incFranjas(lista) {
@@ -2939,7 +2940,9 @@ function incFranjas(lista) {
   if (!ok.length) return [];
   const dias = [...new Set(ok.map(i => incDia(i.created_at)))].sort();
   const cuenta = (grupo, f) => ({ ...f, n: [1, 2, 3].map(nv => grupo.filter(i => (i.nivel || 1) === nv).length) });
-  if (dias.length > 1) return dias.map(d => { const a = new Date(d + 'T00:00:00').getTime(); return cuenta(ok.filter(i => incDia(i.created_at) === d), { etq: d.slice(8, 10) + '/' + d.slice(5, 7), largo: 'El ' + d.slice(8, 10) + '/' + d.slice(5, 7), a, b: a + 86400000 }); });
+  const ts0 = ok.map(i => new Date(i.created_at).getTime());
+  // Un show que cruza la medianoche sigue en franjas de horario; una por día, sólo si pasan más de 18 horas.
+  if (dias.length > 1 && Math.max(...ts0) - Math.min(...ts0) > 18 * 3600000) return dias.map(d => { const a = new Date(d + 'T00:00:00').getTime(); return cuenta(ok.filter(i => incDia(i.created_at) === d), { etq: d.slice(8, 10) + '/' + d.slice(5, 7), largo: 'El ' + d.slice(8, 10) + '/' + d.slice(5, 7), a, b: a + 86400000 }); });
   const ts = ok.map(i => new Date(i.created_at).getTime()).sort((a, b) => a - b);
   const paso = [15, 30, 60, 120].find(p => (ts[ts.length - 1] - ts[0]) / (p * 60000) < 16) || 240;
   const pms = paso * 60000;
@@ -3179,6 +3182,16 @@ async function cargarShows() {
   if (deHoy.length === 1 && !showId) abrirShow(deHoy[0].id);
 }
 function fechasDe(s) { return String(s.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort(); }
+// La fecha de la función de una incidencia (la data es por show): si el show tiene una sola
+// fecha, ésa; si tiene varias, la de su día, salvo que sea de madrugada (antes de las 6) y el
+// día anterior sea fecha del show (el show siguió después de las 0).
+function fechaFuncion(i) {
+  const fs = fechasDe(shows.find(x => x.id === showId) || {}), d = incDia(i && i.created_at);
+  if (!d) return '';
+  if (fs.length === 1) return fs[0];
+  const antes = incDia(new Date(new Date(i.created_at).getTime() - 6 * 3600000).toISOString());
+  return antes !== d && fs.includes(antes) ? antes : d;
+}
 function resumenFechas(s) {
   const fs = fechasDe(s); if (!fs.length) return 'Sin fechas';
   const dm = f => f.slice(8, 10) + '/' + f.slice(5, 7);
@@ -3247,10 +3260,10 @@ async function cargarIncidencias() {
   lista = data || [];
   nuevos = vistos ? new Set(lista.filter(i => !vistos.has(i.id)).map(i => i.id)) : new Set();
   vistos = new Set(lista.map(i => i.id));
-  if (dia === null) dia = lista.some(i => incDia(i.created_at) === hoyISO()) ? hoyISO() : '';
+  if (dia === null) dia = lista.some(i => fechaFuncion(i) === hoyISO()) ? hoyISO() : '';
   render();
 }
-function delDia() { return dia ? lista.filter(i => incDia(i.created_at) === dia) : lista; }
+function delDia() { return dia ? lista.filter(i => fechaFuncion(i) === dia) : lista; }
 function elegirVista(v) { incGuardarVista(v); render(); }
 // El armado es del show: al cambiarlo acá, lo ven igual el panel y la tablet.
 function elegirArmado(a) { incGuardarArmado(showId, a); render(); }
@@ -3332,7 +3345,7 @@ function render() {
   // Sin "Fuera del plano": lo que pasó en un lugar que el plano no muestra ya está en el listado.
   document.getElementById('lugares').innerHTML = '';
   // Al costado, el listado: abiertas, resueltas o todas; el día; y el lugar tocado en el plano.
-  const dias = [...new Set(lista.map(i => incDia(i.created_at)).filter(Boolean))].sort().reverse();
+  const dias = [...new Set(lista.map(fechaFuncion).filter(Boolean))].sort().reverse();
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="filtrar(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
   document.getElementById('listaT').innerHTML = '<span class="mano">las</span>Incidencias';
   document.getElementById('filtros').innerHTML = '<div class="seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (filtro === v ? 'on' : '') + '" onclick="filtrar(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
@@ -3371,9 +3384,9 @@ function informe() {
     // La pieza de marca de SBS de fondo, como marca de agua: en gris y muy suave, en cada hoja (y que la impresora no la saque).
     + 'html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     + 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:url(' + location.origin + '/fondo-sbs.jpg) center/cover no-repeat;opacity:.07;filter:grayscale(1)}'
-    + '.k{font-size:10.5px;font-weight:600;color:#0062FF}'
+    + '.k{font-size:10.5px;font-weight:700;color:#019DF4}'
     + 'h1{font-size:20px;font-weight:600;letter-spacing:-.3px;margin:3px 0 0}h2{font-size:11.5px;font-weight:400;color:#4B5565;margin:2px 0 0}'
-    + 'h3{font-size:11px;font-weight:600;color:#0062FF;margin:0 0 6px}'
+    + 'h3{font-size:11.5px;font-weight:700;color:#019DF4;margin:0 0 6px}'
     + '.cab{display:flex;align-items:center;gap:14px;border-bottom:2px solid #141A26;padding-bottom:12px;margin-bottom:14px}.cab img{width:42px}'
     + '.nums{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-bottom:18px}'
     + '.num{border:1.5px solid #141A26;border-radius:6px;padding:8px 10px}.num b{display:block;font-size:17px;font-weight:600}.num span{font-size:9.5px;font-weight:500;color:#4B5565}'
