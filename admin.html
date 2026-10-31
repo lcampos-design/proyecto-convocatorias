@@ -9858,6 +9858,12 @@ function prepMailTemplate(area) {
 }
 
 // Convierte el texto plano del mensaje en un HTML limpio y sobrio para el correo.
+// La firma del link de confirmación, de la base (sólo un admin la consigue). Sin
+// seguridad-confirmaciones.sql corrido, no hay: el link sale como antes.
+async function confFirma(cuit, convId) {
+  if (!cuit || !convId) return '';
+  try { const { data, error } = await sb.rpc('conf_firma', { p_cuit: cuit, p_conv: convId }); return error ? '' : (data || ''); } catch (_) { return ''; }
+}
 function renderEmailHtml(text, fromAddr, area, confirm) {
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const linkify = s => s.replace(/((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)])/gi, u => {
@@ -9910,7 +9916,9 @@ function renderEmailHtml(text, fromAddr, area, confirm) {
     : `<div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#111827">Show Business Solutions</div>
     <div style="height:2px;width:40px;background:#534AB7;margin:12px 0 26px;border-radius:2px"></div>`;
   const base = (typeof location !== 'undefined' && location.origin) || 'https://convocatorias.show-bs.com';
-  const btns = (CONFIRM_BTNS_ON && confirm && confirm.cuit && confirm.convId) ? `<div style="margin:30px 0 4px;text-align:center"><div style="font-size:13px;color:#6b7280;margin-bottom:12px">Confirmá tu asistencia tocando un botón:</div><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=si" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px"><i class="ic ic-tilde-circ"></i> CONFIRMO</a><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=no" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px">✕ NO CONFIRMO</a></div>` : '';
+  // La firma de la base (seguridad-confirmaciones.sql): sin ella, el CUIL solo ya no alcanza para confirmar por otro.
+  const firmaQs = confirm && confirm.firma ? '&amp;f=' + encodeURIComponent(confirm.firma) : '';
+  const btns = (CONFIRM_BTNS_ON && confirm && confirm.cuit && confirm.convId) ? `<div style="margin:30px 0 4px;text-align:center"><div style="font-size:13px;color:#6b7280;margin-bottom:12px">Confirmá tu asistencia tocando un botón:</div><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=si${firmaQs}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px"><i class="ic ic-tilde-circ"></i> CONFIRMO</a><a href="${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=no${firmaQs}" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 26px;border-radius:8px;margin:4px 6px">✕ NO CONFIRMO</a></div>` : '';
   // En el cuerpo del mail se deja la tipografía que ya usa el cliente de correo
   // (Gmail, Outlook): el correo no puede cargar tipografías de internet, así que
   // Poppins sólo la verían quienes la tengan instalada y el resto vería algo distinto.
@@ -10055,7 +10063,7 @@ async function sendConfirmationMail() {
     const res = await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea, { cuit: mailConfirmCuit, convId: mailConfirmConv }), text: body, ...(attachments ? { attachments } : {}) })
+      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea, { cuit: mailConfirmCuit, convId: mailConfirmConv, firma: await confFirma(mailConfirmCuit, mailConfirmConv) }), text: body, ...(attachments ? { attachments } : {}) })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || data.error || 'Error al enviar');
@@ -10253,7 +10261,7 @@ async function sendBulkMail() {
       }
       const res = await fetch('/api/send-email', {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea, { cuit: r.cuit, convId: currentConvId }), text: body, ...(attachments ? { attachments } : {}) })
+        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea, { cuit: r.cuit, convId: currentConvId, firma: await confFirma(r.cuit, currentConvId) }), text: body, ...(attachments ? { attachments } : {}) })
       });
       if (res.ok) { ok++; if (contratoRow) await marcarContratoEnviado(contratoRow.id); } else fail++;
     } catch (_) { fail++; }
