@@ -37,6 +37,11 @@ textarea.fi{height:70px;resize:vertical}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-sec{background:#fff;color:#534AB7;border:2px solid #534AB7;font-size:14px;padding:10px}
 .err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.insc{border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff}
+.insc-n{font-weight:700;color:#111827;font-size:14px}
+.insc-d{font-size:12px;color:#6b7280;margin:2px 0 8px}
+.insc-baja{width:100%;padding:10px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.insc-baja:disabled{opacity:.6;cursor:not-allowed}
 .ok{background:#f0fdf4;border:1px solid #a7f3d0;color:#065f46;border-radius:8px;padding:12px 14px;font-size:14px;line-height:1.5;display:none}
 .radio-group{display:flex;flex-direction:column;gap:10px;margin-top:6px}
 .radio-opt{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all .15s}
@@ -63,7 +68,7 @@ textarea.fi{height:70px;resize:vertical}
 <div class="sbs-bg"></div>
 <div class="page-header">
   <div class="page-title">Mis datos</div>
-  <div class="page-sub">Actualizá lo que cargaste al inscribirte</div>
+  <div class="page-sub">Tus inscripciones y tus datos</div>
 </div>
 
 <div class="container">
@@ -87,6 +92,11 @@ textarea.fi{height:70px;resize:vertical}
     <div class="card">
       <p class="texto" id="hola" style="margin-bottom:0"></p>
     </div>
+    <div class="card" id="cardInsc" style="display:none">
+      <div class="section-title">Tus inscripciones</div>
+      <div id="inscLista"></div>
+    </div>
+    <div id="bloqueDatos">
     <div class="card">
       <div class="section-title">Contacto</div>
       <div class="frow">
@@ -171,6 +181,7 @@ textarea.fi{height:70px;resize:vertical}
       </div>
     </div>
     <button class="btn" id="guardarBtn" onclick="guardar()">Guardar cambios</button>
+    </div>
   </div>
 
   <!-- 3) Listo. -->
@@ -295,9 +306,11 @@ async function cargar() {
   }
   const d = data;
   // Quien está en la nómina pero nunca llenó el formulario (lo cargó el equipo) no tiene dónde guardar estos datos.
+  cargarInscripciones();
   if (!d.con_inscripcion) {
-    paso(1);
-    mostrarError('Tu ficha la cargó nuestro equipo y no tiene inscripción, así que tus datos los actualizamos nosotros: escribinos a ' + (d.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com') + '.');
+    $('hola').innerHTML = 'Hola' + (d.nombre ? ', <strong>' + esc(String(d.nombre).trim().split(/\s+/)[0]) + '</strong>' : '') + '. Acá ves tus inscripciones. Tu ficha la cargó nuestro equipo, así que tus datos los actualizamos nosotros: escribinos a ' + (d.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com') + '.';
+    $('bloqueDatos').classList.add('oculto');
+    paso(2);
     return;
   }
   $('hola').innerHTML = 'Hola' + (d.nombre ? ', <strong>' + esc(String(d.nombre).trim().split(/\s+/)[0]) + '</strong>' : '') + '. Revisá tus datos, cambiá lo que haga falta y tocá <strong>Guardar cambios</strong>.';
@@ -316,6 +329,40 @@ async function cargar() {
   }
   $('cvActual').textContent = d.cv ? 'El que tenemos: ' + d.cv : 'Todavía no tenemos tu CV.';
   paso(2);
+}
+
+// ── Las inscripciones (seguridad-inscripciones.sql): con el link, y darse de baja ──
+const ESTADOS_INSC = { pendiente: 'Pendiente', en_revision: 'En revisión', aprobado: 'Asignado/a', confirmado: 'Confirmado/a', rechazado: 'Sin lugar o dado/a de baja' };
+async function cargarInscripciones() {
+  try {
+    const { data, error } = await sb.rpc('mis_inscripciones', { p_token: TOKEN });
+    if (error || !data || !data.ok) return;
+    const hoy = new Date().toISOString().slice(0, 10), lista = data.inscripciones || [];
+    $('cardInsc').style.display = '';
+    if (!lista.length) { $('inscLista').innerHTML = '<p class="nota">Todavía no te anotaste a ningún puesto.</p>'; return; }
+    $('inscLista').innerHTML = lista.map(p => {
+      const fechas = String(p.conv_fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+      const fechaTxt = fechas.map(f => f.slice(8, 10) + '/' + f.slice(5, 7)).join(', ');
+      const pasada = fechas.length && fechas[fechas.length - 1] < hoy;
+      const puedeBaja = !pasada && p.estado !== 'rechazado';
+      return '<div class="insc"><div class="insc-n">' + esc(p.conv_nombre || 'Convocatoria') + '</div>'
+        + '<div class="insc-d">' + esc(p.puesto_nombre || 'Puesto') + (fechaTxt ? ' · ' + fechaTxt : '') + ' · ' + esc(ESTADOS_INSC[p.estado] || p.estado || '') + '</div>'
+        + (puedeBaja ? '<button class="insc-baja" onclick="darmeDeBaja(\'' + esc(p.id) + '\', this)">Darme de baja de este servicio</button>' : '') + '</div>';
+    }).join('');
+  } catch (_) {}
+}
+async function darmeDeBaja(id, btn) {
+  if (!confirm('¿Seguro que querés darte de baja de este servicio? Vas a liberar tu lugar.')) return;
+  btn.disabled = true; btn.textContent = 'Dándote de baja…';
+  try {
+    const { data, error } = await sb.rpc('baja_con_link', { p_token: TOKEN, p_postulacion_id: id });
+    if (error) throw error;
+    if (data && data.ok) { alert('Listo, te diste de baja. Ya podés anotarte en otro puesto.'); cargarInscripciones(); return; }
+    alert(data && data.motivo === 'tarde' ? 'Ya no se puede dar de baja online: el plazo venció el ' + (data.limite || '') + '. Escribinos para cualquier cambio.'
+      : data && data.motivo === 'vencido' ? 'El link venció. Pedí uno nuevo con tu CUIL.'
+      : 'No se pudo dar de baja. Probá de nuevo o escribinos.');
+  } catch (_) { alert('Hubo un error. Probá de nuevo.'); }
+  btn.disabled = false; btn.textContent = 'Darme de baja de este servicio';
 }
 
 // ── Guardar ──
