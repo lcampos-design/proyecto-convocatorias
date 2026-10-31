@@ -4537,14 +4537,31 @@ async function invitarMisDatos() {
 // Las direcciones "data:" no funcionan dentro de un marco en Chrome; se pasa a
 // blob, que sí. Se liberan al cerrar la ventana para no dejarlas colgadas.
 let cvBlobUrls = [];
-function dataUrlABlob(dataUrl) {
+// El tipo lo decide el panel, no el archivo (lo manda quien se inscribe): sólo un PDF o
+// una imagen común, y los bytes tienen que ser de verdad eso. Si no, no se muestra.
+// Mostrado con otro tipo (por ejemplo, una página web), correría con la sesión del panel.
+const CV_FIRMAS = [
+  ['application/pdf', [0x25, 0x50, 0x44, 0x46, 0x2D]],          // %PDF-
+  ['image/png', [0x89, 0x50, 0x4E, 0x47]],
+  ['image/jpeg', [0xFF, 0xD8, 0xFF]],
+  ['image/gif', [0x47, 0x49, 0x46, 0x38]],
+  ['image/webp', [0x52, 0x49, 0x46, 0x46]]                       // RIFF (y WEBP en el byte 8)
+];
+function tipoSeguroCv(buf, clase) {
+  const f = CV_FIRMAS.find(([t, firma]) => firma.every((b, i) => buf[i] === b) && (t !== 'image/webp' || String.fromCharCode(buf[8], buf[9], buf[10], buf[11]) === 'WEBP'));
+  if (!f) return null;
+  if (clase === 'pdf' ? f[0] !== 'application/pdf' : !f[0].startsWith('image/')) return null;
+  return f[0];
+}
+function dataUrlABlob(dataUrl, clase) {
   const partes = String(dataUrl || '').split(',');
   if (partes.length < 2) return null;
-  const tipo = (partes[0].match(/data:([^;]+)/) || [])[1] || 'application/octet-stream';
   try {
     const bin = atob(partes[1]);
     const buf = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    const tipo = tipoSeguroCv(buf, clase);
+    if (!tipo) return null;
     const url = URL.createObjectURL(new Blob([buf], { type: tipo }));
     cvBlobUrls.push(url);
     return { url, tipo };
@@ -4578,7 +4595,7 @@ function bajarDataUrl(datos, nombre) { if (!datos) { toast('No se pudo cargar el
 function tipoDeArchivo(archivo) {
   const t = String((archivo && archivo.tipo) || '').toLowerCase();
   const n = String((archivo && archivo.nombre) || '').toLowerCase();
-  if (t.startsWith('image/') || /\.(jpe?g|png|gif|webp|avif|bmp)$/.test(n)) return 'imagen';
+  if (/^image\/(png|jpe?g|gif|webp)$/.test(t) || /\.(jpe?g|png|gif|webp)$/.test(n)) return 'imagen';
   if (t === 'application/pdf' || /\.pdf$/.test(n)) return 'pdf';
   return 'otro';
 }
@@ -4602,8 +4619,8 @@ function pintarVistaCv(contenedorId, archivo, alBajar) {
     cont.innerHTML = cabecera + `<div class="cv-prev"><div class="cv-prev-msg">Este formato no se puede ver acá. Descargalo para abrirlo.</div></div>`;
     return;
   }
-  const b = dataUrlABlob(archivo.datos);
-  if (!b) { cont.innerHTML = cabecera + `<div class="cv-prev"><div class="cv-prev-msg">No se pudo abrir el archivo.</div></div>`; return; }
+  const b = dataUrlABlob(archivo.datos, clase);
+  if (!b) { cont.innerHTML = cabecera + `<div class="cv-prev"><div class="cv-prev-msg">No se puede ver acá: el archivo no es un ${clase === 'pdf' ? 'PDF' : 'imagen'} válido. Descargalo para revisarlo.</div></div>`; return; }
   cont.innerHTML = cabecera + `<div class="cv-prev">${clase === 'imagen'
     ? `<img src="${b.url}" alt="${e(archivo.nombre || 'CV')}">`
     : `<iframe src="${b.url}#toolbar=1" title="${e(archivo.nombre || 'CV')}"></iframe>`}</div>`;
@@ -12196,14 +12213,17 @@ function openDedup() {
             <div style="font-weight:500">${eN(p.nombre)}</div>
             <div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)} · ${pPosts} recitales · ${pFbs} feedbacks${p.email?' · '+e(p.email):''}</div>
           </div>
-          <button class="btn btn-success btn-xs" onclick="keepAsMaster('${p.id}','${cuit}')" title="Mantener este, fusionar los otros">✓ Mantener</button>
+          <button class="btn btn-success btn-xs" onclick="keepAsMaster('${p.id}')" title="Mantener este, fusionar los otros">✓ Mantener</button>
         </div>`;
       }).join('')}
     </div>`).join('');
   showM('mDedup');
 }
 
-async function keepAsMaster(masterId, cuit) {
+// Sólo el id en el botón: el CUIL lo cargó quien se inscribió y no va adentro del onclick.
+async function keepAsMaster(masterId) {
+  const master = people.find(p => p.id === masterId); if (!master) return;
+  const cuit = master.cuit;
   const dups = people.filter(p => p.cuit === cuit && p.id !== masterId);
   if (!dups.length) return;
   if (!confirm(`¿Fusionar ${dups.length} registro(s) duplicado(s) en este? Esta acción no se puede deshacer.`)) return;
