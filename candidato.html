@@ -941,7 +941,8 @@ async function submitForm() {
   if (error) {
     btn.disabled = false; btn.textContent = 'Enviar solicitud →';
     document.getElementById('progressBar').style.display = 'none';
-    showErr('Hubo un error al enviar. Intentá de nuevo en unos minutos.');
+    // La base frena una segunda inscripción con el mismo documento (seguridad-cbu.sql).
+    showErr(error.code === '23505' ? 'Ya hay una inscripción con ese CUIL/CUIT. Si querés cambiar tus datos, entrá a convocatorias.show-bs.com/mis-datos.' : 'Hubo un error al enviar. Intentá de nuevo en unos minutos.');
     return;
   }
 
