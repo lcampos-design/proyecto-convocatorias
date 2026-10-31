@@ -1,0 +1,5 @@
+# Lo que no se publica en el sitio: los SQL se corren a mano en Supabase y algunos
+# tienen datos de la nómina (CUIL, teléfonos, mails). No tienen que poder bajarse.
+*.sql
+*.txt
+_redirects
