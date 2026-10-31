@@ -1,5 +1,19 @@
 {
+  "redirects": [
+    { "source": "/(.*)\\.sql", "destination": "/", "permanent": false },
+    { "source": "/(.*)\\.txt", "destination": "/", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/:pagina", "destination": "/:pagina.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
   ]
 }
