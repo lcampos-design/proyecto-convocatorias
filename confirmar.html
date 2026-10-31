@@ -42,7 +42,7 @@ const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const q = new URLSearchParams(location.search);
-const CUIT = q.get('c'), CONV = q.get('v'), RESP = (q.get('r') || '').toLowerCase();
+const CUIT = q.get('c'), CONV = q.get('v'), RESP = (q.get('r') || '').toLowerCase(), FIRMA = q.get('f');
 
 // Íconos dibujados, en blanco y negro: iguales en cualquier equipo.
 const ICONO_SI = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#16a34a"/><path d="M18 31l8 8 16-17" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -55,7 +55,10 @@ async function go(){
     show('<div class="center">Link inválido. Pedile el link a la coordinación.</div>'); return;
   }
   try {
-    const { data, error } = await sb.rpc('registrar_confirmacion', { p_cuit: CUIT, p_conv_id: CONV, p_respuesta: RESP });
+    // Con la firma de la base (los mails nuevos); sin firma, la de antes (los que ya salieron).
+    const { data, error } = FIRMA
+      ? await sb.rpc('registrar_confirmacion_firmada', { p_cuit: CUIT, p_conv_id: CONV, p_respuesta: RESP, p_firma: FIRMA })
+      : await sb.rpc('registrar_confirmacion', { p_cuit: CUIT, p_conv_id: CONV, p_respuesta: RESP });
     if (error) throw error;
     if (data && data.ok) {
       const nombre = data.nombre ? (', ' + String(data.nombre).split(' ')[0]) : '';

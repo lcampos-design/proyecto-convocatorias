@@ -47,7 +47,8 @@ declare
     'contrato_ver',             -- la página de firma, con el token del link
     'contrato_firmar',
     'contrato_guardar_pdf',
-    'registrar_confirmacion'    -- el "CONFIRMO" de los botones del mail
+    'registrar_confirmacion',   -- el "CONFIRMO" de los botones del mail (los links viejos, sin firma)
+    'registrar_confirmacion_firmada'   -- el mismo, con la firma de la base (seguridad-confirmaciones.sql)
   ];
   abiertas int := 0; panel int := 0; cerradas int := 0;
 begin
