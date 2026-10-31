@@ -226,56 +226,6 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 @media(max-width:520px){.wrap{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.tablero{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.sec-t{font-size:44px}.stat b{font-size:34px}}
 /* Las cifras que cambian (minutos, contadores, horas), de ancho fijo. */
 .stat b,.estado .hace,.inc-vivo,.inc-cuenta strong,.bar-s,.show-f,.pase-f{font-variant-numeric:tabular-nums}
-/* El movimiento. Lo que entra al abrir una pantalla lo mueve el código, una vez (la
-   página se redibuja cada 15 segundos y eso no se mueve); acá, lo que late, lo que
-   llega y lo que responde al tocar. */
-@keyframes ccAparece{from{opacity:0}to{opacity:1}}
-@keyframes ccSube{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-@keyframes ccDesdeIzq{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
-@keyframes ccDesdeDer{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
-@keyframes ccGiraEntra{from{opacity:0;transform:rotate(-90deg) scale(.4)}to{opacity:1;transform:none}}
-.pantalla.on{animation:ccAparece .3s ease-out}
-/* El ingreso: la tarjeta sube, las dos marcas se juntan y la × gira hasta su lugar. */
-.login-card{animation:ccSube .55s cubic-bezier(.2,.7,.2,1) both}
-.login-logo{animation:ccDesdeIzq .6s .15s cubic-bezier(.2,.7,.2,1) both}
-.login-m{animation:ccDesdeDer .6s .15s cubic-bezier(.2,.7,.2,1) both}
-.login-y{animation:ccGiraEntra .6s .3s cubic-bezier(.2,.7,.2,1) both}
-/* La palabra a mano se escribe: una máscara que se corre de izquierda a derecha. */
-.escribe{-webkit-mask-image:linear-gradient(90deg,#000 40%,transparent 60%);mask-image:linear-gradient(90deg,#000 40%,transparent 60%);-webkit-mask-size:250% 100%;mask-size:250% 100%;animation:ccEscribe 1.1s ease-out both}
-@keyframes ccEscribe{from{-webkit-mask-position:100% 0;mask-position:100% 0}to{-webkit-mask-position:0 0;mask-position:0 0}}
-/* El nombre del show, al entrar, letra por letra (cada palabra entera en su renglón). */
-.pase-n .pal{display:inline-block;white-space:nowrap}.pase-n .l{display:inline-block}
-/* Lo grave late, como un corazón (dos golpes y una pausa): el estado de la sala y el número de las graves. */
-@keyframes ccLate{0%,44%,100%{transform:none}11%{transform:scale(1.045)}22%{transform:none}33%{transform:scale(1.03)}}
-.estado.grave>span:not(.hace),.estado.grave svg{animation:ccLate 2.2s ease-in-out infinite;transform-origin:left center}
-.stat.pulso b{animation:ccLate 2.2s ease-in-out infinite;transform-origin:left bottom}
-/* Todo en orden: el ícono respira, tranquilo. */
-@keyframes ccRespira{0%,100%{transform:none}50%{transform:scale(1.1)}}
-.estado:not(.grave):not(.medio) svg{animation:ccRespira 4s ease-in-out infinite}
-/* Cuando cambia el estado de la sala (llegó una grave, se resolvió todo): un golpe de luz. */
-.estado{transition:background-color .5s,color .5s}
-.estado.cambia{animation:ccCambia .8s ease-out}
-@keyframes ccCambia{0%{filter:brightness(1.4);transform:scale(1.012)}100%{filter:none;transform:none}}
-/* Un número que cambió salta un poco mientras cuenta. */
-@keyframes ccSalta{0%{transform:none}35%{transform:translateY(-5px) scale(1.06)}100%{transform:none}}
-.stat.salta b{animation:ccSalta .55s cubic-bezier(.2,.7,.2,1)}
-.stat.pulso.salta b{animation:ccSalta .55s cubic-bezier(.2,.7,.2,1),ccLate 2.2s .55s ease-in-out infinite}
-/* La incidencia que acaba de llegar entra desde el costado, con un borde de luz que se apaga. */
-.pantalla .inc-tj.nueva{animation:ccLlega 2.6s cubic-bezier(.2,.7,.2,1)}
-@keyframes ccLlega{0%{opacity:0;transform:translateX(32px)}14%{opacity:1;transform:none;outline:3px solid var(--crema)}100%{outline:3px solid rgba(244,241,234,0)}}
-/* Actualizando, la flecha gira; con cada actualización, el punto de "en vivo" hace una onda. */
-#btnActualizar.girando svg{animation:ccGira .8s linear infinite}
-@keyframes ccGira{to{transform:rotate(360deg)}}
-.inc-vivo.tic::before{outline:2px solid transparent;animation:incLatido 1.6s infinite,ccOnda .9s ease-out}
-@keyframes ccOnda{from{outline-color:rgba(9,32,60,.6);outline-offset:0}to{outline-color:rgba(9,32,60,0);outline-offset:9px}}
-/* Lo que se toca responde: se levanta o se corre al pasar y se hunde al apretar. */
-.stat,.show,.chip,.seg button,.bar-btn,.atras,.btn-ok,.pantalla .inc-tj{transition:background .15s,transform .15s,filter .15s}
-.stat:hover{transform:translateY(-2px)}
-.show:hover{transform:translateX(3px)}.flecha{transition:transform .15s}.show:hover .flecha{transform:translateX(4px)}
-.pantalla .inc-tj:hover{transform:translateX(2px)}
-.stat:active,.show:active,.chip:active,.seg button:active,.bar-btn:active,.atras:active,.btn-ok:active{transform:scale(.97)}
-/* Las barras de las métricas crecen desde el costado. */
-.pantalla .inc-g-barra{transform-box:fill-box;transform-origin:left center}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -3277,84 +3227,7 @@ let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', 
 // La incidencia tocada (desplegada, y su lugar elegido en el plano); la categoría y la franja tocadas en las métricas.
 let focoInc = '', catSel = '', franjaSel = '', irAFoco = false;
 let vistos = null, nuevos = new Set(), nivelSel = 0;
-// Lo que se mueve la próxima vez que se dibuja: la lista de shows, el tablero al abrirlo y el listado al filtrarlo.
-let animarShows = false, animarTablero = false, animarLista = false;
 const hoyISO = () => incDia(new Date().toISOString());
-// ── El movimiento ──
-// Lo que entra al abrir una pantalla lo mueve el código, una vez (la página se
-// redibuja cada 15 segundos y eso no se mueve); lo que late y lo que responde al
-// tocar está en el estilo. Si el aparato pide menos movimiento, nada se mueve.
-const quieto = () => !(typeof window !== 'undefined' && window.matchMedia) || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const SUBE = [{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }];
-function mover(els, cuadros, op) {
-  if (quieto()) return;
-  op = op || {};
-  Array.prototype.forEach.call(els || [], (el, i) => {
-    if (el && el.animate) el.animate(cuadros, Object.assign({ duration: 440, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'backwards', delay: (op.desde || 0) + (op.paso || 0) * i }, op.extra));
-  });
-}
-// La palabra a mano se escribe (una máscara que se corre).
-function escribir(t, desde) {
-  if (quieto() || !t || !t.classList) return;
-  t.classList.remove('escribe'); void t.offsetWidth;
-  t.style.animationDelay = (desde || 0) + 'ms'; t.classList.add('escribe');
-  setTimeout(() => { t.classList.remove('escribe'); t.style.animationDelay = ''; }, (desde || 0) + 1300);
-}
-// Un número que cambió: cuenta del que había al nuevo.
-function contar(el, desde, hasta) {
-  if (!el) return;
-  if (quieto() || typeof requestAnimationFrame !== 'function') { el.textContent = hasta; return; }
-  const t0 = performance.now(), dur = 700;
-  const paso = t => { const k = Math.min(1, (t - t0) / dur); el.textContent = Math.round(desde + (hasta - desde) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(paso); };
-  requestAnimationFrame(paso);
-}
-// Los contadores de arriba: la primera vez se dibujan; después se actualizan en su
-// lugar (así no se rearman cada 15 segundos) y el número que cambió cuenta y salta.
-function pintarResumen(el, html, cifras) {
-  const antes = el._cifras; el._cifras = cifras;
-  if (!antes || !el.children || el.children.length !== 5 || typeof document.createElement !== 'function') { el.innerHTML = html; return; }
-  const t = document.createElement('div'); t.innerHTML = html;
-  if (!t.children || t.children.length !== 5) { el.innerHTML = html; return; }
-  ['3', '2', '1', 'resueltas', 'todas'].forEach((k, i) => {
-    const v = el.children[i], b = v.querySelector('b');
-    v.className = t.children[i].className;
-    if (antes[k] === cifras[k]) { if (b) b.textContent = cifras[k]; return; }
-    contar(b, antes[k], cifras[k]);
-    if (!quieto()) { v.classList.add('salta'); setTimeout(() => v.classList.remove('salta'), 650); }
-  });
-}
-// Al abrir un show: el nombre aparece de a poco, letra por letra, como un desvanecimiento; el estado de la sala entra desde
-// el costado, los números y las dos columnas suben en cascada y los títulos se escriben.
-function entradaTablero() {
-  if (quieto()) return;
-  const n = document.getElementById('paseN'), nombre = n._n || '';
-  if (n.animate && n.querySelectorAll && nombre) {
-    n.innerHTML = nombre.split(' ').map(p => '<span class="pal">' + [...p].map(ch => '<span class="l">' + incEsc(ch) + '</span>').join('') + '</span>').join(' ');
-    ajustarNombre();
-    mover(n.querySelectorAll('.l'), [{ opacity: 0, filter: 'blur(10px)' }, { opacity: 1, filter: 'blur(0)' }], { paso: 90, extra: { duration: 1000, easing: 'ease-out' } });
-    // Al terminar, el nombre vuelve a ser texto corrido (las letras sueltas pierden el ajuste entre ellas).
-    setTimeout(() => { if (n._n === nombre) { n.innerHTML = incEsc(nombre); ajustarNombre(); } }, 90 * [...nombre].length + 1100);
-  }
-  mover([document.getElementById('paseF')], SUBE, { desde: 200 });
-  mover([document.getElementById('estado')], [{ opacity: 0, transform: 'translateX(-28px)' }, { opacity: 1, transform: 'none' }], { desde: 120, extra: { duration: 520 } });
-  mover(document.querySelectorAll('#resumen .stat'), SUBE, { paso: 60, desde: 220 });
-  mover(document.querySelectorAll('#pShow .t-plano, #pShow .t-lista'), SUBE, { paso: 90, desde: 320, extra: { duration: 560 } });
-  document.querySelectorAll('#pShow .t-grid .sec-t').forEach((t, i) => escribir(t, 450 + 150 * i));
-}
-// Las métricas están más abajo: entran cuando se llega a verlas (los números suben, las barras crecen).
-let mirador = null;
-function revelarAlVer() {
-  if (quieto() || typeof IntersectionObserver !== 'function') return;
-  if (mirador) mirador.disconnect();
-  mirador = new IntersectionObserver(es => es.forEach(e => {
-    if (!e.isIntersecting) return;
-    mirador.unobserve(e.target);
-    if (e.target.classList.contains('sec-t')) { escribir(e.target); return; }
-    mover(e.target.querySelectorAll('.inc-tile'), SUBE, { paso: 70 });
-    mover(e.target.querySelectorAll('.inc-g-barra'), [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { paso: 40, desde: 200, extra: { duration: 700 } });
-  }), { threshold: 0.25 });
-  document.querySelectorAll('#pShow .met-t, #metricas').forEach(x => mirador.observe(x));
-}
 function pantalla(id) {
   document.querySelectorAll('.pantalla').forEach(p => p.classList.toggle('on', p.id === id));
   document.getElementById('btnAtras').style.display = id === 'pShow' ? '' : 'none';
@@ -3399,14 +3272,14 @@ async function entrar() {
   // Un supervisor que entra acá va a su app (y entra ahí).
   const { data: rol } = await sb.rpc('mi_rol');
   if (rol === 'supervisor') { await sb.auth.signOut({ scope: 'local' }); location.replace('/supervisor-mobile'); return; }
-  animarShows = true; pantalla('pShows');
+  pantalla('pShows');
   await cargarShows();
 }
 async function cargarShows() {
   const { data, error } = await sb.rpc('ger_convocatorias');
   const body = document.getElementById('showsBody');
   if (error || data === null) {
-    body._h = null; body.innerHTML = '<div class="vacio">Tu usuario no tiene acceso al Centro de Control. Pedíselo a Show Business Solutions.</div>';
+    body.innerHTML = '<div class="vacio">Tu usuario no tiene acceso al Centro de Control. Pedíselo a Show Business Solutions.</div>';
     return;
   }
   shows = data || [];
@@ -3482,24 +3355,19 @@ function renderShows() {
   const tarjeta = (e, vivo) => '<div class="show' + (vivo ? ' hoy' : '') + '" onclick="abrirShow(\'' + e.s.id + '\',\'' + e.f + '\')"><div class="show-main"><div class="show-n">' + incEsc(sinArena(e.s.nombre)) + (vivo ? '<span class="vivo-pill">Hoy</span>' : '') + '</div>'
     + '<div class="show-f">' + (e.f ? resumenFechas({ fecha: e.f }) : 'Sin fechas') + '</div><div class="show-chips">' + chipsAbiertas(e) + '</div></div><span class="flecha">›</span></div>';
   const body = document.getElementById('showsBody');
-  if (!shows.length) { body._h = null; body.innerHTML = '<div class="vacio">Todavía no hay shows en el Centro de Control. Cuando el equipo de SBS sume uno, aparece acá.</div>'; return; }
+  if (!shows.length) { body.innerHTML = '<div class="vacio">Todavía no hay shows en el Centro de Control. Cuando el equipo de SBS sume uno, aparece acá.</div>'; return; }
   const bloque = (t, l, vivo) => l.length ? '<div class="grupo">' + t + '</div><div class="shows-grid">' + l.map(s => tarjeta(s, vivo)).join('') + '</div>' : '';
-  const html = bloque('Hoy', grupos.hoy, true) + bloque('Próximos', grupos.proximos) + bloque('Anteriores', grupos.anteriores);
-  // Al entrar se dibuja dos veces (la segunda, con lo de cada fecha): si no cambió, no se toca, así no se corta la entrada.
-  if (body._h !== html) { body._h = html; body.innerHTML = html; }
-  if (animarShows) { animarShows = false; mover(body.querySelectorAll ? body.querySelectorAll('.grupo, .show') : [], SUBE, { paso: 40 }); }
+  body.innerHTML = bloque('Hoy', grupos.hoy, true) + bloque('Próximos', grupos.proximos) + bloque('Anteriores', grupos.anteriores);
 }
 async function abrirShow(id, fecha) {
   const s = shows.find(x => x.id === id); if (!s) return;
   // La fecha es el show: el tablero, el resumen y el informe son de ella.
   showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = fecha !== undefined ? fecha : fechaInicial(s); vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = '';
-  // Entra de nuevo: el tablero se mueve al dibujarse y los números cuentan desde cero.
-  animarTablero = animarLista = true; document.getElementById('resumen')._cifras = null; document.getElementById('estado')._clave = undefined;
   pantalla('pShow');
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
   const plano = incRefrescarPlano();
-  render(); revelarAlVer();
+  render();
   await cargarIncidencias();
   if (await plano) render();
   clearInterval(timer);
@@ -3512,17 +3380,13 @@ async function abrirShow(id, fecha) {
 }
 function volverShows() {
   clearInterval(timer); showId = null;
-  animarShows = true; pantalla('pShows'); cargarShows();
+  pantalla('pShows'); cargarShows();
 }
 async function cargarIncidencias() {
-  const vivo = document.getElementById('vivo'), act = document.getElementById('btnActualizar'), t0 = Date.now();
-  if (act && act.classList) act.classList.add('girando');
+  const vivo = document.getElementById('vivo');
   const { data, error } = await sb.rpc('ger_incidencias', { p_conv_id: showId });
-  // Que la flecha dé por lo menos una vuelta (si no, ni se ve).
-  setTimeout(() => { if (act && act.classList) act.classList.remove('girando'); }, Math.max(0, 800 - (Date.now() - t0)));
   if (error || data === null) { vivo.textContent = 'Sin conexión'; vivo.className = 'inc-vivo mal'; return; }
-  // Con cada actualización, el punto de "en vivo" hace una onda.
-  vivo.textContent = 'En vivo'; vivo.title = 'Actualizado a las ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo'; void vivo.offsetWidth; vivo.className = 'inc-vivo tic';
+  vivo.textContent = 'En vivo'; vivo.title = 'Actualizado a las ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo';
   lista = data || [];
   nuevos = vistos ? new Set(lista.filter(i => !vistos.has(i.id)).map(i => i.id)) : new Set();
   vistos = new Set(lista.map(i => i.id));
@@ -3536,9 +3400,9 @@ function tocarSector(sector) {
   // Si estaba elegido por una incidencia tocada en el listado, tocarlo (o la ✕ de su ficha) la suelta.
   const f = focoInc && lista.find(i => String(i.id) === focoInc); focoInc = ''; catSel = franjaSel = '';
   if (f && f.sector === sector && sectorSel !== sector) { render(); return; }
-  sectorSel = sectorSel === sector ? '' : sector; animarLista = true; render();
+  sectorSel = sectorSel === sector ? '' : sector; render();
 }
-function filtrar(k, v) { animarLista = true; if (k === 'estado') { filtro = v; nivelSel = 0; } if (k === 'sector') sectorSel = v; if (k === 'nivel') nivelSel = 0; if (k === 'categoria') catSel = v; if (k === 'franja') franjaSel = v; render(); }
+function filtrar(k, v) { if (k === 'estado') { filtro = v; nivelSel = 0; } if (k === 'sector') sectorSel = v; if (k === 'nivel') nivelSel = 0; if (k === 'categoria') catSel = v; if (k === 'franja') franjaSel = v; render(); }
 // Tocar una incidencia del listado: se despliega con todo y el plano va hasta su lugar (el listado no se filtra); otra vez, se cierra.
 function tocarInc(id) { focoInc = focoInc === id ? '' : id; render(); }
 // Tocar una métrica: una categoría o una franja filtran el listado (todas, abiertas y
@@ -3554,14 +3418,14 @@ function tocarMetrica(tipo, v) {
   if (tipo === 'sector') sectorSel = nuevo;
   if (tipo === 'inc') { focoInc = nuevo; irAFoco = true; }
   if (nuevo) filtro = tipo === 'inc' ? 'abiertas' : 'todas';
-  animarLista = true; render();
+  render();
   const g = document.querySelector && document.querySelector('#pShow .t-grid'); if (g && g.scrollIntoView) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 // Tocar un contador de arriba: el listado muestra esas (y en el celular, baja hasta el listado).
 function tocarStat(k) {
   if (k === 'resueltas' || k === 'todas') { filtro = k; nivelSel = 0; }
   else { const nv = Number(k); filtro = 'abiertas'; nivelSel = nivelSel === nv ? 0 : nv; }
-  animarLista = true; render();
+  render();
   const l = document.getElementById('lista');
   if (window.innerWidth < 960 && l && l.scrollIntoView) l.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -3586,24 +3450,19 @@ function render() {
   const NIVEL_COLOR = { 3: '#A11D21', 2: '#B8900A', 1: '#4E5560' };
   const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat k-' + clave + (num ? '' : ' cero') + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="tocarStat(\'' + clave + '\')" title="Ver ' + ({ 3: 'las graves abiertas', 2: 'las de gravedad media abiertas', 1: 'las leves abiertas', resueltas: 'las resueltas', todas: 'todas' })[clave] + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
-  pintarResumen(document.getElementById('resumen'), [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', NIVEL_COLOR[nv], nv === 3 && n(3), String(nv))).join('')
-    + stat(delD.length - abiertas.length, 'Resueltas', '', '#C9C2B5', false, 'resueltas') + stat(delD.length, 'En total', '', '#C9C2B5', false, 'todas'),
-    { 3: n(3), 2: n(2), 1: n(1), resueltas: delD.length - abiertas.length, todas: delD.length });
+  document.getElementById('resumen').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', NIVEL_COLOR[nv], nv === 3 && n(3), String(nv))).join('')
+    + stat(delD.length - abiertas.length, 'Resueltas', '', '#C9C2B5', false, 'resueltas') + stat(delD.length, 'En total', '', '#C9C2B5', false, 'todas');
   // El pase: quién y cuándo; la franja de estado (cómo está la sala, de un vistazo) y las asistencias.
   const showAct = shows.find(x => x.id === showId) || {};
   // El nombre enorme (lo de antes de " — "); si el show es hoy, "en vivo" a mano al lado.
   const partes = String(showAct.nombre || '').split(' — ');
   // Sólo el nombre y la fecha: todos los shows son del Arena (sin "Movistar Arena") y el
   // "en vivo" a mano salía porque la fecha es hoy, no porque el show esté en curso.
-  // Si es el mismo nombre, no se toca (mientras entra, va letra por letra).
-  const nomEl = document.getElementById('paseN'); if (nomEl._n !== partes[0]) { nomEl._n = partes[0]; nomEl.innerHTML = incEsc(partes[0]); }
+  document.getElementById('paseN').innerHTML = incEsc(partes[0]);
   document.getElementById('paseF').textContent = [partes.slice(1).filter(p => !esElArena(p)).join(' — '), dia ? resumenFechas({ fecha: dia }) : resumenFechas(showAct)].filter(Boolean).join(' · ');
   ajustarNombre();
   const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('estado');
-  // Si cambió (llegó una grave, se resolvió todo), un golpe de luz; si no cambió el texto, no se rearma (así lo que late no se corta).
-  const claveEst = (est.clase || '') + '|' + n(3) + '|' + n(2), cambio = estEl._clave !== undefined && estEl._clave !== claveEst; estEl._clave = claveEst;
-  estEl.className = 'estado' + (est.clase ? ' ' + est.clase : '') + (cambio && !quieto() ? ' cambia' : '');
-  if (estEl._h !== est.html) { estEl._h = est.html; estEl.innerHTML = est.html; }
+  estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html;
   // La botonera: 3D o plano, y cómo está armado el campo.
   const vista = incVistaPreferida();
   const seg = (items, actual, fn) => '<div class="seg">' + items.map(([k, t]) => '<button class="' + (actual === k ? 'on' : '') + '" onclick="' + fn + '(\'' + k + '\')">' + (ICO[k] || '') + t + '</button>').join('') + '</div>';
@@ -3631,12 +3490,9 @@ function render() {
     cont.innerHTML = '<div class="vacio">' + (!lista.length ? 'Sin incidencias en este show.' : filtro === 'abiertas' ? 'No hay incidencias ' + (nivelSel ? INC_NIVELES[nivelSel].nombre.toLowerCase().replace(/o$/, 'a') + 's ' : '') + 'abiertas' + (sectorSel ? ' en ' + incEsc(sectorSel) : '') + '.' : 'Nada por acá.') + '</div>';
   } else {
     cont.innerHTML = visibles.map(i => incTarjetaHTML(i, { abierta: String(i.id) === focoInc, nueva: nuevos.has(i.id), onclick: 'tocarInc' })).join('');
-    // Recién abierto o recién filtrado: los tickets llegan en cascada.
-    if (animarLista) { animarLista = false; mover(cont.children ? Array.prototype.slice.call(cont.children, 0, 10) : [], SUBE, { paso: 40 }); }
     // La tocada desde las métricas: a la vista en el listado.
     if (irAFoco) { irAFoco = false; const t = cont.querySelector && cont.querySelector('[data-inc="' + focoInc + '"]'); if (t && t.scrollIntoView) t.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
   }
-  if (animarTablero) { animarTablero = false; entradaTablero(); }
   nuevos = new Set();
 }
 // El informe del show (del día elegido), listo para guardar como PDF o imprimir.

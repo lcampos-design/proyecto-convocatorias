@@ -160,26 +160,6 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 
 /* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
 button,input,select,textarea,optgroup,option{font-family:inherit}
-/* El movimiento: las pantallas entran deslizándose, las tarjetas suben en cascada,
-   la hoja de carga sube desde abajo, lo que se toca se hunde un poco y el aviso salta. */
-@keyframes supEntra{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
-@keyframes supSube{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-@keyframes supHoja{from{transform:translateY(100%)}to{transform:none}}
-@keyframes supVelo{from{opacity:0}to{opacity:1}}
-@keyframes supAviso{0%{opacity:0;transform:translateX(-50%) translateY(16px) scale(.92)}60%{opacity:1;transform:translateX(-50%) translateY(-3px) scale(1.02)}100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
-.screen.active{animation:supEntra .3s cubic-bezier(.2,.7,.2,1)}
-.screen.active .hub-card,.screen.active .conv-card{animation:supSube .38s cubic-bezier(.2,.7,.2,1) both}
-.screen.active .hub-card:nth-child(2),.screen.active .conv-card:nth-child(2){animation-delay:.05s}
-.screen.active .hub-card:nth-child(3),.screen.active .conv-card:nth-child(3){animation-delay:.1s}
-.screen.active .hub-card:nth-child(4),.screen.active .conv-card:nth-child(4){animation-delay:.15s}
-.screen.active .conv-card:nth-child(5){animation-delay:.2s}.screen.active .conv-card:nth-child(n+6){animation-delay:.25s}
-.fb-sheet:not(.hidden) .fb-overlay{animation:supVelo .25s ease-out}
-.fb-sheet:not(.hidden) .fb-card{animation:supHoja .34s cubic-bezier(.2,.8,.2,1)}
-.toast-mob.on{animation:supAviso .4s cubic-bezier(.2,.8,.2,1)}
-.conv-card{transition:border-color .15s,box-shadow .15s,transform .12s}
-.hub-card,.l-btn,.fb-send,.turno-chip{transition:transform .12s,background .15s}
-.conv-card:active,.l-btn:active,.fb-send:active,.turno-chip:active{transform:scale(.98)}
-@media(prefers-reduced-motion:reduce){.screen.active,.screen.active .hub-card,.screen.active .conv-card,.fb-sheet .fb-overlay,.fb-sheet .fb-card,.toast-mob.on{animation:none!important}.conv-card,.hub-card,.l-btn,.fb-send,.turno-chip{transition:none}}
 </style>
 </head>
 <body>
