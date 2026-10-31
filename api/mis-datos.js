@@ -48,20 +48,22 @@ export function enmascarar(email) {
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // El mail: corto, con el botón y la aclaración de que vence.
-export function armarMail({ nombre, link, invitado }) {
+export function armarMail({ nombre, link, invitado, inscripciones }) {
   const hola = nombre ? `Hola, ${String(nombre).trim().split(/\s+/)[0]}` : 'Hola';
   const intro = invitado
     ? 'Necesitamos que revises y completes tus datos (la fecha de nacimiento, los estudios, la cuenta para pagarte…). Te lleva un par de minutos.'
-    : 'Pediste cambiar tus datos de inscripción. Desde este link podés actualizarlos.';
+    : inscripciones
+      ? 'Pediste ver tus inscripciones. Desde este link ves dónde estás anotado/a, podés darte de baja y actualizar tus datos.'
+      : 'Pediste cambiar tus datos de inscripción. Desde este link podés actualizarlos.';
   const text = `${hola}:\n\n${intro}\n\n${link}\n\nEl link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.\n\nShow Business Solutions`;
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111827">
   <p style="font-size:15px">${esc(hola)}:</p>
   <p style="font-size:15px;line-height:1.5">${esc(intro)}</p>
-  <p style="margin:24px 0"><a href="${esc(link)}" style="background:#534AB7;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">Actualizar mis datos</a></p>
+  <p style="margin:24px 0"><a href="${esc(link)}" style="background:#534AB7;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">${inscripciones ? 'Ver mis inscripciones' : 'Actualizar mis datos'}</a></p>
   <p style="font-size:13px;color:#6b7280;line-height:1.5">El link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.</p>
   <p style="font-size:13px;color:#6b7280">Show Business Solutions</p>
 </div>`;
-  return { subject: invitado ? 'Actualizá tus datos — Show Business Solutions' : 'Tu link para actualizar tus datos', text, html };
+  return { subject: invitado ? 'Actualizá tus datos — Show Business Solutions' : inscripciones ? 'Tu link para ver tus inscripciones' : 'Tu link para actualizar tus datos', text, html };
 }
 
 export default async function handler(req, res) {
@@ -107,7 +109,7 @@ export default async function handler(req, res) {
 
   // El mail, desde la casilla del área.
   const link = `${SITIO}/mis-datos?t=${encodeURIComponent(r.token)}`;
-  const mail = armarMail({ nombre: r.nombre, link, invitado });
+  const mail = armarMail({ nombre: r.nombre, link, invitado, inscripciones: !invitado && cuerpo.para === 'inscripciones' });
   const from = r.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   try {
     const envio = await fetch('https://api.resend.com/emails', {

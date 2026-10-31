@@ -159,13 +159,13 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Gestioná tu inscripción</div>
-    <div class="modal-sub">Poné tu CUIL para ver dónde estás anotado/a. Podés darte de baja para liberar tu lugar y anotarte en otro (hasta cierto plazo antes del evento).</div>
+    <div class="modal-sub">Poné tu CUIL y te mandamos un link al mail que dejaste al inscribirte: ahí ves dónde estás anotado/a y podés darte de baja para liberar tu lugar (hasta cierto plazo antes del evento).</div>
     <div class="err-msg" id="gestErr"></div>
     <div class="fg">
       <label>CUIL <span class="req">*</span></label>
       <input type="text" class="fi" id="gCuil" placeholder="11 dígitos sin guiones" maxlength="11" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')" onkeydown="if(event.key==='Enter')buscarMisInscripciones()">
     </div>
-    <button class="submit-btn" id="gBuscarBtn" onclick="buscarMisInscripciones()">Ver mis inscripciones</button>
+    <button class="submit-btn" id="gBuscarBtn" onclick="buscarMisInscripciones()">Mandarme el link</button>
     <div id="gestList" style="margin-top:14px"></div>
     <button class="cancel-btn" onclick="closeGestion()">Cerrar</button>
   </div>
@@ -339,14 +339,15 @@ async function submitPostulacion() {
 
   // No anotarse a varios puestos de las convocatorias ABIERTAS ahora (las viejas/pasadas no cuentan).
   try {
-    const { data: previas } = await sb.rpc('mis_postulaciones', { p_cuit: cuil });
-    const activas = (previas || []).filter(p => p.estado !== 'rechazado' && openConvIds.has(p.conv_id));
-    if (activas.some(p => p.puesto_id === selectedPuestoId && p.conv_id === selectedConvId)) {
+    // Sólo sí o no (seguridad-inscripciones.sql): con el CUIL ya no se ven los shows de nadie.
+    const { data: puedo, error: pErr } = await sb.rpc('puedo_anotarme', { p_cuit: cuil, p_conv_id: selectedConvId, p_puesto_id: selectedPuestoId });
+    if (pErr) throw pErr;
+    if (puedo && puedo.ya_en_este) {
       btn.disabled = false; btn.textContent = 'Enviar postulación →';
       err.textContent = 'Ya estás anotado/a a este puesto.'; err.style.display = 'block';
       return;
     }
-    if (activas.length) {
+    if (puedo && puedo.otra_activa) {
       btn.disabled = false; btn.textContent = 'Enviar postulación →';
       err.innerHTML = 'Solo podés anotarte a <strong>un puesto</strong> de las convocatorias abiertas. Si querés cambiar, entrá a <strong>"Ver mis inscripciones"</strong> y date de baja primero.';
       err.style.display = 'block';
@@ -418,52 +419,22 @@ function openGestion() {
 }
 function closeGestion() { const el = document.getElementById('gestBg'); if (el) el.style.display = 'none'; }
 
+// Ver las inscripciones y darse de baja: con un link que llega al mail (el de /mis-datos).
+// Con el CUIL solo ya no se ve nada: si no, cualquiera vería los shows de otro y lo podría bajar.
 async function buscarMisInscripciones() {
   const err = document.getElementById('gestErr'); err.style.display = 'none';
   const cuil = document.getElementById('gCuil').value.replace(/\D/g, '');
   const list = document.getElementById('gestList');
   if (cuil.length !== 11) { err.textContent = 'Ingresá tu CUIL (11 dígitos).'; err.style.display = 'block'; return; }
-  list.innerHTML = '<div class="loading">Buscando...</div>';
+  const btn = document.getElementById('gBuscarBtn'); btn.disabled = true; btn.textContent = 'Mandando…';
+  list.innerHTML = '';
   try {
-    // La función trae las inscripciones de ese CUIL con el nombre de la
-    // convocatoria y del puesto adentro. Antes había que ir a buscarlos
-    // aparte, y si la convocatoria ya no estaba publicada el nombre salía
-    // en blanco.
-    const { data: mine } = await sb.rpc('mis_postulaciones', { p_cuit: cuil });
-    if (!mine || !mine.length) { list.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:14px;padding:16px">No encontramos inscripciones con ese CUIL.</div>'; return; }
-    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-    list.innerHTML = mine.map(p => {
-      const c = { nombre: p.conv_nombre, fecha: p.conv_fecha };
-      const puesto = p.puesto_nombre || 'Puesto';
-      const fechas = String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
-      const first = fechas.length ? new Date(fechas[0] + 'T00:00:00') : null;
-      const deadline = first ? new Date(first.getTime() - bajaDiasPublico * 86400000) : null;
-      const tarde = deadline ? hoy > deadline : false;
-      const fechaTxt = fechas.map(f => { const d = new Date(f + 'T00:00:00'); return isNaN(d) ? f : d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }); }).join(', ');
-      return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff">
-        <div style="font-weight:700;color:#111827;font-size:14px">${esc(c.nombre || 'Convocatoria')}</div>
-        <div style="font-size:12px;color:#9ca3af;margin:2px 0 8px">${esc(puesto)}${fechaTxt ? ' · ' + fechaTxt : ''} · ${esc(p.estado || '')}</div>
-        ${tarde
-          ? `<div style="font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 10px">Ya no podés darte de baja online (menos de ${bajaDiasPublico} día/s para el evento). Escribinos si necesitás un cambio.</div>`
-          : `<button onclick="darmeDeBaja('${p.id}','${cuil}',this)" style="width:100%;padding:10px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Darme de baja de este servicio</button>`}
-      </div>`;
-    }).join('');
-  } catch (e) {
-    list.innerHTML = ''; err.textContent = 'Hubo un error al buscar. Probá de nuevo.'; err.style.display = 'block';
-  }
-}
-
-async function darmeDeBaja(postId, cuil, btn) {
-  if (!confirm('¿Seguro que querés darte de baja de este servicio? Vas a liberar tu lugar.')) return;
-  btn.disabled = true; btn.textContent = 'Dándote de baja...';
-  const restore = () => { btn.disabled = false; btn.textContent = 'Darme de baja de este servicio'; };
-  try {
-    const { data, error } = await sb.rpc('dar_de_baja', { p_cuit: cuil, p_postulacion_id: postId });
-    if (error) throw error;
-    if (data && data.ok) { alert('Listo, te diste de baja. Ya podés anotarte en otro puesto.'); buscarMisInscripciones(); }
-    else if (data && data.motivo === 'tarde') { alert('Ya no se puede dar de baja online: el plazo venció el ' + (data.limite || '') + ' (evento: ' + (data.evento || '') + '). Escribinos para cualquier cambio.'); restore(); }
-    else { alert('No se pudo dar de baja. Verificá que el CUIL sea el tuyo.'); restore(); }
-  } catch (e) { alert('Hubo un error. Probá de nuevo.'); restore(); }
+    const res = await fetch('/api/mis-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cuit: cuil, para: 'inscripciones' }) });
+    const r = await res.json().catch(() => ({}));
+    if (!res.ok || !r.ok) { err.textContent = r.error || 'No se pudo mandar el link. Probá de nuevo en un rato.'; err.style.display = 'block'; return; }
+    list.innerHTML = '<div style="background:#f0fdf4;border:1px solid #a7f3d0;color:#065f46;border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.5">✓ Te mandamos el link a <strong>' + esc(r.email) + '</strong>. Abrilo para ver tus inscripciones y darte de baja. Revisá también el correo no deseado: vence en 24 horas.</div>';
+  } catch (_) { err.textContent = 'No se pudo mandar el link. Revisá tu conexión y probá de nuevo.'; err.style.display = 'block'; }
+  finally { btn.disabled = false; btn.textContent = 'Mandarme el link'; }
 }
 
 function validarCuil(input) {

@@ -39,9 +39,12 @@ declare
     'check_solicitud_existe',   -- el formulario avisa si ya te inscribiste
     'crear_postulacion',        -- anotarse a un puesto
     'esta_registrado',          -- ¿estás en la nómina?
-    'dar_de_baja',              -- soltar el lugar
+    'puedo_anotarme',           -- ¿ya estás en ese puesto o en otro? (sólo sí o no)
     'cupos_ocupados',           -- cuántos lugares quedan
-    'mis_postulaciones',        -- ver mis inscripciones
+    'mis_inscripciones',        -- ver mis inscripciones, con el link del mail (seguridad-inscripciones.sql)
+    'baja_con_link',            -- soltar el lugar, con el link del mail
+    'mis_datos_ver',            -- /mis-datos, con el link del mail
+    'mis_datos_guardar',
     'guardar_disponibilidad',   -- la ronda de fechas
     'mi_disponibilidad',
     'contrato_ver',             -- la página de firma, con el token del link
@@ -49,6 +52,14 @@ declare
     'contrato_guardar_pdf',
     'registrar_confirmacion',   -- el "CONFIRMO" de los botones del mail (los links viejos, sin firma)
     'registrar_confirmacion_firmada'   -- el mismo, con la firma de la base (seguridad-confirmaciones.sql)
+  ];
+  -- Las que no ejecuta nadie a mano: las usan otras funciones por dentro o el
+  -- servidor. mis_datos_link devuelve el link de /mis-datos: si la pudiera usar
+  -- cualquier usuario (un supervisor), sacaría el de cualquier persona.
+  -- mis_postulaciones y dar_de_baja: con el CUIL de otro mostraban y bajaban sus
+  -- inscripciones; ahora van por mis_inscripciones y baja_con_link.
+  nadie text[] := array[
+    'mis_datos_link', 'mis_datos_nucleo', 'conf_firma_calc', 'mis_postulaciones', 'dar_de_baja'
   ];
   abiertas int := 0; panel int := 0; cerradas int := 0;
 begin
@@ -64,8 +75,9 @@ begin
   loop
     execute 'revoke execute on function ' || f.firma || ' from public, anon, authenticated';
 
-    if f.es_trigger then
+    if f.es_trigger or f.proname = any (nadie) then
       cerradas := cerradas + 1;
+      if f.proname = 'mis_datos_link' then execute 'grant execute on function ' || f.firma || ' to service_role'; end if;
     elsif f.proname = any (publicas) then
       execute 'grant execute on function ' || f.firma || ' to anon, authenticated';
       abiertas := abiertas + 1;
