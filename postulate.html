@@ -67,7 +67,7 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .cupos-full{font-size:12px;font-weight:600;color:#9ca3af}
 .prog-wrap{width:80px;height:5px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin-top:5px;margin-left:auto}
 .prog-fill{height:100%;border-radius:999px}
-.apply-btn{padding:8px 16px;background:#534AB7;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
+.apply-btn{padding:8px 16px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
 .apply-btn:hover{opacity:.9}
 .apply-btn:disabled{background:#e5e7eb;color:#9ca3af;cursor:not-allowed;opacity:1}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:100;padding:0}
@@ -82,10 +82,10 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .fg label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px}
 .req{color:#ef4444}
 .fi{width:100%;padding:11px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:15px;outline:none;font-family:inherit;transition:border-color .15s}
-.fi:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.1)}
+.fi:focus{border-color:#1a1a1a;box-shadow:0 0 0 3px rgba(26,26,26,.1)}
 textarea.fi{height:80px;resize:none}
 .frow{display:flex;gap:12px}.frow .fg{flex:1}
-.submit-btn{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;font-family:inherit;transition:opacity .15s}
+.submit-btn{width:100%;padding:14px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;font-family:inherit;transition:opacity .15s}
 .submit-btn:hover{opacity:.9}
 .submit-btn:disabled{opacity:.5;cursor:not-allowed}
 .cancel-btn{width:100%;padding:12px;background:none;border:none;color:#9ca3af;font-size:14px;cursor:pointer;margin-top:8px;font-family:inherit}
@@ -94,7 +94,7 @@ textarea.fi{height:80px;resize:none}
 .success-icon{font-size:52px;margin-bottom:16px}
 .success-title{font-size:20px;font-weight:700;color:#111827;margin-bottom:8px}
 .success-sub{font-size:14px;color:#6b7280;line-height:1.6;margin-bottom:20px}
-.back-link{color:#534AB7;font-size:14px;cursor:pointer;text-decoration:underline}
+.back-link{color:#1a1a1a;font-size:14px;cursor:pointer;text-decoration:underline}
 
 /* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
 button,input,select,textarea,optgroup,option{font-family:inherit}
@@ -109,7 +109,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 </div>
 
 <div class="container">
-  <div style="text-align:center;margin:0 0 18px"><button onclick="openGestion()" style="background:#fff;border:1px solid #e5e7eb;color:#534AB7;font-size:13px;font-weight:600;border-radius:999px;padding:8px 16px;cursor:pointer">Ya me anoté — gestionar / cambiar mi inscripción</button></div>
+  <div style="text-align:center;margin:0 0 18px"><button onclick="openGestion()" style="background:#fff;border:1px solid #e5e7eb;color:#1a1a1a;font-size:13px;font-weight:600;border-radius:999px;padding:8px 16px;cursor:pointer">Ya me anoté — gestionar / cambiar mi inscripción</button></div>
   <div id="mainContent"><div class="loading">Cargando convocatorias...</div></div>
 </div>
 
@@ -458,16 +458,16 @@ loadConvocatorias();
     <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;align-items:center">
       <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
         <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af">Movistar Arena</span>
-        <a href="mailto:convocatorias.arena@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias.arena@show-bs.com</a>
+        <a href="mailto:convocatorias.arena@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#1a1a1a;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias.arena@show-bs.com</a>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
         <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af">Externos</span>
-        <a href="mailto:convocatorias.externos@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias.externos@show-bs.com</a>
+        <a href="mailto:convocatorias.externos@show-bs.com" style="display:flex;align-items:center;gap:8px;color:#1a1a1a;text-decoration:none;font-size:14px;font-weight:500"><span style="font-size:18px">✉</span> convocatorias.externos@show-bs.com</a>
       </div>
     </div>
     <div style="margin-top:18px">
-      <a href="https://www.instagram.com/showbs/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;color:#534AB7;text-decoration:none;font-size:14px;font-weight:500">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#534AB7" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#534AB7" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#534AB7"/></svg>
+      <a href="https://www.instagram.com/showbs/" target="_blank" style="display:inline-flex;align-items:center;gap:8px;color:#1a1a1a;text-decoration:none;font-size:14px;font-weight:500">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#1a1a1a" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="#1a1a1a" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1" fill="#1a1a1a"/></svg>
         @showbs
       </a>
     </div>
