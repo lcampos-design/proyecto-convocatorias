@@ -209,6 +209,8 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .pantalla .inc-tj[data-nivel="3"] .inc-tj-talon{background:var(--grave);color:var(--grave-letra)}
 .pantalla .inc-tj[data-nivel="2"] .inc-tj-talon{background:var(--media);color:var(--media-letra)}
 .pantalla .inc-tj[data-nivel="1"] .inc-tj-talon{background:var(--leve);color:var(--leve-letra)}
+.pantalla .inc-tj .inc-tj-cod{border-radius:0}
+.pantalla .inc-tj[data-nivel="3"] .inc-tj-cod{background:var(--grave);color:var(--grave-letra)}.pantalla .inc-tj[data-nivel="2"] .inc-tj-cod{background:var(--media);color:var(--media-letra)}.pantalla .inc-tj[data-nivel="1"] .inc-tj-cod{background:var(--leve);color:var(--leve-letra)}
 .pantalla .inc-tj .inc-tj-talon b{font:900 24px/.9 var(--inc-fuente)}
 .pantalla .inc-tj .inc-tj-talon small{font:600 11.5px var(--inc-fuente);letter-spacing:0}
 .pantalla .inc-tj .inc-tj-txt{border-left:0;padding:11px 14px;gap:4px}
@@ -412,6 +414,26 @@ function incResumenSectores(lista) {
     pn[nv] = (pn[nv] || 0) + 1;
   });
   return { niveles, cuentas, porNivel };
+}
+// Los códigos de las incidencias: la letra de la gravedad (G grave, M media, L leve)
+// y el orden en que se cargaron en esa fecha del show (G1 es la primera grave). Son
+// los mismos en la lista y en el plano, y en el panel, la gerencia y la tablet, así
+// se puede hablar de "la G2"; una que se resuelve conserva el suyo. La madrugada
+// (antes de las 6) cuenta para la fecha de la noche anterior, como en la gerencia.
+const INC_LETRA = { 3: 'G', 2: 'M', 1: 'L' }, INC_NIVEL_LETRA = { G: 3, M: 2, L: 1 };
+function incDiaFuncion(iso) { const t = new Date(iso).getTime(); return isNaN(t) ? '' : incDia(new Date(t - 6 * 3600000).toISOString()); }
+function incCodigos(lista) {
+  const cod = {}, n = {};
+  (lista || []).slice().sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')) || String(a.id).localeCompare(String(b.id)))
+    .forEach(i => { const nv = INC_NIVELES[i.nivel] ? i.nivel : 1, k = incDiaFuncion(i.created_at) + '|' + nv; n[k] = (n[k] || 0) + 1; cod[i.id] = INC_LETRA[nv] + n[k]; });
+  return cod;
+}
+// Lo abierto de cada lugar, en códigos: el más grave primero ("G1", "M3").
+function incCodigosPorLugar(lista) {
+  const cod = incCodigos(lista), por = {};
+  (lista || []).filter(i => i.estado !== 'resuelta').forEach(i => (por[i.sector] = por[i.sector] || []).push(i));
+  Object.keys(por).forEach(k => { por[k] = por[k].sort((a, b) => (b.nivel || 1) - (a.nivel || 1) || String(a.created_at || '').localeCompare(String(b.created_at || ''))).map(i => cod[i.id]); });
+  return por;
 }
 // "2 abiertas", o "1 grave, 1 moderada" si son de distinta gravedad.
 function incAbiertasTexto(n, pn) {
@@ -981,14 +1003,15 @@ function incTarjetaHTML(i, op) {
     + ' role="button" tabindex="0" aria-expanded="' + abierta + '" title="' + (abierta ? 'Cerrar el detalle' : 'Ver el detalle' + (op.sinLugar ? '' : ' y el lugar en el plano')) + '">'
     + '<div class="inc-tj-cab"><span class="inc-tj-talon" title="' + (resuelta ? 'Resuelta' : 'Abierta desde las ' + incEsc(incHora(i.created_at))) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ico + '"/></svg>'
     + '<b>' + (resuelta ? '✓' : incEsc(incCorto(i.created_at))) + '</b><small>' + v.nombre + '</small></span>'
-    + '<div class="inc-tj-txt"><div class="inc-tj-tipo">' + incEsc(i.tipo) + '</div>' + lugar + estado + '</div></div>'
+    + '<div class="inc-tj-txt"><div class="inc-tj-tipo">' + (op.codigo ? '<span class="inc-tj-cod" title="Código de la incidencia">' + incEsc(op.codigo) + '</span>' : '') + incEsc(i.tipo) + '</div>' + lugar + estado + '</div></div>'
     + det + (op.pie || '') + '</div>';
 }
 function incEstiloTarjetas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloTj')) return;
   const st = document.createElement('style'); st.id = 'incEstiloTj';
   const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
-  st.textContent = '.inc-tj{position:relative;display:block;margin:0 0 10px;padding:0;border:0;border-radius:12px;background:var(--tj-fondo,#F2EFE6);color:var(--tj-tinta,#141A26);box-shadow:none;overflow:visible;cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .15s}'
+  st.textContent = '.inc-tj-cod{display:inline-block;margin-right:7px;padding:1px 6px;border-radius:4px;background:var(--tj-c);color:var(--tj-t);font-weight:800;font-size:.82em;line-height:1.35;vertical-align:1px;font-variant-numeric:tabular-nums}'
+    + '.inc-tj{position:relative;display:block;margin:0 0 10px;padding:0;border:0;border-radius:12px;background:var(--tj-fondo,#F2EFE6);color:var(--tj-tinta,#141A26);box-shadow:none;overflow:visible;cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .15s}'
     + '.inc-tj:hover{outline-color:rgba(91,150,255,.55)}.inc-tj:focus-visible{outline-color:#5B96FF}.inc-tj.abierta{outline-color:#0062FF}.inc-tj.resuelta{opacity:.8}'
     + '.inc-tj-cab{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr)}'
     + '.inc-tj-cab::before,.inc-tj-cab::after{content:"";position:absolute;left:62px;width:16px;height:16px;border-radius:50%;background:var(--tj-muesca,#13243E)}.inc-tj-cab::before{top:-8px}.inc-tj-cab::after{bottom:-8px}.inc-tj.abierta .inc-tj-cab::after,.inc-tj:has(.inc-card-acts) .inc-tj-cab::after{display:none}'
@@ -1256,6 +1279,8 @@ function incLeyendaAccion(cont, t) {
 function incPlanoSVG(op) {
   op = op || {};
   const TM = INC_TEMA, niveles = op.niveles || {}, cuentas = op.cuentas || {}, porNivel = op.porNivel || {};
+  // Con las incidencias del show, los códigos de lo abierto en cada lugar (los mismos que en la lista).
+  const codigos = Array.isArray(op.detalle) ? incCodigosPorLugar(op.detalle) : {};
   const pisoSel = op.editor ? (op.piso || '') : incPisoElegido(), capas = op.editor ? INC_CAPAS_TODAS : incCapas(), tipoSel = op.editor ? '' : incTipoElegido();
   let x0 = 6, y0 = -50, x1 = 414, y1 = 342;   // lo que se ve: el estadio y lo que haya afuera (las calles)
   let elegido = null;   // en el editor, el puesto elegido: lleva manijas para cambiarle el tamaño
@@ -1315,7 +1340,13 @@ function incPlanoSVG(op) {
     // El numerito de abiertas: si son de distinta gravedad, uno por cada una, con su color.
     const pn = porNivel[s.id] || {}, desg = [3, 2, 1].filter(k => pn[k]);
     let badge = '';
-    if (n && desg.length > 1) {
+    const cods = codigos[s.id] || [];
+    if (n && cods.length) {
+      const mues = cods.slice(0, 2).concat(cods.length > 2 ? ['+' + (cods.length - 2)] : []), W = 13, ancho = mues.length * W, xi = bx + 6 - ancho;
+      badge = '<g pointer-events="none"><rect x="' + (xi - 1) + '" y="' + (by - 5.5) + '" width="' + (ancho + 2) + '" height="11" rx="5.5" fill="#ffffff"/>'
+        + mues.map((k, i) => '<rect x="' + (xi + i * W + 0.5) + '" y="' + (by - 4.5) + '" width="' + (W - 1) + '" height="9" rx="4.5" fill="' + (k[0] === '+' ? '#0b1b33' : INC_NIVELES[INC_NIVEL_LETRA[k[0]] || 1].color) + '"/>'
+          + '<text x="' + (xi + i * W + W / 2) + '" y="' + (by + 1.9) + '" font-size="5.4" font-weight="700" fill="#ffffff" text-anchor="middle">' + incEsc(k) + '</text>').join('') + '</g>';
+    } else if (n && desg.length > 1) {
       const W = 9, ancho = desg.length * W, xi = bx + 4 - ancho;
       badge = '<g pointer-events="none"><rect x="' + (xi - 1) + '" y="' + (by - 5.5) + '" width="' + (ancho + 2) + '" height="11" rx="5.5" fill="#ffffff"/>'
         + desg.map((k, i) => '<rect x="' + (xi + i * W + 0.5) + '" y="' + (by - 4.5) + '" width="' + (W - 1) + '" height="9" rx="4.5" fill="' + INC_NIVELES[k].color + '"/><text x="' + (xi + i * W + W / 2) + '" y="' + (by + 1.9) + '" font-size="5.4" font-weight="700" fill="#ffffff" text-anchor="middle">' + pn[k] + '</text>').join('') + '</g>';
@@ -1407,6 +1438,22 @@ const INC_TEMA_3D = {
   halo: ['rgba(56,160,255,.18)', 'rgba(56,160,255,.06)'],
   vidrio: [0x3d8fe0, 0.1], fachada: [[10, 0x56b8ff, 0.75], [0.4, 0x3d8fe0, 0.55]], parantes: [0x3d8fe0, 0.35]
 };
+// El "dibujo técnico" de la gerencia: el estadio en líneas claras sobre azul. Los
+// rellenos, azul marino plano y apenas distintos entre sí (sin el brillo LED); los
+// contornos, crema y marcados; la luz, pareja (como un plano, sin sombras fuertes).
+// El color fuerte queda sólo para la gravedad.
+const INC_TEMA_3D_TECNICO = Object.assign({}, INC_TEMA_3D, {
+  luces: { hemi: [0xf4f6fb, 0x7d93b4, 0.88], clave: 0.3, contra: 0.12, escenario: 0.25 },
+  color: {
+    baja: [0x1E4372, 0x163460], alta: [0x24507F, 0x1A3D69], campo: [0x2A5A8C, 0x1E4372], anillo: [0x17365F, 0x102a4a], back: [0x17365F, 0x102a4a], vip: [0x2E5D91, 0x20466F],
+    puerta: [0x3A6CA3, 0x2A5A8C], gastro: [0x2A5A8C, 0x1E4372], banio: [0x2A5A8C, 0x1E4372], enfermeria: [0x3A6CA3, 0x2A5A8C], servicio: [0x1E4372, 0x163460], calle: [0x0d2442, 0x091c36]
+  },
+  borde: { baja: 0xF4F1EA, alta: 0xF4F1EA, campo: 0xF4F1EA, anillo: 0xC9D6E8, back: 0xC9D6E8, vip: 0xF4F1EA, puerta: 0xF4F1EA, gastro: 0xF4F1EA, banio: 0xF4F1EA, enfermeria: 0xF4F1EA, servicio: 0xC9D6E8, calle: 0x9fb3cc },
+  opBorde: { baja: 0.85, alta: 0.85, campo: 0.9, anillo: 0.6, back: 0.6, vip: 0.9, calle: 0.6 }, opBordeOtro: 0.85, sel: 0xffffff,
+  brillo: 0,
+  halo: ['rgba(244,241,234,.06)', 'rgba(244,241,234,.02)'],
+  vidrio: [0x9fc3e8, 0.05], fachada: [[10, 0xF4F1EA, 0.55], [0.4, 0xF4F1EA, 0.35]], parantes: [0xF4F1EA, 0.22]
+});
 let incCarga3D = null, incSin3D = false, incListo3D = false;
 function incCargar3D() {
   if (incCarga3D) return incCarga3D;
@@ -1668,6 +1715,7 @@ function incEstilo3D() {
     + '.inc-3d-chapa{display:grid;place-items:center;min-width:21px;height:21px;padding:0 5px;border-radius:999px;font:700 11.5px/1 ' + INC_FUENTE + ';color:#fff;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,10,30,.45);text-shadow:none}'
     // Si en un lugar hay de distinta gravedad: cuántas de cada una, cada una con su color.
     + '.inc-3d-chapa.multi{display:inline-flex;gap:2px;padding:2px;background:#fff;min-width:0}'
+    + '.inc-3d-chapa.cod i{font-variant-numeric:tabular-nums}.inc-3d-chapa.multi i.mas{background:#0b1b33}'
     + '.inc-3d-chapa.multi i{font-style:normal;display:grid;place-items:center;min-width:16px;height:15px;padding:0 4px;border-radius:999px;color:#fff}'
     // Las capas: qué se muestra (nombres, puestos, calles), con interruptores como los de la Mac.
     + '.inc-3d-capas{position:absolute;top:calc(56px + var(--inc-sup,0px));right:calc(10px + var(--inc-der,0px));z-index:7;display:none;padding:5px;border-radius:12px;' + INC_VIDRIO + '}'
@@ -1721,7 +1769,8 @@ function incPlano3D(cont, op0) {
   const T = window.THREE;
   incEstilo3D();
   cont.classList.add('inc-3d');
-  const TM = INC_TEMA_3D, T2 = INC_TEMA;
+  // En la gerencia, el dibujo técnico; en el panel, el de siempre.
+  const TM = op0.ax ? INC_TEMA_3D_TECNICO : INC_TEMA_3D, T2 = INC_TEMA;
   const desechar = [];
   const lienzoDe = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
   const textura = c => { const t = new T.CanvasTexture(c); desechar.push(t); return t; };
@@ -2362,13 +2411,15 @@ function incPlano3D(cont, op0) {
 
 
   // La baliza de un lugar con incidencias: columna de luz, onda en la base y el número.
-  const baliza = (nivel, n, desg) => {
+  const baliza = (nivel, n, desg, cods) => {
     const v = INC_NIVELES[nivel], g = new T.Group(), col = new T.Color(v.color);
     const haz = new T.Mesh(new T.CylinderGeometry(3.2, 3.2, 64, 24, 1, true), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.5, depthWrite: false, side: T.DoubleSide }));
     haz.position.y = 32; g.add(haz);
     const onda = new T.Mesh(new T.RingGeometry(3.2, 4.8, 48), new T.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false }));
     onda.rotation.x = -Math.PI / 2; onda.position.y = 0.6; g.add(onda);
-    const chapa = etiqueta(desg && desg.length > 1
+    const chapa = etiqueta(cods && cods.length
+      ? '<span class="inc-3d-chapa multi cod">' + cods.slice(0, 3).map(k => '<i style="background:' + INC_NIVELES[INC_NIVEL_LETRA[k[0]] || 1].color + '">' + incEsc(k) + '</i>').join('') + (cods.length > 3 ? '<i class="mas">+' + (cods.length - 3) + '</i>' : '') + '</span>'
+      : desg && desg.length > 1
       ? '<span class="inc-3d-chapa multi">' + desg.map(([k, c]) => '<i style="background:' + INC_NIVELES[k].color + '">' + c + '</i>').join('') + '</span>'
       : '<span class="inc-3d-chapa" style="background:' + v.color + '">' + n + '</span>', 'chapa', new T.Vector3());
     g.userData = { haz, onda, chapa, nivel, nace: null, alto: 70 };
@@ -2477,7 +2528,7 @@ function incPlano3D(cont, op0) {
     if (!detLista) { panel.innerHTML = ''; if (medirRef && cambio) medirRef(); return; }
     const de = i => !detSector || i.sector === detSector;
     const abiertas = incOrdenar(detLista.filter(i => i.estado !== 'resuelta' && de(i))), resueltas = detLista.filter(i => i.estado === 'resuelta' && de(i)).length;
-    const total = detLista.filter(i => i.estado !== 'resuelta').length;
+    const total = detLista.filter(i => i.estado !== 'resuelta').length, codsDet = incCodigos(detLista);
     btnDet.textContent = '☰ Incidencias' + (total ? ' · ' + total : '');
     // Se rehace seguido (cada vez que llegan datos): que no se pierda por dónde se venía leyendo.
     const listaAntes = panel.querySelector('.inc-3d-det-lista'), scrollAntes = listaAntes ? listaAntes.scrollTop : 0;
@@ -2487,7 +2538,7 @@ function incPlano3D(cont, op0) {
       + '<button type="button" class="inc-3d-det-x" data-d="cerrar" title="Cerrar" aria-label="Cerrar el detalle">✕</button></div>'
       + (detSector && incFichaDatos(detSector) ? '<div class="inc-ficha-datos">' + incFichaChips(incFichaDatos(detSector)) + '</div>' : '')
       + (accion && detSector ? '<button type="button" class="inc-3d-det-accion" data-d="accion">' + incEsc(accion.texto) + '</button>' : '')
-      + '<div class="inc-3d-det-lista">' + (abiertas.length ? abiertas.map(i => incTarjetaHTML(i, { abierta: String(i.id) === detAbierta, sinLugar: !!detSector })).join('') : '<div class="inc-3d-det-vacio">' + (detSector ? 'No hay nada abierto en ' + incEsc(detSector) + '.' : 'No hay incidencias abiertas.') + '</div>') + '</div>';
+      + '<div class="inc-3d-det-lista">' + (abiertas.length ? abiertas.map(i => incTarjetaHTML(i, { abierta: String(i.id) === detAbierta, sinLugar: !!detSector, codigo: codsDet[i.id] })).join('') : '<div class="inc-3d-det-vacio">' + (detSector ? 'No hay nada abierto en ' + incEsc(detSector) + '.' : 'No hay incidencias abiertas.') + '</div>') + '</div>';
     const listaNueva = panel.querySelector('.inc-3d-det-lista'); if (listaNueva) listaNueva.scrollTop = scrollAntes;
     // La tarjeta recién tocada: a la vista (y con el foco, si se llegó con el teclado).
     if (enfocarInc) { const t = panel.querySelector('[data-inc="' + enfocarInc + '"]'); enfocarInc = ''; if (t) { if (t.scrollIntoView) t.scrollIntoView({ block: 'nearest' }); if (t.focus) t.focus({ preventScroll: true }); } }
@@ -2902,6 +2953,8 @@ function incPlano3D(cont, op0) {
       if (editar) { ayuda.textContent = 'Arrastrá un puesto para moverlo · sus esquinas, para el tamaño'; if (controles) controles.autoRotate = false; }
       if (op.titulo !== undefined) pintarCinta(op.titulo);
       const niveles = op.niveles || {}, cuentas = op.cuentas || {}, porNivel = op.porNivel || {}, elegido = selLocal || op.sel, pisoSel = incPisoElegido(), capas = incCapas();
+      // Los códigos de lo abierto en cada lugar (los mismos que en la lista).
+      const codigos = Array.isArray(op.detalle) ? incCodigosPorLugar(op.detalle) : {};
       const iSel = ordenPiso(pisoSel), tipoSel = editar ? '' : incTipoElegido();
       // La lupa: no se usa editando; con un tipo elegido, con un punto.
       btnBus.style.display = editar ? 'none' : ''; btnBus.classList.toggle('filtro', !!tipoSel);
@@ -2940,10 +2993,10 @@ function incPlano3D(cont, op0) {
         const sube = p.sube;
         if (!mueve || mueve.p !== p) p.grupo.position.set(0, p.yAct + sube, 0);
         const desg = [3, 2, 1].filter(k => pn[k]).map(k => [k, pn[k]]);
-        const clave = nv ? nv + ':' + n + ':' + desg.join('|') : '';
+        const cods = codigos[p.id] || [], clave = nv ? nv + ':' + n + ':' + desg.join('|') + ':' + cods.join(',') : '';
         if (p.clave !== clave) {
           if (p.baliza) { escena.remove(p.baliza); sacarEtiqueta(p.baliza.userData.chapa); limpiar(p.baliza); p.baliza = null; }
-          if (nv) { p.baliza = baliza(nv, n, desg); escena.add(p.baliza); }
+          if (nv) { p.baliza = baliza(nv, n, desg, cods); escena.add(p.baliza); }
           p.clave = clave;
         }
         if (p.baliza) { const ver = !fuera && !apagado; p.baliza.position.set(p.cx, p.hBase + p.yAct + sube, p.bz); p.baliza.userData.chapa.pos.set(p.cx, p.hBase + p.yAct + sube + 70, p.bz); p.baliza.visible = ver && abre >= 0.9; p.balizaVer = ver; p.baliza.userData.chapa.el.style.visibility = ver ? '' : 'hidden'; }
@@ -3494,7 +3547,8 @@ function render() {
   if (!visibles.length) {
     cont.innerHTML = '<div class="vacio">' + (!lista.length ? 'Sin incidencias en este show.' : filtro === 'abiertas' ? 'No hay incidencias ' + (nivelSel ? INC_NIVELES[nivelSel].nombre.toLowerCase().replace(/o$/, 'a') + 's ' : '') + 'abiertas' + (sectorSel ? ' en ' + incEsc(sectorSel) : '') + '.' : 'Nada por acá.') + '</div>';
   } else {
-    cont.innerHTML = visibles.map(i => incTarjetaHTML(i, { abierta: String(i.id) === focoInc, nueva: nuevos.has(i.id), onclick: 'tocarInc' })).join('');
+    const cods = incCodigos(delD);
+    cont.innerHTML = visibles.map(i => incTarjetaHTML(i, { abierta: String(i.id) === focoInc, nueva: nuevos.has(i.id), onclick: 'tocarInc', codigo: cods[i.id] })).join('');
     // La tocada desde las métricas: a la vista en el listado.
     if (irAFoco) { irAFoco = false; const t = cont.querySelector && cont.querySelector('[data-inc="' + focoInc + '"]'); if (t && t.scrollIntoView) t.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
   }
@@ -3509,7 +3563,7 @@ function informe() {
   const tabla = (titulo, pares) => '<div class="bloque"><h3>' + titulo + '</h3><table class="r">' + (pares.length ? pares.map(p => '<tr><td>' + incEsc(p[0]) + '</td><td class="n">' + p[1] + '</td></tr>').join('') : '<tr><td>—</td><td class="n">0</td></tr>') + '</table></div>';
   const cuando = dia ? dia.slice(8, 10) + '/' + dia.slice(5, 7) + '/' + dia.slice(0, 4) : resumenFechas(s);
   const fh = iso => { const d = incDia(iso); return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + ' ' + incHora(iso) : ''; };
-  const abiertas = l.filter(i => i.estado !== 'resuelta').length, m = incMetricas(l);
+  const abiertas = l.filter(i => i.estado !== 'resuelta').length, m = incMetricas(l), cods = incCodigos(l);
   // Arriba, los números del show (como los pide la propuesta AX: incidentes, asistencias, a quién se derivó, picos).
   const num = (v, t) => '<div class="num"><b>' + v + '</b><span>' + t + '</span></div>';
   const html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe de incidencias · ' + incEsc(s.nombre) + '</title>'
@@ -3535,7 +3589,7 @@ function informe() {
     + '<div class="res">' + tabla('Gravedad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, l.filter(i => (i.nivel || 1) === nv).length])) + tabla('Categoría', cuenta(i => i.categoria)) + tabla('Sector', cuenta(i => i.sector)) + '</div>'
     + '<h3>Línea de tiempo</h3><table><tr><th>Cuándo</th><th>Sector</th><th>Qué pasó</th><th>Gravedad</th><th>Qué se hizo</th><th>Derivado a</th><th>Cómo se resolvió</th></tr>'
     + l.map(i => '<tr><td>' + fh(i.created_at) + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + '</td>'
-      + '<td class="niv" style="color:' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).color + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
+      + '<td class="niv" style="color:' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).color + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
       + '<td>' + (incDerivadoA(i).map(incEsc).join(', ') || '—') + '</td>'
       + '<td>' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')
     + '</table><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
