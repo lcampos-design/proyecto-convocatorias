@@ -12,7 +12,7 @@
 <title>Supervisor — Recital</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Yellowtail&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a1a;color:#1a1a1a;font-size:15px;min-height:100vh;-webkit-tap-highlight-color:transparent}
@@ -117,46 +117,98 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .hub-s{font-size:12.5px;color:#6b7280;margin-top:3px;line-height:1.4}
 .hub-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
 .hub-chip{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:#f4f4f5;color:#52525b}
-.inc-layout{padding:12px 16px 24px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
-.inc-layout>*{min-width:0}
-@media(min-width:900px){.inc-layout{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}}
-@media(max-width:520px){.inc-layout{padding:10px 10px 24px}.inc-panel{padding:8px}.inc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.inc-niveles{gap:5px}.inc-nivel span{display:none}}
-.inc-panel{background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-radius:12px;padding:12px}
-.inc-resumen{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.inc-cuenta{font-size:12px;padding:5px 10px;border-radius:999px;background:#f4f4f5;color:#52525b}
-.inc-cuenta strong{font-size:14px;margin-right:3px}
-.inc-armado{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
-.inc-ayuda{font-size:11.5px;color:#6b7280;text-align:center;margin:8px 0 10px}
-.inc-lugares{display:flex;flex-wrap:wrap;gap:6px}
-.inc-lugar{font-size:12.5px;font-weight:600;background:#fff;border:1.5px solid #d1d5db;color:#374151;border-radius:8px;padding:9px 12px;cursor:pointer}
-.inc-card{background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-left:4px solid #d1d5db;border-radius:12px;padding:12px 14px;margin-bottom:8px}
-.inc-card.resuelta{opacity:.72}
-.inc-card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.inc-tipo{font-size:14px;font-weight:600;color:#111827;flex:1;min-width:0}
-.inc-hora{font-size:12px;color:#6b7280;font-variant-numeric:tabular-nums}
-.inc-donde{font-size:12px;color:#6b7280;margin-top:4px}
-.inc-acc{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:12px;color:#15803d}
-.inc-nota{font-size:13px;color:#374151;margin-top:6px;white-space:pre-wrap}
-.inc-res{font-size:12.5px;color:#374151;margin-top:8px;background:#f4f4f5;border-radius:8px;padding:7px 10px}
-.inc-resolver{margin-top:8px;font-size:13px;font-weight:600;background:#0f1117;color:#fff;border:none;border-radius:8px;padding:9px 16px;cursor:pointer}
-.inc-mini{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
-.inc-mini span.t{flex:1;min-width:0}
-.inc-mini .inc-resolver{margin-top:0;padding:7px 12px}
-.inc-paso{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin:16px 0 7px}
-.inc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px}
-.inc-opc{font-size:13.5px;font-weight:600;background:#fff;border:1.5px solid #d1d5db;color:#111827;border-radius:10px;padding:12px 11px;cursor:pointer;text-align:left;min-height:50px}
-.inc-opc.on{background:#0f1117;border-color:#0f1117;color:#fff}
-.inc-niveles{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.inc-nivel{background:#fff;border:2px solid;border-radius:10px;padding:10px 9px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px}
-.inc-nivel strong{font-size:14px}.inc-nivel span{font-size:11px;opacity:.9;line-height:1.3}
-.inc-checks{display:flex;flex-direction:column;gap:6px}
-.inc-check{font-size:14px;background:#fff;border:1.5px solid #d1d5db;color:#374151;border-radius:10px;padding:12px;cursor:pointer;text-align:left}
-.inc-check.on{background:#dcfce7;border-color:#15803d;color:#14532d;font-weight:600}
-#incSheet .fb-card{max-width:760px;width:100%;margin:0 auto}
-.inc-card.nueva{animation:incLlega 1.6s ease-out}
-@keyframes incLlega{0%{transform:translateY(-10px);opacity:0}25%{transform:none;opacity:1;background:#fff3bf}100%{background:#fff}}
-.inc-cuenta.pulso{animation:incPulso 1.3s ease-in-out infinite}
-@keyframes incPulso{0%,100%{box-shadow:0 0 0 0 rgba(159,18,57,.45)}50%{box-shadow:0 0 0 6px rgba(159,18,57,0)}}
+/* Incidencias: el diseño del Centro de Control (el "Afiche" de la gerencia): azul
+   marino con grano, bloques planos y rectos, la gravedad como único color fuerte;
+   Poppins, y la manuscrita (Yellowtail) sólo en el título. El resto de la app, igual. */
+#screenIncid,#incSheet{--fondo:#09203C;--bloque:#17365F;--bloque-2:#1E4372;--crema:#F4F1EA;--gris:#C9C2B5;--linea:rgba(244,241,234,.22);--celeste:#019DF4;--grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC}
+#screenIncid.active{display:flex;flex-direction:column;min-height:100vh;background:var(--fondo) url(grano.png);color:var(--crema)}
+#screenIncid .sv-bar{background:var(--bloque);border-bottom:2px solid var(--crema)}
+#screenIncid .sv-bar .back-btn{color:var(--crema)}
+#screenIncid .sv-bar .logout-btn{border-color:var(--linea);color:var(--crema);border-radius:0;min-width:40px;min-height:40px;font-size:16px}
+.sv-logo{width:30px;height:30px;display:block;flex-shrink:0}
+.sv-rot{font-size:11px;color:var(--gris)}.sv-rot b{font-weight:800}
+.sv-mano{font:400 15px/1 'Yellowtail',cursive;color:var(--gris)}
+.sv-show{font-size:13px;font-weight:800;line-height:1.2;text-transform:uppercase;color:var(--crema);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-cuerpo{flex:1;width:100%;max-width:760px;margin:0 auto;padding:16px 16px 24px;display:flex;flex-direction:column;gap:10px}
+.sv-cab{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.sv-titulo{font:400 34px/1.05 'Yellowtail',cursive;color:var(--crema)}
+.sv-vivo{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--celeste)}
+.sv-vivo::before{content:'';width:8px;height:8px;background:var(--celeste)}
+.sv-vivo.mal{color:var(--media-letra)}.sv-vivo.mal::before{background:var(--media)}
+.sv-cuentas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.sv-cuenta{padding:9px 11px;font-size:12px;font-weight:600;display:flex;flex-direction:column;gap:3px}
+.sv-cuenta b{font-size:26px;font-weight:900;line-height:1;display:flex;align-items:center;gap:7px}
+.sv-cuenta.n3{background:var(--grave);color:var(--grave-letra)}.sv-cuenta.n2{background:var(--media);color:var(--media-letra)}.sv-cuenta.n1{background:var(--leve);color:var(--leve-letra)}
+/* La grave abierta: un cuadradito que titila, como en la gerencia. */
+.sv-cuenta.pulso b::after{content:'';width:8px;height:8px;background:currentColor;animation:svTitila 1.2s infinite}
+@keyframes svTitila{0%,100%{opacity:1}50%{opacity:.25}}
+.sv-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.sv-seg button{border:0;border-radius:0;background:var(--bloque);color:var(--crema);font-size:13px;font-weight:600;min-height:44px;cursor:pointer}
+.sv-seg button.on{background:var(--crema);color:var(--fondo)}
+.sv-vacio{text-align:center;padding:28px 16px;color:var(--gris);font-size:13px;line-height:1.5;border:2px dashed var(--linea)}
+.sv-pie{position:sticky;bottom:0;z-index:5;padding:10px 16px calc(env(safe-area-inset-bottom,0px) + 12px);background:var(--fondo)}
+.sv-cargar{display:block;width:100%;max-width:728px;margin:0 auto;border:0;border-radius:0;background:var(--crema);color:var(--fondo);font-size:16px;font-weight:700;min-height:54px;cursor:pointer}
+/* Los tickets (los arma el bloque compartido): como en la gerencia. */
+#screenIncid{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFD700;--tj-muesca:var(--fondo)}
+#screenIncid .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px;box-shadow:none}
+#screenIncid .inc-tj.abierta{outline:2px solid var(--crema)}
+#screenIncid .inc-tj-cab{grid-template-columns:78px minmax(0,1fr)}
+#screenIncid .inc-tj-cab::before,#screenIncid .inc-tj-cab::after{display:none}
+#screenIncid .inc-card.inc-tj .inc-tj-talon{border-radius:0;padding:10px 6px;gap:6px}
+#screenIncid .inc-tj[data-nivel="3"] .inc-tj-talon{background:var(--grave);color:var(--grave-letra)}
+#screenIncid .inc-tj[data-nivel="2"] .inc-tj-talon{background:var(--media);color:var(--media-letra)}
+#screenIncid .inc-tj[data-nivel="1"] .inc-tj-talon{background:var(--leve);color:var(--leve-letra)}
+#screenIncid .inc-tj .inc-tj-talon b{font-size:24px;font-weight:900;line-height:.9}
+#screenIncid .inc-tj .inc-tj-talon small{font-size:11.5px;font-weight:600;letter-spacing:0}
+#screenIncid .inc-tj .inc-tj-txt{border-left:0;padding:11px 14px;gap:4px}
+#screenIncid .inc-tj .inc-tj-tipo{font-size:15px;font-weight:700;line-height:1.2}
+#screenIncid .inc-tj .inc-tj-linea{font-size:11.5px}
+#screenIncid .inc-tj .inc-tj-estado{font-size:11.5px;font-weight:600}
+#screenIncid .inc-tj .inc-tj-chips span{border-radius:0}
+.sv-tj-pie{padding:0 14px 12px 92px}
+.sv-resolver{border:0;border-radius:0;background:var(--crema);color:var(--fondo);font-size:13px;font-weight:700;padding:0 16px;min-height:40px;cursor:pointer}
+/* La hoja para cargar y resolver, en el mismo azul. */
+#incSheet .fb-card{max-width:760px;width:100%;margin:0 auto;background:var(--fondo) url(grano.png);color:var(--crema);border-radius:0;border-top:2px solid var(--crema);max-height:92vh}
+#incSheet .fb-handle{background:var(--linea);border-radius:0}
+#incSheet .fb-title{color:var(--crema);font-size:19px;font-weight:800;line-height:1.2}
+#incSheet .fb-title.mano{font:400 32px/1.05 'Yellowtail',cursive}
+#incSheet .fb-sub{color:var(--gris)}
+#incSheet .inc-paso{font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--gris);margin:16px 0 7px}
+#incSheet .inc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+#incSheet .inc-opc,#incSheet .inc-check{width:100%;background:var(--bloque);border:0;border-radius:0;color:var(--crema);font-size:13.5px;font-weight:600;line-height:1.3;padding:12px;min-height:48px;text-align:left;cursor:pointer}
+#incSheet .inc-opc.on,#incSheet .inc-check.on{background:var(--crema);color:var(--fondo)}
+#incSheet .inc-checks{display:flex;flex-direction:column;gap:4px}
+#incSheet .inc-niveles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+#incSheet .inc-nivel{border:0;border-radius:0;padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;cursor:pointer;font-family:inherit}
+#incSheet .inc-nivel.n1{background:var(--leve);color:var(--leve-letra)}#incSheet .inc-nivel.n2{background:var(--media);color:var(--media-letra)}#incSheet .inc-nivel.n3{background:var(--grave);color:var(--grave-letra)}
+#incSheet .inc-nivel.on{outline:3px solid var(--crema);outline-offset:-3px}
+#incSheet .inc-nivel strong{font-size:14px;font-weight:700}#incSheet .inc-nivel span{font-size:11px;line-height:1.3;opacity:.92}
+#incSheet .l-in,#incSheet .fb-ta{background:#071a31;border:2px solid var(--linea);border-radius:0;color:var(--crema);font-size:16px}
+#incSheet .l-in:focus,#incSheet .fb-ta:focus{border-color:var(--crema)}
+#incSheet .l-in::placeholder,#incSheet .fb-ta::placeholder{color:#8f9bad}
+#incSheet .fb-send{background:var(--crema);color:var(--fondo);border-radius:0;font-size:15px;font-weight:700}
+#incSheet .inc-mini{display:flex;align-items:center;gap:8px;background:var(--bloque);padding:8px 10px;margin-bottom:4px;font-size:13px}
+#incSheet .inc-mini span.t{flex:1;min-width:0}
+#incSheet .inc-resolver{border:0;border-radius:0;background:var(--crema);color:var(--fondo);font-size:13px;font-weight:700;padding:0 14px;min-height:40px;cursor:pointer}
+#incSheet .inc-ref-rapida button{background:var(--bloque);border:0;border-radius:0;color:var(--crema)}
+.sv-volver{background:none;border:0;color:var(--crema);font-size:13px;font-weight:600;text-decoration:underline;padding:4px 0;cursor:pointer}
+/* ¿Dónde pasó? */
+.sv-buscar{width:100%;background:#071a31;border:2px solid var(--linea);border-radius:0;color:var(--crema);font-size:16px;padding:12px 14px;outline:none}
+.sv-buscar:focus{border-color:var(--crema)}.sv-buscar::placeholder{color:#8f9bad}
+.sv-pisos{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:4px;margin-top:10px}
+.sv-pisos button{border:0;border-radius:0;background:var(--bloque);color:var(--crema);font-size:13px;font-weight:600;padding:0 12px;min-height:40px;cursor:pointer}
+.sv-pisos button.on{background:var(--crema);color:var(--fondo)}
+.sv-rotulo{font-size:12px;font-weight:600;color:var(--gris);margin:14px 0 6px}
+.sv-sectores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.sv-sectores.anchos{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sv-sec{position:relative;border:0;border-radius:0;background:var(--bloque);color:var(--crema);font-size:19px;font-weight:800;padding:15px 6px;min-height:56px;cursor:pointer}
+.sv-sec.chico{font-size:13px;font-weight:600;line-height:1.25;text-align:left;padding:12px 20px 12px 12px;min-height:48px}
+.sv-pt{position:absolute;top:7px;right:7px;width:9px;height:9px}
+.sv-pt.n1{background:#C3CAD3}.sv-pt.n2{background:#FFD700}.sv-pt.n3{background:#F26D7D}
+.sv-ayuda{background:var(--bloque);padding:12px 14px;font-size:13px;font-weight:500;line-height:1.4;margin-top:12px}
+@media(min-width:700px){.sv-sectores{grid-template-columns:repeat(5,minmax(0,1fr))}.sv-sectores.anchos{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:380px){#incSheet .inc-nivel span{display:none}}
+@media(prefers-reduced-motion:reduce){.sv-cuenta.pulso b::after{animation:none}}
 
 /* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
 button,input,select,textarea,optgroup,option{font-family:inherit}
@@ -226,7 +278,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     </button>
     <button class="hub-card" onclick="openIncid()">
       <div class="hub-ic inc">⚠</div>
-      <div style="flex:1;min-width:0"><div class="hub-t">Incidencias</div><div class="hub-s">Reportar en vivo lo que pasa en el estadio, en el plano</div><div class="hub-chips" id="hubIncid"></div></div>
+      <div style="flex:1;min-width:0"><div class="hub-t">Incidencias</div><div class="hub-s">Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector</div><div class="hub-chips" id="hubIncid"></div></div>
     </button>
   </div>
 </div>
@@ -287,26 +339,24 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 
 <!-- Incidencias en vivo (sólo shows del Movistar Arena) -->
 <div id="screenIncid" class="screen">
-  <div class="app-bar">
+  <div class="app-bar sv-bar">
     <div class="app-bar-inner">
-      <button class="back-btn" onclick="cerrarIncid()">←</button>
-      <div style="flex:1">
-        <div class="app-bar-title">Incidencias</div>
-        <div class="app-bar-sub" id="incSub"></div>
+      <button class="back-btn" onclick="cerrarIncid()" aria-label="Volver">←</button>
+      <img class="sv-logo" src="logo-sbs-calado.png" alt="SBS">
+      <div style="flex:1;min-width:0">
+        <div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div>
+        <div class="sv-show" id="incSub"></div>
       </div>
-      <button class="logout-btn" onclick="cargarIncid()" title="Actualizar">↻</button>
+      <button class="logout-btn" onclick="cargarIncid()" title="Actualizar" aria-label="Actualizar">↻</button>
     </div>
   </div>
-  <div class="inc-layout">
-    <div class="inc-panel">
-      <div class="inc-resumen" id="incResumen"></div>
-      <div class="inc-armado" id="incArmado"></div>
-      <div id="incPlano"></div>
-      <div class="inc-ayuda">Tocá el sector donde pasó. Si fue fuera de las tribunas, elegí el lugar:</div>
-      <div class="inc-lugares" id="incLugares"></div>
-    </div>
+  <div class="sv-cuerpo">
+    <div class="sv-cab"><h1 class="sv-titulo">Incidencias</h1><span class="sv-vivo" id="incVivo">En vivo</span></div>
+    <div class="sv-cuentas" id="incResumen"></div>
+    <div class="sv-seg" id="incFiltro"></div>
     <div id="incLista"></div>
   </div>
+  <div class="sv-pie"><button class="sv-cargar" onclick="incAbrirDonde()">+ Cargar incidencia</button></div>
 </div>
 
 <!-- Hoja: cargar o resolver una incidencia -->
@@ -3590,16 +3640,20 @@ function incEstiloMetricas() {
 // ── fin INCIDENCIAS compartido ──
 
 // ── Incidencias en la tablet ──
-// Se ven las de hoy y las que siguen abiertas de otros días. La lista se
-// actualiza sola cada 20 segundos, así cada supervisor ve lo que cargan los
-// demás.
+// Se ven las de hoy y las que siguen abiertas de otros días, de todos los
+// sectores. La lista se actualiza sola cada 20 segundos, así cada supervisor ve
+// lo que cargan los demás. Para cargar se elige el sector (sin el plano entero:
+// queda para la gerencia y el panel).
 let incLista = [], incTimer = null, incHoja = null;
+// Abiertas o todas, y la incidencia tocada (desplegada).
+let incFiltroSup = 'abiertas', incAbiertaSup = '';
 // Para el destello: las que ya se vieron y las que acaban de llegar.
 let incVistos = null, incNuevos = new Set();
 async function openIncid() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
-  document.getElementById('incSub').textContent = c.nombre;
-  incLista = []; incVistos = null; incNuevos = new Set();
+  // El nombre del show, sin "— Movistar Arena" (son todos del Arena).
+  document.getElementById('incSub').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
+  incLista = []; incVistos = null; incNuevos = new Set(); incFiltroSup = 'abiertas'; incAbiertaSup = '';
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
   const plano = incRefrescarPlano();
@@ -3617,7 +3671,9 @@ async function openIncid() {
 function cerrarIncid() { clearInterval(incTimer); cerrarIncHoja(); openShow(currentConvId); }
 async function cargarIncid() {
   const { data, error } = await sb.rpc('sup_incidencias', { p_conv_id: currentConvId });
-  if (error) { toast('No se pudieron traer las incidencias'); return; }
+  const vivo = document.getElementById('incVivo');
+  if (error) { toast('No se pudieron traer las incidencias'); if (vivo) { vivo.textContent = 'Sin conexión'; vivo.className = 'sv-vivo mal'; } return; }
+  if (vivo) { vivo.textContent = 'En vivo'; vivo.className = 'sv-vivo'; }
   incLista = data || [];
   incNuevos = incVistos ? new Set(incLista.filter(i => !incVistos.has(i.id)).map(i => i.id)) : new Set();
   incVistos = new Set(incLista.map(i => i.id));
@@ -3627,54 +3683,79 @@ function incVisibles() {
   const hoy = incDia(new Date().toISOString());
   return incLista.filter(i => i.estado !== 'resuelta' || incDia(i.created_at) === hoy);
 }
-// El armado es del show: al cambiarlo acá, lo ven igual el panel y la gerencia.
-function incElegirArmado(a) { incGuardarArmado(currentConvId, a); renderIncid(); }
-function incElegirVista(v) { incGuardarVista(v); renderIncid(); }
+// Arriba, lo abierto por gravedad; abajo, los tickets de todos los sectores, con "Resolver".
 function renderIncid() {
-  const lista = incVisibles();
-  const armado = incArmadoDelShow(currentConvId, incLista);
-  const res = incResumenSectores(lista);
-  const abiertas = lista.filter(i => i.estado !== 'resuelta');
+  const lista = incVisibles(), abiertas = lista.filter(i => i.estado !== 'resuelta');
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
-  const resueltas = lista.length - abiertas.length;
+  const NOMBRE = { 3: ['grave', 'graves'], 2: ['media', 'medias'], 1: ['leve', 'leves'] };
   document.getElementById('incResumen').innerHTML = [3, 2, 1].map(nv =>
-    '<span class="inc-cuenta' + (nv === 3 && n(3) ? ' pulso' : '') + '" style="background:' + INC_NIVELES[nv].fondo + ';color:' + INC_NIVELES[nv].color + '"><strong>' + n(nv) + '</strong>' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('')
-    + '<span class="inc-cuenta"><strong>' + resueltas + '</strong>resuelta' + (resueltas === 1 ? '' : 's') + ' hoy</span>';
-  const vista = incVistaPreferida();
-  document.getElementById('incArmado').innerHTML = [['3d', '3D'], ['2d', 'Plano']].map(([k, t]) =>
-    '<button class="turno-chip' + (vista === k ? ' on' : '') + '" onclick="incElegirVista(\'' + k + '\')">' + t + '</button>').join('')
-    + '<span style="width:1px;background:#e5e7eb;margin:0 2px"></span>'
-    + [['campos', 'Campo de pie'], ['asientos', 'Campo con asientos']].map(([k, t]) =>
-    '<button class="turno-chip' + (armado === k ? ' on' : '') + '" onclick="incElegirArmado(\'' + k + '\')">' + t + '</button>').join('');
-  incMontarPlano(document.getElementById('incPlano'), { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, onclick: 'incTocarSector', titulo: (convs.find(x => x.id === currentConvId) || {}).nombre,
-    detalle: lista, accionPantalla: { texto: '+ Cargar incidencia acá', fn: 'incTocarSector' } });
-  document.getElementById('incLugares').innerHTML = incLugaresSueltos(lista, armado, true).map(l => {
-    const nv = res.niveles[l], c = res.cuentas[l] || 0;
-    return '<button class="inc-lugar"' + (nv ? ' style="background:' + INC_NIVELES[nv].fondo + ';border-color:' + INC_NIVELES[nv].color + ';color:' + INC_NIVELES[nv].color + '"' : '')
-      + ' onclick="incTocarSector(\'' + incEsc(l) + '\')">' + incEsc(l) + (c ? ' <strong>' + c + '</strong>' : '') + '</button>';
-  }).join('');
+    '<div class="sv-cuenta n' + nv + (nv === 3 && n(3) ? ' pulso' : '') + '"><b>' + n(nv) + '</b>' + NOMBRE[nv][n(nv) === 1 ? 0 : 1] + '</div>').join('');
+  document.getElementById('incFiltro').innerHTML = [['abiertas', 'Abiertas · ' + abiertas.length], ['todas', 'Todas · ' + lista.length]].map(([k, t]) =>
+    '<button type="button" class="' + (incFiltroSup === k ? 'on' : '') + '" onclick="incFiltrar(\'' + k + '\')">' + t + '</button>').join('');
   const cont = document.getElementById('incLista');
-  if (!lista.length) { cont.innerHTML = '<div class="empty-state"><div class="empty-title">Sin incidencias en este show</div><div style="font-size:13px;color:#9ca3af">Tocá el sector en el plano para cargar una.</div></div>'; return; }
-  cont.innerHTML = incOrdenar(lista).map(incTarjeta).join('');
+  const visibles = incOrdenar(lista).filter(i => incFiltroSup === 'todas' || i.estado !== 'resuelta');
+  if (!visibles.length) {
+    const res = lista.length - abiertas.length;
+    cont.innerHTML = '<div class="sv-vacio">' + (lista.length ? 'No hay incidencias abiertas. ' + (res === 1 ? 'La resuelta de hoy está' : 'Las ' + res + ' resueltas de hoy están') + ' en “Todas”.' : 'Sin incidencias en este show. Para cargar una, tocá “+ Cargar incidencia”.') + '</div>';
+    incNuevos = new Set(); return;
+  }
+  cont.innerHTML = visibles.map(i => incTarjetaHTML(i, { abierta: String(i.id) === incAbiertaSup, nueva: incNuevos.has(i.id), onclick: 'incTocarTarjeta',
+    pie: i.estado === 'resuelta' ? '' : '<div class="sv-tj-pie"><button type="button" class="sv-resolver" onclick="event.stopPropagation();incAbrirResolver(\'' + incEsc(i.id) + '\')">Resolver</button></div>' })).join('');
   incNuevos = new Set();
 }
-function incTarjeta(i) {
-  const v = INC_NIVELES[i.nivel] || INC_NIVELES[1];
-  const resuelta = i.estado === 'resuelta';
-  return '<div class="inc-card' + (resuelta ? ' resuelta' : '') + (incNuevos.has(i.id) ? ' nueva' : '') + '" style="border-left-color:' + v.color + '">'
-    + '<div class="inc-card-top">' + incNivelChip(i.nivel) + '<span class="inc-tipo">' + incEsc(i.tipo) + '</span><span class="inc-hora">' + incCuando(i.created_at) + '</span></div>'
-    + '<div class="inc-donde">' + incEsc(i.sector) + (incZona(i.sector) ? ' · ' + incZona(i.sector) : '') + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + ' · ' + incEsc(i.categoria) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '') + '</div>'
-    + ((i.acciones || []).length ? '<div class="inc-acc">' + i.acciones.map(a => '<span>✓ ' + incEsc(a) + '</span>').join('') + '</div>' : '')
-    + (i.nota ? '<div class="inc-nota">' + incEsc(i.nota) + '</div>' : '')
-    + (resuelta ? '<div class="inc-res"><strong>Resuelta ' + incCuando(i.resuelta_at) + '</strong> · ' + incEsc(i.resolucion || '') + '</div>'
-                : '<button class="inc-resolver" onclick="incAbrirResolver(\'' + i.id + '\')">Resolver</button>')
-    + '</div>';
+function incFiltrar(k) { incFiltroSup = k; renderIncid(); }
+// Tocar un ticket lo despliega con todo; otra vez, lo cierra.
+function incTocarTarjeta(id) { incAbiertaSup = incAbiertaSup === String(id) ? '' : String(id); renderIncid(); }
+
+// ── ¿Dónde pasó? ──
+// Se elige el sector: el piso (Campo, Platea baja, VIP, Platea alta) con sus
+// sectores y lo que tiene ese piso (baños, gastronomía…), o Exteriores (los
+// ingresos y las calles, para avisar filas desbordadas y congestiones). O se busca.
+const INC_DONDE = [['PB', 'Campo'], ['P1', 'Platea baja'], ['VIP', 'VIP'], ['P3', 'Platea alta'], ['EXT', 'Exteriores']];
+function incPisoDonde() { try { const p = localStorage.getItem('incPisoDonde'); return INC_DONDE.some(x => x[0] === p) ? p : 'P1'; } catch (_) { return 'P1'; } }
+function incAbrirDonde() {
+  incHoja = { modo: 'donde', q: '' };
+  const t = document.getElementById('incSheetTitulo'); t.textContent = '¿Dónde pasó?'; t.className = 'fb-title mano';
+  document.getElementById('incSheetSub').textContent = 'Elegí el sector o buscalo.';
+  renderIncHoja();
+  document.getElementById('incSheet').classList.remove('hidden');
+}
+function incElegirPisoDonde(p) {
+  try { localStorage.setItem('incPisoDonde', p); } catch (_) {}
+  const c = document.getElementById('svDonde'); if (c) c.innerHTML = incDondeHTML('');
+}
+function incBuscarDonde(q) { if (incHoja) incHoja.q = q; const c = document.getElementById('svDonde'); if (c) c.innerHTML = incDondeHTML(q); }
+function incDondeHTML(q) {
+  const armado = incArmadoDelShow(currentConvId, incLista), todos = incSectoresPlano(armado), res = incResumenSectores(incVisibles());
+  const num = x => parseInt(String(x.id).replace(/\D+/g, ''), 10) || 0;
+  // En la grilla grande, lo corto: "104", "A"; lo demás, con su nombre.
+  const etiqueta = x => x.t === 'baja' || x.t === 'alta' ? x.id.replace(/^Platea /, '') : x.t === 'campo' ? x.id.replace(/^Campo /, '').replace(/^./, c => c.toUpperCase()) : x.id;
+  const boton = (x, chico) => { const nv = res.niveles[x.id];
+    return '<button type="button" class="sv-sec' + (chico ? ' chico' : '') + '" onclick="incTocarSector(\'' + incEsc(x.id) + '\')">' + incEsc(chico ? x.id : etiqueta(x))
+      + (nv ? '<i class="sv-pt n' + nv + '" title="Hay algo abierto"></i>' : '') + '</button>'; };
+  const grupo = (rot, l, grande) => l.length ? '<div class="sv-rotulo">' + rot + '</div><div class="sv-sectores' + (grande ? '' : ' anchos') + '">' + l.map(x => boton(x, !grande)).join('') + '</div>' : '';
+  if (String(q || '').trim()) {
+    const r = incBuscarLugares(q, armado);
+    return r.length ? '<div class="sv-sectores anchos" style="margin-top:12px">' + r.map(x => boton(x, true)).join('') + '</div>'
+      : '<div class="sv-ayuda">No hay ningún lugar que se llame así. Probá con el número (104), la puerta o la calle.</div>';
+  }
+  const p = incPisoDonde(), de = f => todos.filter(f);
+  // Lo de cada piso: primero los baños, después la gastronomía y lo demás.
+  const RANGO = { banio: 0, gastro: 1, enfermeria: 2, servicio: 3 }, rango = x => RANGO[x.t] == null ? 9 : RANGO[x.t];
+  const enPiso = piso => de(x => x.lugar && x.piso === piso && x.t !== 'puerta' && x.t !== 'calle').sort((a, b) => rango(a) - rango(b));
+  let html = '<div class="sv-pisos">' + INC_DONDE.map(([k, t]) => '<button type="button" class="' + (p === k ? 'on' : '') + '" onclick="incElegirPisoDonde(\'' + k + '\')">' + t + '</button>').join('') + '</div>';
+  if (p === 'EXT') html += grupo('Ingresos', de(x => x.t === 'puerta').sort((a, b) => num(a) - num(b)), false) + grupo('Calles', de(x => x.t === 'calle'), false)
+    + '<div class="sv-ayuda"><b>Para avisar desde los exteriores:</b> filas de ingreso desbordadas, congestión en la vereda, cortes o lo que pase en la calle.</div>';
+  else if (p === 'PB') html += grupo('Sectores del campo', de(x => x.t === 'campo'), true) + grupo('Pasillos y backstage', de(x => x.t === 'anillo' || x.t === 'back'), false) + grupo('En planta baja', enPiso('PB'), false);
+  else if (p === 'VIP') html += grupo('Sectores', de(x => x.t === 'vip' && !x.lugar), false) + grupo('En el VIP', enPiso('VIP'), false);
+  else html += grupo('Sectores', de(x => x.t === (p === 'P1' ? 'baja' : 'alta')).sort((a, b) => num(a) - num(b)), true) + grupo(p === 'P1' ? 'En el piso 1' : 'En el piso 3', enPiso(p), false);
+  return html + '<div class="sv-rotulo">¿No está en la lista?</div><div class="sv-sectores anchos">' + boton({ id: INC_LUGARES[0] }, true) + '</div>';
 }
 
 // La hoja para cargar (modo 'nueva') o resolver (modo 'resolver').
 function incTocarSector(sector) {
   incHoja = { modo: 'nueva', sector, cat: '', tipo: '', nivel: 1, acciones: [], ubicacion: '', nota: '' };
-  document.getElementById('incSheetTitulo').textContent = 'Nueva incidencia · ' + sector;
+  const t = document.getElementById('incSheetTitulo'); t.textContent = 'Nueva incidencia · ' + sector; t.className = 'fb-title';
   document.getElementById('incSheetSub').textContent = 'Qué pasó y qué se hizo. Sin nombres ni datos del público.';
   renderIncHoja();
   document.getElementById('incSheet').classList.remove('hidden');
@@ -3682,7 +3763,7 @@ function incTocarSector(sector) {
 function incAbrirResolver(id) {
   const i = incLista.find(x => x.id === id); if (!i) return;
   incHoja = { modo: 'resolver', id, cat: i.categoria, acciones: (i.acciones || []).slice(), resolucion: '' };
-  document.getElementById('incSheetTitulo').textContent = 'Resolver · ' + i.tipo;
+  const t = document.getElementById('incSheetTitulo'); t.textContent = 'Resolver · ' + i.tipo; t.className = 'fb-title';
   document.getElementById('incSheetSub').textContent = i.sector + (i.ubicacion ? ' · ' + i.ubicacion : '') + ' · cargada ' + incCuando(i.created_at);
   renderIncHoja();
   document.getElementById('incSheet').classList.remove('hidden');
@@ -3700,6 +3781,11 @@ function renderIncHoja() {
     return '<button type="button" class="inc-check' + (on ? ' on' : '') + '" onclick="incToggleAccion(' + ai + ')">' + (on ? '☑ ' : '☐ ') + incEsc(a) + '</button>';
   }).join('') + '</div>';
   const body = document.getElementById('incSheetBody');
+  if (h.modo === 'donde') {
+    body.innerHTML = '<input type="search" class="sv-buscar" id="svDondeQ" placeholder="Buscá: 104, Puerta 4, Humboldt…" aria-label="Buscar el lugar" autocomplete="off" enterkeyhint="search" oninput="incBuscarDonde(this.value)" value="' + incEsc(h.q || '') + '">'
+      + '<div id="svDonde">' + incDondeHTML(h.q) + '</div>';
+    return;
+  }
   if (h.modo === 'resolver') {
     body.innerHTML = checklist()
       + '<div class="inc-paso">Cómo se resolvió</div><textarea class="fb-ta" id="incCampo_resolucion" maxlength="1000" placeholder="Ej: se reubicó en la platea 104 y se avisó a boletería">' + incEsc(h.resolucion) + '</textarea>'
@@ -3707,7 +3793,8 @@ function renderIncHoja() {
     return;
   }
   const abiertasAca = incLista.filter(i => i.sector === h.sector && i.estado !== 'resuelta');
-  let html = abiertasAca.length ? '<div class="inc-paso">Abiertas en este lugar</div>' + abiertasAca.map(i =>
+  let html = '<button type="button" class="sv-volver" onclick="incAbrirDonde()">← Cambiar el lugar</button>';
+  html += abiertasAca.length ? '<div class="inc-paso">Abiertas en este lugar</div>' + abiertasAca.map(i =>
     '<div class="inc-mini">' + incNivelChip(i.nivel) + '<span class="t">' + incEsc(i.tipo) + ' · ' + incCuando(i.created_at) + '</span><button class="inc-resolver" onclick="incAbrirResolver(\'' + i.id + '\')">Resolver</button></div>').join('') : '';
   html += '<div class="inc-paso">Categoría</div><div class="inc-grid">' + INC_CATALOGO.map((c, ci) =>
     '<button type="button" class="inc-opc' + (h.cat === c.cat ? ' on' : '') + '" onclick="incElegirCat(' + ci + ')">' + incEsc(c.cat) + '</button>').join('') + '</div>';
@@ -3718,8 +3805,7 @@ function renderIncHoja() {
   if (h.tipo) {
     html += '<div class="inc-paso">Gravedad</div><div class="inc-niveles">' + [1, 2, 3].map(nv => {
       const v = INC_NIVELES[nv], on = h.nivel === nv;
-      return '<button type="button" class="inc-nivel" style="' + (on ? 'background:' + v.color + ';border-color:' + v.color + ';color:#fff' : 'border-color:' + v.color + ';color:' + v.color)
-        + '" onclick="incElegirNivel(' + nv + ')"><strong>' + v.nombre + '</strong><span>' + v.ayuda + '</span></button>';
+      return '<button type="button" class="inc-nivel n' + nv + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="incElegirNivel(' + nv + ')"><strong>' + v.nombre + '</strong><span>' + v.ayuda + '</span></button>';
     }).join('') + '</div>';
     html += checklist();
     html += '<div class="inc-paso">Referencia (opcional)</div><input class="l-in" id="incCampo_ubicacion" maxlength="80" placeholder="Fila, butaca, puerta… (nada del público)" value="' + incEsc(h.ubicacion) + '">' + incRefRapidaHTML('incCampo_ubicacion', h.sector);
