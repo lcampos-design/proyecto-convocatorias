@@ -54,12 +54,18 @@ async function go(){
   if (!CUIT || !CONV || (RESP !== 'si' && RESP !== 'no')) {
     show('<div class="center">Link inválido. Pedile el link a la coordinación.</div>'); return;
   }
+  // Los links sin firma (los mails de antes del 30-oct) ya no sirven: la función
+  // vieja se cerró el 2-nov. Se explica, en vez de tirar un error suelto.
+  if (!FIRMA) {
+    show('<div class="center">Este link ya no sirve. Escribile a la coordinación y te reenvían el mail para confirmar.</div>'); return;
+  }
   try {
-    // Con la firma de la base (los mails nuevos); sin firma, la de antes (los que ya salieron).
-    const { data, error } = FIRMA
-      ? await sb.rpc('registrar_confirmacion_firmada', { p_cuit: CUIT, p_conv_id: CONV, p_respuesta: RESP, p_firma: FIRMA })
-      : await sb.rpc('registrar_confirmacion', { p_cuit: CUIT, p_conv_id: CONV, p_respuesta: RESP });
+    // Con la firma de la base: sólo registra con la firma justa de esa persona y esa convocatoria.
+    const { data, error } = await sb.rpc('registrar_confirmacion_firmada', { p_cuit: CUIT, p_conv_id: CONV, p_respuesta: RESP, p_firma: FIRMA });
     if (error) throw error;
+    if (data && data.ok === false && data.motivo === 'firma') {
+      show('<div class="center">Este link no es válido. Escribile a la coordinación y te reenvían el mail para confirmar.</div>'); return;
+    }
     if (data && data.ok) {
       const nombre = data.nombre ? (', ' + String(data.nombre).split(' ')[0]) : '';
       const conv = data.convocatoria ? (' para <strong>' + esc(data.convocatoria) + '</strong>') : '';

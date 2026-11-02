@@ -43,6 +43,12 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .msg.ok{background:#dcfce7;color:#166534}
 .center{text-align:center;color:#4b5563;padding:40px 10px;line-height:1.6}
 .link{color:#111827;font-weight:600;text-decoration:underline}
+/* El código que llega por mail para firmar (contrato-codigo.sql). */
+.codigo{display:none;margin-top:16px;padding:16px;border:1.5px solid #0f1117;border-radius:12px;background:#fafafa}
+.codigo.on{display:block}
+.codigo-txt{font-size:13px;color:#374151;line-height:1.5}
+.codigo-in{margin-top:12px;font-size:22px;font-weight:600;letter-spacing:8px;text-align:center}
+.link-btn{background:none;border:0;color:#111827;font-weight:600;text-decoration:underline;font-size:13px;margin-top:10px;padding:4px 0;cursor:pointer}
 
 /* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
 button,input,select,textarea,optgroup,option{font-family:inherit}
@@ -66,6 +72,8 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const TOKEN = new URLSearchParams(location.search).get('t');
 let contrato = null, signaturePad = null;
+// Si la base pide el código por mail (contrato-codigo.sql), si ya lo ingresó bien.
+let codigoOk = false;
 // Íconos dibujados (los emojis del sistema se ven distintos en cada equipo).
 const ICONO_OK = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#16a34a"/><path d="M18 31l8 8 16-17" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ICONO_RELOJ = '<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="29" fill="#fff" stroke="#0f1117" stroke-width="2.5"/><path d="M30 16v15l10 6" fill="none" stroke="#0f1117" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -155,8 +163,15 @@ function renderForm() {
       <button class="btn btn-sec" onclick="limpiarFirma()">Borrar</button>
       <button class="btn" id="firmarBtn" onclick="firmar()" disabled>Firmar contrato</button>
     </div>
+    <div class="codigo" id="codigoBox">
+      <div class="lbl" style="margin-top:0">Código de verificación</div>
+      <div class="codigo-txt" id="codigoTxt"></div>
+      <input class="fi codigo-in" id="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="••••••" onkeydown="if(event.key==='Enter')confirmarCodigo()">
+      <button class="btn" id="codigoBtn" onclick="confirmarCodigo()">Confirmar y firmar</button>
+      <button class="link-btn" type="button" onclick="pedirCodigo()">Mandarme otro código</button>
+    </div>
     <div class="msg err" id="err"></div>
-    <div class="legal">Al firmar se genera un informe de auditoría con la fecha, hora, dirección IP y dispositivo de cada paso (envío, apertura, consentimiento y firma), que queda incorporado como última página del contrato firmado.</div>
+    <div class="legal">Al firmar se genera un informe de auditoría con la fecha, hora, dirección IP y dispositivo de cada paso (envío, apertura, ${contrato.pide_codigo ? 'código de verificación por mail, ' : ''}consentimiento y firma), que queda incorporado como última página del contrato firmado.</div>
   </div>`);
   const canvas = document.getElementById('sigCanvas');
   signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgba(255,255,255,0)' });
@@ -177,7 +192,11 @@ function resizeCanvas() {
 }
 
 function limpiarFirma() { if (signaturePad) signaturePad.clear(); const ph = document.getElementById('sigPh'); if (ph) ph.style.display = ''; }
-function onConsent() { document.getElementById('firmarBtn').disabled = !document.getElementById('consentChk').checked; }
+function onConsent() {
+  const ok = document.getElementById('consentChk').checked;
+  document.getElementById('firmarBtn').disabled = !ok;
+  const b = document.getElementById('codigoBtn'); if (b) b.disabled = !ok;
+}
 
 // ── Generación del PDF final (mismo layout que admin.html, con la firma estampada) ──
 async function fetchBytes(url) { const r = await fetch(url); return new Uint8Array(await r.arrayBuffer()); }
@@ -279,7 +298,7 @@ function agregarCertificado(pdfDoc, font, fontBold, rgb, cert, logo) {
     const lineasDesc = wrapPlain(desc, font, size + 0.5, maxWidth - 14);
     const sub = `${fmtGMT(ev.fecha)} · ${fmtAR(ev.fecha)}${ev.ip ? ' · IP: ' + ev.ip : ''}${ev.tipo === 'firmado' ? ' · Origen de la hora: servidor' : ''}`;
     const lineasSub = wrapPlain(sub, font, size - 0.5, maxWidth - 14);
-    const lineasUA = (ev.user_agent && (ev.tipo === 'firmado' || ev.tipo === 'visto')) ? wrapPlain('Dispositivo: ' + ev.user_agent, font, size - 1, maxWidth - 14) : [];
+    const lineasUA = (ev.user_agent && (ev.tipo === 'firmado' || ev.tipo === 'visto' || ev.tipo === 'codigo_ok')) ? wrapPlain('Dispositivo: ' + ev.user_agent, font, size - 1, maxWidth - 14) : [];
     const alto = (lineasDesc.length * lh) + (lineasSub.length * (lh - 2)) + (lineasUA.length * (lh - 3)) + 10;
     nuevaPaginaSiHaceFalta(alto);
     lineasDesc.forEach(ln => { page.drawText(ln, { x: M + 14, y, size: size + 0.5, font, color: tinta }); y -= lh; });
@@ -295,8 +314,9 @@ function agregarCertificado(pdfDoc, font, fontBold, rgb, cert, logo) {
     page.drawText(`${fmtGMT(ultima.fecha)} · ${fmtAR(ultima.fecha)}`, { x: M + 14, y, size: size - 0.5, font, color: gris }); y -= lh + 12;
   }
 
-  // Fundamento legal
-  const legal = 'Validez legal: la firma electrónica aplicada sobre este documento constituye una manifestación de voluntad válida conforme a los artículos 286 y 288 del Código Civil y Comercial de la Nación, y al artículo 5 de la Ley N.º 25.506 de Firma Digital. El presente informe, generado automáticamente por el sistema, registra la trazabilidad completa de la operación —envío, apertura, consentimiento expreso y firma, con fecha, hora de servidor, dirección IP y dispositivo— y la huella digital SHA-256 del texto firmado, que permite verificar que su contenido no fue alterado con posterioridad a la firma. Estos elementos constituyen el respaldo probatorio de la autoría e integridad del documento.';
+  // Fundamento legal (con el código por mail, también la verificación de identidad).
+  const conCodigo = (cert.eventos || []).some(e => e.tipo === 'codigo_ok');
+  const legal = 'Validez legal: la firma electrónica aplicada sobre este documento constituye una manifestación de voluntad válida conforme a los artículos 286 y 288 del Código Civil y Comercial de la Nación, y al artículo 5 de la Ley N.º 25.506 de Firma Digital. El presente informe, generado automáticamente por el sistema, registra la trazabilidad completa de la operación —envío, apertura, ' + (conCodigo ? 'verificación de identidad con un código enviado al correo electrónico del firmante, ' : '') + 'consentimiento expreso y firma, con fecha, hora de servidor, dirección IP y dispositivo— y la huella digital SHA-256 del texto firmado, que permite verificar que su contenido no fue alterado con posterioridad a la firma. Estos elementos constituyen el respaldo probatorio de la autoría e integridad del documento.';
   const lineasLegal = wrapPlain(legal, font, size - 0.5, maxWidth);
   nuevaPaginaSiHaceFalta(lineasLegal.length * (lh - 2) + 20);
   page.drawLine({ start: { x: M, y: y + 6 }, end: { x: W - M, y: y + 6 }, thickness: 0.7, color: rgb(0.8, 0.8, 0.8) });
@@ -312,6 +332,8 @@ function descripcionEvento(ev, cert) {
     case 'enviado': return `Documento enviado por correo electrónico a ${cert.email || 'el firmante'} para su firma`;
     case 'reenviado': return `Documento reenviado por correo electrónico a ${cert.email || 'el firmante'}`;
     case 'visto': return `Documento abierto por ${cert.email || nombre}`;
+    case 'codigo_enviado': return `Código de verificación enviado por correo electrónico a ${cert.email || 'el firmante'}`;
+    case 'codigo_ok': return `${nombre} ingresó el código de verificación enviado a ${cert.email || 'su correo electrónico'}`;
     case 'consentimiento': return `${nombre} aceptó firmar electrónicamente, con el mismo valor legal que la firma manuscrita`;
     case 'firmado': return `Documento firmado electrónicamente por ${nombre}${email}`;
     default: return ev.tipo;
@@ -514,13 +536,69 @@ async function generarContratoPDF(texto, opts) {
 // (con su propia hora, IP y user-agent) y devuelve la trazabilidad completa;
 // recién después el navegador arma el PDF con ese informe de auditoría adentro
 // y lo guarda. Así ningún dato del certificado sale del cliente.
+//
+// Con el código por mail (contrato-codigo.sql): al tocar "Firmar contrato" le
+// llega un código al mail del contrato; lo escribe y recién ahí se firma.
 async function firmar() {
   const err = document.getElementById('err'); err.style.display = 'none';
   if (!document.getElementById('consentChk')?.checked) { err.textContent = 'Tenés que aceptar la declaración para poder firmar.'; err.style.display = 'block'; return; }
   if (!signaturePad || signaturePad.isEmpty()) { err.textContent = 'Dibujá tu firma antes de continuar.'; err.style.display = 'block'; return; }
   const domicilio = String(document.getElementById('domicilio')?.value || '').replace(/\s+/g, ' ').trim();
   if (tieneLineaDomicilio() && domicilio.length < 5) { err.textContent = 'Completá tu domicilio: va en el contrato.'; err.style.display = 'block'; document.getElementById('domicilio')?.focus(); return; }
-  const btn = document.getElementById('firmarBtn'); btn.disabled = true; btn.textContent = 'Firmando…';
+  if (contrato.pide_codigo && !codigoOk) { await pedirCodigo(); return; }
+  await firmarYa(domicilio);
+}
+
+// Pide el código (lo manda el servidor al mail del contrato) y muestra dónde escribirlo.
+async function pedirCodigo() {
+  const err = document.getElementById('err'); err.style.display = 'none';
+  const box = document.getElementById('codigoBox'), btn = box.classList.contains('on') ? document.getElementById('codigoBtn') : document.getElementById('firmarBtn');
+  const antes = btn.textContent; btn.disabled = true; btn.textContent = 'Mandando el código…';
+  try {
+    const r = await fetch('/api/contrato-codigo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: TOKEN }) });
+    const d = await r.json().catch(() => ({}));
+    if (d.motivo === 'vencido') { contrato.vencido = true; renderVencido(); return; }
+    // Si ya se lo mandamos hace menos de un minuto, que use ese.
+    if (!r.ok && d.motivo === 'espera' && !box.classList.contains('on')) { mostrarCodigo(d.email); err.textContent = d.error; err.style.display = 'block'; return; }
+    if (!r.ok || !d.ok) throw new Error(d.error || 'No pudimos mandarte el código. Probá de nuevo en un rato.');
+    mostrarCodigo(d.email);
+  } catch (e) {
+    err.textContent = e.message || 'No pudimos mandarte el código. Probá de nuevo en un rato.'; err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = antes;
+  }
+}
+function mostrarCodigo(email) {
+  document.getElementById('codigoTxt').innerHTML = 'Te mandamos un código de 6 números' + (email ? ' a <strong>' + esc(email) + '</strong>' : ' a tu mail') + '. Escribilo acá para firmar (vence en 15 minutos). Si no lo ves, revisá el correo no deseado.';
+  document.getElementById('codigoBox').classList.add('on');
+  document.getElementById('firmarBtn').style.display = 'none';
+  const c = document.getElementById('codigo'); c.value = ''; c.focus();
+}
+async function confirmarCodigo() {
+  const err = document.getElementById('err'); err.style.display = 'none';
+  const v = String(document.getElementById('codigo').value || '').replace(/\D/g, '');
+  if (v.length !== 6) { err.textContent = 'Escribí los 6 números del código.'; err.style.display = 'block'; return; }
+  const btn = document.getElementById('codigoBtn'); btn.disabled = true; btn.textContent = 'Verificando…';
+  const { data, error } = await sb.rpc('contrato_codigo_verificar', { p_token: TOKEN, p_codigo: v });
+  if (error || !data?.ok) {
+    btn.disabled = false; btn.textContent = 'Confirmar y firmar';
+    const m = data && data.motivo;
+    if (m === 'vencido') { contrato.vencido = true; renderVencido(); return; }
+    err.textContent = m === 'codigo' ? 'El código no es correcto.' + (data.quedan ? ' Te quedan ' + data.quedan + (data.quedan === 1 ? ' intento.' : ' intentos.') : ' Pedí otro.')
+      : m === 'codigo_vencido' ? 'El código venció. Tocá "Mandarme otro código".'
+      : m === 'intentos' ? 'Probaste muchas veces. Tocá "Mandarme otro código".'
+      : 'No pudimos verificar el código. Probá de nuevo.';
+    err.style.display = 'block'; return;
+  }
+  codigoOk = true;
+  btn.disabled = false; btn.textContent = 'Confirmar y firmar';
+  await firmar();
+}
+
+async function firmarYa(domicilio) {
+  const err = document.getElementById('err');
+  const btn = document.getElementById('codigoBox')?.classList.contains('on') ? document.getElementById('codigoBtn') : document.getElementById('firmarBtn');
+  const antes = btn.textContent; btn.disabled = true; btn.textContent = 'Firmando…';
   try {
     const firmaDataUrl = signaturePad.toDataURL('image/png');
     const { data, error } = await sb.rpc('contrato_firmar', { p_token: TOKEN, p_firma_png: firmaDataUrl, p_domicilio: domicilio || null });
@@ -529,6 +607,12 @@ async function firmar() {
     if (data && data.ok === false && data.motivo === 'vencido') {
       contrato.vencido = true; contrato.vence_el = data.vence_el;
       renderVencido(); return;
+    }
+    // La base pide el código (se activó con la página abierta, o pasó más de media hora desde que lo escribió): se lo mandamos.
+    if (data && data.ok === false && data.motivo === 'codigo') {
+      contrato.pide_codigo = true; codigoOk = false;
+      btn.disabled = false; btn.textContent = antes;
+      await pedirCodigo(); return;
     }
     if (error || !data?.ok) throw new Error(data?.motivo === 'ya_firmado' ? 'Este contrato ya fue firmado.' : data?.motivo === 'domicilio' ? 'Completá tu domicilio: va en el contrato.' : 'No se pudo registrar la firma.');
 
@@ -547,7 +631,7 @@ async function firmar() {
     renderFirmado();
   } catch (e) {
     err.textContent = e.message || 'Hubo un error. Probá de nuevo.'; err.style.display = 'block';
-    btn.disabled = false; btn.textContent = 'Firmar contrato';
+    btn.disabled = false; btn.textContent = antes;
   }
 }
 

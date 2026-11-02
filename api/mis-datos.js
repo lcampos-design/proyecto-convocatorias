@@ -59,7 +59,7 @@ export function armarMail({ nombre, link, invitado, inscripciones }) {
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111827">
   <p style="font-size:15px">${esc(hola)}:</p>
   <p style="font-size:15px;line-height:1.5">${esc(intro)}</p>
-  <p style="margin:24px 0"><a href="${esc(link)}" style="background:#534AB7;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">${inscripciones ? 'Ver mis inscripciones' : 'Actualizar mis datos'}</a></p>
+  <p style="margin:24px 0"><a href="${esc(link)}" style="background:#1a1a1a;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">${inscripciones ? 'Ver mis inscripciones' : 'Actualizar mis datos'}</a></p>
   <p style="font-size:13px;color:#6b7280;line-height:1.5">El link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.</p>
   <p style="font-size:13px;color:#6b7280">Show Business Solutions</p>
 </div>`;

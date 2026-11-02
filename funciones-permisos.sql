@@ -50,16 +50,20 @@ declare
     'contrato_ver',             -- la página de firma, con el token del link
     'contrato_firmar',
     'contrato_guardar_pdf',
-    'registrar_confirmacion',   -- el "CONFIRMO" de los botones del mail (los links viejos, sin firma)
-    'registrar_confirmacion_firmada'   -- el mismo, con la firma de la base (seguridad-confirmaciones.sql)
+    'registrar_confirmacion_firmada',   -- el "CONFIRMO" de los botones del mail, con la firma de la base (seguridad-confirmaciones.sql)
+    'contrato_codigo_verificar'   -- el código que llega por mail para firmar el contrato (contrato-codigo.sql)
   ];
   -- Las que no ejecuta nadie a mano: las usan otras funciones por dentro o el
   -- servidor. mis_datos_link devuelve el link de /mis-datos: si la pudiera usar
   -- cualquier usuario (un supervisor), sacaría el de cualquier persona.
   -- mis_postulaciones y dar_de_baja: con el CUIL de otro mostraban y bajaban sus
   -- inscripciones; ahora van por mis_inscripciones y baja_con_link.
+  -- registrar_confirmacion: los links viejos, sin firma (cerrada el 2-nov; la usa
+  -- por dentro registrar_confirmacion_firmada). contrato_codigo_pedir devuelve el
+  -- código para firmar: sólo el servidor, que lo manda por mail.
   nadie text[] := array[
-    'mis_datos_link', 'mis_datos_nucleo', 'conf_firma_calc', 'mis_postulaciones', 'dar_de_baja'
+    'mis_datos_link', 'mis_datos_nucleo', 'conf_firma_calc', 'mis_postulaciones', 'dar_de_baja',
+    'registrar_confirmacion', 'contrato_codigo_pedir', 'contrato_pide_codigo'
   ];
   abiertas int := 0; panel int := 0; cerradas int := 0;
 begin
@@ -78,6 +82,7 @@ begin
     if f.es_trigger or f.proname = any (nadie) then
       cerradas := cerradas + 1;
       if f.proname = 'mis_datos_link' then execute 'grant execute on function ' || f.firma || ' to service_role'; end if;
+      if f.proname = 'contrato_codigo_pedir' then execute 'grant execute on function ' || f.firma || ' to service_role'; end if;
     elsif f.proname = any (publicas) then
       execute 'grant execute on function ' || f.firma || ' to anon, authenticated';
       abiertas := abiertas + 1;
