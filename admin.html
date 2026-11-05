@@ -6006,22 +6006,6 @@ const INC_TEMA_3D = {
   halo: ['rgba(56,160,255,.18)', 'rgba(56,160,255,.06)'],
   vidrio: [0x3d8fe0, 0.1], fachada: [[10, 0x56b8ff, 0.75], [0.4, 0x3d8fe0, 0.55]], parantes: [0x3d8fe0, 0.35]
 };
-// El "dibujo técnico" de la gerencia: el estadio en líneas claras sobre azul. Los
-// rellenos, azul marino plano y apenas distintos entre sí (sin el brillo LED); los
-// contornos, crema y marcados; la luz, pareja (como un plano, sin sombras fuertes).
-// El color fuerte queda sólo para la gravedad.
-const INC_TEMA_3D_TECNICO = Object.assign({}, INC_TEMA_3D, {
-  luces: { hemi: [0xf4f6fb, 0x7d93b4, 0.88], clave: 0.3, contra: 0.12, escenario: 0.25 },
-  color: {
-    baja: [0x1E4372, 0x163460], alta: [0x24507F, 0x1A3D69], campo: [0x2A5A8C, 0x1E4372], anillo: [0x17365F, 0x102a4a], back: [0x17365F, 0x102a4a], vip: [0x2E5D91, 0x20466F],
-    puerta: [0x3A6CA3, 0x2A5A8C], gastro: [0x2A5A8C, 0x1E4372], banio: [0x2A5A8C, 0x1E4372], enfermeria: [0x3A6CA3, 0x2A5A8C], servicio: [0x1E4372, 0x163460], calle: [0x0d2442, 0x091c36]
-  },
-  borde: { baja: 0xF4F1EA, alta: 0xF4F1EA, campo: 0xF4F1EA, anillo: 0xC9D6E8, back: 0xC9D6E8, vip: 0xF4F1EA, puerta: 0xF4F1EA, gastro: 0xF4F1EA, banio: 0xF4F1EA, enfermeria: 0xF4F1EA, servicio: 0xC9D6E8, calle: 0x9fb3cc },
-  opBorde: { baja: 0.85, alta: 0.85, campo: 0.9, anillo: 0.6, back: 0.6, vip: 0.9, calle: 0.6 }, opBordeOtro: 0.85, sel: 0xffffff,
-  brillo: 0,
-  halo: ['rgba(244,241,234,.06)', 'rgba(244,241,234,.02)'],
-  vidrio: [0x9fc3e8, 0.05], fachada: [[10, 0xF4F1EA, 0.55], [0.4, 0xF4F1EA, 0.35]], parantes: [0xF4F1EA, 0.22]
-});
 let incCarga3D = null, incSin3D = false, incListo3D = false;
 function incCargar3D() {
   if (incCarga3D) return incCarga3D;
@@ -6337,8 +6321,7 @@ function incPlano3D(cont, op0) {
   const T = window.THREE;
   incEstilo3D();
   cont.classList.add('inc-3d');
-  // En la gerencia, el dibujo técnico; en el panel, el de siempre.
-  const TM = op0.ax ? INC_TEMA_3D_TECNICO : INC_TEMA_3D, T2 = INC_TEMA;
+  const TM = INC_TEMA_3D, T2 = INC_TEMA;
   const desechar = [];
   const lienzoDe = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
   const textura = c => { const t = new T.CanvasTexture(c); desechar.push(t); return t; };
