@@ -1193,21 +1193,23 @@ tr:hover td{background:#f9f9fb}
     <div class="det-hdr">
       <button class="back-btn" onclick="closeDetail()">← Volver</button>
       <div><div class="det-title" id="detTitle"></div><div class="det-meta" id="detMeta"></div><div class="det-stats" id="detStats"></div></div>
-      <!-- Lo del día del show a la vista; lo demás, en un menú. Editar y
+      <!-- Lo del trabajo diario a la vista (la disponibilidad, para armar el
+           equipo); lo demás, en un menú. Pasar lista lo hacen los supervisores
+           desde su app: acá queda en el menú, sólo para corregir. Editar y
            archivar aparte, para que no se confundan con el trabajo diario. -->
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-        <button class="btn btn-primary btn-sm" onclick="openPasarLista()"><i class="ic ic-tilde-circ"></i> Pasar lista</button>
+        <button class="btn btn-primary btn-sm" onclick="openDispAdmin()" title="Quiénes dijeron que pueden cada día: ver su ficha, su feedback y su CV, y confirmar de a uno o de a muchos"><i class="ic ic-calendario"></i> Disponibilidad</button>
         <button class="btn btn-sec btn-sm" onclick="exportPresentes()" title="La planilla que se reparte a los supervisores: una hoja por turno, una tabla por sector, con lo ya marcado">↓ Planilla supervisores</button>
         <button class="btn btn-sec btn-sm" onclick="exportPostuladosExcel()" title="La planilla completa por puesto, con datos de contacto">↓ Planilla Excel</button>
         <div class="nom-mas">
-          <button class="btn btn-sec btn-sm" onclick="toggleDetMas(event)" title="Publicar, importar asistencia, reporte, disponibilidad">⋯ Más</button>
+          <button class="btn btn-sec btn-sm" onclick="toggleDetMas(event)" title="Publicar, corregir presentes, importar asistencia, feedback, reporte, contratos">⋯ Más</button>
           <div class="nom-mas-menu" id="detMasMenu">
             <button class="btn btn-sm" id="btnPublicada" onclick="togglePublicada(currentConvId)">○ Publicar</button>
+            <button class="btn btn-sec btn-sm" onclick="openPasarLista()" title="La lista la pasan los supervisores desde su app; acá, para corregir algún presente"><i class="ic ic-tilde-circ"></i> Corregir presentes</button>
             <button class="btn btn-sec btn-sm" onclick="openImportAsistencia()"><i class="ic ic-planilla"></i> Importar asistencia</button>
             <button class="btn btn-sec btn-sm" onclick="bajarPlanillaFeedback()" title="Una planilla con los convocados para puntuar los cuatro criterios del 1 al 5"><i class="ic ic-planilla"></i> ↓ Planilla de feedback</button>
             <button class="btn btn-sec btn-sm" onclick="openImportFeedback()" title="Subir la planilla de feedback completa: se cargan los puntajes y se recalcula el semáforo"><i class="ic ic-planilla"></i> Importar feedback</button>
             <button class="btn btn-sec btn-sm" onclick="openReporte()"><i class="ic ic-grafico"></i> Reporte</button>
-            <button class="btn btn-sec btn-sm" onclick="openDispAdmin()"><i class="ic ic-calendario"></i> Disponibilidad</button>
             <button class="btn btn-sec btn-sm" onclick="openBulkMailConv()" title="Manda la confirmación con el contrato a todos los aprobados que todavía no lo tienen, con el puesto y el monto de cada uno"><i class="ic ic-doc"></i> Contratos a todos</button>
           </div>
         </div>
