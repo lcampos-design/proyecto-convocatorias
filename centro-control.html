@@ -32,25 +32,24 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
   --tinta:#F2F2F2;--tinta-2:#E6E6E6;--gris:#A8A8A8;--linea:rgba(242,242,242,.2);--resalte:rgba(242,242,242,.45);
   --borde:transparent;--prim-hover:#FFFFFF;--logo-filtro:none;--tj-mal:#FFD700;
   --celeste:#019DF4;   /* el celeste del Arena, de detalle: la raya de lo tocado en las métricas */
-  /* Los fondos del ingreso (una foto de recital) y de la lista de shows (una trama), y lo que los tapa para que se lea encima. */
-  --velo-ingreso:rgba(20,20,20,.62);--velo-shows:rgba(20,20,20,.88);--trama:url(trama-oscura.jpg);
+  --velo:rgba(20,20,20,.86);   /* lo que tapa la pieza de marca de SBS en el ingreso, para que se lea lo de encima */
   /* La gravedad, igual en los dos modos: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
   --grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC;
   color-scheme:dark;
 }
 /* El modo claro: blanco y gris claro, la letra negra; las tarjetas, con un borde gris, y los
    logos (que son blancos), en negro. Vale si eligió Claro, o en Automático con el aparato en claro. */
-@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo-ingreso:rgba(237,237,237,.8);--velo-shows:rgba(237,237,237,.86);--trama:url(trama-clara.jpg);color-scheme:light}}
-:root[data-tema="claro"]{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo-ingreso:rgba(237,237,237,.8);--velo-shows:rgba(237,237,237,.86);--trama:url(trama-clara.jpg);color-scheme:light}
+@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(237,237,237,.84);color-scheme:light}}
+:root[data-tema="claro"]{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(237,237,237,.84);color-scheme:light}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
 button,input,select,textarea,optgroup,option{font-family:inherit}
-/* El fondo, liso, del tono del modo. En el ingreso, una foto de recital en blanco y negro; en la
-   lista de shows, una trama de líneas (la oscura o la clara, según el modo). Las dos, tapadas con
-   el tono del modo para que se lea lo de encima. En el tablero del show, liso. */
-body[data-pantalla="pLogin"]::before,body[data-pantalla="pShows"]::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
-body[data-pantalla="pLogin"]::before{background:linear-gradient(var(--velo-ingreso),var(--velo-ingreso)),url(fondo-recital.jpg) center/cover no-repeat;filter:grayscale(1)}
-body[data-pantalla="pShows"]::before{background:linear-gradient(var(--velo-shows),var(--velo-shows)),var(--trama) center/cover no-repeat}
+/* El fondo, liso, del tono del modo. En el ingreso, la pieza de marca de SBS (las letras
+   gigantes), tapada con el tono del modo para que se lea lo de encima. */
+body[data-pantalla="pLogin"]::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(var(--velo),var(--velo)),url(fondo-sbs.jpg) center/cover no-repeat}
+/* En el celular parado, la pieza (que es apaisada) recortada mostraba sólo un pedazo de la B: ahí va entera, de ancho, debajo
+   de la barra, y abajo se funde con el fondo (la imagen mide 56 % de su ancho de alto). */
+@media(max-aspect-ratio:3/4){body[data-pantalla="pLogin"]::before{background:linear-gradient(var(--velo),var(--velo)),linear-gradient(rgba(0,0,0,0),var(--fondo)) 0 calc(60px + 34vw)/100% 23vw no-repeat,url(fondo-sbs.jpg) center 60px/100% auto no-repeat}}
 body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 /* La palabra manuscrita de acento: nunca en datos ni en botones. */
 .mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
@@ -3365,12 +3364,6 @@ function abrirTemas(ev) {
   m.hidden = false; document.getElementById('btnTema').setAttribute('aria-expanded', 'true');
   m.querySelector('[aria-checked="true"]').focus();
 }
-// El modo que se está viendo: el elegido o, en Automático, el del aparato (sin saberlo, el oscuro, como la página).
-function temaActual() {
-  const r = document.documentElement, t = r && r.getAttribute ? r.getAttribute('data-tema') : '';
-  if (t === 'claro' || t === 'oscuro') return t;
-  try { return matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'oscuro'; } catch (_) { return 'oscuro'; }
-}
 function cerrarTemas() { const m = document.getElementById('temaMenu'); if (m.hidden) return; m.hidden = true; document.getElementById('btnTema').setAttribute('aria-expanded', 'false'); }
 document.addEventListener('click', ev => { if (!ev.target.closest('#temaMenu')) cerrarTemas(); });
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cerrarTemas(); });
@@ -3616,10 +3609,8 @@ function informe() {
   const abiertas = l.filter(i => i.estado !== 'resuelta').length, m = incMetricas(l), cods = incCodigos(l);
   // Arriba, los números del show (como los pide la propuesta AX: incidentes, asistencias, a quién se derivó, picos).
   const num = (v, t) => '<div class="num"><b>' + v + '</b><span>' + t + '</span></div>';
-  // En el modo que se está viendo, con los colores de SBS: en el oscuro, el logo blanco y la gravedad en sus tonos claros.
-  const P = temaActual() === 'oscuro'
-    ? { fondo: '#141414', tinta: '#F2F2F2', gris: '#A8A8A8', linea: '#333333', marca: '.05', logo: 'logo-sbs-calado.png', niv: nv => INC_NIVELES[nv].plano }
-    : { fondo: '#FFFFFF', tinta: '#1A1A1A', gris: '#5C5C5C', linea: '#DADADA', marca: '.07', logo: 'logo-sbs.png', niv: nv => INC_NIVELES[nv].color };
+  // Siempre en claro (aunque la página esté en oscuro), con los colores de SBS.
+  const P = { fondo: '#FFFFFF', tinta: '#1A1A1A', gris: '#5C5C5C', linea: '#DADADA', marca: '.07', logo: 'logo-sbs.png', niv: nv => INC_NIVELES[nv].color };
   const html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe de incidencias · ' + incEsc(s.nombre) + '</title>'
     + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"><style>'
     + 'body{font-family:Poppins,sans-serif;color:' + P.tinta + ';margin:28px;font-size:11px;font-variant-numeric:tabular-nums}'
