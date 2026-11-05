@@ -50,6 +50,17 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .tc{background:#f3f4f6;color:#6b7280;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px}
 .atab.active .tc{background:#ede9fe;color:#534AB7}
 .ctrlbar{background:#fff;padding:10px 24px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* Las convocatorias: una pestaña por área (con cuántas tiene) y, en la lista, un título por mes. */
+.cv-areas{display:inline-flex;gap:2px;padding:3px;background:#f3f4f6;border-radius:10px}
+.cv-area{border:0;background:transparent;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;font-family:inherit;color:#4b5563;cursor:pointer;white-space:nowrap}
+.cv-area span{font-weight:500;color:#9ca3af;margin-left:2px}
+.cv-area.on{background:#fff;color:#111827;box-shadow:0 1px 2px rgba(0,0,0,.08)}.cv-area.on span{color:#6b7280}
+.cv-mes{display:flex;align-items:baseline;gap:10px;margin:14px 2px 2px;flex-wrap:wrap}
+.cv-mes:first-child{margin-top:0}
+.cv-mes-t{font-size:15px;font-weight:700;color:#111827}
+.cv-mes-n{font-size:12.5px;color:#6b7280}
+.cv-mes .btn{margin-left:auto}
+.cv-pasaron{margin:22px 2px 0;padding-top:12px;border-top:1px dashed #d1d5db;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af}
 .srch{flex:1;min-width:160px;padding:7px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none}
 .srch:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.1)}
 select.filt{padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;outline:none;background:#fff;cursor:pointer}
@@ -1179,11 +1190,8 @@ tr:hover td{background:#f9f9fb}
 <div id="sec-convs" class="sec">
   <div id="cv-list">
     <div class="ctrlbar">
+      <div class="cv-areas" id="cvAreas" role="tablist" aria-label="Área"></div>
       <input type="text" class="srch" id="cvSrch" placeholder="Buscar convocatoria..." oninput="renderCvList()">
-      <select class="filt" id="cvAreaF" onchange="renderCvList()">
-        <option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option>
-        <option value="externos">Externos</option><option value="espana">España</option><option value="ambas">Ambas</option>
-      </select>
       <select class="filt" id="cvArchF" onchange="renderCvList()">
         <option value="activas">Activas</option><option value="archivadas">Archivadas</option><option value="todas">Todas</option>
       </select>
@@ -4844,20 +4852,46 @@ async function downloadCvFile() { await bajarCvArchivo(document.getElementById('
 async function downloadCvFileById(id) { await bajarCvArchivo(id); }
 
 // ── CONVOCATORIAS ──
+// Las convocatorias, por área (una pestaña cada una, con cuántas tiene) y por mes. En el
+// Arena cada convocatoria es un show o un grupo de shows; en Externos, un evento. Cada una
+// va en el mes de su primera fecha: primero este mes y los que vienen, después los que ya
+// pasaron (del más nuevo al más viejo). Las de "Ambas áreas" salen en las dos.
+const CV_AREAS = [['movistar_arena', 'Movistar Arena', 'show', 'shows'], ['externos', 'Externos', 'evento', 'eventos'], ['espana', 'España', 'evento', 'eventos'], ['', 'Todas', 'convocatoria', 'convocatorias']];
+let cvArea = (() => { try { const a = localStorage.getItem('convArea'); return a !== null && CV_AREAS.some(x => x[0] === a) ? a : 'movistar_arena'; } catch (_) { return 'movistar_arena'; } })();
+function elegirAreaConv(a) { cvArea = a; try { localStorage.setItem('convArea', a); } catch (_) {} renderCvList(); }
+function enAreaConv(c, a) { const x = normArea(c.area); return !a || x === a || (x === 'ambas' && a !== 'espana'); }
+function mesDeConv(c) { const s = slotsDe(c)[0]; return s && s.fecha ? String(s.fecha).slice(0, 7) : ''; }
+const MESES_LARGOS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+function nombreDeMes(m) { const [y, mm] = String(m).split('-'); return (MESES_LARGOS[+mm - 1] || m) + ' ' + y; }
 function renderCvList() {
   const q = document.getElementById('cvSrch').value.toLowerCase().trim();
-  const af = document.getElementById('cvAreaF').value;
   const arch = document.getElementById('cvArchF') ? document.getElementById('cvArchF').value : 'activas';
-  const filtered = convs.filter(c => {
+  const base = convs.filter(c => {
     if (arch === 'activas' && c.archivada) return false;
     if (arch === 'archivadas' && !c.archivada) return false;
-    if (af && c.area !== af) return false;
     if (q && !c.nombre.toLowerCase().includes(q)) return false;
     return true;
   });
+  // España sólo aparece si tiene alguna (o si es la elegida).
+  document.getElementById('cvAreas').innerHTML = CV_AREAS.filter(([k]) => k !== 'espana' || cvArea === 'espana' || base.some(c => normArea(c.area) === 'espana'))
+    .map(([k, nombre]) => `<button type="button" class="cv-area${k === cvArea ? ' on' : ''}" role="tab" aria-selected="${k === cvArea}" onclick="elegirAreaConv('${k}')">${nombre} <span>${base.filter(c => enAreaConv(c, k)).length}</span></button>`).join('');
+  const filtered = base.filter(c => enAreaConv(c, cvArea));
   const cont = document.getElementById('cvCards');
   if (!filtered.length) { cont.innerHTML = `<div class="no-convs"><div class="no-convs-title">${convs.length === 0 ? 'Todavía no hay convocatorias' : 'Sin resultados'}</div><div class="no-convs-sub">${convs.length === 0 ? 'Creá una para cargar puestos y cupos.' : 'Probá con otro filtro.'}</div>${convs.length === 0 ? `<button class="btn btn-primary" onclick="openAddConv()">+ Crear primera convocatoria</button>` : ''}</div>`; return; }
-  cont.innerHTML = `<div class="cv-list">${filtered.map(c => cvRowHTML(c)).join('')}</div>`;
+  const [, , uno, varios] = CV_AREAS.find(x => x[0] === cvArea) || CV_AREAS[3];
+  const hoyMes = hoyLocalISO().slice(0, 7), archivadas = arch === 'archivadas';
+  const porMes = {}; filtered.forEach(c => { const m = mesDeConv(c); (porMes[m] = porMes[m] || []).push(c); });
+  const meses = Object.keys(porMes).filter(Boolean);
+  const vienen = archivadas ? [] : meses.filter(m => m >= hoyMes).sort(), pasaron = meses.filter(m => archivadas || m < hoyMes).sort().reverse();
+  const primera = c => (slotsDe(c)[0] || {}).fecha || '';
+  const bloque = (m, alReves) => {
+    const lista = porMes[m].slice().sort((a, b) => alReves ? primera(b).localeCompare(primera(a)) : primera(a).localeCompare(primera(b)));
+    const disp = m && m >= hoyMes && !archivadas ? `<button class="btn btn-sec btn-xs" onclick="openDispMes('${m}')" title="Un solo link de disponibilidad con todos los de ${e(nombreDeMes(m))}"><i class="ic ic-calendario"></i> Disponibilidad de ${e(MESES_LARGOS[+m.slice(5) - 1].toLowerCase())}</button>` : '';
+    return `<div class="cv-mes"><span class="cv-mes-t">${m ? nombreDeMes(m) : 'Sin fecha'}</span><span class="cv-mes-n">${lista.length} ${lista.length === 1 ? uno : varios}</span>${disp}</div>` + lista.map(c => cvRowHTML(c)).join('');
+  };
+  cont.innerHTML = `<div class="cv-list">${vienen.map(m => bloque(m, false)).join('')}`
+    + (vienen.length && pasaron.length ? '<div class="cv-pasaron">Ya pasaron</div>' : '') + pasaron.map(m => bloque(m, true)).join('')
+    + (porMes[''] ? bloque('', false) : '') + '</div>';
 }
 function cvRowHTML(c) {
   const cPosts = posts.filter(p => p.convId === c.id);
@@ -8783,7 +8817,7 @@ function aplicarTurnosATodas() {
   toast(convTurnos.length + ' turnos generados (' + fechasUnicas.length + ' fechas × ' + lines.length + ')');
 }
 
-function openAddConv() { editConvId = null; convTurnos = []; calMes = null; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cRangoDesde', 'cRangoHasta', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = (document.getElementById('cvAreaF') || {}).value || 'movistar_arena'; /* el área que está filtrada en la lista */ document.getElementById('cContratosHab').checked = false; renderFechasList(); showM('mConv'); }
+function openAddConv() { editConvId = null; convTurnos = []; calMes = null; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cRangoDesde', 'cRangoHasta', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = cvArea === 'externos' || cvArea === 'espana' ? cvArea : 'movistar_arena'; /* el área que está filtrada en la lista */ document.getElementById('cContratosHab').checked = false; renderFechasList(); showM('mConv'); }
 function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cRangoDesde').value = ''; document.getElementById('cRangoHasta').value = ''; { const f = [...convTurnos].map(t => t.fecha).filter(Boolean).sort()[0]; calMes = f ? new Date(f.slice(0, 4), Number(f.slice(5, 7)) - 1, 1) : null; } document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cContratosHab').checked = !!c.contratos_habilitados; document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
 function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
 
@@ -12212,9 +12246,12 @@ function dmMensaje() {
     + evs.map(x => `• ${x.c.nombre} — ${x.dias.map(d => fechaDMA(d.fecha).slice(0, 5)).join(', ')}`).join('\n')
     + '\n\nSe completa con tu CUIL. Si te seleccionan, te llega la confirmación.';
 }
-function openDispMes() {
+// Sin mes, el que viene; desde el título de un mes de la lista, ese mes y el área de la pestaña.
+function openDispMes(mes) {
   const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);   // el mes que viene
-  document.getElementById('dmMes').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  document.getElementById('dmMes').value = mes || (d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+  const area = document.getElementById('dmArea');
+  if (mes && area && [...area.options].some(o => o.value === cvArea)) area.value = cvArea;
   showM('mDispMes'); renderDispMes();
 }
 // ── LOS EVENTOS DEL GOOGLE CALENDAR (los del Arena y los de Externos) ──
