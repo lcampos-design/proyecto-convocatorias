@@ -12028,7 +12028,7 @@ function renderDispBody() {
   const opc = (lista, val) => lista.map(([k, t]) => `<option value="${k}"${k === val ? ' selected' : ''}>${t}</option>`).join('');
   if (dispRows.length) html += `<div class="disp-filtros">
     <input type="text" class="srch" id="dispSrch" placeholder="Buscar por nombre, apellido o CUIL…" value="${e(dispBusqueda)}" oninput="dispBusqueda=this.value;renderDispBody();document.getElementById('dispSrch').focus()" style="flex:1;min-width:200px">
-    <select class="filt" id="dispFiltro" onchange="dispFiltro=this.value;renderDispBody()" title="Quiénes se ven">${opc([['', 'Todas las personas'], ['verde', 'Semáforo verde'], ['amarillo', 'Semáforo amarillo'], ['rojo', 'Semáforo rojo'], ['sinfb', 'Sin feedback'], ['cv', 'Con CV'], ['fuera', 'No están en la nómina']], dispFiltro)}</select>
+    <select class="filt" id="dispFiltro" onchange="dispFiltro=this.value;renderDispBody()" title="Quiénes se ven">${opc([['', 'Todas las personas'], ['nomina', 'Sólo de la nómina'], ['verde', 'Semáforo verde'], ['amarillo', 'Semáforo amarillo'], ['rojo', 'Semáforo rojo'], ['sinfb', 'Sin feedback'], ['cv', 'Con CV'], ['fuera', 'No están en la nómina']], dispFiltro)}</select>
     <select class="filt" id="dispOrden" onchange="dispOrden=this.value;renderDispBody()" title="En qué orden">${opc([['nombre', 'Por nombre'], ['fb', 'Mejor feedback primero'], ['dias', 'Más días disponibles']], dispOrden)}</select>
     <span style="font-size:12px;color:#6b7280;white-space:nowrap">Tocá el nombre para ver la ficha · arrastrá la tabla para moverte</span>
   </div>`;
@@ -12040,7 +12040,7 @@ function renderDispBody() {
   // Cada respuesta con su persona de la nómina (o su inscripción, si no está), para filtrar y ordenar por feedback y CV.
   const conPersona = dispRows.map(r => { const cn = docNucleo(r.cuit); return { r, per: people.find(p => docNucleo(p.cuit) === cn), sol: solicitudes.find(s => docNucleo(s.cuit) === cn) }; });
   const sem = x => x.per && evaluacionesDe(x.per.id) ? calcSemaforo(x.per.id) : 0;
-  const pasa = x => !dispFiltro ? true : dispFiltro === 'fuera' ? !x.per : !x.per ? false
+  const pasa = x => !dispFiltro ? true : dispFiltro === 'fuera' ? !x.per : dispFiltro === 'nomina' ? !!x.per : !x.per ? false
     : dispFiltro === 'sinfb' ? !cuantosFb(x.per.id) : dispFiltro === 'cv' ? tieneCv(x.per) : sem(x) === { verde: 1, amarillo: 2, rojo: 3 }[dispFiltro];
   const porNombre = (a, b) => String(a.r.nombre || '').localeCompare(String(b.r.nombre || ''), 'es');
   const orden = dispOrden === 'fb' ? (a, b) => ((b.per && promedioDe(b.per.id)) ?? -1) - ((a.per && promedioDe(a.per.id)) ?? -1) || (sem(a) || 9) - (sem(b) || 9) || porNombre(a, b)
