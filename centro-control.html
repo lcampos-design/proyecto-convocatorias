@@ -32,21 +32,25 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
   --tinta:#F2F2F2;--tinta-2:#E6E6E6;--gris:#A8A8A8;--linea:rgba(242,242,242,.2);--resalte:rgba(242,242,242,.45);
   --borde:transparent;--prim-hover:#FFFFFF;--logo-filtro:none;--tj-mal:#FFD700;
   --celeste:#019DF4;   /* el celeste del Arena, de detalle: la raya de lo tocado en las métricas */
-  --velo:rgba(20,20,20,.86);   /* lo que tapa la pieza de marca de SBS en el ingreso y en la lista de shows */
+  /* Los fondos del ingreso (una foto de recital) y de la lista de shows (una trama), y lo que los tapa para que se lea encima. */
+  --velo-ingreso:rgba(20,20,20,.62);--velo-shows:rgba(20,20,20,.88);--trama:url(trama-oscura.jpg);
   /* La gravedad, igual en los dos modos: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
   --grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC;
   color-scheme:dark;
 }
 /* El modo claro: blanco y gris claro, la letra negra; las tarjetas, con un borde gris, y los
    logos (que son blancos), en negro. Vale si eligió Claro, o en Automático con el aparato en claro. */
-@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(237,237,237,.84);color-scheme:light}}
-:root[data-tema="claro"]{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(237,237,237,.84);color-scheme:light}
+@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo-ingreso:rgba(237,237,237,.8);--velo-shows:rgba(237,237,237,.86);--trama:url(trama-clara.jpg);color-scheme:light}}
+:root[data-tema="claro"]{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo-ingreso:rgba(237,237,237,.8);--velo-shows:rgba(237,237,237,.86);--trama:url(trama-clara.jpg);color-scheme:light}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
 button,input,select,textarea,optgroup,option{font-family:inherit}
-/* El fondo, liso, del tono del modo. En el ingreso y en la lista de shows, la pieza de marca
-   de SBS (las letras gigantes), tapada con el tono del modo para que se lea lo de encima. */
-body.con-marca::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(var(--velo),var(--velo)),url(fondo-sbs.jpg) center/cover no-repeat}
+/* El fondo, liso, del tono del modo. En el ingreso, una foto de recital en blanco y negro; en la
+   lista de shows, una trama de líneas (la oscura o la clara, según el modo). Las dos, tapadas con
+   el tono del modo para que se lea lo de encima. En el tablero del show, liso. */
+body[data-pantalla="pLogin"]::before,body[data-pantalla="pShows"]::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
+body[data-pantalla="pLogin"]::before{background:linear-gradient(var(--velo-ingreso),var(--velo-ingreso)),url(fondo-recital.jpg) center/cover no-repeat;filter:grayscale(1)}
+body[data-pantalla="pShows"]::before{background:linear-gradient(var(--velo-shows),var(--velo-shows)),var(--trama) center/cover no-repeat}
 body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 /* La palabra manuscrita de acento: nunca en datos ni en botones. */
 .mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
@@ -80,6 +84,9 @@ body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);fo
 button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-offset:2px}
 @media(max-width:760px){.bar-s{display:none}#btnActualizar{display:none}}
 @media(max-width:560px){#btnSalir span,#btnTema span,.bar-acc .bar-btn span,.bar .rot{display:none}#btnSalir,#btnTema,.bar-acc .bar-btn{width:44px;padding:0}}
+/* Dentro de un show, en el celular, no entra todo: la marca se esconde (queda el logo) y, en los más angostos, también el logo. */
+@media(max-width:560px){body[data-pantalla="pShow"] .bar-txt{display:none}body[data-pantalla="pShow"] .bar-acc{margin-left:auto}}
+@media(max-width:400px){body[data-pantalla="pShow"] .bar-logo{display:none}}
 .wrap{max-width:1180px;margin:0 auto;padding:28px max(18px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
 .pantalla{display:none}.pantalla.on{display:block}
 /* El ingreso: un bloque plano. */
@@ -255,7 +262,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body class="con-marca">
+<body data-pantalla="pLogin">
 
 <header class="bar">
   <button class="atras" id="btnAtras" onclick="volverShows()" style="display:none" aria-label="Volver a los shows">←</button>
@@ -3299,7 +3306,7 @@ let vistos = null, nuevos = new Set(), nivelSel = 0;
 const hoyISO = () => incDia(new Date().toISOString());
 function pantalla(id) {
   document.querySelectorAll('.pantalla').forEach(p => p.classList.toggle('on', p.id === id));
-  document.body.classList.toggle('con-marca', id !== 'pShow');
+  document.body.dataset.pantalla = id;
   document.getElementById('btnAtras').style.display = id === 'pShow' ? '' : 'none';
   document.getElementById('btnSalir').style.display = id === 'pLogin' ? 'none' : '';
   document.getElementById('barAcc').style.display = id === 'pShow' ? '' : 'none';
