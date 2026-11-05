@@ -6090,63 +6090,65 @@ function incEsperar3D(cont) {
   cont.style.height = fijo ? '' : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680)) + 'px';
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
-// El estilo de los controles del plano en la gerencia y el panel (diseño "Afiche",
-// cianotipo): bloques planos y rectos, sin vidrio, sombras ni degradés; las letras de
-// los botones en Poppins seminegrita (sin mayúsculas); lo elegido, en bloque crema. El fondo del 3D,
-// azul plano con la cuadrícula de un plano. Sólo con op.ax (la tablet queda como está).
+// Los controles del plano en la gerencia (op.ax): bloques planos y rectos, sin vidrio,
+// sombras ni degradés; las letras de los botones en Poppins seminegrita (sin mayúsculas);
+// lo elegido, invertido. Los del 2D y su ficha, en los colores de la página (modo claro u
+// oscuro); el 3D, siempre sobre un panel grafito con la cuadrícula de un plano (el estadio,
+// en sus colores, se ve mejor sobre oscuro). Sólo con op.ax (la tablet queda como está).
 function incEstiloAx() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloAx')) return;
   const st = document.createElement('style'); st.id = 'incEstiloAx';
-  const LETRA = INC_FUENTE, PANEL = 'background:#09203C;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;';
+  const LETRA = INC_FUENTE, PANEL = 'background:var(--ax-panel);-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;';
   const BOTON = 'font:600 12.5px ' + LETRA + ';';
-  const GRILLA = 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Cpath d=%22M24 0H0V24%22 fill=%22none%22 stroke=%22%23F4F1EA%22 stroke-opacity=%22.07%22/%3E%3C/svg%3E")';
-  st.textContent = '.inc-ax.inc-3d{border-radius:0;background:#17365F ' + GRILLA + '}'
-    + '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F4F1EA;min-width:40px;min-height:40px;' + BOTON + '}'
-    + '.inc-ax .inc-3d-btn:hover{background:#1E4372}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
-    + '.inc-ax .inc-3d-btn.on{background:#F4F1EA;color:#09203C}'
+  const GRILLA = 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Cpath d=%22M24 0H0V24%22 fill=%22none%22 stroke=%22%23F2F2F2%22 stroke-opacity=%22.07%22/%3E%3C/svg%3E")';
+  st.textContent = '.inc-ax{--ax-panel:var(--fondo,#161616);--ax-boton:var(--bloque,#262626);--ax-boton-2:var(--bloque-2,#303030);--ax-tinta:var(--tinta,#F2F2F2);--ax-tinta-2:var(--tinta-2,#E6E6E6);--ax-gris:var(--gris,#A8A8A8);--ax-linea:var(--linea,rgba(242,242,242,.3))}'
+    + '.inc-ax.inc-3d{--ax-panel:#161616;--ax-boton:#262626;--ax-boton-2:#303030;--ax-tinta:#F2F2F2;--ax-tinta-2:#E6E6E6;--ax-gris:#A8A8A8;--ax-linea:rgba(242,242,242,.3);border-radius:0;background:#1C1C1C ' + GRILLA + '}'
+    + '.inc-ax .inc-3d-btn{' + PANEL + 'color:var(--ax-tinta);min-width:40px;min-height:40px;' + BOTON + '}'
+    + '.inc-ax .inc-3d-btn:hover{background:var(--ax-boton-2)}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid var(--ax-tinta);outline-offset:2px}'
+    + '.inc-ax .inc-3d-btn.on{background:var(--ax-tinta);color:var(--ax-panel)}'
     // Arriba del estadio, sólo los botones: la leyenda va adentro del menú de capas.
     + '.inc-ax>.inc-3d-ley{display:none}'
     + '.inc-ax .inc-3d-capas{' + PANEL + 'padding:6px}'
     + '.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){display:grid;grid-template-columns:auto auto;gap:0 8px;align-items:start;max-height:calc(100% - 70px);overflow:auto}'
-    + '.inc-ax .inc-3d-menu-t{font:600 12.5px ' + LETRA + ';color:#C9C2B5;padding:8px 10px 6px}'
+    + '.inc-ax .inc-3d-menu-t{font:600 12.5px ' + LETRA + ';color:var(--ax-gris);padding:8px 10px 6px}'
     + '.inc-ax .inc-3d-ref-l{display:flex;flex-direction:column;gap:2px}'
-    + '.inc-ax .inc-3d-ref-l .inc-ley-b,.inc-ax .inc-3d-ref-l>span{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 10px;border:0;border-radius:0;background:transparent;color:#F4F1EA;' + BOTON + 'text-align:left;cursor:pointer;white-space:nowrap}'
-    + '.inc-ax .inc-3d-ref-l .inc-ley-b:hover{background:#17365F}.inc-ax .inc-3d-ref-l .inc-ley-b.on{background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-3d-ref-l .inc-ley-b,.inc-ax .inc-3d-ref-l>span{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 10px;border:0;border-radius:0;background:transparent;color:var(--ax-tinta);' + BOTON + 'text-align:left;cursor:pointer;white-space:nowrap}'
+    + '.inc-ax .inc-3d-ref-l .inc-ley-b:hover{background:var(--ax-boton)}.inc-ax .inc-3d-ref-l .inc-ley-b.on{background:var(--ax-tinta);color:var(--ax-panel)}'
     + '.inc-ax .inc-3d-ref-l i{width:12px;height:12px;border-radius:0;border:1px solid;display:inline-block;flex-shrink:0}'
     + '@media(max-width:560px){.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){grid-template-columns:minmax(0,1fr)}}'
-    + '.inc-ax .inc-3d-capas-l button,.inc-ax .inc-3d-vistas-l>button{border-radius:0;color:#F4F1EA;' + BOTON + '}'
-    + '.inc-ax .inc-3d-capas-l button:hover,.inc-ax .inc-3d-vistas-l>button:hover{background:#17365F}'
-    + '.inc-ax .inc-3d-capas-l button::after{width:16px;height:16px;border-radius:0;background:transparent;border:2px solid #C9C2B5;box-sizing:border-box}'
-    + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:#F4F1EA;border-color:#F4F1EA;color:#09203C;font-size:11px;line-height:1}'
-    + '.inc-ax .inc-3d-vistas-t{color:#C9C2B5;font:600 12.5px ' + LETRA + '}'
-    + '.inc-ax .inc-3d-vistas-l>button.on{background:#F4F1EA;color:#09203C}.inc-ax .inc-3d-vistas-l>button.on::after{color:#09203C}'
-    + '.inc-ax .inc-3d-vistas-p button{border-radius:0;' + BOTON + '}.inc-ax .inc-3d-vistas-p button.on{background:#F4F1EA;color:#09203C}'
-    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#C9C2B5;font:400 12.5px ' + LETRA + '}'
+    + '.inc-ax .inc-3d-capas-l button,.inc-ax .inc-3d-vistas-l>button{border-radius:0;color:var(--ax-tinta);' + BOTON + '}'
+    + '.inc-ax .inc-3d-capas-l button:hover,.inc-ax .inc-3d-vistas-l>button:hover{background:var(--ax-boton)}'
+    + '.inc-ax .inc-3d-capas-l button::after{width:16px;height:16px;border-radius:0;background:transparent;border:2px solid var(--ax-gris);box-sizing:border-box}'
+    + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:var(--ax-tinta);border-color:var(--ax-tinta);color:var(--ax-panel);font-size:11px;line-height:1}'
+    + '.inc-ax .inc-3d-vistas-t{color:var(--ax-gris);font:600 12.5px ' + LETRA + '}'
+    + '.inc-ax .inc-3d-vistas-l>button.on{background:var(--ax-tinta);color:var(--ax-panel)}.inc-ax .inc-3d-vistas-l>button.on::after{color:var(--ax-panel)}'
+    + '.inc-ax .inc-3d-vistas-p button{border-radius:0;' + BOTON + '}.inc-ax .inc-3d-vistas-p button.on{background:var(--ax-tinta);color:var(--ax-panel)}'
+    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:var(--ax-gris);font:400 12.5px ' + LETRA + '}'
     + '.inc-ax .inc-3d-pisos{' + PANEL + 'gap:4px;padding:4px}'
-    + '.inc-ax .inc-3d-pisos button{border-radius:0;background:#17365F;color:#F4F1EA;' + BOTON + 'min-height:34px;padding:0 12px}'
-    + '.inc-ax .inc-3d-pisos button:hover{background:#1E4372}.inc-ax .inc-3d-pisos button.on{background:#F4F1EA;color:#09203C;box-shadow:none}'
+    + '.inc-ax .inc-3d-pisos button{border-radius:0;background:var(--ax-boton);color:var(--ax-tinta);' + BOTON + 'min-height:34px;padding:0 12px}'
+    + '.inc-ax .inc-3d-pisos button:hover{background:var(--ax-boton-2)}.inc-ax .inc-3d-pisos button.on{background:var(--ax-tinta);color:var(--ax-panel);box-shadow:none}'
     + '@media(pointer:coarse){.inc-ax .inc-3d-btn{min-width:44px;min-height:44px}.inc-ax .inc-3d-pisos button{min-height:40px}}'
-    // La ficha de un lugar: un bloque azul marino, con la letra clara.
-    + '.inc-ax .inc-ficha,.inc-ax .inc-3d-ficha{' + PANEL + 'color:#F4F1EA}'
-    + '.inc-ax .inc-ficha-ico{border-radius:0}.inc-ax .inc-ficha-datos span{border:1px solid rgba(244,241,234,.3);background:transparent;border-radius:0;color:#ECE7DD;font-family:' + LETRA + '}'
-    + '.inc-ax .inc-ficha-cab button{background:#17365F;color:#F4F1EA;border-radius:0}'
-    + '.inc-ax .inc-ficha-abiertas{color:#C9C2B5}.inc-ax .inc-ficha-accion{border-radius:0;background:#F4F1EA;color:#09203C;box-shadow:none;' + BOTON + '}'
-    // El detalle de pantalla completa: un bloque azul marino, con los tickets.
-    + '.inc-ax .inc-3d-det{' + PANEL + 'color:#F4F1EA;--tj-muesca:#09203C}'
-    + '.inc-ax .inc-3d-det-cab{border-bottom:2px solid #F4F1EA}.inc-ax .inc-3d-det-tit span{color:#C9C2B5;font:400 12.5px ' + LETRA + '}'
-    + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:0;border:0;background:#17365F;color:#F4F1EA}'
-    + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{background:#1E4372}'
-    + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:0;background:#F4F1EA;color:#09203C}'
-    + '.inc-ax .inc-3d-det .inc-ficha-datos span{border:1px solid rgba(244,241,234,.3);background:transparent;border-radius:0;color:#ECE7DD}'
-    + '.inc-ax .inc-3d-det-vacio{color:#C9C2B5}'
+    // La ficha de un lugar: un bloque del fondo, con la letra.
+    + '.inc-ax .inc-ficha,.inc-ax .inc-3d-ficha{' + PANEL + 'color:var(--ax-tinta)}'
+    + '.inc-ax .inc-ficha-ico{border-radius:0}.inc-ax .inc-ficha-datos span{border:1px solid var(--ax-linea);background:transparent;border-radius:0;color:var(--ax-tinta-2);font-family:' + LETRA + '}'
+    + '.inc-ax .inc-ficha-cab button{background:var(--ax-boton);color:var(--ax-tinta);border-radius:0}'
+    + '.inc-ax .inc-ficha-abiertas{color:var(--ax-gris)}.inc-ax .inc-ficha-accion{border-radius:0;background:var(--ax-tinta);color:var(--ax-panel);box-shadow:none;' + BOTON + '}'
+    // El detalle de pantalla completa: un bloque grafito, con los tickets.
+    + '.inc-ax .inc-3d-det{' + PANEL + 'color:var(--ax-tinta);--tj-muesca:var(--ax-panel)}'
+    + '.inc-ax .inc-3d-det-cab{border-bottom:2px solid var(--ax-tinta)}.inc-ax .inc-3d-det-tit span{color:var(--ax-gris);font:400 12.5px ' + LETRA + '}'
+    + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:0;border:0;background:var(--ax-boton);color:var(--ax-tinta)}'
+    + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{background:var(--ax-boton-2)}'
+    + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:0;background:var(--ax-tinta);color:var(--ax-panel)}'
+    + '.inc-ax .inc-3d-det .inc-ficha-datos span{border:1px solid var(--ax-linea);background:transparent;border-radius:0;color:var(--ax-tinta-2)}'
+    + '.inc-ax .inc-3d-det-vacio{color:var(--ax-gris)}'
     // El plano 2D: los pisos, "Mostrar", buscar y la leyenda.
     + '.inc-ax .inc-pisos{background:transparent;border:0;border-radius:0;padding:0;gap:4px}'
-    + '.inc-ax .inc-pisos button{border-radius:0;background:#17365F;color:#F4F1EA;' + BOTON + '}'
-    + '.inc-ax .inc-pisos button.on{background:#F4F1EA;color:#09203C;box-shadow:none}'
-    + '.inc-ax .inc-plano-mostrar{color:#C9C2B5}'
-    + '.inc-ax .inc-capas button,.inc-ax .inc-bus-btn{border:0;background:#17365F;color:#F4F1EA;border-radius:0}'
-    + '.inc-ax .inc-capas button.on,.inc-ax .inc-bus-btn.on{background:#F4F1EA;color:#09203C}'
-    + '.inc-ax .inc-ley{color:#ECE7DD}';
+    + '.inc-ax .inc-pisos button{border-radius:0;background:var(--ax-boton);color:var(--ax-tinta);' + BOTON + '}'
+    + '.inc-ax .inc-pisos button.on{background:var(--ax-tinta);color:var(--ax-panel);box-shadow:none}'
+    + '.inc-ax .inc-plano-mostrar{color:var(--ax-gris)}'
+    + '.inc-ax .inc-capas button,.inc-ax .inc-bus-btn{border:0;background:var(--ax-boton);color:var(--ax-tinta);border-radius:0}'
+    + '.inc-ax .inc-capas button.on,.inc-ax .inc-bus-btn.on{background:var(--ax-tinta);color:var(--ax-panel)}'
+    + '.inc-ax .inc-ley{color:var(--ax-tinta-2)}';
   document.head.appendChild(st);
 }
 // La leyenda de abajo del plano 2D (y la del 3D, encima).

@@ -3,36 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0D1A2E">
+<meta name="theme-color" content="#262626">
+<script>
+// El tema que eligió (Claro u Oscuro), antes de pintar, así no parpadea; sin elegir, el del aparato.
+try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro') document.documentElement.setAttribute('data-tema', t); } catch (_) {}
+</script>
 <title>Centro de Control — Movistar Arena</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Yellowtail&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-/* Diseño "Afiche" (cianotipo / plano técnico, vintage moderno): el azul marino del Arena
-   como papel de plano, con un grano muy suave; bloques planos y rectos, sin redondeos,
-   sombras, desenfoque ni degradés. Títulos en Poppins muy pesada y en mayúsculas, con una
-   palabra manuscrita (Yellowtail) de acento; los rótulos y los botones, en Poppins
-   seminegrita y en mayúsculas espaciadas (Poppins en todo). El único color fuerte es la gravedad (grave en rojo, media en ámbar, leve con
-   contorno), en bloques, y siempre con su nombre escrito. Lo elegido,
-   en bloque crema. En la compu, los controles de 40 px; en lo táctil, de 44. */
+/* Los colores de SBS, en dos modos a elección de cada uno (como en WhatsApp: Automático,
+   Claro u Oscuro): negro y grafito con la letra blanca, o blanco y gris claro con la letra
+   negra. El fondo, liso; bloques planos y rectos, sin redondeos, sombras ni desenfoque.
+   Títulos en Poppins muy pesada y en mayúsculas, con una palabra manuscrita (Yellowtail) de
+   acento; los rótulos y los botones, en Poppins seminegrita. El único color fuerte es la
+   gravedad (grave en rojo, media en dorado, leve en gris), en bloques, y siempre con su
+   nombre escrito; el azul y el celeste del Arena, de detalle (el plano y el resumen del
+   show). Lo elegido, invertido (del color de la letra). En la compu, los controles de
+   40 px; en lo táctil, de 44. */
 :root{
   --inc-fuente:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   
   --mano:'Yellowtail',cursive;
-  --fondo:#09203C;--bloque:#17365F;--bloque-2:#1E4372;
-  --crema:#F4F1EA;--crema-2:#ECE7DD;--gris:#C9C2B5;--linea:rgba(244,241,234,.22);
-  /* La gravedad: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
-  --celeste:#019DF4;   /* el celeste de la marca (las cifras del resumen del show y el informe) */
+  /* El modo oscuro: negro, grafito y la letra blanca. */
+  --fondo:#141414;--bloque:#262626;--bloque-2:#303030;
+  --tinta:#F2F2F2;--tinta-2:#E6E6E6;--gris:#A8A8A8;--linea:rgba(242,242,242,.2);--resalte:rgba(242,242,242,.45);
+  --borde:transparent;--prim-hover:#FFFFFF;--logo-filtro:none;--tj-mal:#FFD700;
+  --celeste:#019DF4;   /* el celeste del Arena, de detalle: las cifras del resumen del show y el informe */
   --celeste-osc:#003150;--celeste-letra:#019DF4;   /* el resumen del show: fondo oscuro y la letra en el celeste (4,6 a 1) */
+  /* La gravedad, igual en los dos modos: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
   --grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC;
+  color-scheme:dark;
 }
+/* El modo claro: blanco y gris claro, la letra negra; las tarjetas, con un borde gris, y los
+   logos (que son blancos), en negro. Vale si eligió Claro, o en Automático con el aparato en claro. */
+@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--celeste-osc:#E3F3FD;--celeste-letra:#00639C;color-scheme:light}}
+:root[data-tema="claro"]{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--celeste-osc:#E3F3FD;--celeste-letra:#00639C;color-scheme:light}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
 button,input,select,textarea,optgroup,option{font-family:inherit}
-/* El papel: azul marino con un grano chico que se repite (128 px, no se calcula en vivo). */
-body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:var(--crema);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+/* El fondo, liso, del tono del modo. */
+body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 /* La palabra manuscrita de acento: nunca en datos ni en botones. */
 .mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
 /* Los rótulos: mono, en mayúsculas espaciadas. */
@@ -43,8 +56,8 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 .sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 .28em;font:400 56px/1.05 var(--mano);letter-spacing:0;padding-top:.05em}
 .sec-t .mano{font-size:1em;transform:none}
 /* La barra de arriba: el logo y la marca (AX, Show Business Solutions, la frase) y, a la derecha, en vivo, actualizar, el informe y salir. */
-.bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--bloque);border-bottom:2px solid var(--crema)}
-.bar-logo{width:34px;height:34px;flex-shrink:0;display:block}
+.bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--bloque);border-bottom:2px solid var(--tinta)}
+.bar-logo{width:34px;height:34px;flex-shrink:0;display:block;filter:var(--logo-filtro)}
 .bar-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .bar-t{font:800 14.5px/1.1 var(--inc-fuente);letter-spacing:0;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .bar-s{font:400 12px var(--inc-fuente);color:var(--gris);white-space:nowrap}
@@ -52,60 +65,60 @@ body{font-family:var(--inc-fuente);background:var(--fondo) url(grano.png);color:
 /* En el celular, la marca en dos renglones (entera, sin puntos suspensivos). */
 @media(max-width:560px){.bar-t{white-space:normal;font-size:12.5px;line-height:1.05}}
 .bar-acc{display:flex;gap:4px;align-items:center;flex-shrink:0}
-.bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:0;background:var(--fondo);color:var(--crema);font:600 13px var(--inc-fuente);letter-spacing:0;cursor:pointer;flex-shrink:0;transition:background .15s}
+.bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:0;background:var(--fondo);color:var(--tinta);font:600 13px var(--inc-fuente);letter-spacing:0;cursor:pointer;flex-shrink:0;transition:background .15s}
 .bar-btn:hover{background:var(--bloque-2)}
-.bar-btn.prim{background:var(--crema);color:var(--fondo)}.bar-btn.prim:hover{background:#fff}
+.bar-btn.prim{background:var(--tinta);color:var(--fondo)}.bar-btn.prim:hover{background:var(--prim-hover)}
 .bar-btn.ico{width:40px;padding:0}
 .bar-btn svg{width:17px;height:17px;flex-shrink:0}
-.inc-vivo{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;background:var(--crema);color:var(--fondo);font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap}
+.inc-vivo{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;background:var(--tinta);color:var(--fondo);font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap}
 .inc-vivo::before{content:'';width:8px;height:8px;background:var(--fondo);animation:incLatido 1.6s infinite}
 .inc-vivo.mal{background:var(--media);color:var(--media-letra)}.inc-vivo.mal::before{background:var(--media-letra)}.inc-vivo.mal::before{animation:none}
-.atras{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border:0;border-radius:0;background:var(--fondo);color:var(--crema);font-size:18px;cursor:pointer}
+.atras{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border:0;border-radius:0;background:var(--fondo);color:var(--tinta);font-size:18px;cursor:pointer}
 .atras:hover{background:var(--bloque-2)}
-button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-offset:2px}
+button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-offset:2px}
 @media(max-width:760px){.bar-s{display:none}#btnActualizar{display:none}}
 @media(max-width:560px){#btnSalir span,.bar-acc .bar-btn span,.bar .rot{display:none}#btnSalir,.bar-acc .bar-btn{width:44px;padding:0}}
 .wrap{max-width:1180px;margin:0 auto;padding:28px max(18px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
 .pantalla{display:none}.pantalla.on{display:block}
 /* El ingreso: un bloque plano. */
 .login{min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{background:var(--bloque);color:var(--crema);padding:28px 24px 24px;width:100%;max-width:400px}
-/* Las dos marcas juntas, como una colaboración: el SBS calado (las letras, del azul del bloque) y la M de Movistar. */
+.login-card{background:var(--bloque);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;box-shadow:inset 0 0 0 1px var(--borde)}
+/* Las dos marcas juntas, como una colaboración: el SBS calado (las letras, del color del bloque) y la M de Movistar; en el modo claro, las dos en negro. */
 .login-marcas{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 20px}
-.login-logo{width:68px;height:68px;display:block}
-.login-m{height:50px;width:auto;display:block}
+.login-logo{width:68px;height:68px;display:block;filter:var(--logo-filtro)}
+.login-m{height:50px;width:auto;display:block;filter:var(--logo-filtro)}
 /* La ×: dibujada, de trazo firme y puntas redondas, como las curvas de la M. */
-.login-y{width:18px;height:18px;flex-shrink:0;display:block}.login-y path{stroke:var(--crema);stroke-width:3.6;stroke-linecap:round;fill:none}
+.login-y{width:18px;height:18px;flex-shrink:0;display:block}.login-y path{stroke:var(--tinta);stroke-width:3.6;stroke-linecap:round;fill:none}
 .login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;text-align:center;margin:0 0 26px}
 .login-t .mano{display:block;font-size:.78em;margin-top:8px}
 .lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin-bottom:6px}
 /* 16 px: en el iPhone, con menos, la página se agranda sola al tocar el campo. */
-.in{width:100%;min-height:46px;padding:10px 12px;border:2px solid var(--linea);border-radius:0;font:16px var(--inc-fuente);outline:none;margin-bottom:16px;background:var(--fondo);color:var(--crema)}
-.in:focus{border-color:var(--crema)}
-/* Lo que autocompleta el navegador, también azul oscuro (si no, lo pinta celeste). */
-.in:-webkit-autofill,.in:-webkit-autofill:hover,.in:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px var(--fondo) inset;-webkit-text-fill-color:var(--crema);caret-color:var(--crema)}
-.btn-ok{width:100%;min-height:50px;background:var(--crema);color:var(--fondo);border:0;border-radius:0;font:600 15px var(--inc-fuente);letter-spacing:0;cursor:pointer}
-.btn-ok:hover{background:#fff}
+.in{width:100%;min-height:46px;padding:10px 12px;border:2px solid var(--linea);border-radius:0;font:16px var(--inc-fuente);outline:none;margin-bottom:16px;background:var(--fondo);color:var(--tinta)}
+.in:focus{border-color:var(--tinta)}
+/* Lo que autocompleta el navegador, también del tono del campo (si no, lo pinta celeste). */
+.in:-webkit-autofill,.in:-webkit-autofill:hover,.in:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px var(--fondo) inset;-webkit-text-fill-color:var(--tinta);caret-color:var(--tinta)}
+.btn-ok{width:100%;min-height:50px;background:var(--tinta);color:var(--fondo);border:0;border-radius:0;font:600 15px var(--inc-fuente);letter-spacing:0;cursor:pointer}
+.btn-ok:hover{background:var(--prim-hover)}
 .btn-ok:disabled{background:var(--bloque-2);color:var(--gris);cursor:default}
-.err{display:none;background:var(--grave);color:var(--crema);padding:10px 12px;font:400 12px var(--inc-fuente);margin-bottom:14px}
-/* Los shows: bloques planos; el de hoy, con el contorno crema. */
+.err{display:none;background:var(--grave);color:var(--tinta);padding:10px 12px;font:400 12px var(--inc-fuente);margin-bottom:14px}
+/* Los shows: bloques planos; el de hoy, con el contorno del color de la letra. */
 .titulo{margin:0 0 8px}
 .titulo-s{font:400 12px var(--inc-fuente);color:var(--gris)}
 .grupo{font:600 13.5px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin:28px 0 8px}
 .shows-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:4px}
-.show{padding:14px 16px;min-height:78px;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--bloque);color:var(--crema);transition:background .15s}
+.show{padding:14px 16px;min-height:78px;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--bloque);color:var(--tinta);box-shadow:inset 0 0 0 1px var(--borde);transition:background .15s}
 .show:hover{background:var(--bloque-2)}
-.show.hoy{outline:2px solid var(--crema);outline-offset:-2px}
+.show.hoy{outline:2px solid var(--tinta);outline-offset:-2px}
 .show-main{flex:1;min-width:0}
 .show-n{font:700 16px/1.2 var(--inc-fuente);display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
 .show-f{font:400 11px var(--inc-fuente);color:var(--gris);margin-top:5px}
 .show-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
-.vivo-pill{font:600 11.5px var(--inc-fuente);letter-spacing:0;color:var(--fondo);background:var(--crema);padding:3px 7px;display:inline-flex;align-items:center;gap:5px}
+.vivo-pill{font:600 11.5px var(--inc-fuente);letter-spacing:0;color:var(--fondo);background:var(--tinta);padding:3px 7px;display:inline-flex;align-items:center;gap:5px}
 .vivo-pill::before{content:'';width:6px;height:6px;background:var(--fondo);animation:incLatido 1.4s infinite}
 .flecha{color:var(--gris);font-size:22px}
 .vacio{text-align:center;padding:32px 18px;color:var(--gris);font:400 12px/1.5 var(--inc-fuente);border:2px dashed var(--linea)}
 .inc-cuenta{font:400 11px var(--inc-fuente);padding:4px 8px;background:var(--fondo);color:var(--gris)}
-.inc-cuenta strong{font-weight:700;margin-right:5px;color:var(--crema)}
+.inc-cuenta strong{font-weight:700;margin-right:5px;color:var(--tinta)}
 /* Lo abierto por gravedad: un bloque del color de su gravedad (fondo oscuro, letra clara). */
 .inc-cuenta.n3{background:var(--grave);color:var(--grave-letra)}.inc-cuenta.n3 strong{color:inherit}
 .inc-cuenta.n2{background:var(--media);color:var(--media-letra)}.inc-cuenta.n2 strong{color:inherit}
@@ -117,10 +130,10 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 /* El nombre del show: las palabras nunca se cortan; el tamaño lo ajusta ajustarNombre() (cada palabra entera, dos renglones como mucho); aire arriba para las tildes. */
 .pase-n{font:900 clamp(52px,12vw,150px)/.9 var(--inc-fuente);letter-spacing:-.035em;text-transform:uppercase;overflow-wrap:normal;word-break:normal;hyphens:none;padding-top:.1em}
 .pase-n .mano{font-size:max(.36em,24px);margin-left:.2em;transform:rotate(-8deg) translateY(-.45em)}
-.pase-f{font:400 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);padding-top:10px;border-top:4px solid var(--crema)}
+.pase-f{font:400 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);padding-top:10px;border-top:4px solid var(--tinta)}
 .pase-centro{flex:1 1 520px;min-width:0;display:flex;flex-direction:column;gap:4px}
-/* El estado de la sala: un bloque; rojo si hay graves, amarillo si hay medias (fondo oscuro, letra clara), crema si está todo en orden. */
-.estado{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:16px 18px;background:var(--crema);color:var(--fondo)}
+/* El estado de la sala: un bloque; rojo si hay graves, amarillo si hay medias (fondo oscuro, letra clara), invertido (del color de la letra) si está todo en orden. */
+.estado{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:16px 18px;background:var(--tinta);color:var(--fondo)}
 .estado svg{grid-column:1;grid-row:1/3;width:28px;height:28px}
 .estado>span:not(.hace){grid-column:2;grid-row:1;font:900 30px/.95 var(--inc-fuente);text-transform:uppercase;letter-spacing:-.005em}
 .estado .hace{grid-column:3;grid-row:1;font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap;align-self:start}
@@ -128,7 +141,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .estado.grave{background:var(--grave);color:var(--grave-letra)}.estado.medio{background:var(--media);color:var(--media-letra)}
 /* Lo abierto por gravedad (un bloque por nivel), lo resuelto y el total. */
 .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
-.stat{--c:var(--gris);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;min-height:86px;padding:11px 12px;border:0;border-radius:0;background:var(--bloque);color:var(--crema);text-align:left;font:inherit;cursor:pointer;min-width:0;transition:background .15s}
+.stat{--c:var(--gris);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;min-height:86px;padding:11px 12px;border:0;border-radius:0;background:var(--bloque);color:var(--tinta);text-align:left;font:inherit;cursor:pointer;min-width:0;transition:background .15s}
 .stat:hover{filter:brightness(1.12)}
 .stat-t{display:flex;align-items:center;gap:7px;max-width:100%;font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-t i{display:none}
@@ -141,18 +154,18 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .stat b{font:900 44px/.85 var(--inc-fuente)}
 .stat small{font:400 10.5px var(--inc-fuente);color:var(--gris)}
 .stat:not(.cero) small,.stat.k-3 small,.stat.k-2 small,.stat.k-1 small{color:inherit;opacity:.8}
-/* El que se tocó (filtra la lista): un borde crema. */
-.stat.on{outline:3px solid var(--crema);outline-offset:-3px}
+/* El que se tocó (filtra la lista): un borde del color de la letra. */
+.stat.on{outline:3px solid var(--tinta);outline-offset:-3px}
 /* La grave abierta: un cuadradito que late, como el de "en vivo". */
 .stat.pulso .stat-t::before{content:'';width:8px;height:8px;flex-shrink:0;background:currentColor;animation:incLatido 1.2s infinite}
 /* En el celular: los números de a tres arriba y dos abajo. */
 @media(max-width:700px){.pase-id{padding:0 0 12px}.stats{grid-template-columns:repeat(6,minmax(0,1fr))}.stat{grid-column:span 2}.stat:nth-child(n+4){grid-column:span 3}.stat small{display:none}.estado>span:not(.hace){font-size:24px}}
-/* Las botoneras: bloques planos de a uno; el elegido, en crema. */
+/* Las botoneras: bloques planos de a uno; el elegido, invertido. */
 .herr{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 .seg{display:inline-flex;gap:4px}
-.seg button{border:0;border-radius:0;background:var(--bloque);font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--crema);padding:0 14px;min-height:40px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;transition:background .15s}
+.seg button{border:0;border-radius:0;background:var(--bloque);font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--tinta);padding:0 14px;min-height:40px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;transition:background .15s}
 .seg button:hover{background:var(--bloque-2)}
-.seg button.on{background:var(--crema);color:var(--fondo)}
+.seg button.on{background:var(--tinta);color:var(--fondo)}
 .seg button svg{width:14px;height:14px;flex-shrink:0}
 .seg.chico button{padding:0 12px}
 .t-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:30px}
@@ -173,9 +186,9 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 }
 @media(min-width:1500px){.t-grid{grid-template-columns:minmax(0,1fr) 460px}}
 .fila{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;font:600 12.5px var(--inc-fuente);letter-spacing:0;background:var(--bloque);border:0;color:var(--crema);border-radius:0;padding:0 12px;cursor:pointer;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;font:600 12.5px var(--inc-fuente);letter-spacing:0;background:var(--bloque);border:0;color:var(--tinta);border-radius:0;padding:0 12px;cursor:pointer;white-space:nowrap}
 .chip:hover{background:var(--bloque-2)}
-.chip.on{background:var(--crema);color:var(--fondo)}
+.chip.on{background:var(--tinta);color:var(--fondo)}
 .inc-lugares{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0 0;align-items:center}
 @keyframes incLatido{0%,100%{opacity:1}50%{opacity:.25}}
 .met-t{margin:44px 0 16px}
@@ -195,14 +208,14 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .pantalla .inc-tile-ir{font:600 12.5px var(--inc-fuente);color:var(--celeste-letra)}
 .pantalla .inc-graf-card{background:transparent;border:0;border-radius:0;padding:0}
 .pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:var(--celeste-letra);margin-bottom:8px}
-.pantalla .inc-g-t{fill:#019DF4}.pantalla .inc-g-s{fill:#019DF4}.pantalla .inc-g-barra{fill:#019DF4}
+.pantalla .inc-g-t{fill:var(--celeste)}.pantalla .inc-g-s{fill:var(--celeste)}.pantalla .inc-g-barra{fill:var(--celeste)}
 .pantalla .inc-marca:focus-visible{outline-color:var(--celeste-letra)}
-.pantalla .inc-met-tip{background:var(--fondo);color:var(--crema-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--crema)}
+.pantalla .inc-met-tip{background:var(--fondo);color:var(--tinta-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--tinta)}
 .pantalla .inc-met-vacio{background:var(--celeste-osc);border:0;border-radius:0;color:var(--celeste-letra)}
 /* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad. */
-.pantalla{--tj-tinta:#F4F1EA;--tj-tinta2:#C9C2B5;--tj-perf:rgba(244,241,234,.22);--tj-ok:#ECE7DD;--tj-mal:#FFD700}
-.pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px}
-.pantalla .inc-tj:hover{outline-color:rgba(244,241,234,.45)}.pantalla .inc-tj.abierta{outline-color:var(--crema)}
+.pantalla{--tj-tinta:var(--tinta);--tj-tinta2:var(--gris);--tj-perf:var(--linea);--tj-ok:var(--tinta-2)}
+.pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px;box-shadow:inset 0 0 0 1px var(--borde)}
+.pantalla .inc-tj:hover{outline-color:var(--resalte)}.pantalla .inc-tj.abierta{outline-color:var(--tinta)}
 .pantalla .inc-tj-cab{grid-template-columns:78px minmax(0,1fr)}
 .pantalla .inc-tj-cab::before,.pantalla .inc-tj-cab::after{display:none}
 .pantalla .inc-card.inc-tj .inc-tj-talon{border-radius:0;padding:10px 6px;gap:6px}
@@ -219,6 +232,15 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
 .pantalla .inc-tj .inc-tj-estado{font:600 11px var(--inc-fuente)}
 .pantalla .inc-tj .inc-tj-f>span{font:600 12px var(--inc-fuente);letter-spacing:0}
 .pantalla .inc-tj .inc-tj-chips span{border-radius:0;font-family:var(--inc-fuente)}
+/* El tema (como en WhatsApp): un menú chico debajo de la barra, con Automático, Claro y Oscuro; el elegido, tildado. */
+.tema-menu{position:absolute;top:calc(100% + 4px);right:max(16px,env(safe-area-inset-right,0px));z-index:40;width:min(280px,calc(100vw - 32px));padding:6px;display:flex;flex-direction:column;gap:2px;background:var(--bloque);color:var(--tinta);box-shadow:0 0 0 1px var(--linea)}
+.tema-menu[hidden]{display:none}
+.tema-menu-t{font:600 12.5px var(--inc-fuente);color:var(--gris);padding:8px 10px 6px}
+.tema-op{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:12px;min-height:48px;padding:6px 10px;border:0;border-radius:0;background:transparent;color:var(--tinta);font:600 14px var(--inc-fuente);text-align:left;cursor:pointer}
+.tema-op:hover{background:var(--bloque-2)}
+.tema-op small{display:block;font:400 12px var(--inc-fuente);color:var(--gris);margin-top:2px}
+.tema-op i{width:18px;height:18px;border:2px solid var(--gris);display:grid;place-items:center;font:700 11px/1 var(--inc-fuente);font-style:normal;color:var(--fondo)}
+.tema-op[aria-checked="true"] i{background:var(--tinta);border-color:var(--tinta)}.tema-op[aria-checked="true"] i::before{content:"✓"}
 /* En los aparatos táctiles, todo lo que se toca, de 44 px (lo que pide la accesibilidad). */
 @media(pointer:coarse){
   .bar-btn,.atras,.inc-vivo{min-height:44px}.bar-btn.ico,.atras{width:44px;height:44px}
@@ -246,7 +268,9 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--crema);outline-
     <button class="bar-btn ico" id="btnActualizar" onclick="cargarIncidencias()" title="Actualizar ahora" aria-label="Actualizar ahora"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
     <button class="bar-btn prim" onclick="informe()" title="Informe del show (PDF)" aria-label="Informe del show en PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Informe</span></button>
   </div>
+  <button class="bar-btn ico" id="btnTema" onclick="abrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false" aria-controls="temaMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
   <button class="bar-btn" id="btnSalir" onclick="salir()" style="display:none" aria-label="Salir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg><span>Salir</span></button>
+  <div class="tema-menu" id="temaMenu" role="menu" aria-label="Tema" hidden></div>
 </header>
 
 <!-- El ingreso -->
@@ -1522,63 +1546,65 @@ function incEsperar3D(cont) {
   cont.style.height = fijo ? '' : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680)) + 'px';
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
-// El estilo de los controles del plano en la gerencia y el panel (diseño "Afiche",
-// cianotipo): bloques planos y rectos, sin vidrio, sombras ni degradés; las letras de
-// los botones en Poppins seminegrita (sin mayúsculas); lo elegido, en bloque crema. El fondo del 3D,
-// azul plano con la cuadrícula de un plano. Sólo con op.ax (la tablet queda como está).
+// Los controles del plano en la gerencia (op.ax): bloques planos y rectos, sin vidrio,
+// sombras ni degradés; las letras de los botones en Poppins seminegrita (sin mayúsculas);
+// lo elegido, invertido. Los del 2D y su ficha, en los colores de la página (modo claro u
+// oscuro); el 3D, siempre sobre un panel grafito con la cuadrícula de un plano (el estadio,
+// en sus colores, se ve mejor sobre oscuro). Sólo con op.ax (la tablet queda como está).
 function incEstiloAx() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloAx')) return;
   const st = document.createElement('style'); st.id = 'incEstiloAx';
-  const LETRA = INC_FUENTE, PANEL = 'background:#09203C;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;';
+  const LETRA = INC_FUENTE, PANEL = 'background:var(--ax-panel);-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;';
   const BOTON = 'font:600 12.5px ' + LETRA + ';';
-  const GRILLA = 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Cpath d=%22M24 0H0V24%22 fill=%22none%22 stroke=%22%23F4F1EA%22 stroke-opacity=%22.07%22/%3E%3C/svg%3E")';
-  st.textContent = '.inc-ax.inc-3d{border-radius:0;background:#17365F ' + GRILLA + '}'
-    + '.inc-ax .inc-3d-btn{' + PANEL + 'color:#F4F1EA;min-width:40px;min-height:40px;' + BOTON + '}'
-    + '.inc-ax .inc-3d-btn:hover{background:#1E4372}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid #F4F1EA;outline-offset:2px}'
-    + '.inc-ax .inc-3d-btn.on{background:#F4F1EA;color:#09203C}'
+  const GRILLA = 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Cpath d=%22M24 0H0V24%22 fill=%22none%22 stroke=%22%23F2F2F2%22 stroke-opacity=%22.07%22/%3E%3C/svg%3E")';
+  st.textContent = '.inc-ax{--ax-panel:var(--fondo,#161616);--ax-boton:var(--bloque,#262626);--ax-boton-2:var(--bloque-2,#303030);--ax-tinta:var(--tinta,#F2F2F2);--ax-tinta-2:var(--tinta-2,#E6E6E6);--ax-gris:var(--gris,#A8A8A8);--ax-linea:var(--linea,rgba(242,242,242,.3))}'
+    + '.inc-ax.inc-3d{--ax-panel:#161616;--ax-boton:#262626;--ax-boton-2:#303030;--ax-tinta:#F2F2F2;--ax-tinta-2:#E6E6E6;--ax-gris:#A8A8A8;--ax-linea:rgba(242,242,242,.3);border-radius:0;background:#1C1C1C ' + GRILLA + '}'
+    + '.inc-ax .inc-3d-btn{' + PANEL + 'color:var(--ax-tinta);min-width:40px;min-height:40px;' + BOTON + '}'
+    + '.inc-ax .inc-3d-btn:hover{background:var(--ax-boton-2)}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid var(--ax-tinta);outline-offset:2px}'
+    + '.inc-ax .inc-3d-btn.on{background:var(--ax-tinta);color:var(--ax-panel)}'
     // Arriba del estadio, sólo los botones: la leyenda va adentro del menú de capas.
     + '.inc-ax>.inc-3d-ley{display:none}'
     + '.inc-ax .inc-3d-capas{' + PANEL + 'padding:6px}'
     + '.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){display:grid;grid-template-columns:auto auto;gap:0 8px;align-items:start;max-height:calc(100% - 70px);overflow:auto}'
-    + '.inc-ax .inc-3d-menu-t{font:600 12.5px ' + LETRA + ';color:#C9C2B5;padding:8px 10px 6px}'
+    + '.inc-ax .inc-3d-menu-t{font:600 12.5px ' + LETRA + ';color:var(--ax-gris);padding:8px 10px 6px}'
     + '.inc-ax .inc-3d-ref-l{display:flex;flex-direction:column;gap:2px}'
-    + '.inc-ax .inc-3d-ref-l .inc-ley-b,.inc-ax .inc-3d-ref-l>span{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 10px;border:0;border-radius:0;background:transparent;color:#F4F1EA;' + BOTON + 'text-align:left;cursor:pointer;white-space:nowrap}'
-    + '.inc-ax .inc-3d-ref-l .inc-ley-b:hover{background:#17365F}.inc-ax .inc-3d-ref-l .inc-ley-b.on{background:#F4F1EA;color:#09203C}'
+    + '.inc-ax .inc-3d-ref-l .inc-ley-b,.inc-ax .inc-3d-ref-l>span{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 10px;border:0;border-radius:0;background:transparent;color:var(--ax-tinta);' + BOTON + 'text-align:left;cursor:pointer;white-space:nowrap}'
+    + '.inc-ax .inc-3d-ref-l .inc-ley-b:hover{background:var(--ax-boton)}.inc-ax .inc-3d-ref-l .inc-ley-b.on{background:var(--ax-tinta);color:var(--ax-panel)}'
     + '.inc-ax .inc-3d-ref-l i{width:12px;height:12px;border-radius:0;border:1px solid;display:inline-block;flex-shrink:0}'
     + '@media(max-width:560px){.inc-ax .inc-3d-capas.abierto:not(.inc-3d-vistas){grid-template-columns:minmax(0,1fr)}}'
-    + '.inc-ax .inc-3d-capas-l button,.inc-ax .inc-3d-vistas-l>button{border-radius:0;color:#F4F1EA;' + BOTON + '}'
-    + '.inc-ax .inc-3d-capas-l button:hover,.inc-ax .inc-3d-vistas-l>button:hover{background:#17365F}'
-    + '.inc-ax .inc-3d-capas-l button::after{width:16px;height:16px;border-radius:0;background:transparent;border:2px solid #C9C2B5;box-sizing:border-box}'
-    + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:#F4F1EA;border-color:#F4F1EA;color:#09203C;font-size:11px;line-height:1}'
-    + '.inc-ax .inc-3d-vistas-t{color:#C9C2B5;font:600 12.5px ' + LETRA + '}'
-    + '.inc-ax .inc-3d-vistas-l>button.on{background:#F4F1EA;color:#09203C}.inc-ax .inc-3d-vistas-l>button.on::after{color:#09203C}'
-    + '.inc-ax .inc-3d-vistas-p button{border-radius:0;' + BOTON + '}.inc-ax .inc-3d-vistas-p button.on{background:#F4F1EA;color:#09203C}'
-    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:#C9C2B5;font:400 12.5px ' + LETRA + '}'
+    + '.inc-ax .inc-3d-capas-l button,.inc-ax .inc-3d-vistas-l>button{border-radius:0;color:var(--ax-tinta);' + BOTON + '}'
+    + '.inc-ax .inc-3d-capas-l button:hover,.inc-ax .inc-3d-vistas-l>button:hover{background:var(--ax-boton)}'
+    + '.inc-ax .inc-3d-capas-l button::after{width:16px;height:16px;border-radius:0;background:transparent;border:2px solid var(--ax-gris);box-sizing:border-box}'
+    + '.inc-ax .inc-3d-capas-l button.on::after{content:"✓";display:grid;place-items:center;background:var(--ax-tinta);border-color:var(--ax-tinta);color:var(--ax-panel);font-size:11px;line-height:1}'
+    + '.inc-ax .inc-3d-vistas-t{color:var(--ax-gris);font:600 12.5px ' + LETRA + '}'
+    + '.inc-ax .inc-3d-vistas-l>button.on{background:var(--ax-tinta);color:var(--ax-panel)}.inc-ax .inc-3d-vistas-l>button.on::after{color:var(--ax-panel)}'
+    + '.inc-ax .inc-3d-vistas-p button{border-radius:0;' + BOTON + '}.inc-ax .inc-3d-vistas-p button.on{background:var(--ax-tinta);color:var(--ax-panel)}'
+    + '.inc-ax .inc-3d-ayuda{' + PANEL + 'color:var(--ax-gris);font:400 12.5px ' + LETRA + '}'
     + '.inc-ax .inc-3d-pisos{' + PANEL + 'gap:4px;padding:4px}'
-    + '.inc-ax .inc-3d-pisos button{border-radius:0;background:#17365F;color:#F4F1EA;' + BOTON + 'min-height:34px;padding:0 12px}'
-    + '.inc-ax .inc-3d-pisos button:hover{background:#1E4372}.inc-ax .inc-3d-pisos button.on{background:#F4F1EA;color:#09203C;box-shadow:none}'
+    + '.inc-ax .inc-3d-pisos button{border-radius:0;background:var(--ax-boton);color:var(--ax-tinta);' + BOTON + 'min-height:34px;padding:0 12px}'
+    + '.inc-ax .inc-3d-pisos button:hover{background:var(--ax-boton-2)}.inc-ax .inc-3d-pisos button.on{background:var(--ax-tinta);color:var(--ax-panel);box-shadow:none}'
     + '@media(pointer:coarse){.inc-ax .inc-3d-btn{min-width:44px;min-height:44px}.inc-ax .inc-3d-pisos button{min-height:40px}}'
-    // La ficha de un lugar: un bloque azul marino, con la letra clara.
-    + '.inc-ax .inc-ficha,.inc-ax .inc-3d-ficha{' + PANEL + 'color:#F4F1EA}'
-    + '.inc-ax .inc-ficha-ico{border-radius:0}.inc-ax .inc-ficha-datos span{border:1px solid rgba(244,241,234,.3);background:transparent;border-radius:0;color:#ECE7DD;font-family:' + LETRA + '}'
-    + '.inc-ax .inc-ficha-cab button{background:#17365F;color:#F4F1EA;border-radius:0}'
-    + '.inc-ax .inc-ficha-abiertas{color:#C9C2B5}.inc-ax .inc-ficha-accion{border-radius:0;background:#F4F1EA;color:#09203C;box-shadow:none;' + BOTON + '}'
-    // El detalle de pantalla completa: un bloque azul marino, con los tickets.
-    + '.inc-ax .inc-3d-det{' + PANEL + 'color:#F4F1EA;--tj-muesca:#09203C}'
-    + '.inc-ax .inc-3d-det-cab{border-bottom:2px solid #F4F1EA}.inc-ax .inc-3d-det-tit span{color:#C9C2B5;font:400 12.5px ' + LETRA + '}'
-    + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:0;border:0;background:#17365F;color:#F4F1EA}'
-    + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{background:#1E4372}'
-    + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:0;background:#F4F1EA;color:#09203C}'
-    + '.inc-ax .inc-3d-det .inc-ficha-datos span{border:1px solid rgba(244,241,234,.3);background:transparent;border-radius:0;color:#ECE7DD}'
-    + '.inc-ax .inc-3d-det-vacio{color:#C9C2B5}'
+    // La ficha de un lugar: un bloque del fondo, con la letra.
+    + '.inc-ax .inc-ficha,.inc-ax .inc-3d-ficha{' + PANEL + 'color:var(--ax-tinta)}'
+    + '.inc-ax .inc-ficha-ico{border-radius:0}.inc-ax .inc-ficha-datos span{border:1px solid var(--ax-linea);background:transparent;border-radius:0;color:var(--ax-tinta-2);font-family:' + LETRA + '}'
+    + '.inc-ax .inc-ficha-cab button{background:var(--ax-boton);color:var(--ax-tinta);border-radius:0}'
+    + '.inc-ax .inc-ficha-abiertas{color:var(--ax-gris)}.inc-ax .inc-ficha-accion{border-radius:0;background:var(--ax-tinta);color:var(--ax-panel);box-shadow:none;' + BOTON + '}'
+    // El detalle de pantalla completa: un bloque grafito, con los tickets.
+    + '.inc-ax .inc-3d-det{' + PANEL + 'color:var(--ax-tinta);--tj-muesca:var(--ax-panel)}'
+    + '.inc-ax .inc-3d-det-cab{border-bottom:2px solid var(--ax-tinta)}.inc-ax .inc-3d-det-tit span{color:var(--ax-gris);font:400 12.5px ' + LETRA + '}'
+    + '.inc-ax .inc-3d-det-x,.inc-ax .inc-3d-det-todas{border-radius:0;border:0;background:var(--ax-boton);color:var(--ax-tinta)}'
+    + '.inc-ax .inc-3d-det-x:hover,.inc-ax .inc-3d-det-todas:hover{background:var(--ax-boton-2)}'
+    + '.inc-ax .inc-3d-det .inc-3d-det-accion{border-radius:0;background:var(--ax-tinta);color:var(--ax-panel)}'
+    + '.inc-ax .inc-3d-det .inc-ficha-datos span{border:1px solid var(--ax-linea);background:transparent;border-radius:0;color:var(--ax-tinta-2)}'
+    + '.inc-ax .inc-3d-det-vacio{color:var(--ax-gris)}'
     // El plano 2D: los pisos, "Mostrar", buscar y la leyenda.
     + '.inc-ax .inc-pisos{background:transparent;border:0;border-radius:0;padding:0;gap:4px}'
-    + '.inc-ax .inc-pisos button{border-radius:0;background:#17365F;color:#F4F1EA;' + BOTON + '}'
-    + '.inc-ax .inc-pisos button.on{background:#F4F1EA;color:#09203C;box-shadow:none}'
-    + '.inc-ax .inc-plano-mostrar{color:#C9C2B5}'
-    + '.inc-ax .inc-capas button,.inc-ax .inc-bus-btn{border:0;background:#17365F;color:#F4F1EA;border-radius:0}'
-    + '.inc-ax .inc-capas button.on,.inc-ax .inc-bus-btn.on{background:#F4F1EA;color:#09203C}'
-    + '.inc-ax .inc-ley{color:#ECE7DD}';
+    + '.inc-ax .inc-pisos button{border-radius:0;background:var(--ax-boton);color:var(--ax-tinta);' + BOTON + '}'
+    + '.inc-ax .inc-pisos button.on{background:var(--ax-tinta);color:var(--ax-panel);box-shadow:none}'
+    + '.inc-ax .inc-plano-mostrar{color:var(--ax-gris)}'
+    + '.inc-ax .inc-capas button,.inc-ax .inc-bus-btn{border:0;background:var(--ax-boton);color:var(--ax-tinta);border-radius:0}'
+    + '.inc-ax .inc-capas button.on,.inc-ax .inc-bus-btn.on{background:var(--ax-tinta);color:var(--ax-panel)}'
+    + '.inc-ax .inc-ley{color:var(--ax-tinta-2)}';
   document.head.appendChild(st);
 }
 // La leyenda de abajo del plano 2D (y la del 3D, encima).
@@ -3309,6 +3335,31 @@ async function ingresar() {
   entrar();
 }
 async function salir() { clearInterval(timer); await sb.auth.signOut({ scope: 'local' }); location.reload(); }
+// El tema, como en WhatsApp: Automático (el del celular o la compu), Claro u Oscuro. Se
+// guarda en el aparato ('tema') y vale también para la app de los supervisores.
+const TEMAS = [['auto', 'Automático', 'Como tu celular o tu compu'], ['claro', 'Claro', ''], ['oscuro', 'Oscuro', '']];
+function temaElegido() { try { const t = localStorage.getItem('tema'); return t === 'claro' || t === 'oscuro' ? t : 'auto'; } catch (_) { return 'auto'; } }
+// La barra del navegador del celular, del color de la barra de arriba.
+function colorBarra() { const m = document.querySelector('meta[name="theme-color"]'), c = getComputedStyle(document.documentElement).getPropertyValue('--bloque').trim(); if (m && c) m.content = c; }
+function ponerTema(t) {
+  try { if (t === 'auto') localStorage.removeItem('tema'); else localStorage.setItem('tema', t); } catch (_) {}
+  if (t === 'auto') document.documentElement.removeAttribute('data-tema'); else document.documentElement.setAttribute('data-tema', t);
+  colorBarra(); cerrarTemas(); document.getElementById('btnTema').focus();
+}
+function abrirTemas(ev) {
+  if (ev) ev.stopPropagation();
+  const m = document.getElementById('temaMenu');
+  if (!m.hidden) { cerrarTemas(); return; }
+  const t = temaElegido();
+  m.innerHTML = '<div class="tema-menu-t">Tema</div>' + TEMAS.map(([k, n, s]) => '<button type="button" class="tema-op" role="menuitemradio" aria-checked="' + (k === t) + '" onclick="ponerTema(\'' + k + '\')"><i aria-hidden="true"></i><span>' + n + (s ? '<small>' + s + '</small>' : '') + '</span></button>').join('');
+  m.hidden = false; document.getElementById('btnTema').setAttribute('aria-expanded', 'true');
+  m.querySelector('[aria-checked="true"]').focus();
+}
+function cerrarTemas() { const m = document.getElementById('temaMenu'); if (m.hidden) return; m.hidden = true; document.getElementById('btnTema').setAttribute('aria-expanded', 'false'); }
+document.addEventListener('click', ev => { if (!ev.target.closest('#temaMenu')) cerrarTemas(); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cerrarTemas(); });
+try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', colorBarra); } catch (_) {}
+colorBarra();
 async function entrar() {
   // Un supervisor que entra acá va a su app (y entra ahí).
   const { data: rol } = await sb.rpc('mi_rol');
@@ -3492,7 +3543,7 @@ function render() {
   const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat k-' + clave + (num ? '' : ' cero') + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="tocarStat(\'' + clave + '\')" title="Ver ' + ({ 3: 'las graves abiertas', 2: 'las de gravedad media abiertas', 1: 'las leves abiertas', resueltas: 'las resueltas', todas: 'todas' })[clave] + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
   document.getElementById('resumen').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', NIVEL_COLOR[nv], nv === 3 && n(3), String(nv))).join('')
-    + stat(delD.length - abiertas.length, 'Resueltas', '', '#C9C2B5', false, 'resueltas') + stat(delD.length, 'En total', '', '#C9C2B5', false, 'todas');
+    + stat(delD.length - abiertas.length, 'Resueltas', '', 'var(--gris)', false, 'resueltas') + stat(delD.length, 'En total', '', 'var(--gris)', false, 'todas');
   // El pase: quién y cuándo; la franja de estado (cómo está la sala, de un vistazo) y las asistencias.
   const showAct = shows.find(x => x.id === showId) || {};
   // El nombre enorme (lo de antes de " — "); si el show es hoy, "en vivo" a mano al lado.
