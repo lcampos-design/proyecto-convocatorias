@@ -791,6 +791,22 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .fbi-res .sem{vertical-align:middle;margin:0 2px 0 6px}
 .fbi-sub{font-size:12px;color:var(--r-muted)}
 .fbi-msg{font-size:12.5px;color:var(--r-muted);padding:6px 0}
+/* Los feedbacks de varios eventos: una fila por feedback, con la persona y el evento para confirmar. */
+.fbv-tabla{margin-top:12px;max-height:56vh;overflow:auto;border:1px solid var(--r-line);border-radius:9px}
+.fbv-tabla table{width:100%;border-collapse:collapse;font-size:12.5px}
+.fbv-tabla th{position:sticky;top:0;background:#fafafa;text-align:left;font-size:11px;font-weight:600;color:var(--r-muted);padding:8px 10px;border-bottom:1px solid var(--r-line)}
+.fbv-tabla td{padding:9px 10px;border-bottom:1px solid #f3f4f6;vertical-align:top}
+.fbv-tabla td:first-child{width:28px}
+.fbv-nom{font-weight:600;color:#1a1a1a}
+.fbv-sub{font-size:11px;color:var(--r-muted);margin:1px 0 6px}
+.fbv-sel{width:100%;max-width:300px;font-size:12px}
+.fbv-bus{display:block;width:100%;max-width:300px;margin-top:4px;font-size:12px;font-family:inherit;padding:5px 8px;border:1px solid var(--r-line);border-radius:7px}
+.fbv-crit{font-size:11.5px;color:#374151;font-variant-numeric:tabular-nums}
+.fbv-com{margin-top:5px;font-size:12px;color:#374151;max-width:340px}
+.fbv-ver{font-size:11.5px;color:#92400e;max-width:200px}
+.fbv-mal{margin-top:4px;color:#991b1b;font-weight:600}
+.fbv-no td{opacity:.55}
+.fbv-sin td{background:#fffdf5}
 .fbi-mal{color:var(--alerta)}
 .fbi-prob{margin-top:10px;max-height:220px;overflow:auto;padding:10px 14px;border-radius:9px;background:#fffbeb;border:1px solid #fde68a;font-size:12px;color:#92400e;line-height:1.6}
 .fbi-prob-t{font-weight:600;margin-bottom:4px}
@@ -1067,6 +1083,7 @@ tr:hover td{background:#f9f9fb}
         <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
         <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
         <button class="btn btn-sec btn-sm" id="btnExportBbva" onclick="exportBbva()" title="Los de esta lista que no tienen cuenta y todavía no tienen CBU, con los datos que pide el banco">↓ Cuentas a abrir (BBVA)</button>
+        <button class="btn btn-sec btn-sm" onclick="openFbVarios()" title="La planilla de feedbacks pendientes de carga (varios eventos, por nombre): se busca a cada persona y cada evento, se revisa y se carga"><i class="ic ic-planilla"></i> Importar feedbacks de varios eventos</button>
         <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
       </div>
     </div>
@@ -2054,6 +2071,22 @@ tr:hover td{background:#f9f9fb}
     <div class="ma">
       <button class="btn btn-sec" onclick="closeM('mImportFb')">Cancelar</button>
       <button class="btn btn-primary" id="fbImpBtn" onclick="doImportFeedback()" disabled>Cargar feedback</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Importar feedbacks de varios eventos (la planilla de RRHH, sin CUIL) -->
+<div class="modal-bg" id="mFbVarios" style="display:none" onclick="bgClose('mFbVarios',event)">
+  <div class="modal" style="max-width:1180px">
+    <div class="modal-title"><span><i class="ic ic-planilla"></i> Importar feedbacks de varios eventos</span><button class="mclose" onclick="closeM('mFbVarios')">✕</button></div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">
+      Para la planilla de feedbacks pendientes de carga: una fila por persona y evento, con el nombre (sin CUIL), la evaluación con los cuatro criterios o una observación. Cada nombre se busca en la nómina y cada evento en las convocatorias; <strong>revisá cada fila</strong> (sobre todo las que dicen qué verificar) y elegí a mano lo que no quedó claro. Las observaciones se guardan sin puntaje: quedan en la ficha y no cambian el semáforo.
+    </div>
+    <div class="fg"><input type="file" id="fbvFile" accept=".xlsx,.csv,.txt" style="font-size:12px" onchange="leerFbVarios()"></div>
+    <div id="fbvPrev"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mFbVarios')">Cancelar</button>
+      <button class="btn btn-primary" id="fbvBtn" onclick="doFbVarios()" disabled>Cargar feedbacks</button>
     </div>
   </div>
 </div>
@@ -9228,14 +9261,16 @@ function csvAFilas(txt) {
   if (campo || fila.length) { fila.push(campo); filas.push(fila); }
   return filas;
 }
-// El archivo como filas de texto: un Excel (la hoja que tenga la columna de CUIL) o un CSV.
-async function filasDeArchivo(f) {
+// El archivo como filas de texto: un Excel (la primera hoja que sirva: por defecto,
+// la que tenga la columna de CUIL) o un CSV.
+async function filasDeArchivo(f, sirve) {
+  sirve = sirve || (filas => filas.some(r => r.some(x => FB_COLUMNAS.cuil.test(nomPelar(x)))));
   if (/\.xlsx$/i.test(f.name)) {
     const libro = new ExcelJS.Workbook(); await libro.xlsx.load(await f.arrayBuffer());
     for (const hoja of libro.worksheets) {
       const filas = [];
       hoja.eachRow({ includeEmpty: true }, fila => { filas.push((fila.values || []).slice(1).map(textoDeCelda)); });
-      if (filas.some(r => r.some(x => FB_COLUMNAS.cuil.test(nomPelar(x))))) return filas;
+      if (sirve(filas)) return filas;
     }
     return [];
   }
@@ -9310,14 +9345,184 @@ async function doImportFeedback() {
     try { await sbInsert('feedbacks', tanda); } catch (_) { fallo = true; break; }
     tanda.forEach(f => { feedbacks.push(Object.assign({ created_at: ahora }, f)); hechos.push(f); });
   }
-  // El semáforo de cada uno, de nuevo con todo lo que tiene; se guarda de a un color por vez.
-  const porColor = { 1: [], 2: [], 3: [] };
-  [...new Set(hechos.map(f => f.persona_id))].forEach(id => { const p = people.find(x => x.id === id); if (!p) return; const sem = calcSemaforo(id); if ((p.semaforo || 1) !== sem || p.semaforo == null) { p.semaforo = sem; porColor[sem].push(id); } });
-  try { for (const k of [1, 2, 3]) await sbUpdateIn('personas', porColor[k], { semaforo: k }); } catch (_) {}
+  await recalcularSemaforos(hechos.map(f => f.persona_id));
   nomRefresh();
   if (fallo) { toast('Se cargaron ' + hechos.length + ' de ' + nuevos.length + '. Volvé a subir la planilla: lo que ya entró no se repite.'); fbImport = null; btn.textContent = 'Cargar feedback'; return; }
   closeM('mImportFb');
   toast('✓ ' + hechos.length + ' feedback' + (hechos.length === 1 ? '' : 's') + ' cargado' + (hechos.length === 1 ? '' : 's'));
+}
+// El semáforo de cada uno, de nuevo con todo lo que tiene; se guarda de a un color por vez.
+async function recalcularSemaforos(ids) {
+  const porColor = { 1: [], 2: [], 3: [] };
+  [...new Set(ids)].forEach(id => { const p = people.find(x => x.id === id); if (!p) return; const sem = calcSemaforo(id); if ((p.semaforo || 1) !== sem || p.semaforo == null) { p.semaforo = sem; porColor[sem].push(id); } });
+  try { for (const k of [1, 2, 3]) await sbUpdateIn('personas', porColor[k], { semaforo: k }); } catch (_) {}
+}
+
+// ── FEEDBACKS DE VARIOS EVENTOS, DESDE LA PLANILLA SIN CUIL ──
+// La de "feedbacks hechos pendientes de carga": una fila por persona y evento, con el
+// nombre (sin CUIL), el rol, la evaluación con los cuatro criterios o una observación
+// (sólo el comentario) y qué verificar antes de cargarla. Cada nombre se busca en la
+// nómina y cada evento en las convocatorias; lo que no queda claro (fichas duplicadas,
+// nombres escritos distinto) se elige a mano. Una observación se guarda sin puntaje:
+// queda en el historial y en la ficha, y no cuenta para el semáforo.
+const FBV_COLUMNAS = { evento: /^evento/, jornada: /jornada|sector|fecha/, persona: /^(persona|nombre|apellido)/, rol: /^(rol|puesto)/, estado: /estado/, responsable: /responsable|evaluo/,
+  verificar: /verificar/, comentario: /observ|coment/, actitud: /actitud/, consignas: /consigna/, presencia: /presen|uniforme/, iniciativa: /iniciativa/ };
+let fbVarios = null;   // lo leído de la planilla, fila por fila, con lo elegido
+const fbvPalabras = s => nomPelar(s).split(/\s+/).filter(w => w.length > 1);
+// Quiénes de la nómina pueden ser: el mismo nombre (en cualquier orden) primero, después
+// los que tienen todas las palabras de la planilla (o la planilla todas las suyas). Si
+// trabajó en ese evento, suma: entre dos fichas iguales, casi siempre es esa.
+function fbvCandidatos(nombre, convId) {
+  const t = fbvPalabras(nombre); if (!t.length) return [];
+  return people.map(p => {
+    const u = new Set(fbvPalabras(p.nombre)), comunes = t.filter(w => u.has(w)).length;
+    let pts = !comunes ? 0 : comunes === t.length && comunes === u.size ? 6 : comunes === t.length ? 4 : comunes === u.size ? 3 : comunes >= 2 ? 2 : 0;
+    if (!pts) return null;
+    const trabajo = !!convId && posts.some(x => x.convId === convId && x.personaId === p.id);
+    return { p, pts: pts + (trabajo ? 3 : 0), trabajo };
+  }).filter(Boolean).sort((a, b) => b.pts - a.pts || String(a.p.nombre).localeCompare(String(b.p.nombre), 'es')).slice(0, 8);
+}
+// La fecha de la jornada: "2026-11-02" o "Lollapalooza 03-11" (día y mes).
+function fbvFecha(j) {
+  const s = String(j || ''); let m = s.match(/(\d{4})-(\d{2})-(\d{2})/); if (m) return m[0];
+  m = s.match(/\b(\d{1,2})[-\/](\d{1,2})\b/); return m ? '--' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : '';
+}
+// Qué convocatoria es el evento: la que tiene sus palabras en el nombre y, si la jornada dice la fecha, ese día.
+function fbvConvocatorias(evento, jornada) {
+  const t = fbvPalabras(evento), fecha = fbvFecha(jornada); if (!t.length) return [];
+  return convs.map(c => {
+    const u = new Set(fbvPalabras(c.nombre)), comunes = t.filter(w => u.has(w)).length; if (!comunes) return null;
+    const dia = !!fecha && slotsDe(c).some(s => fecha.length === 10 ? s.fecha === fecha : String(s.fecha || '').slice(5) === fecha.slice(2));
+    return { c, pts: (comunes === t.length ? 3 : 1) + (dia ? 3 : 0), dia };
+  }).filter(Boolean).sort((a, b) => b.pts - a.pts || String(b.c.fecha || '').localeCompare(String(a.c.fecha || ''))).slice(0, 6);
+}
+// Se elige solo cuando el mejor es claro (y no empata con el segundo).
+function fbvClaro(cands, minimo, id) { return cands.length && cands[0].pts >= minimo && !(cands[1] && cands[1].pts === cands[0].pts) ? id(cands[0]) : ''; }
+function analizarFbVarios(filas) {
+  const iCab = filas.findIndex(r => r.some(x => FBV_COLUMNAS.persona.test(nomPelar(x).trim())) && r.some(x => FBV_COLUMNAS.actitud.test(nomPelar(x))));
+  if (iCab < 0) return { error: 'No encontré las columnas: tiene que haber una de la persona (o el nombre) y las de los cuatro criterios (actitud, consignas, presentación, iniciativa).' };
+  const cab = filas[iCab].map(x => nomPelar(x).trim()), col = {};
+  Object.entries(FBV_COLUMNAS).forEach(([k, re]) => { const i = cab.findIndex(x => re.test(x)); if (i >= 0) col[k] = i; });
+  const salida = [];
+  filas.slice(iCab + 1).forEach((r, j) => {
+    const celda = k => col[k] === undefined ? '' : String(r[col[k]] == null ? '' : r[col[k]]).trim();
+    const nombre = celda('persona'); if (!nombre) return;
+    const crudos = FB_CRITERIOS.map(k => celda(k.id)), v = {}, malos = [];
+    if (crudos.some(Boolean)) FB_CRITERIOS.forEach((k, i) => { const n = Number(crudos[i].replace(',', '.')); if (!Number.isInteger(n) || n < 1 || n > 5) malos.push(k.titulo.toLowerCase()); else v[k.id] = n; });
+    const f = { nro: iCab + j + 2, nombre, evento: celda('evento'), jornada: celda('jornada'), rol: celda('rol'), verificar: celda('verificar'), responsable: celda('responsable'),
+      comentario: celda('comentario'), v: crudos.some(Boolean) && !malos.length ? v : null, problema: '' };
+    if (/cargad/i.test(celda('estado'))) f.problema = 'en la planilla ya figura como cargado';
+    else if (malos.length) f.problema = 'puntajes que faltan o no van del 1 al 5: ' + malos.join(', ');
+    else if (!f.v && !f.comentario) f.problema = 'no tiene ni puntajes ni observación';
+    f.convCands = fbvConvocatorias(f.evento, f.jornada);
+    f.convId = fbvClaro(f.convCands, 3, x => x.c.id);
+    f.cands = fbvCandidatos(nombre, f.convId);
+    f.personaId = fbvClaro(f.cands, 4, x => x.p.id);
+    // Las que piden una autorización (de RRHH) arrancan sin marcar.
+    f.marcada = !f.problema && !!f.personaId && !/autoriz/i.test(f.verificar);
+    salida.push(f);
+  });
+  return { filas: salida };
+}
+function openFbVarios() {
+  fbVarios = null;
+  document.getElementById('fbvFile').value = '';
+  document.getElementById('fbvPrev').innerHTML = '';
+  const b = document.getElementById('fbvBtn'); b.disabled = true; b.textContent = 'Cargar feedbacks';
+  showM('mFbVarios');
+}
+async function leerFbVarios() {
+  const f = document.getElementById('fbvFile').files[0], prev = document.getElementById('fbvPrev');
+  fbVarios = null; renderFbVariosBoton();
+  if (!f) { prev.innerHTML = ''; return; }
+  prev.innerHTML = '<div class="fbi-msg">Leyendo la planilla…</div>';
+  let filas;
+  const sirve = fs => fs.some(r => r.some(x => FBV_COLUMNAS.persona.test(nomPelar(x).trim())) && r.some(x => FBV_COLUMNAS.actitud.test(nomPelar(x))));
+  try { filas = await filasDeArchivo(f, sirve); } catch (err) { prev.innerHTML = '<div class="fbi-msg fbi-mal">No pude leer el archivo: ' + e(err && err.message || err) + '</div>'; return; }
+  const r = analizarFbVarios(filas);
+  if (r.error) { prev.innerHTML = '<div class="fbi-msg fbi-mal">' + e(r.error) + '</div>'; return; }
+  fbVarios = r; renderFbVarios();
+}
+function fbvCriterios(v) { const prom = FB_CRITERIOS.reduce((t, k) => t + v[k.id], 0) / FB_CRITERIOS.length; return { prom, color: colorDePromedio(prom) }; }
+function renderFbVarios() {
+  const r = fbVarios; if (!r) return;
+  const n = r.filas.length, marcadas = r.filas.filter(f => f.marcada).length, sinQuien = r.filas.filter(f => !f.problema && !f.personaId).length, conProblema = r.filas.filter(f => f.problema).length;
+  const opcion = (val, txt, sel) => `<option value="${e(val)}"${sel ? ' selected' : ''}>${e(txt)}</option>`;
+  const filas = r.filas.map((f, i) => {
+    const quien = `<select class="filt fbv-sel" id="fbvSel${i}" onchange="fbvPersona(${i}, this.value)"${f.problema ? ' disabled' : ''}>${fbvOpcionesPersona(f)}</select>`
+      + (f.problema ? '' : `<input class="fbv-bus" placeholder="Buscar otra persona…" oninput="fbvBuscar(${i}, this.value)">`);
+    const conv = `<select class="filt fbv-sel" onchange="fbvConv(${i}, this.value)"${f.problema ? ' disabled' : ''}>${opcion('', 'Sin convocatoria', !f.convId)}${f.convCands.map(x => opcion(x.c.id, x.c.nombre + ' · ' + fechaDMA(slotsDe(x.c)[0] ? slotsDe(x.c)[0].fecha : ''), x.c.id === f.convId)).join('')}</select>`;
+    const que = f.v ? (() => { const k = fbvCriterios(f.v); return `<span class="sem sem-${k.color}">${k.color}</span> <span class="fbv-crit">${FB_CRITERIOS.map(c => f.v[c.id]).join(' · ')} → ${k.prom.toFixed(2)}</span>`; })() : '<span class="fb-obs">Observación</span>';
+    return `<tr class="${f.problema ? 'fbv-no' : f.marcada ? '' : 'fbv-sin'}">
+      <td><input type="checkbox" ${f.marcada ? 'checked' : ''}${f.problema || !f.personaId ? ' disabled' : ''} onchange="fbvMarcar(${i}, this.checked)" aria-label="Cargar la fila ${f.nro}"></td>
+      <td><div class="fbv-nom">${e(f.nombre)}</div><div class="fbv-sub">${e([f.rol, 'fila ' + f.nro].filter(Boolean).join(' · '))}</div>${quien}</td>
+      <td><div class="fbv-nom">${e(f.evento || '—')}</div><div class="fbv-sub">${e(f.jornada)}</div>${conv}</td>
+      <td>${que}${f.comentario ? `<div class="fbv-com">${e(f.comentario)}</div>` : ''}</td>
+      <td class="fbv-ver">${e(f.verificar)}${f.problema ? `<div class="fbv-mal">No se carga: ${e(f.problema)}</div>` : ''}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('fbvPrev').innerHTML = `<div class="fbi-res"><strong>${marcadas}</strong> de ${n} marcadas para cargar`
+    + (sinQuien ? `<div class="fbi-sub">${sinQuien} sin la persona elegida: elegila de la lista o buscala.</div>` : '')
+    + (conProblema ? `<div class="fbi-sub">${conProblema} no se carga${conProblema === 1 ? '' : 'n'} (dice por qué en la fila).</div>` : '') + '</div>'
+    + `<div class="fbv-tabla"><table><thead><tr><th></th><th>Persona</th><th>Evento</th><th>Feedback</th><th>Qué verificar</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+  renderFbVariosBoton();
+}
+function fbvOpcionesPersona(f) {
+  const op = (val, txt, sel) => `<option value="${e(val)}"${sel ? ' selected' : ''}>${e(txt)}</option>`;
+  return op('', f.cands.length ? '— Elegí la persona —' : '— No está: buscala —', !f.personaId)
+    + f.cands.map(x => op(x.p.id, x.p.nombre + (x.p.cuit ? ' · CUIL ' + x.p.cuit : '') + ' · ' + areaCorto(x.p.area) + (x.trabajo ? ' · trabajó en este evento' : ''), x.p.id === f.personaId)).join('');
+}
+function renderFbVariosBoton() {
+  const b = document.getElementById('fbvBtn'), n = fbVarios ? fbVarios.filas.filter(f => f.marcada).length : 0;
+  b.disabled = !n; b.textContent = n ? 'Cargar ' + n + ' feedback' + (n === 1 ? '' : 's') : 'Cargar feedbacks';
+}
+function fbvPersona(i, id) { const f = fbVarios.filas[i]; f.personaId = id; f.marcada = !!id && !f.problema; renderFbVarios(); }
+function fbvConv(i, id) {
+  const f = fbVarios.filas[i]; f.convId = id;
+  // Con el evento elegido, quién trabajó ahí sube en la lista (lo elegido se mantiene).
+  f.cands = fbvCandidatos(f.nombre, id); if (f.personaId && !f.cands.some(x => x.p.id === f.personaId)) { const p = people.find(x => x.id === f.personaId); if (p) f.cands.unshift({ p, pts: 0, trabajo: false }); }
+  renderFbVarios();
+}
+function fbvMarcar(i, si) { fbVarios.filas[i].marcada = si; renderFbVariosBoton(); renderFbVariosResumen(); }
+function renderFbVariosResumen() { const fuerte = document.querySelector('#fbvPrev .fbi-res strong'); if (fuerte) fuerte.textContent = fbVarios.filas.filter(f => f.marcada).length; }
+// Buscar a mano en la nómina (desde tres letras): cambia las opciones de esa fila, sin perder lo escrito.
+function fbvBuscar(i, q) {
+  const f = fbVarios.filas[i], t = fbvPalabras(q);
+  if (String(q).trim().length < 3) f.cands = fbvCandidatos(f.nombre, f.convId);
+  else f.cands = people.filter(p => { const n = nomPelar(p.nombre); return t.every(w => n.includes(w)); }).slice(0, 15)
+    .map(p => ({ p, pts: 0, trabajo: !!f.convId && posts.some(x => x.convId === f.convId && x.personaId === p.id) }));
+  if (f.personaId && !f.cands.some(x => x.p.id === f.personaId)) { const p = people.find(x => x.id === f.personaId); if (p) f.cands.unshift({ p, pts: 0, trabajo: false }); }
+  document.getElementById('fbvSel' + i).innerHTML = fbvOpcionesPersona(f);
+}
+async function doFbVarios() {
+  const r = fbVarios; if (!r) return;
+  const elegidas = r.filas.filter(f => f.marcada && f.personaId && !f.problema); if (!elegidas.length) return;
+  const btn = document.getElementById('fbvBtn'); btn.disabled = true; btn.textContent = 'Cargando…';
+  // Lo que ya está cargado (o repetido en la planilla) no se repite: la misma persona, el mismo evento, lo mismo.
+  const clave = (pid, conv, v, com) => pid + '|' + (conv || '') + '|' + (v ? FB_CRITERIOS.map(k => v[k.id]).join(',') : 'obs') + '|' + (com || '');
+  const ya = new Set(feedbacks.map(f => clave(f.persona_id, f.conv_id, f.actitud != null ? f : null, f.comentario)));
+  const evals = [], obs = []; let repetidas = 0;
+  elegidas.forEach(f => {
+    const k = clave(f.personaId, f.convId, f.v, f.comentario); if (ya.has(k)) { repetidas++; return; } ya.add(k);
+    const base = { id: uid(), persona_id: f.personaId, conv_id: f.convId || null, supervisor_id: currentUserId || null, supervisor_nombre: f.responsable || 'Planilla de feedback', comentario: f.comentario || null };
+    if (f.v) evals.push(Object.assign(base, { puntaje: fbvCriterios(f.v).color }, f.v));
+    else obs.push(Object.assign(base, { puntaje: null }));
+  });
+  const hechos = [], ahora = new Date().toISOString(); let fallaron = 0, faltaSql = false;
+  for (const [lista, esObs] of [[evals, false], [obs, true]]) {
+    if (!lista.length) continue;
+    try { await sbInsert('feedbacks', lista); lista.forEach(f => { feedbacks.push(Object.assign({ created_at: ahora }, f)); hechos.push(f); }); }
+    catch (err) { fallaron += lista.length; if (esObs && /puntaje/i.test(String(err && (err.message || err.details) || ''))) faltaSql = true; }
+  }
+  await recalcularSemaforos(hechos.map(f => f.persona_id));
+  nomRefresh();
+  if (fallaron) {
+    toast(faltaSql ? 'Se cargaron las evaluaciones; las observaciones necesitan que se corra feedback-observaciones.sql en Supabase. Después volvé a subir la planilla: lo que ya entró no se repite.'
+      : 'Se cargaron ' + hechos.length + ' de ' + (evals.length + obs.length) + '. Volvé a subir la planilla: lo que ya entró no se repite.');
+    fbVarios = null; renderFbVariosBoton(); return;
+  }
+  closeM('mFbVarios');
+  toast('✓ ' + hechos.length + ' feedback' + (hechos.length === 1 ? '' : 's') + ' cargado' + (hechos.length === 1 ? '' : 's') + (repetidas ? ' · ' + repetidas + ' ya estaba' + (repetidas === 1 ? '' : 'n') : ''));
 }
 
 async function changePostSt(id, sel) { const p = posts.find(x => x.id === id); if (p) { p.estado = sel.value; sel.className = 'ssp ' + sel.value; renderGestList(); renderPuestos(); renderDetStats(); try { await sbUpdate('postulaciones', id, { estado: sel.value }); } catch (_) {} } }
