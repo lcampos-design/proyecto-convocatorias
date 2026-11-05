@@ -272,6 +272,19 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
         <label>Instagram</label>
         <input type="text" class="fi" id="fInstagram" placeholder="@tuusuario" autocapitalize="off" autocorrect="off" spellcheck="false">
       </div>
+      <!-- Para pedir las viandas de cada servicio (lo pidió Mer). -->
+      <div class="fg solo-ar">
+        <label for="fAlimentacion">Alimentación <span class="req">*</span> <span style="font-weight:400;color:#9ca3af;font-size:11px">Para las viandas</span></label>
+        <select class="fi" id="fAlimentacion" onchange="syncAlimentacion()">
+          <option value="">Elegí una opción…</option>
+          <option>Regular</option>
+          <option>Vegetariana</option>
+          <option>Vegana</option>
+          <option>Sin TACC (celíaca)</option>
+          <option value="Otra">Otra (contanos cuál)</option>
+        </select>
+        <input type="text" class="fi" id="fAlimentacionOtra" maxlength="60" placeholder="Ej: sin lactosa, alergia al maní" aria-label="Qué otra alimentación" style="display:none;margin-top:8px">
+      </div>
     </div>
 
     <!-- Perfil profesional -->
@@ -774,6 +787,20 @@ function validarIbanInput(input) {
 
 let antecedentes = null, beneficioSocial = null, tieneCuenta = null;
 
+// La alimentación: en "Otra" aparece para escribir cuál; se guarda "Otra: sin lactosa".
+function syncAlimentacion() {
+  const otra = document.getElementById('fAlimentacion').value === 'Otra', txt = document.getElementById('fAlimentacionOtra');
+  txt.style.display = otra ? '' : 'none';
+  if (!otra) txt.value = '';
+}
+function leerAlimentacion() {
+  const v = document.getElementById('fAlimentacion').value;
+  if (!v) return { error: 'Elegí tu alimentación (para las viandas).' };
+  if (v !== 'Otra') return { texto: v };
+  const cual = document.getElementById('fAlimentacionOtra').value.replace(/\s+/g, ' ').trim();
+  return cual ? { texto: 'Otra: ' + cual } : { error: 'Contanos qué alimentación necesitás.' };
+}
+
 // Idiomas: al marcar uno aparece su nivel (y, en "Otro", cuál); al desmarcarlo se borra.
 function syncIdioma(cb) {
   const fila = cb.closest('.idioma');
@@ -867,6 +894,8 @@ async function submitForm() {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))     { showErr('Ingresá un email válido.'); return; }
   if (!tel)                                          { showErr('El teléfono es obligatorio.'); return; }
   if (!localidad)                                    { showErr('Indicá tu localidad.'); return; }
+  const alimentacion = leerAlimentacion();
+  if (alimentacion.error)                            { showErr(alimentacion.error); return; }
   const nacimiento = document.getElementById('fNacimiento').value;
   if (!nacimiento)                                   { showErr('Indicá tu fecha de nacimiento.'); return; }
   if (nacimiento > new Date().toISOString().slice(0, 10) || nacimiento < '1900-01-01') { showErr('Revisá la fecha de nacimiento.'); return; }
@@ -917,6 +946,7 @@ async function submitForm() {
     fecha_nacimiento: nacimiento,
     estudios,
     idiomas:        idiomas.texto || null,
+    alimentacion:   alimentacion.texto,
     tiene_cuenta:   tieneCuenta === 'si',
     cbu:            tieneCuenta === 'si' ? cbu : null,
     numero_cuenta:  tieneCuenta === 'si' ? nroCuenta : null,
@@ -1080,7 +1110,8 @@ function resetForm() {
   ['antSi','antNo','benSi','benNo','ctaSi','ctaNo'].forEach(id => document.getElementById(id).classList.remove('selected'));
   document.querySelectorAll('input[name="tieneCuenta"]').forEach(i => { i.checked = false; });
   ['ctaSiCampos','ctaNoCampos','fNacionalidadOtra'].forEach(id => { document.getElementById(id).style.display = 'none'; });
-  ['fEstudios','fApellido','fNombres','fNacionalidad','fNacionalidadOtra','fDomicilio','fCp'].forEach(id => { document.getElementById(id).value = ''; });
+  ['fEstudios','fAlimentacion','fApellido','fNombres','fNacionalidad','fNacionalidadOtra','fDomicilio','fCp'].forEach(id => { document.getElementById(id).value = ''; });
+  syncAlimentacion();
   document.querySelectorAll('#idiomasAr input[type="checkbox"]').forEach(cb => { cb.checked = false; syncIdioma(cb); });
   // España: limpiar sus campos y quedarse en España
   ['fDni','fNacimiento','fExpEs','fDispEs','fEmergenciaEs','fObsEs','fIban','fTitular','posOtroTxtEs'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.style.borderColor = ''; });

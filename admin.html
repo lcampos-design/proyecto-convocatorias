@@ -2704,8 +2704,9 @@ async function loadAll() {
       // observaciones), los datos bancarios y el CV son la mayor parte del peso
       // y sólo hacen falta al abrir una solicitud o al aprobarla, así que se
       // buscan ahí, de a una fila (ver solCompleta). Nacimiento, estudios e
-      // idiomas son cortos y los usan los filtros de la nómina.
-      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,estado,conv_id,puesto_id,puesto_nombre,created_at,antecedentes,beneficio_social,fecha_nacimiento,estudios,idiomas';
+      // idiomas son cortos y los usan los filtros de la nómina; la alimentación,
+      // el Excel para supervisores (las viandas).
+      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,estado,conv_id,puesto_id,puesto_nombre,created_at,antecedentes,beneficio_social,fecha_nacimiento,estudios,idiomas,alimentacion';
       // Del CV, sólo el nombre del archivo: alcanza para saber si mandó uno (la nómina lo
       // muestra a quien lo tiene sólo en su inscripción) sin bajar el archivo. Si la base no
       // lo deja pedir así, se trae la lista sin eso.
@@ -4408,12 +4409,12 @@ function edadDe(iso, hoy) {
   const h = hoy || new Date(), cumplio = h.getMonth() + 1 > m || (h.getMonth() + 1 === m && h.getDate() >= d);
   return h.getFullYear() - y - (cumplio ? 0 : 1);
 }
-// Lo nuevo del formulario de Argentina: nacimiento (con la edad), estudios e idiomas.
+// Lo nuevo del formulario de Argentina: nacimiento (con la edad), estudios, idiomas y alimentación.
 function datosPerfilHTML(s, fld) {
   if (!s || s.area === 'espana') return '';
   const edad = edadDe(s.fecha_nacimiento);
   return fld('Fecha de nacimiento', s.fecha_nacimiento ? fechaDMA(s.fecha_nacimiento) + (edad !== '' ? ' (' + edad + ' años)' : '') : '')
-    + fld('Nivel de estudios', s.estudios) + fld('Idiomas', s.idiomas);
+    + fld('Nivel de estudios', s.estudios) + fld('Idiomas', s.idiomas) + fld('Alimentación (viandas)', s.alimentacion);
 }
 // Si dijo que no tiene cuenta: los datos para abrirle una en el BBVA.
 function cuentaBbvaHTML(s, fld) {
@@ -4567,7 +4568,7 @@ async function cargarPlanillaSol(personaId) {
   await pintarCambiosDatos('cvSolBox', p);
 }
 // Lo que cambió la persona desde /mis-datos, con el valor de antes (lo más nuevo arriba).
-const CAMPOS_DATOS = { email: 'Mail', tel: 'Teléfono', localidad: 'Localidad', fecha_nacimiento: 'Fecha de nacimiento', estudios: 'Estudios', idiomas: 'Idiomas', disponibilidad: 'Disponibilidad',
+const CAMPOS_DATOS = { email: 'Mail', tel: 'Teléfono', localidad: 'Localidad', fecha_nacimiento: 'Fecha de nacimiento', estudios: 'Estudios', idiomas: 'Idiomas', alimentacion: 'Alimentación', disponibilidad: 'Disponibilidad',
   tiene_cuenta: 'Tiene cuenta', cbu: 'CBU', numero_cuenta: 'Número de cuenta', banco: 'Banco', apellido: 'Apellido', nombres: 'Nombre', nacionalidad: 'Nacionalidad', domicilio: 'Domicilio', codigo_postal: 'Código postal', cv: 'CV' };
 function cambiosDatosHTML(filas) {
   if (!filas || !filas.length) return '';
@@ -9117,6 +9118,13 @@ async function exportPresentes() {
   const pedido = (c.puestos || []).reduce((t, p) => t + (p.cupos || 0), 0);
   const fechaLinda = f => { const d = new Date(f + 'T00:00:00'); return isNaN(d) ? f : String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear(); };
 
+  // La alimentación de cada uno (la eligió al inscribirse o en /mis-datos), para pedir las
+  // viandas: arriba, cuántas de cada tipo; en cada fila, la suya.
+  const alimentacionDe = x => ((solicitudDe(personaDe(x) || { cuit: x.cuit }) || {}).alimentacion || '');
+  const TIPOS_VIANDA = [['REGULAR', 'Regular'], ['VEGETARIANA', 'Vegetariana'], ['VEGANA', 'Vegana'], ['SIN TACC', 'Sin TACC (celíaca)']];
+  const viandas = [todos.length].concat(TIPOS_VIANDA.map(([, v]) => todos.filter(x => alimentacionDe(x) === v).length),
+    [todos.filter(x => /^Otra: /.test(alimentacionDe(x))).length, todos.filter(x => !alimentacionDe(x)).length]);
+
   const hojas = slots.map(sl => {
     const marca = x => ({ presente: 'P', ausente: 'A' })[presentesDe(x)[sl.id]] || '';
     const asistencias = todos.filter(x => marca(x) === 'P').length;
@@ -9126,9 +9134,12 @@ async function exportPresentes() {
       [],
       ['PEDIDO', 'ASISTENCIAS', 'EXTRAS', 'AUSENTES'],
       [pedido, asistencias, Math.max(0, asistencias - pedido), ausentes],
+      [],
+      ['VIANDAS'].concat(TIPOS_VIANDA.map(([t]) => t), ['OTRA', 'SIN DATO']),
+      viandas,
       []
     ];
-    const cabeceras = [2]; // las filas de encabezado: los totales y cada tabla por sector
+    const cabeceras = [2, 5]; // las filas de encabezado: los totales, las viandas y cada tabla por sector
     // Una tabla por sector, en el orden en que están cargados los puestos.
     // Quien está aprobado sin puesto va al final, en "SIN PUESTO".
     const sectores = (c.puestos || []).map(p => ({ id: p.id, nombre: p.nombre }));
@@ -9138,12 +9149,12 @@ async function exportPresentes() {
         .sort((a, b) => apellidoYNombre(a.nombre).apellido.localeCompare(apellidoYNombre(b.nombre).apellido, 'es'));
       if (!gente.length) return;
       cabeceras.push(filas.length);
-      filas.push([String(sec.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'CUIL', 'TELEFONO', 'CONFIRMÓ', 'PRESENTES', 'HORARIO', 'OBSERVACIÓN', 'BREAK']);
+      filas.push([String(sec.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'CUIL', 'TELEFONO', 'CONFIRMÓ', 'PRESENTES', 'HORARIO', 'OBSERVACIÓN', 'BREAK', 'ALIMENTACIÓN']);
       gente.forEach((x, i) => {
         const pers = personaDe(x);
         const nm = apellidoYNombre(x.nombre || (pers && pers.nombre) || '');
         filas.push([i + 1, nm.apellido, nm.nombre, (pers && pers.cuit) || x.cuit || '', (pers && pers.tel) || '', confirmoDe(x),
-                    marca(x), sl.horario || '', x.notas || '', '']);
+                    marca(x), sl.horario || '', x.notas || '', '', alimentacionDe(x)]);
       });
       filas.push([]);
     });

@@ -130,6 +130,15 @@ textarea.fi{height:70px;resize:vertical}
           <div class="idioma"><label><input type="checkbox" value="Otro" onchange="syncIdioma(this)"> Otro</label><input type="text" class="fi" id="idiomaOtro" maxlength="30" placeholder="¿Cuál?" aria-label="Qué otro idioma"><select class="fi" aria-label="Nivel del otro idioma"><option value="">Nivel…</option><option>Básico</option><option>Intermedio</option><option>Avanzado</option><option>Nativo</option></select></div>
         </div>
       </div>
+      <div class="fg">
+        <label for="alimentacion">Alimentación <span class="req">*</span> <span style="font-weight:400;color:#9ca3af;font-size:11px">Para las viandas</span></label>
+        <select class="fi" id="alimentacion" onchange="syncAlimentacion()">
+          <option value="">Elegí una opción…</option>
+          <option>Regular</option><option>Vegetariana</option><option>Vegana</option><option>Sin TACC (celíaca)</option>
+          <option value="Otra">Otra (contanos cuál)</option>
+        </select>
+        <input type="text" class="fi" id="alimentacionOtra" maxlength="60" placeholder="Ej: sin lactosa, alergia al maní" aria-label="Qué otra alimentación" style="display:none;margin-top:8px">
+      </div>
       <div class="fg"><label for="disp">Disponibilidad <span class="req">*</span></label><input type="text" class="fi" id="disp" placeholder="Full time, fines de semana, turno noche..."></div>
     </div>
     <div class="card">
@@ -226,6 +235,26 @@ async function pedirLink() {
 }
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+// ── La alimentación (para las viandas): las mismas opciones del formulario; "Otra: …" con lo que escribió ──
+const ALIMENTACIONES = ['Regular', 'Vegetariana', 'Vegana', 'Sin TACC (celíaca)'];
+function syncAlimentacion() {
+  const otra = $('alimentacion').value === 'Otra';
+  $('alimentacionOtra').style.display = otra ? '' : 'none';
+  if (!otra) $('alimentacionOtra').value = '';
+}
+function ponerAlimentacion(v) {
+  v = String(v || '');
+  if (/^Otra: /.test(v)) { $('alimentacion').value = 'Otra'; syncAlimentacion(); $('alimentacionOtra').value = v.slice(6); }
+  else { $('alimentacion').value = ALIMENTACIONES.includes(v) ? v : ''; syncAlimentacion(); }
+}
+function leerAlimentacion() {
+  const v = valor('alimentacion');
+  if (!v) return { error: 'Elegí tu alimentación (para las viandas).' };
+  if (v !== 'Otra') return { texto: v };
+  const cual = valor('alimentacionOtra').replace(/\s+/g, ' ').trim();
+  return cual ? { texto: 'Otra: ' + cual } : { error: 'Contanos qué alimentación necesitás.' };
+}
+
 // ── Idiomas: los mismos del formulario de inscripción ──
 function syncIdioma(cb) {
   const fila = cb.closest('.idioma');
@@ -319,6 +348,7 @@ async function cargar() {
   $('nacimiento').value = d.fecha_nacimiento ? String(d.fecha_nacimiento).slice(0, 10) : '';
   $('estudios').value = d.estudios || '';
   ponerIdiomas(d.idiomas);
+  ponerAlimentacion(d.alimentacion);
   $('disp').value = d.disponibilidad || '';
   if (d.tiene_cuenta === true || d.tiene_cuenta === false) elegirCuenta(d.tiene_cuenta);
   $('cbu').value = d.cbu || ''; $('nroCuenta').value = d.numero_cuenta || ''; $('banco').value = d.banco || ''; avisoCbu();
@@ -369,7 +399,7 @@ async function darmeDeBaja(id, btn) {
 // ── Guardar ──
 async function guardar() {
   mostrarError('');
-  const idi = leerIdiomas();
+  const idi = leerIdiomas(), ali = leerAlimentacion();
   const nac = valor('nacionalidad') === 'Otra' ? valor('nacionalidadOtra') : valor('nacionalidad');
   const cbu = valor('cbu').replace(/\D/g, ''), cp = valor('cp').toUpperCase().replace(/\s+/g, '');
   const err =
@@ -379,6 +409,7 @@ async function guardar() {
     : !valor('nacimiento') || valor('nacimiento') > new Date().toISOString().slice(0, 10) || valor('nacimiento') < '1900-01-01' ? 'Revisá la fecha de nacimiento.'
     : !valor('estudios') ? 'Elegí tu nivel de estudios.'
     : idi.error ? idi.error
+    : ali.error ? ali.error
     : !valor('disp') ? 'Indicá tu disponibilidad.'
     : tieneCuenta === null ? 'Contanos si tenés una cuenta bancaria a tu nombre.'
     : tieneCuenta && cbuMotivo(cbu) ? cbuMotivo(cbu)
@@ -391,7 +422,7 @@ async function guardar() {
   if (err) { mostrarError(err); return; }
   const datos = {
     email: valor('email'), tel: valor('tel'), localidad: valor('localidad'),
-    fecha_nacimiento: valor('nacimiento'), estudios: valor('estudios'), idiomas: idi.texto || '', disponibilidad: valor('disp'),
+    fecha_nacimiento: valor('nacimiento'), estudios: valor('estudios'), idiomas: idi.texto || '', alimentacion: ali.texto, disponibilidad: valor('disp'),
     tiene_cuenta: tieneCuenta,
     cbu, numero_cuenta: valor('nroCuenta'), banco: valor('banco'),
     apellido: valor('apellido'), nombres: valor('nombres'), nacionalidad: nac, domicilio: valor('domicilio'), codigo_postal: cp,
