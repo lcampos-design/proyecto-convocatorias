@@ -460,6 +460,9 @@ textarea.fi{height:64px;resize:vertical}
 .disp-masivo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:34px;margin-bottom:8px;font-size:12.5px;color:#374151}
 .disp-masivo-ayuda{font-size:12px;color:#6b7280}
 tr.disp-elegida td{background:#f5f3ff}
+/* Quien ya está en la convocatoria: su puesto y cómo va. */
+.disp-en{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#f3f4f6;color:#374151}
+.disp-en-confirmado{background:#dcfce7;color:#166534}.disp-en-aprobado{background:#e0f2fe;color:#075985}.disp-en-rechazado{background:#fee2e2;color:#991b1b}
 /* Una observación (sin puntaje): su nombre, en gris, en vez del color. */
 .fb-obs{font-size:11px;font-weight:600;background:#f3f4f6;color:#4b5563;padding:2px 8px;border-radius:999px}
 button.fb-obs{border:0;font-family:inherit;cursor:pointer}
@@ -1199,8 +1202,7 @@ tr:hover td{background:#f9f9fb}
            archivar aparte, para que no se confundan con el trabajo diario. -->
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end">
         <button class="btn btn-primary btn-sm" onclick="openDispAdmin()" title="Quiénes dijeron que pueden cada día: ver su ficha, su feedback y su CV, y confirmar de a uno o de a muchos"><i class="ic ic-calendario"></i> Disponibilidad</button>
-        <button class="btn btn-sec btn-sm" onclick="exportPresentes()" title="La planilla que se reparte a los supervisores: una hoja por turno, una tabla por sector, con lo ya marcado">↓ Planilla supervisores</button>
-        <button class="btn btn-sec btn-sm" onclick="exportPostuladosExcel()" title="La planilla completa por puesto, con datos de contacto">↓ Planilla Excel</button>
+        <button class="btn btn-sec btn-sm" onclick="exportPresentes()" title="Para mandar a los supervisores: una hoja por fecha, una tabla por sector, con quién confirmó y lo ya marcado (sin mail ni CBU)">↓ Excel para supervisores</button>
         <div class="nom-mas">
           <button class="btn btn-sec btn-sm" onclick="toggleDetMas(event)" title="Publicar, corregir presentes, importar asistencia, feedback, reporte, contratos">⋯ Más</button>
           <div class="nom-mas-menu" id="detMasMenu">
@@ -1210,6 +1212,7 @@ tr:hover td{background:#f9f9fb}
             <button class="btn btn-sec btn-sm" onclick="bajarPlanillaFeedback()" title="Una planilla con los convocados para puntuar los cuatro criterios del 1 al 5"><i class="ic ic-planilla"></i> ↓ Planilla de feedback</button>
             <button class="btn btn-sec btn-sm" onclick="openImportFeedback()" title="Subir la planilla de feedback completa: se cargan los puntajes y se recalcula el semáforo"><i class="ic ic-planilla"></i> Importar feedback</button>
             <button class="btn btn-sec btn-sm" onclick="openReporte()"><i class="ic ic-grafico"></i> Reporte</button>
+            <button class="btn btn-sec btn-sm" onclick="exportLiquidacion()" title="Para RRHH: una fila por persona y turno, con el CBU y si vino">↓ Liquidación (con CBU)</button>
             <button class="btn btn-sec btn-sm" onclick="openBulkMailConv()" title="Manda la confirmación con el contrato a todos los aprobados que todavía no lo tienen, con el puesto y el monto de cada uno"><i class="ic ic-doc"></i> Contratos a todos</button>
           </div>
         </div>
@@ -9062,14 +9065,14 @@ async function listaTodosPresentes() {
   try { await sbUpsert('postulaciones', filas); toast(filas.length + ' marcados presentes'); } catch (_) {}
 }
 
+// El Excel para los supervisores: los que van (aprobados y confirmados), con si confirmaron.
 async function exportPresentes() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
-  const todos = listaConvocados();
+  const todos = listaConvocados().filter(esAprobado);
   if (!todos.length) { toast('No hay nadie aprobado para exportar'); return; }
   const slots = slotsDe(c);
   const puestoDe = id => ((c.puestos || []).filter(p => p.id === id)[0] || {}).nombre || '';
   const personaDe = x => people.filter(p => p.id === x.personaId)[0];
-  const banco = await cargarDatosBancarios();
 
   // Con el mismo armado que la planilla del Arena, para que les sirva tal cual:
   //   PEDIDO      lo que se pidió: la suma de cupos de los puestos
@@ -9101,11 +9104,11 @@ async function exportPresentes() {
         .sort((a, b) => apellidoYNombre(a.nombre).apellido.localeCompare(apellidoYNombre(b.nombre).apellido, 'es'));
       if (!gente.length) return;
       cabeceras.push(filas.length);
-      filas.push([String(sec.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'CUIL', 'TELEFONO', 'PRESENTES', 'HORARIO', 'OBSERVACIÓN', 'BREAK']);
+      filas.push([String(sec.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'CUIL', 'TELEFONO', 'CONFIRMÓ', 'PRESENTES', 'HORARIO', 'OBSERVACIÓN', 'BREAK']);
       gente.forEach((x, i) => {
         const pers = personaDe(x);
         const nm = apellidoYNombre(x.nombre || (pers && pers.nombre) || '');
-        filas.push([i + 1, nm.apellido, nm.nombre, (pers && pers.cuit) || x.cuit || '', (pers && pers.tel) || '',
+        filas.push([i + 1, nm.apellido, nm.nombre, (pers && pers.cuit) || x.cuit || '', (pers && pers.tel) || '', confirmoDe(x),
                     marca(x), sl.horario || '', x.notas || '', '']);
       });
       filas.push([]);
@@ -9114,27 +9117,19 @@ async function exportPresentes() {
              titulo: 'Planilla de presentes · ' + (c.nombre || ''), subtitulo: fechaLinda(sl.fecha) + (sl.horario ? ' · ' + sl.horario : '') + (c.venue ? ' · ' + c.venue : '') };
   });
 
-  // Una hoja por puesto (acreditaciones, orientadores…): la gente del puesto
-  // con una columna por turno, para ver de un vistazo quién vino cada día.
-  const sectoresHoja = (c.puestos || []).map(p => ({ id: p.id, nombre: p.nombre }));
-  if (todos.some(x => !sectoresHoja.some(p => p.id === x.puestoId))) sectoresHoja.push({ id: null, nombre: 'Sin puesto' });
-  const colTurno = sl => fechaLinda(sl.fecha).slice(0, 5) + (sl.horario ? ' ' + sl.horario : '');
-  sectoresHoja.forEach(sec => {
-    const gente = todos.filter(x => sec.id ? x.puestoId === sec.id : !sectoresHoja.some(p => p.id && p.id === x.puestoId))
-      .sort((a, b) => apellidoYNombre(a.nombre).apellido.localeCompare(apellidoYNombre(b.nombre).apellido, 'es'));
-    if (!gente.length) return;
-    const filas = [['#', 'APELLIDO', 'NOMBRE', 'CUIL', 'TELEFONO', ...slots.map(colTurno), 'PRESENTES', 'FALTAS']];
-    gente.forEach((x, i) => {
-      const pers = personaDe(x);
-      const nm = apellidoYNombre(x.nombre || (pers && pers.nombre) || '');
-      const marcas = slots.map(sl => ({ presente: 'P', ausente: 'A' })[presentesDe(x)[sl.id]] || '');
-      filas.push([i + 1, nm.apellido, nm.nombre, (pers && pers.cuit) || x.cuit || '', (pers && pers.tel) || '', ...marcas,
-                  marcas.filter(m => m === 'P').length, marcas.filter(m => m === 'A').length]);
-    });
-    hojas.push({ nombre: sec.nombre, filas, titulo: (sec.nombre || '') + ' · ' + (c.nombre || ''), subtitulo: gente.length + ' persona' + (gente.length === 1 ? '' : 's') + ' · P presente · A faltó' });
-  });
-
-  // Y la lista plana con el CBU, que es con lo que se liquida la jornada.
+  descargarLibro(`supervisores-${(c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase()}.xlsx`, hojas);
+}
+// Si confirmó, para que el supervisor sepa a quién esperar.
+function confirmoDe(post) { return ({ confirmado: 'Sí', aprobado: 'Sin responder', pendiente: 'Sin aprobar', en_revision: 'Sin aprobar' })[post.estado] || ''; }
+// La liquidación (para RRHH, no para los supervisores): una fila por persona y turno, con el CBU y si vino.
+async function exportLiquidacion() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const todos = listaConvocados();
+  if (!todos.length) { toast('No hay nadie aprobado para liquidar'); return; }
+  const slots = slotsDe(c);
+  const puestoDe = id => ((c.puestos || []).filter(p => p.id === id)[0] || {}).nombre || '';
+  const personaDe = x => people.filter(p => p.id === x.personaId)[0];
+  const banco = await cargarDatosBancarios();
   const rotuloMarca = { presente: 'Presente', ausente: 'Faltó' };
   const liquidacion = [['cuil', 'nombre', 'cbu', 'lugar', 'fecha', 'horario', 'puesto', 'asistencia']];
   slots.forEach(sl => todos.forEach(x => {
@@ -9144,9 +9139,8 @@ async function exportPresentes() {
     liquidacion.push([(pers && pers.cuit) || x.cuit || '', x.nombre || (pers && pers.nombre) || '', sol ? sol.cbu : '',
       c.venue || '', sl.fecha, sl.horario || '', puestoDe(x.puestoId), rotuloMarca[presentesDe(x)[sl.id]] || 'Sin marcar']);
   }));
-  hojas.push({ nombre: 'Liquidación', filas: liquidacion });
 
-  descargarLibro(`presentes-${(c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase()}.xlsx`, hojas);
+  descargarLibro(`liquidacion-${(c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase()}.xlsx`, [{ nombre: 'Liquidación', filas: liquidacion }]);
 }
 
 // ── ASISTENCIA ──
@@ -9715,7 +9709,8 @@ async function aprobarElegidas(claves) {
   return ids;
 }
 
-async function confirmPicker() {
+// Desde un puesto entran pendientes; desde la disponibilidad (ya elegidos), aprobados.
+async function confirmPicker(estado) {
   if (!pickerSel.size) { toast('Seleccioná al menos una persona'); return; }
   const c = convs.find(x => x.id === currentConvId); const p = (c?.puestos || []).find(x => x.id === currentPuestoId); if (!p) return;
   // Primero las inscripciones sin aprobar: se aprueban y entran a la nómina,
@@ -9765,7 +9760,7 @@ async function confirmPicker() {
     if (ausenciaConfig.modo === 'bloqueo') { alert(msg + '\n\nNo se puede asignar durante la penalidad (modo bloqueo).'); return; }
     if (!confirm(msg + '\n\n¿Asignar igual?')) return;
   }
-  const newPosts = []; pickerSel.forEach(pid => { const pers = people.find(x => x.id === pid); if (pers) { const np = { id: uid(), convId: currentConvId, puestoId: currentPuestoId, personaId: pid, nombre: pers.nombre, estado: 'pendiente', notas: '' }; posts.push(np); newPosts.push(np); } });
+  const newPosts = []; pickerSel.forEach(pid => { const pers = people.find(x => x.id === pid); if (pers) { const np = { id: uid(), convId: currentConvId, puestoId: currentPuestoId, personaId: pid, nombre: pers.nombre, estado: estado || 'pendiente', notas: '' }; posts.push(np); newPosts.push(np); } });
   renderGestList(); renderPuestos(); renderDetStats(); closeM('mPicker');
   try {
     await sbInsert('postulaciones', newPosts.map(x => ({ id: x.id, conv_id: x.convId, puesto_id: x.puestoId, persona_id: x.personaId, nombre: x.nombre, estado: x.estado, notas: null })));
@@ -11976,59 +11971,6 @@ function openReporte() {
   showM('mReporte');
 }
 
-function exportPostuladosExcel() {
-  const c = convs.find(x => x.id === currentConvId); if (!c) return;
-
-  // Una columna por cada fecha del show (dd/MM)
-  // Una columna por turno, con lo que ya se marcó al pasar lista. Lo que no
-  // se marcó va vacío, para completarlo a mano como se hacía antes.
-  const slots = slotsDe(c);
-  const fechaCols = slots.map(sl => { const d = new Date(sl.fecha + 'T00:00:00'); const dia = isNaN(d) ? sl.fecha : (String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')); return sl.horario ? dia + ' ' + sl.horario : dia; });
-  const marcaDe = (post, sl) => ({ presente: 'P', ausente: 'A' })[presentesDe(post)[sl.id]] || '';
-
-  // Separar Apellido / Nombre (mejor esfuerzo: último token = apellido)
-  const splitNombre = (full) => {
-    const t = String(full || '').trim().split(/\s+/).filter(Boolean);
-    if (t.length <= 1) return { apellido: '', nombre: t[0] || '' };
-    return { apellido: t[t.length - 1], nombre: t.slice(0, -1).join(' ') };
-  };
-
-  const aoa = [];
-  const cabeceras = [];
-  let hay = false;
-  (c.puestos || []).forEach(p => {
-    const ordenEstado = { confirmado: 0, aprobado: 1, en_revision: 2, pendiente: 3, rechazado: 4 };
-    const estadoLabel = { pendiente: 'Pendiente', en_revision: 'En revisión', aprobado: 'Aprobado', confirmado: 'Confirmado', rechazado: 'Rechazado' };
-    const asignados = posts.filter(x => x.convId === c.id && x.puestoId === p.id)
-      .sort((a, b) => ((ordenEstado[a.estado] ?? 9) - (ordenEstado[b.estado] ?? 9))
-                   || splitNombre(a.nombre).apellido.localeCompare(splitNombre(b.nombre).apellido, 'es'));
-    if (!asignados.length) return;
-    hay = true;
-    // Fila de encabezado del sector (el nombre del puesto va en la 1ra columna)
-    cabeceras.push(aoa.length);
-    aoa.push([String(p.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'ESTADO', '', 'CUIL', 'DNI', 'TELEFONO', 'EMAIL', 'VIANDA', ...fechaCols, 'OBSERVACIONES', 'CANT. DE DÍAS', 'CAT', 'ART y SVO', 'CONTRATO']);
-    asignados.forEach((post, i) => {
-      const pers = people.find(x => x.id === post.personaId);
-      const cuil = docNucleo(pers?.cuit || post.cuit);
-      const sol  = cuil ? solicitudes.find(s => docNucleo(s.cuit) === cuil) : null;
-      const cuil9 = cuil.length === 11 ? cuil.slice(2) : '';       // CUIL sin prefijo (9)
-      const dni   = cuil.length === 11 ? cuil.slice(2, 10) : '';   // DNI (8)
-      const nm  = splitNombre(post.nombre || pers?.nombre || sol?.nombre || '');
-      const tel = pers?.tel || sol?.tel || '';
-      const email = pers?.email || sol?.email || '';
-      const obs = post.notas || pers?.notas || '';
-      aoa.push([i + 1, nm.apellido, nm.nombre, (post.estado === 'rechazado' && post.confirmacion === 'no') ? 'No viene' : (estadoLabel[post.estado] || post.estado || ''), cuil9, cuil, dni, tel, email, '', ...slots.map(sl => marcaDe(post, sl)), obs, '', '', '', '']);
-    });
-    aoa.push([]); // separación entre sectores
-  });
-
-  if (!hay) { toast('No hay personas asignadas para exportar'); return; }
-
-  const anchos = [10, 18, 16, 13, 11, 13, 10, 13, 26, 9].concat(fechaCols.map(() => 8)).concat([26, 12, 6, 9, 9]);
-  descargarLibro(`planilla-${c.nombre.slice(0, 30).replace(/\s/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`,
-    [{ nombre: 'Planilla', filas: aoa, cabeceras, anchos, titulo: c.nombre || 'Planilla', subtitulo: [resumenFechasTexto(c.fecha), c.venue].filter(Boolean).join(' · ') }]);
-}
-
 function exportReporte() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   const rows = [['convocatoria','fecha','puesto','nombre','area','estado','semaforo','out']];
@@ -12130,25 +12072,27 @@ function renderDispBody() {
         : nfb ? `<button class="fb-obs" onclick="openFbHistory('${per.id}')" title="Ver el feedback">${nfb} observaci${nfb === 1 ? 'ón' : 'ones'}</button>` : '<span>sin feedback</span>')
         + (tieneCv(per) ? `<button class="cv-ojo" onclick="cvRapidaOrigen='disp';cvRapida('${per.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : '')
       : `<span class="disp-fuera">${sol ? 'se inscribió, no está en la nómina' : 'no está en la nómina'}</span>`;
-    // El cuadradito para confirmar de a muchos (sólo a quien tiene mail).
-    const cn = docNucleo(r.cuit);
-    const marca = `<input type="checkbox" class="cb" data-cn="${e(cn)}" ${email ? `${dispSel.has(cn) ? 'checked ' : ''}onchange="dispMarcar(this.dataset.cn, this.checked)" aria-label="Elegir para confirmar"` : 'disabled title="No tiene mail cargado"'}>`;
+    // Si ya está en la convocatoria (en qué puesto y cómo va); si no, el cuadradito para elegirla.
+    const cn = docNucleo(r.cuit), enConv = dispEnConvocatoria(per);
+    const elegible = (per || sol) && !(enConv && enConv.estado !== 'rechazado');
+    const marca = `<input type="checkbox" class="cb" data-cn="${e(cn)}" ${elegible ? `${dispSel.has(cn) ? 'checked ' : ''}onchange="dispMarcar(this.dataset.cn, this.checked)" aria-label="Elegir para sumar a un puesto"`
+      : `disabled title="${enConv ? 'Ya está en la convocatoria' : 'No está en la nómina ni inscripto'}"`}>`;
     return `<tr${dispSel.has(cn) ? ' class="disp-elegida"' : ''}>
       <td style="padding:6px 4px 6px 8px;border-bottom:1px solid #f3f4f6;width:24px">${marca}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${nombre}<div class="disp-datos">${datos}</div><div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
       ${cells}
-      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')"><i class="ic ic-sobre"></i> Confirmar</button>` : (tel ? `<a href="${waLink(tel)}" target="_blank" rel="noopener" class="btn btn-xs" style="background:#dcfce7;color:#166534;text-decoration:none" title="${e(tel)}">🟢 WhatsApp</a>` : '<span style="font-size:10px;color:#9ca3af">sin contacto</span>')}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${enConv ? dispEstadoHTML(enConv) : !email && tel ? `<a href="${waLink(tel)}" target="_blank" rel="noopener" class="btn btn-xs" style="background:#dcfce7;color:#166534;text-decoration:none" title="No tiene mail: ${e(tel)}">🟢 WhatsApp</a>` : ''}</td>
     </tr>`;
   }).join('');
   const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
   const foot = counts.map(n => `<td style="text-align:center;padding:6px 8px;font-weight:700;color:#534AB7">${n}</td>`).join('');
-  // Los que se ven y tienen mail: los que elige el cuadradito de arriba.
-  const conMail = x => !!((x.per && x.per.email) || (x.sol && x.sol.email));
-  dispVisiblesConMail = visibles.filter(conMail).map(x => docNucleo(x.r.cuit));
-  const todas = dispVisiblesConMail.length && dispVisiblesConMail.every(cn => dispSel.has(cn));
+  // Los que se ven y se pueden sumar (en la nómina o inscriptos, y todavía no en la convocatoria): los que elige el cuadradito de arriba.
+  const elegible = x => !!(x.per || x.sol) && !(dispEnConvocatoria(x.per) && dispEnConvocatoria(x.per).estado !== 'rechazado');
+  dispVisiblesElegibles = visibles.filter(elegible).map(x => docNucleo(x.r.cuit));
+  const todas = dispVisiblesElegibles.length && dispVisiblesElegibles.every(cn => dispSel.has(cn));
   html += `<div class="disp-masivo" id="dispMasivo">${dispMasivoHTML()}</div>
   <div class="disp-scroll" id="dispScroll"><table style="width:100%;font-size:13px">
-    <thead><tr><th style="padding:6px 4px 6px 8px;border-bottom:1px solid #e5e7eb;width:24px"><input type="checkbox" class="cb" ${todas ? 'checked ' : ''}${dispVisiblesConMail.length ? '' : 'disabled '}onchange="dispMarcarTodas(this.checked)" title="Elegir a todos los que se ven (con mail)" aria-label="Elegir a todos los que se ven"></th>${th('Persona (' + (q || dispFiltro ? visibles.length + ' de ' + dispRows.length : dispRows.length) + ')')}${thDates}<th style="border-bottom:1px solid #e5e7eb"></th></tr></thead>
+    <thead><tr><th style="padding:6px 4px 6px 8px;border-bottom:1px solid #e5e7eb;width:24px"><input type="checkbox" class="cb" ${todas ? 'checked ' : ''}${dispVisiblesElegibles.length ? '' : 'disabled '}onchange="dispMarcarTodas(this.checked)" title="Elegir a todos los que se ven (los que todavía no están en la convocatoria)" aria-label="Elegir a todos los que se ven"></th>${th('Persona (' + (q || dispFiltro ? visibles.length + ' de ' + dispRows.length : dispRows.length) + ')')}${thDates}${th('En la convocatoria')}</tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td></td><td style="padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">Disponibles</td>${foot}<td></td></tr></tfoot>
   </table></div>
@@ -12157,36 +12101,55 @@ function renderDispBody() {
   arrastrable(document.getElementById('dispScroll'));
 }
 let dispBusqueda = '', dispFiltro = '', dispOrden = 'nombre';
-// Confirmar de a muchos: se van tildando (quedan tildados aunque se filtre o se
-// busque) y "Confirmar a los elegidos" manda el mismo mail que el botón de cada
-// fila, con el envío masivo de siempre.
-let dispSel = new Set(), dispVisiblesConMail = [];
+// Elegir quiénes van: se van tildando (quedan tildados aunque se filtre o se busque)
+// y se suman a un puesto, como aprobados. Después, desde el puesto, se les manda el
+// mail y el contrato; con su respuesta pasan a Confirmado o No viene. Quien sólo se
+// había inscripto pasa a la nómina con los datos de su inscripción.
+let dispSel = new Set(), dispVisiblesElegibles = [], dispPuestoElegido = '';
+// Su lugar en esta convocatoria, si ya está (en cualquier estado).
+function dispEnConvocatoria(per) { return per ? posts.find(x => x.convId === currentConvId && x.personaId === per.id) || null : null; }
+function dispEstadoHTML(post) {
+  const c = convs.find(x => x.id === currentConvId), puesto = ((c && c.puestos) || []).find(p => p.id === post.puestoId);
+  const estado = post.estado === 'rechazado' ? (post.confirmacion === 'no' ? 'No viene' : 'Rechazado')
+    : ({ pendiente: 'Pendiente', en_revision: 'En revisión', aprobado: 'Aprobado, sin confirmar', confirmado: 'Confirmado' })[post.estado] || post.estado;
+  return `<span class="disp-en disp-en-${e(post.estado)}">${e(puesto ? puesto.nombre : 'Sin puesto')} · ${e(estado)}</span>`;
+}
 function dispMasivoHTML() {
-  const n = dispSel.size;
-  return n ? `<span><b>${n}</b> elegido${n === 1 ? '' : 's'} para confirmar</span><button class="btn btn-primary btn-sm" onclick="confirmarDispElegidos()"><i class="ic ic-sobre"></i> Confirmar a ${n === 1 ? 'el elegido' : 'los ' + n}</button><button class="btn btn-sec btn-sm" onclick="dispSel.clear();renderDispBody()">Limpiar</button>`
-    : '<span class="disp-masivo-ayuda">Tildá a quienes quieras confirmar (o el cuadradito de arriba, para todos los que se ven) y mandales la confirmación de una.</span>';
+  const n = dispSel.size, c = convs.find(x => x.id === currentConvId), puestos = (c && c.puestos) || [];
+  if (!n) return '<span class="disp-masivo-ayuda">Tildá a los que van (o el cuadradito de arriba, para todos los que se ven) y sumalos a un puesto. Después, desde el puesto, les mandás el mail y el contrato.</span>';
+  if (!puestos.length) return `<span><b>${n}</b> elegido${n === 1 ? '' : 's'}</span><span class="disp-masivo-ayuda">Primero agregá un puesto en la convocatoria (Puestos y cupos).</span>`;
+  if (!puestos.some(p => p.id === dispPuestoElegido)) dispPuestoElegido = puestos[0].id;
+  const libres = p => Math.max(0, (p.cupos || 0) - posts.filter(x => x.convId === currentConvId && x.puestoId === p.id && x.estado !== 'rechazado').length);
+  return `<span><b>${n}</b> elegido${n === 1 ? '' : 's'}</span>`
+    + `<select class="filt" id="dispPuesto" onchange="dispPuestoElegido=this.value" aria-label="A qué puesto">${puestos.map(p => `<option value="${e(p.id)}"${p.id === dispPuestoElegido ? ' selected' : ''}>${e(p.nombre)} · ${libres(p)} libre${libres(p) === 1 ? '' : 's'}</option>`).join('')}</select>`
+    + `<button class="btn btn-primary btn-sm" onclick="dispSumarAlPuesto()">Sumar al puesto</button><button class="btn btn-sec btn-sm" onclick="dispSel.clear();renderDispBody()">Limpiar</button>`;
 }
 function dispMarcar(cn, si) {
   if (si) dispSel.add(cn); else dispSel.delete(cn);
   // Sin volver a dibujar la tabla (no se pierde dónde estabas): la fila, la barra y el cuadradito de arriba.
   const cb = [...document.querySelectorAll('#dispScroll tbody input[data-cn]')].find(x => x.dataset.cn === cn); if (cb) cb.closest('tr').classList.toggle('disp-elegida', si);
   document.getElementById('dispMasivo').innerHTML = dispMasivoHTML();
-  const arriba = document.querySelector('#dispScroll thead input'); if (arriba) arriba.checked = dispVisiblesConMail.length > 0 && dispVisiblesConMail.every(x => dispSel.has(x));
+  const arriba = document.querySelector('#dispScroll thead input'); if (arriba) arriba.checked = dispVisiblesElegibles.length > 0 && dispVisiblesElegibles.every(x => dispSel.has(x));
 }
-function dispMarcarTodas(si) { dispVisiblesConMail.forEach(cn => si ? dispSel.add(cn) : dispSel.delete(cn)); renderDispBody(); }
-function confirmarDispElegidos() {
-  bulkMailRecipients = []; bmSinEmail = 0; bmModoConv = false; currentPuestoId = null;
+function dispMarcarTodas(si) { dispVisiblesElegibles.forEach(cn => si ? dispSel.add(cn) : dispSel.delete(cn)); renderDispBody(); }
+// Los suma con el mismo camino que "Agregar" de un puesto (cupos, OUT, el mismo día en
+// otro evento, rotación, faltas; las inscripciones, a la nómina), pero ya aprobados.
+async function dispSumarAlPuesto() {
+  const c = convs.find(x => x.id === currentConvId), puesto = ((c && c.puestos) || []).find(p => p.id === dispPuestoElegido);
+  if (!puesto) { toast('Primero agregá un puesto en la convocatoria'); return; }
+  const claves = []; let sinFicha = 0;
   dispRows.filter(r => dispSel.has(docNucleo(r.cuit))).forEach(r => {
     const cn = docNucleo(r.cuit), per = people.find(p => docNucleo(p.cuit) === cn), sol = solicitudes.find(s => docNucleo(s.cuit) === cn);
-    const email = (per && per.email) || (sol && sol.email);
-    if (email) bulkMailRecipients.push({ email, nombre: r.nombre || (per && per.nombre) || (sol && sol.nombre) || '', cuit: String(r.cuit || '').replace(/\D/g, ''), personaId: per ? per.id : null, postulacionId: null, puestoId: null });
-    else bmSinEmail++;
+    if (per) claves.push(per.id); else if (sol) claves.push('sol:' + sol.id); else sinFicha++;
   });
-  if (!bulkMailRecipients.length) { toast('Ninguno de los elegidos tiene mail cargado'); return; }
-  if (bmSinEmail) toast(bmSinEmail + ' sin mail: a esos no se les manda');
-  document.getElementById('bmStep1').style.display = 'block';
-  document.getElementById('bmStep2').style.display = 'none';
-  showM('mBulkMail');
+  if (!claves.length) { toast('Ninguno de los elegidos está en la nómina ni inscripto'); return; }
+  currentPuestoId = puesto.id; pickerSel = new Set(claves);
+  const antes = posts.length;
+  await confirmPicker('aprobado');
+  const sumados = posts.length - antes;
+  if (!sumados) return;
+  dispSel.clear(); renderDispBody();
+  toast('✓ ' + sumados + ' sumado' + (sumados === 1 ? '' : 's') + ' a ' + puesto.nombre + '. Para mandarles el mail: abrí el puesto, elegilos y tocá "Enviar confirmación".' + (sinFicha ? ' (' + sinFicha + ' sin ficha ni inscripción no se sumaron.)' : ''));
 }
 // La ficha de alguien de la nómina: la de siempre (CV, datos y feedback) o, si
 // no tiene nada de eso cargado, la de editar.
@@ -12402,20 +12365,6 @@ function exportarDisponibilidad() {
   const footer = ['Disponibles', '', '', ...counts, ''];
   descargarExcel(`disponibilidad-${String(c.nombre || '').slice(0, 30).replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`, [hdrs, ...rows, footer], 'Disponibilidad', { titulo: 'Disponibilidad · ' + (c.nombre || ''), subtitulo: dispRows.length + ' respuesta' + (dispRows.length === 1 ? '' : 's'), negritas: [rows.length + 1] });
 }
-function confirmarDisponibilidad(cuit, nombre) {
-  const cn = docNucleo(cuit);
-  const per = people.find(p => docNucleo(p.cuit) === cn);
-  const sol = solicitudes.find(s => docNucleo(s.cuit) === cn);
-  const email = per?.email || sol?.email;
-  if (!email) { toast('Esta persona no tiene email cargado'); return; }
-  closeM('mDispAdmin');
-  mailSolId = '__post__disp';
-  window._tempMailData = { email, nombre: nombre || per?.nombre || sol?.nombre || '', conv_id: currentConvId, puesto_nombre: '', cuit: cn, personaId: per?.id || null };
-  document.getElementById('mMailStep1').style.display = 'block';
-  document.getElementById('mMailStep2').style.display = 'none';
-  showM('mMailConf');
-}
-
 // ── ROTACIÓN ──
 function checkRotacion(personaId) {
   const cutoff = new Date();
