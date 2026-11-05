@@ -456,6 +456,10 @@ textarea.fi{height:64px;resize:vertical}
 .disp-datos .sem{cursor:pointer}
 .disp-fuera{font-size:10.5px;font-weight:600;color:#9a3412;background:#fff7ed;padding:1px 7px;border-radius:999px}
 .disp-filtros{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+/* Confirmar de a muchos: la barra arriba de la tabla y la fila elegida. */
+.disp-masivo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:34px;margin-bottom:8px;font-size:12.5px;color:#374151}
+.disp-masivo-ayuda{font-size:12px;color:#6b7280}
+tr.disp-elegida td{background:#f5f3ff}
 /* Una observación (sin puntaje): su nombre, en gris, en vez del color. */
 .fb-obs{font-size:11px;font-weight:600;background:#f3f4f6;color:#4b5563;padding:2px 8px;border-radius:999px}
 button.fb-obs{border:0;font-family:inherit;cursor:pointer}
@@ -9372,15 +9376,28 @@ const fbvPalabras = s => nomPelar(s).split(/\s+/).filter(w => w.length > 1);
 // Quiénes de la nómina pueden ser: el mismo nombre (en cualquier orden) primero, después
 // los que tienen todas las palabras de la planilla (o la planilla todas las suyas). Si
 // trabajó en ese evento, suma: entre dos fichas iguales, casi siempre es esa.
+// Lo que va entre paréntesis ("(nombre a verificar)") es una aclaración, no el nombre.
 function fbvCandidatos(nombre, convId) {
-  const t = fbvPalabras(nombre); if (!t.length) return [];
-  return people.map(p => {
+  const t = fbvPalabras(String(nombre || '').replace(/\([^)]*\)/g, ' ')); if (!t.length) return [];
+  const conPuntos = people.map(p => {
     const u = new Set(fbvPalabras(p.nombre)), comunes = t.filter(w => u.has(w)).length;
     let pts = !comunes ? 0 : comunes === t.length && comunes === u.size ? 6 : comunes === t.length ? 4 : comunes === u.size ? 3 : comunes >= 2 ? 2 : 0;
+    // Si nadie coincide en dos palabras, quien comparte una poco común (casi siempre el
+    // apellido): para elegir a mano cuando está escrito distinto (un apodo, sin el segundo nombre).
+    const suelta = !pts && comunes > 0 && t.some(w => u.has(w) && w.length >= 4 && fbvFrecuencia(w) <= 5);
+    if (suelta) pts = 1;
     if (!pts) return null;
     const trabajo = !!convId && posts.some(x => x.convId === convId && x.personaId === p.id);
-    return { p, pts: pts + (trabajo ? 3 : 0), trabajo };
-  }).filter(Boolean).sort((a, b) => b.pts - a.pts || String(a.p.nombre).localeCompare(String(b.p.nombre), 'es')).slice(0, 8);
+    return { p, pts: pts + (trabajo ? 3 : 0), trabajo, suelta };
+  }).filter(Boolean);
+  const fuertes = conPuntos.filter(x => x.pts >= 2);
+  return (fuertes.length ? fuertes : conPuntos).sort((a, b) => b.pts - a.pts || String(a.p.nombre).localeCompare(String(b.p.nombre), 'es')).slice(0, 8);
+}
+// En cuántas fichas de la nómina aparece una palabra (se cuenta una vez por lectura).
+let fbvFrec = null;
+function fbvFrecuencia(w) {
+  if (!fbvFrec || fbvFrec.n !== people.length) { fbvFrec = { n: people.length, m: new Map() }; people.forEach(p => new Set(fbvPalabras(p.nombre)).forEach(x => fbvFrec.m.set(x, (fbvFrec.m.get(x) || 0) + 1))); }
+  return fbvFrec.m.get(w) || 0;
 }
 // La fecha de la jornada: "2026-11-02" o "Lollapalooza 03-11" (día y mes).
 function fbvFecha(j) {
@@ -9417,7 +9434,8 @@ function analizarFbVarios(filas) {
     f.convCands = fbvConvocatorias(f.evento, f.jornada);
     f.convId = fbvClaro(f.convCands, 3, x => x.c.id);
     f.cands = fbvCandidatos(nombre, f.convId);
-    f.personaId = fbvClaro(f.cands, 4, x => x.p.id);
+    // Nunca elige sola a alguien que sólo comparte una palabra.
+    f.personaId = fbvClaro(f.cands.filter(x => !x.suelta), 4, x => x.p.id);
     // Las que piden una autorización (de RRHH) arrancan sin marcar.
     f.marcada = !f.problema && !!f.personaId && !/autoriz/i.test(f.verificar);
     salida.push(f);
@@ -9469,8 +9487,9 @@ function renderFbVarios() {
 }
 function fbvOpcionesPersona(f) {
   const op = (val, txt, sel) => `<option value="${e(val)}"${sel ? ' selected' : ''}>${e(txt)}</option>`;
-  return op('', f.cands.length ? '— Elegí la persona —' : '— No está: buscala —', !f.personaId)
-    + f.cands.map(x => op(x.p.id, x.p.nombre + (x.p.cuit ? ' · CUIL ' + x.p.cuit : '') + ' · ' + areaCorto(x.p.area) + (x.trabajo ? ' · trabajó en este evento' : ''), x.p.id === f.personaId)).join('');
+  const sueltas = f.cands.length && f.cands.every(x => x.suelta);
+  return op('', !f.cands.length ? '— No está: buscala —' : sueltas ? '— No está igual: ¿es alguna de estas? —' : '— Elegí la persona —', !f.personaId)
+    + f.cands.map(x => op(x.p.id, x.p.nombre + (x.p.cuit ? ' · CUIL ' + x.p.cuit : '') + ' · ' + areaCorto(x.p.area) + (x.trabajo ? ' · trabajó en este evento' : '') + (x.suelta ? ' · comparte una palabra' : ''), x.p.id === f.personaId)).join('');
 }
 function renderFbVariosBoton() {
   const b = document.getElementById('fbvBtn'), n = fbVarios ? fbVarios.filas.filter(f => f.marcada).length : 0;
@@ -9498,13 +9517,19 @@ async function doFbVarios() {
   const r = fbVarios; if (!r) return;
   const elegidas = r.filas.filter(f => f.marcada && f.personaId && !f.problema); if (!elegidas.length) return;
   const btn = document.getElementById('fbvBtn'); btn.disabled = true; btn.textContent = 'Cargando…';
-  // Lo que ya está cargado (o repetido en la planilla) no se repite: la misma persona, el mismo evento, lo mismo.
+  // El comentario lleva el rol y, si el evento no está como convocatoria, el evento y la jornada
+  // (si no, ese dato se pierde): "BTS · 2026-10-21 · ORIENTADORES 13HS: llegó tarde".
+  const contexto = f => [!f.convId && f.evento, !f.convId && f.jornada, f.rol].filter(Boolean).join(' · ');
+  const comentarioDe = f => { const c = contexto(f); return c ? c + (f.comentario ? ': ' + f.comentario : '') : f.comentario; };
+  // Lo que ya está cargado (o repetido en la planilla) no se repite: la misma persona, el mismo evento, lo mismo
+  // (también lo cargado antes de que el comentario llevara el evento y el rol).
   const clave = (pid, conv, v, com) => pid + '|' + (conv || '') + '|' + (v ? FB_CRITERIOS.map(k => v[k.id]).join(',') : 'obs') + '|' + (com || '');
   const ya = new Set(feedbacks.map(f => clave(f.persona_id, f.conv_id, f.actitud != null ? f : null, f.comentario)));
   const evals = [], obs = []; let repetidas = 0;
   elegidas.forEach(f => {
-    const k = clave(f.personaId, f.convId, f.v, f.comentario); if (ya.has(k)) { repetidas++; return; } ya.add(k);
-    const base = { id: uid(), persona_id: f.personaId, conv_id: f.convId || null, supervisor_id: currentUserId || null, supervisor_nombre: f.responsable || 'Planilla de feedback', comentario: f.comentario || null };
+    const com = comentarioDe(f), k = clave(f.personaId, f.convId, f.v, com);
+    if (ya.has(k) || ya.has(clave(f.personaId, f.convId, f.v, f.comentario))) { repetidas++; return; } ya.add(k);
+    const base = { id: uid(), persona_id: f.personaId, conv_id: f.convId || null, supervisor_id: currentUserId || null, supervisor_nombre: f.responsable || 'Planilla de feedback', comentario: com || null };
     if (f.v) evals.push(Object.assign(base, { puntaje: fbvCriterios(f.v).color }, f.v));
     else obs.push(Object.assign(base, { puntaje: null }));
   });
@@ -12030,7 +12055,7 @@ async function openDispAdmin() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   document.getElementById('mDispTitle').textContent = `Disponibilidad — ${c.nombre}`;
   document.getElementById('dispBody').innerHTML = '<div class="empty">Cargando…</div>';
-  dispBusqueda = ''; dispFiltro = '';
+  dispBusqueda = ''; dispFiltro = ''; dispSel = new Set();
   showM('mDispAdmin');
   try {
     const { data } = await sb.from('disponibilidad').select('*').eq('conv_id', currentConvId).order('updated_at', { ascending: false });
@@ -12103,7 +12128,11 @@ function renderDispBody() {
         : nfb ? `<button class="fb-obs" onclick="openFbHistory('${per.id}')" title="Ver el feedback">${nfb} observaci${nfb === 1 ? 'ón' : 'ones'}</button>` : '<span>sin feedback</span>')
         + (tieneCv(per) ? `<button class="cv-ojo" onclick="cvRapidaOrigen='disp';cvRapida('${per.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : '')
       : `<span class="disp-fuera">${sol ? 'se inscribió, no está en la nómina' : 'no está en la nómina'}</span>`;
-    return `<tr>
+    // El cuadradito para confirmar de a muchos (sólo a quien tiene mail).
+    const cn = docNucleo(r.cuit);
+    const marca = `<input type="checkbox" class="cb" data-cn="${e(cn)}" ${email ? `${dispSel.has(cn) ? 'checked ' : ''}onchange="dispMarcar(this.dataset.cn, this.checked)" aria-label="Elegir para confirmar"` : 'disabled title="No tiene mail cargado"'}>`;
+    return `<tr${dispSel.has(cn) ? ' class="disp-elegida"' : ''}>
+      <td style="padding:6px 4px 6px 8px;border-bottom:1px solid #f3f4f6;width:24px">${marca}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;font-weight:500;white-space:nowrap">${nombre}<div class="disp-datos">${datos}</div><div style="font-size:10px;color:#9ca3af">${e(r.cuit || '')}</div></td>
       ${cells}
       <td style="padding:6px 8px;border-bottom:1px solid #f3f4f6;white-space:nowrap">${email ? `<button class="btn btn-xs" style="background:#e0f2fe;color:#0369a1" onclick="confirmarDisponibilidad('${e(r.cuit)}','${e(String(r.nombre || '').replace(/'/g, ''))}')"><i class="ic ic-sobre"></i> Confirmar</button>` : (tel ? `<a href="${waLink(tel)}" target="_blank" rel="noopener" class="btn btn-xs" style="background:#dcfce7;color:#166534;text-decoration:none" title="${e(tel)}">🟢 WhatsApp</a>` : '<span style="font-size:10px;color:#9ca3af">sin contacto</span>')}</td>
@@ -12111,16 +12140,52 @@ function renderDispBody() {
   }).join('');
   const counts = slots.map(s => dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.includes(s.id)).length);
   const foot = counts.map(n => `<td style="text-align:center;padding:6px 8px;font-weight:700;color:#534AB7">${n}</td>`).join('');
-  html += `<div class="disp-scroll" id="dispScroll"><table style="width:100%;font-size:13px">
-    <thead><tr>${th('Persona (' + (q || dispFiltro ? visibles.length + ' de ' + dispRows.length : dispRows.length) + ')')}${thDates}<th style="border-bottom:1px solid #e5e7eb"></th></tr></thead>
+  // Los que se ven y tienen mail: los que elige el cuadradito de arriba.
+  const conMail = x => !!((x.per && x.per.email) || (x.sol && x.sol.email));
+  dispVisiblesConMail = visibles.filter(conMail).map(x => docNucleo(x.r.cuit));
+  const todas = dispVisiblesConMail.length && dispVisiblesConMail.every(cn => dispSel.has(cn));
+  html += `<div class="disp-masivo" id="dispMasivo">${dispMasivoHTML()}</div>
+  <div class="disp-scroll" id="dispScroll"><table style="width:100%;font-size:13px">
+    <thead><tr><th style="padding:6px 4px 6px 8px;border-bottom:1px solid #e5e7eb;width:24px"><input type="checkbox" class="cb" ${todas ? 'checked ' : ''}${dispVisiblesConMail.length ? '' : 'disabled '}onchange="dispMarcarTodas(this.checked)" title="Elegir a todos los que se ven (con mail)" aria-label="Elegir a todos los que se ven"></th>${th('Persona (' + (q || dispFiltro ? visibles.length + ' de ' + dispRows.length : dispRows.length) + ')')}${thDates}<th style="border-bottom:1px solid #e5e7eb"></th></tr></thead>
     <tbody>${rows}</tbody>
-    <tfoot><tr><td style="padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">Disponibles</td>${foot}<td></td></tr></tfoot>
+    <tfoot><tr><td></td><td style="padding:6px 8px;font-size:11px;color:#9ca3af;font-weight:600">Disponibles</td>${foot}<td></td></tr></tfoot>
   </table></div>
   <div style="font-size:11.5px;color:#6b7280;margin-top:8px"><span style="color:#c2410c;font-weight:700">✓ ocupado</span>: dijo que puede, pero ese día ya está en otro evento (pasá el mouse para ver cuál).</div>`;
   document.getElementById('dispBody').innerHTML = html;
   arrastrable(document.getElementById('dispScroll'));
 }
 let dispBusqueda = '', dispFiltro = '', dispOrden = 'nombre';
+// Confirmar de a muchos: se van tildando (quedan tildados aunque se filtre o se
+// busque) y "Confirmar a los elegidos" manda el mismo mail que el botón de cada
+// fila, con el envío masivo de siempre.
+let dispSel = new Set(), dispVisiblesConMail = [];
+function dispMasivoHTML() {
+  const n = dispSel.size;
+  return n ? `<span><b>${n}</b> elegido${n === 1 ? '' : 's'} para confirmar</span><button class="btn btn-primary btn-sm" onclick="confirmarDispElegidos()"><i class="ic ic-sobre"></i> Confirmar a ${n === 1 ? 'el elegido' : 'los ' + n}</button><button class="btn btn-sec btn-sm" onclick="dispSel.clear();renderDispBody()">Limpiar</button>`
+    : '<span class="disp-masivo-ayuda">Tildá a quienes quieras confirmar (o el cuadradito de arriba, para todos los que se ven) y mandales la confirmación de una.</span>';
+}
+function dispMarcar(cn, si) {
+  if (si) dispSel.add(cn); else dispSel.delete(cn);
+  // Sin volver a dibujar la tabla (no se pierde dónde estabas): la fila, la barra y el cuadradito de arriba.
+  const cb = [...document.querySelectorAll('#dispScroll tbody input[data-cn]')].find(x => x.dataset.cn === cn); if (cb) cb.closest('tr').classList.toggle('disp-elegida', si);
+  document.getElementById('dispMasivo').innerHTML = dispMasivoHTML();
+  const arriba = document.querySelector('#dispScroll thead input'); if (arriba) arriba.checked = dispVisiblesConMail.length > 0 && dispVisiblesConMail.every(x => dispSel.has(x));
+}
+function dispMarcarTodas(si) { dispVisiblesConMail.forEach(cn => si ? dispSel.add(cn) : dispSel.delete(cn)); renderDispBody(); }
+function confirmarDispElegidos() {
+  bulkMailRecipients = []; bmSinEmail = 0; bmModoConv = false; currentPuestoId = null;
+  dispRows.filter(r => dispSel.has(docNucleo(r.cuit))).forEach(r => {
+    const cn = docNucleo(r.cuit), per = people.find(p => docNucleo(p.cuit) === cn), sol = solicitudes.find(s => docNucleo(s.cuit) === cn);
+    const email = (per && per.email) || (sol && sol.email);
+    if (email) bulkMailRecipients.push({ email, nombre: r.nombre || (per && per.nombre) || (sol && sol.nombre) || '', cuit: String(r.cuit || '').replace(/\D/g, ''), personaId: per ? per.id : null, postulacionId: null, puestoId: null });
+    else bmSinEmail++;
+  });
+  if (!bulkMailRecipients.length) { toast('Ninguno de los elegidos tiene mail cargado'); return; }
+  if (bmSinEmail) toast(bmSinEmail + ' sin mail: a esos no se les manda');
+  document.getElementById('bmStep1').style.display = 'block';
+  document.getElementById('bmStep2').style.display = 'none';
+  showM('mBulkMail');
+}
 // La ficha de alguien de la nómina: la de siempre (CV, datos y feedback) o, si
 // no tiene nada de eso cargado, la de editar.
 function dispVerPersona(id) {
