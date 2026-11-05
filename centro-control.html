@@ -16,10 +16,10 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 /* Los colores de SBS, en dos modos a elección de cada uno (como en WhatsApp: Automático,
    Claro u Oscuro): negro y grafito con la letra blanca, o blanco y gris claro con la letra
-   negra. El fondo, liso (negro o blanco); la barra y cada sección (el show, el plano, las
-   incidencias, las métricas), en su caja gris redondeada, como en el Centro de Control del
-   panel; adentro, las tarjetas (los tickets, los números), del tono de la tarjeta. Sin sombras
-   ni desenfoque.
+   negra. El fondo, negro o blanco, con un granulado quieto (en la lista de shows y en el
+   tablero); la barra y cada sección (el show, el plano, las incidencias, las métricas), en su
+   caja de vidrio esmerilado gris, redondeada, como en el Centro de Control del panel; adentro,
+   las tarjetas (los tickets, los números), del tono de la tarjeta.
    Títulos en Poppins muy pesada y en mayúsculas, con una palabra manuscrita (Yellowtail) de
    acento; los rótulos y los botones, en Poppins seminegrita. El único color fuerte es la
    gravedad (grave en rojo, media en dorado, leve en gris), en bloques, y siempre con su
@@ -32,6 +32,9 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
   --mano:'Yellowtail',cursive;
   /* El modo oscuro: negro, grafito y la letra blanca. */
   --fondo:#141414;--bloque:#262626;--bloque-2:#303030;--tarjeta:#303030;--tarjeta-2:#3A3A3A;
+  /* El vidrio de las cajas: sobre el fondo da el gris de --bloque; el borde y el brillo de arriba, apenas claros. */
+  --vidrio:rgba(46,46,46,.7);--vidrio-2:rgba(58,58,58,.74);--vidrio-borde:rgba(255,255,255,.08);--vidrio-brillo:rgba(255,255,255,.07);--vidrio-sombra:0 14px 34px rgba(0,0,0,.38);
+  --desenfoque:saturate(150%) blur(18px);
   --tinta:#F2F2F2;--tinta-2:#E6E6E6;--gris:#A8A8A8;--linea:rgba(242,242,242,.2);--resalte:rgba(242,242,242,.45);
   --borde:transparent;--prim-hover:#FFFFFF;--logo-filtro:none;--tj-mal:#FFD700;
   --celeste:#019DF4;   /* el celeste del Arena, de detalle: la raya de lo tocado en las métricas */
@@ -44,8 +47,8 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
 /* El modo claro: la página blanca, la barra y las cajas en gris claro, las tarjetas blancas y
    la letra negra; los logos (que son blancos), en negro. Vale si eligió Claro, o en Automático
    con el aparato en claro. */
-@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--plano-fondo:#E2E2E2;--plano-grilla:rgba(26,26,26,.07);color-scheme:light}}
-:root[data-tema="claro"]{--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--plano-fondo:#E2E2E2;--plano-grilla:rgba(26,26,26,.07);color-scheme:light}
+@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--grano-op:.8;--vidrio:rgba(229,229,229,.7);--vidrio-2:rgba(220,220,220,.74);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--vidrio-sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--plano-fondo:#E2E2E2;--plano-grilla:rgba(26,26,26,.07);color-scheme:light}}
+:root[data-tema="claro"]{--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--grano-op:.8;--vidrio:rgba(229,229,229,.7);--vidrio-2:rgba(220,220,220,.74);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--vidrio-sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--plano-fondo:#E2E2E2;--plano-grilla:rgba(26,26,26,.07);color-scheme:light}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
 button,input,select,textarea,optgroup,option{font-family:inherit}
@@ -55,6 +58,8 @@ body[data-pantalla="pLogin"]::before{content:"";position:fixed;inset:0;z-index:-
 /* En el celular parado, la pieza (que es apaisada) recortada mostraba sólo un pedazo de la B: ahí va entera, de ancho, debajo
    de la barra, y abajo se funde con el fondo (la imagen mide 56 % de su ancho de alto). */
 @media(max-aspect-ratio:3/4){body[data-pantalla="pLogin"]::before{background:linear-gradient(var(--velo),var(--velo)),linear-gradient(rgba(0,0,0,0),var(--fondo)) 0 calc(60px + 34vw)/100% 23vw no-repeat,url(fondo-sbs.jpg) center 60px/100% auto no-repeat}}
+/* En la lista de shows y en el tablero, un granulado quieto (como el que se usa en Instagram): puntitos negros y blancos muy suaves, que se ven en los dos modos. */
+body[data-pantalla="pShows"]::before,body[data-pantalla="pShow"]::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:url(grano-sbs.png) 0 0/160px 160px repeat;opacity:var(--grano-op,1)}
 body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 /* La palabra manuscrita de acento: nunca en datos ni en botones. */
 .mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
@@ -66,7 +71,7 @@ body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);fo
 .sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 .28em;font:400 56px/1.05 var(--mano);letter-spacing:0;padding-top:.05em}
 .sec-t .mano{font-size:1em;transform:none}
 /* La barra de arriba: el logo y la marca (AX, Show Business Solutions, la frase) y, a la derecha, en vivo, actualizar, el informe y salir. */
-.bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--bloque);border-bottom:1px solid var(--linea)}
+.bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border-bottom:1px solid var(--vidrio-borde);box-shadow:inset 0 -1px 0 var(--linea)}
 .bar-logo{width:34px;height:34px;flex-shrink:0;display:block;filter:var(--logo-filtro)}
 .bar-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .bar-t{font:800 14.5px/1.1 var(--inc-fuente);letter-spacing:0;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -95,7 +100,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .pantalla{display:none}.pantalla.on{display:block}
 /* El ingreso: una caja. */
 .login{min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{background:var(--bloque);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;border-radius:22px}
+.login-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;border-radius:22px}
 /* Las dos marcas juntas, como una colaboración: el SBS calado (las letras, del color del bloque) y la M de Movistar; en el modo claro, las dos en negro. */
 .login-marcas{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 20px}
 .login-logo{width:68px;height:68px;display:block;filter:var(--logo-filtro)}
@@ -114,13 +119,13 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .btn-ok:hover{background:var(--prim-hover)}
 .btn-ok:disabled{background:var(--bloque-2);color:var(--gris);cursor:default}
 .err{display:none;background:var(--grave);color:var(--grave-letra);padding:10px 12px;border-radius:10px;font:400 12px var(--inc-fuente);margin-bottom:14px}
-/* Los shows: cajas; el de hoy, con el contorno del color de la letra. */
+/* Los shows: cajas de vidrio; el de hoy, con el contorno del color de la letra. */
 .titulo{margin:0 0 8px}
 .titulo-s{font:400 12px var(--inc-fuente);color:var(--gris)}
 .grupo{font:600 13.5px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin:28px 0 8px}
 .shows-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:10px}
-.show{padding:14px 16px;min-height:78px;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--bloque);color:var(--tinta);border-radius:16px;transition:background .15s}
-.show:hover{background:var(--bloque-2)}
+.show{padding:14px 16px;min-height:78px;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);border-radius:16px;transition:background .15s}
+.show:hover{background:var(--vidrio-2)}
 .show.hoy{outline:2px solid var(--tinta);outline-offset:-2px}
 .show-main{flex:1;min-width:0}
 .show-n{font:700 16px/1.2 var(--inc-fuente);display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
@@ -138,7 +143,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .inc-cuenta.n1{background:var(--leve);color:var(--leve-letra)}.inc-cuenta.n1 strong{color:inherit}
 /* El tablero de un show, por cajas (como el Centro de Control del panel): arriba, el nombre enorme y el estado de la sala;
    el plano grande y, al costado, los tickets; abajo, las métricas. */
-.caja{background:var(--bloque);color:var(--tinta);border-radius:22px;padding:18px}
+.caja{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);border-radius:22px;padding:18px}
 .caja .sec-t{font-size:42px}
 .tablero{max-width:1880px;margin:0 auto;padding:20px max(18px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
 .pase{display:flex;flex-wrap:wrap;align-items:stretch;gap:18px;margin-bottom:16px;padding:20px}
