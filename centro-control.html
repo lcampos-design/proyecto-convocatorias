@@ -20,8 +20,8 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
    Títulos en Poppins muy pesada y en mayúsculas, con una palabra manuscrita (Yellowtail) de
    acento; los rótulos y los botones, en Poppins seminegrita. El único color fuerte es la
    gravedad (grave en rojo, media en dorado, leve en gris), en bloques, y siempre con su
-   nombre escrito; el azul y el celeste del Arena, de detalle (el plano y el resumen del
-   show). Lo elegido, invertido (del color de la letra). En la compu, los controles de
+   nombre escrito; el azul y el celeste del Arena, de detalle (el plano y la raya de lo
+   tocado en las métricas). Lo elegido, invertido (del color de la letra). En la compu, los controles de
    40 px; en lo táctil, de 44. */
 :root{
   --inc-fuente:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
@@ -31,20 +31,22 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
   --fondo:#141414;--bloque:#262626;--bloque-2:#303030;
   --tinta:#F2F2F2;--tinta-2:#E6E6E6;--gris:#A8A8A8;--linea:rgba(242,242,242,.2);--resalte:rgba(242,242,242,.45);
   --borde:transparent;--prim-hover:#FFFFFF;--logo-filtro:none;--tj-mal:#FFD700;
-  --celeste:#019DF4;   /* el celeste del Arena, de detalle: las cifras del resumen del show y el informe */
-  --celeste-osc:#003150;--celeste-letra:#019DF4;   /* el resumen del show: fondo oscuro y la letra en el celeste (4,6 a 1) */
+  --celeste:#019DF4;   /* el celeste del Arena, de detalle: la raya de lo tocado en las métricas */
+  --velo:rgba(20,20,20,.86);   /* lo que tapa la pieza de marca de SBS en el ingreso y en la lista de shows */
   /* La gravedad, igual en los dos modos: de fondo, el tono oscuro de su color; la letra, el mismo tono, claro. */
   --grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC;
   color-scheme:dark;
 }
 /* El modo claro: blanco y gris claro, la letra negra; las tarjetas, con un borde gris, y los
    logos (que son blancos), en negro. Vale si eligió Claro, o en Automático con el aparato en claro. */
-@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--celeste-osc:#E3F3FD;--celeste-letra:#00639C;color-scheme:light}}
-:root[data-tema="claro"]{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--celeste-osc:#E3F3FD;--celeste-letra:#00639C;color-scheme:light}
+@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(237,237,237,.84);color-scheme:light}}
+:root[data-tema="claro"]{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(237,237,237,.84);color-scheme:light}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
 button,input,select,textarea,optgroup,option{font-family:inherit}
-/* El fondo, liso, del tono del modo. */
+/* El fondo, liso, del tono del modo. En el ingreso y en la lista de shows, la pieza de marca
+   de SBS (las letras gigantes), tapada con el tono del modo para que se lea lo de encima. */
+body.con-marca::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(var(--velo),var(--velo)),url(fondo-sbs.jpg) center/cover no-repeat}
 body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 /* La palabra manuscrita de acento: nunca en datos ni en botones. */
 .mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
@@ -77,7 +79,7 @@ body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);fo
 .atras:hover{background:var(--bloque-2)}
 button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-offset:2px}
 @media(max-width:760px){.bar-s{display:none}#btnActualizar{display:none}}
-@media(max-width:560px){#btnSalir span,.bar-acc .bar-btn span,.bar .rot{display:none}#btnSalir,.bar-acc .bar-btn{width:44px;padding:0}}
+@media(max-width:560px){#btnSalir span,#btnTema span,.bar-acc .bar-btn span,.bar .rot{display:none}#btnSalir,#btnTema,.bar-acc .bar-btn{width:44px;padding:0}}
 .wrap{max-width:1180px;margin:0 auto;padding:28px max(18px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
 .pantalla{display:none}.pantalla.on{display:block}
 /* El ingreso: un bloque plano. */
@@ -193,25 +195,25 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 @keyframes incLatido{0%,100%{opacity:1}50%{opacity:.25}}
 .met-t{margin:44px 0 16px}
 #metricas{--tj-muesca:var(--fondo)}
-/* El resumen del show (lo pone el plano): un bloque celeste, para que corte con el resto, como las cajas de gravedad: de fondo, el celeste oscuro; la letra, el mismo celeste, claro; las cifras (muy pesadas) y las barras, en el celeste de la marca. */
-.pantalla .inc-met{--met-linea:rgba(1,157,244,.28);background:var(--celeste-osc);color:var(--celeste-letra);padding:18px 20px 20px}
-.pantalla .inc-met-intro{color:var(--celeste-letra);font-size:13px;margin-bottom:16px}
+/* El resumen del show (lo pone el plano): un bloque como las tarjetas, del tono del modo; las cifras (muy pesadas), los porcentajes y las barras, del color de la letra; los rótulos, en gris; lo tocado, con una raya celeste (el celeste del Arena, de detalle). */
+.pantalla .inc-met{--met-linea:var(--linea);background:var(--bloque);color:var(--tinta);box-shadow:inset 0 0 0 1px var(--borde);padding:18px 20px 20px}
+.pantalla .inc-met-intro{color:var(--gris);font-size:13px;margin-bottom:16px}
 .pantalla .inc-tiles{gap:0;margin-bottom:18px;border-bottom:1px solid var(--met-linea)}
 .pantalla .inc-tile{background:transparent;border:0;border-right:1px solid var(--met-linea);border-radius:0;padding:4px 18px 16px}
 .pantalla .inc-tile::before{display:none}
 .pantalla .inc-tile:first-child{padding-left:0}.pantalla .inc-tile:last-child{border-right:0}
 .pantalla .inc-tiles.angosto .inc-tile{border-right:0;border-bottom:1px solid var(--met-linea);padding-left:0}.pantalla .inc-tiles.angosto .inc-tile:last-child{border-bottom:0}
 .pantalla button.inc-tile:hover{box-shadow:none}.pantalla .inc-tile.on{box-shadow:inset 0 -4px 0 var(--celeste)}
-.pantalla .inc-tile-e{font:600 13px var(--inc-fuente);color:var(--celeste-letra)}
-.pantalla .inc-tile-v{font:900 42px/1 var(--inc-fuente);letter-spacing:-.02em;color:var(--celeste);margin-top:8px}
-.pantalla .inc-tile-s{font:400 12.5px var(--inc-fuente);color:var(--celeste-letra);margin-top:6px}
-.pantalla .inc-tile-ir{font:600 12.5px var(--inc-fuente);color:var(--celeste-letra)}
+.pantalla .inc-tile-e{font:600 13px var(--inc-fuente);color:var(--gris)}
+.pantalla .inc-tile-v{font:900 42px/1 var(--inc-fuente);letter-spacing:-.02em;color:var(--tinta);margin-top:8px}
+.pantalla .inc-tile-s{font:400 12.5px var(--inc-fuente);color:var(--gris);margin-top:6px}
+.pantalla .inc-tile-ir{font:600 12.5px var(--inc-fuente);color:var(--tinta)}
 .pantalla .inc-graf-card{background:transparent;border:0;border-radius:0;padding:0}
-.pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:var(--celeste-letra);margin-bottom:8px}
-.pantalla .inc-g-t{fill:var(--celeste)}.pantalla .inc-g-s{fill:var(--celeste)}.pantalla .inc-g-barra{fill:var(--celeste)}
-.pantalla .inc-marca:focus-visible{outline-color:var(--celeste-letra)}
+.pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:var(--tinta);margin-bottom:8px}
+.pantalla .inc-g-t{fill:var(--tinta)}.pantalla .inc-g-s{fill:var(--gris)}.pantalla .inc-g-barra{fill:var(--tinta)}
+.pantalla .inc-marca:focus-visible{outline-color:var(--tinta)}
 .pantalla .inc-met-tip{background:var(--fondo);color:var(--tinta-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--tinta)}
-.pantalla .inc-met-vacio{background:var(--celeste-osc);border:0;border-radius:0;color:var(--celeste-letra)}
+.pantalla .inc-met-vacio{background:var(--bloque);border:0;border-radius:0;color:var(--gris);box-shadow:inset 0 0 0 1px var(--borde)}
 /* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad. */
 .pantalla{--tj-tinta:var(--tinta);--tj-tinta2:var(--gris);--tj-perf:var(--linea);--tj-ok:var(--tinta-2)}
 .pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px;box-shadow:inset 0 0 0 1px var(--borde)}
@@ -253,7 +255,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body>
+<body class="con-marca">
 
 <header class="bar">
   <button class="atras" id="btnAtras" onclick="volverShows()" style="display:none" aria-label="Volver a los shows">←</button>
@@ -268,7 +270,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
     <button class="bar-btn ico" id="btnActualizar" onclick="cargarIncidencias()" title="Actualizar ahora" aria-label="Actualizar ahora"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
     <button class="bar-btn prim" onclick="informe()" title="Informe del show (PDF)" aria-label="Informe del show en PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Informe</span></button>
   </div>
-  <button class="bar-btn ico" id="btnTema" onclick="abrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false" aria-controls="temaMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
+  <button class="bar-btn" id="btnTema" onclick="abrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false" aria-controls="temaMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button>
   <button class="bar-btn" id="btnSalir" onclick="salir()" style="display:none" aria-label="Salir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg><span>Salir</span></button>
   <div class="tema-menu" id="temaMenu" role="menu" aria-label="Tema" hidden></div>
 </header>
@@ -3297,6 +3299,7 @@ let vistos = null, nuevos = new Set(), nivelSel = 0;
 const hoyISO = () => incDia(new Date().toISOString());
 function pantalla(id) {
   document.querySelectorAll('.pantalla').forEach(p => p.classList.toggle('on', p.id === id));
+  document.body.classList.toggle('con-marca', id !== 'pShow');
   document.getElementById('btnAtras').style.display = id === 'pShow' ? '' : 'none';
   document.getElementById('btnSalir').style.display = id === 'pLogin' ? 'none' : '';
   document.getElementById('barAcc').style.display = id === 'pShow' ? '' : 'none';
@@ -3354,6 +3357,12 @@ function abrirTemas(ev) {
   m.innerHTML = '<div class="tema-menu-t">Tema</div>' + TEMAS.map(([k, n, s]) => '<button type="button" class="tema-op" role="menuitemradio" aria-checked="' + (k === t) + '" onclick="ponerTema(\'' + k + '\')"><i aria-hidden="true"></i><span>' + n + (s ? '<small>' + s + '</small>' : '') + '</span></button>').join('');
   m.hidden = false; document.getElementById('btnTema').setAttribute('aria-expanded', 'true');
   m.querySelector('[aria-checked="true"]').focus();
+}
+// El modo que se está viendo: el elegido o, en Automático, el del aparato (sin saberlo, el oscuro, como la página).
+function temaActual() {
+  const r = document.documentElement, t = r && r.getAttribute ? r.getAttribute('data-tema') : '';
+  if (t === 'claro' || t === 'oscuro') return t;
+  try { return matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'oscuro'; } catch (_) { return 'oscuro'; }
 }
 function cerrarTemas() { const m = document.getElementById('temaMenu'); if (m.hidden) return; m.hidden = true; document.getElementById('btnTema').setAttribute('aria-expanded', 'false'); }
 document.addEventListener('click', ev => { if (!ev.target.closest('#temaMenu')) cerrarTemas(); });
@@ -3600,30 +3609,34 @@ function informe() {
   const abiertas = l.filter(i => i.estado !== 'resuelta').length, m = incMetricas(l), cods = incCodigos(l);
   // Arriba, los números del show (como los pide la propuesta AX: incidentes, asistencias, a quién se derivó, picos).
   const num = (v, t) => '<div class="num"><b>' + v + '</b><span>' + t + '</span></div>';
+  // En el modo que se está viendo, con los colores de SBS: en el oscuro, el logo blanco y la gravedad en sus tonos claros.
+  const P = temaActual() === 'oscuro'
+    ? { fondo: '#141414', tinta: '#F2F2F2', gris: '#A8A8A8', linea: '#333333', marca: '.05', logo: 'logo-sbs-calado.png', niv: nv => INC_NIVELES[nv].plano }
+    : { fondo: '#FFFFFF', tinta: '#1A1A1A', gris: '#5C5C5C', linea: '#DADADA', marca: '.07', logo: 'logo-sbs.png', niv: nv => INC_NIVELES[nv].color };
   const html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe de incidencias · ' + incEsc(s.nombre) + '</title>'
     + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"><style>'
-    + 'body{font-family:Poppins,sans-serif;color:#141A26;margin:28px;font-size:11px;font-variant-numeric:tabular-nums}'
-    // La pieza de marca de SBS de fondo, como marca de agua: en gris y muy suave, en cada hoja (y que la impresora no la saque).
-    + 'html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    + 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:url(' + location.origin + '/fondo-sbs.jpg) center/cover no-repeat;opacity:.07;filter:grayscale(1)}'
-    + '.k{font-size:10.5px;font-weight:700;color:#019DF4}'
-    + 'h1{font-size:20px;font-weight:600;letter-spacing:-.3px;margin:3px 0 0}h2{font-size:11.5px;font-weight:400;color:#4B5565;margin:2px 0 0}'
-    + 'h3{font-size:11.5px;font-weight:700;color:#019DF4;margin:0 0 6px}'
-    + '.cab{display:flex;align-items:center;gap:14px;border-bottom:2px solid #141A26;padding-bottom:12px;margin-bottom:14px}.cab img{width:42px}'
+    + 'body{font-family:Poppins,sans-serif;color:' + P.tinta + ';margin:28px;font-size:11px;font-variant-numeric:tabular-nums}'
+    // La pieza de marca de SBS de fondo, como marca de agua: en gris y muy suave, en cada hoja (y que la impresora no saque ni el fondo ni la marca).
+    + 'html{background:' + P.fondo + '}html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:url(' + location.origin + '/fondo-sbs.jpg) center/cover no-repeat;opacity:' + P.marca + ';filter:grayscale(1)}'
+    + '.k{font-size:10.5px;font-weight:700;color:' + P.gris + '}'
+    + 'h1{font-size:20px;font-weight:600;letter-spacing:-.3px;margin:3px 0 0}h2{font-size:11.5px;font-weight:400;color:' + P.gris + ';margin:2px 0 0}'
+    + 'h3{font-size:11.5px;font-weight:700;color:' + P.tinta + ';margin:0 0 6px}'
+    + '.cab{display:flex;align-items:center;gap:14px;border-bottom:2px solid ' + P.tinta + ';padding-bottom:12px;margin-bottom:14px}.cab img{width:42px}'
     + '.nums{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-bottom:18px}'
-    + '.num{border:1.5px solid #141A26;border-radius:6px;padding:8px 10px}.num b{display:block;font-size:17px;font-weight:600}.num span{font-size:9.5px;font-weight:500;color:#4B5565}'
+    + '.num{border:1.5px solid ' + P.tinta + ';border-radius:6px;padding:8px 10px}.num b{display:block;font-size:17px;font-weight:600}.num span{font-size:9.5px;font-weight:500;color:' + P.gris + '}'
     + '.res{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:start;margin-bottom:20px}'
-    + 'table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #E2DED3;padding:5px 6px;text-align:left;vertical-align:top}'
-    + 'th{background:#141A26;color:#fff;font-weight:600}.n{text-align:right;font-weight:600}.niv{font-weight:600}.gris{color:#4B5565}'
+    + 'table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid ' + P.linea + ';padding:5px 6px;text-align:left;vertical-align:top}'
+    + 'th{background:' + P.tinta + ';color:' + P.fondo + ';font-weight:600}.n{text-align:right;font-weight:600}.niv{font-weight:600}.gris{color:' + P.gris + '}'
     + '@media print{body{margin:12mm}.bloque,tr{break-inside:avoid}}</style></head><body>'
-    + '<div class="cab"><img src="' + location.origin + '/logo-sbs.png" alt=""><div><div class="k">AX · Audience Experience · Informe del show</div><h1>Informe de incidencias · ' + incEsc(s.nombre) + '</h1><h2>' + cuando + ' · generado ' + new Date().toLocaleString('es-AR') + '</h2></div></div>'
+    + '<div class="cab"><img src="' + location.origin + '/' + P.logo + '" alt=""><div><div class="k">AX · Audience Experience · Informe del show</div><h1>Informe de incidencias · ' + incEsc(s.nombre) + '</h1><h2>' + cuando + ' · generado ' + new Date().toLocaleString('es-AR') + '</h2></div></div>'
     + '<div class="nums">' + num(l.length, 'Incidencias') + num(abiertas, 'Abiertas') + num(l.filter(i => (i.nivel || 1) === 3).length, 'Graves')
     + num(l.filter(i => i.categoria === 'Asistencia').length, 'Asistencias') + num(l.filter(i => incDerivadoA(i).length).length, 'Derivadas')
     + num(m.tMedio == null ? '—' : incMinutos(m.tMedio), 'Resolución media') + num(m.pico ? incEsc(m.pico.etq) : '—', 'Momento más cargado') + '</div>'
     + '<div class="res">' + tabla('Gravedad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, l.filter(i => (i.nivel || 1) === nv).length])) + tabla('Categoría', cuenta(i => i.categoria)) + tabla('Sector', cuenta(i => i.sector)) + '</div>'
     + '<h3>Línea de tiempo</h3><table><tr><th>Cuándo</th><th>Sector</th><th>Qué pasó</th><th>Gravedad</th><th>Qué se hizo</th><th>Derivado a</th><th>Cómo se resolvió</th></tr>'
     + l.map(i => '<tr><td>' + fh(i.created_at) + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + '</td>'
-      + '<td class="niv" style="color:' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).color + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
+      + '<td class="niv" style="color:' + P.niv(INC_NIVELES[i.nivel] ? i.nivel : 1) + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
       + '<td>' + (incDerivadoA(i).map(incEsc).join(', ') || '—') + '</td>'
       + '<td>' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')
     + '</table><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
