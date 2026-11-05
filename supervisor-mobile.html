@@ -1799,7 +1799,7 @@ function incPlanoSVG(op) {
   const vb = op.editor ? [-40, -90, 500, 480] : [Math.floor(x0), Math.floor(y0), Math.ceil(x1 - x0), Math.ceil(y1 - y0)];
   return '<svg viewBox="' + vb.join(' ') + '" xmlns="http://www.w3.org/2000/svg" style="font-family:' + INC_FUENTE + ';width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;border-radius:12px' + (op.editor ? ';touch-action:none' : '') + '">'
     + '<defs><radialGradient id="incFondoG" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="' + TM.fondo[0] + '"/><stop offset=".6" stop-color="' + TM.fondo[1] + '"/><stop offset="1" stop-color="' + TM.fondo[2] + '"/></radialGradient></defs>'
-    + '<rect x="' + vb[0] + '" y="' + vb[1] + '" width="' + vb[2] + '" height="' + vb[3] + '" rx="14" fill="url(#incFondoG)"/>'
+    + '<rect x="' + vb[0] + '" y="' + vb[1] + '" width="' + vb[2] + '" height="' + vb[3] + '" rx="14" fill="url(#incFondoG)"' + (op.ax ? ' style="fill:var(--ax-plano)"' : '') + '/>'
     + '<polygon points="' + pts(INC_FACHADA) + '" fill="none" stroke="' + TM.fachada + '" stroke-width="1" pointer-events="none"/>'
     + partes
     // Las manijas: en las esquinas y en el medio de cada lado (el cursor dice hacia dónde estira).
@@ -1959,17 +1959,17 @@ function incEsperar3D(cont) {
 }
 // Los controles del plano en la gerencia (op.ax): bloques planos y rectos, sin vidrio,
 // sombras ni degradés; las letras de los botones en Poppins seminegrita (sin mayúsculas);
-// lo elegido, invertido. Los del 2D y su ficha, en los colores de la página (modo claro u
-// oscuro); el 3D, siempre sobre un panel grafito con la cuadrícula de un plano (el estadio,
-// en sus colores, se ve mejor sobre oscuro). Sólo con op.ax (la tablet queda como está).
+// lo elegido, invertido. Todo en los colores de la página (modo claro u oscuro): el 3D y el
+// 2D, sobre el fondo del plano (--plano-fondo) con la cuadrícula de un plano (--plano-grilla).
+// Sólo con op.ax (la tablet queda como está).
 function incEstiloAx() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloAx')) return;
   const st = document.createElement('style'); st.id = 'incEstiloAx';
   const LETRA = INC_FUENTE, PANEL = 'background:var(--ax-panel);-webkit-backdrop-filter:none;backdrop-filter:none;border:0;border-radius:0;box-shadow:none;';
   const BOTON = 'font:600 12.5px ' + LETRA + ';';
-  const GRILLA = 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Cpath d=%22M24 0H0V24%22 fill=%22none%22 stroke=%22%23F2F2F2%22 stroke-opacity=%22.07%22/%3E%3C/svg%3E")';
-  st.textContent = '.inc-ax{--ax-panel:var(--fondo,#161616);--ax-boton:var(--bloque,#262626);--ax-boton-2:var(--bloque-2,#303030);--ax-tinta:var(--tinta,#F2F2F2);--ax-tinta-2:var(--tinta-2,#E6E6E6);--ax-gris:var(--gris,#A8A8A8);--ax-linea:var(--linea,rgba(242,242,242,.3))}'
-    + '.inc-ax.inc-3d{--ax-panel:#161616;--ax-boton:#262626;--ax-boton-2:#303030;--ax-tinta:#F2F2F2;--ax-tinta-2:#E6E6E6;--ax-gris:#A8A8A8;--ax-linea:rgba(242,242,242,.3);border-radius:0;background:#1C1C1C ' + GRILLA + '}'
+  st.textContent = '.inc-ax{--ax-panel:var(--fondo,#161616);--ax-boton:var(--bloque,#262626);--ax-boton-2:var(--bloque-2,#303030);--ax-tinta:var(--tinta,#F2F2F2);--ax-tinta-2:var(--tinta-2,#E6E6E6);--ax-gris:var(--gris,#A8A8A8);--ax-linea:var(--linea,rgba(242,242,242,.3));--ax-plano:var(--plano-fondo,#1C1C1C);--ax-grilla:var(--plano-grilla,rgba(242,242,242,.07))}'
+    // La cuadrícula de un plano, cada 24 px, del color que va con el modo.
+    + '.inc-ax.inc-3d{border-radius:0;background-color:var(--ax-plano);background-image:linear-gradient(var(--ax-grilla) 1px,transparent 1px),linear-gradient(90deg,var(--ax-grilla) 1px,transparent 1px);background-size:24px 24px}'
     + '.inc-ax .inc-3d-btn{' + PANEL + 'color:var(--ax-tinta);min-width:40px;min-height:40px;' + BOTON + '}'
     + '.inc-ax .inc-3d-btn:hover{background:var(--ax-boton-2)}.inc-ax .inc-3d-btn:focus-visible{outline:2px solid var(--ax-tinta);outline-offset:2px}'
     + '.inc-ax .inc-3d-btn.on{background:var(--ax-tinta);color:var(--ax-panel)}'
