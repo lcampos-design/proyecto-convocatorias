@@ -16,7 +16,10 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 /* Los colores de SBS, en dos modos a elección de cada uno (como en WhatsApp: Automático,
    Claro u Oscuro): negro y grafito con la letra blanca, o blanco y gris claro con la letra
-   negra. El fondo, liso; bloques planos y rectos, sin redondeos, sombras ni desenfoque.
+   negra. El fondo, liso (negro o blanco); la barra y cada sección (el show, el plano, las
+   incidencias, las métricas), en su caja gris redondeada, como en el Centro de Control del
+   panel; adentro, las tarjetas (los tickets, los números), del tono de la tarjeta. Sin sombras
+   ni desenfoque.
    Títulos en Poppins muy pesada y en mayúsculas, con una palabra manuscrita (Yellowtail) de
    acento; los rótulos y los botones, en Poppins seminegrita. El único color fuerte es la
    gravedad (grave en rojo, media en dorado, leve en gris), en bloques, y siempre con su
@@ -28,7 +31,7 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
   
   --mano:'Yellowtail',cursive;
   /* El modo oscuro: negro, grafito y la letra blanca. */
-  --fondo:#141414;--bloque:#262626;--bloque-2:#303030;
+  --fondo:#141414;--bloque:#262626;--bloque-2:#303030;--tarjeta:#303030;--tarjeta-2:#3A3A3A;
   --tinta:#F2F2F2;--tinta-2:#E6E6E6;--gris:#A8A8A8;--linea:rgba(242,242,242,.2);--resalte:rgba(242,242,242,.45);
   --borde:transparent;--prim-hover:#FFFFFF;--logo-filtro:none;--tj-mal:#FFD700;
   --celeste:#019DF4;   /* el celeste del Arena, de detalle: la raya de lo tocado en las métricas */
@@ -38,10 +41,11 @@ try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro
   --grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC;
   color-scheme:dark;
 }
-/* El modo claro: blanco y gris claro, la letra negra; las tarjetas, con un borde gris, y los
-   logos (que son blancos), en negro. Vale si eligió Claro, o en Automático con el aparato en claro. */
-@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(237,237,237,.84);--plano-fondo:#E2E2E2;--plano-grilla:rgba(26,26,26,.07);color-scheme:light}}
-:root[data-tema="claro"]{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--resalte:rgba(26,26,26,.4);--borde:#DADADA;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(237,237,237,.84);--plano-fondo:#E2E2E2;--plano-grilla:rgba(26,26,26,.07);color-scheme:light}
+/* El modo claro: la página blanca, la barra y las cajas en gris claro, las tarjetas blancas y
+   la letra negra; los logos (que son blancos), en negro. Vale si eligió Claro, o en Automático
+   con el aparato en claro. */
+@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--plano-fondo:#E2E2E2;--plano-grilla:rgba(26,26,26,.07);color-scheme:light}}
+:root[data-tema="claro"]{--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--plano-fondo:#E2E2E2;--plano-grilla:rgba(26,26,26,.07);color-scheme:light}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Los botones y los campos, con la misma letra (el navegador les pone la suya). */
 button,input,select,textarea,optgroup,option{font-family:inherit}
@@ -62,7 +66,7 @@ body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);fo
 .sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 .28em;font:400 56px/1.05 var(--mano);letter-spacing:0;padding-top:.05em}
 .sec-t .mano{font-size:1em;transform:none}
 /* La barra de arriba: el logo y la marca (AX, Show Business Solutions, la frase) y, a la derecha, en vivo, actualizar, el informe y salir. */
-.bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--bloque);border-bottom:2px solid var(--tinta)}
+.bar{position:sticky;top:0;z-index:30;min-height:60px;padding:calc(env(safe-area-inset-top,0px) + 9px) max(16px,env(safe-area-inset-right,0px)) 9px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:var(--bloque);border-bottom:1px solid var(--linea)}
 .bar-logo{width:34px;height:34px;flex-shrink:0;display:block;filter:var(--logo-filtro)}
 .bar-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .bar-t{font:800 14.5px/1.1 var(--inc-fuente);letter-spacing:0;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -71,15 +75,15 @@ body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);fo
 /* En el celular, la marca en dos renglones (entera, sin puntos suspensivos). */
 @media(max-width:560px){.bar-t{white-space:normal;font-size:12.5px;line-height:1.05}}
 .bar-acc{display:flex;gap:4px;align-items:center;flex-shrink:0}
-.bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:0;background:var(--fondo);color:var(--tinta);font:600 13px var(--inc-fuente);letter-spacing:0;cursor:pointer;flex-shrink:0;transition:background .15s}
+.bar-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:10px;background:var(--fondo);color:var(--tinta);font:600 13px var(--inc-fuente);letter-spacing:0;cursor:pointer;flex-shrink:0;transition:background .15s}
 .bar-btn:hover{background:var(--bloque-2)}
 .bar-btn.prim{background:var(--tinta);color:var(--fondo)}.bar-btn.prim:hover{background:var(--prim-hover)}
 .bar-btn.ico{width:40px;padding:0}
 .bar-btn svg{width:17px;height:17px;flex-shrink:0}
-.inc-vivo{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;background:var(--tinta);color:var(--fondo);font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap}
-.inc-vivo::before{content:'';width:8px;height:8px;background:var(--fondo);animation:incLatido 1.6s infinite}
+.inc-vivo{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;border-radius:10px;background:var(--tinta);color:var(--fondo);font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap}
+.inc-vivo::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--fondo);animation:incLatido 1.6s infinite}
 .inc-vivo.mal{background:var(--media);color:var(--media-letra)}.inc-vivo.mal::before{background:var(--media-letra)}.inc-vivo.mal::before{animation:none}
-.atras{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border:0;border-radius:0;background:var(--fondo);color:var(--tinta);font-size:18px;cursor:pointer}
+.atras{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border:0;border-radius:10px;background:var(--fondo);color:var(--tinta);font-size:18px;cursor:pointer}
 .atras:hover{background:var(--bloque-2)}
 button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-offset:2px}
 @media(max-width:760px){.bar-s{display:none}#btnActualizar{display:none}}
@@ -89,9 +93,9 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 @media(max-width:400px){body[data-pantalla="pShow"] .bar-logo{display:none}}
 .wrap{max-width:1180px;margin:0 auto;padding:28px max(18px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
 .pantalla{display:none}.pantalla.on{display:block}
-/* El ingreso: un bloque plano. */
+/* El ingreso: una caja. */
 .login{min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{background:var(--bloque);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;box-shadow:inset 0 0 0 1px var(--borde)}
+.login-card{background:var(--bloque);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;border-radius:22px}
 /* Las dos marcas juntas, como una colaboración: el SBS calado (las letras, del color del bloque) y la M de Movistar; en el modo claro, las dos en negro. */
 .login-marcas{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 20px}
 .login-logo{width:68px;height:68px;display:block;filter:var(--logo-filtro)}
@@ -102,55 +106,58 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .login-t .mano{display:block;font-size:.78em;margin-top:8px}
 .lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin-bottom:6px}
 /* 16 px: en el iPhone, con menos, la página se agranda sola al tocar el campo. */
-.in{width:100%;min-height:46px;padding:10px 12px;border:2px solid var(--linea);border-radius:0;font:16px var(--inc-fuente);outline:none;margin-bottom:16px;background:var(--fondo);color:var(--tinta)}
+.in{width:100%;min-height:46px;padding:10px 12px;border:2px solid var(--linea);border-radius:12px;font:16px var(--inc-fuente);outline:none;margin-bottom:16px;background:var(--fondo);color:var(--tinta)}
 .in:focus{border-color:var(--tinta)}
 /* Lo que autocompleta el navegador, también del tono del campo (si no, lo pinta celeste). */
 .in:-webkit-autofill,.in:-webkit-autofill:hover,.in:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px var(--fondo) inset;-webkit-text-fill-color:var(--tinta);caret-color:var(--tinta)}
-.btn-ok{width:100%;min-height:50px;background:var(--tinta);color:var(--fondo);border:0;border-radius:0;font:600 15px var(--inc-fuente);letter-spacing:0;cursor:pointer}
+.btn-ok{width:100%;min-height:50px;background:var(--tinta);color:var(--fondo);border:0;border-radius:12px;font:600 15px var(--inc-fuente);letter-spacing:0;cursor:pointer}
 .btn-ok:hover{background:var(--prim-hover)}
 .btn-ok:disabled{background:var(--bloque-2);color:var(--gris);cursor:default}
-.err{display:none;background:var(--grave);color:var(--tinta);padding:10px 12px;font:400 12px var(--inc-fuente);margin-bottom:14px}
-/* Los shows: bloques planos; el de hoy, con el contorno del color de la letra. */
+.err{display:none;background:var(--grave);color:var(--grave-letra);padding:10px 12px;border-radius:10px;font:400 12px var(--inc-fuente);margin-bottom:14px}
+/* Los shows: cajas; el de hoy, con el contorno del color de la letra. */
 .titulo{margin:0 0 8px}
 .titulo-s{font:400 12px var(--inc-fuente);color:var(--gris)}
 .grupo{font:600 13.5px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin:28px 0 8px}
-.shows-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:4px}
-.show{padding:14px 16px;min-height:78px;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--bloque);color:var(--tinta);box-shadow:inset 0 0 0 1px var(--borde);transition:background .15s}
+.shows-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:10px}
+.show{padding:14px 16px;min-height:78px;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--bloque);color:var(--tinta);border-radius:16px;transition:background .15s}
 .show:hover{background:var(--bloque-2)}
 .show.hoy{outline:2px solid var(--tinta);outline-offset:-2px}
 .show-main{flex:1;min-width:0}
 .show-n{font:700 16px/1.2 var(--inc-fuente);display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
 .show-f{font:400 11px var(--inc-fuente);color:var(--gris);margin-top:5px}
 .show-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
-.vivo-pill{font:600 11.5px var(--inc-fuente);letter-spacing:0;color:var(--fondo);background:var(--tinta);padding:3px 7px;display:inline-flex;align-items:center;gap:5px}
-.vivo-pill::before{content:'';width:6px;height:6px;background:var(--fondo);animation:incLatido 1.4s infinite}
+.vivo-pill{font:600 11.5px var(--inc-fuente);letter-spacing:0;color:var(--fondo);background:var(--tinta);padding:3px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
+.vivo-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--fondo);animation:incLatido 1.4s infinite}
 .flecha{color:var(--gris);font-size:22px}
-.vacio{text-align:center;padding:32px 18px;color:var(--gris);font:400 12px/1.5 var(--inc-fuente);border:2px dashed var(--linea)}
-.inc-cuenta{font:400 11px var(--inc-fuente);padding:4px 8px;background:var(--fondo);color:var(--gris)}
+.vacio{text-align:center;padding:32px 18px;color:var(--gris);font:400 12px/1.5 var(--inc-fuente);border:2px dashed var(--linea);border-radius:14px}
+.inc-cuenta{font:400 11px var(--inc-fuente);padding:4px 9px;border-radius:999px;background:var(--fondo);color:var(--gris)}
 .inc-cuenta strong{font-weight:700;margin-right:5px;color:var(--tinta)}
 /* Lo abierto por gravedad: un bloque del color de su gravedad (fondo oscuro, letra clara). */
 .inc-cuenta.n3{background:var(--grave);color:var(--grave-letra)}.inc-cuenta.n3 strong{color:inherit}
 .inc-cuenta.n2{background:var(--media);color:var(--media-letra)}.inc-cuenta.n2 strong{color:inherit}
 .inc-cuenta.n1{background:var(--leve);color:var(--leve-letra)}.inc-cuenta.n1 strong{color:inherit}
-/* El tablero de un show: el nombre enorme y el estado de la sala; el plano grande y, al costado, los tickets; abajo, el informe. */
+/* El tablero de un show, por cajas (como el Centro de Control del panel): arriba, el nombre enorme y el estado de la sala;
+   el plano grande y, al costado, los tickets; abajo, las métricas. */
+.caja{background:var(--bloque);color:var(--tinta);border-radius:22px;padding:18px}
+.caja .sec-t{font-size:42px}
 .tablero{max-width:1880px;margin:0 auto;padding:20px max(18px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
-.pase{display:flex;flex-wrap:wrap;align-items:stretch;gap:4px;margin-bottom:34px}
-.pase-id{flex:1 1 380px;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:0 24px 0 0}
+.pase{display:flex;flex-wrap:wrap;align-items:stretch;gap:18px;margin-bottom:16px;padding:20px}
+.pase-id{flex:1 1 380px;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:0 8px 0 2px}
 /* El nombre del show: las palabras nunca se cortan; el tamaño lo ajusta ajustarNombre() (cada palabra entera, dos renglones como mucho); aire arriba para las tildes. */
 .pase-n{font:900 clamp(52px,12vw,150px)/.9 var(--inc-fuente);letter-spacing:-.035em;text-transform:uppercase;overflow-wrap:normal;word-break:normal;hyphens:none;padding-top:.1em}
 .pase-n .mano{font-size:max(.36em,24px);margin-left:.2em;transform:rotate(-8deg) translateY(-.45em)}
 .pase-f{font:400 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);padding-top:10px;border-top:4px solid var(--tinta)}
-.pase-centro{flex:1 1 520px;min-width:0;display:flex;flex-direction:column;gap:4px}
-/* El estado de la sala: un bloque; rojo si hay graves, amarillo si hay medias (fondo oscuro, letra clara), invertido (del color de la letra) si está todo en orden. */
-.estado{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:16px 18px;background:var(--tinta);color:var(--fondo)}
+.pase-centro{flex:1 1 520px;min-width:0;display:flex;flex-direction:column;gap:8px}
+/* El estado de la sala: una tarjeta; rojo si hay graves, amarillo si hay medias (fondo oscuro, letra clara), invertido (del color de la letra) si está todo en orden. */
+.estado{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:16px 18px;border-radius:16px;background:var(--tinta);color:var(--fondo)}
 .estado svg{grid-column:1;grid-row:1/3;width:28px;height:28px}
 .estado>span:not(.hace){grid-column:2;grid-row:1;font:900 30px/.95 var(--inc-fuente);text-transform:uppercase;letter-spacing:-.005em}
 .estado .hace{grid-column:3;grid-row:1;font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap;align-self:start}
 .estado small{grid-column:2/4;grid-row:2;font:400 11.5px/1.45 var(--inc-fuente);letter-spacing:.03em}
 .estado.grave{background:var(--grave);color:var(--grave-letra)}.estado.medio{background:var(--media);color:var(--media-letra)}
-/* Lo abierto por gravedad (un bloque por nivel), lo resuelto y el total. */
-.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
-.stat{--c:var(--gris);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;min-height:86px;padding:11px 12px;border:0;border-radius:0;background:var(--bloque);color:var(--tinta);text-align:left;font:inherit;cursor:pointer;min-width:0;transition:background .15s}
+/* Lo abierto por gravedad (una tarjeta por nivel), lo resuelto y el total. */
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.stat{--c:var(--gris);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;min-height:86px;padding:11px 12px;border:0;border-radius:14px;background:var(--tarjeta);color:var(--tinta);text-align:left;font:inherit;cursor:pointer;min-width:0;transition:background .15s}
 .stat:hover{filter:brightness(1.12)}
 .stat-t{display:flex;align-items:center;gap:7px;max-width:100%;font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-t i{display:none}
@@ -166,44 +173,49 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 /* El que se tocó (filtra la lista): un borde del color de la letra. */
 .stat.on{outline:3px solid var(--tinta);outline-offset:-3px}
 /* La grave abierta: un cuadradito que late, como el de "en vivo". */
-.stat.pulso .stat-t::before{content:'';width:8px;height:8px;flex-shrink:0;background:currentColor;animation:incLatido 1.2s infinite}
+.stat.pulso .stat-t::before{content:'';width:8px;height:8px;flex-shrink:0;border-radius:50%;background:currentColor;animation:incLatido 1.2s infinite}
 /* En el celular: los números de a tres arriba y dos abajo. */
-@media(max-width:700px){.pase-id{padding:0 0 12px}.stats{grid-template-columns:repeat(6,minmax(0,1fr))}.stat{grid-column:span 2}.stat:nth-child(n+4){grid-column:span 3}.stat small{display:none}.estado>span:not(.hace){font-size:24px}}
-/* Las botoneras: bloques planos de a uno; el elegido, invertido. */
-.herr{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.seg{display:inline-flex;gap:4px}
-.seg button{border:0;border-radius:0;background:var(--bloque);font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--tinta);padding:0 14px;min-height:40px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;transition:background .15s}
-.seg button:hover{background:var(--bloque-2)}
+@media(max-width:700px){.pase{padding:16px}.pase-id{padding:0 0 4px}.stats{grid-template-columns:repeat(6,minmax(0,1fr))}.stat{grid-column:span 2}.stat:nth-child(n+4){grid-column:span 3}.stat small{display:none}.estado>span:not(.hace){font-size:24px}}
+/* Las botoneras: en una canaleta del tono de la página, como en el panel; el elegido, invertido. */
+.herr{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:var(--fondo)}
+.seg button{border:0;border-radius:9px;background:transparent;font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--tinta);padding:0 14px;min-height:36px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;transition:background .15s}
+.seg button:hover{background:var(--bloque)}
 .seg button.on{background:var(--tinta);color:var(--fondo)}
 .seg button svg{width:14px;height:14px;flex-shrink:0}
 .seg.chico button{padding:0 12px}
-.t-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:30px}
+.t-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .t-grid>*{min-width:0}
-.t-plano{--tj-muesca:var(--fondo)}
-.t-plano-cab{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;padding:0 0 12px}
-.t-lista{display:flex;flex-direction:column;--tj-muesca:var(--fondo)}
-.t-lista-cab{padding:0 0 10px}
-.t-lista-t{margin-bottom:14px}
+.t-plano{padding:14px}
+.t-plano-cab{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;padding:2px 4px 12px}
+/* La lista: el título con cuántas hay, las pestañas y, abajo, los tickets (las muescas, del tono de la caja). */
+.t-lista{display:flex;flex-direction:column;padding:0;overflow:hidden;--tj-muesca:var(--bloque)}
+.t-lista-cab{padding:16px 16px 12px;border-bottom:1px solid var(--linea)}
+.t-lista-t{margin-bottom:12px;justify-content:space-between}
+.t-lista-t small{font:500 12.5px var(--inc-fuente);color:var(--gris);white-space:nowrap}
 .t-lista-cab .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
-.t-lista-cuerpo{padding:0}
+.t-lista-cuerpo{padding:12px}
 @media(min-width:960px){
   .t-grid{grid-template-columns:minmax(0,1fr) 420px;align-items:start}
-  #plano{height:calc(100vh - 170px);min-height:520px}
-  #plano>svg{height:calc(100% - 44px)!important}
+  #plano{height:calc(100vh - 180px);min-height:520px}
   .t-lista{position:sticky;top:78px;height:calc(100vh - 96px);min-height:560px}
   .t-lista-cuerpo{flex:1;overflow-y:auto}
 }
 @media(min-width:1500px){.t-grid{grid-template-columns:minmax(0,1fr) 460px}}
+/* En el plano 2D, el dibujo ocupa lo que queda arriba de los controles y la leyenda (como en el panel). */
+#plano:not(.inc-3d){display:flex;flex-direction:column}
+#plano:not(.inc-3d)>svg{flex:1 1 0;min-height:0;height:auto!important}
 .fila{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;font:600 12.5px var(--inc-fuente);letter-spacing:0;background:var(--bloque);border:0;color:var(--tinta);border-radius:0;padding:0 12px;cursor:pointer;white-space:nowrap}
-.chip:hover{background:var(--bloque-2)}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;font:600 12.5px var(--inc-fuente);letter-spacing:0;background:var(--tarjeta);border:0;color:var(--tinta);border-radius:999px;padding:0 12px;cursor:pointer;white-space:nowrap}
+.chip:hover{background:var(--tarjeta-2)}
 .chip.on{background:var(--tinta);color:var(--fondo)}
 .inc-lugares{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0 0;align-items:center}
 @keyframes incLatido{0%,100%{opacity:1}50%{opacity:.25}}
-.met-t{margin:44px 0 16px}
-#metricas{--tj-muesca:var(--fondo)}
-/* El resumen del show (lo pone el plano): un bloque como las tarjetas, del tono del modo; las cifras (muy pesadas), los porcentajes y las barras, del color de la letra; los rótulos, en gris; lo tocado, con una raya celeste (el celeste del Arena, de detalle). */
-.pantalla .inc-met{--met-linea:var(--linea);background:var(--bloque);color:var(--tinta);box-shadow:inset 0 0 0 1px var(--borde);padding:18px 20px 20px}
+.t-met{margin-top:16px;padding:20px}
+.met-t{margin:0 0 14px}
+#metricas{--tj-muesca:var(--bloque)}
+/* El resumen del show (lo pone el plano), adentro de su caja; las cifras (muy pesadas), los porcentajes y las barras, del color de la letra; los rótulos, en gris; lo tocado, con una raya celeste (el celeste del Arena, de detalle). */
+.pantalla .inc-met{--met-linea:var(--linea);background:transparent;color:var(--tinta);box-shadow:none;padding:0}
 .pantalla .inc-met-intro{color:var(--gris);font-size:13px;margin-bottom:16px}
 .pantalla .inc-tiles{gap:0;margin-bottom:18px;border-bottom:1px solid var(--met-linea)}
 .pantalla .inc-tile{background:transparent;border:0;border-right:1px solid var(--met-linea);border-radius:0;padding:4px 18px 16px}
@@ -219,36 +231,35 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .pantalla .inc-graf-t{font:600 13.5px var(--inc-fuente);color:var(--tinta);margin-bottom:8px}
 .pantalla .inc-g-t{fill:var(--tinta)}.pantalla .inc-g-s{fill:var(--gris)}.pantalla .inc-g-barra{fill:var(--tinta)}
 .pantalla .inc-marca:focus-visible{outline-color:var(--tinta)}
-.pantalla .inc-met-tip{background:var(--fondo);color:var(--tinta-2);border-radius:0;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--tinta)}
-.pantalla .inc-met-vacio{background:var(--bloque);border:0;border-radius:0;color:var(--gris);box-shadow:inset 0 0 0 1px var(--borde)}
-/* Los tickets (los pone el plano): bloques planos; el talón, del color de su gravedad. */
-.pantalla{--tj-tinta:var(--tinta);--tj-tinta2:var(--gris);--tj-perf:var(--linea);--tj-ok:var(--tinta-2)}
-.pantalla .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px;box-shadow:inset 0 0 0 1px var(--borde)}
-.pantalla .inc-tj:hover{outline-color:var(--resalte)}.pantalla .inc-tj.abierta{outline-color:var(--tinta)}
+.pantalla .inc-met-tip{background:var(--fondo);color:var(--tinta-2);border-radius:10px;box-shadow:none}.pantalla .inc-met-tip .v{color:var(--tinta)}
+.pantalla .inc-met-vacio{background:var(--tarjeta);border:0;border-radius:14px;color:var(--gris);box-shadow:none}
+/* Los tickets (los pone el plano), como en el panel: tarjetas redondeadas del tono de la tarjeta, con el talón del
+   color de su gravedad, la línea punteada y las muescas del tono de la caja. */
+.pantalla{--tj-tinta:var(--tinta);--tj-tinta2:var(--gris);--tj-perf:var(--linea);--tj-ok:var(--tinta-2);--tj-fondo:var(--tarjeta)}
+.pantalla .inc-tj:hover{outline-color:var(--resalte)}.pantalla .inc-tj:focus-visible,.pantalla .inc-tj.abierta{outline-color:var(--tinta)}
 .pantalla .inc-tj-cab{grid-template-columns:78px minmax(0,1fr)}
-.pantalla .inc-tj-cab::before,.pantalla .inc-tj-cab::after{display:none}
-.pantalla .inc-card.inc-tj .inc-tj-talon{border-radius:0;padding:10px 6px;gap:6px}
+.pantalla .inc-tj-cab::before,.pantalla .inc-tj-cab::after{left:70px}
+.pantalla .inc-card.inc-tj .inc-tj-talon{padding:12px 6px;gap:6px}
 .pantalla .inc-tj[data-nivel="3"] .inc-tj-talon{background:var(--grave);color:var(--grave-letra)}
 .pantalla .inc-tj[data-nivel="2"] .inc-tj-talon{background:var(--media);color:var(--media-letra)}
 .pantalla .inc-tj[data-nivel="1"] .inc-tj-talon{background:var(--leve);color:var(--leve-letra)}
-.pantalla .inc-tj .inc-tj-cod{border-radius:0}
 .pantalla .inc-tj[data-nivel="3"] .inc-tj-cod{background:var(--grave);color:var(--grave-letra)}.pantalla .inc-tj[data-nivel="2"] .inc-tj-cod{background:var(--media);color:var(--media-letra)}.pantalla .inc-tj[data-nivel="1"] .inc-tj-cod{background:var(--leve);color:var(--leve-letra)}
-.pantalla .inc-tj .inc-tj-talon b{font:900 24px/.9 var(--inc-fuente)}
+.pantalla .inc-tj .inc-tj-talon b{font:900 22px/.9 var(--inc-fuente)}
 .pantalla .inc-tj .inc-tj-talon small{font:600 11.5px var(--inc-fuente);letter-spacing:0}
-.pantalla .inc-tj .inc-tj-txt{border-left:0;padding:11px 14px;gap:4px}
+.pantalla .inc-tj .inc-tj-txt{padding:11px 14px;gap:4px}
 .pantalla .inc-tj .inc-tj-tipo{font:700 15px/1.2 var(--inc-fuente)}
-.pantalla .inc-tj .inc-tj-linea{font:400 11px var(--inc-fuente)}
-.pantalla .inc-tj .inc-tj-estado{font:600 11px var(--inc-fuente)}
+.pantalla .inc-tj .inc-tj-linea{font:400 12px var(--inc-fuente)}
+.pantalla .inc-tj .inc-tj-estado{font:600 11.5px var(--inc-fuente)}
 .pantalla .inc-tj .inc-tj-f>span{font:600 12px var(--inc-fuente);letter-spacing:0}
-.pantalla .inc-tj .inc-tj-chips span{border-radius:0;font-family:var(--inc-fuente)}
+.pantalla .inc-tj .inc-tj-chips span{font-family:var(--inc-fuente)}
 /* El tema (como en WhatsApp): un menú chico debajo de la barra, con Automático, Claro y Oscuro; el elegido, tildado. */
-.tema-menu{position:absolute;top:calc(100% + 4px);right:max(16px,env(safe-area-inset-right,0px));z-index:40;width:min(280px,calc(100vw - 32px));padding:6px;display:flex;flex-direction:column;gap:2px;background:var(--bloque);color:var(--tinta);box-shadow:0 0 0 1px var(--linea)}
+.tema-menu{position:absolute;top:calc(100% + 4px);right:max(16px,env(safe-area-inset-right,0px));z-index:40;width:min(280px,calc(100vw - 32px));padding:6px;display:flex;flex-direction:column;gap:2px;border-radius:16px;background:var(--bloque);color:var(--tinta);box-shadow:0 0 0 1px var(--linea)}
 .tema-menu[hidden]{display:none}
 .tema-menu-t{font:600 12.5px var(--inc-fuente);color:var(--gris);padding:8px 10px 6px}
-.tema-op{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:12px;min-height:48px;padding:6px 10px;border:0;border-radius:0;background:transparent;color:var(--tinta);font:600 14px var(--inc-fuente);text-align:left;cursor:pointer}
+.tema-op{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:12px;min-height:48px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--tinta);font:600 14px var(--inc-fuente);text-align:left;cursor:pointer}
 .tema-op:hover{background:var(--bloque-2)}
 .tema-op small{display:block;font:400 12px var(--inc-fuente);color:var(--gris);margin-top:2px}
-.tema-op i{width:18px;height:18px;border:2px solid var(--gris);display:grid;place-items:center;font:700 11px/1 var(--inc-fuente);font-style:normal;color:var(--fondo)}
+.tema-op i{width:18px;height:18px;border-radius:50%;border:2px solid var(--gris);display:grid;place-items:center;font:700 11px/1 var(--inc-fuente);font-style:normal;color:var(--fondo)}
 .tema-op[aria-checked="true"] i{background:var(--tinta);border-color:var(--tinta)}.tema-op[aria-checked="true"] i::before{content:"✓"}
 /* En los aparatos táctiles, todo lo que se toca, de 44 px (lo que pide la accesibilidad). */
 @media(pointer:coarse){
@@ -256,7 +267,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
   .seg button{min-height:44px}
   .chip{min-height:40px;padding:0 14px}
 }
-@media(max-width:520px){.wrap{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.tablero{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.sec-t{font-size:44px}.stat b{font-size:34px}}
+@media(max-width:520px){.wrap{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.tablero{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.sec-t{font-size:44px}.caja .sec-t{font-size:34px}.stat b{font-size:34px}.caja{border-radius:18px}.t-plano{padding:10px}}
 /* Las cifras que cambian (minutos, contadores, horas), de ancho fijo. */
 .stat b,.estado .hace,.inc-vivo,.inc-cuenta strong,.bar-s,.show-f,.pase-f{font-variant-numeric:tabular-nums}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -307,10 +318,10 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
   </div>
 </div>
 
-<!-- El tablero de un show: el nombre y el estado de la sala arriba; el plano grande y, al costado, los tickets; abajo, el informe -->
+<!-- El tablero de un show, por cajas: el nombre y el estado de la sala arriba; el plano grande y, al costado, los tickets; abajo, las métricas -->
 <div class="pantalla" id="pShow">
   <div class="tablero">
-    <section class="pase" aria-label="El show">
+    <section class="pase caja" aria-label="El show">
       <div class="pase-id"><span class="pase-n" id="paseN"></span><span class="pase-f" id="paseF"></span></div>
       <div class="pase-centro">
         <div class="estado" id="estado" role="status"></div>
@@ -318,12 +329,12 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
       </div>
     </section>
     <div class="t-grid">
-      <section class="t-plano">
+      <section class="t-plano caja">
         <div class="t-plano-cab"><h2 class="sec-t"><span class="mano">El</span>plano</h2><div class="herr" id="vistas"></div></div>
         <div id="plano" data-alto="pantalla"></div>
         <div class="inc-lugares" id="lugares"></div>
       </section>
-      <aside class="t-lista">
+      <aside class="t-lista caja">
         <div class="t-lista-cab">
           <h2 class="t-lista-t sec-t" id="listaT"><span class="mano">Incidencias</span></h2>
           <div class="fila" id="filtros"></div>
@@ -331,8 +342,10 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
         <div class="t-lista-cuerpo" id="lista"></div>
       </aside>
     </div>
-    <h2 class="met-t sec-t"><span class="mano">M<span class="tilde-aire">é</span>tricas</span></h2>
-    <div id="metricas"></div>
+    <section class="t-met caja" aria-label="Métricas">
+      <h2 class="met-t sec-t"><span class="mano">M<span class="tilde-aire">é</span>tricas</span></h2>
+      <div id="metricas"></div>
+    </section>
   </div>
 </div>
 
@@ -3571,7 +3584,7 @@ function render() {
   document.getElementById('vistas').innerHTML = seg([['3d', '3D'], ['2d', 'Plano']], vista, 'elegirVista') + seg([['campos', 'Campo de pie'], ['asientos', 'Con asientos']], armado, 'elegirArmado');
   // La incidencia tocada: su lugar, elegido en el plano (la cámara va hasta ahí).
   const focoI = focoInc ? delD.find(i => String(i.id) === focoInc) : null; if (!focoI) focoInc = '';
-  incMontarPlano(document.getElementById('plano'), { ax: true, armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: sectorSel || (focoI ? focoI.sector : ''), onclick: 'tocarSector', titulo: (shows.find(x => x.id === showId) || {}).nombre, detalle: delD });
+  incMontarPlano(document.getElementById('plano'), { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: sectorSel || (focoI ? focoI.sector : ''), onclick: 'tocarSector', titulo: (shows.find(x => x.id === showId) || {}).nombre, detalle: delD });
   const met = document.getElementById('metricas');
   if (met) incPintarMetricas(met, delD, { fn: 'tocarMetrica', sel: { categoria: catSel, franja: franjaSel, sector: sectorSel, inc: focoInc } });
   // Abajo del plano, sólo si hay incidencias en lugares que el plano no tiene.
@@ -3579,7 +3592,7 @@ function render() {
   document.getElementById('lugares').innerHTML = '';
   // Al costado, el listado: abiertas, resueltas o todas; el día; y el lugar tocado en el plano.
   const chip = (k, v, t, on) => '<button class="chip' + (on ? ' on' : '') + '" onclick="filtrar(\'' + k + '\',\'' + v + '\')">' + t + '</button>';
-  document.getElementById('listaT').innerHTML = '<span class="mano">Incidencias</span>';
+  document.getElementById('listaT').innerHTML = '<span class="mano">Incidencias</span><small>' + abiertas.length + (abiertas.length === 1 ? ' abierta' : ' abiertas') + ' · ' + delD.length + ' en total</small>';
   document.getElementById('filtros').innerHTML = '<div class="seg chico">' + [['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([v, t]) => '<button class="' + (filtro === v ? 'on' : '') + '" onclick="filtrar(\'estado\',\'' + v + '\')">' + t + '</button>').join('') + '</div>'
     + (nivelSel ? '<span class="chip on">' + INC_NIVELES[nivelSel].nombre + ' <span onclick="event.stopPropagation();filtrar(\'nivel\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
     + (sectorSel ? '<span class="chip on">' + incEsc(sectorSel) + ' <span onclick="event.stopPropagation();filtrar(\'sector\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
