@@ -3584,6 +3584,7 @@ function render() {
   document.getElementById('vistas').innerHTML = seg([['3d', '3D'], ['2d', 'Plano']], vista, 'elegirVista') + seg([['campos', 'Campo de pie'], ['asientos', 'Con asientos']], armado, 'elegirArmado');
   // La incidencia tocada: su lugar, elegido en el plano (la cámara va hasta ahí).
   const focoI = focoInc ? delD.find(i => String(i.id) === focoInc) : null; if (!focoI) focoInc = '';
+  // El plano, el mismo que el del panel (desde el 5-nov, sin el modo ax de bloques planos).
   incMontarPlano(document.getElementById('plano'), { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: sectorSel || (focoI ? focoI.sector : ''), onclick: 'tocarSector', titulo: (shows.find(x => x.id === showId) || {}).nombre, detalle: delD });
   const met = document.getElementById('metricas');
   if (met) incPintarMetricas(met, delD, { fn: 'tocarMetrica', sel: { categoria: catSel, franja: franjaSel, sector: sectorSel, inc: focoInc } });
