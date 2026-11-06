@@ -1638,7 +1638,7 @@ tr:hover td{background:#f9f9fb}
       <div class="fg"><label>Fecha límite confirmación</label><input type="text" class="fi" id="cFechaLimite" placeholder="Ej: 26 de Julio 11hs"></div>
     </div>
     <div class="fg"><label>Link de WhatsApp</label><input type="text" class="fi" id="cWhatsapp" placeholder="https://chat.whatsapp.com/..."></div>
-    <label style="display:flex;align-items:center;gap:8px;margin:4px 0 8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="cContratosHab" style="width:16px;height:16px"> Contratos habilitados <span style="font-weight:400;color:#9ca3af">— muestra la opción de adjuntar contrato con firma en esta convocatoria (piloto)</span></label>
+    <label style="display:flex;align-items:center;gap:8px;margin:4px 0 8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="cContratosHab" style="width:16px;height:16px"> Contratos <span style="font-weight:400;color:#9ca3af">— la confirmación va con el contrato para firmar</span></label>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mConv')">Cancelar</button><button class="btn btn-primary" onclick="saveConv()">Guardar</button></div>
   </div>
 </div>
@@ -8818,7 +8818,7 @@ function aplicarTurnosATodas() {
   toast(convTurnos.length + ' turnos generados (' + fechasUnicas.length + ' fechas × ' + lines.length + ')');
 }
 
-function openAddConv() { editConvId = null; convTurnos = []; calMes = null; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cRangoDesde', 'cRangoHasta', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = cvArea === 'externos' || cvArea === 'espana' ? cvArea : 'movistar_arena'; /* el área que está filtrada en la lista */ document.getElementById('cContratosHab').checked = false; renderFechasList(); showM('mConv'); }
+function openAddConv() { editConvId = null; convTurnos = []; calMes = null; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cRangoDesde', 'cRangoHasta', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = cvArea === 'externos' || cvArea === 'espana' ? cvArea : 'movistar_arena'; /* el área que está filtrada en la lista */ document.getElementById('cContratosHab').checked = true; /* desde el 6-nov los contratos van siempre (ya no es piloto) */ renderFechasList(); showM('mConv'); }
 function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cRangoDesde').value = ''; document.getElementById('cRangoHasta').value = ''; { const f = [...convTurnos].map(t => t.fecha).filter(Boolean).sort()[0]; calMes = f ? new Date(f.slice(0, 4), Number(f.slice(5, 7)) - 1, 1) : null; } document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cContratosHab').checked = !!c.contratos_habilitados; document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
 function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
 
@@ -10179,8 +10179,9 @@ function prepMailTemplate(area) {
   mailContratoCtx = { convId: solConvId || null, personaId: solPersonaId, email: solEmail || '' };
   const ctBlock = document.getElementById('mailContratoBlock');
   ctBlock.style.display = conv?.contratos_habilitados ? 'block' : 'none';
-  document.getElementById('mailAdjContrato').checked = false;
-  document.getElementById('mailContratoFields').style.display = 'none';
+  // Con contratos (desde el 6-nov, lo normal), el contrato va tildado: se puede sacar.
+  document.getElementById('mailAdjContrato').checked = !!conv?.contratos_habilitados;
+  document.getElementById('mailContratoFields').style.display = conv?.contratos_habilitados ? 'block' : 'none';
   if (conv?.contratos_habilitados) {
     document.getElementById('mcNombre').value = nombre;
     document.getElementById('mcCuil').value = solCuit || '';
