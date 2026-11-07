@@ -12908,7 +12908,9 @@ function renderZonasCuentas() {
   const faltan = SUP_ZONAS.filter(([z]) => !cuentas.some(p => p.zona === z));
   const nombreConv = id => ((convs.find(x => x.id === id) || {}).nombre || '');
   cont.innerHTML = '<div class="zonas-cab"><div><div class="zonas-t">Cuentas por zona</div><div class="zonas-s">Una por zona, para el Centro de Control. La usa quien supervisa esa zona ese día: al entrar a cada show pone su nombre y apellido, y queda en cada incidencia que carga. Ven solas los shows del Centro de Control, no hay que asignarlas.</div></div>'
-    + (faltan.length ? '<button class="btn btn-primary btn-sm" onclick="crearZonas()">' + (faltan.length === SUP_ZONAS.length ? 'Crear las 7 cuentas' : 'Crear las que faltan (' + faltan.length + ')') + '</button>' : '') + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + (cuentas.length ? '<button class="btn btn-sec btn-sm" onclick="claveZonasTodas()" title="Las contraseñas no se guardan: si se perdieron, se generan nuevas (las de ahora dejan de andar)">Contraseñas nuevas para todas</button>' : '')
+    + (faltan.length ? '<button class="btn btn-primary btn-sm" onclick="crearZonas()">' + (faltan.length === SUP_ZONAS.length ? 'Crear las 7 cuentas' : 'Crear las que faltan (' + faltan.length + ')') + '</button>' : '') + '</div></div>'
     + '<div class="zonas-grid">' + SUP_ZONAS.map(([z, t]) => {
       const cu = cuentas.find(p => p.zona === z), u = supTurnos.find(x => x.zona === z);
       return '<div class="zona-card' + (cu ? '' : ' falta') + '"><div class="zona-n">' + t + '</div>'
@@ -12959,6 +12961,24 @@ async function claveZona(id) {
     if (!res.ok) { toast(data.error || 'No se pudo cambiar la contraseña'); return; }
     mostrarClavesZonas([{ zona: cu.zona, password: data.password }], 'Contraseña nueva de ' + zonaNombre(cu.zona));
   } catch (err) { toast('Error: ' + err.message); }
+}
+// Las contraseñas no se guardan en ningún lado: si se perdieron, nuevas para todas de una,
+// en el mismo texto para mandar (en el orden de la planilla).
+async function claveZonasTodas() {
+  const cuentas = SUP_ZONAS.map(([z]) => userProfiles.find(p => p.zona === z)).filter(Boolean);
+  if (!cuentas.length) return;
+  if (!confirm('¿Generar contraseñas nuevas para las ' + cuentas.length + ' cuentas por zona? Las de ahora dejan de andar.')) return;
+  const nuevas = [];
+  toast('Generando las contraseñas…');
+  for (const cu of cuentas) {
+    try {
+      const res = await fetch('/api/supervisor', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ id: cu.id }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { toast(zonaNombre(cu.zona) + ': ' + (data.error || 'no se pudo cambiar')); break; }
+      nuevas.push({ zona: cu.zona, password: data.password });
+    } catch (err) { toast('Error: ' + err.message); break; }
+  }
+  if (nuevas.length) mostrarClavesZonas(nuevas, nuevas.length === cuentas.length ? 'Contraseñas nuevas de las cuentas por zona' : 'Contraseñas nuevas (' + nuevas.length + ' de ' + cuentas.length + ')');
 }
 function renderSupList() {
   renderZonasCuentas();
