@@ -488,6 +488,8 @@ button.fb-obs{border:0;font-family:inherit;cursor:pointer}
 /* Las cuentas por zona: una tarjeta por zona; la que falta, punteada. */
 .zonas-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .zonas-t{font-size:15px;font-weight:700;color:#111827}
+.zonas-t2{font-weight:500;color:#6b7280}
+.sup-personas-t{border-top:1px solid #e5e7eb;padding-top:18px}
 .zonas-s{font-size:12.5px;color:#6b7280;margin-top:3px;max-width:640px;line-height:1.45}
 .zonas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:22px}
 .zona-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
@@ -496,6 +498,9 @@ button.fb-obs{border:0;font-family:inherit;cursor:pointer}
 .zona-u{font-size:12.5px;color:#374151}.zona-card.falta .zona-u{color:#9ca3af}
 .zona-ult{font-size:12px;color:#6b7280;min-height:16px}
 .zona-card .btn{align-self:flex-start;margin-top:6px}
+.zona-k{font-size:12.5px;color:#374151;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.zona-k b{font-weight:600;letter-spacing:.3px}.zona-k.sin{color:#9ca3af}
+.zona-ver{border:0;background:none;padding:0;font:600 12px Poppins,sans-serif;color:#534AB7;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .sup-personas-t{font-size:13px;font-weight:700;color:#374151;margin:0 0 10px}
 .zonas-claves{width:100%;min-height:220px;font:14px/1.5 Poppins,sans-serif;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;resize:vertical}
 .sup-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -1998,7 +2003,7 @@ tr:hover td{background:#f9f9fb}
 <div class="modal-bg" id="mZonasClave" style="display:none" onclick="bgClose('mZonasClave',event)">
   <div class="modal" style="max-width:480px">
     <div class="modal-title"><span id="zonasClaveTitulo">Cuentas por zona</span><button class="mclose" onclick="closeM('mZonasClave')">✕</button></div>
-    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">
+    <div id="zonasClaveAviso" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">
       Estas contraseñas no se guardan en ningún lado y no se pueden volver a ver. Copialas ahora y pasáselas a los supervisores.
     </div>
     <textarea class="zonas-claves" id="zonasClaveTexto" readonly onclick="this.select()"></textarea>
@@ -12895,6 +12900,24 @@ const SUP_ZONAS = [['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Plat
 const usuarioDeZona = z => String(z || '').replace(/_/g, '');
 const zonaNombre = z => (SUP_ZONAS.find(x => x[0] === z) || [z, z])[1];
 let supTurnos = [];
+// Las contraseñas de las cuentas por zona (cuentas-zona-claves.sql): son de la empresa y las ve
+// el equipo del panel. zonaClaves: { zona: { clave, actualizada } }; null = todavía no se pidieron.
+let zonaClaves = null, zonaClaveVisible = {};
+async function cargarClavesZonas() {
+  try {
+    const { data, error } = await sb.from('cuentas_zona_claves').select('zona,clave,actualizada');
+    zonaClaves = {};
+    if (!error && Array.isArray(data)) data.forEach(x => { zonaClaves[x.zona] = x; });
+  } catch (_) { zonaClaves = {}; }
+  renderZonasCuentas();
+}
+function verClaveZona(z) { zonaClaveVisible[z] = !zonaClaveVisible[z]; renderZonasCuentas(); }
+// Todas las que se conocen, en el texto para mandar.
+function copiarAccesosZonas() {
+  const lista = SUP_ZONAS.map(([z]) => z).filter(z => userProfiles.some(p => p.zona === z) && zonaClaves && zonaClaves[z]).map(z => ({ zona: z, password: zonaClaves[z].clave }));
+  if (!lista.length) { toast('Todavía no hay contraseñas guardadas: ponéselas con "Cambiar contraseña"'); return; }
+  mostrarClavesZonas(lista, 'Accesos de las cuentas por zona', true);
+}
 // Quién entró en cada zona (lo más nuevo primero), para el "Último" de cada tarjeta.
 async function cargarTurnosSup() {
   try {
@@ -12907,26 +12930,35 @@ function renderZonasCuentas() {
   const cuentas = userProfiles.filter(p => p.zona);
   const faltan = SUP_ZONAS.filter(([z]) => !cuentas.some(p => p.zona === z));
   const nombreConv = id => ((convs.find(x => x.id === id) || {}).nombre || '');
-  cont.innerHTML = '<div class="zonas-cab"><div><div class="zonas-t">Cuentas por zona</div><div class="zonas-s">Una por zona, para el Centro de Control. La usa quien supervisa esa zona ese día: al entrar a cada show pone su nombre y apellido, y queda en cada incidencia que carga. Ven solas los shows del Centro de Control, no hay que asignarlas.</div></div>'
+  cont.innerHTML = '<div class="zonas-cab"><div><div class="zonas-t">Movistar Arena <span class="zonas-t2">· cuentas por zona</span></div><div class="zonas-s">Las posiciones del Arena: una cuenta por zona, para el Centro de Control. La usa quien supervisa esa zona ese día: al entrar a cada show pone su nombre y apellido, y queda en cada incidencia que carga. Ven solas los shows del Centro de Control, no hay que asignarlas.</div></div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    + (cuentas.length ? '<button class="btn btn-sec btn-sm" onclick="claveZonasTodas()" title="Las contraseñas no se guardan: si se perdieron, se generan nuevas (las de ahora dejan de andar)">Contraseñas nuevas para todas</button>' : '')
+    + (cuentas.length && zonaClaves && cuentas.some(p => zonaClaves[p.zona]) ? '<button class="btn btn-sec btn-sm" onclick="copiarAccesosZonas()" title="Usuarios y contraseñas de todas, para mandar por WhatsApp">Copiar accesos</button>' : '')
+    + (cuentas.length ? '<button class="btn btn-sec btn-sm" onclick="claveZonasTodas()" title="Les genera una contraseña nueva a todas (las de ahora dejan de andar)">Contraseñas nuevas para todas</button>' : '')
     + (faltan.length ? '<button class="btn btn-primary btn-sm" onclick="crearZonas()">' + (faltan.length === SUP_ZONAS.length ? 'Crear las 7 cuentas' : 'Crear las que faltan (' + faltan.length + ')') + '</button>' : '') + '</div></div>'
     + '<div class="zonas-grid">' + SUP_ZONAS.map(([z, t]) => {
       const cu = cuentas.find(p => p.zona === z), u = supTurnos.find(x => x.zona === z);
       return '<div class="zona-card' + (cu ? '' : ' falta') + '"><div class="zona-n">' + t + '</div>'
         + '<div class="zona-u">' + (cu ? 'Usuario: <b>' + usuarioDeZona(z) + '</b>' : 'Sin cuenta todavía') + '</div>'
+        + (!cu || !zonaClaves ? '' : zonaClaves[z] ? '<div class="zona-k">Contraseña: <b>' + (zonaClaveVisible[z] ? e(zonaClaves[z].clave) : '••••••••') + '</b><button type="button" class="zona-ver" onclick="verClaveZona(\'' + z + '\')">' + (zonaClaveVisible[z] ? 'Ocultar' : 'Ver') + '</button></div>'
+          : '<div class="zona-k sin">Contraseña: no está guardada (ponele una con "Cambiar contraseña")</div>')
         + '<div class="zona-ult">' + (u ? 'Último: ' + e(u.nombre + ' ' + u.apellido) + (nombreConv(u.conv_id) ? ' · ' + e(nombreConv(u.conv_id)) : '') + (u.fecha ? ' ' + fechaDMA(u.fecha).slice(0, 5) : '') : cu ? 'Todavía no entró nadie' : '') + '</div>'
-        + (cu ? '<button class="btn btn-sec btn-xs" onclick="claveZona(\'' + cu.id + '\')">Nueva contraseña</button>' : '<button class="btn btn-sec btn-xs" onclick="crearZonas(\'' + z + '\')">Crear</button>') + '</div>';
+        + (cu ? '<button class="btn btn-sec btn-xs" onclick="claveZona(\'' + cu.id + '\')">Cambiar contraseña</button>' : '<button class="btn btn-sec btn-xs" onclick="crearZonas(\'' + z + '\')">Crear</button>') + '</div>';
     }).join('') + '</div>';
 }
 // El texto para mandar por WhatsApp: el link de la app y, por zona, usuario y contraseña.
 let zonasClaveTexto = '';
-function mostrarClavesZonas(lista, titulo) {
+function mostrarClavesZonas(lista, titulo, guardadas) {
+  // Si quedaron guardadas, se pueden volver a ver acá; si no (falta cuentas-zona-claves.sql), es la única vez.
+  if (guardadas) { zonaClaves = zonaClaves || {}; lista.forEach(x => { zonaClaves[x.zona] = { zona: x.zona, clave: x.password, actualizada: new Date().toISOString() }; }); }
+  const aviso = document.getElementById('zonasClaveAviso');
+  if (aviso) aviso.textContent = guardadas ? 'Quedan guardadas en Supervisores → Cuentas por zona: las ve sólo el equipo del panel.'
+    : 'Estas contraseñas no quedaron guardadas (falta correr cuentas-zona-claves.sql en Supabase) y no se pueden volver a ver. Copialas ahora.';
   zonasClaveTexto = 'App de supervisores (Centro de Control):\n' + location.origin + '/supervisor-mobile\n\n'
     + lista.map(x => zonaNombre(x.zona) + '\nUsuario: ' + usuarioDeZona(x.zona) + '\nContraseña: ' + x.password).join('\n\n')
     + '\n\nAl entrar a cada show, cada supervisor pone su nombre y apellido.';
   document.getElementById('zonasClaveTitulo').textContent = titulo;
   document.getElementById('zonasClaveTexto').value = zonasClaveTexto;
+  renderZonasCuentas();
   showM('mZonasClave');
 }
 async function copiarZonasClave() {
@@ -12945,25 +12977,28 @@ async function crearZonas(sola) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast(zonaNombre(zona) + ': ' + (data.error || 'no se pudo crear')); break; }
       userProfiles.push({ id: data.id, nombre: data.nombre, rol: 'supervisor', email: data.email, zona });
-      creadas.push({ zona, password: data.password });
+      creadas.push({ zona, password: data.password, guardada: data.guardada });
     } catch (err) { toast('Error creando la cuenta: ' + err.message); break; }
   }
   renderSupList();
-  if (creadas.length) mostrarClavesZonas(creadas, creadas.length > 1 ? 'Cuentas por zona creadas' : 'Cuenta de ' + zonaNombre(creadas[0].zona) + ' creada');
+  if (creadas.length) mostrarClavesZonas(creadas, creadas.length > 1 ? 'Cuentas por zona creadas' : 'Cuenta de ' + zonaNombre(creadas[0].zona) + ' creada', creadas.every(x => x.guardada));
 }
-// Si alguien se lleva la contraseña: una nueva (la de antes deja de andar).
+// Cambiar la contraseña: la que escriban (genérica, de la empresa) o, vacío, una generada.
+// La de antes deja de andar.
 async function claveZona(id) {
   const cu = userProfiles.find(p => p.id === id); if (!cu) return;
-  if (!confirm('¿Cambiarle la contraseña a la cuenta de ' + zonaNombre(cu.zona) + '? La de ahora deja de andar.')) return;
+  const escrita = prompt('Contraseña nueva para la cuenta de ' + zonaNombre(cu.zona) + ' (usuario ' + usuarioDeZona(cu.zona) + ').\n\nEscribila (8 caracteres o más, sin espacios) o dejá vacío para que se genere una. La de ahora deja de andar.', '');
+  if (escrita === null) return;
+  const clave = escrita.trim();
+  if (clave && (clave.length < 8 || clave.length > 64 || /\s/.test(clave))) { toast('La contraseña tiene que tener 8 caracteres o más, sin espacios'); return; }
   try {
-    const res = await fetch('/api/supervisor', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ id }) });
+    const res = await fetch('/api/supervisor', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify(clave ? { id, password: clave } : { id }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { toast(data.error || 'No se pudo cambiar la contraseña'); return; }
-    mostrarClavesZonas([{ zona: cu.zona, password: data.password }], 'Contraseña nueva de ' + zonaNombre(cu.zona));
+    mostrarClavesZonas([{ zona: cu.zona, password: data.password }], 'Contraseña nueva de ' + zonaNombre(cu.zona), data.guardada);
   } catch (err) { toast('Error: ' + err.message); }
 }
-// Las contraseñas no se guardan en ningún lado: si se perdieron, nuevas para todas de una,
-// en el mismo texto para mandar (en el orden de la planilla).
+// Nuevas para todas de una (generadas), en el mismo texto para mandar (en el orden de la planilla).
 async function claveZonasTodas() {
   const cuentas = SUP_ZONAS.map(([z]) => userProfiles.find(p => p.zona === z)).filter(Boolean);
   if (!cuentas.length) return;
@@ -12975,18 +13010,19 @@ async function claveZonasTodas() {
       const res = await fetch('/api/supervisor', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ id: cu.id }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast(zonaNombre(cu.zona) + ': ' + (data.error || 'no se pudo cambiar')); break; }
-      nuevas.push({ zona: cu.zona, password: data.password });
+      nuevas.push({ zona: cu.zona, password: data.password, guardada: data.guardada });
     } catch (err) { toast('Error: ' + err.message); break; }
   }
-  if (nuevas.length) mostrarClavesZonas(nuevas, nuevas.length === cuentas.length ? 'Contraseñas nuevas de las cuentas por zona' : 'Contraseñas nuevas (' + nuevas.length + ' de ' + cuentas.length + ')');
+  if (nuevas.length) mostrarClavesZonas(nuevas, nuevas.length === cuentas.length ? 'Contraseñas nuevas de las cuentas por zona' : 'Contraseñas nuevas (' + nuevas.length + ' de ' + cuentas.length + ')', nuevas.every(x => x.guardada));
 }
 function renderSupList() {
   renderZonasCuentas();
+  if (zonaClaves === null) cargarClavesZonas();
   if (!supTurnos.length) cargarTurnosSup();
   const cont = document.getElementById('supList');
   const sups = userProfiles.filter(p => p.rol === 'supervisor' && !p.zona);
-  if (!sups.length) { cont.innerHTML = '<div class="sup-personas-t">Cuentas de cada supervisor</div><div class="empty">No hay supervisores con cuenta propia. Si hace falta una, creala con "+ Agregar supervisor".</div>'; return; }
-  cont.innerHTML = '<div class="sup-personas-t">Cuentas de cada supervisor</div>' + sups.map(s => {
+  if (!sups.length) { cont.innerHTML = '<div class="sup-personas-t">Otras cuentas · de cada supervisor</div><div class="empty">No hay supervisores con cuenta propia. Si hace falta una (por ejemplo, para Externos), creala con "+ Agregar supervisor".</div>'; return; }
+  cont.innerHTML = '<div class="sup-personas-t">Otras cuentas · de cada supervisor</div>' + sups.map(s => {
     const myConvs = supConvLinks.filter(l => l.supervisor_id === s.id).map(l => convs.find(c => c.id === l.conv_id)).filter(Boolean);
     return `<div class="sup-card"><div class="sup-card-head"><div><div class="sup-name">${e(s.nombre || '—')}</div><div class="sup-email" id="sup-email-${s.id}">${e(s.email || '')}</div></div><button class="btn btn-danger btn-xs" onclick="delSup('${s.id}')">Eliminar</button></div>
     ${myConvs.length ? `<div class="sup-convs">${myConvs.map(c=>`<span class="sup-conv-tag">${e(c.nombre)}<button onclick="removeSupConv('${s.id}','${c.id}')" title="Quitar">×</button></span>`).join('')}</div>` : '<div style="font-size:12px;color:#9ca3af;margin-top:8px">Sin convocatorias asignadas</div>'}

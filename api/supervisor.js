@@ -24,6 +24,23 @@ const ROLES_CUENTA = ['supervisor', 'gerencia'];
 const ZONAS = { calle: 'Calle', cortatickets: 'Cortatickets', anillo: 'Anillo', bowl: 'Bowl', platea_baja: 'Platea baja', platea_alta: 'Platea alta', vip: 'VIP' };
 const DOMINIO_ZONAS = 'zonas.show-bs.com';
 const usuarioDeZona = z => z.replace(/_/g, '');
+// Son cuentas de la empresa, con contraseñas genéricas: el panel las muestra
+// (cuentas-zona-claves.sql). Se pueden poner a mano; si no, se genera una.
+// Sólo las de las cuentas por zona: las de cada persona y las de la gerencia no se guardan.
+function claveElegida(c) {
+  if (c == null || c === '') return { ok: true, clave: null };
+  const s = String(c);
+  if (s.length < 8 || s.length > 64 || /\s/.test(s)) return { ok: false, error: 'La contraseña tiene que tener entre 8 y 64 caracteres, sin espacios' };
+  return { ok: true, clave: s };
+}
+async function guardarClaveZona(servicio, zona, clave, por) {
+  const r = await fetch(`${SB_URL}/rest/v1/cuentas_zona_claves?on_conflict=zona`, {
+    method: 'POST',
+    headers: { ...conServicio(servicio), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ zona, usuario: usuarioDeZona(zona), clave, actualizada: new Date().toISOString(), por: por || null })
+  }).catch(() => null);
+  return !!(r && r.ok);
+}
 
 // Quien llama tiene que estar logueado Y tener ficha de admin. El panel decide
 // el rol en el navegador, y ahí no se puede confiar.
@@ -121,8 +138,11 @@ export default async function handler(req, res) {
     }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'El mail no parece válido' });
     if (!nombre) return res.status(400).json({ error: 'Falta el nombre' });
+    // La de una zona puede venir con su contraseña (genérica); las demás, siempre generada.
+    const elegida = zona ? claveElegida(cuerpo.password) : { ok: true, clave: null };
+    if (!elegida.ok) return res.status(400).json({ error: elegida.error });
 
-    const password = generarClave();
+    const password = elegida.clave || generarClave();
     const crear = await fetch(`${SB_URL}/auth/v1/admin/users`, {
       method: 'POST',
       headers: conServicio(servicio),
@@ -155,7 +175,8 @@ export default async function handler(req, res) {
       return res.status(zona ? 409 : 500).json({ error: zona ? 'Primero hay que correr cuentas-zona.sql en Supabase' : 'Se creó la cuenta pero no la ficha. Se deshizo todo; probá de nuevo.' });
     }
 
-    return res.status(200).json({ ok: true, id: creado.id, email, nombre, rol: rolNuevo, password, zona, usuario: zona ? usuarioDeZona(zona) : email });
+    const guardada = zona ? await guardarClaveZona(servicio, zona, password, auth.user.email) : false;
+    return res.status(200).json({ ok: true, id: creado.id, email, nombre, rol: rolNuevo, password, zona, usuario: zona ? usuarioDeZona(zona) : email, guardada });
   }
 
   // ── CONTRASEÑA NUEVA ──
@@ -168,10 +189,18 @@ export default async function handler(req, res) {
     let ficha = (await fichaRes.json().catch(() => []))[0];
     if (!fichaRes.ok) ficha = (await (await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${id}&select=rol,email`, { headers: conServicio(servicio) })).json().catch(() => []))[0];
     if (!ficha || !ROLES_CUENTA.includes(ficha.rol)) return res.status(400).json({ error: 'Por acá sólo se les cambia la contraseña a los supervisores y a la gerencia' });
-    const password = generarClave();
+    // A la de una zona se le puede poner una a mano (genérica); si no, se genera.
+    const elegida = ficha.zona ? claveElegida(cuerpo.password) : { ok: true, clave: null };
+    if (!elegida.ok) return res.status(400).json({ error: elegida.error });
+    const password = elegida.clave || generarClave();
     const cambio = await fetch(`${SB_URL}/auth/v1/admin/users/${id}`, { method: 'PUT', headers: conServicio(servicio), body: JSON.stringify({ password }) });
-    if (!cambio.ok) return res.status(500).json({ error: 'No se pudo cambiar la contraseña' });
-    return res.status(200).json({ ok: true, id, email: ficha.email || '', zona: ficha.zona || null, usuario: ficha.zona ? usuarioDeZona(ficha.zona) : (ficha.email || ''), password });
+    if (!cambio.ok) {
+      const d = await cambio.json().catch(() => ({}));
+      const msg = String(d.msg || d.message || d.error_description || '');
+      return res.status(/weak|short|password/i.test(msg) ? 400 : 500).json({ error: /weak|short|password/i.test(msg) ? 'Supabase no acepta esa contraseña: probá con una más larga o con números' : 'No se pudo cambiar la contraseña' });
+    }
+    const guardada = ficha.zona ? await guardarClaveZona(servicio, ficha.zona, password, auth.user.email) : false;
+    return res.status(200).json({ ok: true, id, email: ficha.email || '', zona: ficha.zona || null, usuario: ficha.zona ? usuarioDeZona(ficha.zona) : (ficha.email || ''), password, guardada });
   }
 
   // ── BAJA ──
