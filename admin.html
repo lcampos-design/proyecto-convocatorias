@@ -471,6 +471,26 @@ textarea.fi{height:64px;resize:vertical}
 .disp-datos .sem{cursor:pointer}
 .disp-fuera{font-size:10.5px;font-weight:600;color:#9a3412;background:#fff7ed;padding:1px 7px;border-radius:999px}
 .disp-filtros{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+/* Qué es cada disponibilidad: general o de la convocatoria, abierta o cerrada; y de dónde son las respuestas que se ven. */
+.disp-que{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.disp-que-t{font-size:14px;font-weight:700;color:#111827;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.disp-que-s{font-size:12.5px;color:#4b5563;margin-top:4px;line-height:1.5}
+.disp-estado{font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.disp-estado.abierta{background:#dcfce7;color:#166534}.disp-estado.cerrada{background:#f3f4f6;color:#4b5563}
+.disp-fuentes{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:#6b7280}
+.disp-fuentes button{border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:4px 12px;font:500 12px Poppins,sans-serif;color:#374151;cursor:pointer}
+.disp-fuentes button.on{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.disp-fuentes b{font-weight:700;margin-left:2px}
+/* Todas las disponibilidades, en un solo lugar. */
+.disps-intro{font-size:13px;color:#4b5563;line-height:1.5;margin-bottom:12px}
+.disps-grupo{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:16px 0 4px}
+.disps-fila{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6;flex-wrap:wrap}
+.disps-main{flex:1;min-width:220px}
+.disps-n{font-size:14px;font-weight:600;color:#111827}
+.disps-d{font-size:12px;color:#6b7280;margin-top:2px}
+.disps-tipo{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#f3f4f6;color:#4b5563;margin-left:4px;white-space:nowrap;vertical-align:1px}
+.disps-tipo.general,.a-badge.disp-gral{background:#ede9fe;color:#5b21b6}
+.disps-cuenta{font-size:12.5px;color:#374151;min-width:96px;text-align:right;white-space:nowrap}
 /* Confirmar de a muchos: la barra arriba de la tabla y la fila elegida. */
 .disp-masivo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:34px;margin-bottom:8px;font-size:12.5px;color:#374151}
 .disp-masivo-ayuda{font-size:12px;color:#6b7280}
@@ -1217,7 +1237,7 @@ tr:hover td{background:#f9f9fb}
       <select class="filt" id="cvArchF" onchange="renderCvList()">
         <option value="activas">Activas</option><option value="archivadas">Archivadas</option><option value="todas">Todas</option>
       </select>
-      <button class="btn btn-sec" onclick="openDispMes()" title="Todos los eventos de un mes en un solo link de disponibilidad, para el canal de difusión y por mail"><i class="ic ic-calendario"></i> Disponibilidad del mes</button>
+      <button class="btn btn-sec" onclick="openDisps()" title="Todas las rondas de disponibilidad (generales y de cada convocatoria), abiertas o cerradas, con quiénes se anotaron; y el link del mes"><i class="ic ic-calendario"></i> Disponibilidades</button>
       <button class="btn btn-primary" onclick="openAddConv()">+ Nueva convocatoria</button>
     </div>
     <div id="cvCards"></div>
@@ -1662,6 +1682,7 @@ tr:hover td{background:#f9f9fb}
     </div>
     <div class="fg"><label>Link de WhatsApp</label><input type="text" class="fi" id="cWhatsapp" placeholder="https://chat.whatsapp.com/..."></div>
     <label style="display:flex;align-items:center;gap:8px;margin:4px 0 8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="cContratosHab" style="width:16px;height:16px"> Contratos <span style="font-weight:400;color:#9ca3af">— la confirmación va con el contrato para firmar</span></label>
+    <label style="display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="cDispGeneral" style="width:16px;height:16px"> Disponibilidad general <span style="font-weight:400;color:#9ca3af">— para varias jornadas o eventos a la vez: la gente marca qué días puede y después se la suma a la convocatoria de cada jornada</span></label>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mConv')">Cancelar</button><button class="btn btn-primary" onclick="saveConv()">Guardar</button></div>
   </div>
 </div>
@@ -1834,6 +1855,16 @@ tr:hover td{background:#f9f9fb}
 </div>
 
 <!-- Modal: Disponibilidad (admin) -->
+<!-- Todas las disponibilidades, en un solo lugar -->
+<div class="modal-bg" id="mDisps" style="display:none" onclick="bgClose('mDisps',event)">
+  <div class="modal" style="max-width:960px">
+    <div class="modal-title"><span>Disponibilidades</span><button class="mclose" onclick="closeM('mDisps')">✕</button></div>
+    <div class="disps-intro">Cada convocatoria tiene su ronda de disponibilidad, con su link. Las <b>generales</b> son para varias jornadas o eventos a la vez: la gente marca qué días puede y después se la suma a la convocatoria de cada jornada. Abiertas o cerradas, acá ves siempre quiénes se anotaron.</div>
+    <div class="cv-areas" id="dispsAreas" role="tablist" aria-label="Área"></div>
+    <div id="dispsBody"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mDisps');openDispMes()" title="Todos los eventos de un mes en un solo link, para el canal de difusión y por mail">Armar el link del mes</button><button class="btn btn-sec" onclick="closeM('mDisps')">Cerrar</button></div>
+  </div>
+</div>
 <div class="modal-bg" id="mDispAdmin" style="display:none" onclick="bgClose('mDispAdmin',event)">
   <div class="modal" style="max-width:1120px">
     <div class="modal-title"><span id="mDispTitle">Disponibilidad</span><button class="mclose" onclick="closeM('mDispAdmin')">✕</button></div>
@@ -4947,7 +4978,7 @@ function cvRowHTML(c) {
   }).join('\n');
   return `<div class="cv-row${c.archivada ? ' archivada' : ''}" onclick="openDetail('${c.id}')">
   <div class="cv-row-main">
-    <div class="cv-row-title">${e(c.nombre)}${c.archivada ? ' <span class="a-badge" style="background:#e5e7eb;color:#6b7280"><i class="ic ic-caja"></i> Archivada</span>' : ''} <span class="a-badge ${areaClase(c.area)}">${areaLargo(c.area)}</span>${c.publicada ? ' <span class="a-badge" style="background:#ecfdf5;color:#0f6e56" title="Se ve en la página pública"><i class="ic ic-globo"></i> Publicada</span>' : ''}</div>
+    <div class="cv-row-title">${e(c.nombre)}${c.archivada ? ' <span class="a-badge" style="background:#e5e7eb;color:#6b7280"><i class="ic ic-caja"></i> Archivada</span>' : ''} <span class="a-badge ${areaClase(c.area)}">${areaLargo(c.area)}</span>${esGeneral(c) ? ' <span class="a-badge disp-gral" title="Para varias jornadas o eventos a la vez">Disponibilidad general</span>' : ''}${c.publicada ? ' <span class="a-badge" style="background:#ecfdf5;color:#0f6e56" title="Se ve en la página pública"><i class="ic ic-globo"></i> Publicada</span>' : ''}</div>
     <div class="cv-row-meta">${resumenFechas(c.fecha)}<span title="${e(detallePuestos)}">${nPuestos} puesto${nPuestos !== 1 ? 's' : ''}</span></div>
   </div>
   <div class="cv-row-cupo" title="${e(detallePuestos)}">
@@ -8873,8 +8904,8 @@ function aplicarTurnosATodas() {
   toast(convTurnos.length + ' turnos generados (' + fechasUnicas.length + ' fechas × ' + lines.length + ')');
 }
 
-function openAddConv() { editConvId = null; convTurnos = []; calMes = null; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cRangoDesde', 'cRangoHasta', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = cvArea === 'externos' || cvArea === 'espana' ? cvArea : 'movistar_arena'; /* el área que está filtrada en la lista */ document.getElementById('cContratosHab').checked = true; /* desde el 6-nov los contratos van siempre (ya no es piloto) */ renderFechasList(); showM('mConv'); }
-function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cRangoDesde').value = ''; document.getElementById('cRangoHasta').value = ''; { const f = [...convTurnos].map(t => t.fecha).filter(Boolean).sort()[0]; calMes = f ? new Date(f.slice(0, 4), Number(f.slice(5, 7)) - 1, 1) : null; } document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cContratosHab').checked = !!c.contratos_habilitados; document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
+function openAddConv() { editConvId = null; convTurnos = []; calMes = null; document.getElementById('mConvTitle').textContent = 'Nueva convocatoria'; ['cNombre', 'cRangoDesde', 'cRangoHasta', 'cDesc', 'cHorario', 'cVenue', 'cRemuneracion', 'cFechaLimite', 'cWhatsapp', 'cTurnosMultiples'].forEach(i => document.getElementById(i).value = ''); document.getElementById('cArea').value = cvArea === 'externos' || cvArea === 'espana' ? cvArea : 'movistar_arena'; /* el área que está filtrada en la lista */ document.getElementById('cContratosHab').checked = true; /* desde el 6-nov los contratos van siempre (ya no es piloto) */ document.getElementById('cDispGeneral').checked = false; renderFechasList(); showM('mConv'); }
+function openEditConv(id) { const c = convs.find(x => x.id === id); if (!c) return; editConvId = id; convTurnos = migrarTurnos(c); document.getElementById('mConvTitle').textContent = 'Editar convocatoria'; document.getElementById('cNombre').value = c.nombre; document.getElementById('cRangoDesde').value = ''; document.getElementById('cRangoHasta').value = ''; { const f = [...convTurnos].map(t => t.fecha).filter(Boolean).sort()[0]; calMes = f ? new Date(f.slice(0, 4), Number(f.slice(5, 7)) - 1, 1) : null; } document.getElementById('cArea').value = c.area; document.getElementById('cDesc').value = c.descripcion || ''; document.getElementById('cHorario').value = c.horario || ''; document.getElementById('cVenue').value = c.venue || ''; document.getElementById('cRemuneracion').value = c.remuneracion || ''; document.getElementById('cFechaLimite').value = c.fecha_limite || ''; document.getElementById('cWhatsapp').value = c.link_whatsapp || ''; document.getElementById('cContratosHab').checked = !!c.contratos_habilitados; document.getElementById('cDispGeneral').checked = esGeneral(c); document.getElementById('cTurnosMultiples').value = ''; renderFechasList(); showM('mConv'); }
 function editCurrentConv() { if (currentConvId) openEditConv(currentConvId); }
 
 async function saveConv() {
@@ -8882,7 +8913,10 @@ async function saveConv() {
   const turnos = convTurnos.filter(t => t.fecha).map(t => ({ id: t.id, fecha: t.fecha, horario: (t.horario || '').trim() }));
   const fechasUnicas = [...new Set(turnos.map(t => t.fecha))].sort();
   const d = { id: editConvId || uid(), nombre: nom, fecha: fechasUnicas.length ? fechasUnicas.join(',') : null, area: document.getElementById('cArea').value, descripcion: document.getElementById('cDesc').value.trim() || null, horario: document.getElementById('cHorario').value.trim() || null, turnos, venue: document.getElementById('cVenue').value.trim() || null, remuneracion: document.getElementById('cRemuneracion').value.trim() || null, fecha_limite: document.getElementById('cFechaLimite').value.trim() || null, link_whatsapp: document.getElementById('cWhatsapp').value.trim() || null, contratos_habilitados: document.getElementById('cContratosHab').checked };
-  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; c.horario = d.horario; c.turnos = d.turnos; c.venue = d.venue; c.remuneracion = d.remuneracion; c.fecha_limite = d.fecha_limite; c.link_whatsapp = d.link_whatsapp; c.contratos_habilitados = d.contratos_habilitados; } }
+  // La marca de disponibilidad general (disponibilidad-general.sql): sin la columna, no se manda (si no, no se guardaría nada).
+  if (convs.some(x => 'disp_general' in x)) d.disp_general = document.getElementById('cDispGeneral').checked;
+  else if (document.getElementById('cDispGeneral').checked && !/disponibilidad general/i.test(nom)) toast('Para guardar "Disponibilidad general" falta correr disponibilidad-general.sql en Supabase');
+  if (editConvId) { const c = convs.find(x => x.id === editConvId); if (c) { c.nombre = d.nombre; c.fecha = d.fecha; c.area = d.area; c.descripcion = d.descripcion; c.horario = d.horario; c.turnos = d.turnos; c.venue = d.venue; c.remuneracion = d.remuneracion; c.fecha_limite = d.fecha_limite; c.link_whatsapp = d.link_whatsapp; c.contratos_habilitados = d.contratos_habilitados; if ('disp_general' in d) c.disp_general = d.disp_general; } }
   else convs.push({ ...d, puestos: [] });
   if (currentConvId) { const c = convs.find(x => x.id === currentConvId); if (c) { document.getElementById('detTitle').textContent = c.nombre; renderDetStats(); } }
   renderCvList(); closeM('mConv');
@@ -12096,17 +12130,92 @@ function waLink(tel) {
   return d ? 'https://wa.me/549' + d : '#';
 }
 
-async function openDispAdmin() {
+// Una convocatoria es una "disponibilidad general" si está marcada (disponibilidad-general.sql);
+// sin la marca en la base, si se llama así.
+function esGeneral(c) { return !!c && (c.disp_general === true || (c.disp_general == null && /disponibilidad general/i.test(c.nombre || ''))); }
+// Las generales que tienen días de esta convocatoria (ahí puede estar la gente que se anotó para estas fechas).
+function dispGeneralesPara(c) {
+  if (!c || esGeneral(c)) return [];
+  const dias = new Set(slotsDe(c).map(s => s.fecha));
+  return convs.filter(g => g.id !== c.id && !g.archivada && esGeneral(g) && slotsDe(g).some(s => dias.has(s.fecha)));
+}
+// Cuántos se anotaron en cada ronda (sin traer las filas).
+let dispConteos = new Map();
+async function cargarConteosDisp(ids) {
+  await Promise.all(ids.map(async id => {
+    try { const { count, error } = await sb.from('disponibilidad').select('cuit', { count: 'exact', head: true }).eq('conv_id', id); if (!error && count != null) dispConteos.set(id, count); } catch (_) {}
+  }));
+}
+// De quién son las respuestas que se ven: las de esta convocatoria (null) o las de una general de estas fechas.
+let dispFuenteId = null;
+function dispConvFuente() { return convs.find(x => x.id === (dispFuenteId || currentConvId)) || null; }
+// Los días que se muestran: los de esa ronda; de una general, sólo los de esta convocatoria (si tiene alguno).
+function dispSlotsVista() {
+  const c = convs.find(x => x.id === currentConvId), f = dispConvFuente() || c; if (!f) return [];
+  const todos = slotsDe(f); if (!c || f.id === c.id) return todos;
+  const dias = new Set(slotsDe(c).map(x => x.fecha)), deEsos = todos.filter(x => dias.has(x.fecha));
+  return deEsos.length ? deEsos : todos;
+}
+async function dispCargarFilas() {
+  const f = dispConvFuente(); dispRows = [];
+  if (!f) return;
+  try { const { data } = await sb.from('disponibilidad').select('*').eq('conv_id', f.id).order('updated_at', { ascending: false }); dispRows = data || []; } catch (_) { dispRows = []; }
+  // De una general vista desde una convocatoria: sólo los que pueden algún día de esta convocatoria.
+  if (f.id !== currentConvId) { const ids = new Set(dispSlotsVista().map(x => x.id)); dispRows = dispRows.filter(r => Array.isArray(r.fechas) && r.fechas.some(id => ids.has(id))); }
+}
+// Las convocatorias de las jornadas de una general (para ir a sumar a la gente a sus puestos).
+function dispConvsDeLaGeneral(g) {
+  const dias = new Set(slotsDe(g).map(x => x.fecha));
+  return convs.filter(c => c.id !== g.id && !c.archivada && !esGeneral(c) && slotsDe(c).some(x => dias.has(x.fecha)))
+    .sort((a, b) => ((slotsDe(a)[0] || {}).fecha || '').localeCompare((slotsDe(b)[0] || {}).fecha || '') || String(a.nombre).localeCompare(String(b.nombre), 'es'));
+}
+// Ir a la convocatoria de una jornada, con la general abierta en su disponibilidad.
+function dispIrAConv(convId, generalId) { closeM('mDispAdmin'); openDetail(convId); openDispAdmin(generalId); }
+// fuenteId: abrir directo la de una general. Si la convocatoria no tiene anotados propios y una
+// general de sus fechas sí, arranca en la general (arriba dice cuál es y se cambia en "Ver:").
+async function openDispAdmin(fuenteId) {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   document.getElementById('mDispTitle').textContent = `Disponibilidad — ${c.nombre}`;
   document.getElementById('dispBody').innerHTML = '<div class="empty">Cargando…</div>';
-  dispBusqueda = ''; dispFiltro = ''; dispSel = new Set();
+  dispBusqueda = ''; dispFiltro = ''; dispSel = new Set(); dispFuenteId = null;
   showM('mDispAdmin');
-  try {
-    const { data } = await sb.from('disponibilidad').select('*').eq('conv_id', currentConvId).order('updated_at', { ascending: false });
-    dispRows = data || [];
-  } catch (_) { dispRows = []; }
+  const gens = dispGeneralesPara(c);
+  await cargarConteosDisp([c.id].concat(gens.map(g => g.id)));
+  if (fuenteId) dispFuenteId = fuenteId !== c.id ? fuenteId : null;
+  else if (!(dispConteos.get(c.id) > 0)) { const g = gens.find(x => dispConteos.get(x.id) > 0); if (g) dispFuenteId = g.id; }
+  await dispCargarFilas();
   renderDispBody();
+}
+async function dispVerFuente(id) {
+  dispFuenteId = id === currentConvId ? null : id; dispSel = new Set();
+  document.getElementById('dispBody').innerHTML = '<div class="empty">Cargando…</div>';
+  await dispCargarFilas(); renderDispBody();
+}
+// Arriba de todo: qué es, si está abierta o cerrada, y de dónde son las respuestas que se ven.
+function dispQueEsHTML(c, f) {
+  const ajena = f.id !== c.id, gen = esGeneral(f), n = dispRows.length;
+  const tipo = ajena ? 'Disponibilidad general «' + f.nombre + '»' : gen ? 'Disponibilidad general' : 'Disponibilidad de esta convocatoria';
+  const que = ajena ? 'Los que se anotaron en la general y pueden algún día de esta convocatoria. Elegí a los que van y sumalos a un puesto de «' + c.nombre + '».'
+    : gen ? 'Para varias jornadas o eventos a la vez: cada uno marcó qué días puede. Para sumarlos a un puesto, entrá a la convocatoria de la jornada (abajo): ahí ves a los de esta general que pueden ese día.'
+    : 'Quiénes se anotaron por el link de esta convocatoria y qué días pueden.';
+  const estado = f.disp_abierta ? 'El link está abierto: se puede anotar más gente.'
+    : 'Cerrada: el link ya no acepta respuestas' + (n ? ', pero acá ves igual a ' + (n === 1 ? 'la persona que se anotó' : 'los ' + n + ' que se anotaron') : '') + '.';
+  const gens = dispGeneralesPara(c);
+  const fuentes = gens.length ? '<div class="disp-fuentes"><span>Ver:</span>' + [c].concat(gens).map(x => '<button type="button" class="' + (x.id === f.id ? 'on' : '') + '" onclick="dispVerFuente(\'' + x.id + '\')">'
+    + (x.id === c.id ? 'Los de esta convocatoria' : 'General: ' + e(x.nombre)) + (dispConteos.has(x.id) ? ' <b>' + dispConteos.get(x.id) + '</b>' : '') + '</button>').join('') + '</div>' : '';
+  // En la general: las convocatorias de sus jornadas, para ir directo a sumar a la gente.
+  const jornadas = !ajena && gen ? dispConvsDeLaGeneral(f) : [];
+  const ir = jornadas.length ? '<div class="disp-fuentes"><span>Convocatorias de estas jornadas:</span>' + jornadas.map(x => '<button type="button" onclick="dispIrAConv(\'' + x.id + '\', \'' + f.id + '\')" title="Abrir esa convocatoria con los de esta general que pueden ese día">' + e(x.nombre) + ' →</button>').join('') + '</div>'
+    : !ajena && gen ? '<div class="disp-que-s" style="margin-top:6px">Todavía no hay convocatorias con estas fechas: creá la de cada jornada y, desde su disponibilidad, vas a ver a esta gente.</div>' : '';
+  return '<div class="disp-que"><div class="disp-que-t">' + e(tipo) + ' <span class="disp-estado ' + (f.disp_abierta ? 'abierta' : 'cerrada') + '">' + (f.disp_abierta ? 'Abierta' : 'Cerrada') + '</span></div>'
+    + '<div class="disp-que-s">' + e(que) + ' ' + e(estado) + '</div>' + fuentes + ir + '</div>';
+}
+// Sin nadie: por qué, y dónde mirar.
+function dispVacioHTML(c, f) {
+  const otras = dispGeneralesPara(c).filter(g => g.id !== f.id && dispConteos.get(g.id) > 0);
+  return '<div class="empty">' + (f.id !== c.id ? 'Nadie de la general marcó días de esta convocatoria.'
+    : 'Nadie se anotó por el link de esta convocatoria.' + (otras.length ? ' Para estas fechas hay una disponibilidad general con gente anotada: elegila arriba, en «Ver».'
+      : f.disp_abierta ? ' Compartí el link con tu grupo.' : ' La ronda está cerrada: abrila y compartí el link para que se anoten.')) + '</div>';
 }
 
 function slotsDe(c) {
@@ -12117,10 +12226,12 @@ function slotsDe(c) {
 }
 function renderDispBody() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
-  const link = location.origin + '/disponibilidad?conv=' + currentConvId;
-  const slots = slotsDe(c);
-  const abierta = !!c.disp_abierta;
-  let html = `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:14px">
+  // Las respuestas que se ven: las de esta convocatoria o las de una general de sus fechas (con sus días de acá).
+  const f = dispConvFuente() || c;
+  const link = location.origin + '/disponibilidad?conv=' + f.id;
+  const slots = dispSlotsVista();
+  const abierta = !!f.disp_abierta;
+  let html = dispQueEsHTML(c, f) + `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin-bottom:14px">
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer"><input type="checkbox" ${abierta ? 'checked' : ''} onchange="toggleDispAbierta(this.checked)" style="width:18px;height:18px;accent-color:#534AB7"> Ronda abierta</label>
     <span style="flex:1;min-width:200px;font-size:12px;color:#6b7280;word-break:break-all">${e(link)}</span>
     <button class="btn btn-sec btn-sm" onclick="copiarDispLink('${e(link)}')"><i class="ic ic-planilla"></i> Copiar link</button>
@@ -12133,8 +12244,7 @@ function renderDispBody() {
     <select class="filt" id="dispOrden" onchange="dispOrden=this.value;renderDispBody()" title="En qué orden">${opc([['nombre', 'Por nombre'], ['fb', 'Mejor feedback primero'], ['dias', 'Más días disponibles']], dispOrden)}</select>
     <span style="font-size:12px;color:#6b7280;white-space:nowrap">Tocá el nombre para ver la ficha · arrastrá la tabla para moverte</span>
   </div>`;
-  if (!abierta) html += `<div style="font-size:12px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;margin-bottom:12px">La ronda está <strong>cerrada</strong>: el link no acepta respuestas. Activá "Ronda abierta" para recibir disponibilidad.</div>`;
-  if (!dispRows.length) { html += '<div class="empty">Todavía nadie respondió. Compartí el link con tu grupo.</div>'; document.getElementById('dispBody').innerHTML = html; return; }
+  if (!dispRows.length) { html += dispVacioHTML(c, f); document.getElementById('dispBody').innerHTML = html; return; }
   const th = s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center">${s}</th>`;
   const thDates = slots.map(s => `<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;text-align:center;vertical-align:bottom" title="${e(s.horario || '')}">${fmtFechaCorta(s.fecha)}${s.horario ? `<div style="font-size:9px;font-weight:400;color:#8b8fa3;text-transform:none;max-width:100px;margin:2px auto 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e(s.horario)}</div>` : ''}</th>`).join('');
   const q = String(dispBusqueda || '').toLowerCase().trim(), qd = q.replace(/\D/g, '');
@@ -12218,7 +12328,7 @@ function dispEstadoHTML(post) {
 function dispMasivoHTML() {
   const n = dispSel.size, c = convs.find(x => x.id === currentConvId), puestos = (c && c.puestos) || [];
   if (!n) return '<span class="disp-masivo-ayuda">Tildá a los que van (o el cuadradito de arriba, para todos los que se ven) y sumalos a un puesto. Después, desde el puesto, les mandás el mail y el contrato.</span>';
-  if (!puestos.length) return `<span><b>${n}</b> elegido${n === 1 ? '' : 's'}</span><span class="disp-masivo-ayuda">Primero agregá un puesto en la convocatoria (Puestos y cupos).</span>`;
+  if (!puestos.length) return `<span><b>${n}</b> elegido${n === 1 ? '' : 's'}</span><span class="disp-masivo-ayuda">${esGeneral(c) ? 'Es una disponibilidad general: para sumarlos a un puesto, abrí la convocatoria de la jornada y, en su disponibilidad, elegí esta general en «Ver».' : 'Primero agregá un puesto en la convocatoria (Puestos y cupos).'}</span>`;
   if (!puestos.some(p => p.id === dispPuestoElegido)) dispPuestoElegido = puestos[0].id;
   const libres = p => Math.max(0, (p.cupos || 0) - posts.filter(x => x.convId === currentConvId && x.puestoId === p.id && x.estado !== 'rechazado').length);
   return `<span><b>${n}</b> elegido${n === 1 ? '' : 's'}</span>`
@@ -12314,6 +12424,43 @@ function dmMensaje() {
     + '\n\nSe completa con tu CUIL. Si te seleccionan, te llega la confirmación.';
 }
 // Sin mes, el que viene; desde el título de un mes de la lista, ese mes y el área de la pestaña.
+// ── TODAS LAS DISPONIBILIDADES ──
+// Un solo lugar: cada ronda (general o de una convocatoria), sus días, abierta o cerrada, cuántos
+// se anotaron y "Ver anotados" (abre la convocatoria con su disponibilidad, se lea siempre).
+async function cargarTodosLosConteos() {
+  const m = new Map();
+  for (let desde = 0; ; desde += 1000) {
+    const { data, error } = await sb.from('disponibilidad').select('conv_id').range(desde, desde + 999);
+    if (error) return false;
+    (data || []).forEach(r => m.set(r.conv_id, (m.get(r.conv_id) || 0) + 1));
+    if (!data || data.length < 1000) break;
+  }
+  dispConteos = m; return true;
+}
+async function openDisps() { showM('mDisps'); renderDisps(); if (await cargarTodosLosConteos()) renderDisps(); }
+function dispsElegirArea(a) { elegirAreaConv(a); renderDisps(); }
+function renderDisps() {
+  const tabs = document.getElementById('dispsAreas'), cont = document.getElementById('dispsBody'); if (!cont) return;
+  if (tabs) tabs.innerHTML = CV_AREAS.filter(([k]) => k !== 'espana' || cvArea === 'espana' || convs.some(c => normArea(c.area) === 'espana'))
+    .map(([k, t]) => '<button type="button" class="cv-area' + (k === cvArea ? ' on' : '') + '" role="tab" aria-selected="' + (k === cvArea) + '" onclick="dispsElegirArea(\'' + k + '\')">' + t + '</button>').join('');
+  const hoy = hoyLocalISO();
+  const lista = convs.filter(c => !c.archivada && enAreaConv(c, cvArea) && (c.disp_abierta || esGeneral(c) || dispConteos.get(c.id) > 0));
+  if (!lista.length) { cont.innerHTML = '<div class="empty">No hay rondas de disponibilidad en esta área. Se abren desde cada convocatoria (Disponibilidad → Ronda abierta) o con el link del mes.</div>'; return; }
+  const primera = c => (slotsDe(c)[0] || {}).fecha || '', ultima = c => { const x = slotsDe(c); return x.length ? x[x.length - 1].fecha : ''; };
+  const vienen = lista.filter(c => !ultima(c) || ultima(c) >= hoy).sort((a, b) => (primera(a) || '9').localeCompare(primera(b) || '9') || String(a.nombre).localeCompare(String(b.nombre), 'es'));
+  const pasaron = lista.filter(c => ultima(c) && ultima(c) < hoy).sort((a, b) => ultima(b).localeCompare(ultima(a)));
+  const fila = c => {
+    const n = dispConteos.has(c.id) ? dispConteos.get(c.id) : null, gen = esGeneral(c);
+    return '<div class="disps-fila"><div class="disps-main"><div class="disps-n">' + e(c.nombre) + ' <span class="disps-tipo' + (gen ? ' general' : '') + '">' + (gen ? 'General' : 'De la convocatoria') + '</span></div>'
+      + '<div class="disps-d">' + e([resumenFechasTexto(c.fecha), areaLargo(c.area)].filter(Boolean).join(' · ')) + '</div></div>'
+      + '<span class="disp-estado ' + (c.disp_abierta ? 'abierta' : 'cerrada') + '" title="' + (c.disp_abierta ? 'El link acepta respuestas' : 'El link ya no acepta respuestas (igual se ven los que se anotaron)') + '">' + (c.disp_abierta ? 'Abierta' : 'Cerrada') + '</span>'
+      + '<span class="disps-cuenta">' + (n == null ? '…' : n + (n === 1 ? ' anotado' : ' anotados')) + '</span>'
+      + '<button class="btn btn-sec btn-sm" onclick="dispsVer(\'' + c.id + '\')">Ver anotados</button></div>';
+  };
+  cont.innerHTML = (vienen.length ? '<div class="disps-grupo">Las que vienen</div>' + vienen.map(fila).join('') : '') + (pasaron.length ? '<div class="disps-grupo">Ya pasaron</div>' + pasaron.map(fila).join('') : '');
+}
+// Ver anotados: entra a la convocatoria y abre su disponibilidad (ahí se eligen y se suman a un puesto).
+function dispsVer(id) { closeM('mDisps'); openDetail(id); openDispAdmin(); }
 function openDispMes(mes) {
   const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);   // el mes que viene
   document.getElementById('dmMes').value = mes || (d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
@@ -12444,15 +12591,15 @@ async function dmMandar() {
   btn.disabled = false;
 }
 async function toggleDispAbierta(val) {
-  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const c = dispConvFuente(); if (!c) return;   // la ronda que se está viendo (la de acá o la general)
   c.disp_abierta = val; renderDispBody();
-  try { await sbUpdate('convocatorias', currentConvId, { disp_abierta: val }); toast(val ? 'Ronda de disponibilidad abierta' : 'Ronda cerrada'); } catch (_) {}
+  try { await sbUpdate('convocatorias', c.id, { disp_abierta: val }); toast(val ? 'Ronda de disponibilidad abierta' : 'Ronda cerrada'); } catch (_) {}
 }
 function copiarDispLink(link) { if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => toast('Link copiado')).catch(() => toast('Copialo manualmente')); else toast('Copialo manualmente'); }
 function exportarDisponibilidad() {
-  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const c = dispConvFuente(); if (!c) return;   // la ronda que se está viendo, con los días que se ven
   if (!dispRows.length) { toast('Todavía no hay respuestas para exportar'); return; }
-  const slots = slotsDe(c);
+  const slots = dispSlotsVista();
   const colLabel = s => (fmtFechaCorta(s.fecha) + (s.horario ? ' ' + s.horario : '')).trim();
   const hdrs = ['Persona', 'CUIT', 'Email', ...slots.map(colLabel), 'Turnos disponibles'];
   const rows = dispRows.slice().sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es')).map(r => {
