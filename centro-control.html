@@ -152,6 +152,12 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .pase-n{font:900 clamp(52px,12vw,150px)/.9 var(--inc-fuente);letter-spacing:-.035em;text-transform:uppercase;overflow-wrap:normal;word-break:normal;hyphens:none;padding-top:.1em}
 .pase-n .mano{font-size:max(.36em,24px);margin-left:.2em;transform:rotate(-8deg) translateY(-.45em)}
 .pase-f{font:400 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);padding-top:10px;border-top:4px solid var(--tinta)}
+/* Quién está a cargo de cada zona en esta función (las cuentas por zona). */
+.pase-sup{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.pase-sup:empty{display:none}
+.pase-sup-t{font:600 12.5px var(--inc-fuente);color:var(--gris);margin-right:2px}
+.pase-sup span:not(.pase-sup-t){font:400 12.5px var(--inc-fuente);color:var(--tinta);background:var(--tarjeta);border-radius:999px;padding:4px 10px}
+.pase-sup b{font-weight:700}
 .pase-centro{flex:1 1 520px;min-width:0;display:flex;flex-direction:column;gap:8px}
 /* El estado de la sala: una tarjeta; rojo si hay graves, amarillo si hay medias (fondo oscuro, letra clara), invertido (del color de la letra) si está todo en orden. */
 .estado{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:16px 18px;border-radius:16px;background:var(--tinta);color:var(--fondo)}
@@ -327,7 +333,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 <div class="pantalla" id="pShow">
   <div class="tablero">
     <section class="pase caja" aria-label="El show">
-      <div class="pase-id"><span class="pase-n" id="paseN"></span><span class="pase-f" id="paseF"></span></div>
+      <div class="pase-id"><span class="pase-n" id="paseN"></span><span class="pase-f" id="paseF"></span><div class="pase-sup" id="paseSup"></div></div>
       <div class="pase-centro">
         <div class="estado" id="estado" role="status"></div>
         <div class="stats" id="resumen"></div>
@@ -3318,6 +3324,16 @@ function incEstiloMetricas() {
 // Sólo lectura. Todo sale de dos funciones de la base (ger_convocatorias y
 // ger_incidencias), que no devuelven nada a quien no es gerencia o admin.
 let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', dia = null, timer = null, cuentasFuncion = {}, yaEntro = false;
+// Quién entró con la cuenta de cada zona en este show (cuentas-zona.sql), en orden.
+let supervisores = [];
+const ZONAS_ORDEN = [['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['platea_alta', 'Platea alta'], ['cortatickets', 'Cortatickets'], ['calle', 'Calle'], ['vip', 'VIP']];
+// A cargo de cada zona en la función elegida: el último que entró ese día.
+function supervisoresHTML() {
+  const ult = {};
+  supervisores.filter(t => !dia || fechaFuncion({ created_at: t.desde }) === dia).forEach(t => { ult[t.zona] = t; });
+  const hay = ZONAS_ORDEN.filter(([z]) => ult[z]);
+  return hay.length ? '<span class="pase-sup-t">A cargo</span>' + hay.map(([z, t]) => '<span>' + t + ' · <b>' + incEsc(ult[z].nombre + ' ' + ult[z].apellido) + '</b></span>').join('') : '';
+}
 // La incidencia tocada (desplegada, y su lugar elegido en el plano); la categoría y la franja tocadas en las métricas.
 let focoInc = '', catSel = '', franjaSel = '', irAFoco = false;
 let vistos = null, nuevos = new Set(), nivelSel = 0;
@@ -3504,8 +3520,11 @@ function volverShows() {
 }
 async function cargarIncidencias() {
   const vivo = document.getElementById('vivo');
+  const pedidoSup = sb.rpc('ger_supervisores', { p_conv_id: showId }).then(r => r, () => null);
   const { data, error } = await sb.rpc('ger_incidencias', { p_conv_id: showId });
   if (error || data === null) { vivo.textContent = 'Sin conexión'; vivo.className = 'inc-vivo mal'; return; }
+  // Sin cuentas-zona.sql la función no está: no hay nadie a cargo que mostrar.
+  const rs = await pedidoSup; supervisores = rs && !rs.error && Array.isArray(rs.data) ? rs.data : [];
   vivo.textContent = 'En vivo'; vivo.title = 'Actualizado a las ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo';
   lista = data || [];
   nuevos = vistos ? new Set(lista.filter(i => !vistos.has(i.id)).map(i => i.id)) : new Set();
@@ -3581,6 +3600,7 @@ function render() {
   document.getElementById('paseN').innerHTML = incEsc(partes[0]);
   document.getElementById('paseF').textContent = [partes.slice(1).filter(p => !esElArena(p)).join(' — '), dia ? resumenFechas({ fecha: dia }) : resumenFechas(showAct)].filter(Boolean).join(' · ');
   ajustarNombre();
+  document.getElementById('paseSup').innerHTML = supervisoresHTML();
   const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('estado');
   estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html;
   // La botonera: 3D o plano, y cómo está armado el campo.

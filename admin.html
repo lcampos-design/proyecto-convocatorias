@@ -324,6 +324,10 @@ tr:hover td{background:#fafaf8}
 .cc-tablero-top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px}
 .cc-show-t{font-size:16px;font-weight:700;color:var(--r-ink)}
 .cc-show-s{font-size:12px;color:var(--r-muted)}
+/* Quién está a cargo de cada zona en el show (las cuentas por zona). */
+.cc-show-sup{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.cc-show-sup span{font-size:11.5px;color:var(--r-ink);background:rgba(11,27,51,.06);border-radius:999px;padding:3px 9px}
+.cc-show-sup b{font-weight:600}
 .cc-met-t{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--r-muted);margin:18px 2px 8px;padding-top:14px;border-top:1px solid var(--r-line2)}
 #incMetricasAdm .inc-tile,#incMetricasAdm .inc-graf-card{background:#fafbfd}
 .inc-adm{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
@@ -481,6 +485,19 @@ button.fb-obs{border:0;font-family:inherit;cursor:pointer}
 .ficha-fb-res{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:#4b5563;margin:2px 0 4px}
 .ficha-fb-res .btn{margin-left:auto}
 .sup-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:10px}
+/* Las cuentas por zona: una tarjeta por zona; la que falta, punteada. */
+.zonas-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.zonas-t{font-size:15px;font-weight:700;color:#111827}
+.zonas-s{font-size:12.5px;color:#6b7280;margin-top:3px;max-width:640px;line-height:1.45}
+.zonas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:22px}
+.zona-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.zona-card.falta{border-style:dashed;background:#fafafa}
+.zona-n{font-size:14px;font-weight:700;color:#111827}
+.zona-u{font-size:12.5px;color:#374151}.zona-card.falta .zona-u{color:#9ca3af}
+.zona-ult{font-size:12px;color:#6b7280;min-height:16px}
+.zona-card .btn{align-self:flex-start;margin-top:6px}
+.sup-personas-t{font-size:13px;font-weight:700;color:#374151;margin:0 0 10px}
+.zonas-claves{width:100%;min-height:220px;font:14px/1.5 Poppins,sans-serif;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;resize:vertical}
 .sup-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .sup-name{font-size:14px;font-weight:600;color:#111827}
 .sup-email{font-size:12px;color:#9ca3af;margin-top:2px}
@@ -1290,10 +1307,11 @@ tr:hover td{background:#f9f9fb}
 <!-- SUPERVISORES -->
 <div id="sec-supervisores" class="sec">
   <div class="ctrlbar">
-    <span style="font-size:13px;color:#6b7280;flex:1">Usuarios con acceso de supervisor y sus convocatorias asignadas</span>
+    <span style="font-size:13px;color:#6b7280;flex:1">Las cuentas de cada zona (para el Centro de Control) y las de cada supervisor, con sus convocatorias</span>
     <button class="btn btn-primary" onclick="openAddSup()">+ Agregar supervisor</button>
   </div>
-  <div style="padding:20px 24px" id="supList"><div class="empty">Cargando...</div></div>
+  <div style="padding:20px 24px 0" id="zonasCuentas"></div>
+  <div style="padding:0 24px 20px" id="supList"><div class="empty">Cargando...</div></div>
 </div>
 
 <!-- CENTRO DE CONTROL (Movistar Arena): incidencias en vivo, separado de Convocatorias -->
@@ -1314,7 +1332,7 @@ tr:hover td{background:#f9f9fb}
     <div class="cc-lista" id="ccListaShows"><div class="empty">Cargando…</div></div>
     <div class="cc-tablero" id="ccTablero">
       <div class="cc-tablero-top">
-        <div style="flex:1;min-width:0"><div class="cc-show-t" id="incTitulo">—</div><div class="cc-show-s" id="incSubtitulo"></div></div>
+        <div style="flex:1;min-width:0"><div class="cc-show-t" id="incTitulo">—</div><div class="cc-show-s" id="incSubtitulo"></div><div class="cc-show-sup" id="incSupAdm"></div></div>
         <div style="display:flex;gap:8px;align-items:center">
           <span class="inc-vivo" id="incVivo">En vivo</span>
           <button class="bar-btn prim" onclick="incAbrirNuevaAdm()" title="Cargar una incidencia desde el panel (la ven también la gerencia y los supervisores)">+ Cargar incidencia</button>
@@ -1972,6 +1990,21 @@ tr:hover td{background:#f9f9fb}
     <div class="ma">
       <button class="btn btn-sec" onclick="closeM('mSupClave')">Listo</button>
       <button class="btn btn-primary" onclick="copiarAccesoSup()"><i class="ic ic-planilla"></i> Copiar para mandar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: las contraseñas de las cuentas por zona (se ven una sola vez) -->
+<div class="modal-bg" id="mZonasClave" style="display:none" onclick="bgClose('mZonasClave',event)">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title"><span id="zonasClaveTitulo">Cuentas por zona</span><button class="mclose" onclick="closeM('mZonasClave')">✕</button></div>
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 14px;font-size:12px;color:#9a3412;margin-bottom:14px">
+      Estas contraseñas no se guardan en ningún lado y no se pueden volver a ver. Copialas ahora y pasáselas a los supervisores.
+    </div>
+    <textarea class="zonas-claves" id="zonasClaveTexto" readonly onclick="this.select()"></textarea>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mZonasClave')">Listo</button>
+      <button class="btn btn-primary" onclick="copiarZonasClave()"><i class="ic ic-planilla"></i> Copiar para mandar</button>
     </div>
   </div>
 </div>
@@ -8475,7 +8508,24 @@ async function delGerencia(id) {
     renderAccesosGerencia(); toast('Acceso quitado');
   } catch (err) { toast('Error: ' + err.message); }
 }
+// Quién está a cargo de cada zona en la función elegida: el último que entró ese día.
+let incSupAdmLista = [];
+async function cargarSupervisoresAdm() {
+  try {
+    const { data, error } = await sb.rpc('ger_supervisores', { p_conv_id: ccConvId });
+    incSupAdmLista = !error && Array.isArray(data) ? data : [];
+  } catch (_) { incSupAdmLista = []; }
+  pintarSupervisoresAdm();
+}
+function pintarSupervisoresAdm() {
+  const el = document.getElementById('incSupAdm'); if (!el) return;
+  const ult = {};
+  incSupAdmLista.filter(t => !incDiaAdm || incFechaFuncionAdm({ created_at: t.desde }) === incDiaAdm).forEach(t => { ult[t.zona] = t; });
+  const hay = SUP_ZONAS.filter(([z]) => ult[z]);
+  el.innerHTML = hay.map(([z, t]) => '<span>' + t + ' · <b>' + e(ult[z].nombre + ' ' + ult[z].apellido) + '</b></span>').join('');
+}
 async function cargarIncidAdm() {
+  cargarSupervisoresAdm();
   const vivo = document.getElementById('incVivo');
   const { data, error } = await sb.from('incidencias').select('*').eq('conv_id', ccConvId).order('created_at', { ascending: false });
   if (error) { if (vivo) { vivo.textContent = 'Sin conexión'; vivo.className = 'inc-vivo mal'; } console.error('incidencias', error); return; }
@@ -12838,11 +12888,85 @@ function fichaFeedbackHTML(id) {
 }
 
 // ── SUPERVISORES ──
+// Las cuentas por zona (cuentas-zona.sql): una por zona, la usa quien supervisa esa zona
+// ese día (pone su nombre y apellido al entrar a cada show) y ven solas los shows del
+// Centro de Control. En el orden de la planilla del Arena.
+const SUP_ZONAS = [['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['platea_alta', 'Platea alta'], ['cortatickets', 'Cortatickets'], ['calle', 'Calle'], ['vip', 'VIP']];
+const usuarioDeZona = z => String(z || '').replace(/_/g, '');
+const zonaNombre = z => (SUP_ZONAS.find(x => x[0] === z) || [z, z])[1];
+let supTurnos = [];
+// Quién entró en cada zona (lo más nuevo primero), para el "Último" de cada tarjeta.
+async function cargarTurnosSup() {
+  try {
+    const { data, error } = await sb.from('supervisor_turnos').select('conv_id,fecha,zona,nombre,apellido,created_at').order('created_at', { ascending: false }).limit(300);
+    if (!error && Array.isArray(data)) { supTurnos = data; renderZonasCuentas(); }
+  } catch (_) {}
+}
+function renderZonasCuentas() {
+  const cont = document.getElementById('zonasCuentas'); if (!cont) return;
+  const cuentas = userProfiles.filter(p => p.zona);
+  const faltan = SUP_ZONAS.filter(([z]) => !cuentas.some(p => p.zona === z));
+  const nombreConv = id => ((convs.find(x => x.id === id) || {}).nombre || '');
+  cont.innerHTML = '<div class="zonas-cab"><div><div class="zonas-t">Cuentas por zona</div><div class="zonas-s">Una por zona, para el Centro de Control. La usa quien supervisa esa zona ese día: al entrar a cada show pone su nombre y apellido, y queda en cada incidencia que carga. Ven solas los shows del Centro de Control, no hay que asignarlas.</div></div>'
+    + (faltan.length ? '<button class="btn btn-primary btn-sm" onclick="crearZonas()">' + (faltan.length === SUP_ZONAS.length ? 'Crear las 7 cuentas' : 'Crear las que faltan (' + faltan.length + ')') + '</button>' : '') + '</div>'
+    + '<div class="zonas-grid">' + SUP_ZONAS.map(([z, t]) => {
+      const cu = cuentas.find(p => p.zona === z), u = supTurnos.find(x => x.zona === z);
+      return '<div class="zona-card' + (cu ? '' : ' falta') + '"><div class="zona-n">' + t + '</div>'
+        + '<div class="zona-u">' + (cu ? 'Usuario: <b>' + usuarioDeZona(z) + '</b>' : 'Sin cuenta todavía') + '</div>'
+        + '<div class="zona-ult">' + (u ? 'Último: ' + e(u.nombre + ' ' + u.apellido) + (nombreConv(u.conv_id) ? ' · ' + e(nombreConv(u.conv_id)) : '') + (u.fecha ? ' ' + fechaDMA(u.fecha).slice(0, 5) : '') : cu ? 'Todavía no entró nadie' : '') + '</div>'
+        + (cu ? '<button class="btn btn-sec btn-xs" onclick="claveZona(\'' + cu.id + '\')">Nueva contraseña</button>' : '<button class="btn btn-sec btn-xs" onclick="crearZonas(\'' + z + '\')">Crear</button>') + '</div>';
+    }).join('') + '</div>';
+}
+// El texto para mandar por WhatsApp: el link de la app y, por zona, usuario y contraseña.
+let zonasClaveTexto = '';
+function mostrarClavesZonas(lista, titulo) {
+  zonasClaveTexto = 'App de supervisores (Centro de Control):\n' + location.origin + '/supervisor-mobile\n\n'
+    + lista.map(x => zonaNombre(x.zona) + '\nUsuario: ' + usuarioDeZona(x.zona) + '\nContraseña: ' + x.password).join('\n\n')
+    + '\n\nAl entrar a cada show, cada supervisor pone su nombre y apellido.';
+  document.getElementById('zonasClaveTitulo').textContent = titulo;
+  document.getElementById('zonasClaveTexto').value = zonasClaveTexto;
+  showM('mZonasClave');
+}
+async function copiarZonasClave() {
+  const ok = await copiarAlPortapapeles(zonasClaveTexto);
+  toast(ok ? 'Copiado: pegalo en el WhatsApp' : 'No se pudo copiar: copialo a mano');
+}
+// Crear una zona, o todas las que faltan (de a una, para ver dónde se corta si falla algo).
+async function crearZonas(sola) {
+  const faltan = SUP_ZONAS.filter(([z]) => (!sola || z === sola) && !userProfiles.some(p => p.zona === z)).map(x => x[0]);
+  if (!faltan.length) return;
+  const creadas = [];
+  toast(faltan.length > 1 ? 'Creando las cuentas…' : 'Creando la cuenta…');
+  for (const zona of faltan) {
+    try {
+      const res = await fetch('/api/supervisor', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ zona }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { toast(zonaNombre(zona) + ': ' + (data.error || 'no se pudo crear')); break; }
+      userProfiles.push({ id: data.id, nombre: data.nombre, rol: 'supervisor', email: data.email, zona });
+      creadas.push({ zona, password: data.password });
+    } catch (err) { toast('Error creando la cuenta: ' + err.message); break; }
+  }
+  renderSupList();
+  if (creadas.length) mostrarClavesZonas(creadas, creadas.length > 1 ? 'Cuentas por zona creadas' : 'Cuenta de ' + zonaNombre(creadas[0].zona) + ' creada');
+}
+// Si alguien se lleva la contraseña: una nueva (la de antes deja de andar).
+async function claveZona(id) {
+  const cu = userProfiles.find(p => p.id === id); if (!cu) return;
+  if (!confirm('¿Cambiarle la contraseña a la cuenta de ' + zonaNombre(cu.zona) + '? La de ahora deja de andar.')) return;
+  try {
+    const res = await fetch('/api/supervisor', { method: 'PUT', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ id }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast(data.error || 'No se pudo cambiar la contraseña'); return; }
+    mostrarClavesZonas([{ zona: cu.zona, password: data.password }], 'Contraseña nueva de ' + zonaNombre(cu.zona));
+  } catch (err) { toast('Error: ' + err.message); }
+}
 function renderSupList() {
+  renderZonasCuentas();
+  if (!supTurnos.length) cargarTurnosSup();
   const cont = document.getElementById('supList');
-  const sups = userProfiles.filter(p => p.rol === 'supervisor');
-  if (!sups.length) { cont.innerHTML = '<div class="empty">No hay supervisores todavía. Creá uno con el botón.</div>'; return; }
-  cont.innerHTML = sups.map(s => {
+  const sups = userProfiles.filter(p => p.rol === 'supervisor' && !p.zona);
+  if (!sups.length) { cont.innerHTML = '<div class="sup-personas-t">Cuentas de cada supervisor</div><div class="empty">No hay supervisores con cuenta propia. Si hace falta una, creala con "+ Agregar supervisor".</div>'; return; }
+  cont.innerHTML = '<div class="sup-personas-t">Cuentas de cada supervisor</div>' + sups.map(s => {
     const myConvs = supConvLinks.filter(l => l.supervisor_id === s.id).map(l => convs.find(c => c.id === l.conv_id)).filter(Boolean);
     return `<div class="sup-card"><div class="sup-card-head"><div><div class="sup-name">${e(s.nombre || '—')}</div><div class="sup-email" id="sup-email-${s.id}">${e(s.email || '')}</div></div><button class="btn btn-danger btn-xs" onclick="delSup('${s.id}')">Eliminar</button></div>
     ${myConvs.length ? `<div class="sup-convs">${myConvs.map(c=>`<span class="sup-conv-tag">${e(c.nombre)}<button onclick="removeSupConv('${s.id}','${c.id}')" title="Quitar">×</button></span>`).join('')}</div>` : '<div style="font-size:12px;color:#9ca3af;margin-top:8px">Sin convocatorias asignadas</div>'}

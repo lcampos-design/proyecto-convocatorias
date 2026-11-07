@@ -19,6 +19,11 @@ const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const ROLES_PERMITIDOS = ['admin', 'admin_movistar', 'admin_externos'];
 // Las cuentas que se pueden crear y borrar por acá.
 const ROLES_CUENTA = ['supervisor', 'gerencia'];
+// Las cuentas de zona (cuentas-zona.sql): una por zona, compartida por quien supervisa
+// esa zona ese día. El usuario es corto ("plateabaja") y la app le agrega el dominio.
+const ZONAS = { calle: 'Calle', cortatickets: 'Cortatickets', anillo: 'Anillo', bowl: 'Bowl', platea_baja: 'Platea baja', platea_alta: 'Platea alta', vip: 'VIP' };
+const DOMINIO_ZONAS = 'zonas.show-bs.com';
+const usuarioDeZona = z => z.replace(/_/g, '');
 
 // Quien llama tiene que estar logueado Y tener ficha de admin. El panel decide
 // el rol en el navegador, y ahí no se puede confiar.
@@ -79,8 +84,8 @@ const conServicio = clave => ({
 });
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST' && req.method !== 'DELETE') {
-    res.setHeader('Allow', 'POST, DELETE');
+  if (req.method !== 'POST' && req.method !== 'DELETE' && req.method !== 'PUT') {
+    res.setHeader('Allow', 'POST, PUT, DELETE');
     return res.status(405).json({ error: 'Método no permitido' });
   }
 
@@ -99,9 +104,12 @@ export default async function handler(req, res) {
 
   // ── ALTA ──
   if (req.method === 'POST') {
-    const email = String(cuerpo.email || '').trim().toLowerCase();
-    const nombre = String(cuerpo.nombre || '').trim();
-    const rolNuevo = cuerpo.rol == null || cuerpo.rol === '' ? 'supervisor' : String(cuerpo.rol);
+    const zona = cuerpo.zona == null || cuerpo.zona === '' ? null : String(cuerpo.zona);
+    if (zona && !ZONAS[zona]) return res.status(400).json({ error: 'Esa zona no existe' });
+    // La de una zona: el mail y el nombre salen de la zona.
+    const email = zona ? usuarioDeZona(zona) + '@' + DOMINIO_ZONAS : String(cuerpo.email || '').trim().toLowerCase();
+    const nombre = zona ? 'Supervisor ' + ZONAS[zona] : String(cuerpo.nombre || '').trim();
+    const rolNuevo = zona ? 'supervisor' : cuerpo.rol == null || cuerpo.rol === '' ? 'supervisor' : String(cuerpo.rol);
     if (!ROLES_CUENTA.includes(rolNuevo)) return res.status(400).json({ error: 'Ese tipo de cuenta no se puede crear por acá' });
     // Una cuenta de gerencia sólo deja de ser admin con la regla de centro-control.sql.
     // Sin esa regla, vería el panel entero: no se crea.
@@ -125,7 +133,7 @@ export default async function handler(req, res) {
       const msg = String(creado.msg || creado.message || creado.error_description || 'No se pudo crear el usuario');
       const yaExiste = /already|registered|exists/i.test(msg);
       return res.status(crear.status === 422 || yaExiste ? 409 : 500).json({
-        error: yaExiste ? 'Ya existe un usuario con ese mail' : msg
+        error: yaExiste ? (zona ? 'Esa zona ya tiene su cuenta: si no tenés la contraseña, pedí una nueva' : 'Ya existe un usuario con ese mail') : msg
       });
     }
 
@@ -139,14 +147,31 @@ export default async function handler(req, res) {
       headers: { ...conServicio(servicio), 'Prefer': 'return=minimal' },
       body: JSON.stringify(ficha)
     });
-    let perfil = await guardarFicha({ id: creado.id, nombre, rol: rolNuevo, email });
-    if (!perfil.ok) perfil = await guardarFicha({ id: creado.id, nombre, rol: rolNuevo });
+    // La de una zona no se guarda sin la zona (sería la de una persona): sin cuentas-zona.sql, no se crea.
+    let perfil = await guardarFicha(zona ? { id: creado.id, nombre, rol: rolNuevo, email, zona } : { id: creado.id, nombre, rol: rolNuevo, email });
+    if (!perfil.ok && !zona) perfil = await guardarFicha({ id: creado.id, nombre, rol: rolNuevo });
     if (!perfil.ok) {
       await fetch(`${SB_URL}/auth/v1/admin/users/${creado.id}`, { method: 'DELETE', headers: conServicio(servicio) }).catch(() => {});
-      return res.status(500).json({ error: 'Se creó la cuenta pero no la ficha. Se deshizo todo; probá de nuevo.' });
+      return res.status(zona ? 409 : 500).json({ error: zona ? 'Primero hay que correr cuentas-zona.sql en Supabase' : 'Se creó la cuenta pero no la ficha. Se deshizo todo; probá de nuevo.' });
     }
 
-    return res.status(200).json({ ok: true, id: creado.id, email, nombre, rol: rolNuevo, password });
+    return res.status(200).json({ ok: true, id: creado.id, email, nombre, rol: rolNuevo, password, zona, usuario: zona ? usuarioDeZona(zona) : email });
+  }
+
+  // ── CONTRASEÑA NUEVA ──
+  // Para las cuentas compartidas (las de zona) sobre todo: si alguien se la lleva, se cambia
+  // y se le pasa la nueva a quien siga. Sólo para supervisores y la gerencia.
+  if (req.method === 'PUT') {
+    const id = String(cuerpo.id || '').trim();
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: 'Falta el id de la cuenta' });
+    const fichaRes = await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${id}&select=rol,email,zona`, { headers: conServicio(servicio) });
+    let ficha = (await fichaRes.json().catch(() => []))[0];
+    if (!fichaRes.ok) ficha = (await (await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${id}&select=rol,email`, { headers: conServicio(servicio) })).json().catch(() => []))[0];
+    if (!ficha || !ROLES_CUENTA.includes(ficha.rol)) return res.status(400).json({ error: 'Por acá sólo se les cambia la contraseña a los supervisores y a la gerencia' });
+    const password = generarClave();
+    const cambio = await fetch(`${SB_URL}/auth/v1/admin/users/${id}`, { method: 'PUT', headers: conServicio(servicio), body: JSON.stringify({ password }) });
+    if (!cambio.ok) return res.status(500).json({ error: 'No se pudo cambiar la contraseña' });
+    return res.status(200).json({ ok: true, id, email: ficha.email || '', zona: ficha.zona || null, usuario: ficha.zona ? usuarioDeZona(ficha.zona) : (ficha.email || ''), password });
   }
 
   // ── BAJA ──
