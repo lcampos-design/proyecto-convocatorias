@@ -26,6 +26,10 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .app-bar-inner{display:flex;align-items:center;gap:12px;padding:14px 0}
 .app-bar-title{font-size:16px;font-weight:600;flex:1}
 .app-bar-sub{font-size:11px;color:#6b7280;margin-top:1px}
+/* La cuenta de una zona: quién la está usando hoy, y "No soy yo" si cambia la persona. */
+.sv-quien{font-weight:700;color:inherit;filter:brightness(1.35)}
+.sv-noyo{background:none;border:0;padding:0 0 0 6px;font:inherit;font-weight:600;color:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer;white-space:nowrap}
+.sv-turno-volver{display:block;width:100%;margin-top:10px;padding:10px;background:none;border:0;font-size:13px;color:#6b7280;cursor:pointer}
 .back-btn{background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;padding:4px;line-height:1}
 .logout-btn{background:none;border:1px solid #374151;color:#9ca3af;border-radius:6px;font-size:12px;padding:5px 10px;cursor:pointer}
 .screen{display:none;padding-bottom:env(safe-area-inset-bottom,16px)}.screen.active{display:block}
@@ -255,8 +259,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     <div class="login-card">
       <div class="login-title">Recital</div>
       <div class="login-sub">Acceso para supervisores</div>
-      <label class="lbl">Email</label>
-      <input type="email" id="loginEmail" class="l-in" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+      <label class="lbl" for="loginEmail">Usuario</label>
+      <input type="text" id="loginEmail" class="l-in" placeholder="Ej: plateabaja (o tu email)" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()">
       <label class="lbl">Contraseña</label>
       <input type="password" id="loginPass" class="l-in" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
       <div class="l-err" id="loginErr"></div>
@@ -383,6 +387,23 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 </div>
 
 <!-- Hoja: cargar o resolver una incidencia -->
+<!-- Las cuentas por zona: quién supervisa la zona en este show (obligatorio, una vez por show) -->
+<div class="fb-sheet hidden" id="svTurno" role="dialog" aria-modal="true" aria-labelledby="svTurnoTitulo">
+  <div class="fb-overlay"></div>
+  <div class="fb-card">
+    <div class="fb-handle"></div>
+    <div class="fb-title" id="svTurnoTitulo">¿Quién supervisa hoy?</div>
+    <div class="fb-sub" id="svTurnoSub"></div>
+    <label class="lbl" for="svTurnoNombre">Nombre</label>
+    <input class="l-in" id="svTurnoNombre" autocomplete="given-name" autocapitalize="words" maxlength="40" onkeydown="if(event.key==='Enter')document.getElementById('svTurnoApellido').focus()">
+    <label class="lbl" for="svTurnoApellido">Apellido</label>
+    <input class="l-in" id="svTurnoApellido" autocomplete="family-name" autocapitalize="words" maxlength="40" onkeydown="if(event.key==='Enter')svEmpezar()">
+    <div class="l-err" id="svTurnoErr"></div>
+    <button class="l-btn" id="svTurnoBtn" onclick="svEmpezar()">Empezar</button>
+    <button class="sv-turno-volver" onclick="svTurnoVolver()">Volver a los shows</button>
+  </div>
+</div>
+
 <div class="fb-sheet hidden" id="incSheet">
   <div class="fb-overlay" onclick="cerrarIncHoja()"></div>
   <div class="fb-card">
@@ -455,13 +476,58 @@ async function initAuth() {
   else showScreen('screenLogin');
 }
 
+// ── Las cuentas por zona (cuentas-zona.sql) ──
+// La cuenta es de la zona, no de una persona: entra con el usuario corto ("plateabaja", la app
+// le pone el dominio) y, al abrir cada show, quien supervisa pone su nombre y su apellido. Va en
+// cada incidencia que carga y la gerencia ve quién está a cargo de cada zona. Una vez por show:
+// si cambia la persona, "No soy yo".
+const SV_ZONAS = { anillo: 'Anillo', bowl: 'Bowl', platea_baja: 'Platea baja', platea_alta: 'Platea alta', cortatickets: 'Cortatickets', calle: 'Calle', vip: 'VIP' };
+// En "¿Dónde pasó?", el piso con el que abre cada zona (después puede elegir otro).
+const SV_ZONA_PISO = { anillo: 'PB', bowl: 'PB', platea_baja: 'P1', vip: 'VIP', platea_alta: 'P3', cortatickets: 'EXT', calle: 'EXT' };
+const SV_DOMINIO_ZONAS = 'zonas.show-bs.com';
+let svZona = null, svTurnoConv = null;
+function svUsuarioAMail(u) { u = String(u || '').trim(); return u && !u.includes('@') ? u.toLowerCase().replace(/\s+/g, '') + '@' + SV_DOMINIO_ZONAS : u; }
+// El día de la función: lo de la madrugada (antes de las 6) es del show de la noche anterior.
+function svDiaFuncion(ahora) { const d = new Date((ahora || Date.now()) - 6 * 3600000); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function svClaveTurno(convId) { return 'svTurno:' + currentUserId + ':' + convId + ':' + svDiaFuncion(); }
+function svTurnoDe(convId) { try { const t = JSON.parse(localStorage.getItem(svClaveTurno(convId)) || 'null'); return t && t.nombre ? t : null; } catch (_) { return null; } }
+function svPedirTurno(convId, cambio) {
+  svTurnoConv = convId;
+  document.getElementById('svTurnoTitulo').textContent = '¿Quién supervisa ' + SV_ZONAS[svZona] + ' hoy?';
+  document.getElementById('svTurnoSub').textContent = cambio ? 'Poné tu nombre y apellido: desde ahora, lo que cargues va con tu nombre.' : 'Antes de empezar, poné tu nombre y apellido. Va en cada incidencia que cargues.';
+  ['svTurnoNombre', 'svTurnoApellido'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('svTurnoErr').style.display = 'none';
+  document.getElementById('svTurno').classList.remove('hidden');
+  setTimeout(() => { const el = document.getElementById('svTurnoNombre'); if (el && el.focus) el.focus(); }, 50);
+}
+async function svEmpezar() {
+  const nombre = document.getElementById('svTurnoNombre').value.trim(), apellido = document.getElementById('svTurnoApellido').value.trim();
+  const err = document.getElementById('svTurnoErr'), btn = document.getElementById('svTurnoBtn');
+  const mal = m => { err.textContent = m; err.style.display = 'block'; };
+  if (nombre.length < 2 || apellido.length < 2) { mal('Poné tu nombre y tu apellido.'); return; }
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  let r = null;
+  try { r = await sb.rpc('sup_turno', { p_conv_id: svTurnoConv, p_nombre: nombre, p_apellido: apellido }); } catch (_) {}
+  btn.disabled = false; btn.textContent = 'Empezar';
+  const data = r && r.data;
+  if (!r || r.error || !data || !data.ok) { mal((data && data.error) || 'No se pudo guardar. Revisá la conexión y probá de nuevo.'); return; }
+  try { localStorage.setItem(svClaveTurno(svTurnoConv), JSON.stringify({ nombre: data.nombre, apellido: data.apellido })); } catch (_) {}
+  document.getElementById('svTurno').classList.add('hidden');
+  const id = svTurnoConv; svTurnoConv = null;
+  openShow(id);
+}
+function svTurnoVolver() { document.getElementById('svTurno').classList.add('hidden'); svTurnoConv = null; goHome(); }
+function svNoSoyYo() { svPedirTurno(currentConvId, true); }
+// "Platea baja · Ana López", para las barras.
+function svQuienHoy(convId) { const t = svZona && svTurnoDe(convId); return t ? SV_ZONAS[svZona] + ' · ' + t.nombre + ' ' + t.apellido : ''; }
+
 async function doLogin() {
   const btn = document.getElementById('loginBtn'), err = document.getElementById('loginErr');
-  const email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPass').value;
+  const email = svUsuarioAMail(document.getElementById('loginEmail').value), pass = document.getElementById('loginPass').value;
   err.style.display = 'none'; btn.disabled = true; btn.textContent = 'Ingresando...';
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
   btn.disabled = false; btn.textContent = 'Ingresar';
-  if (error) { err.textContent = error.message === 'Invalid login credentials' ? 'Email o contraseña incorrectos' : error.message; err.style.display = 'block'; return; }
+  if (error) { err.textContent = error.message === 'Invalid login credentials' ? 'Usuario o contraseña incorrectos' : error.message; err.style.display = 'block'; return; }
   currentUser = data.user; currentUserId = data.user.id; await loadData();
 }
 
@@ -481,6 +547,10 @@ async function loadData() {
     // La gerencia del Arena tiene su propia página.
     const { data: rol } = await sb.rpc('mi_rol');
     if (rol === 'gerencia') { await sb.auth.signOut({ scope: 'local' }); location.replace('/centro-control'); return; }
+    // ¿Es la cuenta de una zona? (sin cuentas-zona.sql, la función no está: es la de una persona).
+    svZona = null;
+    try { const { data: z, error: zErr } = await sb.rpc('sup_mi_zona'); if (!zErr && z && SV_ZONAS[z]) svZona = z; } catch (_) {}
+    if (svZona) { currentUserName = 'Supervisor ' + SV_ZONAS[svZona]; document.getElementById('homeSubtitle').textContent = 'Cuenta de ' + SV_ZONAS[svZona]; }
 
     setLoad(true, 50);
     const { data: misConvs, error: cErr } = await sb.rpc('sup_convocatorias');
@@ -530,8 +600,11 @@ async function openShow(convId) {
   currentConvId = convId;
   const c = convs.find(x => x.id === convId); if (!c) return;
   if (!enControl(c)) return openConv(convId);
+  // La cuenta de una zona: antes de empezar, quién supervisa hoy (una vez por show).
+  if (svZona && !svTurnoDe(convId)) { svPedirTurno(convId); return; }
   document.getElementById('showTitulo').textContent = c.nombre;
-  document.getElementById('showSub').textContent = c.fecha ? fmtFecha(c.fecha) : '';
+  const quien = svQuienHoy(convId);
+  document.getElementById('showSub').innerHTML = esc(c.fecha ? fmtFecha(c.fecha) : '') + (quien ? (c.fecha ? ' · ' : '') + '<span class="sv-quien">' + esc(quien) + '</span> <button type="button" class="sv-noyo" onclick="svNoSoyYo()">No soy yo</button>' : '');
   const total = c.personas || 0, hechos = c.con_feedback || 0;
   document.getElementById('hubEquipo').innerHTML = '<span class="hub-chip">' + total + ' persona' + (total === 1 ? '' : 's') + '</span><span class="hub-chip">' + hechos + '/' + total + ' con feedback</span>';
   document.getElementById('hubIncid').innerHTML = '<span class="hub-chip">Cargando…</span>';
@@ -3711,7 +3784,7 @@ let incVistos = null, incNuevos = new Set();
 async function openIncid() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   // El nombre del show, sin "— Movistar Arena" (son todos del Arena).
-  document.getElementById('incSub').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
+  document.getElementById('incSub').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ') + (svQuienHoy(c.id) ? ' · ' + svQuienHoy(c.id) : '');
   incLista = []; incVistos = null; incNuevos = new Set(); incFiltroSup = 'abiertas'; incAbiertaSup = '';
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
@@ -3796,8 +3869,10 @@ const INC_DONDE = [['PB', 'Campo'], ['P1', 'Platea baja'], ['VIP', 'VIP'], ['P3'
 function incPisoDonde() { try { const p = localStorage.getItem('incPisoDonde'); return INC_DONDE.some(x => x[0] === p) ? p : 'P1'; } catch (_) { return 'P1'; } }
 function incAbrirDonde() {
   incHoja = { modo: 'donde', q: '' };
+  // La cuenta de una zona abre en el piso de su zona; si pasó en otro lado, cambia de piso o lo busca.
+  if (svZona && SV_ZONA_PISO[svZona]) { try { localStorage.setItem('incPisoDonde', SV_ZONA_PISO[svZona]); } catch (_) {} }
   const t = document.getElementById('incSheetTitulo'); t.textContent = '¿Dónde pasó?'; t.className = 'fb-title mano';
-  document.getElementById('incSheetSub').textContent = 'Elegí el sector o buscalo.';
+  document.getElementById('incSheetSub').textContent = svZona ? 'Arranca en tu zona (' + SV_ZONAS[svZona] + '). Si pasó en otro lado, cambiá de piso o buscalo.' : 'Elegí el sector o buscalo.';
   renderIncHoja();
   document.getElementById('incSheet').classList.remove('hidden');
 }
