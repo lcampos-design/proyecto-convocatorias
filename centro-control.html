@@ -278,6 +278,13 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
   .seg button{min-height:44px}
   .chip{min-height:40px;padding:0 14px}
 }
+/* En el celular: la leyenda del plano 3D debajo de los botones (si no, se pisan), y el título de la lista
+   fluye en dos renglones ("Los shows del / Movistar Arena") en vez de partirse en tres. */
+@media(max-width:560px){
+  #plano.inc-3d .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}
+  .titulo.sec-t{display:block;font-size:38px;line-height:1.1}
+  .titulo.sec-t .mano{margin-right:.22em}
+}
 @media(max-width:520px){.wrap{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.tablero{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}.sec-t{font-size:44px}.caja .sec-t{font-size:34px}.stat b{font-size:34px}.caja{border-radius:18px}.t-plano{padding:10px}}
 /* Las cifras que cambian (minutos, contadores, horas), de ancho fijo. */
 .stat b,.estado .hace,.inc-vivo,.inc-cuenta strong,.bar-s,.show-f,.pase-f{font-variant-numeric:tabular-nums}
@@ -1576,7 +1583,12 @@ function incEsperar3D(cont) {
   incEstilo3D();
   cont.classList.add('inc-3d');
   const fijo = cont.dataset && cont.dataset.alto === 'pantalla' && window.innerWidth >= 960;
-  cont.style.height = fijo ? '' : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680)) + 'px';
+  // En la compu, el alto lo da el CSS (data-alto="pantalla"). En el celular el ancho es poco: el
+  // plano va alto (hasta el 72 % de la pantalla), y así la leyenda, los botones y los pisos no tapan el estadio.
+  const angosto = window.innerWidth < 960;
+  cont.style.height = fijo ? '' : (angosto
+    ? Math.max(Math.round((cont.clientWidth || 600) * 0.82), Math.min(Math.round((window.innerHeight || 700) * 0.72), 720))
+    : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680))) + 'px';
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
 // Los controles del plano en la gerencia (op.ax): bloques planos y rectos, sin vidrio,
@@ -2668,7 +2680,8 @@ function incPlano3D(cont, op0) {
     const w = cont.clientWidth;
     let h;
     if (full || fijo) { cont.style.height = ''; h = full ? cont.clientHeight : Math.max(320, cont.clientHeight); }
-    else if (w) { h = Math.max(280, Math.min(Math.round(w * 0.82), 680)); cont.style.height = h + 'px'; }
+    // En el celular (angosto), alto: hasta el 72 % de la pantalla, para que la leyenda, los botones y los pisos no tapen el estadio.
+    else if (w) { h = window.innerWidth < 960 ? Math.max(Math.round(w * 0.82), Math.min(Math.round((window.innerHeight || 700) * 0.72), 720)) : Math.max(280, Math.min(Math.round(w * 0.82), 680)); cont.style.height = h + 'px'; }
     if (!w || !h) return;
     const conDet = full && panel.classList.contains('abierto'), abajo = conDet && !!(window.matchMedia && window.matchMedia(INC_VENTANA_ABAJO).matches);
     const tapaW = conDet && !abajo ? panel.offsetWidth + 28 : 0, tapaH = abajo ? panel.offsetHeight + 20 : 0;

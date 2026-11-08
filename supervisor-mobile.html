@@ -69,8 +69,13 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 /* El ingreso: una caja de vidrio con el logo y "Supervisores". */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;border-radius:22px}
-.login-marcas{display:flex;align-items:center;justify-content:center;margin:0 0 20px}
+.login-marcas{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 20px}
 .login-logo{width:68px;height:68px;display:block;filter:var(--logo-filtro)}
+.login-m{height:50px;width:auto;display:block;filter:var(--logo-filtro)}
+.login-y{width:18px;height:18px;flex-shrink:0;display:block}.login-y path{stroke:var(--tinta);stroke-width:3.6;stroke-linecap:round;fill:none}
+/* El tema, también desde el ingreso (arriba a la derecha). */
+.login-tema{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:max(12px,env(safe-area-inset-right,0px));z-index:5}
+.login-tema .logout-btn{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde)}
 .login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;text-align:center;margin:0 0 26px}
 .login-t .mano{display:block;font-size:.78em;margin-top:8px}
 .lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;text-transform:none;color:var(--gris);margin-bottom:6px}
@@ -174,8 +179,9 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .hub-chip{font:600 11.5px var(--inc-fuente);padding:4px 9px;border-radius:999px;background:var(--fondo);color:var(--gris)}
 .hub-chip.n3{background:var(--grave);color:var(--grave-letra)}.hub-chip.n2{background:var(--media);color:var(--media-letra)}.hub-chip.n1{background:var(--leve);color:var(--leve-letra)}
 /* El tema (como en WhatsApp): un menú chico debajo de la barra, con Automático, Claro y Oscuro; el elegido, tildado. */
-.app-bar .tema-menu{position:absolute;top:calc(100% + 4px);right:max(16px,env(safe-area-inset-right,0px));z-index:60;width:min(280px,calc(100vw - 32px));padding:6px;display:flex;flex-direction:column;gap:2px;border-radius:16px;background:var(--bloque);color:var(--tinta);box-shadow:0 0 0 1px var(--linea),var(--vidrio-sombra)}
-.app-bar .tema-menu[hidden]{display:none}
+.app-bar .tema-menu,.login-tema .tema-menu{position:absolute;top:calc(100% + 4px);right:max(16px,env(safe-area-inset-right,0px));z-index:60;width:min(280px,calc(100vw - 32px));padding:6px;display:flex;flex-direction:column;gap:2px;border-radius:16px;background:var(--bloque);color:var(--tinta);box-shadow:0 0 0 1px var(--linea),var(--vidrio-sombra)}
+.app-bar .tema-menu[hidden],.login-tema .tema-menu[hidden]{display:none}
+.login-tema .tema-menu{right:0}
 .tema-menu-t{font:600 12.5px var(--inc-fuente);color:var(--gris);padding:8px 10px 6px}
 .tema-op{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:12px;min-height:48px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--tinta);font:600 14px var(--inc-fuente);text-align:left;cursor:pointer}
 .tema-op small{display:block;font:400 12px var(--inc-fuente);color:var(--gris);margin-top:2px}
@@ -201,7 +207,15 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .sv-cuenta.n3{background:var(--grave);color:var(--grave-letra)}.sv-cuenta.n2{background:var(--media);color:var(--media-letra)}.sv-cuenta.n1{background:var(--leve);color:var(--leve-letra)}
 .sv-cuenta.pulso b::after{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;animation:svTitila 1.2s infinite}
 @keyframes svTitila{0%,100%{opacity:1}50%{opacity:.25}}
-.sv-seg{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:3px;border-radius:12px;background:var(--fondo)}
+.sv-seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:3px;border-radius:12px;background:var(--fondo)}
+.sv-seg.chico{display:inline-grid}.sv-seg.chico button{min-height:40px;padding:0 14px;font-size:12.5px}
+/* El plano (el mismo de la gerencia) adentro de la sala: arriba, 3D o Plano y la ayuda. */
+.sv-plano-cab{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
+.sv-plano-ayuda{font:400 12px/1.35 var(--inc-fuente);color:var(--gris);flex:1 1 180px}
+#svPlano{min-height:280px;border-radius:14px}
+@media(min-width:960px){#svPlano{height:calc(100vh - 280px);min-height:480px}}
+/* En el celular, la leyenda del plano debajo de los botones (si no, se pisan). */
+@media(max-width:560px){#svPlano.inc-3d .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}}
 .sv-seg button{border:0;border-radius:9px;background:transparent;color:var(--tinta);font:600 13px var(--inc-fuente);min-height:44px;cursor:pointer}
 .sv-seg button.on{background:var(--tinta);color:var(--fondo)}
 .sv-vacio{text-align:center;padding:28px 16px;color:var(--gris);font:400 13px/1.5 var(--inc-fuente);border:2px dashed var(--linea);border-radius:14px}
@@ -282,10 +296,11 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 
 <!-- Login -->
 <div id="screenLogin" class="screen active">
+  <div class="login-tema"><button class="logout-btn ico sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button><div class="tema-menu" role="menu" aria-label="Tema" hidden></div></div>
   <div class="login-wrap">
     <div class="login-card">
-      <div class="login-marcas"><img class="login-logo" src="logo-sbs-calado.png" alt="Show Business Solutions"></div>
-      <div class="login-t">Supervisores<span class="mano">Show Business Solutions</span></div>
+      <div class="login-marcas"><img class="login-logo" src="logo-sbs-calado.png" alt="SBS"><svg class="login-y" viewBox="0 0 18 18" aria-hidden="true"><path d="M2.5 2.5 15.5 15.5M15.5 2.5 2.5 15.5"/></svg><img class="login-m" src="logo-movistar-m.png" alt="Movistar Arena"></div>
+      <div class="login-t">Centro de Control<span class="mano">Supervisores</span></div>
       <label class="lbl" for="loginEmail">Usuario</label>
       <input type="text" id="loginEmail" class="l-in" placeholder="Ej: plateabaja (o tu email)" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()">
       <label class="lbl">Contraseña</label>
@@ -413,6 +428,10 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
     <div class="sv-cuentas" id="incResumen"></div>
     <div class="sv-seg" id="incFiltro"></div>
     <div id="incLista"></div>
+    <div id="svPlanoCaja" hidden>
+      <div class="sv-plano-cab"><div class="sv-seg chico" id="svVistas"></div><div class="sv-plano-ayuda">Tocá un sector: ves lo abierto ahí y podés cargar.</div></div>
+      <div id="svPlano" data-alto="pantalla"></div>
+    </div>
   </div>
   <div class="sv-pie"><button class="sv-cargar" onclick="incAbrirDonde()">+ Cargar incidencia</button></div>
 </div>
@@ -2058,7 +2077,12 @@ function incEsperar3D(cont) {
   incEstilo3D();
   cont.classList.add('inc-3d');
   const fijo = cont.dataset && cont.dataset.alto === 'pantalla' && window.innerWidth >= 960;
-  cont.style.height = fijo ? '' : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680)) + 'px';
+  // En la compu, el alto lo da el CSS (data-alto="pantalla"). En el celular el ancho es poco: el
+  // plano va alto (hasta el 72 % de la pantalla), y así la leyenda, los botones y los pisos no tapan el estadio.
+  const angosto = window.innerWidth < 960;
+  cont.style.height = fijo ? '' : (angosto
+    ? Math.max(Math.round((cont.clientWidth || 600) * 0.82), Math.min(Math.round((window.innerHeight || 700) * 0.72), 720))
+    : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680))) + 'px';
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
 // Los controles del plano en la gerencia (op.ax): bloques planos y rectos, sin vidrio,
@@ -3150,7 +3174,8 @@ function incPlano3D(cont, op0) {
     const w = cont.clientWidth;
     let h;
     if (full || fijo) { cont.style.height = ''; h = full ? cont.clientHeight : Math.max(320, cont.clientHeight); }
-    else if (w) { h = Math.max(280, Math.min(Math.round(w * 0.82), 680)); cont.style.height = h + 'px'; }
+    // En el celular (angosto), alto: hasta el 72 % de la pantalla, para que la leyenda, los botones y los pisos no tapen el estadio.
+    else if (w) { h = window.innerWidth < 960 ? Math.max(Math.round(w * 0.82), Math.min(Math.round((window.innerHeight || 700) * 0.72), 720)) : Math.max(280, Math.min(Math.round(w * 0.82), 680)); cont.style.height = h + 'px'; }
     if (!w || !h) return;
     const conDet = full && panel.classList.contains('abierto'), abajo = conDet && !!(window.matchMedia && window.matchMedia(INC_VENTANA_ABAJO).matches);
     const tapaW = conDet && !abajo ? panel.offsetWidth + 28 : 0, tapaH = abajo ? panel.offsetHeight + 20 : 0;
@@ -3848,7 +3873,8 @@ function svPonerTema(t) {
 function svAbrirTemas(ev) {
   if (ev) ev.stopPropagation();
   const btn = (ev && ev.currentTarget) || document.querySelector('.screen.active .sv-tema');
-  const m = btn && btn.closest('.app-bar') ? btn.closest('.app-bar').querySelector('.tema-menu') : null;
+  const caja = btn && btn.closest('.app-bar, .login-tema');
+  const m = caja ? caja.querySelector('.tema-menu') : null;
   if (!m) return;
   if (!m.hidden) { svCerrarTemas(); return; }
   svCerrarTemas(); svTemaBoton = btn;
@@ -3857,7 +3883,7 @@ function svAbrirTemas(ev) {
   m.hidden = false; btn.setAttribute('aria-expanded', 'true');
   m.querySelector('[aria-checked="true"]').focus();
 }
-function svCerrarTemas() { if (!document.querySelectorAll) return; document.querySelectorAll('.app-bar .tema-menu').forEach(m => { m.hidden = true; }); document.querySelectorAll('.sv-tema').forEach(b => b.setAttribute('aria-expanded', 'false')); svTemaBoton = null; }
+function svCerrarTemas() { if (!document.querySelectorAll) return; document.querySelectorAll('.app-bar .tema-menu, .login-tema .tema-menu').forEach(m => { m.hidden = true; }); document.querySelectorAll('.sv-tema').forEach(b => b.setAttribute('aria-expanded', 'false')); svTemaBoton = null; }
 document.addEventListener('click', ev => { if (!ev.target.closest('.tema-menu')) svCerrarTemas(); });
 try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', svColorBarra); } catch (_) {}
 svColorBarra();
@@ -3884,9 +3910,13 @@ function renderIncid() {
   const NOMBRE = { 3: ['grave', 'graves'], 2: ['media', 'medias'], 1: ['leve', 'leves'] };
   document.getElementById('incResumen').innerHTML = [3, 2, 1].map(nv =>
     '<div class="sv-cuenta n' + nv + (nv === 3 && n(3) ? ' pulso' : '') + '"><b>' + n(nv) + '</b>' + NOMBRE[nv][n(nv) === 1 ? 0 : 1] + '</div>').join('');
-  document.getElementById('incFiltro').innerHTML = [['abiertas', 'Abiertas · ' + abiertas.length], ['todas', 'Todas · ' + lista.length]].map(([k, t]) =>
+  document.getElementById('incFiltro').innerHTML = [['abiertas', 'Abiertas · ' + abiertas.length], ['todas', 'Todas · ' + lista.length], ['plano', 'Plano']].map(([k, t]) =>
     '<button type="button" class="' + (incFiltroSup === k ? 'on' : '') + '" onclick="incFiltrar(\'' + k + '\')">' + t + '</button>').join('');
   const cont = document.getElementById('incLista');
+  // La pestaña "Plano": el plano en lugar de los tickets (la caja del plano queda viva: el 3D se arma una vez).
+  const caja = document.getElementById('svPlanoCaja');
+  if (caja) { caja.hidden = incFiltroSup !== 'plano'; cont.hidden = incFiltroSup === 'plano'; }
+  if (incFiltroSup === 'plano') { svRenderPlano(lista); incNuevos = new Set(); return; }
   const visibles = incOrdenar(lista).filter(i => incFiltroSup === 'todas' || i.estado !== 'resuelta');
   if (!visibles.length) {
     const res = lista.length - abiertas.length;
@@ -3899,6 +3929,27 @@ function renderIncid() {
   incNuevos = new Set();
 }
 function incFiltrar(k) { incFiltroSup = k; renderIncid(); }
+// ── El plano en la sala ──
+// El mismo plano de la gerencia (3D si se puede; si no, el 2D), con lo abierto por sector.
+// Tocar un sector abre su ficha (lo abierto ahí) con "Cargar acá", que va a la hoja de carga.
+let svSectorSel = '';
+function svRenderPlano(lista) {
+  const pl = document.getElementById('svPlano'); if (!pl) return;
+  const vista = incVistaPreferida();
+  document.getElementById('svVistas').innerHTML = [['3d', '3D'], ['2d', 'Plano']].map(([k, n]) =>
+    '<button type="button" class="' + (vista === k ? 'on' : '') + '" onclick="svElegirVista(\'' + k + '\')">' + n + '</button>').join('');
+  const armado = incArmadoDelShow(currentConvId, incLista), res = incResumenSectores(lista);
+  const cv = convs.find(x => x.id === currentConvId);
+  incMontarPlano(pl, { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: svSectorSel, onclick: 'svTocarSector',
+    titulo: cv ? cv.nombre : '', detalle: lista, accionPantalla: { texto: 'Cargar acá', fn: 'svCargarEn' } });
+}
+function svTocarSector(id) {
+  svSectorSel = svSectorSel === id ? '' : id; renderIncid();
+  // Con la ficha abierta, el plano entero a la vista (la ficha va abajo, y el botón fijo de cargar la taparía).
+  if (svSectorSel) { const pl = document.getElementById('svPlano'); if (pl && pl.scrollIntoView) setTimeout(() => pl.scrollIntoView({ block: 'end', behavior: 'smooth' }), 80); }
+}
+function svElegirVista(v) { incGuardarVista(v); renderIncid(); }
+function svCargarEn(sector) { svSectorSel = ''; incTocarSector(sector); }
 // Tocar un ticket lo despliega con todo; otra vez, lo cierra.
 function incTocarTarjeta(id) { incAbiertaSup = incAbiertaSup === String(id) ? '' : String(id); renderIncid(); }
 
