@@ -3,240 +3,268 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0f1117">
+<meta name="theme-color" content="#262626">
 <script>
 // El tema de las incidencias (Claro u Oscuro), antes de pintar; sin elegir, el del aparato.
 try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro') document.documentElement.setAttribute('data-tema', t); } catch (_) {}
 </script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Recital">
+<meta name="apple-mobile-web-app-title" content="Supervisores">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" id="pwaManifest">
-<title>Supervisor — Recital</title>
+<title>Supervisores — Show Business Solutions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Yellowtail&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a1a;color:#1a1a1a;font-size:15px;min-height:100vh;-webkit-tap-highlight-color:transparent}
-.sbs-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:#2b2b2b url('fondo-sbs.jpg') center/cover no-repeat}
-.screen,.app-bar,.install-banner,.fb-sheet,.site-footer{position:relative;z-index:1}
-.app-bar{background:#0f1117;color:#fff;padding:env(safe-area-inset-top,0) 16px 0;position:sticky;top:0;z-index:50}
-.app-bar-inner{display:flex;align-items:center;gap:12px;padding:14px 0}
-.app-bar-title{font-size:16px;font-weight:600;flex:1}
-.app-bar-sub{font-size:11px;color:#6b7280;margin-top:1px}
-/* La cuenta de una zona: quién la está usando hoy, y "No soy yo" si cambia la persona. */
-.sv-quien{font-weight:700;color:inherit;filter:brightness(1.35)}
-.sv-noyo{background:none;border:0;padding:0 0 0 6px;font:inherit;font-weight:600;color:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer;white-space:nowrap}
-.sv-turno-volver{display:block;width:100%;margin-top:10px;padding:10px;background:none;border:0;font-size:13px;color:#6b7280;cursor:pointer}
-.back-btn{background:none;border:none;color:#9ca3af;font-size:20px;cursor:pointer;padding:4px;line-height:1}
-.logout-btn{background:none;border:1px solid #374151;color:#9ca3af;border-radius:6px;font-size:12px;padding:5px 10px;cursor:pointer}
+/* El diseño de la gerencia (centro-control.html), en toda la app: los colores de SBS en dos modos
+   a elección (Automático, Claro u Oscuro, el mismo ajuste que la gerencia: 'tema' en el aparato),
+   el fondo negro o blanco con un granulado quieto, la barra y las cajas de vidrio esmerilado gris,
+   redondeadas; adentro, las tarjetas del tono de la tarjeta. Poppins, con una palabra manuscrita
+   (Yellowtail) de acento en los títulos. El único color fuerte es la gravedad (grave en rojo,
+   media en dorado, leve en gris), siempre con su nombre escrito. Lo elegido, invertido (del color
+   de la letra). Todo lo que se toca, de 44 px. */
+:root{
+  --inc-fuente:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mano:'Yellowtail',cursive;
+  /* El modo oscuro: negro, grafito y la letra blanca. */
+  --fondo:#141414;--bloque:#262626;--bloque-2:#303030;--tarjeta:#303030;--tarjeta-2:#3A3A3A;
+  --vidrio:rgba(46,46,46,.7);--vidrio-2:rgba(58,58,58,.74);--vidrio-borde:rgba(255,255,255,.08);--vidrio-brillo:rgba(255,255,255,.07);--vidrio-sombra:0 14px 34px rgba(0,0,0,.38);
+  --desenfoque:saturate(150%) blur(18px);
+  --tinta:#F2F2F2;--tinta-2:#E6E6E6;--gris:#A8A8A8;--linea:rgba(242,242,242,.2);--resalte:rgba(242,242,242,.45);
+  --borde:transparent;--prim-hover:#FFFFFF;--logo-filtro:none;--tj-mal:#FFD700;--celeste:#019DF4;
+  --velo:rgba(20,20,20,.86);
+  --campo:#0E0E0E;--placeholder:#8A8A8A;--pt-1:#C3CAD3;--pt-2:#FFD700;--pt-3:#F26D7D;
+  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC;
+  color-scheme:dark;
+}
+/* El modo claro: la página blanca, la barra y las cajas en gris claro, las tarjetas blancas y la letra negra. */
+@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--grano-op:.8;--vidrio:rgba(229,229,229,.7);--vidrio-2:rgba(220,220,220,.74);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--vidrio-sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--campo:#FFFFFF;--placeholder:#7A7A7A;--pt-1:#5C6370;--pt-2:#B8900A;--pt-3:#C4262E;color-scheme:light}}
+:root[data-tema="claro"]{--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--grano-op:.8;--vidrio:rgba(229,229,229,.7);--vidrio-2:rgba(220,220,220,.74);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--vidrio-sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--campo:#FFFFFF;--placeholder:#7A7A7A;--pt-1:#5C6370;--pt-2:#B8900A;--pt-3:#C4262E;color-scheme:light}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,input,select,textarea,optgroup,option{font-family:inherit}
+body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+/* El fondo: el granulado quieto (como en la gerencia); en el ingreso, la pieza de marca de SBS tapada con el tono del modo. */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url(grano-sbs.png) 0 0/160px 160px repeat;opacity:var(--grano-op,1)}
+body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo),var(--velo)),url(fondo-sbs.jpg) center/cover no-repeat;opacity:1}
+@media(max-aspect-ratio:3/4){body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo),var(--velo)),linear-gradient(rgba(0,0,0,0),var(--fondo)) 0 calc(60px + 34vw)/100% 23vw no-repeat,url(fondo-sbs.jpg) center 60px/100% auto no-repeat}}
+.screen,.install-banner,.fb-sheet{position:relative;z-index:1}
+.mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
+/* La barra de arriba: de vidrio, pegada; el título en mayúsculas pesadas y, debajo, el dato en gris. */
+.app-bar{position:sticky;top:0;z-index:50;padding:env(safe-area-inset-top,0px) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border-bottom:1px solid var(--vidrio-borde);box-shadow:inset 0 -1px 0 var(--linea);color:var(--tinta)}
+.app-bar-inner{display:flex;align-items:center;gap:10px;min-height:60px;padding:9px 0}
+.app-bar-title{font:800 14.5px/1.1 var(--inc-fuente);text-transform:uppercase;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.app-bar-sub{font:400 12px/1.3 var(--inc-fuente);color:var(--gris);margin-top:3px}
+.app-bar-inner>div{min-width:0}
+.sv-quien{font-weight:700;color:var(--tinta)}
+.sv-noyo{background:none;border:0;padding:0 0 0 6px;font:inherit;font-weight:600;color:var(--tinta);text-decoration:underline;text-underline-offset:2px;cursor:pointer;white-space:nowrap}
+.sv-turno-volver{display:block;width:100%;margin-top:10px;padding:10px;background:none;border:0;font:600 13px var(--inc-fuente);color:var(--gris);cursor:pointer}
+.back-btn{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;border:0;border-radius:10px;background:var(--fondo);color:var(--tinta);font-size:18px;cursor:pointer}
+.logout-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:44px;padding:0 14px;border:0;border-radius:10px;background:var(--fondo);color:var(--tinta);font:600 13px var(--inc-fuente);cursor:pointer;flex-shrink:0}
+.logout-btn svg{width:17px;height:17px;flex-shrink:0;display:block}
+.logout-btn.ico{padding:0;width:44px}
 .screen{display:none;padding-bottom:env(safe-area-inset-bottom,16px)}.screen.active{display:block}
+/* El ingreso: una caja de vidrio con el logo y "Supervisores". */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border:1px solid #e5e7eb;border-radius:12px;padding:28px;width:100%;max-width:360px}
-.login-title{font-size:18px;font-weight:700;color:#111827;text-align:center;margin-bottom:4px}
-.login-sub{font-size:12px;color:#6b7280;text-align:center;margin-bottom:24px}
-.lbl{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;margin-bottom:5px}
-.l-in{width:100%;padding:12px;background:#fff;border:1px solid #d1d5db;border-radius:8px;color:#1a1a1a;font-size:15px;outline:none;margin-bottom:14px}
-.l-in:focus{border-color:#534AB7}
-.l-err{display:none;background:#fee2e2;color:#991b1b;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:12px}
-.l-btn{width:100%;padding:13px;background:#534AB7;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+.login-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;border-radius:22px}
+.login-marcas{display:flex;align-items:center;justify-content:center;margin:0 0 20px}
+.login-logo{width:68px;height:68px;display:block;filter:var(--logo-filtro)}
+.login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;text-align:center;margin:0 0 26px}
+.login-t .mano{display:block;font-size:.78em;margin-top:8px}
+.lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;text-transform:none;color:var(--gris);margin-bottom:6px}
+/* 16 px: en el iPhone, con menos, la página se agranda sola al tocar el campo. */
+.l-in{width:100%;min-height:46px;padding:10px 12px;background:var(--fondo);border:2px solid var(--linea);border-radius:12px;color:var(--tinta);font:16px var(--inc-fuente);outline:none;margin-bottom:16px}
+.l-in:focus{border-color:var(--tinta)}
+.l-in::placeholder{color:var(--placeholder)}
+.l-in:-webkit-autofill,.l-in:-webkit-autofill:hover,.l-in:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px var(--fondo) inset;-webkit-text-fill-color:var(--tinta);caret-color:var(--tinta)}
+.l-err{display:none;background:var(--grave);color:var(--grave-letra);border-radius:10px;padding:10px 12px;font:400 12px var(--inc-fuente);margin-bottom:14px}
+.l-btn{width:100%;min-height:50px;padding:0 14px;background:var(--tinta);color:var(--fondo);border:0;border-radius:12px;font:600 15px var(--inc-fuente);cursor:pointer}
+.l-btn:disabled{background:var(--bloque-2);color:var(--gris);cursor:default}
 .section-pad{padding:16px}
-.page-title{font-size:18px;font-weight:700;color:#111827;margin-bottom:4px}
-.page-sub{font-size:13px;color:#9ca3af;margin-bottom:16px}
-.conv-card{background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;transition:border-color .15s,box-shadow .15s;-webkit-tap-highlight-color:rgba(83,74,183,.1)}
-.conv-card:active{border-color:#a5b4fc;box-shadow:0 2px 8px rgba(83,74,183,.1)}
-.conv-title{font-size:15px;font-weight:600;color:#111827;margin-bottom:4px}
-.conv-meta{font-size:12px;color:#9ca3af;display:flex;gap:10px;flex-wrap:wrap}
-.conv-prog{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#6b7280}
-.prog-track{flex:1;height:5px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+/* Los títulos de pantalla: en la manuscrita, grandes; el dato, en gris. */
+.page-title{font:400 44px/1.05 var(--mano);color:var(--tinta);margin-bottom:2px}
+.page-sub{font:400 12px var(--inc-fuente);color:var(--gris);margin-bottom:16px}
+/* Los shows: cajas de vidrio, como en la gerencia. */
+.conv-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);border-radius:16px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:background .15s}
+.conv-card:active{background:var(--vidrio-2)}
+.conv-title{font:700 16px/1.2 var(--inc-fuente);margin-bottom:5px}
+.conv-meta{font:400 11px var(--inc-fuente);color:var(--gris);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.conv-prog{display:flex;align-items:center;gap:8px;margin-top:10px;font:400 11px var(--inc-fuente);color:var(--gris)}
+.prog-track{flex:1;height:5px;background:var(--fondo);border-radius:999px;overflow:hidden}
 .prog-fill{height:100%;border-radius:999px}
-.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
-.b-mv{background:#e0f2fe;color:#0369a1}.b-ex{background:#f0fdf4;color:#166534}.b-es{background:#fef3c7;color:#92400e}
-.persona-lista{background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin:16px}
-.person-row{border-bottom:1px solid #f3f4f6;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;font:600 11px var(--inc-fuente);background:var(--fondo);color:var(--gris)}
+.b-mv,.b-ex,.b-es{background:var(--fondo);color:var(--gris)}
+/* La gente: una caja de vidrio con una fila por persona. */
+.persona-lista{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);border-radius:16px;overflow:hidden;margin:16px}
+.person-row{border-bottom:1px solid var(--linea);padding:12px 14px;min-height:60px;display:flex;align-items:center;gap:12px;cursor:pointer}
 .person-row:last-child{border-bottom:none}
-.person-row:active{background:#f5f3ff}
-.person-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0}
-.person-name{font-size:14px;font-weight:600;color:#111827}
-.person-meta{font-size:11px;color:#9ca3af;margin-top:2px}
-.sem{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;flex-shrink:0}
-.sem-1{background:#d1fae5;color:#065f46}.sem-2{background:#fef3c7;color:#92400e}.sem-3{background:#fee2e2;color:#991b1b}
-.chevron{color:#d1d5db;font-size:16px;margin-left:auto;flex-shrink:0}
+.person-row:active{background:var(--vidrio-2)}
+.person-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 13px var(--inc-fuente);flex-shrink:0;background:var(--tarjeta);color:var(--tinta)}
+.person-name{font:600 14px var(--inc-fuente);color:var(--tinta)}
+.person-meta{font:400 11px var(--inc-fuente);color:var(--gris);margin-top:2px}
+/* El semáforo de cada persona: verde, dorado o rojo (los mismos tonos de la gravedad para medio y grave). */
+.sem{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font:700 11px var(--inc-fuente);flex-shrink:0}
+.sem-1{background:#1F6E43;color:#CFF5DC}.sem-2{background:var(--media);color:var(--media-letra)}.sem-3{background:var(--grave);color:var(--grave-letra)}
+.chevron{color:var(--gris);font-size:18px;margin-left:auto;flex-shrink:0}
+/* Las hojas que suben de abajo (feedback, quién supervisa, cargar o resolver): del tono del bloque, redondeadas arriba. */
 .fb-sheet{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;justify-content:flex-end}
 .fb-sheet.hidden{display:none}
-.fb-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
-.fb-card{position:relative;background:#fff;border-radius:20px 20px 0 0;padding:24px 20px calc(env(safe-area-inset-bottom,0px) + 24px);max-height:85vh;overflow-y:auto}
-.fb-handle{width:36px;height:4px;background:#e5e7eb;border-radius:999px;margin:0 auto 18px}
-.fb-title{font-size:17px;font-weight:700;color:#111827;margin-bottom:4px}
-.fb-sub{font-size:13px;color:#9ca3af;margin-bottom:20px}
-.fb-crit{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6}
+.fb-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.fb-card{position:relative;background:var(--bloque);color:var(--tinta);border-radius:22px 22px 0 0;padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 24px);max-height:85vh;overflow-y:auto}
+.fb-handle{width:36px;height:4px;background:var(--linea);border-radius:999px;margin:0 auto 18px}
+.fb-title{font:800 19px/1.2 var(--inc-fuente);color:var(--tinta);margin-bottom:4px}
+.fb-sub{font:400 13px var(--inc-fuente);color:var(--gris);margin-bottom:18px}
+.fb-crit{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--linea)}
 .fb-crit-txt{flex:1;min-width:0}
-.fb-crit-nom{font-size:13.5px;font-weight:600;color:#111827}
-.fb-crit-ayuda{font-size:11px;color:#9ca3af;margin-top:1px;line-height:1.35}
-.fb-crit-nums{display:flex;gap:5px;flex:0 0 auto}
-.fb-n{width:34px;height:34px;border-radius:9px;border:1.5px solid #d1d5db;background:#fff;color:#6b7280;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fb-crit-nom{font:600 13.5px var(--inc-fuente);color:var(--tinta)}
+.fb-crit-ayuda{font:400 11px/1.35 var(--inc-fuente);color:var(--gris);margin-top:1px}
+.fb-crit-nums{display:flex;gap:4px;flex:0 0 auto}
+.fb-n{width:40px;height:40px;border-radius:10px;border:0;background:var(--fondo);color:var(--tinta);font:600 14px var(--inc-fuente);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fb-n:active{transform:scale(.94)}
-.fb-n.on{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
-.fb-res{margin:14px 0 4px;padding:10px 13px;border-radius:9px;font-size:12.5px;background:#fafafa;border:1px solid #e5e7eb;color:#6b7280;text-align:center}
-.fb-res-1{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
-.fb-res-2{background:#fffbeb;border-color:#fde68a;color:#92400e}
-.fb-res-3{background:#fef2f2;border-color:#fecaca;color:#991b1b}
-.fb-ta{width:100%;padding:12px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;outline:none;resize:none;height:90px;font-family:inherit}
-.fb-ta:focus{border-color:#534AB7}
+.fb-n.on{background:var(--tinta);color:var(--fondo)}
+.fb-res{margin:14px 0 4px;padding:10px 13px;border-radius:12px;font:600 12.5px var(--inc-fuente);background:var(--tarjeta);color:var(--gris);text-align:center}
+.fb-res-1{background:#1F6E43;color:#CFF5DC}
+.fb-res-2{background:var(--media);color:var(--media-letra)}
+.fb-res-3{background:var(--grave);color:var(--grave-letra)}
+.fb-ta{width:100%;padding:12px;background:var(--fondo);border:2px solid var(--linea);border-radius:12px;color:var(--tinta);font:16px var(--inc-fuente);outline:none;resize:none;height:90px}
+.fb-ta:focus{border-color:var(--tinta)}
+.fb-ta::placeholder{color:var(--placeholder)}
+/* Pasar lista: los turnos como chips, el sector como campo, el resumen en una caja. */
 .lista-top{padding:12px 16px 0}
-.lista-turnos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.turno-chip{font-size:12px;font-weight:600;background:rgba(255,255,255,.96);border:1.5px solid #d1d5db;color:#6b7280;border-radius:999px;padding:7px 13px;cursor:pointer;font-family:inherit;white-space:nowrap}
-.turno-chip.on{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
-.lista-sector{width:100%;padding:10px 12px;background:rgba(255,255,255,.96);border:1px solid #d1d5db;border-radius:10px;font-size:14px;font-family:inherit;color:#1a1a1a;margin-bottom:10px}
-.lista-resumen{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:#6b7280;background:rgba(255,255,255,.96);border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px;margin-bottom:4px}
-.lista-resumen strong{color:#111827;font-size:14px}
-.lista-resumen .lr-p strong{color:#0f6e56}.lista-resumen .lr-a strong{color:#991b1b}.lista-resumen .lr-s strong{color:#854F0B}
-.pl-btn{font-size:13px;font-weight:600;background:#fff;border:1.5px solid #d1d5db;color:#6b7280;border-radius:8px;padding:9px 12px;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.lista-turnos{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.turno-chip{display:inline-flex;align-items:center;min-height:40px;font:600 12.5px var(--inc-fuente);background:var(--tarjeta);border:0;color:var(--tinta);border-radius:999px;padding:0 14px;cursor:pointer;white-space:nowrap}
+.turno-chip.on{background:var(--tinta);color:var(--fondo)}
+.lista-sector{width:100%;min-height:46px;padding:10px 12px;background:var(--fondo);border:2px solid var(--linea);border-radius:12px;font:16px var(--inc-fuente);color:var(--tinta);margin-bottom:10px}
+.lista-resumen{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.lista-resumen span{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:0 11px;border-radius:999px;background:var(--tarjeta);color:var(--gris);font:600 12px var(--inc-fuente)}
+.lista-resumen strong{color:var(--tinta);font-size:14px;font-weight:800}
+.lista-resumen .lr-p{background:#1F6E43;color:#CFF5DC}.lista-resumen .lr-a{background:var(--grave);color:var(--grave-letra)}.lista-resumen .lr-s{background:var(--media);color:var(--media-letra)}
+.lista-resumen .lr-p strong,.lista-resumen .lr-a strong,.lista-resumen .lr-s strong{color:inherit}
+.pl-btn{min-height:40px;font:600 13px var(--inc-fuente);background:var(--tarjeta);border:0;color:var(--tinta);border-radius:999px;padding:0 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .pl-btn:active{transform:scale(.96)}
-.pl-p.on{background:#d1fae5;border-color:#6ee7b7;color:#065f46}
-.pl-a.on{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
-.pl-acts{display:flex;gap:6px;flex-shrink:0;margin-left:auto}
-.fb-send{width:100%;padding:14px;background:#534AB7;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px}
-.fb-send:disabled{opacity:.5}
-.fb-prev{margin-top:14px;border-top:1px solid #f3f4f6;padding-top:14px}
-.fb-prev-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:10px}
-.fb-prev-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;font-size:13px}
-/* Va suelto sobre el fondo, donde esta la marca en casi blanco: con
-   fondo propio se lee siempre, caiga donde caiga al hacer scroll. */
-.empty-state{text-align:center;padding:40px 20px;color:#6b7280;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border:1px solid #e5e7eb;border-radius:12px}
-.empty-icon{font-size:40px;margin-bottom:12px}
-.empty-title{font-size:15px;font-weight:500;color:#6b7280;margin-bottom:6px}
-.load-bar{position:fixed;top:0;left:0;right:0;height:3px;background:#534AB7;z-index:200;transform:scaleX(0);transform-origin:left;transition:transform .3s}
-.toast-mob{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);left:50%;transform:translateX(-50%) translateY(10px);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:all .2s;white-space:nowrap;pointer-events:none}
+.pl-p.on{background:#1F6E43;color:#CFF5DC}
+.pl-a.on{background:var(--grave);color:var(--grave-letra)}
+.pl-acts{display:flex;gap:4px;flex-shrink:0;margin-left:auto}
+.fb-send{width:100%;min-height:50px;padding:0 14px;background:var(--tinta);color:var(--fondo);border:0;border-radius:12px;font:600 15px var(--inc-fuente);cursor:pointer;margin-top:14px}
+.fb-send:disabled{background:var(--bloque-2);color:var(--gris)}
+.fb-prev{margin-top:14px;border-top:1px solid var(--linea);padding-top:14px}
+.fb-prev-title{font:600 12.5px var(--inc-fuente);color:var(--gris);margin-bottom:10px}
+.fb-prev-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;font:400 13px var(--inc-fuente);color:var(--tinta)}
+.empty-state{text-align:center;padding:32px 18px;color:var(--gris);font:400 12px/1.5 var(--inc-fuente);border:2px dashed var(--linea);border-radius:14px}
+.empty-icon{display:none}
+.empty-title{font:600 14px var(--inc-fuente);color:var(--gris);margin-bottom:6px}
+.load-bar{position:fixed;top:0;left:0;right:0;height:3px;background:var(--tinta);z-index:200;transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.toast-mob{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);left:50%;transform:translateX(-50%) translateY(10px);background:var(--tinta);color:var(--fondo);padding:10px 20px;border-radius:999px;font:600 13px var(--inc-fuente);z-index:300;opacity:0;transition:all .2s;white-space:nowrap;pointer-events:none}
 .toast-mob.on{opacity:1;transform:translateX(-50%) translateY(0)}
-.install-banner{background:#534AB7;color:#fff;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:10px;cursor:pointer}
-.install-banner button{background:rgba(255,255,255,.2);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;flex-shrink:0}
-
-/* ── Incidencias (tablet) ── */
-.hub{padding:16px;display:grid;gap:12px}
+.install-banner{background:var(--bloque);color:var(--tinta);padding:10px 16px;font:400 12px var(--inc-fuente);display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--linea)}
+.install-banner button{background:var(--tinta);color:var(--fondo);border:0;min-height:36px;padding:0 12px;border-radius:10px;font:600 12px var(--inc-fuente);cursor:pointer;flex-shrink:0}
+/* Un show: los dos caminos (equipo e incidencias), en cajas de vidrio. */
+.hub{padding:16px;display:grid;gap:10px}
 @media(min-width:700px){.hub{grid-template-columns:1fr 1fr}}
-.hub-card{background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-radius:16px;padding:20px 18px;cursor:pointer;display:flex;gap:14px;align-items:center;text-align:left;width:100%;font:inherit;color:inherit;box-shadow:0 2px 10px rgba(0,0,0,.05)}
-.hub-card:active{transform:scale(.99)}
-.hub-ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;background:#f4f4f5}
-.hub-ic.inc{background:#0f1117;color:#fff}
-.hub-t{font-size:16px;font-weight:700;color:#111827}
-.hub-s{font-size:12.5px;color:#6b7280;margin-top:3px;line-height:1.4}
-.hub-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-.hub-chip{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:#f4f4f5;color:#52525b}
-/* Incidencias: el diseño del Centro de Control (el de la gerencia), en los colores de SBS
-   y en dos modos a elección (Automático, Claro u Oscuro, como en WhatsApp): el fondo liso,
-   bloques planos y rectos, la gravedad como único color fuerte; Poppins, y la manuscrita
-   (Yellowtail) sólo en el título. El resto de la app, igual. */
-#screenIncid,#incSheet{--fondo:#141414;--bloque:#262626;--bloque-2:#303030;--tinta:#F2F2F2;--gris:#A8A8A8;--linea:rgba(242,242,242,.2);--borde:transparent;--campo:#0E0E0E;--placeholder:#8A8A8A;--logo-filtro:none;--pt-1:#C3CAD3;--pt-2:#FFD700;--pt-3:#F26D7D;--tj-mal:#FFD700;--celeste:#019DF4;color-scheme:dark;--grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC}
-/* El modo claro: blanco y gris claro, la letra negra; las tarjetas con un borde gris y el logo en negro. */
-@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]) #screenIncid,:root:not([data-tema="oscuro"]) #incSheet{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--borde:#DADADA;--campo:#FFFFFF;--placeholder:#7A7A7A;--logo-filtro:brightness(0);--pt-1:#5C6370;--pt-2:#B8900A;--pt-3:#C4262E;--tj-mal:#8A6900;--celeste:#00639C;color-scheme:light}}
-:root[data-tema="claro"] #screenIncid,:root[data-tema="claro"] #incSheet{--fondo:#EDEDED;--bloque:#FFFFFF;--bloque-2:#F4F4F4;--tinta:#1A1A1A;--gris:#5C5C5C;--linea:rgba(26,26,26,.16);--borde:#DADADA;--campo:#FFFFFF;--placeholder:#7A7A7A;--logo-filtro:brightness(0);--pt-1:#5C6370;--pt-2:#B8900A;--pt-3:#C4262E;--tj-mal:#8A6900;--celeste:#00639C;color-scheme:light}
-#screenIncid.active{display:flex;flex-direction:column;min-height:100vh;background:var(--fondo);color:var(--tinta)}
-#screenIncid .sv-bar{background:var(--bloque);border-bottom:2px solid var(--tinta)}
-#screenIncid .sv-bar .back-btn{color:var(--tinta)}
-#screenIncid .sv-bar .logout-btn{border-color:var(--linea);color:var(--tinta);border-radius:0;min-width:40px;min-height:40px;font-size:16px}
-.sv-logo{width:30px;height:30px;display:block;flex-shrink:0;filter:var(--logo-filtro)}
-#screenIncid .sv-bar svg{width:18px;height:18px;display:block;margin:0 auto}
+.hub-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);border-radius:18px;padding:18px 16px;cursor:pointer;display:flex;gap:14px;align-items:center;text-align:left;width:100%;font:inherit;color:var(--tinta)}
+.hub-card:active{background:var(--vidrio-2)}
+.hub-ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--tarjeta);color:var(--tinta)}
+.hub-ic svg{width:26px;height:26px;display:block}
+.hub-ic.inc{background:var(--tinta);color:var(--fondo)}
+.hub-t{font:700 16px var(--inc-fuente);color:var(--tinta)}
+.hub-s{font:400 12.5px/1.4 var(--inc-fuente);color:var(--gris);margin-top:3px}
+.hub-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.hub-chip{font:600 11.5px var(--inc-fuente);padding:4px 9px;border-radius:999px;background:var(--fondo);color:var(--gris)}
+.hub-chip.n3{background:var(--grave);color:var(--grave-letra)}.hub-chip.n2{background:var(--media);color:var(--media-letra)}.hub-chip.n1{background:var(--leve);color:var(--leve-letra)}
 /* El tema (como en WhatsApp): un menú chico debajo de la barra, con Automático, Claro y Oscuro; el elegido, tildado. */
-#screenIncid .tema-menu{position:absolute;top:calc(100% + 4px);right:16px;z-index:60;width:min(280px,calc(100vw - 32px));padding:6px;display:flex;flex-direction:column;gap:2px;background:var(--bloque);color:var(--tinta);box-shadow:0 0 0 1px var(--linea)}
-#screenIncid .tema-menu[hidden]{display:none}
-#screenIncid .tema-menu-t{font-size:12.5px;font-weight:600;color:var(--gris);padding:8px 10px 6px}
-#screenIncid .tema-op{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:12px;min-height:48px;padding:6px 10px;border:0;border-radius:0;background:transparent;color:var(--tinta);font-size:14px;font-weight:600;text-align:left;cursor:pointer}
-#screenIncid .tema-op small{display:block;font-size:12px;font-weight:400;color:var(--gris);margin-top:2px}
-#screenIncid .tema-op i{width:18px;height:18px;border:2px solid var(--gris);display:grid;place-items:center;font-size:11px;font-weight:700;font-style:normal;line-height:1;color:var(--fondo)}
-#screenIncid .tema-op[aria-checked="true"] i{background:var(--tinta);border-color:var(--tinta)}#screenIncid .tema-op[aria-checked="true"] i::before{content:"✓"}
-.sv-rot{font-size:11px;color:var(--gris)}.sv-rot b{font-weight:800}
-.sv-mano{font:400 15px/1 'Yellowtail',cursive;color:var(--gris)}
-.sv-show{font-size:13px;font-weight:800;line-height:1.2;text-transform:uppercase;color:var(--tinta);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sv-cuerpo{flex:1;width:100%;max-width:760px;margin:0 auto;padding:16px 16px 24px;display:flex;flex-direction:column;gap:10px}
-.sv-cab{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-.sv-titulo{font:400 34px/1.05 'Yellowtail',cursive;color:var(--tinta)}
-.sv-vivo{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--celeste)}
-.sv-vivo::before{content:'';width:8px;height:8px;background:var(--celeste)}
-.sv-vivo.mal{color:var(--media-letra)}.sv-vivo.mal::before{background:var(--media)}
-.sv-cuentas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
-.sv-cuenta{padding:9px 11px;font-size:12px;font-weight:600;display:flex;flex-direction:column;gap:3px}
-.sv-cuenta b{font-size:26px;font-weight:900;line-height:1;display:flex;align-items:center;gap:7px}
+.app-bar .tema-menu{position:absolute;top:calc(100% + 4px);right:max(16px,env(safe-area-inset-right,0px));z-index:60;width:min(280px,calc(100vw - 32px));padding:6px;display:flex;flex-direction:column;gap:2px;border-radius:16px;background:var(--bloque);color:var(--tinta);box-shadow:0 0 0 1px var(--linea),var(--vidrio-sombra)}
+.app-bar .tema-menu[hidden]{display:none}
+.tema-menu-t{font:600 12.5px var(--inc-fuente);color:var(--gris);padding:8px 10px 6px}
+.tema-op{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:12px;min-height:48px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--tinta);font:600 14px var(--inc-fuente);text-align:left;cursor:pointer}
+.tema-op small{display:block;font:400 12px var(--inc-fuente);color:var(--gris);margin-top:2px}
+.tema-op i{width:18px;height:18px;border-radius:50%;border:2px solid var(--gris);display:grid;place-items:center;font:700 11px/1 var(--inc-fuente);font-style:normal;color:var(--fondo)}
+.tema-op[aria-checked="true"] i{background:var(--tinta);border-color:var(--tinta)}.tema-op[aria-checked="true"] i::before{content:"✓"}
+
+/* ── Incidencias: la sala en vivo, como el tablero de la gerencia ── */
+#screenIncid.active{display:flex;flex-direction:column;min-height:100vh}
+.sv-logo{width:30px;height:30px;display:block;flex-shrink:0;filter:var(--logo-filtro)}
+.sv-rot{font:400 11px var(--inc-fuente);color:var(--gris)}.sv-rot b{font-weight:800}
+.sv-mano{font:400 15px/1 var(--mano);color:var(--gris)}
+.sv-show{font:800 13px/1.2 var(--inc-fuente);text-transform:uppercase;color:var(--tinta);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* El cuerpo: una caja de vidrio con el título, los números, el filtro y los tickets. */
+.sv-cuerpo{flex:1;width:calc(100% - 24px);max-width:760px;margin:12px auto 0;padding:16px 12px 18px;display:flex;flex-direction:column;gap:10px;background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);border-radius:18px;--tj-muesca:var(--bloque)}
+.sv-cab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 4px}
+.sv-titulo{font:400 34px/1.05 var(--mano);color:var(--tinta)}
+.sv-vivo{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border-radius:999px;background:var(--tinta);color:var(--fondo);font:600 12px var(--inc-fuente);white-space:nowrap}
+.sv-vivo::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--fondo);animation:svTitila 1.6s infinite}
+.sv-vivo.mal{background:var(--media);color:var(--media-letra)}.sv-vivo.mal::before{background:var(--media-letra);animation:none}
+.sv-cuentas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.sv-cuenta{padding:10px 11px;border-radius:14px;font:600 12px var(--inc-fuente);display:flex;flex-direction:column;gap:3px;background:var(--tarjeta);color:var(--tinta)}
+.sv-cuenta b{font:900 26px/1 var(--inc-fuente);display:flex;align-items:center;gap:7px}
 .sv-cuenta.n3{background:var(--grave);color:var(--grave-letra)}.sv-cuenta.n2{background:var(--media);color:var(--media-letra)}.sv-cuenta.n1{background:var(--leve);color:var(--leve-letra)}
-/* La grave abierta: un cuadradito que titila, como en la gerencia. */
-.sv-cuenta.pulso b::after{content:'';width:8px;height:8px;background:currentColor;animation:svTitila 1.2s infinite}
+.sv-cuenta.pulso b::after{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;animation:svTitila 1.2s infinite}
 @keyframes svTitila{0%,100%{opacity:1}50%{opacity:.25}}
-.sv-seg{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.sv-seg button{border:0;border-radius:0;background:var(--bloque);color:var(--tinta);font-size:13px;font-weight:600;min-height:44px;cursor:pointer}
+.sv-seg{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:3px;border-radius:12px;background:var(--fondo)}
+.sv-seg button{border:0;border-radius:9px;background:transparent;color:var(--tinta);font:600 13px var(--inc-fuente);min-height:44px;cursor:pointer}
 .sv-seg button.on{background:var(--tinta);color:var(--fondo)}
-.sv-vacio{text-align:center;padding:28px 16px;color:var(--gris);font-size:13px;line-height:1.5;border:2px dashed var(--linea)}
-.sv-pie{position:sticky;bottom:0;z-index:5;padding:10px 16px calc(env(safe-area-inset-bottom,0px) + 12px);background:var(--fondo)}
-.sv-cargar{display:block;width:100%;max-width:728px;margin:0 auto;border:0;border-radius:0;background:var(--tinta);color:var(--fondo);font-size:16px;font-weight:700;min-height:54px;cursor:pointer}
-/* Los tickets (los arma el bloque compartido): como en la gerencia. */
-#screenIncid{--tj-tinta:var(--tinta);--tj-tinta2:var(--gris);--tj-perf:var(--linea);--tj-ok:var(--tinta);--tj-muesca:var(--fondo)}
-#screenIncid .inc-tj{background:var(--bloque);border:0;border-radius:0;margin-bottom:4px;outline-offset:-2px;box-shadow:inset 0 0 0 1px var(--borde)}
+.sv-vacio{text-align:center;padding:28px 16px;color:var(--gris);font:400 13px/1.5 var(--inc-fuente);border:2px dashed var(--linea);border-radius:14px}
+.sv-pie{position:sticky;bottom:0;z-index:5;margin-top:12px;padding:10px 12px calc(env(safe-area-inset-bottom,0px) + 12px);background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border-top:1px solid var(--vidrio-borde)}
+.sv-cargar{display:block;width:100%;max-width:736px;margin:0 auto;border:0;border-radius:12px;background:var(--tinta);color:var(--fondo);font:700 16px var(--inc-fuente);min-height:54px;cursor:pointer}
+/* Los tickets (los arma el bloque compartido): tarjetas redondeadas con el talón del color de su gravedad. */
+#screenIncid{--tj-tinta:var(--tinta);--tj-tinta2:var(--gris);--tj-perf:var(--linea);--tj-ok:var(--tinta);--tj-fondo:var(--tarjeta)}
+#screenIncid .inc-tj{background:var(--tarjeta);border:0;border-radius:16px;margin-bottom:6px;outline-offset:-2px;box-shadow:none;overflow:hidden}
 #screenIncid .inc-tj.abierta{outline:2px solid var(--tinta)}
 #screenIncid .inc-tj-cab{grid-template-columns:78px minmax(0,1fr)}
 #screenIncid .inc-tj-cab::before,#screenIncid .inc-tj-cab::after{display:none}
-#screenIncid .inc-card.inc-tj .inc-tj-talon{border-radius:0;padding:10px 6px;gap:6px}
+#screenIncid .inc-card.inc-tj .inc-tj-talon{border-radius:0;padding:12px 6px;gap:6px}
 #screenIncid .inc-tj[data-nivel="3"] .inc-tj-talon{background:var(--grave);color:var(--grave-letra)}
 #screenIncid .inc-tj[data-nivel="2"] .inc-tj-talon{background:var(--media);color:var(--media-letra)}
 #screenIncid .inc-tj[data-nivel="1"] .inc-tj-talon{background:var(--leve);color:var(--leve-letra)}
-#screenIncid .inc-tj .inc-tj-cod{border-radius:0}
+#screenIncid .inc-tj .inc-tj-cod{border-radius:6px}
 #screenIncid .inc-tj[data-nivel="3"] .inc-tj-cod{background:var(--grave);color:var(--grave-letra)}#screenIncid .inc-tj[data-nivel="2"] .inc-tj-cod{background:var(--media);color:var(--media-letra)}#screenIncid .inc-tj[data-nivel="1"] .inc-tj-cod{background:var(--leve);color:var(--leve-letra)}
-#screenIncid .inc-tj .inc-tj-talon b{font-size:24px;font-weight:900;line-height:.9}
-#screenIncid .inc-tj .inc-tj-talon small{font-size:11.5px;font-weight:600;letter-spacing:0}
+#screenIncid .inc-tj .inc-tj-talon b{font:900 22px/.9 var(--inc-fuente)}
+#screenIncid .inc-tj .inc-tj-talon small{font:600 11.5px var(--inc-fuente);letter-spacing:0}
 #screenIncid .inc-tj .inc-tj-txt{border-left:0;padding:11px 14px;gap:4px}
-#screenIncid .inc-tj .inc-tj-tipo{font-size:15px;font-weight:700;line-height:1.2}
-#screenIncid .inc-tj .inc-tj-linea{font-size:11.5px}
-#screenIncid .inc-tj .inc-tj-estado{font-size:11.5px;font-weight:600}
-#screenIncid .inc-tj .inc-tj-chips span{border-radius:0}
+#screenIncid .inc-tj .inc-tj-tipo{font:700 15px/1.2 var(--inc-fuente)}
+#screenIncid .inc-tj .inc-tj-linea{font:400 11.5px var(--inc-fuente)}
+#screenIncid .inc-tj .inc-tj-estado{font:600 11.5px var(--inc-fuente)}
+#screenIncid .inc-tj .inc-tj-chips span{border-radius:999px}
 .sv-tj-pie{padding:0 14px 12px 92px}
-.sv-resolver{border:0;border-radius:0;background:var(--tinta);color:var(--fondo);font-size:13px;font-weight:700;padding:0 16px;min-height:40px;cursor:pointer}
+.sv-resolver{border:0;border-radius:10px;background:var(--tinta);color:var(--fondo);font:700 13px var(--inc-fuente);padding:0 16px;min-height:40px;cursor:pointer}
 /* La hoja para cargar y resolver, en los mismos colores. */
-#incSheet .fb-card{max-width:760px;width:100%;margin:0 auto;background:var(--fondo);color:var(--tinta);border-radius:0;border-top:2px solid var(--tinta);max-height:92vh}
-#incSheet .fb-handle{background:var(--linea);border-radius:0}
-#incSheet .fb-title{color:var(--tinta);font-size:19px;font-weight:800;line-height:1.2}
-#incSheet .fb-title.mano{font:400 32px/1.05 'Yellowtail',cursive}
-#incSheet .fb-sub{color:var(--gris)}
-#incSheet .inc-paso{font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--gris);margin:16px 0 7px}
+#incSheet .fb-card{max-width:760px;width:100%;margin:0 auto;max-height:92vh}
+#incSheet .fb-title.mano{font:400 32px/1.05 var(--mano)}
+#incSheet .inc-paso{font:600 12px var(--inc-fuente);letter-spacing:0;text-transform:none;color:var(--gris);margin:16px 0 7px}
 #incSheet .inc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
-#incSheet .inc-opc,#incSheet .inc-check{width:100%;background:var(--bloque);border:0;border-radius:0;color:var(--tinta);font-size:13.5px;font-weight:600;line-height:1.3;padding:12px;min-height:48px;text-align:left;cursor:pointer}
+#incSheet .inc-opc,#incSheet .inc-check{width:100%;background:var(--fondo);border:0;border-radius:12px;color:var(--tinta);font:600 13.5px/1.3 var(--inc-fuente);padding:12px;min-height:48px;text-align:left;cursor:pointer}
 #incSheet .inc-opc.on,#incSheet .inc-check.on{background:var(--tinta);color:var(--fondo)}
 #incSheet .inc-checks{display:flex;flex-direction:column;gap:4px}
 #incSheet .inc-niveles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
-#incSheet .inc-nivel{border:0;border-radius:0;padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;cursor:pointer;font-family:inherit}
+#incSheet .inc-nivel{border:0;border-radius:12px;padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;cursor:pointer;font-family:inherit}
 #incSheet .inc-nivel.n1{background:var(--leve);color:var(--leve-letra)}#incSheet .inc-nivel.n2{background:var(--media);color:var(--media-letra)}#incSheet .inc-nivel.n3{background:var(--grave);color:var(--grave-letra)}
 #incSheet .inc-nivel.on{outline:3px solid var(--tinta);outline-offset:-3px}
-#incSheet .inc-nivel strong{font-size:14px;font-weight:700}#incSheet .inc-nivel span{font-size:11px;line-height:1.3;opacity:.92}
-#incSheet .l-in,#incSheet .fb-ta{background:var(--campo);border:2px solid var(--linea);border-radius:0;color:var(--tinta);font-size:16px}
-#incSheet .l-in:focus,#incSheet .fb-ta:focus{border-color:var(--tinta)}
-#incSheet .l-in::placeholder,#incSheet .fb-ta::placeholder{color:var(--placeholder)}
-#incSheet .fb-send{background:var(--tinta);color:var(--fondo);border-radius:0;font-size:15px;font-weight:700}
-#incSheet .inc-mini{display:flex;align-items:center;gap:8px;background:var(--bloque);padding:8px 10px;margin-bottom:4px;font-size:13px}
+#incSheet .inc-nivel strong{font:700 14px var(--inc-fuente)}#incSheet .inc-nivel span{font:400 11px/1.3 var(--inc-fuente);opacity:.92}
+#incSheet .inc-mini{display:flex;align-items:center;gap:8px;background:var(--fondo);border-radius:10px;padding:8px 10px;margin-bottom:4px;font:400 13px var(--inc-fuente)}
 #incSheet .inc-mini span.t{flex:1;min-width:0}
-#incSheet .inc-resolver{border:0;border-radius:0;background:var(--tinta);color:var(--fondo);font-size:13px;font-weight:700;padding:0 14px;min-height:40px;cursor:pointer}
-/* Los atajos de la referencia (Pasillo, Fila…): su estilo venía con el plano, que la tablet ya no carga. */
+#incSheet .inc-resolver{border:0;border-radius:10px;background:var(--tinta);color:var(--fondo);font:700 13px var(--inc-fuente);padding:0 14px;min-height:40px;cursor:pointer}
 #incSheet .inc-ref-rapida{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 10px}
-#incSheet .inc-ref-rapida button{font-family:inherit;font-size:12.5px;font-weight:600;background:var(--bloque);border:0;border-radius:0;color:var(--tinta);padding:0 12px;min-height:36px;cursor:pointer}
-.sv-volver{background:none;border:0;color:var(--tinta);font-size:13px;font-weight:600;text-decoration:underline;padding:4px 0;cursor:pointer}
+#incSheet .inc-ref-rapida button{font:600 12.5px var(--inc-fuente);background:var(--fondo);border:0;border-radius:999px;color:var(--tinta);padding:0 12px;min-height:40px;cursor:pointer}
+.sv-volver{background:none;border:0;color:var(--tinta);font:600 13px var(--inc-fuente);text-decoration:underline;padding:8px 0;min-height:40px;cursor:pointer}
 /* ¿Dónde pasó? */
-.sv-buscar{width:100%;background:var(--campo);border:2px solid var(--linea);border-radius:0;color:var(--tinta);font-size:16px;padding:12px 14px;outline:none}
+.sv-buscar{width:100%;background:var(--fondo);border:2px solid var(--linea);border-radius:12px;color:var(--tinta);font:16px var(--inc-fuente);padding:12px 14px;outline:none}
 .sv-buscar:focus{border-color:var(--tinta)}.sv-buscar::placeholder{color:var(--placeholder)}
 .sv-pisos{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:4px;margin-top:10px}
-.sv-pisos button{border:0;border-radius:0;background:var(--bloque);color:var(--tinta);font-size:13px;font-weight:600;padding:0 12px;min-height:40px;cursor:pointer}
+.sv-pisos button{border:0;border-radius:10px;background:var(--fondo);color:var(--tinta);font:600 13px var(--inc-fuente);padding:0 12px;min-height:44px;cursor:pointer}
 .sv-pisos button.on{background:var(--tinta);color:var(--fondo)}
-.sv-rotulo{font-size:12px;font-weight:600;color:var(--gris);margin:14px 0 6px}
+.sv-rotulo{font:600 12px var(--inc-fuente);color:var(--gris);margin:14px 0 6px}
 .sv-sectores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
 .sv-sectores.anchos{grid-template-columns:repeat(2,minmax(0,1fr))}
-.sv-sec{position:relative;border:0;border-radius:0;background:var(--bloque);color:var(--tinta);font-size:19px;font-weight:800;padding:15px 6px;min-height:56px;cursor:pointer}
-.sv-sec.chico{font-size:13px;font-weight:600;line-height:1.25;text-align:left;padding:12px 20px 12px 12px;min-height:48px}
-.sv-pt{position:absolute;top:7px;right:7px;width:9px;height:9px}
+.sv-sec{position:relative;border:0;border-radius:14px;background:var(--fondo);color:var(--tinta);font:800 19px var(--inc-fuente);padding:15px 6px;min-height:56px;cursor:pointer}
+.sv-sec.chico{font:600 13px/1.25 var(--inc-fuente);text-align:left;padding:12px 20px 12px 12px;min-height:48px}
+.sv-pt{position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%}
 .sv-pt.n1{background:var(--pt-1)}.sv-pt.n2{background:var(--pt-2)}.sv-pt.n3{background:var(--pt-3)}
-.sv-ayuda{background:var(--bloque);padding:12px 14px;font-size:13px;font-weight:500;line-height:1.4;margin-top:12px}
+.sv-ayuda{background:var(--fondo);border-radius:12px;padding:12px 14px;font:500 13px/1.4 var(--inc-fuente);margin-top:12px}
 @media(min-width:700px){.sv-sectores{grid-template-columns:repeat(5,minmax(0,1fr))}.sv-sectores.anchos{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:380px){#incSheet .inc-nivel span{display:none}}
-@media(prefers-reduced-motion:reduce){.sv-cuenta.pulso b::after{animation:none}}
-
-/* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
-button,input,select,textarea,optgroup,option{font-family:inherit}
+.sv-cuenta b,.app-bar-sub,.conv-meta,.lista-resumen strong{font-variant-numeric:tabular-nums}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -245,10 +273,9 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 <div class="load-bar" id="loadBar"></div>
 
 <!-- Install banner -->
-<div class="sbs-bg"></div>
 
 <div class="install-banner" id="installBanner" style="display:none" onclick="doInstall()">
-  <span style="flex:1">📱 Agregá esta app a tu pantalla de inicio para acceder más rápido</span>
+  <span style="flex:1">Agregá esta app a tu pantalla de inicio para entrar más rápido</span>
   <button>Instalar</button>
   <span onclick="event.stopPropagation();document.getElementById('installBanner').style.display='none'" style="cursor:pointer;opacity:.6">✕</span>
 </div>
@@ -257,8 +284,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 <div id="screenLogin" class="screen active">
   <div class="login-wrap">
     <div class="login-card">
-      <div class="login-title">Recital</div>
-      <div class="login-sub">Acceso para supervisores</div>
+      <div class="login-marcas"><img class="login-logo" src="logo-sbs-calado.png" alt="Show Business Solutions"></div>
+      <div class="login-t">Supervisores<span class="mano">Show Business Solutions</span></div>
       <label class="lbl" for="loginEmail">Usuario</label>
       <input type="text" id="loginEmail" class="l-in" placeholder="Ej: plateabaja (o tu email)" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()">
       <label class="lbl">Contraseña</label>
@@ -277,11 +304,13 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
         <div class="app-bar-title">Mis convocatorias</div>
         <div class="app-bar-sub" id="homeSubtitle">Supervisor</div>
       </div>
+      <button class="logout-btn ico sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
       <button class="logout-btn" onclick="doLogout()">Salir</button>
     </div>
+    <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
   </div>
   <div class="section-pad" id="homeContent" style="min-height:40vh">
-    <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Cargando...</div></div>
+    <div class="empty-state"><div class="empty-title">Cargando...</div></div>
   </div>
 </div>
 
@@ -294,15 +323,17 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
         <div class="app-bar-title" id="showTitulo">Show</div>
         <div class="app-bar-sub" id="showSub"></div>
       </div>
+      <button class="logout-btn ico sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
     </div>
+    <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
   </div>
   <div class="hub">
     <button class="hub-card" onclick="openConv(currentConvId)">
-      <div class="hub-ic">👥</div>
+      <div class="hub-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg></div>
       <div style="flex:1;min-width:0"><div class="hub-t">Equipo y feedback</div><div class="hub-s">Pasar lista y evaluar a cada persona de tu equipo</div><div class="hub-chips" id="hubEquipo"></div></div>
     </button>
     <button class="hub-card" onclick="openIncid()">
-      <div class="hub-ic inc">⚠</div>
+      <div class="hub-ic inc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></div>
       <div style="flex:1;min-width:0"><div class="hub-t">Incidencias</div><div class="hub-s">Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector</div><div class="hub-chips" id="hubIncid"></div></div>
     </button>
   </div>
@@ -320,7 +351,7 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
     </div>
   </div>
   <div style="padding:16px 16px 0">
-    <button class="fb-send" onclick="openLista()"><i class="ic ic-tilde-circ"></i> ✓ Pasar lista</button>
+    <button class="fb-send" onclick="openLista()">Pasar lista</button>
   </div>
   <div id="convPersonList" class="persona-lista"></div>
 </div>
@@ -372,8 +403,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
         <div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div>
         <div class="sv-show" id="incSub"></div>
       </div>
-      <button class="logout-btn" id="svBtnTema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false" aria-controls="svTemaMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
-      <button class="logout-btn" onclick="cargarIncid()" title="Actualizar" aria-label="Actualizar">↻</button>
+      <button class="logout-btn ico sv-tema" id="svBtnTema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false" aria-controls="svTemaMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
+      <button class="logout-btn ico" onclick="cargarIncid()" title="Actualizar" aria-label="Actualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg></button>
     </div>
     <div class="tema-menu" id="svTemaMenu" role="menu" aria-label="Tema" hidden></div>
   </div>
@@ -432,7 +463,7 @@ let currentConvId = null, fbPersonId = null, fbConvId = null, controlIds = null;
 let deferredInstall = null;
 
 // ── PWA Manifest ──
-const manifest = { name:'Recital — Supervisor', short_name:'Recital', start_url:'.', display:'standalone', background_color:'#0f1117', theme_color:'#534AB7', icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%23534AB7"/><text y=".9em" font-size="80" x="10">🎵</text></svg>',sizes:'192x192',type:'image/svg+xml'}] };
+const manifest = { name:'Supervisores — Show Business Solutions', short_name:'Supervisores', start_url:'.', display:'standalone', background_color:'#141414', theme_color:'#262626', icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%23141414"/><text x="50" y="63" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="34" fill="%23ffffff">SBS</text></svg>',sizes:'192x192',type:'image/svg+xml'}] };
 const mBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
 document.getElementById('pwaManifest').href = URL.createObjectURL(mBlob);
 
@@ -447,7 +478,7 @@ function setLoad(on, pct = 0) { const b = document.getElementById('loadBar'); b.
 function toast(msg) { const t = document.getElementById('toastMob'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2400); }
 
 // ── Screens ──
-function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); if (document.body) document.body.dataset.pantalla = id; svCerrarTemas(); window.scrollTo(0,0); }
 
 // ── Auth ──
 // Cada página guarda su sesión aparte: el panel, la app del supervisor y esta.
@@ -570,16 +601,16 @@ async function loadData() {
 // ── Home ──
 function renderHome() {
   const cont = document.getElementById('homeContent');
-  if (!convs.length) { cont.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Sin convocatorias asignadas</div><div style="font-size:13px;color:#9ca3af">El admin todavía no te asignó ningún recital</div></div>`; return; }
+  if (!convs.length) { cont.innerHTML = `<div class="empty-state"><div class="empty-title">Sin shows asignados</div><div>Todavía no te asignaron ningún show</div></div>`; return; }
   cont.innerHTML = convs.map(c => {
     const total = c.personas || 0, hechos = c.con_feedback || 0;
     const pct = total > 0 ? Math.round(hechos / total * 100) : 0;
-    const pc = pct < 50 ? '#e5e7eb' : pct < 100 ? '#fbbf24' : '#10b981';
+    const pc = pct < 50 ? 'var(--gris)' : pct < 100 ? 'var(--media)' : 'var(--tinta)';
     return `<div class="conv-card" onclick="openShow('${c.id}')">
       <div class="conv-title">${esc(c.nombre)}</div>
       <div class="conv-meta">
         <span class="badge ${areaClase(c.area)}">${areaNombre(c.area)}</span>
-        ${c.fecha ? `<span>📅 ${fmtFecha(c.fecha)}</span>` : ''}
+        ${c.fecha ? `<span>${fmtFecha(c.fecha)}</span>` : ''}
         <span>${total} persona${total!==1?'s':''}</span>
       </div>
       <div class="conv-prog">
@@ -613,8 +644,8 @@ async function openShow(convId) {
   const abiertas = (!error && data ? data : []).filter(i => i.estado !== 'resuelta');
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
   document.getElementById('hubIncid').innerHTML = error ? '<span class="hub-chip">Sin conexión</span>'
-    : abiertas.length ? [3, 2, 1].filter(n).map(nv => '<span class="hub-chip" style="background:' + INC_NIVELES[nv].fondo + ';color:' + INC_NIVELES[nv].color + '">' + n(nv) + ' ' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('')
-    : '<span class="hub-chip" style="background:#dcfce7;color:#15803d">Sin incidencias abiertas</span>';
+    : abiertas.length ? [3, 2, 1].filter(n).map(nv => '<span class="hub-chip n' + nv + '">' + n(nv) + ' ' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('')
+    : '<span class="hub-chip" style="background:var(--tinta);color:var(--fondo)">Sin incidencias abiertas</span>';
 }
 function volverDeEquipo() { const c = convs.find(x => x.id === currentConvId); if (enControl(c)) openShow(currentConvId); else goHome(); }
 
@@ -629,17 +660,17 @@ async function openConv(convId) {
   const { data, error } = await sb.rpc('sup_equipo', { p_conv_id: convId });
   people = (!error && data) || [];
   const myPeople = people;
-  if (!myPeople.length) { document.getElementById('convPersonList').innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Sin personas asignadas</div></div>`; return; }
+  if (!myPeople.length) { document.getElementById('convPersonList').innerHTML = `<div class="empty-state"><div class="empty-title">Sin personas asignadas</div></div>`; return; }
   document.getElementById('convPersonList').innerHTML = myPeople.map(p => {
     const sem = p.semaforo || 1;
     const fb = (p.mis_feedbacks || []).length;
     const initials = p.nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-    const avatarBg = p.area==='movistar_arena'?'background:#e0f2fe;color:#0369a1':p.area==='espana'?'background:#fef3c7;color:#92400e':'background:#f0fdf4;color:#166534';
+    const avatarBg = '';
     return `<div class="person-row" onclick="openFbSheet('${p.id}','${c.id}')">
       <div class="person-avatar" style="${avatarBg}">${initials}</div>
       <div style="flex:1;min-width:0">
         <div class="person-name">${esc(p.nombre)}</div>
-        <div class="person-meta">${areaNombre(p.area)}${fb?' · <span style="color:#0369a1">✓ Feedback dado</span>':' · Sin feedback todavía'}</div>
+        <div class="person-meta">${areaNombre(p.area)}${fb?' · <span style="color:var(--tinta);font-weight:600">Feedback dado</span>':' · Sin feedback todavía'}</div>
       </div>
       <span class="sem sem-${sem}">${sem}</span>
       <span class="chevron">›</span>
@@ -661,7 +692,7 @@ function openFbSheet(personaId, convId) {
   const prev = document.getElementById('fbPrevSection');
   if (myFbs.length) {
     prev.style.display = 'block';
-    document.getElementById('fbPrevList').innerHTML = myFbs.map(f => `<div class="fb-prev-item"><span class="sem sem-${f.puntaje}">${f.puntaje}</span><div><div style="font-size:12px;color:#374151">${f.promedio != null ? '<strong>' + f.promedio + ' de 5</strong> · ' : ''}${esc(f.comentario||'Sin comentario')}</div><div style="font-size:11px;color:#9ca3af">${f.created_at?new Date(f.created_at).toLocaleDateString('es-AR'):''}</div></div></div>`).join('');
+    document.getElementById('fbPrevList').innerHTML = myFbs.map(f => `<div class="fb-prev-item"><span class="sem sem-${f.puntaje}">${f.puntaje}</span><div><div style="font-size:12px;color:var(--tinta)">${f.promedio != null ? '<strong>' + f.promedio + ' de 5</strong> · ' : ''}${esc(f.comentario||'Sin comentario')}</div><div style="font-size:11px;color:var(--gris)">${f.created_at?new Date(f.created_at).toLocaleDateString('es-AR'):''}</div></div></div>`).join('');
   } else { prev.style.display = 'none'; }
   document.getElementById('fbSheet').classList.remove('hidden');
   setTimeout(() => document.getElementById('fbComentario').blur(), 10);
@@ -785,12 +816,12 @@ function renderLista() {
   const sector = document.getElementById('listaSector').value;
   const filas = lista.filter(x => !sector || x.puesto_id === sector);
   const body = document.getElementById('listaBody');
-  if (!filas.length) { body.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">${lista.length ? 'Nadie en este sector' : 'Nadie convocado todavía'}</div></div>`; return; }
+  if (!filas.length) { body.innerHTML = `<div class="empty-state"><div class="empty-title">${lista.length ? 'Nadie en este sector' : 'Nadie convocado todavía'}</div></div>`; return; }
   body.innerHTML = filas.map(x => {
     const m = marca(x);
     const initials = String(x.nombre || '').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
     return `<div class="person-row" style="cursor:default">
-      <div class="person-avatar" style="background:#f4f4f5;color:#52525b">${esc(initials)}</div>
+      <div class="person-avatar">${esc(initials)}</div>
       <div style="flex:1;min-width:0">
         <div class="person-name">${esc(x.nombre)}</div>
         <div class="person-meta">${esc(x.puesto || 'Sin sector')}${x.estado === 'aprobado' || x.estado === 'confirmado' ? '' : ' · sin aprobar'}</div>
@@ -3805,22 +3836,32 @@ function cerrarIncid() { clearInterval(incTimer); cerrarIncHoja(); svCerrarTemas
 // Se guarda en el aparato ('tema'), el mismo que usa la gerencia.
 const SV_TEMAS = [['auto', 'Automático', 'Como tu celular'], ['claro', 'Claro', ''], ['oscuro', 'Oscuro', '']];
 function svTemaElegido() { try { const t = localStorage.getItem('tema'); return t === 'claro' || t === 'oscuro' ? t : 'auto'; } catch (_) { return 'auto'; } }
+// La barra del navegador del celular, del color de la barra de arriba.
+function svColorBarra() { if (typeof getComputedStyle !== 'function' || !document.querySelector) return; const m = document.querySelector('meta[name="theme-color"]'), c = getComputedStyle(document.documentElement).getPropertyValue('--bloque').trim(); if (m && c) m.content = c; }
+let svTemaBoton = null;
 function svPonerTema(t) {
   try { if (t === 'auto') localStorage.removeItem('tema'); else localStorage.setItem('tema', t); } catch (_) {}
   if (t === 'auto') document.documentElement.removeAttribute('data-tema'); else document.documentElement.setAttribute('data-tema', t);
-  svCerrarTemas(); document.getElementById('svBtnTema').focus();
+  svColorBarra(); const b = svTemaBoton; svCerrarTemas(); if (b) b.focus();
 }
+// El botón del tema está en varias barras (los shows, un show, la sala): el menú es el de su barra.
 function svAbrirTemas(ev) {
   if (ev) ev.stopPropagation();
-  const m = document.getElementById('svTemaMenu');
+  const btn = (ev && ev.currentTarget) || document.querySelector('.screen.active .sv-tema');
+  const m = btn && btn.closest('.app-bar') ? btn.closest('.app-bar').querySelector('.tema-menu') : null;
+  if (!m) return;
   if (!m.hidden) { svCerrarTemas(); return; }
+  svCerrarTemas(); svTemaBoton = btn;
   const t = svTemaElegido();
   m.innerHTML = '<div class="tema-menu-t">Tema</div>' + SV_TEMAS.map(([k, n, s]) => '<button type="button" class="tema-op" role="menuitemradio" aria-checked="' + (k === t) + '" onclick="svPonerTema(\'' + k + '\')"><i aria-hidden="true"></i><span>' + n + (s ? '<small>' + s + '</small>' : '') + '</span></button>').join('');
-  m.hidden = false; document.getElementById('svBtnTema').setAttribute('aria-expanded', 'true');
+  m.hidden = false; btn.setAttribute('aria-expanded', 'true');
   m.querySelector('[aria-checked="true"]').focus();
 }
-function svCerrarTemas() { const m = document.getElementById('svTemaMenu'); if (!m || m.hidden) return; m.hidden = true; document.getElementById('svBtnTema').setAttribute('aria-expanded', 'false'); }
-document.addEventListener('click', ev => { if (!ev.target.closest('#svTemaMenu')) svCerrarTemas(); });
+function svCerrarTemas() { if (!document.querySelectorAll) return; document.querySelectorAll('.app-bar .tema-menu').forEach(m => { m.hidden = true; }); document.querySelectorAll('.sv-tema').forEach(b => b.setAttribute('aria-expanded', 'false')); svTemaBoton = null; }
+document.addEventListener('click', ev => { if (!ev.target.closest('.tema-menu')) svCerrarTemas(); });
+try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', svColorBarra); } catch (_) {}
+svColorBarra();
+if (document.body && document.querySelector) document.body.dataset.pantalla = (document.querySelector('.screen.active') || {}).id || 'screenLogin';
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') svCerrarTemas(); });
 async function cargarIncid() {
   const { data, error } = await sb.rpc('sup_incidencias', { p_conv_id: currentConvId });
