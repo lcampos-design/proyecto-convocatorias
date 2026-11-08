@@ -45,7 +45,9 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&am
 // El mail: el botón que vuelve al contrato con el código puesto; el código bien grande
 // (y en el asunto, para verlo en el aviso del celular) por si lo escribe a mano; cuánto
 // dura y qué hacer si no lo pidió.
-export function armarMailCodigo({ nombre, codigo, link, minutos }) {
+// Sin contrato (sólo un documento, contrato-solo-documento.sql): el mail dice "documento".
+export function armarMailCodigo({ nombre, codigo, link, minutos, documento }) {
+  const D = s => documento ? s.replace(/contrato/g, 'documento') : s;
   const hola = nombre ? `Hola, ${String(nombre).trim().split(/\s+/)[0]}` : 'Hola';
   const separado = String(codigo).slice(0, 3) + ' ' + String(codigo).slice(3);
   const dura = cuantoDura(minutos);
@@ -62,7 +64,7 @@ export function armarMailCodigo({ nombre, codigo, link, minutos }) {
   <p style="font-size:13px;color:#6b7280;line-height:1.5">Si no estás firmando tu contrato, ignorá este mail: sin el código no se puede firmar.</p>
   <p style="font-size:13px;color:#6b7280">Show Business Solutions</p>
 </div>`;
-  return { subject: `Tu código para firmar el contrato: ${separado}`, text, html };
+  return { subject: D(`Tu código para firmar el contrato: ${separado}`), text: D(text), html: D(html) };
 }
 
 export default async function handler(req, res) {
@@ -97,7 +99,7 @@ export default async function handler(req, res) {
   }
 
   // El mail, desde la casilla del área.
-  const mail = armarMailCodigo({ nombre: r.nombre, codigo: r.codigo, link: linkConCodigo(token, r.codigo), minutos: r.minutos });
+  const mail = armarMailCodigo({ nombre: r.nombre, codigo: r.codigo, link: linkConCodigo(token, r.codigo), minutos: r.minutos, documento: !!r.solo_documentos });
   const from = r.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   try {
     const envio = await fetch('https://api.resend.com/emails', {

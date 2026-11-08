@@ -152,6 +152,18 @@ function pintarDomicilio() {
 // Una constancia de capacitación, por ejemplo: van debajo del contrato, se
 // firman con la misma firma, y en el PDF salen una hoja cada uno.
 function anexos() { return Array.isArray(contrato?.anexos) ? contrato.anexos : []; }
+// Sin contrato: sólo el documento (contrato-solo-documento.sql). La página dice
+// "documento" donde decía "contrato".
+function soloDocs() { return !!(contrato && contrato.solo_documentos); }
+function queEs() { return soloDocs() ? 'documento' : 'contrato'; }
+function botonFirmar() { return soloDocs() ? '"Firmar"' : '"Firmar contrato"'; }
+// Arriba de todo dice "Contrato de trabajo"; sin contrato, el nombre del documento.
+function ponerTituloPagina() {
+  if (!soloDocs()) return;
+  const a = anexos(), titulo = a.length === 1 ? String(a[0].titulo || 'Documento para firmar') : 'Documentos para firmar';
+  const el = document.querySelector('.page-title'); if (el) el.textContent = titulo;
+  document.title = titulo + ' — Show Business Solutions';
+}
 // El DNI son los números del medio del CUIL (sin el cero de adelante si tiene 7).
 function dniDeCuil(cuil) {
   const d = String(cuil || '').replace(/\D/g, '');
@@ -166,13 +178,14 @@ function fechaDDMMAAAA(iso) {
 function datosAnexoDe(d, fechaFirma) { return { nombre: d.nombre || '', dni: dniDeCuil(d.cuil), fecha: fechaFirma ? fechaDDMMAAAA(fechaFirma) : '' }; }
 function listaY(xs) { return xs.length <= 1 ? xs.join('') : xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1]; }
 function htmlAnexos() {
-  return anexos().map(a => `<div class="lbl">${esc(a.titulo || 'Documento')}<span class="lbl-sub">se firma junto con el contrato</span></div>
+  return anexos().map(a => `<div class="lbl">${esc(a.titulo || 'Documento')}${soloDocs() ? '' : '<span class="lbl-sub">se firma junto con el contrato</span>'}</div>
     <div class="contrato-texto anexo">${esc(a.texto || '')}<div class="anexo-datos">Nombre y apellido: ${esc(contrato.nombre || '')}
 DNI: ${esc(dniDeCuil(contrato.cuil))}
 Fecha: la del día que firmás</div></div>`).join('');
 }
 function textoConsentimiento() {
   const t = anexos().map(a => '“' + String(a.titulo || 'el documento adjunto') + '”');
+  if (soloDocs()) return `Leí ${t.length === 1 ? 'el documento ' + t[0] : 'los documentos ' + listaY(t)} y acepto firmarlo${t.length > 1 ? 's' : ''} por medios electrónicos, con el mismo valor legal que mi firma manuscrita (arts. 286 y 288 del Código Civil y Comercial de la Nación y art. 5 de la Ley N.º 25.506).`;
   return `Leí ${t.length ? 'el contrato y ' + listaY(t) : 'el contrato'} y acepto firmarlo${t.length ? 's' : ''} por medios electrónicos, con el mismo valor legal que mi firma manuscrita (arts. 286 y 288 del Código Civil y Comercial de la Nación y art. 5 de la Ley N.º 25.506).`;
 }
 
@@ -181,6 +194,7 @@ async function init() {
   const { data, error } = await sb.rpc('contrato_ver', { p_token: TOKEN });
   if (error || !data) { show('<div class="card"><div class="center">No encontramos este contrato. Puede que el link esté vencido o mal copiado.</div></div>'); return; }
   contrato = data;
+  ponerTituloPagina();
   // Firmado no vence: el link le muestra que ya firmó.
   if (contrato.estado === 'firmado') { borrarBorrador(); renderFirmado(); return; }
   if (contrato.vencido) { renderVencido(); return; }
@@ -197,9 +211,9 @@ async function verificarCodigoDelLink() {
   if (data && data.motivo === 'vencido') { contrato.vencido = true; renderVencido(); return; }
   if (error || !data || !data.ok) {
     const m = data && data.motivo;
-    err.textContent = m === 'codigo' ? 'Ese código no es el último que te mandamos. Usá el botón del mail más nuevo, o tocá "Firmar contrato" y te mandamos otro.'
-      : m === 'codigo_vencido' || m === 'intentos' ? 'El código de ese mail ya venció. Tocá "Firmar contrato" y te mandamos uno nuevo.'
-      : 'No pudimos verificar el código del mail. Tocá "Firmar contrato" y te mandamos otro.';
+    err.textContent = m === 'codigo' ? 'Ese código no es el último que te mandamos. Usá el botón del mail más nuevo, o tocá ' + botonFirmar() + ' y te mandamos otro.'
+      : m === 'codigo_vencido' || m === 'intentos' ? 'El código de ese mail ya venció. Tocá ' + botonFirmar() + ' y te mandamos uno nuevo.'
+      : 'No pudimos verificar el código del mail. Tocá ' + botonFirmar() + ' y te mandamos otro.';
     err.style.display = 'block';
     (document.getElementById('sigCanvas') || err).scrollIntoView({ block: 'center' });
     return;
@@ -207,8 +221,8 @@ async function verificarCodigoDelLink() {
   codigoOk = true;
   const listo = signaturePad && !signaturePad.isEmpty() && document.getElementById('consentChk')?.checked
     && (!tieneLineaDomicilio() || String(document.getElementById('domicilio')?.value || '').trim().length >= 5);
-  aviso.innerHTML = listo ? '<strong>Código verificado.</strong> Ya está todo: tocá "Firmar contrato".'
-    : '<strong>Código verificado.</strong> ' + (tieneLineaDomicilio() ? 'Completá tu domicilio, dibujá' : 'Dibujá') + ' tu firma, aceptá la declaración y tocá "Firmar contrato".';
+  aviso.innerHTML = listo ? '<strong>Código verificado.</strong> Ya está todo: tocá ' + botonFirmar() + '.'
+    : '<strong>Código verificado.</strong> ' + (tieneLineaDomicilio() ? 'Completá tu domicilio, dibujá' : 'Dibujá') + ' tu firma, aceptá la declaración y tocá ' + botonFirmar() + '.';
   aviso.style.display = 'block';
   aviso.scrollIntoView({ block: 'center' });
 }
@@ -223,16 +237,16 @@ function renderVencido() {
   show(`<div class="card">
     <div class="ic">${ICONO_RELOJ}</div>
     <div class="conv-name" style="text-align:center">Este link ya no sirve</div>
-    <div class="center" style="padding:12px 0 0">${contrato.nombre ? esc(String(contrato.nombre).split(' ')[0]) + ', e' : 'E'}l link para firmar tu contrato venció${cuando ? ' el ' + cuando : ''}, así que no se puede firmar desde acá.</div>
-    <div class="center" style="padding:10px 0 0">Escribile a la coordinación y te mandan uno nuevo. Tu contrato sigue estando: lo único que venció es el link.</div>
+    <div class="center" style="padding:12px 0 0">${contrato.nombre ? esc(String(contrato.nombre).split(' ')[0]) + ', e' : 'E'}l link para firmar tu ${queEs()} venció${cuando ? ' el ' + cuando : ''}, así que no se puede firmar desde acá.</div>
+    <div class="center" style="padding:10px 0 0">Escribile a la coordinación y te mandan uno nuevo. Tu ${queEs()} sigue estando: lo único que venció es el link.</div>
   </div>`);
 }
 
 function renderFirmado() {
   show(`<div class="card">
     <div class="ic">${ICONO_OK}</div>
-    <div class="conv-name" style="text-align:center">Contrato firmado</div>
-    <div class="center" style="padding:12px 0 0">Ya firmaste este contrato${contrato.fecha_firma ? ', el ' + new Date(contrato.fecha_firma).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' }) : ''}. Gracias.</div>
+    <div class="conv-name" style="text-align:center">${soloDocs() ? 'Documento firmado' : 'Contrato firmado'}</div>
+    <div class="center" style="padding:12px 0 0">Ya firmaste este ${queEs()}${contrato.fecha_firma ? ', el ' + new Date(contrato.fecha_firma).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' }) : ''}. Gracias.</div>
   </div>`);
 }
 
@@ -243,8 +257,7 @@ function renderForm() {
     ${tieneLineaDomicilio() ? `<div class="lbl">Tu domicilio <span style="color:#dc2626">*</span></div>
     <input class="fi" id="domicilio" placeholder="Calle y número, piso/depto, localidad" autocomplete="street-address" oninput="pintarDomicilio()">
     <div class="ayuda">Va en el contrato, en el lugar de la línea para completar.</div>` : ''}
-    <div class="lbl">Contrato de trabajo</div>
-    <div class="contrato-texto" id="textoContrato">${textoConDomicilio('')}</div>
+    ${soloDocs() ? '' : '<div class="lbl">Contrato de trabajo</div><div class="contrato-texto" id="textoContrato">' + textoConDomicilio('') + '</div>'}
     ${htmlAnexos()}
     <div class="lbl">Tu firma (dibujá con el dedo o el mouse)</div>
     <div class="sig-wrap">
@@ -258,7 +271,7 @@ function renderForm() {
     <div class="msg ok" id="aviso"></div>
     <div class="btnrow">
       <button class="btn btn-sec" onclick="limpiarFirma()">Borrar</button>
-      <button class="btn" id="firmarBtn" onclick="firmar()" disabled>Firmar contrato</button>
+      <button class="btn" id="firmarBtn" onclick="firmar()" disabled>${soloDocs() ? 'Firmar' : 'Firmar contrato'}</button>
     </div>
     <div class="codigo" id="codigoBox">
       <div class="lbl" style="margin-top:0">Código de verificación</div>
@@ -268,7 +281,7 @@ function renderForm() {
       <button class="link-btn" type="button" onclick="pedirCodigo()">Mandarme otro código</button>
     </div>
     <div class="msg err" id="err"></div>
-    <div class="legal">Al firmar se genera un informe de auditoría con la fecha, hora, dirección IP y dispositivo de cada paso (envío, apertura, ${contrato.pide_codigo ? 'código de verificación por mail, ' : ''}consentimiento y firma), que queda incorporado como última página del contrato firmado.</div>
+    <div class="legal">Al firmar se genera un informe de auditoría con la fecha, hora, dirección IP y dispositivo de cada paso (envío, apertura, ${contrato.pide_codigo ? 'código de verificación por mail, ' : ''}consentimiento y firma), que queda incorporado como última página del ${queEs()} firmado.</div>
   </div>`);
   const canvas = document.getElementById('sigCanvas');
   signaturePad = new SignaturePad(canvas, { backgroundColor: 'rgba(255,255,255,0)' });
@@ -420,7 +433,7 @@ function agregarCertificado(pdfDoc, font, fontBold, rgb, cert, logo) {
   const nuevaPaginaSiHaceFalta = alto => { if (y - alto < M) { page = pdfDoc.addPage([W, H]); y = H - M; } };
 
   if (logo) { const d = logo.scale(36 / logo.width); page.drawImage(logo, { x: W - M - d.width, y: y - d.height, width: d.width, height: d.height }); }
-  page.drawText('CONTRATO DE TRABAJO A PLAZO FIJO', { x: M, y: y - 16, size: 16, font: fontBold, color: tinta });
+  page.drawText(tituloInforme(cert), { x: M, y: y - 16, size: 16, font: fontBold, color: tinta });
   y -= 34;
   // La fecha va al lado del subtítulo: a la derecha está el logo.
   const fechaCorta = (cert.fecha_firma || '').slice(0, 10);
@@ -436,7 +449,8 @@ function agregarCertificado(pdfDoc, font, fontBold, rgb, cert, logo) {
     ['ID de transacción:', cert.transaccion_id || '—'],
     ['Huella SHA-256:', cert.hash_texto || '—']
   ];
-  if (cert.anexos && cert.anexos.length) filas.push(['Documentos:', 'Contrato de trabajo; ' + cert.anexos.map(a => (a.titulo || 'Documento') + ' (huella SHA-256 ' + (a.huella || '—') + ')').join('; ')]);
+  if (cert.solo_documentos) { const iH = filas.findIndex(f => f[0] === 'Huella SHA-256:'); if (iH >= 0) filas.splice(iH, 1); }
+  if (cert.anexos && cert.anexos.length) filas.push(['Documentos:', (cert.solo_documentos ? '' : 'Contrato de trabajo; ') + cert.anexos.map(a => (a.titulo || 'Documento') + ' (huella SHA-256 ' + (a.huella || '—') + ')').join('; ')]);
   const size = 9, lh = 13;
   let altoPanel = 12;
   const filasCalc = filas.map(([lab, val]) => { const ls = wrapPlain(val, font, size, maxWidth - 130); altoPanel += ls.length * lh; return [lab, ls]; });
@@ -485,6 +499,13 @@ function agregarCertificado(pdfDoc, font, fontBold, rgb, cert, logo) {
   page.drawLine({ start: { x: M, y: y + 6 }, end: { x: W - M, y: y + 6 }, thickness: 0.7, color: rgb(0.8, 0.8, 0.8) });
   y -= 8;
   lineasLegal.forEach(ln => { page.drawText(ln, { x: M, y, size: size - 0.5, font, color: gris }); y -= lh - 2; });
+}
+
+// Sin contrato, el informe lleva el nombre del documento.
+function tituloInforme(cert) {
+  if (!cert.solo_documentos) return 'CONTRATO DE TRABAJO A PLAZO FIJO';
+  const a = cert.anexos || [];
+  return a.length === 1 ? String(a[0].titulo || 'DOCUMENTO').toUpperCase() : 'DOCUMENTOS FIRMADOS';
 }
 
 function descripcionEvento(ev, cert) {
@@ -595,6 +616,14 @@ async function generarContratoPDF(texto, opts) {
   const { PDFDocument, rgb } = PDFLib;
   const pdfDoc = await PDFDocument.create();
   const fuentes = await cargarFuentes(pdfDoc);
+  // Sólo documentos (sin contrato): la hoja de cada uno y, firmado, el informe.
+  if (opts.soloDocumentos) {
+    let logoSolo = null;
+    try { if (opts.logoUrl) logoSolo = await incrustarImagen(pdfDoc, opts.logoUrl); } catch (_) {}
+    await agregarAnexos(pdfDoc, fuentes, rgb, Object.assign({}, opts, { anexos: opts.anexos || [] }), logoSolo);
+    if (opts.certificado && typeof agregarCertificado === 'function') agregarCertificado(pdfDoc, fuentes.normal, fuentes.negrita, rgb, opts.certificado, logoSolo);
+    return await pdfDoc.saveAsBase64({ dataUri: false });
+  }
 
   const W = 595.28, H = 841.89, M = 46;
   const maxWidth = W - M * 2;
@@ -738,7 +767,7 @@ async function pedirCodigo() {
   }
 }
 function mostrarCodigo(email) {
-  document.getElementById('codigoTxt').innerHTML = 'Te mandamos un mail' + (email ? ' a <strong>' + esc(email) + '</strong>' : '') + ' con un código de 6 números (vence en ' + cuantoDura(minutosCodigo) + '). Tocá el botón del mail, <strong>"Volver al contrato y firmar"</strong>, o escribí el código acá. Si no lo ves, revisá el correo no deseado.';
+  document.getElementById('codigoTxt').innerHTML = 'Te mandamos un mail' + (email ? ' a <strong>' + esc(email) + '</strong>' : '') + ' con un código de 6 números (vence en ' + cuantoDura(minutosCodigo) + '). Tocá el botón del mail, <strong>"Volver al ' + queEs() + ' y firmar"</strong>, o escribí el código acá. Si no lo ves, revisá el correo no deseado.';
   document.getElementById('aviso').style.display = 'none';
   document.getElementById('codigoBox').classList.add('on');
   document.getElementById('firmarBtn').style.display = 'none';
@@ -785,14 +814,14 @@ async function firmarYa(domicilio) {
       await pedirCodigo(); return;
     }
     if (data?.motivo === 'ya_firmado') borrarBorrador();
-    if (error || !data?.ok) throw new Error(data?.motivo === 'ya_firmado' ? 'Este contrato ya fue firmado.' : data?.motivo === 'domicilio' ? 'Completá tu domicilio: va en el contrato.' : 'No se pudo registrar la firma.');
+    if (error || !data?.ok) throw new Error(data?.motivo === 'ya_firmado' ? 'Este ' + queEs() + ' ya fue firmado.' : data?.motivo === 'domicilio' ? 'Completá tu domicilio: va en el contrato.' : 'No se pudo registrar la firma.');
 
     const pdfBase64 = await generarContratoPDF(data.texto_contrato, {
       logoUrl: location.origin + '/logo-sbs.png',
       firmaEmpleadorUrl: data.firma_empleador_img ? (location.origin + '/' + data.firma_empleador_img) : null,
       firmaTrabajadorBytes: dataUrlToBytes(firmaDataUrl),
       destacar: [data.nombre, data.cuil, data.domicilio, data.puesto, data.fecha_inicio, data.fecha_fin, data.monto_letras, data.monto_numero, data.fecha_firma_doc],
-      anexos: data.anexos || [], datosAnexo: datosAnexoDe(data, data.fecha_firma),
+      anexos: data.anexos || [], datosAnexo: datosAnexoDe(data, data.fecha_firma), soloDocumentos: !!data.solo_documentos,
       certificado: data
     });
     await sb.rpc('contrato_guardar_pdf', { p_token: TOKEN, p_pdf_firmado: pdfBase64 });
