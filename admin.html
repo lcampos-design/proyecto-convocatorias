@@ -799,6 +799,14 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 
 
 /* Aviso de qué le falta a la convocatoria para llenar el contrato solo */
+/* Qué mandás: confirmación y contrato / sólo la confirmación / sólo el contrato (pedido de Mer). */
+.qm{display:flex;flex-wrap:wrap;gap:2px;padding:3px;background:#f3f4f6;border-radius:10px}
+.fg .qm label{position:relative;flex:1 1 auto;display:flex;align-items:center;justify-content:center;margin:0;border-radius:8px;padding:8px 10px;font-size:12.5px;font-weight:600;color:#4b5563;text-transform:none;letter-spacing:0;cursor:pointer;white-space:nowrap;text-align:center}
+.qm input{position:absolute;opacity:0;pointer-events:none}
+.fg .qm label:has(input:checked){background:#fff;color:#111827;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.fg .qm label:has(input:focus-visible){outline:2px solid #534AB7;outline-offset:1px}
+.qm-nota{font-size:11.5px;color:#6b7280;margin-top:6px;line-height:1.45}
+.qm-t{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
 .ct-aviso{font-size:11.5px;color:#0f6e56;display:flex;align-items:flex-start;gap:6px;margin-top:2px;line-height:1.45}
 .ct-aviso-falta{color:#92400e}
 .lbl-auto{font-weight:500;text-transform:none;letter-spacing:0;color:#9ca3af;font-size:10.5px;margin-left:5px}
@@ -2197,6 +2205,14 @@ tr:hover td{background:#f9f9fb}
     </div>
     <div id="mMailStep2" style="display:none">
       <div class="fg"><label>Para</label><input type="email" class="fi" id="mailTo" readonly style="background:#f9fafb"></div>
+      <div class="fg" id="mailQueBlock" style="display:none"><label>Qué mandás</label>
+        <div class="qm" role="radiogroup" aria-label="Qué mandás">
+          <label><input type="radio" name="mailQue" value="ambos" onchange="elegirQueMandas('mail')">Confirmación y contrato</label>
+          <label><input type="radio" name="mailQue" value="conf" onchange="elegirQueMandas('mail')">Sólo la confirmación</label>
+          <label><input type="radio" name="mailQue" value="contrato" onchange="elegirQueMandas('mail')">Sólo el contrato</label>
+        </div>
+        <div class="qm-nota" id="mailQueNota"></div>
+      </div>
       <div class="fg"><label>Asunto</label><input type="text" class="fi" id="mailSubject"></div>
       <div id="mailMvFields" style="display:none">
         <div class="frow">
@@ -2213,8 +2229,9 @@ tr:hover td{background:#f9f9fb}
         </div>
       </div>
       <div id="mailContratoBlock" style="display:none;margin:4px 0 10px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="mailAdjContrato" style="width:16px;height:16px" onchange="toggleContratoFields('mail')"> <i class="ic ic-doc"></i> Adjuntar contrato de trabajo (con link para firmar)</label>
-        <div id="mailContratoFields" style="display:none;margin-top:10px">
+        <div class="qm-t"><i class="ic ic-doc"></i> Datos del contrato</div>
+        <input type="checkbox" id="mailAdjContrato" hidden>
+        <div id="mailContratoFields" style="display:none">
           <div class="frow">
             <div class="fg"><label>Nombre y apellido</label><input type="text" class="fi" id="mcNombre"></div>
             <div class="fg"><label>CUIL</label><input type="text" class="fi" id="mcCuil"></div>
@@ -2263,6 +2280,14 @@ tr:hover td{background:#f9f9fb}
     </div>
     <div id="bmStep2" style="display:none">
       <div id="bmRecap" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px"></div>
+      <div class="fg" id="bmQueBlock" style="display:none"><label>Qué mandás</label>
+        <div class="qm" role="radiogroup" aria-label="Qué mandás">
+          <label><input type="radio" name="bmQue" value="ambos" onchange="elegirQueMandas('bm')">Confirmación y contrato</label>
+          <label><input type="radio" name="bmQue" value="conf" onchange="elegirQueMandas('bm')">Sólo la confirmación</label>
+          <label><input type="radio" name="bmQue" value="contrato" onchange="elegirQueMandas('bm')">Sólo el contrato</label>
+        </div>
+        <div class="qm-nota" id="bmQueNota"></div>
+      </div>
       <div class="fg"><label>Asunto</label><input type="text" class="fi" id="bmSubject"></div>
       <div id="bmMvFields" style="display:none">
         <div class="frow">
@@ -2279,8 +2304,9 @@ tr:hover td{background:#f9f9fb}
         </div>
       </div>
       <div id="bmContratoBlock" style="display:none;margin:4px 0 10px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="bmAdjContrato" style="width:16px;height:16px" onchange="toggleContratoFields('bm')"> <i class="ic ic-doc"></i> Adjuntar contrato de trabajo a cada uno (con link para firmar)</label>
-        <div id="bmContratoFields" style="display:none;margin-top:10px">
+        <div class="qm-t"><i class="ic ic-doc"></i> Datos del contrato</div>
+        <input type="checkbox" id="bmAdjContrato" hidden>
+        <div id="bmContratoFields" style="display:none">
           <div style="font-size:11px;color:#9ca3af;margin-bottom:6px">El nombre, apellido y CUIL de cada contrato se toman automáticamente de cada persona seleccionada.</div>
           <div class="fg"><label>Puesto</label><input type="text" class="fi" id="bmcPuesto"></div>
           <div class="frow">
@@ -10200,6 +10226,59 @@ IMPORTANTE: En caso de llegada tarde, se descontará un 10% sobre la remuneraci�
 Saludos att!`;
 }
 let mailNombreCtx = '', mailFechaLimiteCtx = '[COMPLETAR FECHA LÍMITE]', bmFechaLimiteCtx = '[COMPLETAR FECHA LÍMITE]';
+// El nombre del evento y el asunto de la confirmación (para volver a él si se pasa de "Sólo el contrato" a otra).
+let mailConvNombreCtx = '', mailAsuntoConf = '', bmConvNombreCtx = '', bmAsuntoConf = '';
+
+// ── QUÉ MANDÁS ──
+// Pedido de Mer: poder mandar sólo el contrato, sin el mail de confirmación (por ejemplo, a
+// quienes ya confirmaron). Tres opciones, cuando la convocatoria tiene contratos:
+// - Confirmación y contrato: lo de siempre (la confirmación, con el contrato y su link).
+// - Sólo la confirmación: sin contrato.
+// - Sólo el contrato: un mail corto con el PDF y el link para firmar, sin los datos del show
+//   ni los botones para confirmar la asistencia.
+// La casilla escondida (mailAdjContrato / bmAdjContrato) sigue diciendo si va el contrato.
+const QM_NOTAS = {
+  ambos: 'El mail de confirmación, con el contrato en PDF y el link para firmarlo.',
+  conf: 'Sólo el mail de confirmación, sin contrato.',
+  contrato: 'Un mail corto con el contrato en PDF y el link para firmarlo (va donde dice {link}), sin los datos del show ni los botones para confirmar la asistencia.'
+};
+function queMandas(p) { const r = document.querySelector('input[name="' + p + 'Que"]:checked'); return r ? r.value : 'conf'; }
+function elegirQueMandas(p, valor) {
+  if (valor) document.querySelectorAll('input[name="' + p + 'Que"]').forEach(r => { r.checked = r.value === valor; });
+  const bm = p === 'bm', q = queMandas(p);
+  const blk = document.getElementById(bm ? 'bmContratoBlock' : 'mailContratoBlock'), hab = blk.dataset.hab === '1';
+  document.getElementById(p + 'QueBlock').style.display = hab ? 'block' : 'none';
+  document.getElementById(p + 'AdjContrato').checked = hab && q !== 'conf';
+  blk.style.display = hab && q !== 'conf' ? 'block' : 'none';
+  toggleContratoFields(p);
+  // Los datos del show (fecha, horario, monto...) son de la confirmación.
+  document.getElementById(bm ? 'bmMvFields' : 'mailMvFields').style.display = q === 'contrato' ? 'none' : 'block';
+  document.getElementById(p + 'QueNota').textContent = QM_NOTAS[q] || '';
+  const area = bm ? bmFromArea : mailFromArea, ev = bm ? bmConvNombreCtx : mailConvNombreCtx;
+  document.getElementById(bm ? 'bmSubject' : 'mailSubject').value = q === 'contrato'
+    ? 'Contrato de trabajo - ' + (ev || '[EVENTO]') + (area === 'movistar' ? ' - Movistar Arena' : '')
+    : (bm ? bmAsuntoConf : mailAsuntoConf);
+  if (bm) regenBulkBody(); else regenMailBody();
+}
+// "Sólo el contrato": el texto. {link} es donde va el link para firmar (si se borra, va al final).
+function contratoSoloBody(nombre, evento, puesto) {
+  return `Hola ${nombre}:
+
+Te mandamos tu contrato de trabajo para ${evento || '[EVENTO]'}${puesto ? ' (' + puesto + ')' : ''}. Va adjunto en PDF, y lo firmás online desde este link:
+
+{link}
+
+Al tocar "Firmar contrato" te llega un código a este mail: con el botón de ese mail volvés al contrato y firmás.
+
+Cualquier duda, respondé este mail.
+
+Saludos att!`;
+}
+// Pone el link para firmar donde dice {link} o, si no está, al final (como siempre).
+function conLinkDeFirma(texto, link) {
+  return /\{link\}/.test(texto) ? texto.replace(/\{link\}/g, link)
+    : texto + `\n\nAdjuntamos tu contrato de trabajo. Para firmarlo online, ingresá a este link:\n${link}`;
+}
 // Cuerpo del mail de Externos, armado desde sus campos editables.
 function externosBodyFromFields(saludo, fecha, horario, venue, monto, sector, whatsapp) {
   return `Estimado/a ${saludo},
@@ -10233,12 +10312,14 @@ Show Business Solutions`;
 }
 function regenMailBody() {
   const f = id => document.getElementById(id).value;
+  if (queMandas('mail') === 'contrato') { document.getElementById('mailBody').value = contratoSoloBody(mailNombreCtx || '', mailConvNombreCtx, v('mcPuesto')); return; }
   document.getElementById('mailBody').value = mailFromArea === 'movistar'
     ? movistarBodyFromFields(mailNombreCtx || '', f('mailFFecha'), f('mailFHorario'), f('mailFMonto'), f('mailFSector'), mailFechaLimiteCtx)
     : externosBodyFromFields(mailNombreCtx || '', f('mailFFecha'), f('mailFHorario'), f('mailFVenue'), f('mailFMonto'), f('mailFSector'), f('mailFWhatsapp'));
 }
 function regenBulkBody() {
   const f = id => document.getElementById(id).value;
+  if (queMandas('bm') === 'contrato') { document.getElementById('bmBody').value = contratoSoloBody('{nombre}', bmConvNombreCtx, '{puesto}'); return; }
   document.getElementById('bmBody').value = bmFromArea === 'movistar'
     ? movistarBodyFromFields('{nombre}', f('bmFFecha'), f('bmFHorario'), f('bmFMonto'), f('bmFSector'), bmFechaLimiteCtx)
     : externosBodyFromFields('{nombre}', f('bmFFecha'), f('bmFHorario'), f('bmFVenue'), f('bmFMonto'), f('bmFSector'), f('bmFWhatsapp'));
@@ -10268,6 +10349,7 @@ function prepMailTemplate(area) {
   mailContratoCtx = { convId: solConvId || null, personaId: solPersonaId, email: solEmail || '' };
   const ctBlock = document.getElementById('mailContratoBlock');
   ctBlock.style.display = conv?.contratos_habilitados ? 'block' : 'none';
+  ctBlock.dataset.hab = conv?.contratos_habilitados ? '1' : '';
   // Con contratos (desde el 6-nov, lo normal), el contrato va tildado: se puede sacar.
   document.getElementById('mailAdjContrato').checked = !!conv?.contratos_habilitados;
   document.getElementById('mailContratoFields').style.display = conv?.contratos_habilitados ? 'block' : 'none';
@@ -10305,7 +10387,8 @@ function prepMailTemplate(area) {
     document.getElementById('mailFWhatsapp').value = conv?.link_whatsapp || '[COMPLETAR LINK WHATSAPP]';
     extraFields.style.display = 'flex';
   }
-  regenMailBody();
+  mailConvNombreCtx = convNombre; mailAsuntoConf = document.getElementById('mailSubject').value;
+  elegirQueMandas('mail', document.getElementById('mailAdjContrato').checked ? 'ambos' : 'conf');
   document.getElementById('mailTo').value = solEmail || '';
   document.getElementById('mMailStep1').style.display = 'none';
   document.getElementById('mMailStep2').style.display = 'block';
@@ -10442,7 +10525,7 @@ async function copiarLinkFirma() {
 
 async function generarContratoSinMail() {
   if (!document.getElementById('mailAdjContrato') || !document.getElementById('mailAdjContrato').checked) {
-    toast('Primero tildá "Adjuntar contrato de trabajo"'); return;
+    toast('Primero elegí "Confirmación y contrato" o "Sólo el contrato"'); return;
   }
   const to = document.getElementById('mailTo').value.trim();
   const conv = convs.find(c => c.id === (mailContratoCtx && mailContratoCtx.convId));
@@ -10511,13 +10594,15 @@ async function sendConfirmationMail() {
       contratoRow = await crearContrato(datos, mailContratoCtx?.convId, mailContratoCtx?.personaId, to, null, null, mailFromArea);
       const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(contratoRow.texto_contrato), destacar: destacarDe(datos) });
       attachments = [{ filename: 'contrato.pdf', content: pdfBase64 }];
-      body += `\n\nAdjuntamos tu contrato de trabajo. Para firmarlo online, ingresá a este link:\n${location.origin}/contrato.html?t=${contratoRow.token}`;
+      body = conLinkDeFirma(body, `${location.origin}/contrato.html?t=${contratoRow.token}`);
     }
+    // Sólo el contrato: sin los botones para confirmar la asistencia.
+    const soloContrato = queMandas('mail') === 'contrato';
 
     const res = await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea, { cuit: mailConfirmCuit, convId: mailConfirmConv, firma: await confFirma(mailConfirmCuit, mailConfirmConv) }), text: body, ...(attachments ? { attachments } : {}) })
+      body: JSON.stringify({ from, to: [to], subject, html: renderEmailHtml(body, from, mailFromArea, soloContrato ? null : { cuit: mailConfirmCuit, convId: mailConfirmConv, firma: await confFirma(mailConfirmCuit, mailConfirmConv) }), text: body, ...(attachments ? { attachments } : {}) })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || data.error || 'Error al enviar');
@@ -10609,6 +10694,7 @@ function prepBulkTemplate(area) {
   const convNombre = conv?.nombre || '[EVENTO]';
   const bmCtBlock = document.getElementById('bmContratoBlock');
   bmCtBlock.style.display = conv?.contratos_habilitados ? 'block' : 'none';
+  bmCtBlock.dataset.hab = conv?.contratos_habilitados ? '1' : '';
   document.getElementById('bmAdjContrato').checked = false;
   document.getElementById('bmContratoFields').style.display = 'none';
   if (conv?.contratos_habilitados) {
@@ -10648,7 +10734,8 @@ function prepBulkTemplate(area) {
     document.getElementById('bmFWhatsapp').value = conv?.link_whatsapp || '[COMPLETAR LINK WHATSAPP]';
     bmExtra.style.display = 'flex';
   }
-  regenBulkBody();
+  bmConvNombreCtx = convNombre; bmAsuntoConf = document.getElementById('bmSubject').value;
+  elegirQueMandas('bm', document.getElementById('bmAdjContrato').checked ? 'ambos' : 'conf');
   document.getElementById('bmRecap').innerHTML = `Vas a enviar a <b>${bulkMailRecipients.length}</b> persona(s).${bmSinEmail ? ` <span style="color:#9a3412">(${bmSinEmail} sin email — se omiten)</span>` : ''} El texto <b>{nombre}</b> se reemplaza por el nombre de cada persona.`;
   document.getElementById('bmStep1').style.display = 'none';
   document.getElementById('bmStep2').style.display = 'block';
@@ -10659,7 +10746,8 @@ async function sendBulkMail() {
   const bodyTpl = document.getElementById('bmBody').value.trim();
   if (!subject || !bodyTpl) { toast('Completá asunto y mensaje'); return; }
   if (!bulkMailRecipients.length) { toast('No hay destinatarios'); return; }
-  if (!confirm(`¿Enviar la confirmación a ${bulkMailRecipients.length} persona(s)?`)) return;
+  const que = queMandas('bm');
+  if (!confirm(`¿Enviar ${que === 'contrato' ? 'el contrato' : que === 'ambos' ? 'la confirmación y el contrato' : 'la confirmación'} a ${bulkMailRecipients.length} persona(s)?`)) return;
   const from = bmFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   const btn = document.getElementById('bmSendBtn'); btn.disabled = true;
   const prog = document.getElementById('bmProgress'); prog.style.display = 'block';
@@ -10711,11 +10799,11 @@ async function sendBulkMail() {
         contratoRow = await crearContrato(datos, currentConvId, r.personaId, r.email, r.postulacionId, r.puestoId, bmFromArea);
         const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(contratoRow.texto_contrato), destacar: destacarDe(datos) });
         attachments = [{ filename: 'contrato.pdf', content: pdfBase64 }];
-        body += `\n\nAdjuntamos tu contrato de trabajo. Para firmarlo online, ingresá a este link:\n${location.origin}/contrato.html?t=${contratoRow.token}`;
+        body = conLinkDeFirma(body, `${location.origin}/contrato.html?t=${contratoRow.token}`);
       }
       const res = await fetch('/api/send-email', {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea, { cuit: r.cuit, convId: currentConvId, firma: await confFirma(r.cuit, currentConvId) }), text: body, ...(attachments ? { attachments } : {}) })
+        body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea, que === 'contrato' ? null : { cuit: r.cuit, convId: currentConvId, firma: await confFirma(r.cuit, currentConvId) }), text: body, ...(attachments ? { attachments } : {}) })
       });
       if (res.ok) { ok++; if (contratoRow) await marcarContratoEnviado(contratoRow.id); } else fail++;
     } catch (_) { fail++; }

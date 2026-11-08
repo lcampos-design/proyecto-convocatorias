@@ -6,12 +6,32 @@
 // contrato-codigo.sql). Así firma quien tiene acceso a esa casilla, no
 // cualquiera que tenga el link.
 //
+// Firmando desde el celular, ir al mail a copiar el código y volver era un
+// lío (y a veces vencía): el mail trae un botón que vuelve al contrato con el
+// código ya puesto. El código va después del "#", que no viaja al servidor
+// ni queda en los registros; la página lo verifica y lo borra de la dirección.
+// El link es siempre el del sitio (nunca el que diga el pedido), así nadie
+// puede hacer que el mail apunte a otro lado.
+//
 // Necesita la clave de servidor de Supabase (la función que crea el código no
 // la puede llamar nadie más) y la de Resend, para mandar el mail. Las dos van
 // como variables de entorno en Vercel, nunca en el código.
 
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SITIO = 'https://convocatorias.show-bs.com';
+
+// El link del botón: el contrato, con el código para que se verifique solo.
+export function linkConCodigo(token, codigo) {
+  return `${SITIO}/contrato?t=${encodeURIComponent(token)}#codigo=${encodeURIComponent(codigo)}`;
+}
+
+// "1 hora" / "15 minutos" (lo que diga la base; si no dice, los 15 de antes).
+export function cuantoDura(minutos) {
+  const m = Math.round(Number(minutos)) > 0 ? Math.round(Number(minutos)) : 15;
+  if (m % 60 === 0) return m === 60 ? '1 hora' : (m / 60) + ' horas';
+  return m + ' minutos';
+}
 
 // "maria.perez@gmail.com" → "ma***@gmail.com": que sepa a dónde fue, sin mostrar la casilla entera.
 export function enmascarar(email) {
@@ -22,16 +42,23 @@ export function enmascarar(email) {
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-// El mail: el código bien grande (y en el asunto, para verlo en el aviso del celular), cuánto dura y qué hacer si no lo pidió.
-export function armarMailCodigo({ nombre, codigo }) {
+// El mail: el botón que vuelve al contrato con el código puesto; el código bien grande
+// (y en el asunto, para verlo en el aviso del celular) por si lo escribe a mano; cuánto
+// dura y qué hacer si no lo pidió.
+export function armarMailCodigo({ nombre, codigo, link, minutos }) {
   const hola = nombre ? `Hola, ${String(nombre).trim().split(/\s+/)[0]}` : 'Hola';
   const separado = String(codigo).slice(0, 3) + ' ' + String(codigo).slice(3);
-  const text = `${hola}:\n\nTu código para firmar el contrato es: ${separado}\n\nEscribilo en la página del contrato. Vence en 15 minutos.\n\nSi no estás firmando tu contrato, ignorá este mail: sin el código no se puede firmar.\n\nShow Business Solutions`;
+  const dura = cuantoDura(minutos);
+  const text = `${hola}:\n\n` + (link ? `Para terminar de firmar tu contrato, entrá a este link (ya lleva el código):\n${link}\n\nO escribí el código en la página del contrato: ${separado}` : `Tu código para firmar el contrato es: ${separado}\n\nEscribilo en la página del contrato.`)
+    + `\n\nVence en ${dura}.\n\nSi no estás firmando tu contrato, ignorá este mail: sin el código no se puede firmar.\n\nShow Business Solutions`;
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111827">
-  <p style="font-size:15px">${esc(hola)}:</p>
-  <p style="font-size:15px;line-height:1.5">Tu código para firmar el contrato es:</p>
-  <p style="margin:18px 0;font-size:34px;font-weight:bold;letter-spacing:6px;color:#1a1a1a">${esc(separado)}</p>
-  <p style="font-size:15px;line-height:1.5">Escribilo en la página del contrato. Vence en 15 minutos.</p>
+  <p style="font-size:15px">${esc(hola)}:</p>` + (link ? `
+  <p style="font-size:15px;line-height:1.5">Para terminar de firmar tu contrato, tocá el botón: vuelve al contrato con el código ya puesto.</p>
+  <p style="margin:22px 0"><a href="${esc(link)}" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Volver al contrato y firmar</a></p>
+  <p style="font-size:14px;line-height:1.5;color:#374151">O escribí este código en la página del contrato:</p>` : `
+  <p style="font-size:15px;line-height:1.5">Tu código para firmar el contrato es:</p>`) + `
+  <p style="margin:10px 0 18px;font-size:34px;font-weight:bold;letter-spacing:6px;color:#1a1a1a">${esc(separado)}</p>
+  <p style="font-size:15px;line-height:1.5">Vence en ${esc(dura)}.</p>
   <p style="font-size:13px;color:#6b7280;line-height:1.5">Si no estás firmando tu contrato, ignorá este mail: sin el código no se puede firmar.</p>
   <p style="font-size:13px;color:#6b7280">Show Business Solutions</p>
 </div>`;
@@ -70,7 +97,7 @@ export default async function handler(req, res) {
   }
 
   // El mail, desde la casilla del área.
-  const mail = armarMailCodigo({ nombre: r.nombre, codigo: r.codigo });
+  const mail = armarMailCodigo({ nombre: r.nombre, codigo: r.codigo, link: linkConCodigo(token, r.codigo), minutos: r.minutos });
   const from = r.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   try {
     const envio = await fetch('https://api.resend.com/emails', {
@@ -82,5 +109,5 @@ export default async function handler(req, res) {
   } catch (_) {
     return res.status(502).json({ error: 'No pudimos mandarte el código. Probá de nuevo en un rato.' });
   }
-  return res.status(200).json({ ok: true, email: enmascarar(r.email) });
+  return res.status(200).json({ ok: true, email: enmascarar(r.email), minutos: Number(r.minutos) > 0 ? Number(r.minutos) : 15 });
 }
