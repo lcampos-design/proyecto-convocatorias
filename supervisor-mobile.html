@@ -250,6 +250,9 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .sv-plano-cab{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
 .sv-plano-ayuda{font:400 12px/1.35 var(--inc-fuente);color:var(--gris);flex:1 1 180px}
 #svPlano{min-height:280px;border-radius:14px}
+/* Si el 3D no se puede, el plano 2D: el dibujo y, abajo, los pisos y la leyenda (como en la gerencia). */
+#svPlano:not(.inc-3d){display:flex;flex-direction:column;gap:8px}
+#svPlano:not(.inc-3d)>svg{width:100%;height:auto;display:block}
 @media(min-width:960px){#svPlano{height:calc(100vh - 280px);min-height:480px}}
 /* En el celular, la leyenda del plano debajo de los botones (si no, se pisan). */
 @media(max-width:560px){#svPlano.inc-3d .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}}
@@ -2062,10 +2065,18 @@ function incCargar3D() {
     .catch(() => { incSin3D = true; return false; });
   return incCarga3D;
 }
+// Se prueba una sola vez y el contexto de prueba se suelta: cada prueba crea un contexto WebGL y,
+// en el iPhone, con muchos contextos vivos Safari mata el más viejo (el del plano, que queda en negro).
+let incWebGLOk = null;
 function incHayWebGL() {
   if (incSin3D) return false;
-  try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && c.getContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); }
-  catch (_) { return false; }
+  if (incWebGLOk !== null) return incWebGLOk;
+  try {
+    const c = document.createElement('canvas'), gl = window.WebGLRenderingContext && c.getContext && (c.getContext('webgl') || c.getContext('experimental-webgl'));
+    incWebGLOk = !!gl;
+    if (gl && gl.getExtension) { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); }
+  } catch (_) { incWebGLOk = false; }
+  return incWebGLOk;
 }
 function incVistaPreferida() { try { return localStorage.getItem('incVista') || '3d'; } catch (_) { return '3d'; } }
 function incGuardarVista(v) { try { localStorage.setItem('incVista', v); } catch (_) {} }
@@ -3901,8 +3912,9 @@ async function openIncid() {
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
   const plano = incRefrescarPlano();
-  renderIncid();
+  // Primero la pantalla, después el plano: montado con la pantalla oculta (ancho 0) se arma mal.
   showScreen('screenIncid');
+  renderIncid();
   await cargarIncid();
   if (await plano) renderIncid();
   clearInterval(incTimer);
@@ -3988,7 +4000,7 @@ function incFiltrar(k) { incFiltroSup = k; renderIncid(); }
 // vista. Tocar un sector abre su ficha (lo abierto ahí) con "Cargar acá", que va a la hoja de carga.
 let svSectorSel = '';
 function svRenderPlano(lista) {
-  const pl = document.getElementById('svPlano'); if (!pl) return;
+  const pl = document.getElementById('svPlano'); if (!pl || !pl.clientWidth) return;   // con la sala oculta, no (se monta al redibujar)
   const vista = incVistaPreferida();
   document.getElementById('svVistas').innerHTML = [['3d', '3D'], ['2d', 'Plano']].map(([k, n]) =>
     '<button type="button" class="' + (vista === k ? 'on' : '') + '" onclick="svElegirVista(\'' + k + '\')">' + n + '</button>').join('');

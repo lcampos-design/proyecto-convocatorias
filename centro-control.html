@@ -1513,10 +1513,18 @@ function incCargar3D() {
     .catch(() => { incSin3D = true; return false; });
   return incCarga3D;
 }
+// Se prueba una sola vez y el contexto de prueba se suelta: cada prueba crea un contexto WebGL y,
+// en el iPhone, con muchos contextos vivos Safari mata el más viejo (el del plano, que queda en negro).
+let incWebGLOk = null;
 function incHayWebGL() {
   if (incSin3D) return false;
-  try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && c.getContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))); }
-  catch (_) { return false; }
+  if (incWebGLOk !== null) return incWebGLOk;
+  try {
+    const c = document.createElement('canvas'), gl = window.WebGLRenderingContext && c.getContext && (c.getContext('webgl') || c.getContext('experimental-webgl'));
+    incWebGLOk = !!gl;
+    if (gl && gl.getExtension) { const e = gl.getExtension('WEBGL_lose_context'); if (e) e.loseContext(); }
+  } catch (_) { incWebGLOk = false; }
+  return incWebGLOk;
 }
 function incVistaPreferida() { try { return localStorage.getItem('incVista') || '3d'; } catch (_) { return '3d'; } }
 function incGuardarVista(v) { try { localStorage.setItem('incVista', v); } catch (_) {} }
