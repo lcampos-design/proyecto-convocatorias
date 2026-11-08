@@ -807,6 +807,9 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 .fg .qm label:has(input:focus-visible){outline:2px solid #534AB7;outline-offset:1px}
 .qm-nota{font-size:11.5px;color:#6b7280;margin-top:6px;line-height:1.45}
 .qm-t{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.fg .doc-tick{display:flex;gap:9px;align-items:center;font-size:12.5px;color:#374151;margin:0;padding:5px 0;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0}
+.fg .doc-tick input{margin:0;accent-color:#111827;width:16px;height:16px;flex-shrink:0}
+.pill-doc{display:inline-block;font-size:10.5px;font-weight:500;background:#eef2ff;color:#3730a3;border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle;white-space:nowrap}
 .ct-aviso{font-size:11.5px;color:#0f6e56;display:flex;align-items:flex-start;gap:6px;margin-top:2px;line-height:1.45}
 .ct-aviso-falta{color:#92400e}
 .lbl-auto{font-weight:500;text-transform:none;letter-spacing:0;color:#9ca3af;font-size:10.5px;margin-left:5px}
@@ -1539,6 +1542,8 @@ tr:hover td{background:#f9f9fb}
       <option value="visto">Visto</option><option value="firmado">Firmado</option>
     </select>
     <button class="btn btn-sec btn-sm" id="btnCtZip" onclick="bajarContratosZip()" title="Baja en un solo archivo los contratos firmados que estás viendo">↓ Bajar los firmados</button>
+    <button class="btn btn-sec btn-sm" onclick="openPlantilla()" title="El texto legal del contrato">Modelo de contrato</button>
+    <button class="btn btn-sec btn-sm" onclick="openDocsFirma()" title="Constancias, planillas: lo que algunas personas firman además del contrato">Documentos para firmar</button>
   </div>
   <div style="padding:20px 24px" id="ctContent"><div class="empty">Cargando...</div></div>
 </div>
@@ -2248,6 +2253,7 @@ tr:hover td{background:#f9f9fb}
           </div>
           <div class="ct-aviso" id="mcAviso"></div>
           <div class="fg"><label>Fecha de firma (texto del contrato)</label><input type="text" class="fi" id="mcFechaFirmaDoc" placeholder="Ej: 24 DE SEPTIEMBRE"></div>
+          <div class="fg" id="mailDocsFg" style="display:none"><label>Documentos que firma junto con el contrato</label><div id="mailDocsList"></div></div>
         </div>
       </div>
       <div class="fg"><label>Mensaje</label><textarea class="fi" id="mailBody" style="height:260px;font-size:12.5px;line-height:1.6"></textarea></div>
@@ -2320,6 +2326,7 @@ tr:hover td{background:#f9f9fb}
           </div>
           <div class="ct-aviso" id="bmcAviso"></div>
           <div class="fg"><label>Fecha de firma (texto del contrato)</label><input type="text" class="fi" id="bmcFechaFirmaDoc" placeholder="Ej: 24 DE SEPTIEMBRE"></div>
+          <div class="fg" id="bmDocsFg" style="display:none"><label>Documentos que firma junto con el contrato</label><div id="bmDocsList"></div></div>
         </div>
       </div>
       <div class="fg"><label>Mensaje <span style="font-weight:400;text-transform:none;color:#9ca3af">— escribí {nombre} y se reemplaza por el de cada persona</span></label><textarea class="fi" id="bmBody" style="height:230px;font-size:12.5px;line-height:1.6"></textarea></div>
@@ -2333,6 +2340,31 @@ tr:hover td{background:#f9f9fb}
 </div>
 
 <!-- Modal: trazabilidad de un contrato -->
+<div class="modal-bg" id="mDocsFirma" style="display:none" onclick="bgClose('mDocsFirma',event)">
+  <div class="modal modal-xl">
+    <div class="modal-title">
+      <span>Documentos para firmar junto con el contrato</span>
+      <button class="mclose" onclick="closeM('mDocsFirma')">✕</button>
+    </div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">
+      Una constancia de capacitación, una planilla de ARCA, un compromiso: cualquier texto que algunas personas tengan que firmar además del contrato. Al mandar un contrato se tilda cuál va: se agrega al mismo PDF y se firma con la misma firma. El nombre, el DNI, la fecha y la firma se completan solos; no hace falta escribirlos en el texto.
+    </div>
+    <div id="dfLista"></div>
+    <div id="dfForm" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb">
+      <div class="fg"><label>Título</label><input type="text" class="fi" id="dfTitulo" placeholder="Ej: Constancia de capacitación"></div>
+      <div class="fg"><label>Texto</label><textarea class="fi" id="dfTexto" style="height:220px;font-size:12.5px;line-height:1.55;font-family:inherit" placeholder="Lo que dice el documento. Un renglón en blanco separa los párrafos."></textarea></div>
+      <div class="ma">
+        <button class="btn btn-sec" onclick="cancelarDocFirma()">Cancelar</button>
+        <button class="btn btn-primary" id="dfGuardarBtn" onclick="guardarDocFirma()">Guardar</button>
+      </div>
+    </div>
+    <div class="ma" id="dfAcciones">
+      <button class="btn btn-sec" onclick="closeM('mDocsFirma')">Cerrar</button>
+      <button class="btn btn-primary" onclick="editarDocFirma(null)">+ Nuevo documento</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="mContratoTrace" style="display:none" onclick="bgClose('mContratoTrace',event)">
   <div class="modal" style="max-width:520px">
     <div class="modal-title"><span><i class="ic ic-doc"></i> Contrato — <span id="ctTraceNombre"></span></span><button class="mclose" onclick="closeM('mContratoTrace')">✕</button></div>
@@ -2536,6 +2568,7 @@ let rotacionConfig = { max_eventos: 3, dias_periodo: 30, modo: 'advertencia' };
 // El modelo de contrato, uno por país. Vive en la configuración y no en el
 // código, para que se pueda editar desde el panel.
 let contratoPlantillas = {};
+let documentosFirma = [];   // la lista para elegir (config.documentos_firma)
 let etiquetasPaleta = [], formEtiquetas = [];
 let bajaDiasLimite = 3;
 let ausenciaConfig = { dias: 30, modo: 'advertencia' };
@@ -2859,6 +2892,9 @@ async function loadAll() {
   convs.forEach(c => { c.archivada = archSet.has(c.id); });
   const plCfg = (cfgData || []).find(c => c.key === 'contrato_plantilla');
   if (plCfg && plCfg.value && typeof plCfg.value === 'object') contratoPlantillas = plCfg.value;
+  const docsCfg = (cfgData || []).find(c => c.key === 'documentos_firma');
+  documentosFirma = Array.isArray(docsCfg && docsCfg.value) ? docsCfg.value : [];
+  cargarAnexosContratos();
   const bajaCfg = (cfgData || []).find(c => c.key === 'baja');
   bajaDiasLimite = (bajaCfg && bajaCfg.value && Number.isFinite(+bajaCfg.value.dias)) ? +bajaCfg.value.dias : 3;
   const ausCfg = (cfgData || []).find(c => c.key === 'ausencia');
@@ -10261,10 +10297,11 @@ function elegirQueMandas(p, valor) {
   if (bm) regenBulkBody(); else regenMailBody();
 }
 // "Sólo el contrato": el texto. {link} es donde va el link para firmar (si se borra, va al final).
-function contratoSoloBody(nombre, evento, puesto) {
+function contratoSoloBody(nombre, evento, puesto, docs) {
+  const d = (docs || []).map(x => '"' + x + '"'), varios = d.length > 0;
   return `Hola ${nombre}:
 
-Te mandamos tu contrato de trabajo para ${evento || '[EVENTO]'}${puesto ? ' (' + puesto + ')' : ''}. Va adjunto en PDF, y lo firmás online desde este link:
+Te mandamos tu contrato de trabajo para ${evento || '[EVENTO]'}${puesto ? ' (' + puesto + ')' : ''}${varios ? ' y, junto con él, ' + listaY(d) : ''}. Va${varios ? 'n adjuntos' : ' adjunto'} en PDF, y ${varios ? 'los' : 'lo'} firmás online desde este link${varios ? ' (una sola firma para todo)' : ''}:
 
 {link}
 
@@ -10275,9 +10312,10 @@ Cualquier duda, respondé este mail.
 Saludos att!`;
 }
 // Pone el link para firmar donde dice {link} o, si no está, al final (como siempre).
-function conLinkDeFirma(texto, link) {
+function conLinkDeFirma(texto, link, docs) {
+  const d = (docs || []).map(x => '"' + x + '"');
   return /\{link\}/.test(texto) ? texto.replace(/\{link\}/g, link)
-    : texto + `\n\nAdjuntamos tu contrato de trabajo. Para firmarlo online, ingresá a este link:\n${link}`;
+    : texto + `\n\nAdjuntamos tu contrato de trabajo${d.length ? ' y, junto con él, ' + listaY(d) : ''}. Para firmarlo${d.length ? 's' : ''} online${d.length ? ' (una sola firma para todo)' : ''}, ingresá a este link:\n${link}`;
 }
 // Cuerpo del mail de Externos, armado desde sus campos editables.
 function externosBodyFromFields(saludo, fecha, horario, venue, monto, sector, whatsapp) {
@@ -10312,14 +10350,14 @@ Show Business Solutions`;
 }
 function regenMailBody() {
   const f = id => document.getElementById(id).value;
-  if (queMandas('mail') === 'contrato') { document.getElementById('mailBody').value = contratoSoloBody(mailNombreCtx || '', mailConvNombreCtx, v('mcPuesto')); return; }
+  if (queMandas('mail') === 'contrato') { document.getElementById('mailBody').value = contratoSoloBody(mailNombreCtx || '', mailConvNombreCtx, v('mcPuesto'), titulosDe(anexosElegidos('mail'))); return; }
   document.getElementById('mailBody').value = mailFromArea === 'movistar'
     ? movistarBodyFromFields(mailNombreCtx || '', f('mailFFecha'), f('mailFHorario'), f('mailFMonto'), f('mailFSector'), mailFechaLimiteCtx)
     : externosBodyFromFields(mailNombreCtx || '', f('mailFFecha'), f('mailFHorario'), f('mailFVenue'), f('mailFMonto'), f('mailFSector'), f('mailFWhatsapp'));
 }
 function regenBulkBody() {
   const f = id => document.getElementById(id).value;
-  if (queMandas('bm') === 'contrato') { document.getElementById('bmBody').value = contratoSoloBody('{nombre}', bmConvNombreCtx, '{puesto}'); return; }
+  if (queMandas('bm') === 'contrato') { document.getElementById('bmBody').value = contratoSoloBody('{nombre}', bmConvNombreCtx, '{puesto}', titulosDe(anexosElegidos('bm'))); return; }
   document.getElementById('bmBody').value = bmFromArea === 'movistar'
     ? movistarBodyFromFields('{nombre}', f('bmFFecha'), f('bmFHorario'), f('bmFMonto'), f('bmFSector'), bmFechaLimiteCtx)
     : externosBodyFromFields('{nombre}', f('bmFFecha'), f('bmFHorario'), f('bmFVenue'), f('bmFMonto'), f('bmFSector'), f('bmFWhatsapp'));
@@ -10363,6 +10401,7 @@ function prepMailTemplate(area) {
     document.getElementById('mcAnio').value = rango.anio;
     llenarMontoYAvisos('mc', conv);
     document.getElementById('mcFechaFirmaDoc').value = fechaHoyTexto();
+    renderDocsTicks('mail');
   }
   const fechas = conv?.fecha ? conv.fecha.split(',').map(f => fmtFecha(f.trim())).join(' y ') : '[COMPLETAR FECHA]';
   const convNombre = conv?.nombre || '[EVENTO]';
@@ -10501,7 +10540,8 @@ async function bajarContratoPDF(row) {
     logoUrl: location.origin + '/' + LOGO_IMG,
     firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO,
     hashTexto: await sha256Hex(row.texto_contrato),
-    destacar: destacarDe(row)
+    destacar: destacarDe(row),
+    anexos: row.anexos || [], datosAnexo: datosAnexoDe(row)
   });
   const a = document.createElement('a');
   a.href = 'data:application/pdf;base64,' + pdf;
@@ -10539,7 +10579,7 @@ async function generarContratoSinMail() {
   const btn = document.getElementById('btnGenContrato');
   btn.disabled = true; btn.textContent = 'Generando...';
   try {
-    const row = await crearContrato(datos, mailContratoCtx && mailContratoCtx.convId, mailContratoCtx && mailContratoCtx.personaId, to || null, null, null, mailFromArea);
+    const row = await crearContrato(datos, mailContratoCtx && mailContratoCtx.convId, mailContratoCtx && mailContratoCtx.personaId, to || null, null, null, mailFromArea, anexosElegidos('mail'));
     await bajarContratoPDF(row);
     const link = linkDeFirma(row.token);
     const copiado = await copiarAlPortapapeles(link);
@@ -10591,10 +10631,10 @@ async function sendConfirmationMail() {
         toast('No se envió: al contrato le falta ' + faltan.join(', '));
         return;
       }
-      contratoRow = await crearContrato(datos, mailContratoCtx?.convId, mailContratoCtx?.personaId, to, null, null, mailFromArea);
-      const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(contratoRow.texto_contrato), destacar: destacarDe(datos) });
+      contratoRow = await crearContrato(datos, mailContratoCtx?.convId, mailContratoCtx?.personaId, to, null, null, mailFromArea, anexosElegidos('mail'));
+      const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(contratoRow.texto_contrato), destacar: destacarDe(datos), anexos: contratoRow.anexos || [], datosAnexo: datosAnexoDe(contratoRow) });
       attachments = [{ filename: 'contrato.pdf', content: pdfBase64 }];
-      body = conLinkDeFirma(body, `${location.origin}/contrato.html?t=${contratoRow.token}`);
+      body = conLinkDeFirma(body, `${location.origin}/contrato.html?t=${contratoRow.token}`, titulosDe(contratoRow.anexos));
     }
     // Sólo el contrato: sin los botones para confirmar la asistencia.
     const soloContrato = queMandas('mail') === 'contrato';
@@ -10705,6 +10745,7 @@ function prepBulkTemplate(area) {
     document.getElementById('bmcAnio').value = rango.anio;
     llenarMontoYAvisos('bmc', conv);
     document.getElementById('bmcFechaFirmaDoc').value = fechaHoyTexto();
+    renderDocsTicks('bm');
     if (bmModoConv) {
       document.getElementById('bmAdjContrato').checked = true;
       document.getElementById('bmContratoFields').style.display = 'block';
@@ -10747,7 +10788,8 @@ async function sendBulkMail() {
   if (!subject || !bodyTpl) { toast('Completá asunto y mensaje'); return; }
   if (!bulkMailRecipients.length) { toast('No hay destinatarios'); return; }
   const que = queMandas('bm');
-  if (!confirm(`¿Enviar ${que === 'contrato' ? 'el contrato' : que === 'ambos' ? 'la confirmación y el contrato' : 'la confirmación'} a ${bulkMailRecipients.length} persona(s)?`)) return;
+  const docsBm = que === 'conf' ? [] : titulosDe(anexosElegidos('bm')).map(x => '"' + x + '"');
+  if (!confirm(`¿Enviar ${que === 'contrato' ? 'el contrato' : que === 'ambos' ? 'la confirmación y el contrato' : 'la confirmación'}${docsBm.length ? ' (junto con ' + listaY(docsBm) + ')' : ''} a ${bulkMailRecipients.length} persona(s)?`)) return;
   const from = bmFromArea === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   const btn = document.getElementById('bmSendBtn'); btn.disabled = true;
   const prog = document.getElementById('bmProgress'); prog.style.display = 'block';
@@ -10796,10 +10838,10 @@ async function sendBulkMail() {
       let attachments, contratoRow;
       if (adjContrato) {
         const datos = datosDe(r);
-        contratoRow = await crearContrato(datos, currentConvId, r.personaId, r.email, r.postulacionId, r.puestoId, bmFromArea);
-        const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(contratoRow.texto_contrato), destacar: destacarDe(datos) });
+        contratoRow = await crearContrato(datos, currentConvId, r.personaId, r.email, r.postulacionId, r.puestoId, bmFromArea, anexosElegidos('bm'));
+        const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(contratoRow.texto_contrato), destacar: destacarDe(datos), anexos: contratoRow.anexos || [], datosAnexo: datosAnexoDe(contratoRow) });
         attachments = [{ filename: 'contrato.pdf', content: pdfBase64 }];
-        body = conLinkDeFirma(body, `${location.origin}/contrato.html?t=${contratoRow.token}`);
+        body = conLinkDeFirma(body, `${location.origin}/contrato.html?t=${contratoRow.token}`, titulosDe(contratoRow.anexos));
       }
       const res = await fetch('/api/send-email', {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
@@ -11224,6 +11266,8 @@ async function generarContratoPDF(texto, opts) {
       yNota -= 9;
     });
   }
+  // Los documentos que se firman junto con el contrato: una hoja cada uno.
+  if (opts.anexos && opts.anexos.length) await agregarAnexos(pdfDoc, fuentes, rgb, opts, logo);
   // El informe de auditoría sólo se arma en la página de firma.
   if (opts.certificado && typeof agregarCertificado === 'function') {
     agregarCertificado(pdfDoc, fuentes.normal, fuentes.negrita, rgb, opts.certificado, logo);
@@ -11232,8 +11276,82 @@ async function generarContratoPDF(texto, opts) {
   return await pdfDoc.saveAsBase64({ dataUri: false });
 }
 
+// Los documentos que se firman junto con el contrato (una constancia de
+// capacitación, por ejemplo): una hoja cada uno, con el nombre, el DNI, la
+// fecha y la firma de la persona. El mismo código en admin.html y contrato.html.
+async function agregarAnexos(pdfDoc, fuentes, rgb, opts, logo) {
+  const W = 595.28, H = 841.89, M = 46, maxWidth = W - M * 2;
+  const tinta = rgb(0.11, 0.11, 0.13), gris = rgb(0.35, 0.35, 0.35);
+  const d = opts.datosAnexo || {};
+  let firmaImg = null;
+  if (opts.firmaTrabajadorBytes) { try { firmaImg = await pdfDoc.embedPng(opts.firmaTrabajadorBytes); } catch (_) {} }
+  for (const a of opts.anexos) {
+    let page = pdfDoc.addPage([W, H]);
+    let y = H - M;
+    if (logo) { const l = logo.scale(44 / logo.width); page.drawImage(logo, { x: M, y: y - l.height, width: l.width, height: l.height }); }
+    const titulo = String(a.titulo || 'Documento').toUpperCase();
+    const titSize = 11, titAncho = fuentes.negrita.widthOfTextAtSize(titulo, titSize);
+    const titX = (W - titAncho) / 2, titY = y - 26;
+    page.drawText(titulo, { x: titX, y: titY, size: titSize, font: fuentes.negrita, color: tinta });
+    page.drawLine({ start: { x: titX, y: titY - 2.5 }, end: { x: titX + titAncho, y: titY - 2.5 }, thickness: 0.8, color: tinta });
+    y -= 62;
+    const ZONA = 170;   // lo que ocupan abajo los datos y la firma
+    // Cada párrafo (separados por un renglón en blanco) conserva sus renglones; el
+    // renglón corto y sin punto que encabeza un párrafo ("Declaración") va en negrita.
+    const parrafos = String(a.texto || '').replace(/\r\n?/g, '\n').split(/\n[ \t]*\n+/);
+    const size = 10, lineH = 14.5, parGap = 9;
+    for (const par of parrafos) {
+      const renglones = par.split('\n').map(r => r.trim()).filter(Boolean);
+      renglones.forEach((r, k) => {
+        if (k === 0 && renglones.length > 1 && r.length <= 40 && !/[.:;,]$/.test(r)) {
+          if (y - lineH < M + ZONA) { page = pdfDoc.addPage([W, H]); y = H - M; }
+          page.drawText(r, { x: M, y, size, font: fuentes.negrita, color: tinta }); y -= lineH;
+          return;
+        }
+        const lineas = armarLineas(r, fuentes, size, maxWidth, []);
+        if (y - (lineas.length * lineH + parGap) < M + ZONA) { page = pdfDoc.addPage([W, H]); y = H - M; }
+        lineas.forEach((ln, i) => { dibujarLinea(page, ln, M, y, size, fuentes, tinta, maxWidth, i < lineas.length - 1); y -= lineH; });
+      });
+      y -= parGap;
+    }
+    // Quién firma, y la firma.
+    if (y < M + ZONA) { page = pdfDoc.addPage([W, H]); y = H - M; }
+    y -= 10;
+    [['Nombre y apellido:', d.nombre || ''], ['DNI:', d.dni || ''], ['Fecha:', d.fecha || '____ / ____ / ________']].forEach(([k, val]) => {
+      page.drawText(k, { x: M, y, size: 10, font: fuentes.negrita, color: tinta });
+      page.drawText(String(val), { x: M + 112, y, size: 10, font: fuentes.normal, color: tinta });
+      y -= 18;
+    });
+    y -= 8;
+    const colAncho = 220, altoFirma = 44;
+    if (firmaImg) {
+      const f = firmaImg.scale(Math.min(colAncho / firmaImg.width, altoFirma / firmaImg.height));
+      page.drawImage(firmaImg, { x: M + (colAncho - f.width) / 2, y: y - f.height, width: f.width, height: f.height });
+    }
+    y -= altoFirma + 2;
+    page.drawLine({ start: { x: M, y }, end: { x: M + colAncho, y }, thickness: 0.7, color: rgb(0.45, 0.45, 0.45) });
+    y -= 12;
+    const etiq = firmaImg ? 'FIRMA (firmado electrónicamente)' : 'FIRMA';
+    page.drawText(etiq, { x: M + (colAncho - fuentes.normal.widthOfTextAtSize(etiq, 8)) / 2, y, size: 8, font: fuentes.normal, color: gris });
+    if (a.huella) {
+      armarLineas('Huella SHA-256 del texto: ' + a.huella, fuentes, 6.5, maxWidth, []).forEach((ln, i) => dibujarLinea(page, ln, M, M + 52 - i * 9, 6.5, fuentes, rgb(0.55, 0.55, 0.55), maxWidth, false));
+    }
+    if (logo) { const l = logo.scale(24 / logo.width); page.drawImage(logo, { x: W - M - l.width, y: M + 26, width: l.width, height: l.height }); }
+  }
+}
+// El DNI son los números del medio del CUIL (sin el cero de adelante si tiene 7).
+function dniDeCuil(cuil) {
+  const d = String(cuil || '').replace(/\D/g, '');
+  const n = d.length === 11 ? String(parseInt(d.slice(2, 10), 10)) : d;
+  return n ? n.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : String(cuil || '');
+}
+// Lo que va en la hoja de cada documento (la fecha la pone la firma).
+function datosAnexoDe(row) { return { nombre: row.nombre || '', dni: dniDeCuil(row.cuil) }; }
+function titulosDe(anexos) { return (Array.isArray(anexos) ? anexos : []).map(a => a && a.titulo).filter(Boolean); }
+function listaY(xs) { return xs.length <= 1 ? xs.join('') : xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1]; }
+
 // ── Alta y estado de contratos ──
-async function crearContrato(datos, convId, personaId, email, postulacionId, puestoId, area) {
+async function crearContrato(datos, convId, personaId, email, postulacionId, puestoId, area, anexos) {
   // El modelo lo decide el área de la convocatoria, que es la que sabe si el
   // show es en España. El parámetro "area" de acá es para el remitente del
   // mail y no distingue país.
@@ -11249,10 +11367,15 @@ async function crearContrato(datos, convId, personaId, email, postulacionId, pue
     fecha_inicio: datos.fecha_inicio, fecha_fin: datos.fecha_fin, anio: datos.anio,
     monto_letras: datos.monto_letras, monto_numero: datos.monto_numero, fecha_firma_doc: datos.fecha_firma_doc,
     texto_contrato: texto, estado: 'pendiente', creado_por: currentUserId || null,
-    firma_empleador_img: FIRMA_CONTRATO
+    firma_empleador_img: FIRMA_CONTRATO,
+    // Los documentos que firma junto con el contrato (congelados acá, como el texto).
+    ...(anexos && anexos.length ? { anexos } : {})
   };
   const { data, error } = await sb.from('contratos').insert(row).select().single();
-  if (error) throw error;
+  if (error) {
+    if (anexos && anexos.length && /anexos/.test(error.message || '')) toast('Para mandar documentos junto con el contrato hay que correr contrato-documentos.sql en Supabase');
+    throw error;
+  }
   await sb.from('contrato_eventos').insert({ contrato_id: data.id, tipo: 'creado' });
   contratos.unshift(data);
   populateCtFilters(); renderContratos();
@@ -11269,6 +11392,117 @@ async function marcarContratoEnviado(id) {
 }
 
 // ── Sección Contratos ──
+// ── DOCUMENTOS PARA FIRMAR JUNTO CON EL CONTRATO ──────────────
+// La lista (config.documentos_firma): constancias, planillas, lo que algunas
+// personas firman además del contrato. Al mandar un contrato se tildan los que
+// van; quedan congelados en el contrato (contratos.anexos) y se firman con la
+// misma firma. Ver contrato-documentos.sql.
+let dfEditId = null;
+function openDocsFirma() { dfEditId = null; renderDocsFirmaLista(); cancelarDocFirma(); showM('mDocsFirma'); }
+function renderDocsFirmaLista() {
+  const el = document.getElementById('dfLista');
+  if (!documentosFirma.length) { el.innerHTML = '<div class="empty">Todavía no hay documentos. Creá el primero con "+ Nuevo documento".</div>'; return; }
+  el.innerHTML = documentosFirma.map(d => `<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #f3f4f6">
+    <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13.5px">${e(d.titulo)}</div><div style="font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e(String(d.texto || '').replace(/\s+/g, ' ').slice(0, 140))}</div></div>
+    <button class="btn btn-sec btn-xs" onclick="editarDocFirma('${e(d.id)}')">Editar</button>
+    <button class="btn btn-sec btn-xs" onclick="borrarDocFirma('${e(d.id)}')">Borrar</button>
+  </div>`).join('');
+}
+function editarDocFirma(id) {
+  dfEditId = id || null;
+  const d = id ? documentosFirma.find(x => x.id === id) : null;
+  document.getElementById('dfTitulo').value = d ? d.titulo : '';
+  document.getElementById('dfTexto').value = d ? d.texto : '';
+  document.getElementById('dfForm').style.display = 'block';
+  document.getElementById('dfAcciones').style.display = 'none';
+  document.getElementById('dfTitulo').focus();
+}
+function cancelarDocFirma() { dfEditId = null; document.getElementById('dfForm').style.display = 'none'; document.getElementById('dfAcciones').style.display = 'flex'; }
+async function guardarDocsFirma(nuevos) {
+  const { error } = await sb.from('config').upsert({ key: 'documentos_firma', value: nuevos, updated_at: new Date().toISOString() });
+  if (error) throw error;
+  documentosFirma = nuevos;
+}
+async function guardarDocFirma() {
+  const titulo = v('dfTitulo'), texto = document.getElementById('dfTexto').value.trim();
+  if (!titulo || !texto) { toast('Poné el título y el texto'); return; }
+  const btn = document.getElementById('dfGuardarBtn'); btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const nuevos = documentosFirma.map(d => d.id === dfEditId ? { ...d, titulo, texto } : d);
+    if (!dfEditId) nuevos.push({ id: uid(), titulo, texto, creado: new Date().toISOString() });
+    await guardarDocsFirma(nuevos);
+    cancelarDocFirma(); renderDocsFirmaLista();
+    toast('Documento guardado: vale para los contratos que se manden de ahora en más');
+  } catch (err) { toast('No se pudo guardar: ' + (err.message || err)); }
+  finally { btn.disabled = false; btn.textContent = 'Guardar'; }
+}
+async function borrarDocFirma(id) {
+  const d = documentosFirma.find(x => x.id === id); if (!d) return;
+  if (!confirm(`¿Borrar "${d.titulo}" de la lista?\n\nLos contratos que ya lo llevan no cambian.`)) return;
+  try { await guardarDocsFirma(documentosFirma.filter(x => x.id !== id)); renderDocsFirmaLista(); toast('Documento borrado'); }
+  catch (err) { toast('No se pudo borrar: ' + (err.message || err)); }
+}
+// Las casillas en los dos mails: sin tildar, no va ninguno.
+function renderDocsTicks(p) {
+  const fg = document.getElementById(p + 'DocsFg'), list = document.getElementById(p + 'DocsList');
+  if (!fg || !list) return;
+  if (!documentosFirma.length) { fg.style.display = 'none'; list.innerHTML = ''; return; }
+  fg.style.display = 'block';
+  list.innerHTML = documentosFirma.map(d => `<label class="doc-tick"><input type="checkbox" value="${e(d.id)}" onchange="docsCambio('${p}')"><span>${e(d.titulo)}</span></label>`).join('')
+    + '<div style="font-size:11px;color:#9ca3af;margin-top:4px">Van en el mismo PDF y se firman con la misma firma que el contrato. Sin tildar, no van.</div>';
+}
+function anexosElegidos(p) {
+  const ids = [...document.querySelectorAll('#' + p + 'DocsList input:checked')].map(i => i.value);
+  return documentosFirma.filter(d => ids.includes(d.id)).map(d => ({ titulo: d.titulo, texto: d.texto }));
+}
+function docsCambio(p) { if (p === 'bm') regenBulkBody(); else regenMailBody(); }
+function pillDocs(c) {
+  const t = titulosDe(c.anexos);
+  return t.length ? ` <span class="pill-doc" title="${e(t.join(', '))}">+ ${e(t.length === 1 ? t[0] : t.length + ' documentos')}</span>` : '';
+}
+// Los documentos de cada contrato se leen aparte (la lista principal no trae lo
+// pesado): si la base todavía no tiene la columna, el panel sigue igual.
+async function cargarAnexosContratos() {
+  try {
+    const { data, error } = await sb.from('contratos').select('id,anexos');
+    if (error || !data) return;
+    const por = new Map(data.filter(r => Array.isArray(r.anexos) && r.anexos.length).map(r => [r.id, r.anexos]));
+    contratos.forEach(ct => { if (por.has(ct.id)) ct.anexos = por.get(ct.id); });
+    if (por.size && document.getElementById('sec-contratos')?.classList.contains('active')) renderContratos();
+  } catch (_) {}
+}
+// En el detalle: qué lleva, y agregar o sacar uno mientras no esté firmado.
+function htmlCtAnexos(row) {
+  const lista = Array.isArray(row.anexos) ? row.anexos : [], firmado = row.estado === 'firmado';
+  const items = lista.map((a, i) => `<span class="pill-doc" style="margin:0 6px 4px 0">${e(a.titulo || 'Documento')}${firmado ? '' : ` <a href="#" onclick="quitarAnexoContrato(${i});return false" title="Sacarlo de este contrato" style="color:#991b1b;text-decoration:none;margin-left:4px">✕</a>`}</span>`).join('');
+  const opciones = firmado ? [] : documentosFirma.filter(d => !lista.some(a => a.titulo === d.titulo));
+  return `<div style="margin-top:6px"><strong>Firma junto con el contrato:</strong> ${items || '<span style="color:#9ca3af">nada más</span>'}
+    ${opciones.length ? `<div style="display:flex;gap:6px;align-items:center;margin-top:6px"><select class="filt" id="ctAnexoSel" style="max-width:260px">${opciones.map(d => `<option value="${e(d.id)}">${e(d.titulo)}</option>`).join('')}</select><button class="btn btn-sec btn-xs" onclick="agregarAnexoContrato()">+ Agregar</button></div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:3px">Lo ve al abrir el link. Si ya le mandaste el mail, reenviáselo para que tenga el PDF con todo.</div>` : ''}
+  </div>`;
+}
+async function guardarAnexosContrato(nuevos, evento, titulo) {
+  const { error } = await sb.from('contratos').update({ anexos: nuevos }).eq('id', ctTraceRow.id);
+  if (error) throw error;
+  await sb.from('contrato_eventos').insert({ contrato_id: ctTraceRow.id, tipo: evento, meta: { titulo } });
+  const ct = contratos.find(x => x.id === ctTraceRow.id); if (ct) ct.anexos = nuevos;
+  renderContratos();
+  verContratoTrace(ctTraceRow.id);
+}
+async function agregarAnexoContrato() {
+  if (!ctTraceRow || ctTraceRow.estado === 'firmado') return;
+  const d = documentosFirma.find(x => x.id === document.getElementById('ctAnexoSel')?.value); if (!d) return;
+  try { await guardarAnexosContrato([...(Array.isArray(ctTraceRow.anexos) ? ctTraceRow.anexos : []), { titulo: d.titulo, texto: d.texto }], 'documento_agregado', d.titulo); toast('Agregado: ' + d.titulo); }
+  catch (err) { toast('No se pudo: ' + (/anexos/.test(err.message || '') ? 'hay que correr contrato-documentos.sql en Supabase' : (err.message || err))); }
+}
+async function quitarAnexoContrato(i) {
+  if (!ctTraceRow || ctTraceRow.estado === 'firmado') return;
+  const lista = Array.isArray(ctTraceRow.anexos) ? ctTraceRow.anexos : [], a = lista[i]; if (!a) return;
+  if (!confirm(`¿Sacar "${a.titulo}" de este contrato?`)) return;
+  try { await guardarAnexosContrato(lista.filter((_, j) => j !== i), 'documento_quitado', a.titulo); toast('Sacado: ' + a.titulo); }
+  catch (err) { toast('No se pudo: ' + (err.message || err)); }
+}
+
 // ── EL MODELO DE CONTRATO ────────────────────────────────────
 let plPais = 'ar', plBorradores = {};
 
@@ -11510,7 +11744,7 @@ function populateCtFilters() {
 }
 
 // Cómo se nombra cada paso de la trazabilidad, acá y en el detalle de un borrado.
-const CT_EVENTO = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i class="ic ic-sobre"></i> Enviado', visto: '<i class="ic ic-ojo"></i> Visto', consentimiento: '<i class="ic ic-tilde-circ"></i> Consentimiento', firmado: '<i class="ic ic-firma"></i> Firmado', reenviado: '↻ Reenviado', codigo_enviado: '<i class="ic ic-sobre"></i> Código enviado', codigo_ok: '<i class="ic ic-tilde-circ"></i> Código verificado' };
+const CT_EVENTO = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i class="ic ic-sobre"></i> Enviado', visto: '<i class="ic ic-ojo"></i> Visto', consentimiento: '<i class="ic ic-tilde-circ"></i> Consentimiento', firmado: '<i class="ic ic-firma"></i> Firmado', reenviado: '↻ Reenviado', codigo_enviado: '<i class="ic ic-sobre"></i> Código enviado', codigo_ok: '<i class="ic ic-tilde-circ"></i> Código verificado', documento_agregado: '<i class="ic ic-doc"></i> Documento agregado', documento_quitado: '<i class="ic ic-doc"></i> Documento sacado' };
 
 // ── CONTRATOS BORRADOS ────────────────────────────────────────
 // Lo que se borró no desaparece: contrato_borrar() deja una copia completa en
@@ -11677,7 +11911,7 @@ function renderContratos() {
       <td><input type="checkbox" class="cb ctcb" data-id="${c.id}" onchange="ctSelCambio()"></td>
       <td>${e(c.nombre || '')}</td>
       <td>${e(c.cuil || '')}</td>
-      <td>${e(c.puesto || '')}</td>
+      <td>${e(c.puesto || '')}${pillDocs(c)}</td>
       <td>${e(conv?.nombre || '—')}</td>
       <td>${estadoBadge(c.estado)}</td>
       <td>${fecha}</td>
@@ -11738,7 +11972,7 @@ async function verContratoTrace(id) {
   document.getElementById('ctTraceNombre').textContent = row.nombre || '';
   const timeline = (eventos || []).map(ev => `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6">
     <div style="display:flex;gap:10px">
-      <div style="flex:1;font-size:13px;color:#374151">${CT_EVENTO[ev.tipo] || ev.tipo}</div>
+      <div style="flex:1;font-size:13px;color:#374151">${CT_EVENTO[ev.tipo] || ev.tipo}${ev.meta && ev.meta.titulo ? ': ' + e(ev.meta.titulo) : ''}</div>
       <div style="font-size:12px;color:#9ca3af;white-space:nowrap">${ev.fecha ? new Date(ev.fecha).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}</div>
     </div>
     ${ev.ip || ev.user_agent ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px;word-break:break-all">${ev.ip ? 'IP: ' + e(ev.ip) : ''}${ev.ip && ev.user_agent ? ' · ' : ''}${ev.user_agent ? e(String(ev.user_agent).slice(0, 90)) : ''}</div>` : ''}
@@ -11748,6 +11982,7 @@ async function verContratoTrace(id) {
       <div><strong>CUIL:</strong> ${e(row.cuil || '')}</div>
       <div><strong>Puesto:</strong> ${e(row.puesto || '')}</div>
       <div><strong>Estado:</strong> ${estadoBadge(row.estado)}</div>
+      ${htmlCtAnexos(row)}
       ${lineaVencimiento(row)}
     </div>
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:10px 0 6px">Trazabilidad</div>
@@ -11819,8 +12054,9 @@ async function reenviarContrato() {
     const conv = convs.find(c => c.id === ctTraceRow.conv_id);
     const area = conv?.area === 'externos' ? 'externos' : 'movistar';
     const from = area === 'movistar' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
-    const pdfBase64 = await generarContratoPDF(ctTraceRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(ctTraceRow.texto_contrato), destacar: destacarDe(ctTraceRow) });
-    const body = `Te reenviamos tu contrato de trabajo. Para firmarlo online, ingresá a este link:\n${location.origin}/contrato.html?t=${ctTraceRow.token}`;
+    const pdfBase64 = await generarContratoPDF(ctTraceRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(ctTraceRow.texto_contrato), destacar: destacarDe(ctTraceRow), anexos: ctTraceRow.anexos || [], datosAnexo: datosAnexoDe(ctTraceRow) });
+    const docsRe = titulosDe(ctTraceRow.anexos).map(x => '"' + x + '"');
+    const body = `Te reenviamos tu contrato de trabajo${docsRe.length ? ' y, junto con él, ' + listaY(docsRe) : ''}. Para firmarlo${docsRe.length ? 's' : ''} online, ingresá a este link:\n${location.origin}/contrato.html?t=${ctTraceRow.token}`;
     const res = await fetch('/api/send-email', {
       method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
       body: JSON.stringify({ from, to: [ctTraceRow.email], subject: 'Reenvío — Contrato de trabajo', html: renderEmailHtml(body, from, area), text: body, attachments: [{ filename: 'contrato.pdf', content: pdfBase64 }] })

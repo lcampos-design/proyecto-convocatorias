@@ -25,6 +25,9 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .fi{width:100%;padding:11px 12px;border:1.5px solid #d1d5db;border-radius:10px;font-size:14px;color:#111827;background:#fff}
 .fi:focus{outline:none;border-color:#0f1117}
 .ayuda{font-size:11px;color:#9ca3af;margin-top:5px}
+.lbl-sub{font-weight:400;color:#9ca3af;margin-left:6px}
+.contrato-texto.anexo{max-height:none}
+.anexo-datos{margin-top:14px;padding-top:10px;border-top:1px dashed #e5e7eb;color:#111827}
 .dom{background:#fef9c3;border-radius:3px;padding:0 3px}
 .contrato-texto{white-space:pre-wrap;font-size:13px;line-height:1.6;color:#374151;background:#fafafa;border:1px solid #eee;border-radius:10px;padding:16px;max-height:380px;overflow-y:auto}
 .sig-wrap{border:1.5px dashed #d1d5db;border-radius:10px;margin-top:8px;position:relative;background:#fff}
@@ -145,6 +148,34 @@ function pintarDomicilio() {
   el.innerHTML = textoConDomicilio(document.getElementById('domicilio')?.value);
 }
 
+// ── Los documentos que se firman junto con el contrato (contrato-documentos.sql) ──
+// Una constancia de capacitación, por ejemplo: van debajo del contrato, se
+// firman con la misma firma, y en el PDF salen una hoja cada uno.
+function anexos() { return Array.isArray(contrato?.anexos) ? contrato.anexos : []; }
+// El DNI son los números del medio del CUIL (sin el cero de adelante si tiene 7).
+function dniDeCuil(cuil) {
+  const d = String(cuil || '').replace(/\D/g, '');
+  const n = d.length === 11 ? String(parseInt(d.slice(2, 10), 10)) : d;
+  return n ? n.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : String(cuil || '');
+}
+function fechaDDMMAAAA(iso) {
+  const d = iso ? new Date(iso) : new Date(); if (isNaN(d)) return '';
+  try { return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Argentina/Buenos_Aires' }); } catch (_) { return d.toLocaleDateString('es-AR'); }
+}
+// Lo que va en la hoja de cada documento: con la fecha sólo una vez firmado.
+function datosAnexoDe(d, fechaFirma) { return { nombre: d.nombre || '', dni: dniDeCuil(d.cuil), fecha: fechaFirma ? fechaDDMMAAAA(fechaFirma) : '' }; }
+function listaY(xs) { return xs.length <= 1 ? xs.join('') : xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1]; }
+function htmlAnexos() {
+  return anexos().map(a => `<div class="lbl">${esc(a.titulo || 'Documento')}<span class="lbl-sub">se firma junto con el contrato</span></div>
+    <div class="contrato-texto anexo">${esc(a.texto || '')}<div class="anexo-datos">Nombre y apellido: ${esc(contrato.nombre || '')}
+DNI: ${esc(dniDeCuil(contrato.cuil))}
+Fecha: la del día que firmás</div></div>`).join('');
+}
+function textoConsentimiento() {
+  const t = anexos().map(a => '“' + String(a.titulo || 'el documento adjunto') + '”');
+  return `Leí ${t.length ? 'el contrato y ' + listaY(t) : 'el contrato'} y acepto firmarlo${t.length ? 's' : ''} por medios electrónicos, con el mismo valor legal que mi firma manuscrita (arts. 286 y 288 del Código Civil y Comercial de la Nación y art. 5 de la Ley N.º 25.506).`;
+}
+
 async function init() {
   if (!TOKEN) { show('<div class="card"><div class="center">Link inválido. Pedile el link a la coordinación.</div></div>'); return; }
   const { data, error } = await sb.rpc('contrato_ver', { p_token: TOKEN });
@@ -214,6 +245,7 @@ function renderForm() {
     <div class="ayuda">Va en el contrato, en el lugar de la línea para completar.</div>` : ''}
     <div class="lbl">Contrato de trabajo</div>
     <div class="contrato-texto" id="textoContrato">${textoConDomicilio('')}</div>
+    ${htmlAnexos()}
     <div class="lbl">Tu firma (dibujá con el dedo o el mouse)</div>
     <div class="sig-wrap">
       <canvas id="sigCanvas"></canvas>
@@ -221,7 +253,7 @@ function renderForm() {
     </div>
     <label class="consent">
       <input type="checkbox" id="consentChk" onchange="onConsent()">
-      <span>Leí el contrato y acepto firmarlo por medios electrónicos, con el mismo valor legal que mi firma manuscrita (arts. 286 y 288 del Código Civil y Comercial de la Nación y art. 5 de la Ley N.º 25.506).</span>
+      <span>${textoConsentimiento()}</span>
     </label>
     <div class="msg ok" id="aviso"></div>
     <div class="btnrow">
@@ -314,6 +346,70 @@ function fmtAR(iso) {
   catch (_) { return ''; }
 }
 
+// Los documentos que se firman junto con el contrato (una constancia de
+// capacitación, por ejemplo): una hoja cada uno, con el nombre, el DNI, la
+// fecha y la firma de la persona. El mismo código en admin.html y contrato.html.
+async function agregarAnexos(pdfDoc, fuentes, rgb, opts, logo) {
+  const W = 595.28, H = 841.89, M = 46, maxWidth = W - M * 2;
+  const tinta = rgb(0.11, 0.11, 0.13), gris = rgb(0.35, 0.35, 0.35);
+  const d = opts.datosAnexo || {};
+  let firmaImg = null;
+  if (opts.firmaTrabajadorBytes) { try { firmaImg = await pdfDoc.embedPng(opts.firmaTrabajadorBytes); } catch (_) {} }
+  for (const a of opts.anexos) {
+    let page = pdfDoc.addPage([W, H]);
+    let y = H - M;
+    if (logo) { const l = logo.scale(44 / logo.width); page.drawImage(logo, { x: M, y: y - l.height, width: l.width, height: l.height }); }
+    const titulo = String(a.titulo || 'Documento').toUpperCase();
+    const titSize = 11, titAncho = fuentes.negrita.widthOfTextAtSize(titulo, titSize);
+    const titX = (W - titAncho) / 2, titY = y - 26;
+    page.drawText(titulo, { x: titX, y: titY, size: titSize, font: fuentes.negrita, color: tinta });
+    page.drawLine({ start: { x: titX, y: titY - 2.5 }, end: { x: titX + titAncho, y: titY - 2.5 }, thickness: 0.8, color: tinta });
+    y -= 62;
+    const ZONA = 170;   // lo que ocupan abajo los datos y la firma
+    // Cada párrafo (separados por un renglón en blanco) conserva sus renglones; el
+    // renglón corto y sin punto que encabeza un párrafo ("Declaración") va en negrita.
+    const parrafos = String(a.texto || '').replace(/\r\n?/g, '\n').split(/\n[ \t]*\n+/);
+    const size = 10, lineH = 14.5, parGap = 9;
+    for (const par of parrafos) {
+      const renglones = par.split('\n').map(r => r.trim()).filter(Boolean);
+      renglones.forEach((r, k) => {
+        if (k === 0 && renglones.length > 1 && r.length <= 40 && !/[.:;,]$/.test(r)) {
+          if (y - lineH < M + ZONA) { page = pdfDoc.addPage([W, H]); y = H - M; }
+          page.drawText(r, { x: M, y, size, font: fuentes.negrita, color: tinta }); y -= lineH;
+          return;
+        }
+        const lineas = armarLineas(r, fuentes, size, maxWidth, []);
+        if (y - (lineas.length * lineH + parGap) < M + ZONA) { page = pdfDoc.addPage([W, H]); y = H - M; }
+        lineas.forEach((ln, i) => { dibujarLinea(page, ln, M, y, size, fuentes, tinta, maxWidth, i < lineas.length - 1); y -= lineH; });
+      });
+      y -= parGap;
+    }
+    // Quién firma, y la firma.
+    if (y < M + ZONA) { page = pdfDoc.addPage([W, H]); y = H - M; }
+    y -= 10;
+    [['Nombre y apellido:', d.nombre || ''], ['DNI:', d.dni || ''], ['Fecha:', d.fecha || '____ / ____ / ________']].forEach(([k, val]) => {
+      page.drawText(k, { x: M, y, size: 10, font: fuentes.negrita, color: tinta });
+      page.drawText(String(val), { x: M + 112, y, size: 10, font: fuentes.normal, color: tinta });
+      y -= 18;
+    });
+    y -= 8;
+    const colAncho = 220, altoFirma = 44;
+    if (firmaImg) {
+      const f = firmaImg.scale(Math.min(colAncho / firmaImg.width, altoFirma / firmaImg.height));
+      page.drawImage(firmaImg, { x: M + (colAncho - f.width) / 2, y: y - f.height, width: f.width, height: f.height });
+    }
+    y -= altoFirma + 2;
+    page.drawLine({ start: { x: M, y }, end: { x: M + colAncho, y }, thickness: 0.7, color: rgb(0.45, 0.45, 0.45) });
+    y -= 12;
+    const etiq = firmaImg ? 'FIRMA (firmado electrónicamente)' : 'FIRMA';
+    page.drawText(etiq, { x: M + (colAncho - fuentes.normal.widthOfTextAtSize(etiq, 8)) / 2, y, size: 8, font: fuentes.normal, color: gris });
+    if (a.huella) {
+      armarLineas('Huella SHA-256 del texto: ' + a.huella, fuentes, 6.5, maxWidth, []).forEach((ln, i) => dibujarLinea(page, ln, M, M + 52 - i * 9, 6.5, fuentes, rgb(0.55, 0.55, 0.55), maxWidth, false));
+    }
+    if (logo) { const l = logo.scale(24 / logo.width); page.drawImage(logo, { x: W - M - l.width, y: M + 26, width: l.width, height: l.height }); }
+  }
+}
+
 // Informe de auditoría: última página del PDF firmado, con la trazabilidad
 // completa (mismo rol que el "Final Audit Report" de Adobe Sign).
 function agregarCertificado(pdfDoc, font, fontBold, rgb, cert, logo) {
@@ -340,6 +436,7 @@ function agregarCertificado(pdfDoc, font, fontBold, rgb, cert, logo) {
     ['ID de transacción:', cert.transaccion_id || '—'],
     ['Huella SHA-256:', cert.hash_texto || '—']
   ];
+  if (cert.anexos && cert.anexos.length) filas.push(['Documentos:', 'Contrato de trabajo; ' + cert.anexos.map(a => (a.titulo || 'Documento') + ' (huella SHA-256 ' + (a.huella || '—') + ')').join('; ')]);
   const size = 9, lh = 13;
   let altoPanel = 12;
   const filasCalc = filas.map(([lab, val]) => { const ls = wrapPlain(val, font, size, maxWidth - 130); altoPanel += ls.length * lh; return [lab, ls]; });
@@ -397,6 +494,8 @@ function descripcionEvento(ev, cert) {
     case 'creado': return 'Documento creado por Show Business Solutions S.R.L.';
     case 'enviado': return `Documento enviado por correo electrónico a ${cert.email || 'el firmante'} para su firma`;
     case 'reenviado': return `Documento reenviado por correo electrónico a ${cert.email || 'el firmante'}`;
+    case 'documento_agregado': return `Show Business Solutions S.R.L. agregó "${(ev.meta && ev.meta.titulo) || 'un documento'}" para firmar junto con el contrato`;
+    case 'documento_quitado': return `Show Business Solutions S.R.L. sacó "${(ev.meta && ev.meta.titulo) || 'un documento'}" del contrato`;
     case 'visto': return `Documento abierto por ${cert.email || nombre}`;
     case 'codigo_enviado': return `Código de verificación enviado por correo electrónico a ${cert.email || 'el firmante'}`;
     case 'codigo_ok': return `${nombre} ingresó el código de verificación enviado a ${cert.email || 'su correo electrónico'}`;
@@ -590,6 +689,8 @@ async function generarContratoPDF(texto, opts) {
       yNota -= 9;
     });
   }
+  // Los documentos que se firman junto con el contrato: una hoja cada uno.
+  if (opts.anexos && opts.anexos.length) await agregarAnexos(pdfDoc, fuentes, rgb, opts, logo);
   // El informe de auditoría sólo se arma en la página de firma.
   if (opts.certificado && typeof agregarCertificado === 'function') {
     agregarCertificado(pdfDoc, fuentes.normal, fuentes.negrita, rgb, opts.certificado, logo);
@@ -691,6 +792,7 @@ async function firmarYa(domicilio) {
       firmaEmpleadorUrl: data.firma_empleador_img ? (location.origin + '/' + data.firma_empleador_img) : null,
       firmaTrabajadorBytes: dataUrlToBytes(firmaDataUrl),
       destacar: [data.nombre, data.cuil, data.domicilio, data.puesto, data.fecha_inicio, data.fecha_fin, data.monto_letras, data.monto_numero, data.fecha_firma_doc],
+      anexos: data.anexos || [], datosAnexo: datosAnexoDe(data, data.fecha_firma),
       certificado: data
     });
     await sb.rpc('contrato_guardar_pdf', { p_token: TOKEN, p_pdf_firmado: pdfBase64 });
