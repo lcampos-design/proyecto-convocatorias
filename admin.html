@@ -6323,7 +6323,12 @@ function incEsperar3D(cont) {
   incEstilo3D();
   cont.classList.add('inc-3d');
   const fijo = cont.dataset && cont.dataset.alto === 'pantalla' && window.innerWidth >= 960;
-  cont.style.height = fijo ? '' : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680)) + 'px';
+  // En la compu, el alto lo da el CSS (data-alto="pantalla"). En el celular el ancho es poco: el
+  // plano va alto (hasta el 72 % de la pantalla), y así la leyenda, los botones y los pisos no tapan el estadio.
+  const angosto = window.innerWidth < 960;
+  cont.style.height = fijo ? '' : (angosto
+    ? Math.max(Math.round((cont.clientWidth || 600) * 0.82), Math.min(Math.round((window.innerHeight || 700) * 0.72), 720))
+    : Math.max(280, Math.min(Math.round((cont.clientWidth || 600) * 0.82), 680))) + 'px';
   cont.innerHTML = '<div class="inc-3d-espera" role="status"><span></span>Cargando el plano…</div>';
 }
 // Los controles del plano en la gerencia (op.ax): bloques planos y rectos, sin vidrio,
@@ -7415,7 +7420,8 @@ function incPlano3D(cont, op0) {
     const w = cont.clientWidth;
     let h;
     if (full || fijo) { cont.style.height = ''; h = full ? cont.clientHeight : Math.max(320, cont.clientHeight); }
-    else if (w) { h = Math.max(280, Math.min(Math.round(w * 0.82), 680)); cont.style.height = h + 'px'; }
+    // En el celular (angosto), alto: hasta el 72 % de la pantalla, para que la leyenda, los botones y los pisos no tapen el estadio.
+    else if (w) { h = window.innerWidth < 960 ? Math.max(Math.round(w * 0.82), Math.min(Math.round((window.innerHeight || 700) * 0.72), 720)) : Math.max(280, Math.min(Math.round(w * 0.82), 680)); cont.style.height = h + 'px'; }
     if (!w || !h) return;
     const conDet = full && panel.classList.contains('abierto'), abajo = conDet && !!(window.matchMedia && window.matchMedia(INC_VENTANA_ABAJO).matches);
     const tapaW = conDet && !abajo ? panel.offsetWidth + 28 : 0, tapaH = abajo ? panel.offsetHeight + 20 : 0;
