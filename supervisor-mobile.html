@@ -73,8 +73,38 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .login-logo{width:68px;height:68px;display:block;filter:var(--logo-filtro)}
 .login-m{height:50px;width:auto;display:block;filter:var(--logo-filtro)}
 .login-y{width:18px;height:18px;flex-shrink:0;display:block}.login-y path{stroke:var(--tinta);stroke-width:3.6;stroke-linecap:round;fill:none}
-/* En el ingreso, la barra de la gerencia, con "Tema" escrito en la compu y sólo el ícono en el celular. */
-@media(max-width:560px){.sv-tema span{display:none}.sv-tema{width:44px;padding:0}}
+/* La barra de la gerencia en todas las pantallas: la marca a la izquierda y, a la derecha, lo que se puede hacer.
+   En el celular, "Tema" y "Salir" son sólo el ícono, "Hands on everything" no entra, y en la sala la marca se
+   esconde (queda el logo), como en la gerencia. */
+.sv-marca{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sv-acc{display:flex;gap:4px;align-items:center;flex-shrink:0;margin-left:auto}
+@media(max-width:760px){.sv-marca .app-bar-sub{display:none}}
+@media(max-width:560px){.sv-tema span,.sv-salir span{display:none}.sv-tema,.sv-salir{width:44px;padding:0}.sv-marca .app-bar-title{white-space:normal;font-size:12.5px;line-height:1.05}
+  body[data-pantalla="screenIncid"] .sv-marca{display:none}}
+@media(max-width:400px){body[data-pantalla="screenIncid"] .sv-logo{display:none}}
+/* El cuerpo de cada pantalla, los títulos en la manuscrita y las cajas, como en la gerencia. */
+.wrap{max-width:980px;margin:0 auto;padding:16px max(12px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.sv-tablero{max-width:980px;margin:0 auto;padding:12px max(12px,env(safe-area-inset-right,0px)) 12px max(12px,env(safe-area-inset-left,0px))}
+.sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 .28em;font:400 40px/1.05 var(--mano);color:var(--tinta);letter-spacing:0;padding-top:.05em}
+.sec-t .mano{font-size:1em}
+.caja .sec-t{font-size:32px}
+.titulo{margin:0 0 14px}
+.titulo-s{font:400 12px var(--inc-fuente);color:var(--gris);margin-top:2px}
+.grupo{font:600 13.5px var(--inc-fuente);color:var(--gris);margin:22px 0 8px}
+.grupo:first-child{margin-top:0}
+.caja{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);border-radius:18px;padding:16px 14px;margin-bottom:12px}
+.sv-caja-cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;margin-bottom:10px}
+.sv-tot{font:500 12.5px var(--inc-fuente);color:var(--gris);white-space:nowrap}
+/* El show, grande, con la fecha, la zona y quién la supervisa; abajo, sus números. */
+.sv-pase-n{font:900 clamp(34px,9vw,64px)/.95 var(--inc-fuente);letter-spacing:-.03em;text-transform:uppercase;overflow-wrap:normal;padding-top:.08em}
+.sv-pase-f{font:400 13px/1.4 var(--inc-fuente);color:var(--gris);padding-top:10px;border-top:4px solid var(--tinta);margin-top:10px}
+.sv-pase .sv-cuentas{margin-top:12px}
+.sv-pase .sv-cuentas:empty{display:none}
+.hub{padding:0}
+.hub .hub-card{margin:0}
+.wrap .persona-lista{margin:12px 0 0}
+.wrap .lista-top{padding:0}
+.sv-plano-ayuda{margin-bottom:8px}
 .login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;text-align:center;margin:0 0 26px}
 .login-t .mano{display:block;font-size:.78em;margin-top:8px}
 .lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;text-transform:none;color:var(--gris);margin-bottom:6px}
@@ -91,9 +121,17 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .page-title{font:400 44px/1.05 var(--mano);color:var(--tinta);margin-bottom:2px}
 .page-sub{font:400 12px var(--inc-fuente);color:var(--gris);margin-bottom:16px}
 /* Los shows: cajas de vidrio, como en la gerencia. */
-.conv-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);border-radius:16px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:background .15s}
+.conv-card{display:flex;align-items:center;gap:12px;min-height:78px;background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);border-radius:16px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:background .15s}
+.conv-card.hoy{outline:2px solid var(--tinta);outline-offset:-2px}
+.conv-main{flex:1;min-width:0}
+.conv-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+.conv-chip{font:400 11px var(--inc-fuente);padding:4px 9px;border-radius:999px;background:var(--fondo);color:var(--gris)}
+.conv-chip strong{font-weight:700;margin-right:5px;color:var(--tinta)}
+.vivo-pill{font:600 11.5px var(--inc-fuente);color:var(--fondo);background:var(--tinta);padding:3px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
+.vivo-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--fondo);animation:svTitila 1.4s infinite}
+.flecha{color:var(--gris);font-size:22px;flex-shrink:0}
 .conv-card:active{background:var(--vidrio-2)}
-.conv-title{font:700 16px/1.2 var(--inc-fuente);margin-bottom:5px}
+.conv-title{font:700 16px/1.2 var(--inc-fuente);margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .conv-meta{font:400 11px var(--inc-fuente);color:var(--gris);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .conv-prog{display:flex;align-items:center;gap:8px;margin-top:10px;font:400 11px var(--inc-fuente);color:var(--gris)}
 .prog-track{flex:1;height:5px;background:var(--fondo);border-radius:999px;overflow:hidden}
@@ -298,12 +336,8 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
   <div class="app-bar">
     <div class="app-bar-inner">
       <img class="sv-logo" src="logo-sbs-calado.png" alt="SBS">
-      <div style="flex:1;min-width:0">
-        <div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div>
-        <div class="app-bar-title">Show Business Solutions</div>
-        <div class="app-bar-sub">Hands on everything</div>
-      </div>
-      <button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button>
+      <div class="sv-marca"><div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div>
+      <div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div>
     </div>
     <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
   </div>
@@ -325,17 +359,17 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 <div id="screenHome" class="screen">
   <div class="app-bar">
     <div class="app-bar-inner">
-      <div style="flex:1">
-        <div class="app-bar-title">Mis convocatorias</div>
-        <div class="app-bar-sub" id="homeSubtitle">Supervisor</div>
-      </div>
-      <button class="logout-btn ico sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
-      <button class="logout-btn" onclick="doLogout()">Salir</button>
+      <img class="sv-logo" src="logo-sbs-calado.png" alt="SBS">
+      <div class="sv-marca"><div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div>
+      <div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button><button class="logout-btn sv-salir" onclick="doLogout()" title="Salir" aria-label="Salir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10"/><path d="M14 8l4 4-4 4"/><path d="M9 12h9"/></svg><span>Salir</span></button></div>
     </div>
     <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
   </div>
-  <div class="section-pad" id="homeContent" style="min-height:40vh">
-    <div class="empty-state"><div class="empty-title">Cargando...</div></div>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Tus</span>shows</h1><div class="titulo-s" id="homeSubtitle">Supervisor</div></div>
+    <div id="homeContent" style="min-height:40vh">
+      <div class="empty-state"><div class="empty-title">Cargando...</div></div>
+    </div>
   </div>
 </div>
 
@@ -343,16 +377,16 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 <div id="screenShow" class="screen">
   <div class="app-bar">
     <div class="app-bar-inner">
-      <button class="back-btn" onclick="goHome()">←</button>
-      <div style="flex:1">
-        <div class="app-bar-title" id="showTitulo">Show</div>
-        <div class="app-bar-sub" id="showSub"></div>
-      </div>
-      <button class="logout-btn ico sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
+      <button class="back-btn" onclick="goHome()" aria-label="Volver">←</button>
+      <img class="sv-logo" src="logo-sbs-calado.png" alt="SBS">
+      <div class="sv-marca"><div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div>
+      <div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button><button class="logout-btn sv-salir" onclick="doLogout()" title="Salir" aria-label="Salir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10"/><path d="M14 8l4 4-4 4"/><path d="M9 12h9"/></svg><span>Salir</span></button></div>
     </div>
     <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
   </div>
-  <div class="hub">
+  <div class="wrap">
+    <div class="caja sv-pase"><div class="sv-pase-n" id="showTitulo">Show</div><div class="sv-pase-f" id="showSub"></div></div>
+    <div class="hub">
     <button class="hub-card" onclick="openConv(currentConvId)">
       <div class="hub-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg></div>
       <div style="flex:1;min-width:0"><div class="hub-t">Equipo y feedback</div><div class="hub-s">Pasar lista y evaluar a cada persona de tu equipo</div><div class="hub-chips" id="hubEquipo"></div></div>
@@ -361,6 +395,7 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
       <div class="hub-ic inc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></div>
       <div style="flex:1;min-width:0"><div class="hub-t">Incidencias</div><div class="hub-s">Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector</div><div class="hub-chips" id="hubIncid"></div></div>
     </button>
+      </div>
   </div>
 </div>
 
@@ -368,36 +403,40 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 <div id="screenConv" class="screen">
   <div class="app-bar">
     <div class="app-bar-inner">
-      <button class="back-btn" onclick="volverDeEquipo()">←</button>
-      <div style="flex:1">
-        <div class="app-bar-title" id="convScreenTitle">Equipo y feedback</div>
-        <div class="app-bar-sub" id="convScreenSub"></div>
-      </div>
+      <button class="back-btn" onclick="volverDeEquipo()" aria-label="Volver">←</button>
+      <img class="sv-logo" src="logo-sbs-calado.png" alt="SBS">
+      <div class="sv-marca"><div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div>
+      <div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div>
     </div>
+    <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
   </div>
-  <div style="padding:16px 16px 0">
-    <button class="fb-send" onclick="openLista()">Pasar lista</button>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t" id="convScreenTitle"><span class="mano">Equipo</span>y feedback</h1><div class="titulo-s" id="convScreenSub"></div></div>
+    <button class="fb-send" style="margin-top:0" onclick="openLista()">Pasar lista</button>
+    <div id="convPersonList" class="persona-lista"></div>
   </div>
-  <div id="convPersonList" class="persona-lista"></div>
 </div>
 
 <!-- Pasar lista: un turno, una persona por fila, Vino / Faltó -->
 <div id="screenLista" class="screen">
   <div class="app-bar">
     <div class="app-bar-inner">
-      <button class="back-btn" onclick="cerrarLista()">←</button>
-      <div style="flex:1">
-        <div class="app-bar-title">Pasar lista</div>
-        <div class="app-bar-sub" id="listaSub"></div>
-      </div>
+      <button class="back-btn" onclick="cerrarLista()" aria-label="Volver">←</button>
+      <img class="sv-logo" src="logo-sbs-calado.png" alt="SBS">
+      <div class="sv-marca"><div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div>
+      <div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div>
     </div>
+    <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
   </div>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Pasar</span>lista</h1><div class="titulo-s" id="listaSub"></div></div>
   <div class="lista-top">
     <div class="lista-turnos" id="listaTurnos"></div>
     <select class="lista-sector" id="listaSector" onchange="renderLista()"></select>
     <div class="lista-resumen" id="listaResumen"></div>
   </div>
-  <div id="listaBody" class="persona-lista"></div>
+    <div id="listaBody" class="persona-lista"></div>
+  </div>
 </div>
 
 <!-- Bottom sheet: dar feedback -->
@@ -418,29 +457,32 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
   </div>
 </div>
 
-<!-- Incidencias en vivo (sólo shows del Movistar Arena) -->
+<!-- Incidencias en vivo (sólo shows del Movistar Arena): las cajas de la gerencia -->
 <div id="screenIncid" class="screen">
-  <div class="app-bar sv-bar">
+  <div class="app-bar">
     <div class="app-bar-inner">
       <button class="back-btn" onclick="cerrarIncid()" aria-label="Volver">←</button>
       <img class="sv-logo" src="logo-sbs-calado.png" alt="SBS">
-      <div style="flex:1;min-width:0">
-        <div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div>
-        <div class="sv-show" id="incSub"></div>
-      </div>
-      <button class="logout-btn ico sv-tema" id="svBtnTema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false" aria-controls="svTemaMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg></button>
-      <button class="logout-btn ico" onclick="cargarIncid()" title="Actualizar" aria-label="Actualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg></button>
+      <div class="sv-marca"><div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div>
+      <div class="sv-acc"><span class="sv-vivo" id="incVivo">En vivo</span><button class="logout-btn ico" onclick="cargarIncid()" title="Actualizar" aria-label="Actualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg></button><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div>
     </div>
-    <div class="tema-menu" id="svTemaMenu" role="menu" aria-label="Tema" hidden></div>
+    <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
   </div>
-  <div class="sv-cuerpo">
-    <div class="sv-cab"><h1 class="sv-titulo">Incidencias</h1><span class="sv-vivo" id="incVivo">En vivo</span></div>
-    <div class="sv-cuentas" id="incResumen"></div>
-    <div class="sv-seg" id="incFiltro"></div>
-    <div id="incLista"></div>
-    <div id="svPlanoCaja" hidden>
-      <div class="sv-plano-cab"><div class="sv-seg chico" id="svVistas"></div><div class="sv-plano-ayuda">Tocá un sector: ves lo abierto ahí y podés cargar.</div></div>
+  <div class="sv-tablero">
+    <div class="caja sv-pase">
+      <div class="sv-pase-n" id="incShowN"></div>
+      <div class="sv-pase-f" id="incSub"></div>
+      <div class="sv-cuentas" id="incResumen"></div>
+    </div>
+    <div class="caja">
+      <div class="sv-caja-cab"><h2 class="sec-t"><span class="mano">El</span>plano</h2><div class="sv-seg chico" id="svVistas"></div></div>
+      <div class="sv-plano-ayuda">Tocá un sector: ves lo abierto ahí y podés cargar.</div>
       <div id="svPlano" data-alto="pantalla"></div>
+    </div>
+    <div class="caja">
+      <div class="sv-caja-cab"><h2 class="sec-t"><span class="mano">Incidencias</span></h2><small class="sv-tot" id="incTot"></small></div>
+      <div class="sv-seg" id="incFiltro"></div>
+      <div id="incLista"></div>
     </div>
   </div>
   <div class="sv-pie"><button class="sv-cargar" onclick="incAbrirDonde()">+ Cargar incidencia</button></div>
@@ -631,22 +673,24 @@ async function loadData() {
 function renderHome() {
   const cont = document.getElementById('homeContent');
   if (!convs.length) { cont.innerHTML = `<div class="empty-state"><div class="empty-title">Sin shows asignados</div><div>Todavía no te asignaron ningún show</div></div>`; return; }
-  cont.innerHTML = convs.map(c => {
-    const total = c.personas || 0, hechos = c.con_feedback || 0;
-    const pct = total > 0 ? Math.round(hechos / total * 100) : 0;
-    const pc = pct < 50 ? 'var(--gris)' : pct < 100 ? 'var(--media)' : 'var(--tinta)';
-    return `<div class="conv-card" onclick="openShow('${c.id}')">
-      <div class="conv-title">${esc(c.nombre)}</div>
-      <div class="conv-meta">
-        <span class="badge ${areaClase(c.area)}">${areaNombre(c.area)}</span>
-        ${c.fecha ? `<span>${fmtFecha(c.fecha)}</span>` : ''}
-        <span>${total} persona${total!==1?'s':''}</span>
+  // Como en la gerencia: el de hoy (con su contorno), los que vienen y los que pasaron.
+  const hoy = new Date(); const hoyISO = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+  const fechasDe = c => String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
+  const grupoDe = c => { const fs = fechasDe(c); if (!fs.length) return 'proximos'; if (fs.includes(hoyISO)) return 'hoy'; return fs[fs.length - 1] < hoyISO ? 'anteriores' : 'proximos'; };
+  const tarjeta = c => {
+    const total = c.personas || 0, hechos = c.con_feedback || 0, g = grupoDe(c);
+    return `<div class="conv-card${g === 'hoy' ? ' hoy' : ''}" onclick="openShow('${c.id}')">
+      <div class="conv-main">
+        <div class="conv-title">${esc(c.nombre)}${g === 'hoy' ? '<span class="vivo-pill">Hoy</span>' : ''}</div>
+        <div class="conv-meta">${c.fecha ? `<span>${fmtFecha(c.fecha)}</span>` : ''}${c.area && c.area !== 'movistar_arena' ? `<span class="badge ${areaClase(c.area)}">${areaNombre(c.area)}</span>` : ''}</div>
+        <div class="conv-chips"><span class="conv-chip"><strong>${total}</strong>persona${total !== 1 ? 's' : ''}</span><span class="conv-chip"><strong>${hechos}/${total}</strong>con feedback</span></div>
       </div>
-      <div class="conv-prog">
-        <div class="prog-track"><div class="prog-fill" style="background:${pc};width:${pct}%"></div></div>
-        <span>${hechos}/${total} feedbacks</span>
-      </div>
+      <span class="flecha">›</span>
     </div>`;
+  };
+  cont.innerHTML = [['hoy', 'Hoy'], ['proximos', 'Próximos'], ['anteriores', 'Anteriores']].map(([k, nombre]) => {
+    const l = convs.filter(x => grupoDe(x) === k);
+    return l.length ? '<div class="grupo">' + nombre + '</div>' + l.map(tarjeta).join('') : '';
   }).join('');
 }
 
@@ -662,7 +706,8 @@ async function openShow(convId) {
   if (!enControl(c)) return openConv(convId);
   // La cuenta de una zona: antes de empezar, quién supervisa hoy (una vez por show).
   if (svZona && !svTurnoDe(convId)) { svPedirTurno(convId); return; }
-  document.getElementById('showTitulo').textContent = c.nombre;
+  // El nombre del show, sin "— Movistar Arena" (son todos del Arena), como en la sala y en la gerencia.
+  document.getElementById('showTitulo').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
   const quien = svQuienHoy(convId);
   document.getElementById('showSub').innerHTML = esc(c.fecha ? fmtFecha(c.fecha) : '') + (quien ? (c.fecha ? ' · ' : '') + '<span class="sv-quien">' + esc(quien) + '</span> <button type="button" class="sv-noyo" onclick="svNoSoyYo()">No soy yo</button>' : '');
   const total = c.personas || 0, hechos = c.con_feedback || 0;
@@ -681,7 +726,7 @@ function volverDeEquipo() { const c = convs.find(x => x.id === currentConvId); i
 async function openConv(convId) {
   currentConvId = convId;
   const c = convs.find(x => x.id === convId); if (!c) return;
-  document.getElementById('convScreenTitle').textContent = 'Equipo y feedback';
+  document.getElementById('convScreenTitle').innerHTML = '<span class="mano">Equipo</span>y feedback';
   document.getElementById('convScreenSub').textContent = c.nombre + (c.fecha ? ' · ' + fmtFecha(c.fecha) : '');
   document.getElementById('convPersonList').innerHTML = '<div class="empty-state"><div class="empty-title">Cargando...</div></div>';
   showScreen('screenConv');
@@ -3850,7 +3895,8 @@ let incVistos = null, incNuevos = new Set();
 async function openIncid() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   // El nombre del show, sin "— Movistar Arena" (son todos del Arena).
-  document.getElementById('incSub').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ') + (svQuienHoy(c.id) ? ' · ' + svQuienHoy(c.id) : '');
+  document.getElementById('incShowN').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
+  document.getElementById('incSub').textContent = (c.fecha ? fmtFecha(c.fecha) : '') + (svQuienHoy(c.id) ? (c.fecha ? ' · ' : '') + svQuienHoy(c.id) : '');
   incLista = []; incVistos = null; incNuevos = new Set(); incFiltroSup = 'abiertas'; incAbiertaSup = '';
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
@@ -3920,13 +3966,11 @@ function renderIncid() {
   const NOMBRE = { 3: ['grave', 'graves'], 2: ['media', 'medias'], 1: ['leve', 'leves'] };
   document.getElementById('incResumen').innerHTML = [3, 2, 1].map(nv =>
     '<div class="sv-cuenta n' + nv + (nv === 3 && n(3) ? ' pulso' : '') + '"><b>' + n(nv) + '</b>' + NOMBRE[nv][n(nv) === 1 ? 0 : 1] + '</div>').join('');
-  document.getElementById('incFiltro').innerHTML = [['abiertas', 'Abiertas · ' + abiertas.length], ['todas', 'Todas · ' + lista.length], ['plano', 'Plano']].map(([k, t]) =>
+  document.getElementById('incTot').textContent = abiertas.length + (abiertas.length === 1 ? ' abierta' : ' abiertas') + ' · ' + lista.length + ' en total';
+  svRenderPlano(lista);
+  document.getElementById('incFiltro').innerHTML = [['abiertas', 'Abiertas · ' + abiertas.length], ['todas', 'Todas · ' + lista.length]].map(([k, t]) =>
     '<button type="button" class="' + (incFiltroSup === k ? 'on' : '') + '" onclick="incFiltrar(\'' + k + '\')">' + t + '</button>').join('');
   const cont = document.getElementById('incLista');
-  // La pestaña "Plano": el plano en lugar de los tickets (la caja del plano queda viva: el 3D se arma una vez).
-  const caja = document.getElementById('svPlanoCaja');
-  if (caja) { caja.hidden = incFiltroSup !== 'plano'; cont.hidden = incFiltroSup === 'plano'; }
-  if (incFiltroSup === 'plano') { svRenderPlano(lista); incNuevos = new Set(); return; }
   const visibles = incOrdenar(lista).filter(i => incFiltroSup === 'todas' || i.estado !== 'resuelta');
   if (!visibles.length) {
     const res = lista.length - abiertas.length;
@@ -3940,8 +3984,8 @@ function renderIncid() {
 }
 function incFiltrar(k) { incFiltroSup = k; renderIncid(); }
 // ── El plano en la sala ──
-// El mismo plano de la gerencia (3D si se puede; si no, el 2D), con lo abierto por sector.
-// Tocar un sector abre su ficha (lo abierto ahí) con "Cargar acá", que va a la hoja de carga.
+// El mismo plano de la gerencia (3D si se puede; si no, el 2D), con lo abierto por sector, siempre a la
+// vista. Tocar un sector abre su ficha (lo abierto ahí) con "Cargar acá", que va a la hoja de carga.
 let svSectorSel = '';
 function svRenderPlano(lista) {
   const pl = document.getElementById('svPlano'); if (!pl) return;
