@@ -251,6 +251,12 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .sv-plano-ayuda{font:400 12px/1.35 var(--inc-fuente);color:var(--gris);flex:1 1 180px}
 #svPlano{min-height:280px;border-radius:14px}
 /* Si el 3D no se puede, el plano 2D: el dibujo y, abajo, los pisos y la leyenda (como en la gerencia). */
+/* En la sala, la barra y el pie sin vidrio esmerilado: en Safari de iOS, lo que tapa un canvas WebGL con
+   backdrop-filter puede dejarlo en blanco; el pie tapa el borde de abajo del plano. */
+body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv-pie{background:var(--bloque);-webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-plano-nota{display:none;margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fondo);color:var(--tinta);font:400 12.5px/1.4 var(--inc-fuente)}
+.sv-plano-nota.on{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sv-plano-nota button{border:0;border-radius:999px;background:var(--tinta);color:var(--fondo);font:600 12.5px var(--inc-fuente);min-height:40px;padding:0 14px;cursor:pointer}
 #svPlano:not(.inc-3d){display:flex;flex-direction:column;gap:8px}
 #svPlano:not(.inc-3d)>svg{width:100%;height:auto;display:block}
 @media(min-width:960px){#svPlano{height:calc(100vh - 280px);min-height:480px}}
@@ -481,6 +487,7 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
       <div class="sv-caja-cab"><h2 class="sec-t"><span class="mano">El</span>plano</h2><div class="sv-seg chico" id="svVistas"></div></div>
       <div class="sv-plano-ayuda">Tocá un sector: ves lo abierto ahí y podés cargar.</div>
       <div id="svPlano" data-alto="pantalla"></div>
+      <div class="sv-plano-nota" id="svPlanoNota"></div>
     </div>
     <div class="caja">
       <div class="sv-caja-cab"><h2 class="sec-t"><span class="mano">Incidencias</span></h2><small class="sv-tot" id="incTot"></small></div>
@@ -4008,6 +4015,28 @@ function svRenderPlano(lista) {
   const cv = convs.find(x => x.id === currentConvId);
   incMontarPlano(pl, { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: svSectorSel, onclick: 'svTocarSector',
     titulo: cv ? cv.nombre : '', detalle: lista, accionPantalla: { texto: 'Cargar acá', fn: 'svCargarEn' } });
+  if (vista === '3d' && incSin3D) svAviso3D('En este celular el 3D no se pudo cargar: se muestra el plano 2D.');
+  else if (pl._inc3d) { svVigilar3D(pl); const n = document.getElementById('svPlanoNota'); if (n && n.classList.contains('on') && /no se pudo cargar/.test(n.textContent)) svAviso3D(''); }
+}
+// Si el 3D no se pudo cargar (incSin3D) o Safari cortó el contexto, se avisa debajo del plano y se puede reintentar.
+function svAviso3D(texto) {
+  const n = document.getElementById('svPlanoNota'); if (!n) return;
+  if (!texto) { n.className = 'sv-plano-nota'; n.innerHTML = ''; return; }
+  n.innerHTML = '<span>' + texto + '</span><button type="button" onclick="svReintentar3D()">Reintentar 3D</button>';
+  n.className = 'sv-plano-nota on';
+}
+function svReintentar3D() {
+  incSin3D = false; incWebGLOk = null; incCarga3D = null; incListo3D = false;
+  const pl = document.getElementById('svPlano');
+  if (pl && pl._inc3d) { try { pl._inc3d.destruir(); } catch (_) {} pl._inc3d = null; }
+  if (pl) { pl.classList.remove('inc-3d'); pl.style.height = ''; pl.innerHTML = ''; }
+  svAviso3D(''); incGuardarVista('3d'); renderIncid();
+}
+function svVigilar3D(pl) {
+  const cv = pl.querySelector && pl.querySelector('canvas');
+  if (!cv || cv._svVigilado) return;
+  cv._svVigilado = true;
+  cv.addEventListener('webglcontextlost', e => { e.preventDefault(); svAviso3D('El 3D se cortó (el celular liberó memoria).'); });
 }
 function svTocarSector(id) {
   svSectorSel = svSectorSel === id ? '' : id; renderIncid();
