@@ -1507,10 +1507,12 @@ function incCargar3D() {
   if (incCarga3D) return incCarga3D;
   if (window.THREE) return Promise.resolve(true);
   const cargar = src => new Promise((ok, mal) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = mal; document.head.appendChild(s); });
+  // Dos orígenes para cada pieza: si uno falla (la red, un bloqueador), el otro.
   incCarga3D = cargar('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js')
-    .then(() => cargar('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js').catch(() => null))
+    .catch(() => cargar('https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js'))
+    .then(() => cargar('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js').catch(() => cargar('https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js')).catch(() => null))
     .then(() => { incListo3D = true; return !!window.THREE; })
-    .catch(() => { incSin3D = true; return false; });
+    .catch(() => { incSin3D = true; incCarga3D = null; return false; });
   return incCarga3D;
 }
 // Se prueba una sola vez y el contexto de prueba se suelta: cada prueba crea un contexto WebGL y,
