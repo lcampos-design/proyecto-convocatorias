@@ -10891,7 +10891,7 @@ async function sendBulkMail() {
       return;
     }
   }
-  let ok = 0, fail = 0;
+  let ok = 0, fail = 0, tope = null, cortadoEn = -1;
   for (let i = 0; i < bulkMailRecipients.length; i++) {
     const r = bulkMailRecipients[i];
     prog.textContent = `Enviando ${i + 1} de ${bulkMailRecipients.length}...`;
@@ -10903,7 +10903,9 @@ async function sendBulkMail() {
       let attachments, contratoRow;
       if (adjContrato) {
         const datos = datosDe(r);
-        contratoRow = await crearContrato(datos, currentConvId, r.personaId, r.email, r.postulacionId, r.puestoId, bmFromArea, anexosBm, soloDoc);
+        // Si el envío se frenó por el tope de Resend y se retoma, el contrato de esta persona ya está creado: no se arma otro.
+        contratoRow = r.contratoRow || await crearContrato(datos, currentConvId, r.personaId, r.email, r.postulacionId, r.puestoId, bmFromArea, anexosBm, soloDoc);
+        r.contratoRow = contratoRow;
         const pdfBase64 = await generarContratoPDF(contratoRow.texto_contrato, { logoUrl: location.origin + '/' + LOGO_IMG, firmaEmpleadorUrl: location.origin + '/' + FIRMA_CONTRATO, hashTexto: await sha256Hex(contratoRow.texto_contrato), destacar: destacarDe(datos), anexos: contratoRow.anexos || [], datosAnexo: datosAnexoDe(contratoRow), soloDocumentos: soloDoc });
         attachments = [{ filename: soloDoc ? 'documento.pdf' : 'contrato.pdf', content: pdfBase64 }];
         body = conLinkDeFirma(body, `${location.origin}/contrato.html?t=${contratoRow.token}`, titulosDe(contratoRow.anexos));
@@ -10912,14 +10914,35 @@ async function sendBulkMail() {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
         body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea, (que === 'contrato' || soloDoc) ? null : { cuit: r.cuit, convId: currentConvId, firma: await confFirma(r.cuit, currentConvId) }), text: body, ...(attachments ? { attachments } : {}) })
       });
-      if (res.ok) { ok++; if (contratoRow) await marcarContratoEnviado(contratoRow.id); } else fail++;
+      if (res.ok) { ok++; if (contratoRow) await marcarContratoEnviado(contratoRow.id); }
+      else {
+        // Si Resend llegó a su tope (100 por día en el plan gratis), seguir es fallar uno
+        // por uno: se frena acá, se dice cuántos faltan y se deja retomar desde ese.
+        const data = await res.json().catch(() => null);
+        if (data && data.cuota) { tope = data; cortadoEn = i; break; }
+        fail++;
+      }
     } catch (_) { fail++; }
     await new Promise(res => setTimeout(res, 600));
   }
-  prog.style.display = 'none'; prog.textContent = '';
   btn.disabled = false;
+  if (tope) {
+    bulkMailRecipients = bulkMailRecipients.slice(cortadoEn);
+    prog.innerHTML = topeMailHTML(tope, ok, bulkMailRecipients.length, 'sendBulkMail()');
+    document.getElementById('bmRecap').innerHTML = `Quedan <b>${bulkMailRecipients.length}</b> persona(s) sin mandar.`;
+    toast(`Se frenó por el tope de Resend: ${ok} enviados, faltan ${bulkMailRecipients.length}`);
+    return;
+  }
+  prog.style.display = 'none'; prog.textContent = '';
   toast(`✓ Enviados: ${ok}${fail ? ` · Fallaron: ${fail}` : ''}`);
   if (!fail) closeM('mBulkMail');
+}
+// El aviso cuando Resend frena un envío masivo por su tope: cuántos salieron y
+// cuántos faltan, qué pasó, desde qué hora (de acá) se puede retomar si es el tope
+// diario, y el botón para retomar con los que faltan.
+function topeMailHTML(tope, ok, faltan, retomar) {
+  const cuando = tope.cuota === 'diaria' && tope.reinicio ? ' Se puede retomar a partir de las ' + new Date(tope.reinicio).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' (hora de acá).' : '';
+  return `<b>Se mandaron ${ok}; faltan ${faltan}.</b> ${e(tope.error || 'Resend no aceptó el envío.')}${cuando}<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:8px" onclick="${retomar}">Retomar los ${faltan} que faltan</button>`;
 }
 // ── CONTRATOS ──
 // Ojo: acá había una segunda normDoc() que sólo dejaba los números. Al ser una
@@ -12974,13 +12997,15 @@ async function dmAbrirRondas() {
   toast('✓ Ronda abierta en ' + ids.length + ' convocatoria' + (ids.length === 1 ? '' : 's'));
   renderDispMes();
 }
-async function dmMandar() {
-  const dest = dmDestinatarios(), mes = document.getElementById('dmMes').value; if (!dest.length) return;
+// Si Resend frenó el envío por su tope, acá quedan los que faltan, para retomar.
+let dmRestantes = [];
+async function dmMandar(restantes) {
+  const dest = Array.isArray(restantes) ? restantes : dmDestinatarios(), mes = document.getElementById('dmMes').value; if (!dest.length) return;
   if (dmEventos().some(x => !x.c.disp_abierta)) { toast('Primero abrí la ronda de todas: si no, esos eventos no salen en el link'); return; }
   if (!confirm(`¿Mandar el link de la disponibilidad de ${dmNombreMes(mes)} a ${dest.length} persona(s)?`)) return;
   const btn = document.getElementById('dmMandarBtn'), cuantos = document.getElementById('dmCuantos'); btn.disabled = true;
   const asunto = `Disponibilidad de ${dmNombreMes(mes)} — Show Business Solutions`;
-  let ok = 0, mal = 0;
+  let ok = 0, mal = 0, tope = null, cortadoEn = -1;
   for (let i = 0; i < dest.length; i++) {
     const p = dest[i];
     cuantos.textContent = `Mandando ${i + 1} de ${dest.length}…`;
@@ -12990,11 +13015,18 @@ async function dmMandar() {
     try {
       const res = await fetch('/api/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
         body: JSON.stringify({ from, to: [p.email], subject: asunto, text: texto, html: renderEmailHtml(texto, from, p.area === 'movistar_arena' ? 'movistar' : 'externos') }) });
-      if (res.ok) ok++; else mal++;
+      if (res.ok) ok++;
+      else {
+        // El tope de Resend (100 por día en el plan gratis): se frena y se deja retomar con los que faltan.
+        const data = await res.json().catch(() => null);
+        if (data && data.cuota) { tope = data; cortadoEn = i; break; }
+        mal++;
+      }
     } catch (_) { mal++; }
   }
-  cuantos.textContent = `✓ Enviado a ${ok}` + (mal ? ` · ${mal} no salieron (revisá el mail de esas personas)` : '') + '.';
   btn.disabled = false;
+  if (tope) { dmRestantes = dest.slice(cortadoEn); cuantos.innerHTML = topeMailHTML(tope, ok, dmRestantes.length, 'dmMandar(dmRestantes)'); return; }
+  cuantos.textContent = `✓ Enviado a ${ok}` + (mal ? ` · ${mal} no salieron (revisá el mail de esas personas)` : '') + '.';
 }
 async function toggleDispAbierta(val) {
   const c = dispConvFuente(); if (!c) return;   // la ronda que se está viendo (la de acá o la general)
