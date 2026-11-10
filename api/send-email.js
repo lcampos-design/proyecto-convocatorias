@@ -53,6 +53,29 @@ async function verificarAdmin(req) {
   }
 }
 
+// Los topes de Resend. En el plan gratis son 100 mails por día (el contador se
+// reinicia a la medianoche UTC) y 3.000 por mes; en los planes pagos no hay tope
+// diario. En todos, 2 pedidos por segundo. Se devuelven con nombre ("cuota") para
+// que el panel frene un envío masivo y diga cuántos faltan y cuándo retomar, en
+// vez de seguir fallando uno por uno.
+function topeDe(cuerpo, status) {
+  const n = String(cuerpo && cuerpo.name || '').toLowerCase(), m = String(cuerpo && cuerpo.message || '');
+  if (n === 'daily_quota_exceeded' || /daily email sending quota/i.test(m)) {
+    return { cuota: 'diaria', reinicio: proximaMedianocheUTC(), error: 'Resend llegó al tope diario de mails del plan (en el gratis, 100 por día; el contador se reinicia a la medianoche UTC). Para sacar el tope hay que pasar a un plan pago en Resend.' };
+  }
+  if (n === 'monthly_quota_exceeded' || /monthly email sending quota/i.test(m)) {
+    return { cuota: 'mensual', error: 'Resend llegó al tope mensual de mails del plan (en el gratis, 3.000). Hay que pasar a un plan pago en Resend o esperar al mes que viene.' };
+  }
+  if (n === 'rate_limit_exceeded' || (status === 429 && /too many requests/i.test(m))) {
+    return { cuota: 'velocidad', error: 'Resend pidió ir más despacio (más de 2 envíos por segundo). Esperá unos segundos y volvé a intentar.' };
+  }
+  return null;
+}
+function proximaMedianocheUTC() {
+  const d = new Date();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1)).toISOString();
+}
+
 // Una clave con permiso "Sending access" sirve para mandar pero no para
 // consultar dominios: Resend contesta 401 con este nombre. No es un error.
 function esClaveRestringida(cuerpo) {
@@ -160,21 +183,29 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from, to, subject, text,
-        ...(html ? { html } : {}),
-        ...(Array.isArray(attachments) && attachments.length ? { attachments } : {})
-      })
-    });
-
-    const data = await response.json();
+    let response, data;
+    for (let intento = 0; ; intento++) {
+      response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from, to, subject, text,
+          ...(html ? { html } : {}),
+          ...(Array.isArray(attachments) && attachments.length ? { attachments } : {})
+        })
+      });
+      data = await response.json();
+      // Si Resend pide ir más despacio (más de 2 pedidos por segundo), se espera un
+      // segundo y se prueba una vez más antes de darlo por fallado.
+      if (!response.ok && intento === 0 && (topeDe(data, response.status) || {}).cuota === 'velocidad') { await new Promise(r => setTimeout(r, 1200)); continue; }
+      break;
+    }
     if (!response.ok) {
+      const tope = topeDe(data, response.status);
+      if (tope) { res.status(response.status).json({ ...tope, resend: data }); return; }
       // Resend devuelve 401/403 para cosas muy distintas: clave inválida,
       // dominio sin verificar, remitente no permitido. Antes se decía
       // "rechazó la clave" para todas, y se mandaba a cambiar una clave que
