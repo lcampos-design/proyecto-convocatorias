@@ -71,6 +71,11 @@ function topeDe(cuerpo, status) {
   }
   return null;
 }
+// Cuánto esperar antes de reintentar: lo que pida su cabecera retry-after, entre 1 y 3 segundos.
+function esperaResend(respuesta) {
+  const s = Number(respuesta.headers && typeof respuesta.headers.get === 'function' ? respuesta.headers.get('retry-after') : 0);
+  return Math.min(3000, Math.max(1000, (s > 0 ? s : 0) * 1000));
+}
 function proximaMedianocheUTC() {
   const d = new Date();
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1)).toISOString();
@@ -200,7 +205,7 @@ export default async function handler(req, res) {
       data = await response.json();
       // Si Resend pide ir más despacio (más de 2 pedidos por segundo), se espera un
       // segundo y se prueba una vez más antes de darlo por fallado.
-      if (!response.ok && intento === 0 && (topeDe(data, response.status) || {}).cuota === 'velocidad') { await new Promise(r => setTimeout(r, 1200)); continue; }
+      if (!response.ok && intento === 0 && (topeDe(data, response.status) || {}).cuota === 'velocidad') { await new Promise(r => setTimeout(r, esperaResend(response))); continue; }
       break;
     }
     if (!response.ok) {

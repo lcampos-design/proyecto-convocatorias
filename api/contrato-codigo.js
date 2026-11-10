@@ -67,6 +67,18 @@ export function armarMailCodigo({ nombre, codigo, link, minutos, documento }) {
   return { subject: D(`Tu código para firmar el contrato: ${separado}`), text: D(text), html: D(html) };
 }
 
+// Si Resend contestó 429 por velocidad ("rate_limit_exceeded"): no por el tope diario o mensual.
+async function resendPideEsperar(respuesta) {
+  if (!respuesta || respuesta.ok || respuesta.status !== 429 || typeof respuesta.json !== 'function') return false;
+  const cuerpo = await respuesta.json().catch(() => null);
+  return /rate_limit|too many requests/i.test(JSON.stringify(cuerpo || {}));
+}
+// Cuánto esperar antes de reintentar: lo que pida su cabecera retry-after, entre 1 y 3 segundos.
+function esperaResend(respuesta) {
+  const s = Number(respuesta.headers && typeof respuesta.headers.get === 'function' ? respuesta.headers.get('retry-after') : 0);
+  return Math.min(3000, Math.max(1000, (s > 0 ? s : 0) * 1000));
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ error: 'Método no permitido' }); }
   const servicio = process.env.SUPABASE_SERVICE_ROLE_KEY || '', resend = process.env.RESEND_API_KEY || '';
@@ -102,11 +114,19 @@ export default async function handler(req, res) {
   const mail = armarMailCodigo({ nombre: r.nombre, codigo: r.codigo, link: linkConCodigo(token, r.codigo), minutos: r.minutos, documento: !!r.solo_documentos });
   const from = r.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   try {
-    const envio = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${resend}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [r.email], subject: mail.subject, text: mail.text, html: mail.html })
-    });
+    let envio;
+    for (let intento = 0; ; intento++) {
+      envio = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${resend}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to: [r.email], subject: mail.subject, text: mail.text, html: mail.html })
+      });
+      // Resend admite 2 pedidos por segundo para toda la cuenta: el panel mandando
+      // contratos y varios pidiendo el código a la vez lo pasan. Si pide ir más
+      // despacio, se espera lo que dice (1 a 3 s) y se prueba una vez más.
+      if (intento === 0 && (await resendPideEsperar(envio))) { await new Promise(r => setTimeout(r, esperaResend(envio))); continue; }
+      break;
+    }
     if (!envio.ok) return res.status(502).json({ error: 'No pudimos mandarte el código. Probá de nuevo en un rato.' });
   } catch (_) {
     return res.status(502).json({ error: 'No pudimos mandarte el código. Probá de nuevo en un rato.' });
