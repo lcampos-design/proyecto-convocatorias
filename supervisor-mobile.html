@@ -265,6 +265,14 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
 .sv-seg button{border:0;border-radius:9px;background:transparent;color:var(--tinta);font:600 13px var(--inc-fuente);min-height:44px;cursor:pointer}
 .sv-seg button.on{background:var(--tinta);color:var(--fondo)}
 .sv-vacio{text-align:center;padding:28px 16px;color:var(--gris);font:400 13px/1.5 var(--inc-fuente);border:2px dashed var(--linea);border-radius:14px}
+/* En el celular, sin el plano (ahí no se lee): las incidencias se eligen por zona con el desplegable y, en
+   "Todas las zonas", van agrupadas por zona. En la compu, el plano 3D para todos y sin el desplegable. */
+@media(max-width:959px){.sv-compu{display:none}}
+@media(min-width:960px){.sv-zona{display:none}}
+.sv-zona{margin:0 0 10px;padding-right:44px;font-weight:600;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 14px center}
+.sv-zona-cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:16px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--linea);font:800 13px var(--inc-fuente);letter-spacing:.02em;text-transform:uppercase;color:var(--tinta)}
+.sv-zona-cab:first-child{margin-top:2px}
+.sv-zona-cab small{font:500 12px var(--inc-fuente);color:var(--gris);text-transform:none;letter-spacing:0;white-space:nowrap}
 .sv-pie{position:sticky;bottom:0;z-index:5;margin-top:12px;padding:10px 12px calc(env(safe-area-inset-bottom,0px) + 12px);background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border-top:1px solid var(--vidrio-borde)}
 .sv-cargar{display:block;width:100%;max-width:736px;margin:0 auto;border:0;border-radius:12px;background:var(--tinta);color:var(--fondo);font:700 16px var(--inc-fuente);min-height:54px;cursor:pointer}
 /* Los tickets (los arma el bloque compartido): tarjetas redondeadas con el talón del color de su gravedad. */
@@ -483,7 +491,7 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
       <div class="sv-pase-f" id="incSub"></div>
       <div class="sv-cuentas" id="incResumen"></div>
     </div>
-    <div class="caja">
+    <div class="caja sv-compu">
       <div class="sv-caja-cab"><h2 class="sec-t"><span class="mano">El</span>plano</h2><div class="sv-seg chico" id="svVistas"></div></div>
       <div class="sv-plano-ayuda">Tocá un sector: ves lo abierto ahí y podés cargar.</div>
       <div id="svPlano" data-alto="pantalla"></div>
@@ -491,6 +499,7 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
     </div>
     <div class="caja">
       <div class="sv-caja-cab"><h2 class="sec-t"><span class="mano">Incidencias</span></h2><small class="sv-tot" id="incTot"></small></div>
+      <select class="l-in sv-zona" id="incZonaSel" onchange="incElegirZona(this.value)" aria-label="Zona"></select>
       <div class="sv-seg" id="incFiltro"></div>
       <div id="incLista"></div>
     </div>
@@ -1535,6 +1544,21 @@ function incTraerDatos(p) {
   });
 }
 async function incRefrescarPlano() { return incTraerDatos(Promise.all([incCargarPlanoArena(), incCargarArmados()]).then(r => r[0] || r[1])); }
+// La zona de un lugar según las zonas de los supervisores (las cuentas por zona): la
+// calle, las puertas (cortatickets), el anillo (los puestos: gastronomía, baños,
+// enfermería, servicios, y el backstage), el bowl (el campo), la platea baja, el VIP
+// (Premium) y la platea alta. Lo que no está en el plano va a "Otros lugares". En el
+// celular, las incidencias se eligen y se agrupan por estas zonas (sin el plano).
+const INC_ZONAS_CUENTA = [['calle', 'Calle'], ['cortatickets', 'Cortatickets'], ['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['vip', 'VIP'], ['platea_alta', 'Platea alta'], ['otros', 'Otros lugares']];
+function incZonaCuenta(sector) {
+  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
+  if (!s) return 'otros';
+  if (s.t === 'calle') return 'calle';
+  if (s.t === 'puerta') return 'cortatickets';
+  if (s.lugar || s.t === 'anillo' || s.t === 'back') return 'anillo';
+  return { campo: 'bowl', baja: 'platea_baja', alta: 'platea_alta', vip: 'vip' }[s.t] || 'otros';
+}
+function incZonaNombre(z) { return (INC_ZONAS_CUENTA.find(x => x[0] === z) || [])[1] || String(z || ''); }
 // La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
 // "Platea baja · P1", "PB" (el campo) o "Anillo · P1" (los puestos).
 function incZona(sector) {
@@ -3909,7 +3933,7 @@ function incEstiloMetricas() {
 // queda para la gerencia y el panel).
 let incLista = [], incTimer = null, incHoja = null;
 // Abiertas o todas, y la incidencia tocada (desplegada).
-let incFiltroSup = 'abiertas', incAbiertaSup = '';
+let incFiltroSup = 'abiertas', incAbiertaSup = '', incZonaSup = 'todas';
 // Para el destello: las que ya se vieron y las que acaban de llegar.
 let incVistos = null, incNuevos = new Set();
 async function openIncid() {
@@ -3918,6 +3942,8 @@ async function openIncid() {
   document.getElementById('incShowN').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
   document.getElementById('incSub').textContent = (c.fecha ? fmtFecha(c.fecha) : '') + (svQuienHoy(c.id) ? (c.fecha ? ' · ' : '') + svQuienHoy(c.id) : '');
   incLista = []; incVistos = null; incNuevos = new Set(); incFiltroSup = 'abiertas'; incAbiertaSup = '';
+  // En el celular, la sala arranca en la zona de la cuenta (si pasó en otra, se elige en el desplegable).
+  incZonaSup = svZona || 'todas';
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
   const plano = incRefrescarPlano();
@@ -3966,6 +3992,9 @@ try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', svC
 svColorBarra();
 if (document.body && document.querySelector) document.body.dataset.pantalla = (document.querySelector('.screen.active') || {}).id || 'screenLogin';
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape') svCerrarTemas(); });
+// Al pasar del celular a la compu (o al revés), la sala cambia de forma: por zona, o con el plano.
+let svRedibujo = 0;
+if (typeof window !== 'undefined') window.addEventListener('resize', () => { clearTimeout(svRedibujo); svRedibujo = setTimeout(() => { if (document.body && document.body.dataset.pantalla === 'screenIncid') renderIncid(); }, 200); });
 async function cargarIncid() {
   const { data, error } = await sb.rpc('sup_incidencias', { p_conv_id: currentConvId });
   const vivo = document.getElementById('incVivo');
@@ -3987,29 +4016,57 @@ function renderIncid() {
   const NOMBRE = { 3: ['grave', 'graves'], 2: ['media', 'medias'], 1: ['leve', 'leves'] };
   document.getElementById('incResumen').innerHTML = [3, 2, 1].map(nv =>
     '<div class="sv-cuenta n' + nv + (nv === 3 && n(3) ? ' pulso' : '') + '"><b>' + n(nv) + '</b>' + NOMBRE[nv][n(nv) === 1 ? 0 : 1] + '</div>').join('');
-  document.getElementById('incTot').textContent = abiertas.length + (abiertas.length === 1 ? ' abierta' : ' abiertas') + ' · ' + lista.length + ' en total';
   svRenderPlano(lista);
-  document.getElementById('incFiltro').innerHTML = [['abiertas', 'Abiertas · ' + abiertas.length], ['todas', 'Todas · ' + lista.length]].map(([k, t]) =>
+  // En el celular, por zona (en la compu está el plano): el desplegable dice cuántas abiertas tiene cada
+  // zona; elegida una, se ven sólo las suyas; en "Todas las zonas", la lista va agrupada por zona.
+  const porZona = incPorZona(), zonaDe = i => incZonaCuenta(i.sector);
+  const sel = document.getElementById('incZonaSel');
+  if (sel) {
+    const porZ = {}; abiertas.forEach(i => { const z = zonaDe(i); porZ[z] = (porZ[z] || 0) + 1; });
+    const cuenta = k => k ? ' · ' + k + (k === 1 ? ' abierta' : ' abiertas') : '';
+    const zonas = INC_ZONAS_CUENTA.filter(([z]) => z !== 'otros' || lista.some(i => zonaDe(i) === 'otros'));
+    if (incZonaSup !== 'todas' && !zonas.some(([z]) => z === incZonaSup)) incZonaSup = 'todas';
+    sel.innerHTML = '<option value="todas"' + (incZonaSup === 'todas' ? ' selected' : '') + '>Todas las zonas' + cuenta(abiertas.length) + '</option>'
+      + zonas.map(([z, nombre]) => '<option value="' + z + '"' + (incZonaSup === z ? ' selected' : '') + '>' + nombre + cuenta(porZ[z] || 0) + '</option>').join('');
+  }
+  const zonaElegida = porZona && incZonaSup !== 'todas' ? incZonaSup : '';
+  const deZona = zonaElegida ? lista.filter(i => zonaDe(i) === zonaElegida) : lista, abiertasZ = deZona.filter(i => i.estado !== 'resuelta');
+  document.getElementById('incTot').textContent = abiertasZ.length + (abiertasZ.length === 1 ? ' abierta' : ' abiertas') + ' · ' + deZona.length + ' en total' + (zonaElegida ? ' en ' + incZonaNombre(zonaElegida) : '');
+  document.getElementById('incFiltro').innerHTML = [['abiertas', 'Abiertas · ' + abiertasZ.length], ['todas', 'Todas · ' + deZona.length]].map(([k, t]) =>
     '<button type="button" class="' + (incFiltroSup === k ? 'on' : '') + '" onclick="incFiltrar(\'' + k + '\')">' + t + '</button>').join('');
   const cont = document.getElementById('incLista');
-  const visibles = incOrdenar(lista).filter(i => incFiltroSup === 'todas' || i.estado !== 'resuelta');
+  const visibles = incOrdenar(deZona).filter(i => incFiltroSup === 'todas' || i.estado !== 'resuelta');
   if (!visibles.length) {
-    const res = lista.length - abiertas.length;
-    cont.innerHTML = '<div class="sv-vacio">' + (lista.length ? 'No hay incidencias abiertas. ' + (res === 1 ? 'La resuelta de hoy está' : 'Las ' + res + ' resueltas de hoy están') + ' en “Todas”.' : 'Sin incidencias en este show. Para cargar una, tocá “+ Cargar incidencia”.') + '</div>';
+    const res = deZona.length - abiertasZ.length;
+    cont.innerHTML = '<div class="sv-vacio">' + (zonaElegida && !deZona.length ? 'Sin incidencias en ' + incEsc(incZonaNombre(zonaElegida)) + ' en este show. Para ver las demás, elegí «Todas las zonas».' : deZona.length ? 'No hay incidencias abiertas' + (zonaElegida ? ' en ' + incEsc(incZonaNombre(zonaElegida)) : '') + '. ' + (res === 1 ? 'La resuelta de hoy está' : 'Las ' + res + ' resueltas de hoy están') + ' en “Todas”.' : 'Sin incidencias en este show. Para cargar una, tocá “+ Cargar incidencia”.') + '</div>';
     incNuevos = new Set(); return;
   }
   const cods = incCodigos(incLista);
-  cont.innerHTML = visibles.map(i => incTarjetaHTML(i, { abierta: String(i.id) === incAbiertaSup, nueva: incNuevos.has(i.id), onclick: 'incTocarTarjeta', codigo: cods[i.id],
-    pie: i.estado === 'resuelta' ? '' : '<div class="sv-tj-pie"><button type="button" class="sv-resolver" onclick="event.stopPropagation();incAbrirResolver(\'' + incEsc(i.id) + '\')">Resolver</button></div>' })).join('');
+  const tarjeta = i => incTarjetaHTML(i, { abierta: String(i.id) === incAbiertaSup, nueva: incNuevos.has(i.id), onclick: 'incTocarTarjeta', codigo: cods[i.id],
+    pie: i.estado === 'resuelta' ? '' : '<div class="sv-tj-pie"><button type="button" class="sv-resolver" onclick="event.stopPropagation();incAbrirResolver(\'' + incEsc(i.id) + '\')">Resolver</button></div>' });
+  // En el celular con "Todas las zonas": agrupadas por zona, cada una con su título y cuántas abiertas tiene.
+  cont.innerHTML = porZona && !zonaElegida ? incPorZonasHTML(visibles, zonaDe, tarjeta) : visibles.map(tarjeta).join('');
   incNuevos = new Set();
 }
+function incPorZonasHTML(visibles, zonaDe, tarjeta) {
+  return INC_ZONAS_CUENTA.map(([z, nombre]) => {
+    const de = visibles.filter(i => zonaDe(i) === z); if (!de.length) return '';
+    const ab = de.filter(i => i.estado !== 'resuelta').length;
+    return '<div class="sv-zona-cab">' + nombre + '<small>' + (ab ? ab + (ab === 1 ? ' abierta' : ' abiertas') : 'sin abiertas') + (de.length !== ab ? ' · ' + de.length + ' en total' : '') + '</small></div>' + de.map(tarjeta).join('');
+  }).join('');
+}
+function incElegirZona(z) { incZonaSup = z; renderIncid(); }
+// En el celular (angosto) la sala va por zona; en la compu, con el plano.
+function incPorZona() { return typeof window !== 'undefined' && window.innerWidth < 960; }
 function incFiltrar(k) { incFiltroSup = k; renderIncid(); }
 // ── El plano en la sala ──
 // El mismo plano de la gerencia (3D si se puede; si no, el 2D), con lo abierto por sector, siempre a la
 // vista. Tocar un sector abre su ficha (lo abierto ahí) con "Cargar acá", que va a la hoja de carga.
 let svSectorSel = '';
 function svRenderPlano(lista) {
-  const pl = document.getElementById('svPlano'); if (!pl || !pl.clientWidth) return;   // con la sala oculta, no (se monta al redibujar)
+  const pl = document.getElementById('svPlano'); if (!pl) return;
+  // Con la sala oculta o en el celular (la caja del plano no se muestra: va por zona) no se monta; si quedó un 3D de antes, se suelta.
+  if (!pl.clientWidth) { if (pl._inc3d) { try { pl._inc3d.destruir(); } catch (_) {} pl._inc3d = null; pl.classList.remove('inc-3d'); pl.style.height = ''; pl.innerHTML = ''; } return; }
   const vista = incVistaPreferida();
   document.getElementById('svVistas').innerHTML = [['3d', '3D'], ['2d', 'Plano']].map(([k, n]) =>
     '<button type="button" class="' + (vista === k ? 'on' : '') + '" onclick="svElegirVista(\'' + k + '\')">' + n + '</button>').join('');
