@@ -5716,6 +5716,21 @@ function incTraerDatos(p) {
   });
 }
 async function incRefrescarPlano() { return incTraerDatos(Promise.all([incCargarPlanoArena(), incCargarArmados()]).then(r => r[0] || r[1])); }
+// La zona de un lugar según las zonas de los supervisores (las cuentas por zona): la
+// calle, las puertas (cortatickets), el anillo (los puestos: gastronomía, baños,
+// enfermería, servicios, y el backstage), el bowl (el campo), la platea baja, el VIP
+// (Premium) y la platea alta. Lo que no está en el plano va a "Otros lugares". En el
+// celular, las incidencias se eligen y se agrupan por estas zonas (sin el plano).
+const INC_ZONAS_CUENTA = [['calle', 'Calle'], ['cortatickets', 'Cortatickets'], ['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['vip', 'VIP'], ['platea_alta', 'Platea alta'], ['otros', 'Otros lugares']];
+function incZonaCuenta(sector) {
+  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
+  if (!s) return 'otros';
+  if (s.t === 'calle') return 'calle';
+  if (s.t === 'puerta') return 'cortatickets';
+  if (s.lugar || s.t === 'anillo' || s.t === 'back') return 'anillo';
+  return { campo: 'bowl', baja: 'platea_baja', alta: 'platea_alta', vip: 'vip' }[s.t] || 'otros';
+}
+function incZonaNombre(z) { return (INC_ZONAS_CUENTA.find(x => x[0] === z) || [])[1] || String(z || ''); }
 // La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
 // "Platea baja · P1", "PB" (el campo) o "Anillo · P1" (los puestos).
 function incZona(sector) {

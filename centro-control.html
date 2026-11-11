@@ -206,6 +206,15 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .t-lista-t small{font:500 12.5px var(--inc-fuente);color:var(--gris);white-space:nowrap}
 .t-lista-cab .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
 .t-lista-cuerpo{padding:12px}
+/* En el celular, sin el plano (ahí no se lee): las incidencias se eligen por zona con el desplegable y, en
+   "Todas las zonas", van agrupadas por zona. En la compu, el plano 3D para todos y sin el desplegable. */
+@media(max-width:959px){.t-plano{display:none}}
+@media(min-width:960px){.t-zona{display:none}}
+.t-zona{width:100%;min-height:44px;margin:0 0 10px;padding:8px 44px 8px 12px;border:2px solid var(--linea);border-radius:12px;background:var(--fondo) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 14px center;color:var(--tinta);font:600 15px var(--inc-fuente);appearance:none;-webkit-appearance:none;outline:none}
+.t-zona:focus-visible{border-color:var(--tinta)}
+.t-zona-cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:16px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--linea);font:800 13px var(--inc-fuente);letter-spacing:.02em;text-transform:uppercase;color:var(--tinta)}
+.t-zona-cab:first-child{margin-top:2px}
+.t-zona-cab small{font:500 12px var(--inc-fuente);color:var(--gris);text-transform:none;letter-spacing:0;white-space:nowrap}
 @media(min-width:960px){
   .t-grid{grid-template-columns:minmax(0,1fr) 420px;align-items:start}
   #plano{height:calc(100vh - 180px);min-height:520px}
@@ -355,6 +364,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
       <aside class="t-lista caja">
         <div class="t-lista-cab">
           <h2 class="t-lista-t sec-t" id="listaT"><span class="mano">Incidencias</span></h2>
+          <select class="t-zona" id="zonaSel" onchange="elegirZona(this.value)" aria-label="Zona"></select>
           <div class="fila" id="filtros"></div>
         </div>
         <div class="t-lista-cuerpo" id="lista"></div>
@@ -976,6 +986,21 @@ function incTraerDatos(p) {
   });
 }
 async function incRefrescarPlano() { return incTraerDatos(Promise.all([incCargarPlanoArena(), incCargarArmados()]).then(r => r[0] || r[1])); }
+// La zona de un lugar según las zonas de los supervisores (las cuentas por zona): la
+// calle, las puertas (cortatickets), el anillo (los puestos: gastronomía, baños,
+// enfermería, servicios, y el backstage), el bowl (el campo), la platea baja, el VIP
+// (Premium) y la platea alta. Lo que no está en el plano va a "Otros lugares". En el
+// celular, las incidencias se eligen y se agrupan por estas zonas (sin el plano).
+const INC_ZONAS_CUENTA = [['calle', 'Calle'], ['cortatickets', 'Cortatickets'], ['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['vip', 'VIP'], ['platea_alta', 'Platea alta'], ['otros', 'Otros lugares']];
+function incZonaCuenta(sector) {
+  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
+  if (!s) return 'otros';
+  if (s.t === 'calle') return 'calle';
+  if (s.t === 'puerta') return 'cortatickets';
+  if (s.lugar || s.t === 'anillo' || s.t === 'back') return 'anillo';
+  return { campo: 'bowl', baja: 'platea_baja', alta: 'platea_alta', vip: 'vip' }[s.t] || 'otros';
+}
+function incZonaNombre(z) { return (INC_ZONAS_CUENTA.find(x => x[0] === z) || [])[1] || String(z || ''); }
 // La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
 // "Platea baja · P1", "PB" (el campo) o "Anillo · P1" (los puestos).
 function incZona(sector) {
@@ -3358,7 +3383,7 @@ function supervisoresHTML() {
   return hay.length ? '<span class="pase-sup-t">A cargo</span>' + hay.map(([z, t]) => '<span>' + t + ' · <b>' + incEsc(ult[z].nombre + ' ' + ult[z].apellido) + '</b></span>').join('') : '';
 }
 // La incidencia tocada (desplegada, y su lugar elegido en el plano); la categoría y la franja tocadas en las métricas.
-let focoInc = '', catSel = '', franjaSel = '', irAFoco = false;
+let focoInc = '', catSel = '', franjaSel = '', irAFoco = false, zonaSel = 'todas';
 let vistos = null, nuevos = new Set(), nivelSel = 0;
 const hoyISO = () => incDia(new Date().toISOString());
 function pantalla(id) {
@@ -3502,6 +3527,9 @@ function ajustarNombre() {
 if (typeof window !== 'undefined' && window.addEventListener) {
   let esperaNombre = null;
   window.addEventListener('resize', () => { clearTimeout(esperaNombre); esperaNombre = setTimeout(ajustarNombre, 120); });
+  // Al pasar del celular a la compu (o al revés), el tablero cambia de forma: por zona, o con el plano.
+  let esperaForma = 0;
+  window.addEventListener('resize', () => { clearTimeout(esperaForma); esperaForma = setTimeout(() => { if (document.body.dataset.pantalla === 'pShow') render(); }, 200); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarNombre);
 }
 function renderShows() {
@@ -3521,7 +3549,7 @@ function renderShows() {
 async function abrirShow(id, fecha) {
   const s = shows.find(x => x.id === id); if (!s) return;
   // La fecha es el show: el tablero, el resumen y el informe son de ella.
-  showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = fecha !== undefined ? fecha : fechaInicial(s); vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = '';
+  showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = fecha !== undefined ? fecha : fechaInicial(s); vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = ''; zonaSel = 'todas';
   pantalla('pShow');
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
@@ -3556,6 +3584,16 @@ async function cargarIncidencias() {
 }
 function delDia() { return dia ? lista.filter(i => fechaFuncion(i) === dia) : lista; }
 function elegirVista(v) { incGuardarVista(v); render(); }
+function elegirZona(z) { zonaSel = z; render(); }
+// En el celular (angosto) el listado va por zona y sin el plano; en la compu, con el plano.
+function verPorZona() { return typeof window !== 'undefined' && window.innerWidth < 960; }
+function porZonasHTML(visibles, zonaDe, tarjeta) {
+  return INC_ZONAS_CUENTA.map(([z, nombre]) => {
+    const de = visibles.filter(i => zonaDe(i) === z); if (!de.length) return '';
+    const ab = de.filter(i => i.estado !== 'resuelta').length;
+    return '<div class="t-zona-cab">' + nombre + '<small>' + (ab ? ab + (ab === 1 ? ' abierta' : ' abiertas') : 'sin abiertas') + (de.length !== ab ? ' · ' + de.length + ' en total' : '') + '</small></div>' + de.map(tarjeta).join('');
+  }).join('');
+}
 // El armado es del show: al cambiarlo acá, lo ven igual el panel y la tablet.
 function elegirArmado(a) { incGuardarArmado(showId, a); render(); }
 function tocarSector(sector) {
@@ -3633,7 +3671,10 @@ function render() {
   // La incidencia tocada: su lugar, elegido en el plano (la cámara va hasta ahí).
   const focoI = focoInc ? delD.find(i => String(i.id) === focoInc) : null; if (!focoI) focoInc = '';
   // El plano, el mismo que el del panel (desde el 5-nov, sin el modo ax de bloques planos).
-  incMontarPlano(document.getElementById('plano'), { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: sectorSel || (focoI ? focoI.sector : ''), onclick: 'tocarSector', titulo: (shows.find(x => x.id === showId) || {}).nombre, detalle: delD });
+  // En el celular la caja del plano no se muestra (el listado va por zona): no se monta, y si quedó un 3D de antes, se suelta.
+  const pl = document.getElementById('plano'), planoOculto = typeof pl.clientWidth === 'number' && !pl.clientWidth;
+  if (!planoOculto) incMontarPlano(pl, { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: sectorSel || (focoI ? focoI.sector : ''), onclick: 'tocarSector', titulo: (shows.find(x => x.id === showId) || {}).nombre, detalle: delD });
+  else if (pl._inc3d) { try { pl._inc3d.destruir(); } catch (_) {} pl._inc3d = null; pl.classList.remove('inc-3d'); pl.style.height = ''; pl.innerHTML = ''; }
   const met = document.getElementById('metricas');
   if (met) incPintarMetricas(met, delD, { fn: 'tocarMetrica', sel: { categoria: catSel, franja: franjaSel, sector: sectorSel, inc: focoInc } });
   // Abajo del plano, sólo si hay incidencias en lugares que el plano no tiene.
@@ -3647,14 +3688,28 @@ function render() {
     + (sectorSel ? '<span class="chip on">' + incEsc(sectorSel) + ' <span onclick="event.stopPropagation();filtrar(\'sector\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
     + (catSel ? '<span class="chip on">' + incEsc(catSel) + ' <span onclick="event.stopPropagation();filtrar(\'categoria\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '')
     + (franjaSel ? '<span class="chip on">' + incEsc(incFranjaNombre(franjaSel)) + ' <span onclick="event.stopPropagation();filtrar(\'franja\',\'\')" style="margin-left:4px;cursor:pointer">✕</span></span>' : '');
+  // En el celular, por zona (en la compu está el plano): el desplegable dice cuántas abiertas hay en cada
+  // zona; elegida una, el listado muestra sólo las suyas; en "Todas las zonas", va agrupado por zona.
+  const porZona = verPorZona(), zonaDe = i => incZonaCuenta(i.sector), zs = document.getElementById('zonaSel');
+  if (zs) {
+    const porZ = {}; abiertas.forEach(i => { const z = zonaDe(i); porZ[z] = (porZ[z] || 0) + 1; });
+    const cuenta = k => k ? ' · ' + k + (k === 1 ? ' abierta' : ' abiertas') : '';
+    const zonas = INC_ZONAS_CUENTA.filter(([z]) => z !== 'otros' || delD.some(i => zonaDe(i) === 'otros'));
+    if (zonaSel !== 'todas' && !zonas.some(([z]) => z === zonaSel)) zonaSel = 'todas';
+    zs.innerHTML = '<option value="todas"' + (zonaSel === 'todas' ? ' selected' : '') + '>Todas las zonas' + cuenta(abiertas.length) + '</option>'
+      + zonas.map(([z, nombre]) => '<option value="' + z + '"' + (zonaSel === z ? ' selected' : '') + '>' + nombre + cuenta(porZ[z] || 0) + '</option>').join('');
+  }
+  const zonaElegida = porZona && zonaSel !== 'todas' ? zonaSel : '';
   const visibles = incOrdenar(delD).filter(i => filtro === 'todas' || (filtro === 'abiertas') === (i.estado !== 'resuelta')).filter(i => !sectorSel || i.sector === sectorSel).filter(i => !nivelSel || (i.nivel || 1) === nivelSel)
-    .filter(i => !catSel || i.categoria === catSel).filter(i => !franjaSel || incEnFranja(i, franjaSel));
+    .filter(i => !catSel || i.categoria === catSel).filter(i => !franjaSel || incEnFranja(i, franjaSel)).filter(i => !zonaElegida || zonaDe(i) === zonaElegida);
   const cont = document.getElementById('lista');
   if (!visibles.length) {
-    cont.innerHTML = '<div class="vacio">' + (!lista.length ? 'Sin incidencias en este show.' : filtro === 'abiertas' ? 'No hay incidencias ' + (nivelSel ? INC_NIVELES[nivelSel].nombre.toLowerCase().replace(/o$/, 'a') + 's ' : '') + 'abiertas' + (sectorSel ? ' en ' + incEsc(sectorSel) : '') + '.' : 'Nada por acá.') + '</div>';
+    cont.innerHTML = '<div class="vacio">' + (zonaElegida && !delD.some(i => zonaDe(i) === zonaElegida) ? 'Sin incidencias en ' + incEsc(incZonaNombre(zonaElegida)) + '. Para ver las demás, elegí «Todas las zonas».' : !lista.length ? 'Sin incidencias en este show.' : filtro === 'abiertas' ? 'No hay incidencias ' + (nivelSel ? INC_NIVELES[nivelSel].nombre.toLowerCase().replace(/o$/, 'a') + 's ' : '') + 'abiertas' + (sectorSel ? ' en ' + incEsc(sectorSel) : '') + '.' : 'Nada por acá.') + '</div>';
   } else {
     const cods = incCodigos(delD);
-    cont.innerHTML = visibles.map(i => incTarjetaHTML(i, { abierta: String(i.id) === focoInc, nueva: nuevos.has(i.id), onclick: 'tocarInc', codigo: cods[i.id] })).join('');
+    const tarjeta = i => incTarjetaHTML(i, { abierta: String(i.id) === focoInc, nueva: nuevos.has(i.id), onclick: 'tocarInc', codigo: cods[i.id] });
+    // En el celular con "Todas las zonas": agrupadas por zona, cada una con su título y cuántas abiertas tiene.
+    cont.innerHTML = porZona && !zonaElegida ? porZonasHTML(visibles, zonaDe, tarjeta) : visibles.map(tarjeta).join('');
     // La tocada desde las métricas: a la vista en el listado.
     if (irAFoco) { irAFoco = false; const t = cont.querySelector && cont.querySelector('[data-inc="' + focoInc + '"]'); if (t && t.scrollIntoView) t.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
   }
