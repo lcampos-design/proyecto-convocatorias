@@ -2413,6 +2413,19 @@ tr:hover td{background:#f9f9fb}
   </div>
 </div>
 
+<!-- Contratos por presente: lo que sale con cada P (el contrato y el mail) -->
+<div class="modal-bg" id="mPpVista" style="display:none" onclick="bgClose('mPpVista',event)">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-title"><span><i class="ic ic-doc"></i> Lo que sale con cada P</span><button class="mclose" onclick="closeM('mPpVista')">✕</button></div>
+    <div style="display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center;margin-bottom:12px;font-size:13px">
+      <label>Fecha del show <input type="date" class="fi" style="width:auto;display:inline-block" id="ppVFecha" onchange="ppVistaRender()"></label>
+      <label>Puesto <select class="filt" id="ppVPuesto" onchange="ppVistaRender()"></select></label>
+    </div>
+    <div id="ppVBody"></div>
+    <div class="ma"><button class="btn btn-sec" onclick="closeM('mPpVista')">Cerrar</button></div>
+  </div>
+</div>
+
 <!-- La vista rápida del CV, al costado de la nómina -->
 <aside class="cv-rapida" id="cvRapida" aria-label="Vista rápida del CV">
   <div class="cv-rapida-cab">
@@ -12183,7 +12196,7 @@ async function renderPorPresente(recargar) {
       ${bloques.map((b, j) => `<label>${e(b)} <input type="hidden" id="ppBn${j}" value="${e(b)}"><select class="filt" id="ppB${j}">${opciones(puestoBloque(b), true)}</select></label>`).join('')}
     </div>
     ${Object.keys(porRol).length ? `<div style="font-size:12px;color:var(--r-muted);margin-top:8px">Además, por lo que dice la fila: ${Object.entries(porRol).map(([p, ks]) => '«' + e(ks.join(' / ')) + '» en OBSERVACIÓN o en la primera columna → ' + e(p)).join(' · ')}.</div>` : ''}
-    <div style="margin-top:12px;display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="ppGuardarMontos(${puestos.length}, ${bloques.length})">Guardar (montos de ${e(mesTxt)})</button><button class="btn btn-sec btn-sm" onclick="renderPorPresente(true)">↻ Actualizar</button></div>
+    <div style="margin-top:12px;display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="ppGuardarMontos(${puestos.length}, ${bloques.length})">Guardar (montos de ${e(mesTxt)})</button><button class="btn btn-sec btn-sm" onclick="renderPorPresente(true)">↻ Actualizar</button><button class="btn btn-sec btn-sm" onclick="ppAbrirVista()" title="El contrato y el mail que le llegan a quien tiene la P: con el modelo de contrato guardado, el puesto y el monto del mes">Ver lo que sale</button></div>
   </div>`;
   // Por fecha: cuántos salieron, cuántos firmaron, cuántos se anularon y lo que hay que corregir.
   const fechas = [...new Set(ppFilas.map(f => f.fecha))];
@@ -12202,6 +12215,50 @@ async function renderPorPresente(recargar) {
     </div>`;
   }).join('');
   cont.innerHTML = montos + (porFecha || '<div class="empty">Todavía no llegó ninguna planilla. Cuando el script de la planilla de presentes esté andando, acá aparece cada fecha.</div>');
+}
+// Lo que sale con cada P: el mismo texto y el mismo mail que arma api/presentes-planilla.js
+// (armarTexto y armarMail), con el modelo de contrato guardado, el puesto y su monto en el mes y
+// la fecha del show. Sólo el nombre y el CUIL son de ejemplo (van los de cada persona).
+function ppFechaLarga(iso) { const [a, m, d] = String(iso).split('-').map(Number); return new Date(Date.UTC(a, m - 1, d, 12)).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', timeZone: 'UTC' }).toUpperCase(); }
+function ppFechaMail(iso) { const [a, m, d] = String(iso).split('-').map(Number); return new Date(Date.UTC(a, m - 1, d, 12)).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }); }
+function ppAbrirVista() {
+  const fe = document.getElementById('ppVFecha');
+  if (fe && !fe.value) fe.value = hoyLocalISO();
+  ppVistaRender(); showM('mPpVista');
+}
+function ppVistaRender() {
+  const body = document.getElementById('ppVBody'), sel = document.getElementById('ppVPuesto'); if (!body || !sel) return;
+  const cfg = ppCfg || {}, fecha = document.getElementById('ppVFecha').value || hoyLocalISO(), mesIso = fecha.slice(0, 7);
+  const delMes = (cfg.meses && cfg.meses[mesIso] && cfg.meses[mesIso].puestos) || {};
+  const puestos = Object.keys(delMes).filter(p => montoANumero(delMes[p]) > 0);
+  const actual = puestos.find(p => p === sel.value) || puestos.find(p => ppClave(p) === ppClave(cfg.porDefecto)) || puestos[0] || '';
+  sel.innerHTML = puestos.length ? puestos.map(p => '<option' + (p === actual ? ' selected' : '') + '>' + e(p) + '</option>').join('') : '<option>—</option>';
+  const plantilla = String((contratoPlantillas && contratoPlantillas.ar) || '').trim();
+  // El show del panel de esa fecha, del Arena (si hay varios, el del Centro de Control).
+  const delDia = convs.filter(c => incEsArena(c.area) && ccFechas(c).includes(fecha)).sort((a, b) => (b.centro_control ? 1 : 0) - (a.centro_control ? 1 : 0));
+  const conv = delDia[0] || null;
+  const falta = [];
+  if (!plantilla) falta.push('No hay un modelo de contrato guardado en el panel: el contrato no sale ("Falta el modelo").');
+  if (!conv) falta.push('No hay un show del Arena con esa fecha en el panel: el contrato no sale ("Sin show en el panel").');
+  if (!actual) falta.push('No hay montos cargados para ' + mesIso.slice(5) + '/' + mesIso.slice(0, 4) + ': el contrato no sale ("Falta el monto").');
+  const monto = actual ? montoANumero(delMes[actual]) : 0, dia = ppFechaLarga(fecha);
+  const datos = { nombre: 'NOMBRE Y APELLIDO', cuil: '20-12345678-9', puesto: actual || '—', venue: String(cfg.venue || (conv && conv.venue) || 'Movistar Arena'),
+    fecha_inicio: dia, fecha_fin: dia, anio: fecha.slice(0, 4), monto_letras: monto ? numeroALetras(monto) : '—', monto_numero: monto ? montoFormateado(monto) : '—', fecha_firma_doc: ppFechaLarga(hoyLocalISO()) };
+  const marca = v => '<mark style="background:#fef3c7;color:inherit;padding:0 2px;border-radius:3px">' + e(v) + '</mark>';
+  const texto = plantilla ? e(plantilla.replace(/\r\n?/g, '\n').trim()).replace(/\{\{(\w+)\}\}/g, (_, k) => marca(datos[k] != null ? datos[k] : '')) : '';
+  const show = conv ? String(conv.nombre || '').split(' — ')[0] : '';
+  const asunto = 'Tu contrato del ' + dia.toLowerCase() + (show ? ' · ' + show : '');
+  const caja = 'font-size:12.5px;color:#374151;line-height:1.6;white-space:pre-wrap;word-break:break-word;background:#fafafa;border:1px solid #f3f4f6;border-radius:8px;padding:12px 14px';
+  const t = x => '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:16px 0 6px">' + x + '</div>';
+  body.innerHTML = (falta.length ? '<div class="ct-aviso ct-aviso-falta" style="margin-bottom:10px">' + falta.map(e).join('<br>') + '</div>' : '')
+    + '<div style="font-size:13px;color:#374151;line-height:1.7">'
+    + '<div><strong>A quién:</strong> a cada persona con <b>P</b> en la planilla de esa fecha, una sola vez. Si le ponen <b>A</b> o le sacan la P antes de firmar, el link se anula.</div>'
+    + '<div><strong>Show:</strong> ' + (conv ? e(conv.nombre || '') : '—') + ' · <strong>Puesto:</strong> ' + e(actual || '—') + ' · <strong>Monto:</strong> ' + (monto ? '$' + e(montoFormateado(monto)) : '—') + '</div>'
+    + '<div><strong>Desde:</strong> convocatorias.arena@show-bs.com · el link para firmar vence a los 7 días · lleva la firma de la empresa de los contratos de siempre.</div></div>'
+    + t('El mail') + '<div style="' + caja + '"><b>Asunto:</b> ' + e(asunto) + '\n\nHola, Nombre:\n\nGracias por trabajar con nosotros el ' + e(ppFechaMail(fecha)) + (show ? ' (' + e(show) + ')' : '') + ' en el Movistar Arena.\n\nPara firmar tu contrato de esa fecha, tocá el botón:\n[ Firmar mi contrato ]\n\nEl link vence en 7 días. Cualquier duda, respondé este mail.\n\n(Firma de Show Business Solutions)</div>'
+    + '<div style="font-size:11.5px;color:#9ca3af;margin-top:4px">En el asunto va el nombre del show como está en el título de la planilla (ej.: "MARIA BECERRA").</div>'
+    + t('El contrato (en amarillo, lo que se completa)') + (texto ? '<div style="' + caja + ';max-height:420px;overflow:auto">' + texto + '</div>' : '<div class="empty">Sin modelo de contrato.</div>')
+    + '<div style="font-size:11.5px;color:#9ca3af;margin-top:4px">El nombre y el CUIL son de ejemplo: van los de cada persona. La fecha de firma es el día en que se marca la P.</div>';
 }
 function ppVer(fe) { if (ppAbiertas.has(fe)) ppAbiertas.delete(fe); else ppAbiertas.add(fe); renderPorPresente(); }
 async function ppGuardarMontos(nPuestos, nBloques) {
