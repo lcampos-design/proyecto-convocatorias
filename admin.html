@@ -1530,6 +1530,7 @@ tr:hover td{background:#f9f9fb}
 <div id="sec-contratos" class="sec">
   <div class="atabs">
     <div class="atab active" data-ct="activos" onclick="setCtTab('activos')">Contratos <span class="tc" id="tcCtAct">0</span></div>
+    <div class="atab" data-ct="presentes" onclick="setCtTab('presentes')" title="Los contratos que salen solos de las planillas de presentes del Arena">Por presente</div>
     <div class="atab atab-out" data-ct="borrados" onclick="setCtTab('borrados')">Borrados <span class="tc" id="tcCtBor">·</span></div>
   </div>
   <div class="ctrlbar">
@@ -1539,7 +1540,7 @@ tr:hover td{background:#f9f9fb}
     <select class="filt" id="ctEstadoFilter" onchange="renderContratos()">
       <option value="">Todos los estados</option>
       <option value="pendiente">Pendiente</option><option value="enviado">Enviado</option>
-      <option value="visto">Visto</option><option value="firmado">Firmado</option>
+      <option value="visto">Visto</option><option value="firmado">Firmado</option><option value="anulado">Anulado</option>
     </select>
     <button class="btn btn-sec btn-sm" id="btnCtZip" onclick="bajarContratosZip()" title="Baja en un solo archivo los contratos firmados que estás viendo">↓ Bajar los firmados</button>
     <button class="btn btn-sec btn-sm" onclick="openPlantilla()" title="El texto legal del contrato">Modelo de contrato</button>
@@ -11856,7 +11857,9 @@ async function bajarContratosZip() {
 function estadoBadge(estado) {
   const map = {
     pendiente: ['#f3f4f6', '#6b7280', 'Pendiente'], enviado: ['#e0f2fe', '#0369a1', 'Enviado'],
-    visto: ['#fef3c7', '#92400e', 'Visto'], firmado: ['#dcfce7', '#166534', 'Firmado']
+    visto: ['#fef3c7', '#92400e', 'Visto'], firmado: ['#dcfce7', '#166534', 'Firmado'],
+    // Contratos por presente: la planilla lo pasó a ausente (o le sacó la P) antes de que firmara.
+    anulado: ['#fee2e2', '#991b1b', 'Anulado']
   };
   const [bg, fg, label] = map[estado] || map.pendiente;
   return `<span style="background:${bg};color:${fg};font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap">${label}</span>`;
@@ -11879,7 +11882,7 @@ function populateCtFilters() {
 }
 
 // Cómo se nombra cada paso de la trazabilidad, acá y en el detalle de un borrado.
-const CT_EVENTO = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i class="ic ic-sobre"></i> Enviado', visto: '<i class="ic ic-ojo"></i> Visto', consentimiento: '<i class="ic ic-tilde-circ"></i> Consentimiento', firmado: '<i class="ic ic-firma"></i> Firmado', reenviado: '↻ Reenviado', codigo_enviado: '<i class="ic ic-sobre"></i> Código enviado', codigo_ok: '<i class="ic ic-tilde-circ"></i> Código verificado', documento_agregado: '<i class="ic ic-doc"></i> Documento agregado', documento_quitado: '<i class="ic ic-doc"></i> Documento sacado' };
+const CT_EVENTO = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i class="ic ic-sobre"></i> Enviado', visto: '<i class="ic ic-ojo"></i> Visto', consentimiento: '<i class="ic ic-tilde-circ"></i> Consentimiento', firmado: '<i class="ic ic-firma"></i> Firmado', reenviado: '↻ Reenviado', codigo_enviado: '<i class="ic ic-sobre"></i> Código enviado', codigo_ok: '<i class="ic ic-tilde-circ"></i> Código verificado', documento_agregado: '<i class="ic ic-doc"></i> Documento agregado', documento_quitado: '<i class="ic ic-doc"></i> Documento sacado', anulado: '✕ Anulado (planilla de presentes)' };
 
 // ── CONTRATOS BORRADOS ────────────────────────────────────────
 // Lo que se borró no desaparece: contrato_borrar() deja una copia completa en
@@ -12033,9 +12036,91 @@ function contratosFiltrados() {
   }).sort((a, b) => (b.fecha_creacion || '').localeCompare(a.fecha_creacion || ''));
 }
 
+// ── Contratos por presente (Arena) ──
+// Los manda solos api/presentes-planilla con lo que dicen las planillas "SUPERVISORES"
+// de Google Sheets (apps-script/planilla-presentes.gs): una "P" manda el contrato de esa
+// fecha; una "A" (o sacar la P) lo anula si no lo firmó. Acá: los montos de cada sector
+// por mes (sin monto, el contrato no sale) y, por fecha, cómo salió cada uno.
+const PP_SECTORES = ['Anillo', 'Bowl', 'Platea baja', 'Platea alta', 'Corta tickets', 'Calle', 'VIP', 'Supervisores', 'P.Point', 'Backs'];
+const PP_RESULTADO = {
+  enviado: ['#e0f2fe', '#0369a1', 'Contrato enviado'], ya_tenia: ['#f3f4f6', '#4b5563', 'Ya tenía el contrato'], firmado: ['#dcfce7', '#166534', 'Firmado'],
+  anulado: ['#fee2e2', '#991b1b', 'Anulado'], ausente: ['#f3f4f6', '#6b7280', 'Ausente'], pendiente: ['#fef3c7', '#92400e', 'Por salir'],
+  firmado_ausente: ['#fef3c7', '#92400e', 'Firmó y figura ausente'], sin_persona: ['#fee2e2', '#991b1b', 'No está en la nómina'],
+  cuil_incompleto: ['#fee2e2', '#991b1b', 'CUIL incompleto'], sin_mail: ['#fee2e2', '#991b1b', 'Sin mail'], sin_monto: ['#fef3c7', '#92400e', 'Falta el monto'],
+  sin_show: ['#fef3c7', '#92400e', 'Sin show en el panel'], sin_plantilla: ['#fee2e2', '#991b1b', 'Falta el modelo'], error_mail: ['#fee2e2', '#991b1b', 'No salió el mail']
+};
+const PP_PROBLEMAS = ['sin_persona', 'cuil_incompleto', 'sin_mail', 'sin_monto', 'sin_show', 'sin_plantilla', 'error_mail', 'firmado_ausente'];
+let ppCfg = null, ppMes = '', ppFilas = null, ppContratos = {}, ppAbiertas = new Set();
+const ppClave = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+function ppBadge(k) { const [bg, fg, t] = PP_RESULTADO[k] || ['#f3f4f6', '#6b7280', k || '—']; return `<span style="background:${bg};color:${fg};font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap">${e(t)}</span>`; }
+async function renderPorPresente(recargar) {
+  const cont = document.getElementById('ctContent'); if (!cont) return;
+  if (!ppFilas || recargar) {
+    cont.innerHTML = '<div class="empty">Cargando...</div>';
+    const desde = new Date(Date.now() - 62 * 864e5).toISOString().slice(0, 10);
+    const [rf, rc, rk] = await Promise.all([
+      sb.from('planilla_presentes').select('fecha,show,archivo_id,sector,cuil,apellido,nombre,marca,resultado,detalle,contrato_id,actualizado').gte('fecha', desde).order('fecha', { ascending: false }).limit(5000),
+      sb.from('contratos').select('id,estado,fecha_show').eq('origen', 'planilla').gte('fecha_show', desde).limit(5000),
+      sb.from('config').select('value').eq('key', 'contratos_presentes').maybeSingle()
+    ]);
+    if (rf.error) { cont.innerHTML = '<div class="empty">' + (/planilla_presentes/.test(rf.error.message || '') ? 'Primero hay que correr contratos-presentes.sql en Supabase.' : 'No se pudo cargar: ' + e(rf.error.message || '')) + '</div>'; return; }
+    ppFilas = rf.data || [];
+    ppContratos = {}; (rc.data || []).forEach(c => { ppContratos[c.id] = c; });
+    ppCfg = (rk.data && rk.data.value && typeof rk.data.value === 'object') ? rk.data.value : { venue: 'Movistar Arena', meses: {} };
+    if (!ppCfg.meses) ppCfg.meses = {};
+  }
+  const hoyMes = hoyLocalISO().slice(0, 7);
+  const meses = [...new Set([hoyMes].concat(Object.keys(ppCfg.meses), ppFilas.map(f => String(f.fecha).slice(0, 7))))].sort().reverse();
+  if (!ppMes) ppMes = hoyMes;
+  // Los montos del mes: los sectores de siempre, más los que trajo alguna planilla o ya tenían monto.
+  const delMes = (ppCfg.meses[ppMes] && ppCfg.meses[ppMes].sectores) || {};
+  const nombres = []; const agregar = n => { if (n && !nombres.some(x => ppClave(x) === ppClave(n))) nombres.push(n); };
+  PP_SECTORES.forEach(agregar); Object.keys(delMes).forEach(agregar); ppFilas.filter(f => String(f.fecha).slice(0, 7) === ppMes).forEach(f => agregar(f.sector ? f.sector.charAt(0) + f.sector.slice(1).toLowerCase() : ''));
+  const valor = n => { const k = Object.keys(delMes).find(x => ppClave(x) === ppClave(n)); return k ? delMes[k] : {}; };
+  const montos = `<div class="card" style="padding:18px 20px;margin-bottom:18px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><strong style="font-size:14px">Montos por jornada</strong>
+      <select class="filt" onchange="ppMes=this.value;renderPorPresente()">${meses.map(m => `<option value="${m}"${m === ppMes ? ' selected' : ''}>${e(m.slice(5) + '/' + m.slice(0, 4))}</option>`).join('')}</select>
+      <span style="font-size:12px;color:var(--r-muted)">El puesto y el monto que lleva el contrato de cada sector. Sin monto, el contrato de ese sector no sale (queda "Falta el monto").</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Sector</th><th>Puesto (va en el contrato)</th><th>Monto por jornada</th></tr></thead><tbody>
+    ${nombres.map((n, i) => { const v = valor(n); return `<tr><td>${e(n)}<input type="hidden" id="ppS${i}" value="${e(n)}"></td><td><input class="fi" style="max-width:260px" id="ppP${i}" value="${e(v.puesto || '')}" placeholder="Ej.: Acomodador"></td><td><input class="fi" style="max-width:160px" id="ppM${i}" value="${v.monto ? e(montoFormateado(montoANumero(v.monto))) : ''}" placeholder="$ 0,00" inputmode="decimal"></td></tr>`; }).join('')}
+    </tbody></table></div>
+    <div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="ppGuardarMontos(${nombres.length})">Guardar montos de ${e(ppMes.slice(5) + '/' + ppMes.slice(0, 4))}</button><button class="btn btn-sec btn-sm" onclick="renderPorPresente(true)">↻ Actualizar</button></div>
+  </div>`;
+  // Por fecha: cuántos salieron, cuántos firmaron, cuántos se anularon y lo que hay que corregir.
+  const fechas = [...new Set(ppFilas.map(f => f.fecha))];
+  const porFecha = fechas.map(fe => {
+    const filas = ppFilas.filter(f => f.fecha === fe), c = filas.map(f => f.contrato_id && ppContratos[f.contrato_id]).filter(Boolean);
+    const firmados = c.filter(x => x.estado === 'firmado').length, anulados = c.filter(x => x.estado === 'anulado').length, salieron = c.filter(x => x.estado !== 'anulado').length;
+    const problemas = filas.filter(f => PP_PROBLEMAS.includes(f.resultado)), abierta = ppAbiertas.has(fe);
+    const fila = f => { const ct = f.contrato_id && ppContratos[f.contrato_id]; return `<tr><td>${e([f.apellido, f.nombre].filter(Boolean).join(', ') || f.cuil)}</td><td>${e(f.sector || '')}</td><td style="font-family:monospace;font-size:12px">${e(f.cuil)}</td><td>${e(f.marca || '—')}</td><td>${ct ? estadoBadge(ct.estado) : ppBadge(f.resultado)}</td><td style="font-size:12px;color:var(--r-muted)">${e(f.detalle || '')}</td></tr>`; };
+    const lista = abierta ? filas : problemas;
+    const show = filas.find(f => f.show) || {}, arch = filas.find(f => f.archivo_id) || {};
+    return `<div class="card" style="padding:16px 20px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><strong>${e(fmtFecha(fe))}${show.show ? ' · ' + e(show.show) : ''}</strong>
+        <span style="font-size:12.5px;color:var(--r-muted)">${salieron} contrato${salieron === 1 ? '' : 's'} · ${firmados} firmado${firmados === 1 ? '' : 's'} · ${anulados} anulado${anulados === 1 ? '' : 's'}${problemas.length ? ' · <b style="color:#991b1b">' + problemas.length + ' para corregir</b>' : ''}</span>
+        <span style="margin-left:auto;display:flex;gap:6px">${arch.archivo_id ? `<a class="btn btn-sec btn-xs" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/${encodeURIComponent(arch.archivo_id)}/edit">Abrir la planilla</a>` : ''}<button class="btn btn-sec btn-xs" onclick="ppVer('${fe}')">${abierta ? 'Ver sólo lo que hay que corregir' : 'Ver todos (' + filas.length + ')'}</button></span></div>
+      ${lista.length ? `<div class="tbl-wrap" style="margin-top:10px"><table><thead><tr><th>Persona</th><th>Sector</th><th>CUIL</th><th>Marca</th><th>Estado</th><th></th></tr></thead><tbody>${lista.map(fila).join('')}</tbody></table></div>` : '<div style="font-size:12.5px;color:#166534;margin-top:8px">Todo en orden.</div>'}
+    </div>`;
+  }).join('');
+  cont.innerHTML = montos + (porFecha || '<div class="empty">Todavía no llegó ninguna planilla. Cuando el script de la planilla de presentes esté andando, acá aparece cada fecha.</div>');
+}
+function ppVer(fe) { if (ppAbiertas.has(fe)) ppAbiertas.delete(fe); else ppAbiertas.add(fe); renderPorPresente(); }
+async function ppGuardarMontos(n) {
+  const sectores = {};
+  for (let i = 0; i < n; i++) {
+    const s = (document.getElementById('ppS' + i) || {}).value, p = ((document.getElementById('ppP' + i) || {}).value || '').trim(), m = montoANumero((document.getElementById('ppM' + i) || {}).value);
+    if (s && (p || m)) sectores[s] = { puesto: p, monto: m };
+  }
+  const valor = Object.assign({}, ppCfg || {}, { meses: Object.assign({}, (ppCfg && ppCfg.meses) || {}, { [ppMes]: { sectores } }) });
+  const { error } = await sb.from('config').upsert({ key: 'contratos_presentes', value: valor, updated_at: new Date().toISOString() });
+  if (error) { await avisarError('No se pudieron guardar los montos: ', error); return; }
+  ppCfg = valor; toast('✓ Montos guardados: los contratos que faltaban salen en la próxima vuelta (5 minutos)'); renderPorPresente();
+}
+
 function renderContratos() {
   ctTabCounts();
   if (ctTab === 'borrados') { renderContratosBorrados(); return; }
+  if (ctTab === 'presentes') { renderPorPresente(); return; }
   const cont = document.getElementById('ctContent'); if (!cont) return;
   const list = contratosFiltrados();
   if (!list.length) { cont.innerHTML = `<div class="empty">${contratos.length === 0 ? 'Todavía no se generó ningún contrato.' : 'Sin resultados para este filtro.'}</div>`; return; }
@@ -12131,7 +12216,7 @@ async function verContratoTrace(id) {
   document.getElementById('ctReenviarBtn').style.display = row.estado !== 'firmado' ? 'inline-block' : 'none';
   document.getElementById('ctDescargarBtn').style.display = (row.estado === 'firmado' && row.pdf_firmado) ? 'inline-block' : 'none';
   // Renovar sólo tiene sentido si todavía no firmó.
-  document.getElementById('ctRenovarBtn').style.display = row.estado === 'firmado' ? 'none' : 'inline-block';
+  document.getElementById('ctRenovarBtn').style.display = row.estado === 'firmado' || row.estado === 'anulado' ? 'none' : 'inline-block';
   const bb = document.getElementById('ctBorrarBtn');
   bb.style.display = esAdmin() ? 'inline-block' : 'none';
   bb.disabled = false; bb.textContent = 'Borrar contrato';

@@ -231,6 +231,16 @@ async function verificarCodigoDelLink() {
 // nuevo: así un mail reenviado o que quedó en un celular prestado no sirve
 // para firmar en nombre de otro.
 function renderVencido() {
+  // Anulado (contratos por presente: la planilla lo pasó a ausente): el link venció en ese momento.
+  if (contrato.estado === 'anulado') {
+    show(`<div class="card">
+    <div class="ic">${ICONO_RELOJ}</div>
+    <div class="conv-name" style="text-align:center">Este contrato se anuló</div>
+    <div class="center" style="padding:12px 0 0">${contrato.nombre ? esc(String(contrato.nombre).split(' ')[0]) + ', e' : 'E'}ste ${queEs()} se anuló porque en la planilla de esa fecha no figurás como presente, así que no se puede firmar.</div>
+    <div class="center" style="padding:10px 0 0">Si trabajaste ese día, escribile a la coordinación.</div>
+  </div>`);
+    return;
+  }
   const cuando = contrato.vence_el
     ? new Date(contrato.vence_el).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
     : null;
