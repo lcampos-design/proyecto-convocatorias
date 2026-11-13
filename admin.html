@@ -1554,8 +1554,9 @@ tr:hover td{background:#f9f9fb}
     <select class="filt" id="ctPeriodoFilter" onchange="renderContratos()" style="display:none"><option value="">Todos los períodos</option></select>
     <select class="filt" id="ctEstadoFilter" onchange="renderContratos()">
       <option value="">Todos los estados</option>
-      <option value="pendiente">Pendiente</option><option value="enviado">Enviado</option>
-      <option value="visto">Visto</option><option value="firmado">Firmado</option><option value="anulado">Anulado</option>
+      <option value="pend">Pendientes (todos)</option>
+      <option value="pendiente">&nbsp;&nbsp;· sin enviar</option><option value="enviado">&nbsp;&nbsp;· no lo abrió</option><option value="visto">&nbsp;&nbsp;· lo abrió</option>
+      <option value="firmado">Firmados</option><option value="anulado">Anulados</option>
     </select>
     <button class="btn btn-sec btn-sm" id="btnCtZip" onclick="bajarContratosZip()" title="Baja en un solo archivo los contratos firmados que estás viendo">↓ Bajar los firmados</button>
     <button class="btn btn-sec btn-sm" onclick="openPlantilla()" title="El texto legal del contrato">Modelo de contrato</button>
@@ -2887,7 +2888,11 @@ async function loadAll() {
     sb.from('notificaciones').select('*').order('created_at', { ascending: false }),
     sb.from('respuestas').select('*').order('received_at', { ascending: false }),
     // Sin texto_contrato/pdf_firmado/firma_png (pesados) — se traen bajo demanda al ver el detalle.
-    sb.from('contratos').select('id,conv_id,persona_id,postulacion_id,puesto_id,nombre,cuil,email,puesto,estado,fecha_creacion,fecha_envio,fecha_visto,fecha_firma,token').order('fecha_creacion', { ascending: false })
+    (async () => {
+      const cols = 'id,conv_id,persona_id,postulacion_id,puesto_id,nombre,cuil,email,puesto,estado,fecha_creacion,fecha_envio,fecha_visto,fecha_firma,token';
+      const r = await sb.from('contratos').select(cols + ',fecha_show,sector,origen').order('fecha_creacion', { ascending: false });
+      return r.error ? await sb.from('contratos').select(cols).order('fecha_creacion', { ascending: false }) : r;
+    })()
   ]);
   convs = (cData || []).map(c => ({
     ...c,
@@ -11899,15 +11904,28 @@ async function bajarContratosZip() {
   }
 }
 
+// Tres estados (Thomas: "firmado, anulado y pendiente serían las categorías más importantes; en todo
+// caso, subcategorizar los pendientes"): los pendientes dicen además si se mandó y si lo abrió.
+const CT_PENDIENTES = ['pendiente', 'enviado', 'visto'];
+function ctEstadoCoincide(estado, filtro) { return !filtro || (filtro === 'pend' ? CT_PENDIENTES.includes(estado || 'pendiente') : estado === filtro); }
 function estadoBadge(estado) {
   const map = {
-    pendiente: ['#f3f4f6', '#6b7280', 'Pendiente'], enviado: ['#e0f2fe', '#0369a1', 'Enviado'],
-    visto: ['#fef3c7', '#92400e', 'Visto'], firmado: ['#dcfce7', '#166534', 'Firmado'],
+    pendiente: ['#fef3c7', '#92400e', 'Pendiente', 'sin enviar'], enviado: ['#fef3c7', '#92400e', 'Pendiente', 'no lo abrió'],
+    visto: ['#fef3c7', '#92400e', 'Pendiente', 'lo abrió'], firmado: ['#dcfce7', '#166534', 'Firmado', ''],
     // Contratos por presente: la planilla lo pasó a ausente (o le sacó la P) antes de que firmara.
-    anulado: ['#fee2e2', '#991b1b', 'Anulado']
+    anulado: ['#fee2e2', '#991b1b', 'Anulado', '']
   };
-  const [bg, fg, label] = map[estado] || map.pendiente;
-  return `<span style="background:${bg};color:${fg};font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap">${label}</span>`;
+  const [bg, fg, label, sub] = map[estado] || map.pendiente;
+  return `<span style="background:${bg};color:${fg};font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap">${label}${sub ? '<span style="font-weight:400"> · ' + sub + '</span>' : ''}</span>`;
+}
+// El show de un contrato: el nombre y, si es de una fecha (los de por presente), la fecha.
+function ctShowDe(c) { const conv = convs.find(x => x.id === c.conv_id); return (conv?.nombre || '—') + (c.fecha_show ? ' · ' + fmtFechaCorta(c.fecha_show) : ''); }
+// El filtro de convocatorias: "id" o "id|AAAA-MM-DD" (un show de varias fechas, una sola).
+function ctConvCoincide(c, filtro) {
+  if (!filtro) return true;
+  const [id, fe] = filtro.split('|');
+  if (c.conv_id !== id) return false;
+  return !fe || c.fecha_show === undefined || c.fecha_show === fe;
 }
 function periodoDe(c) { const d = c.fecha_creacion ? new Date(c.fecha_creacion) : null; if (!d || isNaN(d)) return ''; return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
 
@@ -11916,7 +11934,13 @@ function populateCtFilters() {
   const curConv = sel.value;
   // Adentro de un área, sólo sus convocatorias.
   const convIds = [...new Set(contratos.filter(c => ctEnArea(c, ctArea)).map(c => c.conv_id).filter(Boolean))];
-  sel.innerHTML = '<option value="">Todas las convocatorias</option>' + convIds.map(id => { const c = convs.find(x => x.id === id); return `<option value="${id}">${e(c?.nombre || 'Convocatoria')}</option>`; }).join('');
+  sel.innerHTML = '<option value="">Todas las convocatorias</option>' + convIds.map(id => {
+    const c = convs.find(x => x.id === id), nom = c?.nombre || 'Convocatoria';
+    // Un show con contratos de varias fechas (María Becerra: 8 en el mes): todas juntas o cada una.
+    const fechas = [...new Set(contratos.filter(k => k.conv_id === id && k.fecha_show && ctEnArea(k, ctArea)).map(k => k.fecha_show))].sort();
+    if (fechas.length < 2) return `<option value="${id}">${e(nom)}${fechas.length ? ' · ' + fmtFechaCorta(fechas[0]) : ''}</option>`;
+    return `<option value="${id}">${e(nom)} · todas las fechas (${fechas.length})</option>` + fechas.map(fe => `<option value="${id}|${fe}">&nbsp;&nbsp;${e(nom)} · ${fmtFechaCorta(fe)}</option>`).join('');
+  }).join('');
   sel.value = curConv;
 
   const selP = document.getElementById('ctPeriodoFilter'); if (!selP) return;
@@ -12018,9 +12042,9 @@ async function renderContratosBorrados() {
   const estF = document.getElementById('ctEstadoFilter')?.value || '';
   const list = contratosBorrados.filter(c => {
     if (ctArea && !ctEnArea(c, ctArea)) return false;
-    if (convF && c.conv_id !== convF) return false;
+    if (!ctConvCoincide(c, convF)) return false;
     if (perF && periodoDe(c) !== perF) return false;
-    if (estF && c.estado !== estF) return false;
+    if (!ctEstadoCoincide(c.estado, estF)) return false;
     const qd = q.replace(/\D/g, '');
     if (q && !((c.nombre || '').toLowerCase().includes(q) || (qd && normDoc(c.cuil).includes(qd)) || (c.motivo || '').toLowerCase().includes(q))) return false;
     return true;
@@ -12123,9 +12147,9 @@ function contratosFiltrados() {
   const qd = q.replace(/\D/g, '');
   return contratos.filter(c => {
     if (ctArea && !ctEnArea(c, ctArea)) return false;
-    if (convF && c.conv_id !== convF) return false;
+    if (!ctConvCoincide(c, convF)) return false;
     if (perF && periodoDe(c) !== perF) return false;
-    if (estF && c.estado !== estF) return false;
+    if (!ctEstadoCoincide(c.estado, estF)) return false;
     if (q && !((c.nombre || '').toLowerCase().includes(q) || (qd && normDoc(c.cuil).includes(qd)))) return false;
     return true;
   }).sort((a, b) => (b.fecha_creacion || '').localeCompare(a.fecha_creacion || ''));
@@ -12290,7 +12314,7 @@ function renderContratos() {
       <td>${e(c.nombre || '')}</td>
       <td>${e(c.cuil || '')}</td>
       <td>${c.solo_documentos ? '<span class="pill-doc" style="margin:0 6px 0 0;background:#fef3c7;color:#92400e">Sin contrato</span>' : ''}${e(c.puesto || '')}${pillDocs(c)}</td>
-      <td>${e(conv?.nombre || '—')}</td>
+      <td>${e(ctShowDe(c))}</td>
       <td>${estadoBadge(c.estado)}</td>
       <td>${fecha}</td>
       <td><button class="btn btn-sec btn-xs" onclick="verContratoTrace('${c.id}')">Ver</button></td>
@@ -12359,6 +12383,7 @@ async function verContratoTrace(id) {
     <div style="font-size:13px;color:#374151;margin-bottom:10px">
       <div><strong>CUIL:</strong> ${e(row.cuil || '')}</div>
       <div><strong>Puesto:</strong> ${e(row.puesto || '')}</div>
+      <div><strong>Show:</strong> ${e(ctShowDe(row))}</div>
       <div><strong>Estado:</strong> ${estadoBadge(row.estado)}</div>
       ${htmlCtAnexos(row)}
       ${lineaVencimiento(row)}
