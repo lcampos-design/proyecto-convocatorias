@@ -44,6 +44,23 @@ function probar() {
   });
 }
 
+// Antes del show: le pregunta a la plataforma qué pasaría si todos tuvieran "P" (a cuántos
+// les saldría el contrato, con qué puesto, y quiénes no: no están en la nómina, sin mail, CUIL
+// incompleto…). No manda ni guarda nada. Necesita la CLAVE.
+function revisar() {
+  var clave = PropertiesService.getScriptProperties().getProperty('CLAVE');
+  if (!clave) throw new Error('Falta la propiedad CLAVE (Configuración del proyecto → Propiedades del script).');
+  planillas_().forEach(function (f) {
+    var p = leer_(f);
+    if (!p) return;
+    p.simular = true;
+    var r = mandar_(p, clave);
+    if (!r || !r.ok) { Logger.log(f.getName() + ' → ' + JSON.stringify(r)); return; }
+    Logger.log(f.getName() + ' → ' + r.fecha + ' · show del panel: ' + (r.show || '(ninguno)') + ' · ' + r.filas + ' personas · ' + JSON.stringify(r.porResultado));
+    (r.problemas || []).forEach(function (x) { Logger.log('   ' + x.sector + ' · ' + x.apellido + ', ' + x.nombre + ' → ' + x.resultado + (x.detalle ? ' (' + x.detalle + ')' : '')); });
+  });
+}
+
 // Lo que corre cada 5 minutos.
 function sincronizar() {
   var clave = PropertiesService.getScriptProperties().getProperty('CLAVE');
