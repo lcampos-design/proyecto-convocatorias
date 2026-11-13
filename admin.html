@@ -585,6 +585,22 @@ body{background:var(--r-bg);color:var(--r-ink);-webkit-font-smoothing:antialiase
 /* Tabs de área */
 .atabs{background:#fff;border-bottom:1px solid var(--r-line);gap:22px;padding:0 22px}
 .atab{color:var(--r-muted);font-weight:500;padding:13px 2px}
+/* Contratos: primero el área (Arena, Externos, España); adentro, sus meses y sus pestañas. */
+.ct-areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.ct-area{background:#fff;border:1px solid var(--r-line);border-radius:14px;padding:18px 20px;cursor:pointer;text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:4px}
+.ct-area:hover{border-color:#b9bac4;box-shadow:0 1px 6px rgba(17,24,39,.06)}
+.ct-area b{font-size:16px;font-weight:600}
+.ct-area .ct-n{font-size:30px;font-weight:700;line-height:1.1;margin-top:6px}
+.ct-area small{color:var(--r-muted);font-size:12.5px;line-height:1.5}
+.ct-area .ct-ir{margin-top:8px;font-size:12.5px;font-weight:600;color:#111827}
+.ct-otros{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.ct-cab{display:flex;align-items:center;gap:12px;padding:14px 22px 2px;background:#fff;flex-wrap:wrap}
+.ct-cab h3{margin:0;font-size:17px;font-weight:600}
+.ct-meses{display:flex;gap:6px;flex-wrap:wrap;padding:10px 22px 12px;background:#fff}
+.ct-mes{border:1px solid var(--r-line);background:#fff;border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer;color:inherit}
+.ct-mes.on{background:#111827;color:#fff;border-color:#111827}
+.ct-mes small{opacity:.7;margin-left:4px}
+.ct-caja{background:#fff;border:1px solid var(--r-line);border-radius:14px}
 .atab:hover{color:var(--r-ink)}
 .atab.active{color:var(--r-ink);font-weight:600;border-bottom-color:var(--r-ink)}
 .tc{background:var(--r-bg);border:1px solid var(--r-line);color:var(--r-muted)}
@@ -1528,15 +1544,12 @@ tr:hover td{background:#f9f9fb}
 
 <!-- CONTRATOS -->
 <div id="sec-contratos" class="sec">
-  <div class="atabs">
-    <div class="atab active" data-ct="activos" onclick="setCtTab('activos')">Contratos <span class="tc" id="tcCtAct">0</span></div>
-    <div class="atab" data-ct="presentes" onclick="setCtTab('presentes')" title="Los contratos que salen solos de las planillas de presentes del Arena">Por presente</div>
-    <div class="atab atab-out" data-ct="borrados" onclick="setCtTab('borrados')">Borrados <span class="tc" id="tcCtBor">·</span></div>
-  </div>
-  <div class="ctrlbar">
+  <!-- Arriba: el área (Movistar Arena, Externos, España), sus meses y sus pestañas (los arma renderCtNav). -->
+  <div id="ctNav"></div>
+  <div class="ctrlbar" id="ctBarra" style="display:none">
     <input type="text" class="srch" id="ctSrch" placeholder="Buscar por nombre o CUIL..." oninput="renderContratos()">
     <select class="filt" id="ctConvFilter" onchange="renderContratos()"><option value="">Todas las convocatorias</option></select>
-    <select class="filt" id="ctPeriodoFilter" onchange="renderContratos()"><option value="">Todos los períodos</option></select>
+    <select class="filt" id="ctPeriodoFilter" onchange="renderContratos()" style="display:none"><option value="">Todos los períodos</option></select>
     <select class="filt" id="ctEstadoFilter" onchange="renderContratos()">
       <option value="">Todos los estados</option>
       <option value="pendiente">Pendiente</option><option value="enviado">Enviado</option>
@@ -3036,7 +3049,7 @@ function goSec(s) {
   if (s === 'supervisores') renderSupList();
   if (s === 'solicitudes') renderSolicitudes();
   if (s === 'respuestas') renderRespuestas();
-  if (s === 'contratos') renderContratos();
+  if (s === 'contratos') { ctArea = ''; renderContratos(); }   // siempre entra por la portada (Arena, Externos, España)
   if (s === 'control') renderCentroControl();
 }
 
@@ -11869,7 +11882,8 @@ function periodoDe(c) { const d = c.fecha_creacion ? new Date(c.fecha_creacion) 
 function populateCtFilters() {
   const sel = document.getElementById('ctConvFilter'); if (!sel) return;
   const curConv = sel.value;
-  const convIds = [...new Set(contratos.map(c => c.conv_id).filter(Boolean))];
+  // Adentro de un área, sólo sus convocatorias.
+  const convIds = [...new Set(contratos.filter(c => ctEnArea(c, ctArea)).map(c => c.conv_id).filter(Boolean))];
   sel.innerHTML = '<option value="">Todas las convocatorias</option>' + convIds.map(id => { const c = convs.find(x => x.id === id); return `<option value="${id}">${e(c?.nombre || 'Convocatoria')}</option>`; }).join('');
   sel.value = curConv;
 
@@ -11889,14 +11903,58 @@ const CT_EVENTO = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i c
 // contratos_borrados. Acá se lee ese registro, para no tener que ir a la base.
 let ctTab = 'activos', contratosBorrados = null, ctBorRow = null;
 
-function setCtTab(t) {
-  ctTab = t;
-  document.querySelectorAll('#sec-contratos .atab').forEach(x => x.classList.toggle('active', x.dataset.ct === t));
+// ── Contratos por área y por mes ──
+// Primero se elige el área (Movistar Arena, Externos, España); adentro, el mes (arranca en
+// el de hoy), las pestañas (Contratos, Por presente en el Arena, Borrados) y los filtros.
+// El área de un contrato es la de su convocatoria; "Ambas áreas" va en Arena y en Externos.
+let ctArea = '', ctMes = '';
+const CT_AREAS = [['arena', 'Movistar Arena'], ['externos', 'Externos'], ['espana', 'España']];
+function ctAreasDe(c) {
+  const conv = convs.find(x => x.id === c.conv_id), a = normArea(conv && conv.area);
+  return a === 'movistar_arena' ? ['arena'] : a === 'espana' ? ['espana'] : a === 'ambas' ? ['arena', 'externos'] : a === 'externos' ? ['externos'] : ['sin'];
+}
+function ctEnArea(c, area) { return !area || ctAreasDe(c).includes(area); }
+function ctNombreArea(a) { const x = CT_AREAS.find(y => y[0] === a); return x ? x[1] : a === 'sin' ? 'Sin convocatoria' : a; }
+const CT_MESES_TXT = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+function ctMesTxt(p) { const [y, m] = String(p).split('-'), t = CT_MESES_TXT[+m - 1]; return t ? t.charAt(0).toUpperCase() + t.slice(1) + ' ' + y : p; }
+function setCtArea(a) {
+  ctArea = a; ctTab = 'activos';
+  const hoy = hoyLocalISO().slice(0, 7), meses = [...new Set(contratos.filter(c => ctEnArea(c, a)).map(periodoDe).filter(Boolean))].sort().reverse();
+  ctMes = meses.includes(hoy) || !meses.length ? hoy : meses[0];
+  ['ctSrch', 'ctConvFilter', 'ctEstadoFilter'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  populateCtFilters();
   renderContratos();
 }
-function ctTabCounts() {
-  const a = document.getElementById('tcCtAct'); if (a) a.textContent = contratos.length.toLocaleString('es-AR');
-  const b = document.getElementById('tcCtBor'); if (b) b.textContent = contratosBorrados ? contratosBorrados.length.toLocaleString('es-AR') : '·';
+function setCtMes(m) { ctMes = m; renderContratos(); }
+function setCtTab(t) { ctTab = t; renderContratos(); }
+function ctTabCounts() { renderCtNav(); }
+// Arriba: en la portada nada; adentro de un área, volver, su nombre, sus meses y sus pestañas.
+function renderCtNav() {
+  const nav = document.getElementById('ctNav'), barra = document.getElementById('ctBarra'); if (!nav) return;
+  if (!ctArea) { nav.innerHTML = ''; if (barra) barra.style.display = 'none'; return; }
+  if (barra) barra.style.display = ctTab === 'presentes' ? 'none' : '';
+  const delArea = contratos.filter(c => ctEnArea(c, ctArea)), hoy = hoyLocalISO().slice(0, 7);
+  const meses = [...new Set(delArea.map(periodoDe).filter(Boolean).concat([hoy]))].sort().reverse();
+  const n = m => delArea.filter(c => periodoDe(c) === m).length;
+  const borr = contratosBorrados ? contratosBorrados.filter(c => ctEnArea(c, ctArea) && (!ctMes || periodoDe(c) === ctMes)).length : '·';
+  const tab = (k, t, cuenta, title) => `<div class="atab${ctTab === k ? ' active' : ''}${k === 'borrados' ? ' atab-out' : ''}" data-ct="${k}" onclick="setCtTab('${k}')"${title ? ' title="' + e(title) + '"' : ''}>${t}${cuenta != null ? ' <span class="tc">' + cuenta + '</span>' : ''}</div>`;
+  nav.innerHTML = `<div class="ct-cab"><button class="btn btn-sec btn-xs" onclick="setCtArea('')">← Contratos</button><h3>${e(ctNombreArea(ctArea))}</h3></div>`
+    + (ctTab === 'presentes' ? '' : `<div class="ct-meses">${meses.map(m => `<button class="ct-mes${ctMes === m ? ' on' : ''}" onclick="setCtMes('${m}')">${e(ctMesTxt(m))}<small>${n(m)}</small></button>`).join('')}<button class="ct-mes${!ctMes ? ' on' : ''}" onclick="setCtMes('')">Todos<small>${delArea.length}</small></button></div>`)
+    + `<div class="atabs">${tab('activos', 'Contratos', ctMes ? n(ctMes) : delArea.length)}${ctArea === 'arena' ? tab('presentes', 'Por presente', null, 'Los contratos que salen solos de las planillas de presentes') : ''}${tab('borrados', 'Borrados', borr)}</div>`;
+}
+// La portada: una tarjeta por área, con lo del mes.
+function renderCtHome() {
+  const cont = document.getElementById('ctContent'); if (!cont) return;
+  const hoy = hoyLocalISO().slice(0, 7);
+  const areas = CT_AREAS.map(x => x[0]).concat(contratos.some(c => ctAreasDe(c)[0] === 'sin') ? ['sin'] : []);
+  cont.innerHTML = `<div style="font-size:13px;color:var(--r-muted);margin:0 0 12px">Elegí el área: adentro están sus meses, sus pestañas y los filtros.</div><div class="ct-areas">${areas.map(a => {
+    const l = contratos.filter(c => ctEnArea(c, a)), mes = l.filter(c => periodoDe(c) === hoy);
+    const firm = mes.filter(c => c.estado === 'firmado').length, sinFirmar = mes.filter(c => c.estado !== 'firmado' && c.estado !== 'anulado').length;
+    return `<button class="ct-area" onclick="setCtArea('${a}')"><b>${e(ctNombreArea(a))}</b><span class="ct-n">${mes.length}</span>`
+      + `<small>contrato${mes.length === 1 ? '' : 's'} en ${e(ctMesTxt(hoy).toLowerCase())}${mes.length ? ' · ' + firm + ' firmado' + (firm === 1 ? '' : 's') + ' · ' + sinFirmar + ' sin firmar' : ''}</small>`
+      + `<small>${l.length.toLocaleString('es-AR')} en total</small><span class="ct-ir">Entrar →</span></button>`;
+  }).join('')}</div>
+  <div class="ct-otros"><button class="btn btn-sec btn-sm" onclick="openPlantilla()" title="El texto legal del contrato">Modelo de contrato</button><button class="btn btn-sec btn-sm" onclick="openDocsFirma()" title="Constancias, planillas: lo que algunas personas firman además del contrato">Documentos para firmar</button></div>`;
 }
 
 async function renderContratosBorrados() {
@@ -11921,9 +11979,10 @@ async function renderContratosBorrados() {
 
   const q = (document.getElementById('ctSrch')?.value || '').toLowerCase().trim();
   const convF = document.getElementById('ctConvFilter')?.value || '';
-  const perF = document.getElementById('ctPeriodoFilter')?.value || '';
+  const perF = ctArea ? ctMes : (document.getElementById('ctPeriodoFilter')?.value || '');
   const estF = document.getElementById('ctEstadoFilter')?.value || '';
   const list = contratosBorrados.filter(c => {
+    if (ctArea && !ctEnArea(c, ctArea)) return false;
     if (convF && c.conv_id !== convF) return false;
     if (perF && periodoDe(c) !== perF) return false;
     if (estF && c.estado !== estF) return false;
@@ -12024,10 +12083,11 @@ function descargarPdfBorrado() {
 function contratosFiltrados() {
   const q = (document.getElementById('ctSrch')?.value || '').toLowerCase().trim();
   const convF = document.getElementById('ctConvFilter')?.value || '';
-  const perF = document.getElementById('ctPeriodoFilter')?.value || '';
+  const perF = ctArea ? ctMes : (document.getElementById('ctPeriodoFilter')?.value || '');
   const estF = document.getElementById('ctEstadoFilter')?.value || '';
   const qd = q.replace(/\D/g, '');
   return contratos.filter(c => {
+    if (ctArea && !ctEnArea(c, ctArea)) return false;
     if (convF && c.conv_id !== convF) return false;
     if (perF && periodoDe(c) !== perF) return false;
     if (estF && c.estado !== estF) return false;
@@ -12088,7 +12148,7 @@ async function renderPorPresente(recargar) {
   const opciones = (sel, siempre) => (siempre ? `<option value="">${e(ppCfg.porDefecto || '—')} (el de siempre)</option>` : '') + puestos.map(p => `<option${ppClave(p) === ppClave(sel) ? ' selected' : ''}>${e(p)}</option>`).join('');
   const porRol = {}; Object.entries(ppCfg.roles || {}).forEach(([k, p]) => { (porRol[p] = porRol[p] || []).push(k); });
   const mesTxt = ppMes.slice(5) + '/' + ppMes.slice(0, 4);
-  const montos = `<div class="card" style="padding:18px 20px;margin-bottom:18px">
+  const montos = `<div class="ct-caja" style="padding:18px 20px;margin-bottom:18px">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><strong style="font-size:14px">Montos por jornada</strong>
       <select class="filt" onchange="ppMes=this.value;renderPorPresente()">${meses.map(m => `<option value="${m}"${m === ppMes ? ' selected' : ''}>${e(m.slice(5) + '/' + m.slice(0, 4))}</option>`).join('')}</select>
       <span style="font-size:12px;color:var(--r-muted)">Lo que cobra cada puesto en el mes. Sin monto, el contrato de ese puesto no sale (queda "Falta el monto").</span></div>
@@ -12112,7 +12172,7 @@ async function renderPorPresente(recargar) {
     const fila = f => { const ct = f.contrato_id && ppContratos[f.contrato_id]; return `<tr><td>${e([f.apellido, f.nombre].filter(Boolean).join(', ') || f.cuil)}</td><td>${e(f.sector || '')}</td><td style="font-family:monospace;font-size:12px">${e(f.cuil)}</td><td>${e(f.marca || '—')}</td><td>${ct ? estadoBadge(ct.estado) : ppBadge(f.resultado)}</td><td style="font-size:12px;color:var(--r-muted)">${e(f.detalle || '')}</td></tr>`; };
     const lista = abierta ? filas : problemas;
     const show = filas.find(f => f.show) || {}, arch = filas.find(f => f.archivo_id) || {};
-    return `<div class="card" style="padding:16px 20px;margin-bottom:14px">
+    return `<div class="ct-caja" style="padding:16px 20px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><strong>${e(fmtFecha(fe))}${show.show ? ' · ' + e(show.show) : ''}</strong>
         <span style="font-size:12.5px;color:var(--r-muted)">${salieron} contrato${salieron === 1 ? '' : 's'} · ${firmados} firmado${firmados === 1 ? '' : 's'} · ${anulados} anulado${anulados === 1 ? '' : 's'}${problemas.length ? ' · <b style="color:#991b1b">' + problemas.length + ' para corregir</b>' : ''}</span>
         <span style="margin-left:auto;display:flex;gap:6px">${arch.archivo_id ? `<a class="btn btn-sec btn-xs" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/${encodeURIComponent(arch.archivo_id)}/edit">Abrir la planilla</a>` : ''}<button class="btn btn-sec btn-xs" onclick="ppVer('${fe}')">${abierta ? 'Ver sólo lo que hay que corregir' : 'Ver todos (' + filas.length + ')'}</button></span></div>
@@ -12137,6 +12197,7 @@ async function ppGuardarMontos(nPuestos, nBloques) {
 
 function renderContratos() {
   ctTabCounts();
+  if (!ctArea) { renderCtHome(); return; }
   if (ctTab === 'borrados') { renderContratosBorrados(); return; }
   if (ctTab === 'presentes') { renderPorPresente(); return; }
   const cont = document.getElementById('ctContent'); if (!cont) return;
