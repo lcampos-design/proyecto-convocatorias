@@ -220,6 +220,8 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .ct-pend-sector{font:600 11px var(--inc-fuente);letter-spacing:.06em;text-transform:uppercase;color:var(--gris);padding:10px 14px 4px}
 .ct-pend-est{font:600 11px var(--inc-fuente);padding:3px 8px;border-radius:999px;white-space:nowrap;background:var(--fondo);color:var(--gris)}
 .ct-pend-est.visto{background:var(--tinta);color:var(--fondo)}
+.ct-pend-est.firmado{background:transparent;color:var(--tinta);border:1.5px solid var(--tinta)}
+.ct-pend-filtros{display:grid;gap:8px;margin:0 0 4px}
 .hub-chip{font:600 11.5px var(--inc-fuente);padding:4px 9px;border-radius:999px;background:var(--fondo);color:var(--gris)}
 .hub-chip.n3{background:var(--grave);color:var(--grave-letra)}.hub-chip.n2{background:var(--media);color:var(--media-letra)}.hub-chip.n1{background:var(--leve);color:var(--leve-letra)}
 /* El tema (como en WhatsApp): un menú chico debajo de la barra, con Automático, Claro y Oscuro; el elegido, tildado. */
@@ -419,15 +421,15 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
       <div class="hub-ic inc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></div>
       <div style="flex:1;min-width:0"><div class="hub-t">Incidencias</div><div class="hub-s">Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector</div><div class="hub-chips" id="hubIncid"></div></div>
     </button>
-    <button class="hub-card" id="hubContratosCard" onclick="openContratosSinFirmar()" style="display:none">
+    <button class="hub-card" id="hubContratosCard" onclick="openContratos()">
       <div class="hub-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 15.5c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3.5-.5"/></svg></div>
-      <div style="flex:1;min-width:0"><div class="hub-t">Contratos sin firmar</div><div class="hub-s">Quiénes todavía no firmaron su contrato, para avisarles</div><div class="hub-chips" id="hubContratos"></div></div>
+      <div style="flex:1;min-width:0"><div class="hub-t">Contratos</div><div class="hub-s">Quién firmó y quién no, para pedirles la firma</div><div class="hub-chips" id="hubContratos"></div></div>
     </button>
       </div>
   </div>
 </div>
 
-<!-- El Coordinador: los contratos sin firmar del show (coordinador-contratos.sql) -->
+<!-- Contratos: quién firmó y quién no, por fecha del show (contratos-supervisores.sql). Sólo el estado, no el contrato. -->
 <div id="screenContratos" class="screen">
   <div class="app-bar">
     <div class="app-bar-inner">
@@ -439,10 +441,11 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
     <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
   </div>
   <div class="wrap">
-    <div class="titulo"><h1 class="sec-t"><span class="mano">Contratos</span>sin firmar</h1><div class="titulo-s" id="ctPendSub"></div></div>
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Contratos</span></h1><div class="titulo-s" id="ctPendSub"></div></div>
     <div class="ct-pend-aviso">Para firmarlo, que busquen en su mail uno de <b>convocatorias.arena@show-bs.com</b> con el asunto <b>«Contrato · …»</b> (si no lo ven, en Spam o Promociones).</div>
-    <button class="fb-send" style="margin-top:0" onclick="openContratosSinFirmar()">↻ Actualizar</button>
+    <div class="ct-pend-filtros"><div class="sv-seg" id="ctPendFiltro"></div><select class="l-in sv-zona" id="ctPendSector" onchange="svCtSector = this.value; svPintarContratos()" aria-label="Sector"></select></div>
     <div id="ctPendLista"></div>
+    <button class="fb-send" onclick="openContratos()">↻ Actualizar</button>
   </div>
 </div>
 
@@ -794,52 +797,70 @@ async function openShow(convId, fecha) {
     : abiertas.length ? [3, 2, 1].filter(n).map(nv => '<span class="hub-chip n' + nv + '">' + n(nv) + ' ' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('')
     : '<span class="hub-chip" style="background:var(--tinta);color:var(--fondo)">Sin incidencias abiertas</span>';
 }
-// ── El Coordinador: los contratos sin firmar (coordinador-contratos.sql) ──
-// Sólo la cuenta del Coordinador ve la tarjeta; la base igual chequea que sea ella.
-let svCtPend = null;
-async function svCargarContratosPend(convId) {
-  const { data, error } = await sb.rpc('sup_contratos_sin_firmar', { p_conv_id: convId });
-  if (error) return { ok: false, error: /sup_contratos_sin_firmar/.test(error.message || '') ? 'Falta correr coordinador-contratos.sql en Supabase' : 'Sin conexión' };
+// ── Contratos: quién firmó y quién no (contratos-supervisores.sql) ──
+// Todas las cuentas de la app (las de zona, Coordinador y Corporativo; la base chequea que el show
+// esté asignado). Sólo el estado: nombre, puesto, sector y si firmó, para pedirles la firma.
+let svCtDatos = null, svCtFiltro = 'pend', svCtSector = '';
+async function svCargarContratos(convId) {
+  const { data, error } = await sb.rpc('sup_contratos_show', { p_conv_id: convId });
+  if (error) return { ok: false, error: /sup_contratos_show/.test(error.message || '') ? 'Falta correr contratos-supervisores.sql en Supabase' : 'Sin conexión' };
   return data || { ok: false, error: 'Sin datos' };
 }
+const svCtClave = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const svCtPendiente = p => p.estado !== 'firmado';
 async function svPintarHubContratos(convId) {
-  const card = document.getElementById('hubContratosCard'), chips = document.getElementById('hubContratos');
-  if (!card) return;
-  if (svZona !== 'coordinador') { card.style.display = 'none'; return; }
-  card.style.display = ''; chips.innerHTML = '<span class="hub-chip">Cargando…</span>';
-  const r = await svCargarContratosPend(convId); if (currentConvId !== convId) return;
-  svCtPend = r;
+  const chips = document.getElementById('hubContratos'); if (!chips) return;
+  chips.innerHTML = '<span class="hub-chip">Cargando…</span>';
+  const r = await svCargarContratos(convId); if (currentConvId !== convId) return;
   if (!r.ok) { chips.innerHTML = '<span class="hub-chip">' + esc(r.error || 'No disponible') + '</span>'; return; }
-  const hoy = (r.fechas || []).find(x => x.fecha === svFechaDe(convs.find(c => c.id === convId) || {}));
-  const total = (r.fechas || []).reduce((a, x) => a + x.pendientes.length, 0);
-  chips.innerHTML = !total ? '<span class="hub-chip" style="background:var(--tinta);color:var(--fondo)">Todos firmaron</span>'
-    : (hoy && hoy.pendientes.length ? '<span class="hub-chip">' + hoy.pendientes.length + ' de hoy sin firmar</span>' : '')
-      + '<span class="hub-chip">' + total + ' sin firmar en total</span>';
+  const fechas = r.fechas || [], dia = fechas.find(x => x.fecha === svFechaDe(convs.find(c => c.id === convId) || {})) || fechas[0];
+  if (!dia) { chips.innerHTML = '<span class="hub-chip">Todavía no salió ninguno</span>'; return; }
+  const sin = dia.total - dia.firmados;
+  chips.innerHTML = (sin ? '<span class="hub-chip">' + sin + ' sin firmar</span>' : '<span class="hub-chip" style="background:var(--tinta);color:var(--fondo)">Todos firmaron</span>')
+    + '<span class="hub-chip">' + dia.firmados + '/' + dia.total + ' firmados' + (dia.fecha ? ' · ' + esc(fmtFecha(dia.fecha).slice(0, 6)) : '') + '</span>';
 }
 function svEstadoContrato(p) {
-  if (p.vence && new Date(p.vence) < new Date()) return ['', 'El link venció'];
-  if (p.estado === 'visto') return ['visto', 'Lo abrió, falta firmar'];
-  if (p.estado === 'pendiente') return ['', 'El mail todavía no salió'];
-  return ['', 'No lo abrió'];
+  if (p.estado === 'firmado') return ['firmado', 'Firmado'];
+  if (p.vence && new Date(p.vence) < new Date()) return ['', 'Pendiente · el link venció'];
+  if (p.estado === 'visto') return ['visto', 'Pendiente · lo abrió'];
+  if (p.estado === 'pendiente') return ['', 'Pendiente · sin enviar'];
+  return ['', 'Pendiente · no lo abrió'];
 }
-async function openContratosSinFirmar() {
+async function openContratos() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   document.getElementById('ctPendSub').textContent = String(c.nombre || '').split(' — ')[0];
-  const lista = document.getElementById('ctPendLista');
-  lista.innerHTML = '<div class="empty-state"><div class="empty-title">Cargando…</div></div>';
+  document.getElementById('ctPendLista').innerHTML = '<div class="empty-state"><div class="empty-title">Cargando…</div></div>';
   showScreen('screenContratos');
-  const r = await svCargarContratosPend(currentConvId);
-  svCtPend = r;
-  if (!r.ok) { lista.innerHTML = '<div class="empty-state"><div class="empty-title">' + esc(r.error || 'No disponible') + '</div></div>'; return; }
+  svCtDatos = await svCargarContratos(currentConvId);
+  // Una cuenta de zona arranca en su sector (si hay contratos de ese sector); las demás, en todos.
+  const sectores = [...new Set(((svCtDatos && svCtDatos.fechas) || []).flatMap(x => x.personas.map(p => p.sector || '')).filter(Boolean))];
+  const propio = svZona && sectores.find(sc => svCtClave(sc) === svCtClave(SV_ZONAS[svZona]));
+  if (!svCtSector || !sectores.includes(svCtSector)) svCtSector = propio || '';
+  svPintarContratos();
+}
+function svPintarContratos() {
+  const lista = document.getElementById('ctPendLista'), r = svCtDatos;
+  if (!r || !r.ok) { lista.innerHTML = '<div class="empty-state"><div class="empty-title">' + esc((r && r.error) || 'No disponible') + '</div></div>'; document.getElementById('ctPendFiltro').innerHTML = ''; document.getElementById('ctPendSector').style.display = 'none'; return; }
   const fechas = (r.fechas || []).filter(x => x.total);
+  const deSector = p => !svCtSector || (p.sector || '') === svCtSector;
+  const todas = fechas.flatMap(x => x.personas.filter(deSector));
+  const nSin = todas.filter(svCtPendiente).length, nCon = todas.length - nSin;
+  document.getElementById('ctPendFiltro').innerHTML = [['pend', 'Sin firmar (' + nSin + ')'], ['firmados', 'Firmados (' + nCon + ')'], ['todos', 'Todos']]
+    .map(([k, t]) => '<button type="button" class="' + (svCtFiltro === k ? 'on' : '') + '" onclick="svCtFiltro=\'' + k + '\';svPintarContratos()">' + t + '</button>').join('');
+  const sectores = [...new Set(fechas.flatMap(x => x.personas.map(p => p.sector || '')).filter(Boolean))].sort();
+  const sel = document.getElementById('ctPendSector');
+  sel.style.display = sectores.length > 1 ? '' : 'none';
+  sel.innerHTML = '<option value="">Todos los sectores</option>' + sectores.map(sc => '<option value="' + esc(sc) + '"' + (sc === svCtSector ? ' selected' : '') + '>' + esc(sc.charAt(0) + sc.slice(1).toLowerCase()) + '</option>').join('');
   if (!fechas.length) { lista.innerHTML = '<div class="empty-state"><div class="empty-title">Todavía no salió ningún contrato de este show</div></div>'; return; }
+  const pasa = p => deSector(p) && (svCtFiltro === 'todos' || (svCtFiltro === 'pend' ? svCtPendiente(p) : !svCtPendiente(p)));
   lista.innerHTML = fechas.map(x => {
-    const cab = '<div class="ct-pend-fecha"><span>' + (x.fecha ? esc(fmtFecha(x.fecha)) : 'Sin fecha') + '</span><small>' + (x.pendientes.length ? x.pendientes.length + ' sin firmar · ' : '') + x.firmados + ' de ' + x.total + ' firmaron</small></div>';
-    if (!x.pendientes.length) return cab + '<div class="caja" style="padding:12px 14px;font:400 13px var(--inc-fuente);color:var(--gris)">Todos firmaron.</div>';
+    const gente = x.personas.filter(pasa), enSector = x.personas.filter(deSector), firm = enSector.filter(p => !svCtPendiente(p)).length;
+    const cab = '<div class="ct-pend-fecha"><span>' + (x.fecha ? esc(fmtFecha(x.fecha)) : 'Sin fecha') + '</span><small>' + firm + ' de ' + enSector.length + ' firmaron</small></div>';
+    if (!gente.length) return cab + '<div class="caja" style="padding:12px 14px;font:400 13px var(--inc-fuente);color:var(--gris)">' + (svCtFiltro === 'pend' ? 'Todos firmaron.' : svCtFiltro === 'firmados' ? 'Todavía no firmó nadie.' : 'Nadie.') + '</div>';
     let sector = null, filas = '';
-    x.pendientes.forEach(p => {
+    gente.forEach(p => {
       const sec = p.sector || 'Sin sector';
-      if (sec !== sector) { sector = sec; filas += '<div class="ct-pend-sector">' + esc(sec) + '</div>'; }
+      if (!svCtSector && sec !== sector) { sector = sec; filas += '<div class="ct-pend-sector">' + esc(sec) + '</div>'; }
       const [cl, txt] = svEstadoContrato(p);
       filas += '<div class="person-row" style="cursor:default"><div style="flex:1;min-width:0"><div class="person-name">' + esc(p.nombre || '') + '</div><div class="person-meta">' + esc(p.puesto || '') + '</div></div><span class="ct-pend-est ' + cl + '">' + txt + '</span></div>';
     });
