@@ -14,15 +14,24 @@
 --   · Cada fecha es un show aparte en la lista, con su tablero y su informe
 --     (María Becerra son 8 fechas en una convocatoria).
 --
+--  Calamaro (23-nov) va como "Calamaro — Prueba piloto" (pedido de Thomas):
+--  con ese nombre se ve en el panel, la gerencia, la app y el informe.
+--
 --  Para sacar uno: en el panel, Centro de Control → el show → "Sacar del
 --  Centro de Control"; o borrar la convocatoria desde Convocatorias.
 -- ============================================================
+
+-- ── Si ya se había corrido la primera versión: Calamaro pasa al nombre nuevo ──
+update public.convocatorias
+   set nombre = 'Calamaro — Prueba piloto'
+ where nombre = 'Calamaro' and fecha = '2026-11-23'
+   and descripcion like 'Show del Arena para el Centro de Control%';
 
 with shows(nombre, fechas) as (values
   ('María Becerra',                array['2026-11-13','2026-11-14','2026-11-15','2026-11-17','2026-11-18','2026-11-19','2026-11-26','2026-11-27']),
   ('Las Pastillas del Abuelo',     array['2026-11-20','2026-11-21']),
   ('Serú Girán por Lebón y Aznar', array['2026-11-22']),
-  ('Calamaro',                     array['2026-11-23']),
+  ('Calamaro — Prueba piloto',     array['2026-11-23']),
   ('ZZ Top',                       array['2026-11-24']),
   ('Ulises Bueno',                 array['2026-11-25']),
   ('Paulo Londra',                 array['2026-11-28']),
