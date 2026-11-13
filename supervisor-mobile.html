@@ -692,23 +692,33 @@ async function loadData() {
 function renderHome() {
   const cont = document.getElementById('homeContent');
   if (!convs.length) { cont.innerHTML = `<div class="empty-state"><div class="empty-title">Sin shows asignados</div><div>Todavía no te asignaron ningún show</div></div>`; return; }
-  // Como en la gerencia: el de hoy (con su contorno), los que vienen y los que pasaron.
-  const hoy = new Date(); const hoyISO = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
-  const fechasDe = c => String(c.fecha || '').split(',').map(f => f.trim()).filter(Boolean).sort();
-  const grupoDe = c => { const fs = fechasDe(c); if (!fs.length) return 'proximos'; if (fs.includes(hoyISO)) return 'hoy'; return fs[fs.length - 1] < hoyISO ? 'anteriores' : 'proximos'; };
-  const tarjeta = c => {
-    const total = c.personas || 0, hechos = c.con_feedback || 0, g = grupoDe(c);
-    return `<div class="conv-card${g === 'hoy' ? ' hoy' : ''}" onclick="openShow('${c.id}')">
+  // Como en la gerencia: el de hoy (con su contorno) y los que vienen, del más próximo al más
+  // lejano; los de prueba ("Prueba" en el nombre), aparte. Los que ya pasaron no se muestran.
+  // En los shows del Centro de Control cada fecha es un show; en los demás, una tarjeta por
+  // convocatoria, con la próxima fecha.
+  const hoy = incHoyFuncion(), items = [];
+  convs.forEach(c => {
+    const fs = svFechasDe(c), vienen = fs.filter(f => f >= hoy), cc = enControl(c);
+    if (cc && incEsPrueba(c)) (vienen.length ? vienen : fs.length ? fs.slice(-1) : ['']).forEach(f => items.push({ c, f, g: 'prueba' }));
+    else if (!fs.length) items.push({ c, f: '', g: 'proximos' });
+    else if (cc) vienen.forEach(f => items.push({ c, f, g: f === hoy ? 'hoy' : 'proximos' }));
+    else if (vienen.length) items.push({ c, f: vienen[0], g: vienen[0] === hoy ? 'hoy' : 'proximos', varias: fs.length });
+  });
+  if (!items.length) { cont.innerHTML = `<div class="empty-state"><div class="empty-title">Sin shows de hoy en adelante</div><div>Cuando se sume uno, aparece acá</div></div>`; return; }
+  const orden = (a, b) => (a.f || '9999').localeCompare(b.f || '9999') || String(a.c.nombre || '').localeCompare(String(b.c.nombre || ''));
+  const tarjeta = it => {
+    const c = it.c, total = c.personas || 0, hechos = c.con_feedback || 0, esHoy = !!it.f && it.f === hoy;
+    return `<div class="conv-card${esHoy ? ' hoy' : ''}" onclick="openShow('${c.id}','${it.f}')">
       <div class="conv-main">
-        <div class="conv-title">${esc(c.nombre)}${g === 'hoy' ? '<span class="vivo-pill">Hoy</span>' : ''}</div>
-        <div class="conv-meta">${c.fecha ? `<span>${fmtFecha(c.fecha)}</span>` : ''}${c.area && c.area !== 'movistar_arena' ? `<span class="badge ${areaClase(c.area)}">${areaNombre(c.area)}</span>` : ''}</div>
-        <div class="conv-chips"><span class="conv-chip"><strong>${total}</strong>persona${total !== 1 ? 's' : ''}</span><span class="conv-chip"><strong>${hechos}/${total}</strong>con feedback</span></div>
+        <div class="conv-title">${esc(c.nombre)}${esHoy ? '<span class="vivo-pill">Hoy</span>' : ''}</div>
+        <div class="conv-meta">${it.f ? `<span>${fmtFecha(it.f)}${it.varias > 1 ? ' · ' + it.varias + ' fechas' : ''}</span>` : ''}${c.area && c.area !== 'movistar_arena' ? `<span class="badge ${areaClase(c.area)}">${areaNombre(c.area)}</span>` : ''}</div>
+        ${total ? `<div class="conv-chips"><span class="conv-chip"><strong>${total}</strong>persona${total !== 1 ? 's' : ''}</span><span class="conv-chip"><strong>${hechos}/${total}</strong>con feedback</span></div>` : ''}
       </div>
       <span class="flecha">›</span>
     </div>`;
   };
-  cont.innerHTML = [['hoy', 'Hoy'], ['proximos', 'Próximos'], ['anteriores', 'Anteriores']].map(([k, nombre]) => {
-    const l = convs.filter(x => grupoDe(x) === k);
+  cont.innerHTML = [['hoy', 'Hoy'], ['proximos', 'Próximos'], ['prueba', 'Prueba']].map(([k, nombre]) => {
+    const l = items.filter(x => x.g === k).sort(orden);
     return l.length ? '<div class="grupo">' + nombre + '</div>' + l.map(tarjeta).join('') : '';
   }).join('');
 }
@@ -719,16 +729,23 @@ function renderHome() {
 // controlIds: los shows sumados al Centro (null si la base todavía no lo
 // sabe: entonces, como antes, los del Arena).
 function enControl(c) { return !!c && (controlIds ? controlIds.has(c.id) : incEsArena(c.area)); }
-async function openShow(convId) {
+// Las fechas de un show y la que se muestra: la de la función que se abrió desde la lista; si no,
+// la de hoy, la próxima o la última (un show de varias fechas tiene varias en c.fecha).
+var svFechaAbierta = '';
+function svFechasDe(c) { return String((c && c.fecha) || '').split(',').map(f => f.trim()).filter(Boolean).sort(); }
+function svFechaDe(c) { const fs = svFechasDe(c), hoy = incHoyFuncion(); return fs.includes(svFechaAbierta) ? svFechaAbierta : fs.includes(hoy) ? hoy : fs.find(f => f > hoy) || fs[fs.length - 1] || ''; }
+async function openShow(convId, fecha) {
   currentConvId = convId;
   const c = convs.find(x => x.id === convId); if (!c) return;
+  if (fecha !== undefined) svFechaAbierta = fecha;   // la fecha de la tarjeta que se tocó
+  const fTxt = svFechaDe(c) ? fmtFecha(svFechaDe(c)) : '';
   if (!enControl(c)) return openConv(convId);
   // La cuenta de una zona: antes de empezar, quién supervisa hoy (una vez por show).
   if (svZona && !svTurnoDe(convId)) { svPedirTurno(convId); return; }
   // El nombre del show, sin "— Movistar Arena" (son todos del Arena), como en la sala y en la gerencia.
   document.getElementById('showTitulo').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
   const quien = svQuienHoy(convId);
-  document.getElementById('showSub').innerHTML = esc(c.fecha ? fmtFecha(c.fecha) : '') + (quien ? (c.fecha ? ' · ' : '') + '<span class="sv-quien">' + esc(quien) + '</span> <button type="button" class="sv-noyo" onclick="svNoSoyYo()">No soy yo</button>' : '');
+  document.getElementById('showSub').innerHTML = esc(fTxt) + (quien ? (fTxt ? ' · ' : '') + '<span class="sv-quien">' + esc(quien) + '</span> <button type="button" class="sv-noyo" onclick="svNoSoyYo()">No soy yo</button>' : '');
   const total = c.personas || 0, hechos = c.con_feedback || 0;
   document.getElementById('hubEquipo').innerHTML = '<span class="hub-chip">' + total + ' persona' + (total === 1 ? '' : 's') + '</span><span class="hub-chip">' + hechos + '/' + total + ' con feedback</span>';
   document.getElementById('hubIncid').innerHTML = '<span class="hub-chip">Cargando…</span>';
@@ -746,7 +763,7 @@ async function openConv(convId) {
   currentConvId = convId;
   const c = convs.find(x => x.id === convId); if (!c) return;
   document.getElementById('convScreenTitle').innerHTML = '<span class="mano">Equipo</span>y feedback';
-  document.getElementById('convScreenSub').textContent = c.nombre + (c.fecha ? ' · ' + fmtFecha(c.fecha) : '');
+  document.getElementById('convScreenSub').textContent = c.nombre + (svFechaDe(c) ? ' · ' + fmtFecha(svFechaDe(c)) : '');
   document.getElementById('convPersonList').innerHTML = '<div class="empty-state"><div class="empty-title">Cargando...</div></div>';
   showScreen('screenConv');
   // La base decide qué gente es de este recital y si es de este supervisor.
@@ -1010,6 +1027,10 @@ function incRefRapida(idCampo, r) {
 }
 // Las incidencias son sólo de los shows del Movistar Arena.
 function incEsArena(area) { return /arena|movistar/i.test(String(area || '')); }
+// Un show de prueba ("Prueba" en el nombre, como "Calamaro — Prueba piloto"): en las listas va aparte.
+function incEsPrueba(show) { return /prueba/i.test(String((show && show.nombre) || '')); }
+// El día de la función (AAAA-MM-DD, hora de acá): la madrugada, antes de las 6, todavía es la noche del show.
+function incHoyFuncion() { const d = new Date(Date.now() - 6 * 3600e3); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function incEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function incHora(iso) { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 // El día (AAAA-MM-DD, hora de acá): una convocatoria del Arena puede tener
@@ -3940,7 +3961,8 @@ async function openIncid() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   // El nombre del show, sin "— Movistar Arena" (son todos del Arena).
   document.getElementById('incShowN').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
-  document.getElementById('incSub').textContent = (c.fecha ? fmtFecha(c.fecha) : '') + (svQuienHoy(c.id) ? (c.fecha ? ' · ' : '') + svQuienHoy(c.id) : '');
+  const fTxt = svFechaDe(c) ? fmtFecha(svFechaDe(c)) : '';
+  document.getElementById('incSub').textContent = fTxt + (svQuienHoy(c.id) ? (fTxt ? ' · ' : '') + svQuienHoy(c.id) : '');
   incLista = []; incVistos = null; incNuevos = new Set(); incFiltroSup = 'abiertas'; incAbiertaSup = '';
   // En el celular, la sala arranca en la zona de la cuenta (si pasó en otra, se elige en el desplegable).
   incZonaSup = svZona || 'todas';

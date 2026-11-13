@@ -452,6 +452,10 @@ function incRefRapida(idCampo, r) {
 }
 // Las incidencias son sólo de los shows del Movistar Arena.
 function incEsArena(area) { return /arena|movistar/i.test(String(area || '')); }
+// Un show de prueba ("Prueba" en el nombre, como "Calamaro — Prueba piloto"): en las listas va aparte.
+function incEsPrueba(show) { return /prueba/i.test(String((show && show.nombre) || '')); }
+// El día de la función (AAAA-MM-DD, hora de acá): la madrugada, antes de las 6, todavía es la noche del show.
+function incHoyFuncion() { const d = new Date(Date.now() - 6 * 3600e3); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function incEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function incHora(iso) { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 // El día (AAAA-MM-DD, hora de acá): una convocatoria del Arena puede tener
@@ -3533,18 +3537,26 @@ if (typeof window !== 'undefined' && window.addEventListener) {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarNombre);
 }
 function renderShows() {
-  const hoy = hoyISO();
-  const grupos = { hoy: [], proximos: [], anteriores: [] };
-  // Una tarjeta por función (cada fecha es un show).
-  funciones().forEach(e => { if (e.f === hoy) grupos.hoy.push(e); else if (e.f && e.f > hoy) grupos.proximos.push(e); else grupos.anteriores.push(e); });
-  grupos.proximos.sort((a, b) => a.f.localeCompare(b.f));
-  grupos.anteriores.sort((a, b) => b.f.localeCompare(a.f));
+  // Hoy es el día de la función: la madrugada (antes de las 6) todavía es la noche del show.
+  const hoy = incHoyFuncion();
+  const grupos = { hoy: [], proximos: [], prueba: [] };
+  // Una tarjeta por función (cada fecha es un show), del más próximo al más lejano. Los que ya
+  // pasaron no se muestran. Los de prueba ("Prueba" en el nombre) van aparte; si ya pasaron, queda
+  // la última fecha.
+  funciones().forEach(e => {
+    if (incEsPrueba(e.s)) { const fs = fechasDe(e.s); if (!e.f || e.f >= hoy || (e.f === fs[fs.length - 1] && !fs.some(f => f >= hoy))) grupos.prueba.push(e); }
+    else if (e.f === hoy) grupos.hoy.push(e);
+    else if (!e.f || e.f > hoy) grupos.proximos.push(e);
+  });
+  const orden = (a, b) => (a.f || '9999').localeCompare(b.f || '9999');
+  grupos.proximos.sort(orden); grupos.prueba.sort(orden);
   const tarjeta = (e, vivo) => '<div class="show' + (vivo ? ' hoy' : '') + '" onclick="abrirShow(\'' + e.s.id + '\',\'' + e.f + '\')"><div class="show-main"><div class="show-n">' + incEsc(sinArena(e.s.nombre)) + (vivo ? '<span class="vivo-pill">Hoy</span>' : '') + '</div>'
     + '<div class="show-f">' + (e.f ? resumenFechas({ fecha: e.f }) : 'Sin fechas') + '</div><div class="show-chips">' + chipsAbiertas(e) + '</div></div><span class="flecha">›</span></div>';
   const body = document.getElementById('showsBody');
   if (!shows.length) { body.innerHTML = '<div class="vacio">Todavía no hay shows en el Centro de Control. Cuando el equipo de SBS sume uno, aparece acá.</div>'; return; }
-  const bloque = (t, l, vivo) => l.length ? '<div class="grupo">' + t + '</div><div class="shows-grid">' + l.map(s => tarjeta(s, vivo)).join('') + '</div>' : '';
-  body.innerHTML = bloque('Hoy', grupos.hoy, true) + bloque('Próximos', grupos.proximos) + bloque('Anteriores', grupos.anteriores);
+  const bloque = (t, l) => l.length ? '<div class="grupo">' + t + '</div><div class="shows-grid">' + l.map(s => tarjeta(s, !!s.f && s.f === hoy)).join('') + '</div>' : '';
+  body.innerHTML = (bloque('Hoy', grupos.hoy) + bloque('Próximos', grupos.proximos) + bloque('Prueba', grupos.prueba))
+    || '<div class="vacio">No hay shows de hoy en adelante. Cuando el equipo de SBS sume uno, aparece acá.</div>';
 }
 async function abrirShow(id, fecha) {
   const s = shows.find(x => x.id === id); if (!s) return;

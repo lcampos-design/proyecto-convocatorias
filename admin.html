@@ -5182,6 +5182,10 @@ function incRefRapida(idCampo, r) {
 }
 // Las incidencias son sólo de los shows del Movistar Arena.
 function incEsArena(area) { return /arena|movistar/i.test(String(area || '')); }
+// Un show de prueba ("Prueba" en el nombre, como "Calamaro — Prueba piloto"): en las listas va aparte.
+function incEsPrueba(show) { return /prueba/i.test(String((show && show.nombre) || '')); }
+// El día de la función (AAAA-MM-DD, hora de acá): la madrugada, antes de las 6, todavía es la noche del show.
+function incHoyFuncion() { const d = new Date(Date.now() - 6 * 3600e3); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function incEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function incHora(iso) { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 // El día (AAAA-MM-DD, hora de acá): una convocatoria del Arena puede tener
@@ -8569,11 +8573,15 @@ function renderCcShows() {
   const hoy = hoyLocalISO();
   const tarjeta = f => '<button class="cc-show' + (f.x.id === ccConvId && f.f === ccFechaSel ? ' on' : '') + '" onclick="ccAbrirShow(\'' + f.x.id + '\',\'' + f.f + '\')"><div class="cc-show-n">' + e(f.x.nombre || '') + (f.f === hoy ? '<span class="cc-hoy">Hoy</span>' : '') + '</div>'
     + '<div class="cc-show-f">' + e(resumenFechasTexto(f.f) || 'Sin fechas') + '</div>' + chips(f) + '</button>';
-  const todas = ccFunciones(), g = k => todas.filter(f => k === 'hoy' ? f.f === hoy : k === 'proximos' ? f.f > hoy : f.f < hoy);
+  // Los de prueba ("Prueba" en el nombre) van aparte. Acá quedan los anteriores: el informe de un
+  // show se saca después de la fecha (en la gerencia y en la app de supervisores no se muestran).
+  const todas = ccFunciones(), reales = todas.filter(f => !incEsPrueba(f.x)), g = k => reales.filter(f => k === 'hoy' ? f.f === hoy : k === 'proximos' ? f.f > hoy : f.f < hoy);
   const prox = g('proximos').sort((a, b) => a.f.localeCompare(b.f));
+  const prueba = todas.filter(f => incEsPrueba(f.x)).sort((a, b) => a.f.localeCompare(b.f));
   const ant = g('anteriores').sort((a, b) => b.f.localeCompare(a.f));
   cont.innerHTML = sumar + (g('hoy').length ? '<div class="cc-grupo">Hoy</div>' + g('hoy').map(tarjeta).join('') : '')
     + (prox.length ? '<div class="cc-grupo">Próximos</div>' + prox.map(tarjeta).join('') : '')
+    + (prueba.length ? '<div class="cc-grupo">Prueba</div>' + prueba.map(tarjeta).join('') : '')
     + (ant.length ? '<div class="cc-grupo">Anteriores</div>' + ant.map(tarjeta).join('') : '');
 }
 // Sin shows sumados: el tablero queda vacío, con lo que hay que hacer.
