@@ -1391,9 +1391,10 @@ tr:hover td{background:#f9f9fb}
           <button class="bar-btn prim" onclick="incAbrirNuevaAdm()" title="Cargar una incidencia desde el panel (la ven también la gerencia y los supervisores)">+ Cargar incidencia</button>
           <button class="bar-btn ico" onclick="cargarIncidAdm()" title="Actualizar ahora" aria-label="Actualizar ahora">↻</button>
           <div class="nom-mas">
-            <button class="bar-btn ico" onclick="toggleCcMas(event)" title="Informe Excel, quitar del Centro" aria-label="Más acciones">⋯</button>
+            <button class="bar-btn ico" onclick="toggleCcMas(event)" title="Informe Excel, el campo, quitar del Centro" aria-label="Más acciones">⋯</button>
             <div class="nom-mas-menu" id="ccMasMenu">
               <button class="btn btn-sm" onclick="exportIncidencias()" title="El informe del show: resumen por gravedad, categoría y sector, y el detalle con la línea de tiempo">↓ Informe Excel</button>
+              <button class="btn btn-sm" id="ccArmadoBtn" onclick="ccCambiarArmado()" title="Cómo va el campo en este show (lo dice la ficha técnica del Arena): la gerencia y los supervisores lo ven así, en todas sus fechas">Campo con asientos</button>
               <button class="btn btn-sm" id="ccQuitar" onclick="ccQuitarShow()" title="La gerencia deja de verlo y los supervisores ya no cargan incidencias en este show">Quitar del Centro</button>
             </div>
           </div>
@@ -5697,10 +5698,10 @@ const INC_ICONOS = {
 function incSectoresPlano(armado) { return INC_PLANO_ZONAS.concat(incLugaresArena.map(incLugarForma), INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
 // Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
 function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
-// El armado del campo (de pie o con asientos) es del show, no del aparato: lo
-// elige cualquiera que mira el plano (el panel, la gerencia o la tablet) y lo
-// ven todos igual. Si la base todavía no lo guarda (falta correr
-// centro-control-armado.sql), queda en el aparato, como antes.
+// El armado del campo (de pie o con asientos) es del show, no del aparato: se
+// elige una vez en el panel (en el menú del show) y lo ven todos igual; la
+// gerencia y los supervisores no lo cambian. Sólo si la base todavía no lo
+// guarda (falta correr centro-control-armado.sql), queda en el aparato.
 const incArmados = {};   // id del show → 'campos' | 'asientos'
 let incArmadosEnBase = true;
 async function incCargarArmados() {
@@ -5715,7 +5716,8 @@ async function incCargarArmados() {
 }
 function incArmadoDelShow(convId, lista) {
   if (incArmados[convId]) return incArmados[convId];
-  let local = ''; try { local = localStorage.getItem('incArmado:' + convId) || ''; } catch (_) {}
+  // Lo que quedó guardado en el aparato (de cuando se elegía ahí) ya no cuenta: manda la base.
+  let local = ''; if (!incArmadosEnBase) { try { local = localStorage.getItem('incArmado:' + convId) || ''; } catch (_) {} }
   return local === 'campos' || local === 'asientos' ? local : incArmadoDe(lista);
 }
 async function incGuardarArmado(convId, a) {
@@ -8616,15 +8618,17 @@ function ccSinShows() {
   const plano = document.getElementById('incPlanoAdm');
   if (plano && plano._inc3d) { plano._inc3d.destruir(); plano._inc3d = null; }
   ['incResumenAdm', 'incArmadoAdm', 'incPlanoAdm', 'incLugaresAdm', 'incFiltrosAdm', 'incListaAdm', 'incMetricasAdm'].forEach(k => { const el = document.getElementById(k); if (el) el.innerHTML = ''; });
-  const q = document.getElementById('ccQuitar'); if (q) q.style.display = 'none';
+  ['ccQuitar', 'ccArmadoBtn'].forEach(k => { const b = document.getElementById(k); if (b) b.style.display = 'none'; });
 }
+let ccSubtituloAdm = '';   // la fecha y el lugar del show abierto (el armado del campo se suma al dibujar)
 async function ccAbrirShow(id, fecha) {
   const x = ccShows.find(y => y.id === id) || convs.find(y => y.id === id); if (!x) return;
   // La fecha es el show: el tablero, el resumen y el informe son de ella.
   ccConvId = id; ccFechaSel = fecha !== undefined ? fecha : ccFechaInicial(x);
-  const q = document.getElementById('ccQuitar'); if (q) q.style.display = '';
+  ['ccQuitar', 'ccArmadoBtn'].forEach(k => { const b = document.getElementById(k); if (b) b.style.display = ''; });
   document.getElementById('incTitulo').textContent = x.nombre || '';
-  document.getElementById('incSubtitulo').textContent = [ccFechaSel ? resumenFechasTexto(ccFechaSel) : resumenFechasTexto(x.fecha), x.venue].filter(Boolean).join(' · ');
+  ccSubtituloAdm = [ccFechaSel ? resumenFechasTexto(ccFechaSel) : resumenFechasTexto(x.fecha), x.venue].filter(Boolean).join(' · ');
+  document.getElementById('incSubtitulo').textContent = ccSubtituloAdm;
   incListaAdm = []; incFiltroAdm = 'abiertas'; incSectorAdm = ''; incDiaAdm = ccFechaSel; incVistosAdm = null; incNuevosAdm = new Set(); incNivelAdm = 0; incFocoAdm = incCatAdm = incFranjaAdm = '';
   // El armado del campo, antes de dibujar: el 3D lo espera (la primera vez) y se arma una vez.
   const armados = incTraerDatos(incCargarArmados());
@@ -8710,8 +8714,19 @@ const CC_ICO = {
   campos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="3"/><path d="M3.5 20v-.5a5.5 5.5 0 0 1 11 0v.5"/><path d="M16 4.2a3 3 0 0 1 0 5.6M20.5 20v-.5a5.5 5.5 0 0 0-3.5-5.1"/></svg>',
   asientos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6.5 11V5.5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2V11"/><path d="M4 11h16v4.5H4zM6 15.5V20M18 15.5V20"/></svg>'
 };
-// El armado es del show: al cambiarlo acá, lo ven igual la gerencia y la tablet.
-function incElegirArmadoAdm(a) { incGuardarArmado(ccConvId, a); renderIncidAdm(); }
+// El armado es del show y se elige acá, una vez (lo dice la ficha técnica del Arena): la gerencia y
+// los supervisores lo ven así, sin poder cambiarlo; los supervisores, con los lugares de ese campo.
+async function ccCambiarArmado() {
+  if (!ccConvId) return;
+  const x = ccShows.find(y => y.id === ccConvId) || convs.find(y => y.id === ccConvId) || {};
+  const nf = ccFechas(x).length, nuevo = incArmadoDelShow(ccConvId, incListaAdm) === 'asientos' ? 'campos' : 'asientos';
+  const txt = nuevo === 'asientos' ? 'con asientos (sectores A a N)' : 'de pie (campo delantero y trasero)';
+  if (!confirm('¿El campo de "' + (x.nombre || 'este show') + '" va ' + txt + '?' + (nf > 1 ? '\n\nVale para sus ' + nf + ' fechas.' : '') + '\n\nLa gerencia y los supervisores lo ven así, y los supervisores cargan las incidencias del campo con esos lugares.')) return;
+  await incGuardarArmado(ccConvId, nuevo);
+  if (!incArmadosEnBase) toast('Quedó sólo en esta compu: falta correr centro-control-armado.sql en Supabase');
+  else toast(nuevo === 'asientos' ? 'Campo con asientos' : 'Campo de pie');
+  renderIncidAdm();
+}
 function incTocarSectorAdm(sector) {
   // Si estaba elegido por una incidencia tocada en el listado, tocarlo (o la ✕ de su ficha) la suelta.
   const f = incFocoAdm && incListaAdm.find(i => String(i.id) === incFocoAdm); incFocoAdm = ''; incCatAdm = incFranjaAdm = '';
@@ -8759,7 +8774,10 @@ function renderIncidAdm() {
   const vista = incVistaPreferida();
   // La botonera, igual que la de la gerencia: dos grupos con íconos.
   const seg = (items, actual, fn) => '<div class="cc-seg seg">' + items.map(([k, t]) => '<button class="' + (actual === k ? 'on' : '') + '" onclick="' + fn + '(\'' + k + '\')">' + (CC_ICO[k] || '') + t + '</button>').join('') + '</div>';
-  document.getElementById('incArmadoAdm').innerHTML = seg([['3d', '3D'], ['2d', 'Plano']], vista, 'incElegirVistaAdm') + seg([['campos', 'Campo de pie'], ['asientos', 'Con asientos']], armado, 'incElegirArmadoAdm')
+  // El armado no va acá: es del show (en el menú ⋯) y se lee en el subtítulo.
+  const sub = document.getElementById('incSubtitulo'); if (sub && ccConvId) sub.textContent = [ccSubtituloAdm, armado === 'asientos' ? 'Campo con asientos' : 'Campo de pie'].filter(Boolean).join(' · ');
+  const ab = document.getElementById('ccArmadoBtn'); if (ab) ab.textContent = armado === 'asientos' ? 'Cambiar a campo de pie' : 'Cambiar a campo con asientos';
+  document.getElementById('incArmadoAdm').innerHTML = seg([['3d', '3D'], ['2d', 'Plano']], vista, 'incElegirVistaAdm')
     + '<button class="bar-btn cc-editar" onclick="ccTab(\'plano\')" title="Agregar, mover o sacar puertas, gastronomía, baños…">✎ Editar plano</button>';
   // La incidencia tocada: su lugar, elegido en el plano (la cámara va hasta ahí).
   const focoI = incFocoAdm ? delDia.find(i => String(i.id) === incFocoAdm) : null; if (!focoI) incFocoAdm = '';
