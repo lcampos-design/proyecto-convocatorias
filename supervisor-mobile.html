@@ -1270,6 +1270,10 @@ const INC_LUGARES_BASE = [
   { id: 'Puerta 3', t: 'puerta', txt: 'P3', cx: 46, cy: 289, w: 22, h: 12, ang: 50.4, piso: 'PB' },
   { id: 'Puerta 4', t: 'puerta', txt: 'P4', cx: 210, cy: 318, w: 40, h: 12, ang: 0, piso: 'PB' },
   { id: 'Puerta 5', t: 'puerta', txt: 'P5', cx: 374, cy: 289, w: 22, h: 12, ang: -50.4, piso: 'PB' },
+  // Al fondo, detrás del escenario, una por lado: las salidas hacia las vías del plano de evacuación
+  // de planta baja que mandó el Arena el 13-nov-2026 (no tienen número).
+  { id: 'Salida fondo Cancha', t: 'puerta', txt: 'Fondo', cx: 50, cy: -46, w: 28, h: 12, ang: 0, piso: 'PB' },
+  { id: 'Salida fondo Sede', t: 'puerta', txt: 'Fondo', cx: 370, cy: -46, w: 28, h: 12, ang: 0, piso: 'PB' },
   // Lado Sede (derecha), igual: los externos y el 3 (chico) afuera; los baños
   // y el interno adentro.
   { id: 'Sede externo 2 (7UP)', t: 'gastro', txt: 'SE2', cx: 391.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'PB' },
@@ -1459,6 +1463,7 @@ const INC_PLANO_V1 = {
 };
 // El plano guardado desde el panel. Si no hay nada guardado (o la base
 // todavía no lo tiene), queda el de siempre. Devuelve si cambió algo.
+const INC_SALIDAS_FONDO_DESDE = '2026-11-13T15:50:00Z';
 async function incCargarPlanoArena() {
   try {
     const { data, error } = await sb.rpc('plano_arena');
@@ -1488,6 +1493,10 @@ async function incCargarPlanoArena() {
     INC_PISOS.forEach(([p]) => ['gastro', 'banio', 'enfermeria', 'servicio'].forEach(t => {
       if (!lista.some(l => l && l.t === t && l.piso === p)) lista = lista.concat(INC_LUGARES_BASE.filter(l => l.t === t && l.piso === p));
     }));
+    // Las dos salidas del fondo (13-nov-2026): a un plano guardado antes, se le suman; si después
+    // las sacan desde el editor y guardan, quedan afuera.
+    if (!(data.updated_at && new Date(data.updated_at) > new Date(INC_SALIDAS_FONDO_DESDE)))
+      INC_LUGARES_BASE.filter(l => /^Salida fondo /.test(l.id)).forEach(l => { if (!lista.some(x => x && String(x.id == null ? '' : x.id).trim().toLowerCase() === l.id.toLowerCase())) lista = lista.concat([l]); });
     const nuevos = incNormalizarLugares(lista);
     if (JSON.stringify(nuevos) === JSON.stringify(incLugaresArena)) return false;
     incLugaresArena = nuevos; incVersionPlano++;
@@ -4168,7 +4177,7 @@ function incDondeHTML(q) {
   const RANGO = { banio: 0, gastro: 1, enfermeria: 2, servicio: 3 }, rango = x => RANGO[x.t] == null ? 9 : RANGO[x.t];
   const enPiso = piso => de(x => x.lugar && x.piso === piso && x.t !== 'puerta' && x.t !== 'calle').sort((a, b) => rango(a) - rango(b));
   let html = '<div class="sv-pisos">' + INC_DONDE.map(([k, t]) => '<button type="button" class="' + (p === k ? 'on' : '') + '" onclick="incElegirPisoDonde(\'' + k + '\')">' + t + '</button>').join('') + '</div>';
-  if (p === 'EXT') html += grupo('Ingresos', de(x => x.t === 'puerta').sort((a, b) => num(a) - num(b)), false) + grupo('Calles', de(x => x.t === 'calle'), false)
+  if (p === 'EXT') html += grupo('Ingresos', de(x => x.t === 'puerta').sort((a, b) => (num(a) || 99) - (num(b) || 99)), false) + grupo('Calles', de(x => x.t === 'calle'), false)
     + '<div class="sv-ayuda"><b>Para avisar desde los exteriores:</b> filas de ingreso desbordadas, congestión en la vereda, cortes o lo que pase en la calle.</div>';
   else if (p === 'PB') html += grupo('Sectores del campo', de(x => x.t === 'campo'), true) + grupo('Pasillos y backstage', de(x => x.t === 'anillo' || x.t === 'back'), false) + grupo('En planta baja', enPiso('PB'), false);
   else if (p === 'VIP') html += grupo('Sectores', de(x => x.t === 'vip' && !x.lugar), false) + grupo('En el VIP', enPiso('VIP'), false);
