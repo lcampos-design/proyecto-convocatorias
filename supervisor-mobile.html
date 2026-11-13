@@ -213,6 +213,13 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .hub-t{font:700 16px var(--inc-fuente);color:var(--tinta)}
 .hub-s{font:400 12.5px/1.4 var(--inc-fuente);color:var(--gris);margin-top:3px}
 .hub-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.ct-pend-aviso{font:400 13px/1.5 var(--inc-fuente);color:var(--gris);background:var(--fondo);border-radius:12px;padding:10px 12px;margin:0 0 12px}
+.ct-pend-aviso b{color:var(--tinta);font-weight:600}
+.ct-pend-fecha{margin:18px 0 6px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;font:600 15px var(--inc-fuente);color:var(--tinta)}
+.ct-pend-fecha small{font:400 12.5px var(--inc-fuente);color:var(--gris)}
+.ct-pend-sector{font:600 11px var(--inc-fuente);letter-spacing:.06em;text-transform:uppercase;color:var(--gris);padding:10px 14px 4px}
+.ct-pend-est{font:600 11px var(--inc-fuente);padding:3px 8px;border-radius:999px;white-space:nowrap;background:var(--fondo);color:var(--gris)}
+.ct-pend-est.visto{background:var(--tinta);color:var(--fondo)}
 .hub-chip{font:600 11.5px var(--inc-fuente);padding:4px 9px;border-radius:999px;background:var(--fondo);color:var(--gris)}
 .hub-chip.n3{background:var(--grave);color:var(--grave-letra)}.hub-chip.n2{background:var(--media);color:var(--media-letra)}.hub-chip.n1{background:var(--leve);color:var(--leve-letra)}
 /* El tema (como en WhatsApp): un menú chico debajo de la barra, con Automático, Claro y Oscuro; el elegido, tildado. */
@@ -412,7 +419,30 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
       <div class="hub-ic inc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></div>
       <div style="flex:1;min-width:0"><div class="hub-t">Incidencias</div><div class="hub-s">Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector</div><div class="hub-chips" id="hubIncid"></div></div>
     </button>
+    <button class="hub-card" id="hubContratosCard" onclick="openContratosSinFirmar()" style="display:none">
+      <div class="hub-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 15.5c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3.5-.5"/></svg></div>
+      <div style="flex:1;min-width:0"><div class="hub-t">Contratos sin firmar</div><div class="hub-s">Quiénes todavía no firmaron su contrato, para avisarles</div><div class="hub-chips" id="hubContratos"></div></div>
+    </button>
       </div>
+  </div>
+</div>
+
+<!-- El Coordinador: los contratos sin firmar del show (coordinador-contratos.sql) -->
+<div id="screenContratos" class="screen">
+  <div class="app-bar">
+    <div class="app-bar-inner">
+      <button class="back-btn" onclick="openShow(currentConvId)" aria-label="Volver">←</button>
+      <img class="sv-logo" src="logo-sbs-calado.png" alt="SBS">
+      <div class="sv-marca"><div class="sv-rot"><b>AX</b> · <span class="sv-mano">Sala en vivo</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div>
+      <div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div>
+    </div>
+    <div class="tema-menu" role="menu" aria-label="Tema" hidden></div>
+  </div>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Contratos</span>sin firmar</h1><div class="titulo-s" id="ctPendSub"></div></div>
+    <div class="ct-pend-aviso">Para firmarlo, que busquen en su mail uno de <b>convocatorias.arena@show-bs.com</b> con el asunto <b>«Contrato · …»</b> (si no lo ven, en Spam o Promociones).</div>
+    <button class="fb-send" style="margin-top:0" onclick="openContratosSinFirmar()">↻ Actualizar</button>
+    <div id="ctPendLista"></div>
   </div>
 </div>
 
@@ -756,12 +786,65 @@ async function openShow(convId, fecha) {
   document.getElementById('hubEquipo').innerHTML = '<span class="hub-chip">' + total + ' persona' + (total === 1 ? '' : 's') + '</span><span class="hub-chip">' + hechos + '/' + total + ' con feedback</span>';
   document.getElementById('hubIncid').innerHTML = '<span class="hub-chip">Cargando…</span>';
   showScreen('screenShow');
+  svPintarHubContratos(convId);
   const { data, error } = await sb.rpc('sup_incidencias', { p_conv_id: convId });
   const abiertas = (!error && data ? data : []).filter(i => i.estado !== 'resuelta');
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
   document.getElementById('hubIncid').innerHTML = error ? '<span class="hub-chip">Sin conexión</span>'
     : abiertas.length ? [3, 2, 1].filter(n).map(nv => '<span class="hub-chip n' + nv + '">' + n(nv) + ' ' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('')
     : '<span class="hub-chip" style="background:var(--tinta);color:var(--fondo)">Sin incidencias abiertas</span>';
+}
+// ── El Coordinador: los contratos sin firmar (coordinador-contratos.sql) ──
+// Sólo la cuenta del Coordinador ve la tarjeta; la base igual chequea que sea ella.
+let svCtPend = null;
+async function svCargarContratosPend(convId) {
+  const { data, error } = await sb.rpc('sup_contratos_sin_firmar', { p_conv_id: convId });
+  if (error) return { ok: false, error: /sup_contratos_sin_firmar/.test(error.message || '') ? 'Falta correr coordinador-contratos.sql en Supabase' : 'Sin conexión' };
+  return data || { ok: false, error: 'Sin datos' };
+}
+async function svPintarHubContratos(convId) {
+  const card = document.getElementById('hubContratosCard'), chips = document.getElementById('hubContratos');
+  if (!card) return;
+  if (svZona !== 'coordinador') { card.style.display = 'none'; return; }
+  card.style.display = ''; chips.innerHTML = '<span class="hub-chip">Cargando…</span>';
+  const r = await svCargarContratosPend(convId); if (currentConvId !== convId) return;
+  svCtPend = r;
+  if (!r.ok) { chips.innerHTML = '<span class="hub-chip">' + esc(r.error || 'No disponible') + '</span>'; return; }
+  const hoy = (r.fechas || []).find(x => x.fecha === svFechaDe(convs.find(c => c.id === convId) || {}));
+  const total = (r.fechas || []).reduce((a, x) => a + x.pendientes.length, 0);
+  chips.innerHTML = !total ? '<span class="hub-chip" style="background:var(--tinta);color:var(--fondo)">Todos firmaron</span>'
+    : (hoy && hoy.pendientes.length ? '<span class="hub-chip">' + hoy.pendientes.length + ' de hoy sin firmar</span>' : '')
+      + '<span class="hub-chip">' + total + ' sin firmar en total</span>';
+}
+function svEstadoContrato(p) {
+  if (p.vence && new Date(p.vence) < new Date()) return ['', 'El link venció'];
+  if (p.estado === 'visto') return ['visto', 'Lo abrió, falta firmar'];
+  if (p.estado === 'pendiente') return ['', 'El mail todavía no salió'];
+  return ['', 'No lo abrió'];
+}
+async function openContratosSinFirmar() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  document.getElementById('ctPendSub').textContent = String(c.nombre || '').split(' — ')[0];
+  const lista = document.getElementById('ctPendLista');
+  lista.innerHTML = '<div class="empty-state"><div class="empty-title">Cargando…</div></div>';
+  showScreen('screenContratos');
+  const r = await svCargarContratosPend(currentConvId);
+  svCtPend = r;
+  if (!r.ok) { lista.innerHTML = '<div class="empty-state"><div class="empty-title">' + esc(r.error || 'No disponible') + '</div></div>'; return; }
+  const fechas = (r.fechas || []).filter(x => x.total);
+  if (!fechas.length) { lista.innerHTML = '<div class="empty-state"><div class="empty-title">Todavía no salió ningún contrato de este show</div></div>'; return; }
+  lista.innerHTML = fechas.map(x => {
+    const cab = '<div class="ct-pend-fecha"><span>' + (x.fecha ? esc(fmtFecha(x.fecha)) : 'Sin fecha') + '</span><small>' + (x.pendientes.length ? x.pendientes.length + ' sin firmar · ' : '') + x.firmados + ' de ' + x.total + ' firmaron</small></div>';
+    if (!x.pendientes.length) return cab + '<div class="caja" style="padding:12px 14px;font:400 13px var(--inc-fuente);color:var(--gris)">Todos firmaron.</div>';
+    let sector = null, filas = '';
+    x.pendientes.forEach(p => {
+      const sec = p.sector || 'Sin sector';
+      if (sec !== sector) { sector = sec; filas += '<div class="ct-pend-sector">' + esc(sec) + '</div>'; }
+      const [cl, txt] = svEstadoContrato(p);
+      filas += '<div class="person-row" style="cursor:default"><div style="flex:1;min-width:0"><div class="person-name">' + esc(p.nombre || '') + '</div><div class="person-meta">' + esc(p.puesto || '') + '</div></div><span class="ct-pend-est ' + cl + '">' + txt + '</span></div>';
+    });
+    return cab + '<div class="persona-lista" style="margin:0">' + filas + '</div>';
+  }).join('');
 }
 function volverDeEquipo() { const c = convs.find(x => x.id === currentConvId); if (enControl(c)) openShow(currentConvId); else goHome(); }
 
