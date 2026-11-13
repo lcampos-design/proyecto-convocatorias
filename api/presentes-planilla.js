@@ -88,18 +88,29 @@ function hoyLarga() { return new Date().toLocaleDateString('es-AR', { day: 'nume
 // "23 de noviembre" (para el mail).
 function fechaMail(iso) { const [a, m, d] = String(iso).split('-').map(Number); return new Date(Date.UTC(a, m - 1, d, 12)).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }); }
 
-// La clave de un sector para buscar su monto: sin tildes, espacios ni signos ("Corta tickets" = "CORTATICKETS").
+// La clave de un sector o un puesto: sin tildes, espacios ni signos ("Corta tickets" = "CORTATICKETS").
 export function claveSector(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
-// El monto y el puesto de un sector en un mes (config.contratos_presentes.meses["2026-11"]).
-export function tarifaDe(cfg, fecha, sector) {
+const buscarClave = (obj, k) => { const hit = Object.keys(obj || {}).find(x => claveSector(x) === k); return hit === undefined ? undefined : obj[hit]; };
+// Qué puesto lleva una fila (config.contratos_presentes):
+//  1) un rol conocido en OBSERVACIÓN ("Firmas": el primero del P.Point) o en la primera columna
+//     ("Coordinador", dentro del bloque de supervisores);
+//  2) si no, el del bloque (Supervisores, P.Point = Recepciones premium, Firmas, Cargas…);
+//  3) si el bloque no figura, el de siempre (Orientador).
+export function puestoDe(cfg, sector, rol, obs) {
+  const roles = (cfg && cfg.roles) || {};
+  const candidatos = [obs, rol].flatMap(t => [t].concat(String(t || '').split(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+/)));
+  for (const c of candidatos) { const r = c && buscarClave(roles, claveSector(c)); if (r) return String(r); }
+  const s = buscarClave(cfg && cfg.sectores, claveSector(sector));
+  return String(s || (cfg && cfg.porDefecto) || '').trim();
+}
+// El monto y el puesto de una fila en un mes: el puesto según el sector y el monto de ese puesto
+// en ese mes (config.contratos_presentes.meses["2026-11"].puestos).
+export function tarifaDe(cfg, fecha, sector, rol, obs) {
   const mes = cfg && cfg.meses && cfg.meses[String(fecha).slice(0, 7)];
-  if (!mes) return null;
-  const sectores = mes.sectores || {}, k = claveSector(sector);
-  const hit = Object.keys(sectores).find(x => claveSector(x) === k);
-  const t = hit ? sectores[hit] : (mes.todos || null);
-  if (!t) return null;
-  const monto = montoANumero(t.monto);
-  return monto > 0 ? { monto, puesto: String(t.puesto || '').trim() } : null;
+  const puesto = puestoDe(cfg, sector, rol, obs);
+  if (!mes || !puesto) return null;
+  const monto = montoANumero(buscarClave(mes.puestos, claveSector(puesto)));
+  return monto > 0 ? { monto, puesto } : null;
 }
 function tituloSector(s) { return String(s || '').toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase()); }
 // El texto del contrato: la plantilla del panel con los datos puestos (como buildTextoContrato).
@@ -146,7 +157,7 @@ export function normalizarFilas(filas) {
     if (cuil.length < 7) return;
     const m = String((f && f.marca) || '').trim().toUpperCase().charAt(0);
     const marca = m === 'P' ? 'P' : m === 'A' ? 'A' : '';
-    const fila = { cuil, marca, sector: String(f.sector || '').trim().slice(0, 40), apellido: String(f.apellido || '').trim().slice(0, 80), nombre: String(f.nombre || '').trim().slice(0, 80) };
+    const fila = { cuil, marca, sector: String(f.sector || '').trim().slice(0, 40), rol: String(f.rol || '').trim().slice(0, 40), obs: String(f.obs || '').trim().slice(0, 80), apellido: String(f.apellido || '').trim().slice(0, 80), nombre: String(f.nombre || '').trim().slice(0, 80) };
     const antes = por.get(cuil);
     if (!antes || (marca === 'P' && antes.marca !== 'P') || (marca && !antes.marca)) por.set(cuil, fila);
   });
@@ -173,8 +184,8 @@ export function decidir(fila, ctx) {
     if (!String(persona.email || '').includes('@')) return { resultado: 'sin_mail', detalle: 'No tiene mail en la nómina' };
     if (!ctx.plantilla) return { resultado: 'sin_plantilla', detalle: 'Falta el modelo de contrato en el panel' };
     if (!ctx.conv) return { resultado: 'sin_show', detalle: 'No hay un show del Arena con esa fecha en el panel' };
-    const tarifa = tarifaDe(ctx.cfg, ctx.fecha, fila.sector);
-    if (!tarifa) return { resultado: 'sin_monto', detalle: 'Falta el monto de ' + (fila.sector || 'ese sector') + ' para ' + String(ctx.fecha).slice(0, 7) };
+    const tarifa = tarifaDe(ctx.cfg, ctx.fecha, fila.sector, fila.rol, fila.obs);
+    if (!tarifa) { const p = puestoDe(ctx.cfg, fila.sector, fila.rol, fila.obs); return { resultado: 'sin_monto', detalle: p ? 'Falta el monto de ' + p + ' para ' + String(ctx.fecha).slice(5, 7) + '/' + String(ctx.fecha).slice(0, 4) : 'Falta decir qué puesto lleva ' + (fila.sector || 'ese sector') }; }
     return { resultado: 'mandar', persona, contrato, tarifa };
   }
   if (contrato && contrato.estado === 'firmado') return { resultado: 'firmado_ausente', contrato, detalle: 'Firmó, pero la planilla ya no le da el presente' };

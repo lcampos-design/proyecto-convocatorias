@@ -21,9 +21,13 @@
 --      La ve sólo el panel.
 --   4) presentes_buscar_personas: busca en la nómina por CUIL (o por DNI,
 --      si la planilla trae sólo el DNI). La usa sólo el servidor.
---   5) config.contratos_presentes: el monto y el puesto de cada sector, por
---      mes (se cargan desde el panel). Mientras un mes no tenga montos, los
---      contratos de ese mes no salen y quedan como "falta el monto".
+--   5) config.contratos_presentes: qué puesto lleva cada fila y el monto de
+--      cada puesto por mes (se cambian desde el panel). Todos son Orientador,
+--      menos el bloque de Supervisores (Supervisor; el "Coordinador" de ese
+--      bloque, Coordinador on site), el P.Point (Recepciones premium; el que
+--      dice "Firmas" en OBSERVACIÓN, Firmas) y Cargas. Ya trae los montos de
+--      noviembre de 2026. Un mes sin montos: sus contratos no salen y quedan
+--      como "falta el monto".
 -- ============================================================
 
 -- ── 1) Los contratos de la planilla ──
@@ -78,10 +82,20 @@ $$;
 revoke execute on function public.presentes_buscar_personas(text[]) from public, anon, authenticated;
 grant  execute on function public.presentes_buscar_personas(text[]) to service_role;
 
--- ── 5) Los montos por mes (se cargan desde el panel) ──
+-- ── 5) Los puestos y los montos (se cambian desde el panel) ──
+--  Si ya estaba y tiene montos cargados, no se toca.
 insert into public.config (key, value, updated_at)
-values ('contratos_presentes', '{"venue": "Movistar Arena", "meses": {}}'::jsonb, now())
-on conflict (key) do nothing;
+values ('contratos_presentes', '{
+  "venue": "Movistar Arena",
+  "porDefecto": "Orientador",
+  "sectores": { "Supervisores": "Supervisor", "P.Point": "Recepciones premium", "Recepciones": "Recepciones premium", "Firmas": "Firmas", "Cargas": "Cargas" },
+  "roles": { "Firmas": "Firmas", "Firma": "Firmas", "Cargas": "Cargas", "Carga": "Cargas", "Coordinador": "Coordinador on site" },
+  "meses": { "2026-11": { "puestos": {
+    "Orientador": 34432, "Recepciones premium": 36284, "Firmas": 47833,
+    "Supervisor": 48685, "Coordinador on site": 59115, "Cargas": 43250 } } }
+}'::jsonb, now())
+on conflict (key) do update set value = excluded.value, updated_at = now()
+  where coalesce(public.config.value -> 'meses', '{}'::jsonb) = '{}'::jsonb;
 
 -- ── CÓMO QUEDÓ ──
 --  Tiene que dar todo true.

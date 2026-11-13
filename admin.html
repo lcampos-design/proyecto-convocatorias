@@ -12042,6 +12042,7 @@ function contratosFiltrados() {
 // fecha; una "A" (o sacar la P) lo anula si no lo firmó. Acá: los montos de cada sector
 // por mes (sin monto, el contrato no sale) y, por fecha, cómo salió cada uno.
 const PP_SECTORES = ['Anillo', 'Bowl', 'Platea baja', 'Platea alta', 'Corta tickets', 'Calle', 'VIP', 'Supervisores', 'P.Point', 'Backs'];
+const PP_PUESTOS = ['Orientador', 'Recepciones premium', 'Firmas', 'Supervisor', 'Coordinador on site', 'Cargas'];
 const PP_RESULTADO = {
   enviado: ['#e0f2fe', '#0369a1', 'Contrato enviado'], ya_tenia: ['#f3f4f6', '#4b5563', 'Ya tenía el contrato'], firmado: ['#dcfce7', '#166534', 'Firmado'],
   anulado: ['#fee2e2', '#991b1b', 'Anulado'], ausente: ['#f3f4f6', '#6b7280', 'Ausente'], pendiente: ['#fef3c7', '#92400e', 'Por salir'],
@@ -12066,25 +12067,41 @@ async function renderPorPresente(recargar) {
     if (rf.error) { cont.innerHTML = '<div class="empty">' + (/planilla_presentes/.test(rf.error.message || '') ? 'Primero hay que correr contratos-presentes.sql en Supabase.' : 'No se pudo cargar: ' + e(rf.error.message || '')) + '</div>'; return; }
     ppFilas = rf.data || [];
     ppContratos = {}; (rc.data || []).forEach(c => { ppContratos[c.id] = c; });
-    ppCfg = (rk.data && rk.data.value && typeof rk.data.value === 'object') ? rk.data.value : { venue: 'Movistar Arena', meses: {} };
+    ppCfg = (rk.data && rk.data.value && typeof rk.data.value === 'object') ? rk.data.value : { venue: 'Movistar Arena', porDefecto: 'Orientador', sectores: {}, roles: {}, meses: {} };
     if (!ppCfg.meses) ppCfg.meses = {};
   }
   const hoyMes = hoyLocalISO().slice(0, 7);
   const meses = [...new Set([hoyMes].concat(Object.keys(ppCfg.meses), ppFilas.map(f => String(f.fecha).slice(0, 7))))].sort().reverse();
   if (!ppMes) ppMes = hoyMes;
-  // Los montos del mes: los sectores de siempre, más los que trajo alguna planilla o ya tenían monto.
-  const delMes = (ppCfg.meses[ppMes] && ppCfg.meses[ppMes].sectores) || {};
-  const nombres = []; const agregar = n => { if (n && !nombres.some(x => ppClave(x) === ppClave(n))) nombres.push(n); };
-  PP_SECTORES.forEach(agregar); Object.keys(delMes).forEach(agregar); ppFilas.filter(f => String(f.fecha).slice(0, 7) === ppMes).forEach(f => agregar(f.sector ? f.sector.charAt(0) + f.sector.slice(1).toLowerCase() : ''));
-  const valor = n => { const k = Object.keys(delMes).find(x => ppClave(x) === ppClave(n)); return k ? delMes[k] : {}; };
+  // Los puestos y su monto en el mes (como el Excel de cada mes). Un mes nuevo arranca con los
+  // puestos del último que tenga montos, para completar.
+  const delMes = (ppCfg.meses[ppMes] && ppCfg.meses[ppMes].puestos) || {};
+  const conMontos = Object.keys(ppCfg.meses).filter(m => ppCfg.meses[m] && ppCfg.meses[m].puestos && Object.keys(ppCfg.meses[m].puestos).length).sort();
+  const modelo = conMontos.length ? ppCfg.meses[conMontos.filter(m => m <= ppMes).pop() || conMontos[conMontos.length - 1]].puestos : {};
+  const puestos = []; const sumar = n => { if (n && !puestos.some(x => ppClave(x) === ppClave(n))) puestos.push(n); };
+  PP_PUESTOS.forEach(sumar); [modelo, delMes].forEach(o => Object.keys(o).forEach(sumar)); [ppCfg.porDefecto].concat(Object.values(ppCfg.sectores || {}), Object.values(ppCfg.roles || {})).forEach(sumar);
+  const montoDe = n => { const k = Object.keys(delMes).find(x => ppClave(x) === ppClave(n)); return k ? montoANumero(delMes[k]) : 0; };
+  // Qué puesto lleva cada bloque de las planillas (el que no figura: el de siempre).
+  const bloques = []; const sumarB = n => { if (n && !bloques.some(x => ppClave(x) === ppClave(n))) bloques.push(n); };
+  PP_SECTORES.forEach(sumarB); Object.keys(ppCfg.sectores || {}).forEach(sumarB); ppFilas.forEach(f => sumarB(f.sector ? f.sector.charAt(0) + f.sector.slice(1).toLowerCase() : ''));
+  const puestoBloque = n => { const k = Object.keys(ppCfg.sectores || {}).find(x => ppClave(x) === ppClave(n)); return k ? ppCfg.sectores[k] : ''; };
+  const opciones = (sel, siempre) => (siempre ? `<option value="">${e(ppCfg.porDefecto || '—')} (el de siempre)</option>` : '') + puestos.map(p => `<option${ppClave(p) === ppClave(sel) ? ' selected' : ''}>${e(p)}</option>`).join('');
+  const porRol = {}; Object.entries(ppCfg.roles || {}).forEach(([k, p]) => { (porRol[p] = porRol[p] || []).push(k); });
+  const mesTxt = ppMes.slice(5) + '/' + ppMes.slice(0, 4);
   const montos = `<div class="card" style="padding:18px 20px;margin-bottom:18px">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><strong style="font-size:14px">Montos por jornada</strong>
       <select class="filt" onchange="ppMes=this.value;renderPorPresente()">${meses.map(m => `<option value="${m}"${m === ppMes ? ' selected' : ''}>${e(m.slice(5) + '/' + m.slice(0, 4))}</option>`).join('')}</select>
-      <span style="font-size:12px;color:var(--r-muted)">El puesto y el monto que lleva el contrato de cada sector. Sin monto, el contrato de ese sector no sale (queda "Falta el monto").</span></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Sector</th><th>Puesto (va en el contrato)</th><th>Monto por jornada</th></tr></thead><tbody>
-    ${nombres.map((n, i) => { const v = valor(n); return `<tr><td>${e(n)}<input type="hidden" id="ppS${i}" value="${e(n)}"></td><td><input class="fi" style="max-width:260px" id="ppP${i}" value="${e(v.puesto || '')}" placeholder="Ej.: Acomodador"></td><td><input class="fi" style="max-width:160px" id="ppM${i}" value="${v.monto ? e(montoFormateado(montoANumero(v.monto))) : ''}" placeholder="$ 0,00" inputmode="decimal"></td></tr>`; }).join('')}
+      <span style="font-size:12px;color:var(--r-muted)">Lo que cobra cada puesto en el mes. Sin monto, el contrato de ese puesto no sale (queda "Falta el monto").</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Puesto</th><th>Monto por jornada</th></tr></thead><tbody>
+    ${puestos.map((p, i) => `<tr><td>${e(p)}<input type="hidden" id="ppPu${i}" value="${e(p)}"></td><td><input class="fi" style="max-width:170px" id="ppM${i}" value="${montoDe(p) ? e(montoFormateado(montoDe(p))) : ''}" placeholder="$ 0,00" inputmode="decimal"></td></tr>`).join('')}
     </tbody></table></div>
-    <div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="ppGuardarMontos(${nombres.length})">Guardar montos de ${e(ppMes.slice(5) + '/' + ppMes.slice(0, 4))}</button><button class="btn btn-sec btn-sm" onclick="renderPorPresente(true)">↻ Actualizar</button></div>
+    <div style="margin:16px 0 8px;font-size:13px;font-weight:600">Qué puesto lleva cada uno</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:13px">
+      <label>El de siempre <select class="filt" id="ppDef">${opciones(ppCfg.porDefecto || 'Orientador', false)}</select></label>
+      ${bloques.map((b, j) => `<label>${e(b)} <input type="hidden" id="ppBn${j}" value="${e(b)}"><select class="filt" id="ppB${j}">${opciones(puestoBloque(b), true)}</select></label>`).join('')}
+    </div>
+    ${Object.keys(porRol).length ? `<div style="font-size:12px;color:var(--r-muted);margin-top:8px">Además, por lo que dice la fila: ${Object.entries(porRol).map(([p, ks]) => '«' + e(ks.join(' / ')) + '» en OBSERVACIÓN o en la primera columna → ' + e(p)).join(' · ')}.</div>` : ''}
+    <div style="margin-top:12px;display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="ppGuardarMontos(${puestos.length}, ${bloques.length})">Guardar (montos de ${e(mesTxt)})</button><button class="btn btn-sec btn-sm" onclick="renderPorPresente(true)">↻ Actualizar</button></div>
   </div>`;
   // Por fecha: cuántos salieron, cuántos firmaron, cuántos se anularon y lo que hay que corregir.
   const fechas = [...new Set(ppFilas.map(f => f.fecha))];
@@ -12105,13 +12122,14 @@ async function renderPorPresente(recargar) {
   cont.innerHTML = montos + (porFecha || '<div class="empty">Todavía no llegó ninguna planilla. Cuando el script de la planilla de presentes esté andando, acá aparece cada fecha.</div>');
 }
 function ppVer(fe) { if (ppAbiertas.has(fe)) ppAbiertas.delete(fe); else ppAbiertas.add(fe); renderPorPresente(); }
-async function ppGuardarMontos(n) {
+async function ppGuardarMontos(nPuestos, nBloques) {
+  const val = id => (document.getElementById(id) || {}).value || '';
+  const puestos = {};
+  for (let i = 0; i < nPuestos; i++) { const p = val('ppPu' + i).trim(), m = montoANumero(val('ppM' + i)); if (p && m) puestos[p] = m; }
   const sectores = {};
-  for (let i = 0; i < n; i++) {
-    const s = (document.getElementById('ppS' + i) || {}).value, p = ((document.getElementById('ppP' + i) || {}).value || '').trim(), m = montoANumero((document.getElementById('ppM' + i) || {}).value);
-    if (s && (p || m)) sectores[s] = { puesto: p, monto: m };
-  }
-  const valor = Object.assign({}, ppCfg || {}, { meses: Object.assign({}, (ppCfg && ppCfg.meses) || {}, { [ppMes]: { sectores } }) });
+  for (let j = 0; j < nBloques; j++) { const b = val('ppBn' + j).trim(), p = val('ppB' + j).trim(); if (b && p) sectores[b] = p; }
+  const porDefecto = val('ppDef').trim() || (ppCfg && ppCfg.porDefecto) || '';
+  const valor = Object.assign({}, ppCfg || {}, { porDefecto, sectores, meses: Object.assign({}, (ppCfg && ppCfg.meses) || {}, { [ppMes]: { puestos } }) });
   const { error } = await sb.from('config').upsert({ key: 'contratos_presentes', value: valor, updated_at: new Date().toISOString() });
   if (error) { await avisarError('No se pudieron guardar los montos: ', error); return; }
   ppCfg = valor; toast('✓ Montos guardados: los contratos que faltaban salen en la próxima vuelta (5 minutos)'); renderPorPresente();

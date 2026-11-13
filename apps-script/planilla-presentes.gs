@@ -89,7 +89,7 @@ function planillas_() {
   return lista;
 }
 
-// Una planilla → { archivo, fecha, show, filas: [{ sector, cuil, apellido, nombre, marca }] }.
+// Una planilla → { archivo, fecha, show, filas: [{ sector, cuil, rol, obs, apellido, nombre, marca }] }.
 // El nombre trae la fecha y el show: SUPERVISORES 08/11 "FIESTA FA". El año, el de
 // cuando se creó la planilla (si la fecha quedó muy atrás, es del año siguiente).
 function leer_(f) {
@@ -108,14 +108,19 @@ function leer_(f) {
     var iCuil = arriba.indexOf('CUIL'), iPres = arriba.indexOf('PRESENTES');
     if (iCuil >= 0 && iPres >= 0) {
       sector = String(fila[0]).trim();
-      col = { cuil: iCuil, pres: iPres, ape: arriba.indexOf('APELLIDO'), nom: arriba.indexOf('NOMBRE') };
+      var iObs = -1;
+      arriba.forEach(function (v, i) { if (iObs < 0 && /^OBSERVACI[OÓ]N/.test(v)) iObs = i; });
+      col = { cuil: iCuil, pres: iPres, ape: arriba.indexOf('APELLIDO'), nom: arriba.indexOf('NOMBRE'), obs: iObs };
       return;
     }
     if (!col) return;
     var cuil = String(fila[col.cuil] || '').replace(/\D/g, '');
     if (cuil.length < 7) return;
+    // La primera columna (el número, o la zona en el bloque de supervisores: "Coordinador") y
+    // OBSERVACIÓN ("Firmas", en el primero del P.Point): de ahí sale el puesto si no es el del bloque.
     filas.push({
-      sector: sector, cuil: cuil,
+      sector: sector, cuil: cuil, rol: String(fila[0] || '').trim(),
+      obs: col.obs >= 0 ? String(fila[col.obs] || '').trim() : '',
       apellido: col.ape >= 0 ? String(fila[col.ape]).trim() : '',
       nombre: col.nom >= 0 ? String(fila[col.nom]).trim() : '',
       marca: String(fila[col.pres] || '').trim().toUpperCase().charAt(0)
