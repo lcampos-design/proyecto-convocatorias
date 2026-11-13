@@ -80,8 +80,8 @@ begin
   if v_nuc is null then return jsonb_build_object('ok', false, 'motivo', 'vencido'); end if;
   select * into p from public.personas where public.doc_nucleo(cuit) = v_nuc and area <> 'espana' order by created_at desc nulls last limit 1;
   select * into s from public.solicitudes where public.doc_nucleo(cuit) = v_nuc and area <> 'espana' order by created_at desc limit 1;
-  -- Sin nómina ni inscripción: el nombre, el mail y el área de su contrato (para saludarlo y que se registre).
-  if p.id is null and s.id is null then
+  -- Sin inscripción: lo que falte (nombre, mail, área) sale de su contrato (para saludarlo y que se registre).
+  if s.id is null then
     select k.nombre, k.email, coalesce(c.area, 'movistar_arena') into k_nombre, k_email, k_area
       from public.contratos k left join public.convocatorias c on c.id = k.conv_id
      where public.doc_nucleo(coalesce(nullif(btrim(k.cuil), ''), k.doc_nucleo)) = v_nuc and coalesce(c.area, '') <> 'espana'
