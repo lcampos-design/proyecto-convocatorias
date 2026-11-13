@@ -3388,7 +3388,7 @@ function incEstiloMetricas() {
 let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', dia = null, timer = null, cuentasFuncion = {}, yaEntro = false;
 // Quién entró con la cuenta de cada zona en este show (cuentas-zona.sql), en orden.
 let supervisores = [];
-const ZONAS_ORDEN = [['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['platea_alta', 'Platea alta'], ['cortatickets', 'Cortatickets'], ['calle', 'Calle'], ['vip', 'VIP']];
+const ZONAS_ORDEN = [['coordinador', 'Coordinador'], ['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['platea_alta', 'Platea alta'], ['cortatickets', 'Cortatickets'], ['calle', 'Calle'], ['vip', 'VIP'], ['corporativo', 'Corporativo']];
 // A cargo de cada zona en la función elegida: el último que entró ese día.
 function supervisoresHTML() {
   const ult = {};

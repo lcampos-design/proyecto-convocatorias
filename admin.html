@@ -13698,8 +13698,9 @@ function fichaFeedbackHTML(id) {
 // ── SUPERVISORES ──
 // Las cuentas por zona (cuentas-zona.sql): una por zona, la usa quien supervisa esa zona
 // ese día (pone su nombre y apellido al entrar a cada show) y ven solas los shows del
-// Centro de Control. En el orden de la planilla del Arena.
-const SUP_ZONAS = [['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['platea_alta', 'Platea alta'], ['cortatickets', 'Cortatickets'], ['calle', 'Calle'], ['vip', 'VIP']];
+// Centro de Control. En el orden de la planilla del Arena; primero Coordinador y al final
+// Corporativo (cuentas-coordinador-corporativo.sql), que no tienen un sector propio.
+const SUP_ZONAS = [['coordinador', 'Coordinador'], ['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['platea_alta', 'Platea alta'], ['cortatickets', 'Cortatickets'], ['calle', 'Calle'], ['vip', 'VIP'], ['corporativo', 'Corporativo']];
 const usuarioDeZona = z => String(z || '').replace(/_/g, '');
 const zonaNombre = z => (SUP_ZONAS.find(x => x[0] === z) || [z, z])[1];
 let supTurnos = [];
@@ -13733,11 +13734,11 @@ function renderZonasCuentas() {
   const cuentas = userProfiles.filter(p => p.zona);
   const faltan = SUP_ZONAS.filter(([z]) => !cuentas.some(p => p.zona === z));
   const nombreConv = id => ((convs.find(x => x.id === id) || {}).nombre || '');
-  cont.innerHTML = '<div class="zonas-cab"><div><div class="zonas-t">Movistar Arena <span class="zonas-t2">· cuentas por zona</span></div><div class="zonas-s">Las posiciones del Arena: una cuenta por zona, para el Centro de Control. La usa quien supervisa esa zona ese día: al entrar a cada show pone su nombre y apellido, y queda en cada incidencia que carga. Ven solas los shows del Centro de Control, no hay que asignarlas.</div></div>'
+  cont.innerHTML = '<div class="zonas-cab"><div><div class="zonas-t">Movistar Arena <span class="zonas-t2">· cuentas por zona</span></div><div class="zonas-s">Las posiciones del Arena: una cuenta por zona, para el Centro de Control. La usa quien supervisa esa zona ese día: al entrar a cada show pone su nombre y apellido, y queda en cada incidencia que carga. Coordinador y Corporativo son iguales, sin una zona propia: cargan en cualquier lugar. Ven solas los shows del Centro de Control, no hay que asignarlas.</div></div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
     + (cuentas.length && zonaClaves && cuentas.some(p => zonaClaves[p.zona]) ? '<button class="btn btn-sec btn-sm" onclick="copiarAccesosZonas()" title="Usuarios y contraseñas de todas, para mandar por WhatsApp">Copiar accesos</button>' : '')
     + (cuentas.length ? '<button class="btn btn-sec btn-sm" onclick="claveZonasTodas()" title="Les genera una contraseña nueva a todas (las de ahora dejan de andar)">Contraseñas nuevas para todas</button>' : '')
-    + (faltan.length ? '<button class="btn btn-primary btn-sm" onclick="crearZonas()">' + (faltan.length === SUP_ZONAS.length ? 'Crear las 7 cuentas' : 'Crear las que faltan (' + faltan.length + ')') + '</button>' : '') + '</div></div>'
+    + (faltan.length ? '<button class="btn btn-primary btn-sm" onclick="crearZonas()">' + (faltan.length === SUP_ZONAS.length ? 'Crear las ' + SUP_ZONAS.length + ' cuentas' : 'Crear las que faltan (' + faltan.length + ')') + '</button>' : '') + '</div></div>'
     + '<div class="zonas-grid">' + SUP_ZONAS.map(([z, t]) => {
       const cu = cuentas.find(p => p.zona === z), u = supTurnos.find(x => x.zona === z);
       return '<div class="zona-card' + (cu ? '' : ' falta') + '"><div class="zona-n">' + t + '</div>'
@@ -13778,7 +13779,7 @@ async function crearZonas(sola) {
     try {
       const res = await fetch('/api/supervisor', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ zona }) });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { toast(zonaNombre(zona) + ': ' + (data.error || 'no se pudo crear')); break; }
+      if (!res.ok) { toast(zonaNombre(zona) + ': ' + (/correr cuentas-zona\.sql/.test(data.error || '') && (zona === 'coordinador' || zona === 'corporativo') ? 'primero hay que correr cuentas-coordinador-corporativo.sql en Supabase' : (data.error || 'no se pudo crear'))); break; }
       userProfiles.push({ id: data.id, nombre: data.nombre, rol: 'supervisor', email: data.email, zona });
       creadas.push({ zona, password: data.password, guardada: data.guardada });
     } catch (err) { toast('Error creando la cuenta: ' + err.message); break; }
