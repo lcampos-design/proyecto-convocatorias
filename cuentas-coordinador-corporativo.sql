@@ -5,9 +5,10 @@
 --
 --  Pedido de Thomas (13-nov): "crear 2 usuarios en la app de supervisores,
 --  uno para Coordinador y otro para Corporativo". Son como las de zona: una
---  cuenta compartida (usuario "coordinador" y "corporativo"), quien la usa
---  pone su nombre y apellido al entrar a cada show, y ven solas los shows del
---  Centro de Control. No tienen un sector propio: cargan en cualquier lugar.
+--  cuenta compartida (usuario "coordinador" y "corporativo") que ve sola los
+--  shows del Centro de Control, sin un sector propio. Coordinador pone su nombre
+--  y apellido al entrar a cada show; Corporativo no (la usa todo el equipo para
+--  mirar la app por dentro).
 --
 --  Después de correrlo: panel → Supervisores → "Crear las que faltan (2)".
 -- ============================================================
