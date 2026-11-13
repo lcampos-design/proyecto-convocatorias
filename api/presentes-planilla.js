@@ -124,7 +124,8 @@ export function armarMail({ nombre, fecha, show, link }) {
   const pila = String(nombre || '').trim().split(/\s+/)[0] || '';
   const hola = pila ? 'Hola, ' + pila.charAt(0).toUpperCase() + pila.slice(1).toLowerCase() : 'Hola';
   const cuando = fechaMail(fecha), que = show ? ' (' + show + ')' : '';
-  const subject = `Tu contrato del ${fechaLarga(fecha).toLowerCase()}${show ? ' · ' + show : ''}`;
+  // Empieza con "Contrato ·", como dice la guía para firmar desde el celular (Mer, 13-nov).
+  const subject = `Contrato · ${show ? show + ' · ' : ''}${fechaLarga(fecha).toLowerCase()}`;
   const text = `${hola}:\n\nGracias por trabajar con nosotros el ${cuando}${que} en el Movistar Arena.\n\nPara firmar tu contrato de esa fecha, entrá a este link:\n${link}\n\nEl link vence en 7 días. Cualquier duda, respondé este mail.\n\nSaludos,\nShow Business Solutions`;
   const P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
   const html = `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
