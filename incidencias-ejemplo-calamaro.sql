@@ -6,8 +6,8 @@
 --  Calamaro es un show nuevo: nadie cargó nada, por eso no tiene
 --  incidencias. Las que se ven en las presentaciones y en las capturas son
 --  de mentira y viven sólo en esas copias, no en la base. Esto carga las
---  mismas en Calamaro (más una "Salida obstruida" en una salida de
---  evacuación), para ver el tablero, la app y el informe con datos.
+--  mismas en Calamaro (más una "Salida obstruida" en la puerta 6), para ver
+--  el tablero, la app y el informe con datos.
 --
 --  Son de mentira: dicen "Ejemplo (zona)" en quién la cargó. No hay datos
 --  del público ni de nadie. Para sacarlas, el paso 3 (está abajo, comentado).
@@ -31,7 +31,7 @@ from public.convocatorias c,
   ('Campo delantero',      null,              'Seguridad',       'Pelea o agresión',                  3, '["Se avisó a seguridad", "Se retiró a la persona del sector"]', null,                                'abierta',  null,                    'Bowl',         4,   null),
   ('Sede externo 2 (7UP)', null,              'Seguridad',       'Pelea o agresión',                  3, '["Se avisó a seguridad"]',                                     null,                                'abierta',  null,                    'Anillo',       3,   null),
   ('Platea 313',           null,              'Seguridad',       'Persona agresiva o molesta',        3, '["Se avisó a seguridad"]',                                     null,                                'abierta',  null,                    'Platea alta',  9,   null),
-  ('Salida Cancha 2 (P1)', 'Puerta de salida', 'Infraestructura', 'Salida obstruida',                  3, '["Se avisó a mantenimiento"]',                                 'Carros de gastronomía en el paso',  'abierta',  null,                    'Platea baja',  7,   null),
+  ('Puerta 6',             null,              'Infraestructura', 'Salida obstruida',                  3, '["Se avisó a mantenimiento"]',                                 'Carros de gastronomía en el paso',  'abierta',  null,                    'Cortatickets', 7,   null),
   ('Sede externo 2 (7UP)', null,              'Médica',          'Lesión o caída',                    2, '["Se llamó a socorrismo"]',                                    null,                                'abierta',  null,                    'Anillo',       6,   null),
   ('Platea 104',           'Fila 12',         'Médica',          'Desmayo / descompensación',         2, '["Se llamó a socorrismo"]',                                    'Se recuperó, queda en observación', 'abierta',  null,                    'Platea baja',  14,  null),
   ('Platea 110',           null,              'Ubicación',       'Entrada duplicada',                 2, '["Se consultó a boletería"]',                                  null,                                'abierta',  null,                    'Platea baja',  26,  null),
