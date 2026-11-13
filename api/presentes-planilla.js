@@ -158,6 +158,10 @@ export function normalizarFilas(filas) {
     const m = String((f && f.marca) || '').trim().toUpperCase().charAt(0);
     const marca = m === 'P' ? 'P' : m === 'A' ? 'A' : '';
     const fila = { cuil, marca, sector: String(f.sector || '').trim().slice(0, 40), rol: String(f.rol || '').trim().slice(0, 40), obs: String(f.obs || '').trim().slice(0, 80), apellido: String(f.apellido || '').trim().slice(0, 80), nombre: String(f.nombre || '').trim().slice(0, 80) };
+    // De la disponibilidad del mes (lo agrega el script): el mail y el CUIL o DNI que dejó ahí la persona.
+    const mail = String(f.mail || '').trim().toLowerCase().slice(0, 120), doc = String(f.doc || '').replace(/\D/g, '');
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) fila.mail = mail;
+    if (doc.length >= 7 && doc.length <= 11 && doc !== cuil) fila.doc = doc;
     const antes = por.get(cuil);
     if (!antes || (marca === 'P' && antes.marca !== 'P') || (marca && !antes.marca)) por.set(cuil, fila);
   });
@@ -230,11 +234,31 @@ export function candidatosPorNombre(personas, solicitudes) {
   const enNomina = new Set(per.map(p => p.nucleo));
   return per.concat(ins.filter(s => !enNomina.has(s.nucleo)));
 }
+// ── El mail de la disponibilidad (lo agrega el script de la planilla: fila.mail y fila.doc) ──
+// A quien la base encontró pero sin mail: el de la disponibilidad, si el documento que dejó ahí es
+// el mismo. A quien la base no encontró: el contrato con los datos de la planilla y ese mail, si con
+// ese documento no hay nadie en la base (si hay alguien y no se lo eligió es porque no coincide
+// el apellido: se revisa a mano). `cands`: lo que la base trajo para el CUIL de la planilla y para
+// el documento de la disponibilidad.
+export function conDisponibilidad(p, fila, cands) {
+  if (!fila.mail) return p;
+  const nDisp = nucleoDe(fila.doc);
+  if (p && !p.ambigua && !p.distinta) {
+    if (String(p.email || '').includes('@') || (nDisp && nDisp !== p.nucleo)) return p;
+    return Object.assign({}, p, { email: fila.mail, mailDe: 'disponibilidad' });
+  }
+  if (p && p.ambigua && !(p.porNombre && nDisp)) return p;
+  const docs = [fila.doc, fila.cuil].filter(Boolean);
+  const doc = docs.find(d => d.length === 11) || docs.find(d => nucleoDe(d)) || '';
+  const nucleo = nucleoDe(doc);
+  if (!nucleo || (cands || []).some(c => c.nucleo === nucleo)) return p;
+  return { fuente: 'disponibilidad', como: 'disponibilidad', id: null, nombre: (fila.nombre + ' ' + fila.apellido).trim(), email: fila.mail, cuit: doc, nucleo, mailDe: 'disponibilidad' };
+}
 export function decidir(fila, ctx) {
   const persona = ctx.personas.get(fila.cuil);
   const contrato = ctx.contratos.get((persona && persona.nucleo) || nucleoDe(fila.cuil)) || null;
   if (fila.marca === 'P') {
-    if (!persona) return { resultado: fila.cuil.length === 11 || fila.cuil.length <= 8 ? 'sin_persona' : 'cuil_incompleto', detalle: fila.cuil.length === 11 || fila.cuil.length <= 8 ? 'No está en la nómina ni en las inscripciones' : 'El CUIL de la planilla está incompleto (' + fila.cuil.length + ' números) y no se encontró a nadie con ese apellido' };
+    if (!persona) return { resultado: fila.cuil.length === 11 || fila.cuil.length <= 8 ? 'sin_persona' : 'cuil_incompleto', detalle: fila.cuil.length === 11 || fila.cuil.length <= 8 ? (ctx.disponibilidad ? 'No está en la nómina, ni en las inscripciones, ni en la disponibilidad del mes' : 'No está en la nómina ni en las inscripciones') : 'El CUIL de la planilla está incompleto (' + fila.cuil.length + ' números) y no se encontró a nadie con ese apellido' };
     if (persona.ambigua && persona.porNombre) return { resultado: 'sin_persona', detalle: 'El CUIL no coincide y hay más de una persona con ese nombre: revisá el CUIL en la planilla' };
     if (persona.ambigua) return { resultado: 'cuil_incompleto', detalle: 'Con ese documento hay más de una persona: revisá el CUIL en la planilla' };
     if (persona.distinta) return { resultado: 'sin_persona', detalle: 'Con ese DNI hay alguien en la nómina con otro apellido: revisá el CUIL en la planilla' };
@@ -242,7 +266,7 @@ export function decidir(fila, ctx) {
     if (contrato && contrato.estado !== 'pendiente') return { resultado: 'ya_tenia', contrato };
     // Armado en una vuelta anterior, pero el mail no salió: se vuelve a mandar (el contrato ya está hecho).
     if (contrato) return { resultado: 'mandar', persona, contrato };
-    if (!String(persona.email || '').includes('@')) return { resultado: 'sin_mail', detalle: 'No tiene mail en la nómina' };
+    if (!String(persona.email || '').includes('@')) return { resultado: 'sin_mail', detalle: ctx.disponibilidad ? 'No tiene mail en la nómina ni en la disponibilidad del mes' : 'No tiene mail en la nómina' };
     if (!ctx.plantilla) return { resultado: 'sin_plantilla', detalle: 'Falta el modelo de contrato en el panel' };
     if (!ctx.conv) return { resultado: 'sin_show', detalle: 'No hay un show del Arena con esa fecha en el panel' };
     const tarifa = tarifaDe(ctx.cfg, ctx.fecha, fila.sector, fila.rol, fila.obs);
@@ -314,10 +338,17 @@ export default async function handler(req, res) {
   const buscar = filas.filter(f => cuerpo.simular || f.marca || antes.has(f.cuil)).map(f => f.cuil);
   const personas = new Map();
   if (buscar.length) {
-    const rb = await sbJson(servicio, 'rpc/presentes_buscar_personas', { method: 'POST', body: { p_cuils: buscar } });
+    // También el documento que la persona dejó en la disponibilidad, por si el de la planilla está mal.
+    const docs = filas.filter(f => f.doc && buscar.includes(f.cuil)).map(f => f.doc);
+    const rb = await sbJson(servicio, 'rpc/presentes_buscar_personas', { method: 'POST', body: { p_cuils: [...new Set(buscar.concat(docs))] } });
     if (!rb.ok) return res.status(500).json({ error: 'Falta correr contratos-presentes.sql en Supabase', detalle: (rb.data && rb.data.message) || '' });
     const porCuil = new Map(); (rb.data || []).forEach(p => { if (!porCuil.has(p.buscado)) porCuil.set(p.buscado, []); porCuil.get(p.buscado).push(p); });
-    filas.forEach(f => { const p = elegirPersona(porCuil.get(f.cuil) || [], f); if (p) personas.set(f.cuil, p); });
+    const candsDe = f => (porCuil.get(f.cuil) || []).concat(f.doc ? porCuil.get(f.doc) || [] : []);
+    filas.forEach(f => {
+      let p = elegirPersona(porCuil.get(f.cuil) || [], f);
+      if ((!p || p.distinta || p.ambigua) && f.doc) { const q = elegirPersona(porCuil.get(f.doc) || [], f); if (q && !q.distinta && !q.ambigua) p = q; else if (!p) p = q; }
+      if (p) personas.set(f.cuil, p);
+    });
     // A los que el CUIL no llevó a nadie: por el apellido y el nombre (una sola consulta para todos).
     const faltan = filas.filter(f => buscar.includes(f.cuil) && (!personas.has(f.cuil) || personas.get(f.cuil).distinta) && patronApellido(f.apellido));
     if (faltan.length) {
@@ -330,9 +361,11 @@ export default async function handler(req, res) {
       const cands = candidatosPorNombre(rpn.ok ? rpn.data : [], rsn.ok ? rsn.data : []);
       faltan.forEach(f => { const p = elegirPorNombre(cands, f); if (p) personas.set(f.cuil, p); });
     }
+    // Lo que todavía falta (la persona o su mail), con el mail de la disponibilidad del mes.
+    filas.forEach(f => { if (!f.mail || !buscar.includes(f.cuil)) return; const p = conDisponibilidad(personas.get(f.cuil) || null, f, candsDe(f)); if (p) personas.set(f.cuil, p); });
   }
 
-  const ctx = { personas, contratos, cfg, plantilla, conv, fecha };
+  const ctx = { personas, contratos, cfg, plantilla, conv, fecha, disponibilidad: Number(cuerpo.disponibilidad) > 0 };
 
   // Revisar (desde el script, antes del show): qué pasaría si todos tuvieran "P", sin mandar ni guardar nada.
   if (cuerpo.simular) {
@@ -342,6 +375,7 @@ export default async function handler(req, res) {
       porResultado[k] = (porResultado[k] || 0) + 1;
       if (k !== 'saldria' && k !== 'ya_tenia' && k !== 'firmado') problemas.push({ sector: f.sector, apellido: f.apellido, nombre: f.nombre, resultado: k, detalle: d.detalle || '' });
       if (d.resultado === 'mandar' && d.tarifa) porResultado['puesto: ' + d.tarifa.puesto] = (porResultado['puesto: ' + d.tarifa.puesto] || 0) + 1;
+      if (d.resultado === 'mandar' && d.persona && d.persona.mailDe === 'disponibilidad') porResultado['con el mail de la disponibilidad'] = (porResultado['con el mail de la disponibilidad'] || 0) + 1;
     }
     return res.status(200).json({ ok: true, simulacion: true, fecha, show: (conv && conv.nombre) || '', filas: filas.length, porResultado, problemas: problemas.slice(0, 80) });
   }
