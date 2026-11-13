@@ -250,7 +250,7 @@ export default async function handler(req, res) {
   const conv = elegirShow(rconv.ok ? rconv.data : [], show);
 
   // Las personas: las de las filas que importan (con marca, o que ya tenían algo).
-  const buscar = filas.filter(f => f.marca || antes.has(f.cuil)).map(f => f.cuil);
+  const buscar = filas.filter(f => cuerpo.simular || f.marca || antes.has(f.cuil)).map(f => f.cuil);
   const personas = new Map();
   if (buscar.length) {
     const rb = await sbJson(servicio, 'rpc/presentes_buscar_personas', { method: 'POST', body: { p_cuils: buscar } });
@@ -259,6 +259,18 @@ export default async function handler(req, res) {
   }
 
   const ctx = { personas, contratos, cfg, plantilla, conv, fecha };
+
+  // Revisar (desde el script, antes del show): qué pasaría si todos tuvieran "P", sin mandar ni guardar nada.
+  if (cuerpo.simular) {
+    const porResultado = {}, problemas = [];
+    for (const f of filas) {
+      const d = decidir(Object.assign({}, f, { marca: 'P' }), ctx), k = d.resultado === 'mandar' ? 'saldria' : d.resultado;
+      porResultado[k] = (porResultado[k] || 0) + 1;
+      if (k !== 'saldria' && k !== 'ya_tenia' && k !== 'firmado') problemas.push({ sector: f.sector, apellido: f.apellido, nombre: f.nombre, resultado: k, detalle: d.detalle || '' });
+      if (d.resultado === 'mandar' && d.tarifa) porResultado['puesto: ' + d.tarifa.puesto] = (porResultado['puesto: ' + d.tarifa.puesto] || 0) + 1;
+    }
+    return res.status(200).json({ ok: true, simulacion: true, fecha, show: (conv && conv.nombre) || '', filas: filas.length, porResultado, problemas: problemas.slice(0, 80) });
+  }
   const registro = [], cuenta = { enviados: 0, anulados: 0, pendientes: 0, problemas: 0 };
   const ahora = () => new Date().toISOString();
   for (const fila of filas) {
