@@ -606,6 +606,8 @@ const SV_ZONAS = { anillo: 'Anillo', bowl: 'Bowl', platea_baja: 'Platea baja', p
 // Coordinador y Corporativo (cuentas-coordinador-corporativo.sql): como las de zona, pero sin un
 // sector propio: no abren en un piso, la sala arranca en "Todas las zonas" y cargan en cualquier lugar.
 const svSinSector = z => z === 'coordinador' || z === 'corporativo';
+// Corporativo la usan todos en SBS para mirar la app por dentro: no pide nombre (lo que cargue dice "Corporativo").
+const svSinNombre = z => z === 'corporativo';
 const svQuienTitulo = z => z === 'coordinador' ? '¿Quién coordina hoy?' : z === 'corporativo' ? '¿Quién está en Corporativo hoy?' : '¿Quién supervisa ' + SV_ZONAS[z] + ' hoy?';
 // En "¿Dónde pasó?", el piso con el que abre cada zona (después puede elegir otro).
 const SV_ZONA_PISO = { anillo: 'PB', bowl: 'PB', platea_baja: 'P1', vip: 'VIP', platea_alta: 'P3', cortatickets: 'EXT', calle: 'EXT' };
@@ -745,7 +747,7 @@ async function openShow(convId, fecha) {
   const fTxt = svFechaDe(c) ? fmtFecha(svFechaDe(c)) : '';
   if (!enControl(c)) return openConv(convId);
   // La cuenta de una zona: antes de empezar, quién supervisa hoy (una vez por show).
-  if (svZona && !svTurnoDe(convId)) { svPedirTurno(convId); return; }
+  if (svZona && !svSinNombre(svZona) && !svTurnoDe(convId)) { svPedirTurno(convId); return; }
   // El nombre del show, sin "— Movistar Arena" (son todos del Arena), como en la sala y en la gerencia.
   document.getElementById('showTitulo').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
   const quien = svQuienHoy(convId);
