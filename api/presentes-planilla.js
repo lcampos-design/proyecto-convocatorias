@@ -172,11 +172,11 @@ export function elegirShow(convs, show) {
 }
 // Qué hacer con una fila: lo decide sin tocar nada (se prueba aparte).
 // El DNI de 8 números que lleva adentro un CUIL (o el DNI suelto). Con 10 números no se sabe.
-export function nucleoDe(doc) { const d = String(doc || '').replace(/D/g, ''); return d.length === 11 ? d.slice(2, 10) : d.length >= 7 && d.length <= 8 ? d.padStart(8, '0') : ''; }
+export function nucleoDe(doc) { const d = String(doc || '').replace(/\D/g, ''); return d.length === 11 ? d.slice(2, 10) : d.length >= 7 && d.length <= 8 ? d.padStart(8, '0') : ''; }
 const sinTildes = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 // De lo que encontró la base para un CUIL de la planilla, a quién se le manda: el de la nómina con
-// el mismo CUIL; si no, el de la nómina con el mismo DNI; con un CUIL de 10 números (se prueba de
-// las dos maneras), sólo si el apellido de la planilla coincide. Si no está en la nómina, lo mismo
+// el mismo CUIL; si no, el de la nómina con el mismo DNI o, con un CUIL de 10 números, de las dos
+// maneras posibles, sólo si el apellido de la planilla coincide (un CUIL mal tipeado puede dar el DNI de otro). Si no está en la nómina, lo mismo
 // en las inscripciones. Si quedan dos personas distintas, es dudoso (no se manda).
 export function elegirPersona(cands, fila) {
   const palabras = sinTildes(fila.apellido).split(/[^a-zñ]+/).filter(w => w.length >= 3);
@@ -184,7 +184,8 @@ export function elegirPersona(cands, fila) {
   for (const fuente of ['nomina', 'inscripcion']) {
     const deFuente = (cands || []).filter(c => c.fuente === fuente);
     const exactos = deFuente.filter(c => c.como === 'exacto');
-    const otros = deFuente.filter(c => c.como === 'dni' || (c.como === 'aproximado' && apellidoOk(c)));
+    // Por el DNI solo (o un CUIL de 10 números), también el apellido: un CUIL mal tipeado puede dar el DNI de otro.
+    const otros = deFuente.filter(c => (c.como === 'dni' || c.como === 'aproximado') && apellidoOk(c));
     for (const l of [exactos, otros]) {
       if (!l.length) continue;
       const nucleos = new Set(l.map(c => c.nucleo));
@@ -195,11 +196,46 @@ export function elegirPersona(cands, fila) {
   }
   return null;
 }
+// ── Por el nombre, cuando el CUIL de la planilla no lleva a nadie (a veces está mal escrito) ──
+// Las palabras de un nombre, sin tildes ni signos ("Díaz Cabrera" → ["diaz", "cabrera"]).
+export function palabrasDe(s) { return sinTildes(s).replace(/ñ/g, 'n').split(/[^a-z]+/).filter(w => w.length >= 2); }
+// El pedazo de apellido para buscar en la base (la palabra más larga, con las vocales y la ene
+// como comodín: así "Diaz" encuentra "Díaz" y "Munoz" encuentra "Muñoz").
+export function patronApellido(apellido) {
+  const w = palabrasDe(apellido).sort((a, b) => b.length - a.length)[0] || '';
+  return w.length >= 3 ? w.replace(/[aeioun]/g, '_') : '';
+}
+// La persona con ese apellido y ese nombre: todas las palabras del apellido y la primera del
+// nombre tienen que estar en su nombre. Primero en la nómina y, si no, en las inscripciones; sólo
+// si hay una sola (con dos personas con el mismo nombre no se manda) y con documento.
+export function elegirPorNombre(cands, fila) {
+  const ap = palabrasDe(fila.apellido), nom = palabrasDe(fila.nombre)[0];
+  if (!ap.length || !nom) return null;
+  const coincide = c => { const t = new Set(palabrasDe(c.nombre)); return ap.every(w => t.has(w)) && t.has(nom); };
+  for (const fuente of ['nomina', 'inscripcion']) {
+    const l = (cands || []).filter(c => c.fuente === fuente && c.nucleo && coincide(c));
+    if (!l.length) continue;
+    if (new Set(l.map(c => c.nucleo)).size > 1) return { ambigua: true, nombre: l[0].nombre, porNombre: true };
+    return Object.assign({}, l.slice().sort((a, b) => (b.email ? 1 : 0) - (a.email ? 1 : 0))[0], { como: 'nombre' });
+  }
+  return null;
+}
+// Lo que trae la base (personas y solicitudes) como candidatos, con el DNI y el mail de la inscripción.
+export function candidatosPorNombre(personas, solicitudes) {
+  const doc = c => String(c || '').replace(/\D/g, '');
+  const ins = (solicitudes || []).map(s => ({ fuente: 'inscripcion', id: null, nombre: s.nombre, email: String(s.email || '').trim() || null, cuit: doc(s.cuit), nucleo: nucleoDe(s.cuit) }));
+  const mailIns = n => (ins.find(s => s.nucleo === n && s.email) || {}).email || null;
+  const per = (personas || []).map(p => ({ fuente: 'nomina', id: p.id, nombre: p.nombre, cuit: doc(p.cuit), nucleo: nucleoDe(p.cuit), email: String(p.email || '').trim() || null }))
+    .map(p => Object.assign(p, { email: p.email || mailIns(p.nucleo) }));
+  const enNomina = new Set(per.map(p => p.nucleo));
+  return per.concat(ins.filter(s => !enNomina.has(s.nucleo)));
+}
 export function decidir(fila, ctx) {
   const persona = ctx.personas.get(fila.cuil);
   const contrato = ctx.contratos.get((persona && persona.nucleo) || nucleoDe(fila.cuil)) || null;
   if (fila.marca === 'P') {
     if (!persona) return { resultado: fila.cuil.length === 11 || fila.cuil.length <= 8 ? 'sin_persona' : 'cuil_incompleto', detalle: fila.cuil.length === 11 || fila.cuil.length <= 8 ? 'No está en la nómina ni en las inscripciones' : 'El CUIL de la planilla está incompleto (' + fila.cuil.length + ' números) y no se encontró a nadie con ese apellido' };
+    if (persona.ambigua && persona.porNombre) return { resultado: 'sin_persona', detalle: 'El CUIL no coincide y hay más de una persona con ese nombre: revisá el CUIL en la planilla' };
     if (persona.ambigua) return { resultado: 'cuil_incompleto', detalle: 'Con ese documento hay más de una persona: revisá el CUIL en la planilla' };
     if (persona.distinta) return { resultado: 'sin_persona', detalle: 'Con ese DNI hay alguien en la nómina con otro apellido: revisá el CUIL en la planilla' };
     if (contrato && contrato.estado === 'firmado') return { resultado: 'firmado', contrato };
@@ -282,6 +318,18 @@ export default async function handler(req, res) {
     if (!rb.ok) return res.status(500).json({ error: 'Falta correr contratos-presentes.sql en Supabase', detalle: (rb.data && rb.data.message) || '' });
     const porCuil = new Map(); (rb.data || []).forEach(p => { if (!porCuil.has(p.buscado)) porCuil.set(p.buscado, []); porCuil.get(p.buscado).push(p); });
     filas.forEach(f => { const p = elegirPersona(porCuil.get(f.cuil) || [], f); if (p) personas.set(f.cuil, p); });
+    // A los que el CUIL no llevó a nadie: por el apellido y el nombre (una sola consulta para todos).
+    const faltan = filas.filter(f => buscar.includes(f.cuil) && (!personas.has(f.cuil) || personas.get(f.cuil).distinta) && patronApellido(f.apellido));
+    if (faltan.length) {
+      const patrones = [...new Set(faltan.map(f => patronApellido(f.apellido)))].slice(0, 150);
+      const or = 'or=(' + patrones.map(p => 'nombre.ilike.*' + p + '*').join(',') + ')';
+      const [rpn, rsn] = await Promise.all([
+        sbJson(servicio, `personas?select=id,nombre,email,cuit&${or}&limit=5000`),
+        sbJson(servicio, `solicitudes?select=nombre,email,cuit,created_at&${or}&order=created_at.desc&limit=5000`)
+      ]);
+      const cands = candidatosPorNombre(rpn.ok ? rpn.data : [], rsn.ok ? rsn.data : []);
+      faltan.forEach(f => { const p = elegirPorNombre(cands, f); if (p) personas.set(f.cuil, p); });
+    }
   }
 
   const ctx = { personas, contratos, cfg, plantilla, conv, fecha };

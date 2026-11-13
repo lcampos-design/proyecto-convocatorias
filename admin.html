@@ -586,13 +586,10 @@ body{background:var(--r-bg);color:var(--r-ink);-webkit-font-smoothing:antialiase
 .atabs{background:#fff;border-bottom:1px solid var(--r-line);gap:22px;padding:0 22px}
 .atab{color:var(--r-muted);font-weight:500;padding:13px 2px}
 /* Contratos: primero el área (Arena, Externos, España); adentro, sus meses y sus pestañas. */
-.ct-areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
-.ct-area{background:#fff;border:1px solid var(--r-line);border-radius:14px;padding:18px 20px;cursor:pointer;text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:4px}
-.ct-area:hover{border-color:#b9bac4;box-shadow:0 1px 6px rgba(17,24,39,.06)}
-.ct-area b{font-size:16px;font-weight:600}
-.ct-area .ct-n{font-size:30px;font-weight:700;line-height:1.1;margin-top:6px}
-.ct-area small{color:var(--r-muted);font-size:12.5px;line-height:1.5}
-.ct-area .ct-ir{margin-top:8px;font-size:12.5px;font-weight:600;color:#111827}
+.ct-areas{display:flex;gap:12px;flex-wrap:wrap;max-width:860px}
+.ct-areas .d-tile{flex:1 1 200px;max-width:270px;padding:14px 16px}
+.ct-areas .d-tile-n{font-size:26px}
+.ct-areas .d-tile.a-mv{box-shadow:inset 4px 0 0 var(--arena),var(--mac-sombra)}.ct-areas .d-tile.a-ex{box-shadow:inset 4px 0 0 var(--externos),var(--mac-sombra)}.ct-areas .d-tile.a-es{box-shadow:inset 4px 0 0 var(--espana),var(--mac-sombra)}
 .ct-otros{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
 .ct-cab{display:flex;align-items:center;gap:12px;padding:14px 22px 2px;background:#fff;flex-wrap:wrap}
 .ct-cab h3{margin:0;font-size:17px;font-weight:600}
@@ -601,6 +598,10 @@ body{background:var(--r-bg);color:var(--r-ink);-webkit-font-smoothing:antialiase
 .ct-mes.on{background:#111827;color:#fff;border-color:#111827}
 .ct-mes small{opacity:.7;margin-left:4px}
 .ct-caja{background:#fff;border:1px solid var(--r-line);border-radius:14px}
+/* El color de cada área, adentro: el título y el mes elegido. */
+.ct-nav-arena h3{color:var(--arena)}.ct-nav-externos h3{color:var(--externos)}.ct-nav-espana h3{color:var(--espana)}
+.ct-nav-arena .ct-mes.on{background:var(--arena);border-color:var(--arena)}.ct-nav-externos .ct-mes.on{background:var(--externos);border-color:var(--externos)}.ct-nav-espana .ct-mes.on{background:var(--espana);border-color:var(--espana)}
+.ct-caja{border-color:var(--mac-linea);border-radius:var(--mac-radio);box-shadow:var(--mac-sombra)}
 .atab:hover{color:var(--r-ink)}
 .atab.active{color:var(--r-ink);font-weight:600;border-bottom-color:var(--r-ink)}
 .tc{background:var(--r-bg);border:1px solid var(--r-line);color:var(--r-muted)}
@@ -11938,21 +11939,24 @@ function renderCtNav() {
   const n = m => delArea.filter(c => periodoDe(c) === m).length;
   const borr = contratosBorrados ? contratosBorrados.filter(c => ctEnArea(c, ctArea) && (!ctMes || periodoDe(c) === ctMes)).length : '·';
   const tab = (k, t, cuenta, title) => `<div class="atab${ctTab === k ? ' active' : ''}${k === 'borrados' ? ' atab-out' : ''}" data-ct="${k}" onclick="setCtTab('${k}')"${title ? ' title="' + e(title) + '"' : ''}>${t}${cuenta != null ? ' <span class="tc">' + cuenta + '</span>' : ''}</div>`;
-  nav.innerHTML = `<div class="ct-cab"><button class="btn btn-sec btn-xs" onclick="setCtArea('')">← Contratos</button><h3>${e(ctNombreArea(ctArea))}</h3></div>`
+  nav.innerHTML = `<div class="ct-nav ct-nav-${ctArea}"><div class="ct-cab"><button class="btn btn-sec btn-xs" onclick="setCtArea('')">← Contratos</button><h3>${e(ctNombreArea(ctArea))}</h3></div>`
     + (ctTab === 'presentes' ? '' : `<div class="ct-meses">${meses.map(m => `<button class="ct-mes${ctMes === m ? ' on' : ''}" onclick="setCtMes('${m}')">${e(ctMesTxt(m))}<small>${n(m)}</small></button>`).join('')}<button class="ct-mes${!ctMes ? ' on' : ''}" onclick="setCtMes('')">Todos<small>${delArea.length}</small></button></div>`)
-    + `<div class="atabs">${tab('activos', 'Contratos', ctMes ? n(ctMes) : delArea.length)}${ctArea === 'arena' ? tab('presentes', 'Por presente', null, 'Los contratos que salen solos de las planillas de presentes') : ''}${tab('borrados', 'Borrados', borr)}</div>`;
+    + `<div class="atabs">${tab('activos', 'Contratos', ctMes ? n(ctMes) : delArea.length)}${ctArea === 'arena' ? tab('presentes', 'Por presente', null, 'Los contratos que salen solos de las planillas de presentes') : ''}${tab('borrados', 'Borrados', borr)}</div></div>`;
 }
-// La portada: una tarjeta por área, con lo del mes.
+// La portada: un recuadro por área, como los del Tablero (el color de cada área), con lo del mes.
 function renderCtHome() {
   const cont = document.getElementById('ctContent'); if (!cont) return;
   const hoy = hoyLocalISO().slice(0, 7);
   const areas = CT_AREAS.map(x => x[0]).concat(contratos.some(c => ctAreasDe(c)[0] === 'sin') ? ['sin'] : []);
-  cont.innerHTML = `<div style="font-size:13px;color:var(--r-muted);margin:0 0 12px">Elegí el área: adentro están sus meses, sus pestañas y los filtros.</div><div class="ct-areas">${areas.map(a => {
+  const clase = a => a === 'arena' ? ' a-mv' : a === 'externos' ? ' a-ex' : a === 'espana' ? ' a-es' : '';
+  cont.innerHTML = `<div class="d-tit">Contratos de ${e(ctMesTxt(hoy).toLowerCase())}</div><div class="d-sub">Tocá un área para ver sus contratos, mes por mes.</div>
+  <div class="ct-areas">${areas.map(a => {
     const l = contratos.filter(c => ctEnArea(c, a)), mes = l.filter(c => periodoDe(c) === hoy);
     const firm = mes.filter(c => c.estado === 'firmado').length, sinFirmar = mes.filter(c => c.estado !== 'firmado' && c.estado !== 'anulado').length;
-    return `<button class="ct-area" onclick="setCtArea('${a}')"><b>${e(ctNombreArea(a))}</b><span class="ct-n">${mes.length}</span>`
-      + `<small>contrato${mes.length === 1 ? '' : 's'} en ${e(ctMesTxt(hoy).toLowerCase())}${mes.length ? ' · ' + firm + ' firmado' + (firm === 1 ? '' : 's') + ' · ' + sinFirmar + ' sin firmar' : ''}</small>`
-      + `<small>${l.length.toLocaleString('es-AR')} en total</small><span class="ct-ir">Entrar →</span></button>`;
+    return `<div class="d-tile${clase(a)}" onclick="setCtArea('${a}')" style="cursor:pointer" title="Entrar a los contratos de ${e(ctNombreArea(a))}">`
+      + `<div class="d-tile-n">${mes.length.toLocaleString('es-AR')}</div>`
+      + `<div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500">${e(ctNombreArea(a))}</div>`
+      + `<div style="font-size:11px;color:#9ca3af;margin-top:2px">${firm} firmado${firm === 1 ? '' : 's'} · ${sinFirmar} sin firmar · ${l.length.toLocaleString('es-AR')} en total</div></div>`;
   }).join('')}</div>
   <div class="ct-otros"><button class="btn btn-sec btn-sm" onclick="openPlantilla()" title="El texto legal del contrato">Modelo de contrato</button><button class="btn btn-sec btn-sm" onclick="openDocsFirma()" title="Constancias, planillas: lo que algunas personas firman además del contrato">Documentos para firmar</button></div>`;
 }
