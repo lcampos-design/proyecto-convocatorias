@@ -21,7 +21,10 @@ const ROLES_PERMITIDOS = ['admin', 'admin_movistar', 'admin_externos'];
 const ROLES_CUENTA = ['supervisor', 'gerencia'];
 // Las cuentas de zona (cuentas-zona.sql): una por zona, compartida por quien supervisa
 // esa zona ese día. El usuario es corto ("plateabaja") y la app le agrega el dominio.
-const ZONAS = { calle: 'Calle', cortatickets: 'Cortatickets', anillo: 'Anillo', bowl: 'Bowl', platea_baja: 'Platea baja', platea_alta: 'Platea alta', vip: 'VIP' };
+const ZONAS = { calle: 'Calle', cortatickets: 'Cortatickets', anillo: 'Anillo', bowl: 'Bowl', platea_baja: 'Platea baja', platea_alta: 'Platea alta', vip: 'VIP', coordinador: 'Coordinador', corporativo: 'Corporativo' };
+// Coordinador y Corporativo (cuentas-coordinador-corporativo.sql): como las de zona, pero sin un
+// sector propio; su nombre es ése solo ("Coordinador"), no "Supervisor Coordinador".
+const SIN_SECTOR = ['coordinador', 'corporativo'];
 const DOMINIO_ZONAS = 'zonas.show-bs.com';
 const usuarioDeZona = z => z.replace(/_/g, '');
 // Son cuentas de la empresa, con contraseñas genéricas: el panel las muestra
@@ -125,7 +128,7 @@ export default async function handler(req, res) {
     if (zona && !ZONAS[zona]) return res.status(400).json({ error: 'Esa zona no existe' });
     // La de una zona: el mail y el nombre salen de la zona.
     const email = zona ? usuarioDeZona(zona) + '@' + DOMINIO_ZONAS : String(cuerpo.email || '').trim().toLowerCase();
-    const nombre = zona ? 'Supervisor ' + ZONAS[zona] : String(cuerpo.nombre || '').trim();
+    const nombre = zona ? (SIN_SECTOR.includes(zona) ? ZONAS[zona] : 'Supervisor ' + ZONAS[zona]) : String(cuerpo.nombre || '').trim();
     const rolNuevo = zona ? 'supervisor' : cuerpo.rol == null || cuerpo.rol === '' ? 'supervisor' : String(cuerpo.rol);
     if (!ROLES_CUENTA.includes(rolNuevo)) return res.status(400).json({ error: 'Ese tipo de cuenta no se puede crear por acá' });
     // Una cuenta de gerencia sólo deja de ser admin con la regla de centro-control.sql.
@@ -172,7 +175,7 @@ export default async function handler(req, res) {
     if (!perfil.ok && !zona) perfil = await guardarFicha({ id: creado.id, nombre, rol: rolNuevo });
     if (!perfil.ok) {
       await fetch(`${SB_URL}/auth/v1/admin/users/${creado.id}`, { method: 'DELETE', headers: conServicio(servicio) }).catch(() => {});
-      return res.status(zona ? 409 : 500).json({ error: zona ? 'Primero hay que correr cuentas-zona.sql en Supabase' : 'Se creó la cuenta pero no la ficha. Se deshizo todo; probá de nuevo.' });
+      return res.status(zona ? 409 : 500).json({ error: zona ? (SIN_SECTOR.includes(zona) ? 'Primero hay que correr cuentas-coordinador-corporativo.sql en Supabase' : 'Primero hay que correr cuentas-zona.sql en Supabase') : 'Se creó la cuenta pero no la ficha. Se deshizo todo; probá de nuevo.' });
     }
 
     const guardada = zona ? await guardarClaveZona(servicio, zona, password, auth.user.email) : false;

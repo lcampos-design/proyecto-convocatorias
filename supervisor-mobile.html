@@ -602,7 +602,11 @@ async function initAuth() {
 // le pone el dominio) y, al abrir cada show, quien supervisa pone su nombre y su apellido. Va en
 // cada incidencia que carga y la gerencia ve quién está a cargo de cada zona. Una vez por show:
 // si cambia la persona, "No soy yo".
-const SV_ZONAS = { anillo: 'Anillo', bowl: 'Bowl', platea_baja: 'Platea baja', platea_alta: 'Platea alta', cortatickets: 'Cortatickets', calle: 'Calle', vip: 'VIP' };
+const SV_ZONAS = { anillo: 'Anillo', bowl: 'Bowl', platea_baja: 'Platea baja', platea_alta: 'Platea alta', cortatickets: 'Cortatickets', calle: 'Calle', vip: 'VIP', coordinador: 'Coordinador', corporativo: 'Corporativo' };
+// Coordinador y Corporativo (cuentas-coordinador-corporativo.sql): como las de zona, pero sin un
+// sector propio: no abren en un piso, la sala arranca en "Todas las zonas" y cargan en cualquier lugar.
+const svSinSector = z => z === 'coordinador' || z === 'corporativo';
+const svQuienTitulo = z => z === 'coordinador' ? '¿Quién coordina hoy?' : z === 'corporativo' ? '¿Quién está en Corporativo hoy?' : '¿Quién supervisa ' + SV_ZONAS[z] + ' hoy?';
 // En "¿Dónde pasó?", el piso con el que abre cada zona (después puede elegir otro).
 const SV_ZONA_PISO = { anillo: 'PB', bowl: 'PB', platea_baja: 'P1', vip: 'VIP', platea_alta: 'P3', cortatickets: 'EXT', calle: 'EXT' };
 const SV_DOMINIO_ZONAS = 'zonas.show-bs.com';
@@ -614,7 +618,7 @@ function svClaveTurno(convId) { return 'svTurno:' + currentUserId + ':' + convId
 function svTurnoDe(convId) { try { const t = JSON.parse(localStorage.getItem(svClaveTurno(convId)) || 'null'); return t && t.nombre ? t : null; } catch (_) { return null; } }
 function svPedirTurno(convId, cambio) {
   svTurnoConv = convId;
-  document.getElementById('svTurnoTitulo').textContent = '¿Quién supervisa ' + SV_ZONAS[svZona] + ' hoy?';
+  document.getElementById('svTurnoTitulo').textContent = svQuienTitulo(svZona);
   document.getElementById('svTurnoSub').textContent = cambio ? 'Poné tu nombre y apellido: desde ahora, lo que cargues va con tu nombre.' : 'Antes de empezar, poné tu nombre y apellido. Va en cada incidencia que cargues.';
   ['svTurnoNombre', 'svTurnoApellido'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('svTurnoErr').style.display = 'none';
@@ -671,7 +675,7 @@ async function loadData() {
     // ¿Es la cuenta de una zona? (sin cuentas-zona.sql, la función no está: es la de una persona).
     svZona = null;
     try { const { data: z, error: zErr } = await sb.rpc('sup_mi_zona'); if (!zErr && z && SV_ZONAS[z]) svZona = z; } catch (_) {}
-    if (svZona) { currentUserName = 'Supervisor ' + SV_ZONAS[svZona]; document.getElementById('homeSubtitle').textContent = 'Cuenta de ' + SV_ZONAS[svZona]; }
+    if (svZona) { currentUserName = (svSinSector(svZona) ? '' : 'Supervisor ') + SV_ZONAS[svZona]; document.getElementById('homeSubtitle').textContent = 'Cuenta de ' + SV_ZONAS[svZona]; }
 
     setLoad(true, 50);
     const { data: misConvs, error: cErr } = await sb.rpc('sup_convocatorias');
@@ -3975,7 +3979,7 @@ async function openIncid() {
   document.getElementById('incSub').textContent = fTxt + (svQuienHoy(c.id) ? (fTxt ? ' · ' : '') + svQuienHoy(c.id) : '');
   incLista = []; incVistos = null; incNuevos = new Set(); incFiltroSup = 'abiertas'; incAbiertaSup = '';
   // En el celular, la sala arranca en la zona de la cuenta (si pasó en otra, se elige en el desplegable).
-  incZonaSup = svZona || 'todas';
+  incZonaSup = svZona && !svSinSector(svZona) ? svZona : 'todas';
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
   const plano = incRefrescarPlano();
@@ -4150,7 +4154,7 @@ function incAbrirDonde() {
   // La cuenta de una zona abre en el piso de su zona; si pasó en otro lado, cambia de piso o lo busca.
   if (svZona && SV_ZONA_PISO[svZona]) { try { localStorage.setItem('incPisoDonde', SV_ZONA_PISO[svZona]); } catch (_) {} }
   const t = document.getElementById('incSheetTitulo'); t.textContent = '¿Dónde pasó?'; t.className = 'fb-title mano';
-  document.getElementById('incSheetSub').textContent = svZona ? 'Arranca en tu zona (' + SV_ZONAS[svZona] + '). Si pasó en otro lado, cambiá de piso o buscalo.' : 'Elegí el sector o buscalo.';
+  document.getElementById('incSheetSub').textContent = svZona && SV_ZONA_PISO[svZona] ? 'Arranca en tu zona (' + SV_ZONAS[svZona] + '). Si pasó en otro lado, cambiá de piso o buscalo.' : 'Elegí el sector o buscalo.';
   renderIncHoja();
   document.getElementById('incSheet').classList.remove('hidden');
 }
