@@ -24,7 +24,9 @@
  *     por coma. Opcional: CARPETA_DISPONIBILIDAD = el código de la carpeta de
  *     la disponibilidad (lo que va después de /folders/ en su link); sin esa
  *     propiedad busca en todo el Drive de la cuenta lo que diga
- *     "disponibilidad" o el mes en el nombre.
+ *     "disponibilidad" o el mes en el nombre. Para los CUIL incompletos usa la
+ *     planilla de altas de ARCA ("Detalle altas…"); si no la encuentra sola:
+ *     PLANILLA_ALTAS = su link.
  *  3. Elegir la función "probar" y tocar Ejecutar: muestra qué planillas y
  *     qué respuestas de disponibilidad encontró, sin mandar nada. (La primera
  *     vez Google pide permiso para ver el Drive y las planillas: aceptar.)
@@ -67,6 +69,9 @@ function lineaDisponibilidad_(p) {
   Logger.log('   [script ' + VERSION + '] Disponibilidad de ' + MESES[Number(p.fecha.slice(5, 7)) - 1] + ' (en ' + donde + '): '
     + (d.archivos.length ? d.archivos.join(' · ') : 'no encontré respuestas de ese mes') + ' · ' + d.total + ' mails leídos · '
     + p.filas.filter(function (x) { return !!x.mail; }).length + ' de ' + p.filas.length + ' de la planilla con mail ahí');
+  var incompletos = p.filas.filter(function (x) { return x.cuil.length !== 11; });
+  Logger.log('   Altas de ARCA: ' + (d.altasArchivos.length ? d.altasArchivos.join(' · ') : 'no la encontré') + ' · de ' + incompletos.length + ' con el CUIL incompleto en la planilla, '
+    + incompletos.filter(function (x) { return String(x.doc || '').length === 11; }).length + ' tienen el completo (' + p.filas.filter(function (x) { return x.deAltas; }).length + ' de la planilla de altas)');
   d.notas.slice(0, 10).forEach(function (n) { Logger.log('      ' + n); });
   if (!d.archivos.length) Logger.log('      Vi ' + d.vistos.length + ' planillas o formularios' + (d.vistos.length ? ': ' + d.vistos.slice(0, 12).join(' · ') : ''));
 }
@@ -170,8 +175,9 @@ function disponibilidad_(fecha) {
 }
 function leerDisponibilidad_(clave) {
   var mes = MESES[Number(clave.slice(5, 7)) - 1] || '';
-  var res = { porNucleo: {}, gente: [], items: [], archivos: [], total: 0, vistos: [], notas: [], carpeta: '' };
+  var res = { porNucleo: {}, gente: [], items: [], archivos: [], total: 0, vistos: [], notas: [], carpeta: '', altas: [], altasArchivos: [] };
   if (!mes) return res;
+  leerAltas_(res);
   var delMes = function (nombre) { var p = palabras_(nombre); return p.indexOf(mes) >= 0 || p.indexOf(mes.slice(0, 3)) >= 0; };
   var anio = Number(clave.slice(0, 4)), nMes = Number(clave.slice(5, 7));
   var desde = new Date(anio, nMes - 1, 1).getTime() - 120 * 86400000, hasta = new Date(anio, nMes, 1).getTime() + 31 * 86400000;
@@ -271,7 +277,8 @@ function indexar_(res, item) {
 // Lo leído, guardado 25 minutos en la caché del script (en pedazos: cada valor admite hasta 100 KB).
 function guardarCache_(clave, res) {
   try {
-    var txt = JSON.stringify({ i: res.items.map(function (x) { return [x.mail, x.doc, x.palabras.join(' ')]; }), a: res.archivos, n: res.notas, v: res.vistos.slice(0, 30), t: res.total, c: res.carpeta });
+    var txt = JSON.stringify({ i: res.items.map(function (x) { return [x.mail, x.doc, x.palabras.join(' ')]; }), a: res.archivos, n: res.notas, v: res.vistos.slice(0, 30), t: res.total, c: res.carpeta,
+      al: res.altas.map(function (x) { return [x.doc, x.palabras.join(' ')]; }), aa: res.altasArchivos });
     var n = Math.ceil(txt.length / 40000), partes = {};
     if (!n || n > 60) return;
     for (var k = 0; k < n; k++) partes['disp_' + clave + '_' + k] = txt.slice(k * 40000, (k + 1) * 40000);
@@ -288,10 +295,65 @@ function desdeCache_(clave) {
     var hay = c.getAll(claves), txt = '';
     for (var j = 0; j < n; j++) { if (hay[claves[j]] == null) return null; txt += hay[claves[j]]; }
     var o = JSON.parse(txt);
-    var res = { porNucleo: {}, gente: [], items: [], archivos: o.a, notas: o.n, vistos: o.v, total: o.t, carpeta: o.c, deCache: true };
+    var res = { porNucleo: {}, gente: [], items: [], archivos: o.a, notas: o.n, vistos: o.v, total: o.t, carpeta: o.c, deCache: true, altasArchivos: o.aa || [],
+      altas: (o.al || []).map(function (x) { return { doc: x[0], palabras: x[1] ? x[1].split(' ') : [] }; }) };
     o.i.forEach(function (x) { indexar_(res, { mail: x[0], doc: x[1], palabras: x[2] ? x[2].split(' ') : [] }); });
     return res;
   } catch (e) { return null; }
+}
+// ── El CUIL completo, de la planilla de altas de ARCA ("DETALLE ALTAS ORIENTADORES 2026") ──
+// La de la propiedad PLANILLA_ALTAS (link o código) o, sin ella, la que se llame "Detalle altas…". Una
+// pestaña por mes, un bloque por show; de cada fila con encabezado APELLIDO · NOMBRE · … · CUIL, el
+// CUIL de 11 números (el que validó ARCA) y el nombre. No tiene mail: sólo sirve para el CUIL.
+function leerAltas_(res) {
+  var ids = String(PropertiesService.getScriptProperties().getProperty('PLANILLA_ALTAS') || '').match(/[-\w]{25,}/g) || [];
+  try {
+    if (!ids.length) {
+      var it = DriveApp.searchFiles('title contains "detalle" and title contains "altas" and trashed = false and mimeType = "' + MIME_HOJA_ + '"');
+      while (it.hasNext() && ids.length < 3) ids.push(it.next().getId());
+    }
+  } catch (e) { res.notas.push('No pude buscar la planilla de altas: ' + e); }
+  if (!ids.length) res.notas.push('No encontré la planilla de altas de ARCA (se puede poner su link en PLANILLA_ALTAS)');
+  var vistos = {};
+  ids.forEach(function (id) {
+    try {
+      var libro = SpreadsheetApp.openById(id), sumo = 0;
+      libro.getSheets().forEach(function (h) {
+        var col = null;
+        h.getDataRange().getDisplayValues().forEach(function (fila) {
+          var arriba = fila.map(function (t) { return String(t).trim().toUpperCase(); });
+          var iC = arriba.indexOf('CUIL'), iA = arriba.indexOf('APELLIDO');
+          if (iC >= 0 && iA >= 0) { col = { cuil: iC, ape: iA, nom: arriba.indexOf('NOMBRE') }; return; }
+          if (!col) return;
+          var cuil = String(fila[col.cuil] || '').replace(/\D/g, '');
+          if (cuil.length !== 11) return;
+          var palabras = palabras_(fila[col.ape] + ' ' + (col.nom >= 0 ? fila[col.nom] : ''));
+          var k = cuil + '|' + palabras.join(' ');
+          if (!palabras.length || vistos[k]) return;
+          vistos[k] = 1; res.altas.push({ doc: cuil, palabras: palabras }); sumo++;
+        });
+      });
+      res.altasArchivos.push(libro.getName() + ' (' + sumo + ' personas)');
+    } catch (e) { res.notas.push('No puedo abrir la planilla de altas (' + id.slice(0, 6) + '…): ¿la cuenta del script la ve?'); }
+  });
+}
+// El CUIL de la planilla de altas para alguien de la planilla de presentes sin CUIL completo: por el
+// nombre (todas las palabras del apellido y la primera del nombre) y sólo si encaja con el que está
+// incompleto (con 10 números, le falta uno; con 7 u 8, es el DNI). Si quedan dos, ninguno.
+function cuilDeAltas_(d, fila) {
+  var ap = palabras_(fila.apellido), nom = palabras_(fila.nombre)[0];
+  if (!ap.length || !nom || !d.altas) return '';
+  var docs = {};
+  d.altas.forEach(function (g) { if (ap.every(function (w) { return g.palabras.indexOf(w) >= 0; }) && g.palabras.indexOf(nom) >= 0) docs[g.doc] = 1; });
+  var k = Object.keys(docs).filter(function (c) { return encaja_(c, [fila.cuil, fila.doc]); });
+  return k.length === 1 ? k[0] : '';
+}
+function encaja_(cuil, parciales) {
+  return parciales.some(function (p) {
+    p = String(p || '').replace(/\D/g, '');
+    if (p.length === 10) { for (var i = 0; i < 11; i++) if (cuil.slice(0, i) + cuil.slice(i + 1) === p) return true; return false; }
+    return p.length >= 7 && p.length <= 8 && nucleo_(cuil) === nucleo_(p);
+  });
 }
 // ¿La marca temporal cae entre desde y hasta? Con 21/4/2026 (o 4/21/2026 si la planilla está en
 // formato de EE. UU.: vale cualquiera de las dos) o 2026-04-21. Sin marca, la fecha del archivo.
@@ -371,6 +433,11 @@ function leer_(f) {
   });
   // El mail de la disponibilidad del mes (y el documento que dejó ahí), para quien la plataforma no tenga.
   var d = disponibilidad_(fecha);
-  filas.forEach(function (x) { var h = mailDe_(d, x); if (h) { x.mail = h.mail; if (h.doc) x.doc = h.doc; } });
+  filas.forEach(function (x) {
+    var h = mailDe_(d, x);
+    if (h) { x.mail = h.mail; if (h.doc) x.doc = h.doc; }
+    // Sin un CUIL completo (ni en la planilla ni en la disponibilidad): el de la planilla de altas de ARCA.
+    if (x.cuil.length !== 11 && String(x.doc || '').length !== 11) { var c = cuilDeAltas_(d, x); if (c) { x.doc = c; x.deAltas = true; } }
+  });
   return { archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: show, disponibilidad: d.total, filas: filas };
 }
