@@ -620,6 +620,15 @@ function setArea(a) {
   else if (a === 'espana' || a === 'españa') setArea('espana');
   else setArea('movistar_arena'); // también acomoda la lista de servicios del área inicial
 })();
+// Si viene de /mis-datos ("Completar mi inscripción"), el nombre y el mail que ya teníamos (una sola vez).
+(function () {
+  let p = null;
+  try { p = JSON.parse(sessionStorage.getItem('prefillInscripcion') || 'null'); sessionStorage.removeItem('prefillInscripcion'); } catch (_) {}
+  if (!p) return;
+  const n = document.getElementById('fNombre'), m = document.getElementById('fEmail');
+  if (n && !n.value && p.nombre) n.value = p.nombre;
+  if (m && !m.value && p.email) m.value = p.email;
+})();
 
 function dragOver(e) { e.preventDefault(); document.getElementById('fileArea').classList.add('dragover'); }
 function dragLeave() { document.getElementById('fileArea').classList.remove('dragover'); }
