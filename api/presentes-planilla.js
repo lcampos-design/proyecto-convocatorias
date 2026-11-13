@@ -171,12 +171,37 @@ export function elegirShow(convs, show) {
   return (convs || []).slice().sort((a, b) => puntos(b) - puntos(a))[0] || null;
 }
 // Qué hacer con una fila: lo decide sin tocar nada (se prueba aparte).
+// El DNI de 8 números que lleva adentro un CUIL (o el DNI suelto). Con 10 números no se sabe.
+export function nucleoDe(doc) { const d = String(doc || '').replace(/D/g, ''); return d.length === 11 ? d.slice(2, 10) : d.length >= 7 && d.length <= 8 ? d.padStart(8, '0') : ''; }
+const sinTildes = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+// De lo que encontró la base para un CUIL de la planilla, a quién se le manda: el de la nómina con
+// el mismo CUIL; si no, el de la nómina con el mismo DNI; con un CUIL de 10 números (se prueba de
+// las dos maneras), sólo si el apellido de la planilla coincide. Si no está en la nómina, lo mismo
+// en las inscripciones. Si quedan dos personas distintas, es dudoso (no se manda).
+export function elegirPersona(cands, fila) {
+  const palabras = sinTildes(fila.apellido).split(/[^a-zñ]+/).filter(w => w.length >= 3);
+  const apellidoOk = c => palabras.length > 0 && palabras.some(w => sinTildes(c.nombre).includes(w));
+  for (const fuente of ['nomina', 'inscripcion']) {
+    const deFuente = (cands || []).filter(c => c.fuente === fuente);
+    const exactos = deFuente.filter(c => c.como === 'exacto');
+    const otros = deFuente.filter(c => c.como === 'dni' || (c.como === 'aproximado' && apellidoOk(c)));
+    for (const l of [exactos, otros]) {
+      if (!l.length) continue;
+      const nucleos = new Set(l.map(c => c.nucleo));
+      if (nucleos.size > 1) return { ambigua: true, nombre: l[0].nombre };
+      return l.slice().sort((a, b) => (b.email ? 1 : 0) - (a.email ? 1 : 0))[0];
+    }
+    if (deFuente.length && !exactos.length && !otros.length && fuente === 'nomina') { const ins = (cands || []).some(c => c.fuente === 'inscripcion'); if (!ins) return { distinta: true }; }
+  }
+  return null;
+}
 export function decidir(fila, ctx) {
   const persona = ctx.personas.get(fila.cuil);
-  const contrato = persona && persona.id ? ctx.contratos.get(persona.id) : null;
+  const contrato = ctx.contratos.get((persona && persona.nucleo) || nucleoDe(fila.cuil)) || null;
   if (fila.marca === 'P') {
-    if (!persona) return { resultado: fila.cuil.length === 11 ? 'sin_persona' : 'cuil_incompleto', detalle: fila.cuil.length === 11 ? 'No está en la nómina con ese CUIL' : 'El CUIL de la planilla está incompleto (' + fila.cuil.length + ' números)' };
-    if (persona.ambigua) return { resultado: 'cuil_incompleto', detalle: 'Con ese DNI hay más de una persona en la nómina' };
+    if (!persona) return { resultado: fila.cuil.length === 11 || fila.cuil.length <= 8 ? 'sin_persona' : 'cuil_incompleto', detalle: fila.cuil.length === 11 || fila.cuil.length <= 8 ? 'No está en la nómina ni en las inscripciones' : 'El CUIL de la planilla está incompleto (' + fila.cuil.length + ' números) y no se encontró a nadie con ese apellido' };
+    if (persona.ambigua) return { resultado: 'cuil_incompleto', detalle: 'Con ese documento hay más de una persona: revisá el CUIL en la planilla' };
+    if (persona.distinta) return { resultado: 'sin_persona', detalle: 'Con ese DNI hay alguien en la nómina con otro apellido: revisá el CUIL en la planilla' };
     if (contrato && contrato.estado === 'firmado') return { resultado: 'firmado', contrato };
     if (contrato && contrato.estado !== 'pendiente') return { resultado: 'ya_tenia', contrato };
     // Armado en una vuelta anterior, pero el mail no salió: se vuelve a mandar (el contrato ya está hecho).
@@ -236,13 +261,13 @@ export default async function handler(req, res) {
 
   // Lo que ya hay de esa fecha: los contratos de la planilla (los no anulados) y lo último que dijo.
   const [rc, rp, rcfg, rconv] = await Promise.all([
-    sbJson(servicio, `contratos?select=id,persona_id,estado,token,email,nombre&fecha_show=eq.${fecha}&origen=eq.planilla&estado=neq.anulado`),
+    sbJson(servicio, `contratos?select=id,persona_id,doc_nucleo,estado,token,email,nombre&fecha_show=eq.${fecha}&origen=eq.planilla&estado=neq.anulado`),
     sbJson(servicio, `planilla_presentes?select=cuil,marca,resultado,persona_id,contrato_id&fecha=eq.${fecha}`),
     sbJson(servicio, `config?select=key,value&key=in.(contratos_presentes,contrato_plantilla)`),
     sbJson(servicio, `convocatorias?select=id,nombre,venue,area,fecha,centro_control&area=eq.movistar_arena&fecha=like.*${fecha}*`)
   ]);
   if (!rc.ok || !rp.ok) return res.status(500).json({ error: 'Falta correr contratos-presentes.sql en Supabase', detalle: (rc.data && rc.data.message) || (rp.data && rp.data.message) || '' });
-  const contratos = new Map((rc.data || []).map(c => [c.persona_id, c]));
+  const contratos = new Map((rc.data || []).map(c => [c.doc_nucleo, c]));
   const antes = new Map((rp.data || []).map(x => [x.cuil, x]));
   const cfgs = Object.fromEntries((rcfg.data || []).map(x => [x.key, x.value]));
   const cfg = cfgs.contratos_presentes || {};
@@ -255,7 +280,8 @@ export default async function handler(req, res) {
   if (buscar.length) {
     const rb = await sbJson(servicio, 'rpc/presentes_buscar_personas', { method: 'POST', body: { p_cuils: buscar } });
     if (!rb.ok) return res.status(500).json({ error: 'Falta correr contratos-presentes.sql en Supabase', detalle: (rb.data && rb.data.message) || '' });
-    (rb.data || []).forEach(p => { const ya = personas.get(p.buscado); personas.set(p.buscado, ya && ya.id !== p.id ? Object.assign({}, ya, { ambigua: true }) : p); });
+    const porCuil = new Map(); (rb.data || []).forEach(p => { if (!porCuil.has(p.buscado)) porCuil.set(p.buscado, []); porCuil.get(p.buscado).push(p); });
+    filas.forEach(f => { const p = elegirPersona(porCuil.get(f.cuil) || [], f); if (p) personas.set(f.cuil, p); });
   }
 
   const ctx = { personas, contratos, cfg, plantilla, conv, fecha };
@@ -284,14 +310,14 @@ export default async function handler(req, res) {
         if (!c) {
           const p = dec.persona, t = dec.tarifa, dia = fechaLarga(fecha);
           const datos = {
-            nombre: String(p.nombre || (fila.nombre + ' ' + fila.apellido)).trim(), cuil: p.cuit || fila.cuil,
+            nombre: String(p.nombre || (fila.nombre + ' ' + fila.apellido)).trim(), cuil: String(p.cuit || '').length === 11 ? p.cuit : fila.cuil.length === 11 ? fila.cuil : (p.cuit || fila.cuil),
             puesto: t.puesto || tituloSector(fila.sector), venue: String(cfg.venue || (conv && conv.venue) || 'Movistar Arena'),
             fecha_inicio: dia, fecha_fin: dia, anio: fecha.slice(0, 4),
             monto_letras: numeroALetras(t.monto), monto_numero: montoFormateado(t.monto), fecha_firma_doc: hoyLarga()
           };
           const ri = await sbJson(servicio, 'contratos', {
             method: 'POST', headers: { 'Prefer': 'return=representation' },
-            body: Object.assign({}, datos, { conv_id: conv.id, persona_id: p.id, email: p.email, texto_contrato: armarTexto(plantilla, datos), estado: 'pendiente', firma_empleador_img: FIRMA_CONTRATO, fecha_show: fecha, origen: 'planilla', sector: fila.sector || null })
+            body: Object.assign({}, datos, { conv_id: conv.id, persona_id: p.id || null, doc_nucleo: p.nucleo, email: p.email, texto_contrato: armarTexto(plantilla, datos), estado: 'pendiente', firma_empleador_img: FIRMA_CONTRATO, fecha_show: fecha, origen: 'planilla', sector: fila.sector || null })
           });
           if (!ri.ok || !Array.isArray(ri.data) || !ri.data[0]) {
             // Otra vuelta lo creó al mismo tiempo (uno por persona y por fecha): queda para la próxima.
@@ -301,7 +327,7 @@ export default async function handler(req, res) {
           }
           c = ri.data[0];
           await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: c.id, tipo: 'creado', meta: { origen: 'planilla', archivo, sector: fila.sector || null } } });
-          contratos.set(p.id, c);
+          contratos.set(p.nucleo, c);
         }
         contratoId = c.id;
         if (cuenta.enviados) await espera(600);   // Resend: 2 por segundo para toda la cuenta
@@ -319,7 +345,7 @@ export default async function handler(req, res) {
     } else if (resultado === 'anular') {
       const motivo = fila.marca === 'A' ? 'Ausente en la planilla' : 'Le sacaron el presente en la planilla';
       const ra = await sbFetch(servicio, `contratos?id=eq.${dec.contrato.id}&estado=neq.firmado`, { method: 'PATCH', body: { estado: 'anulado', vence_el: ahora(), anulado_at: ahora(), anulado_motivo: motivo } });
-      if (ra.ok) { await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: dec.contrato.id, tipo: 'anulado', meta: { origen: 'planilla', motivo } } }); contratos.delete(personas.get(fila.cuil).id); resultado = 'anulado'; detalle = motivo; cuenta.anulados++; }
+      if (ra.ok) { await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: dec.contrato.id, tipo: 'anulado', meta: { origen: 'planilla', motivo } } }); contratos.delete(dec.contrato.doc_nucleo || ((personas.get(fila.cuil) || {}).nucleo)); resultado = 'anulado'; detalle = motivo; cuenta.anulados++; }
       else { resultado = 'error_mail'; detalle = 'No se pudo anular'; cuenta.problemas++; }
     } else if (['sin_persona', 'cuil_incompleto', 'sin_mail', 'sin_monto', 'sin_show', 'sin_plantilla', 'firmado_ausente'].includes(resultado)) cuenta.problemas++;
     registro.push({ fila, resultado, detalle, persona: personas.get(fila.cuil), contratoId });
