@@ -952,10 +952,10 @@ const INC_ICONOS = {
 function incSectoresPlano(armado) { return INC_PLANO_ZONAS.concat(incLugaresArena.map(incLugarForma), INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
 // Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
 function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
-// El armado del campo (de pie o con asientos) es del show, no del aparato: lo
-// elige cualquiera que mira el plano (el panel, la gerencia o la tablet) y lo
-// ven todos igual. Si la base todavía no lo guarda (falta correr
-// centro-control-armado.sql), queda en el aparato, como antes.
+// El armado del campo (de pie o con asientos) es del show, no del aparato: se
+// elige una vez en el panel (en el menú del show) y lo ven todos igual; la
+// gerencia y los supervisores no lo cambian. Sólo si la base todavía no lo
+// guarda (falta correr centro-control-armado.sql), queda en el aparato.
 const incArmados = {};   // id del show → 'campos' | 'asientos'
 let incArmadosEnBase = true;
 async function incCargarArmados() {
@@ -970,7 +970,8 @@ async function incCargarArmados() {
 }
 function incArmadoDelShow(convId, lista) {
   if (incArmados[convId]) return incArmados[convId];
-  let local = ''; try { local = localStorage.getItem('incArmado:' + convId) || ''; } catch (_) {}
+  // Lo que quedó guardado en el aparato (de cuando se elegía ahí) ya no cuenta: manda la base.
+  let local = ''; if (!incArmadosEnBase) { try { local = localStorage.getItem('incArmado:' + convId) || ''; } catch (_) {} }
   return local === 'campos' || local === 'asientos' ? local : incArmadoDe(lista);
 }
 async function incGuardarArmado(convId, a) {
@@ -3616,7 +3617,6 @@ function porZonasHTML(visibles, zonaDe, tarjeta) {
   }).join('');
 }
 // El armado es del show: al cambiarlo acá, lo ven igual el panel y la tablet.
-function elegirArmado(a) { incGuardarArmado(showId, a); render(); }
 function tocarSector(sector) {
   // Si estaba elegido por una incidencia tocada en el listado, tocarlo (o la ✕ de su ficha) la suelta.
   const f = focoInc && lista.find(i => String(i.id) === focoInc); focoInc = ''; catSel = franjaSel = '';
@@ -3685,10 +3685,10 @@ function render() {
   document.getElementById('paseSup').innerHTML = supervisoresHTML();
   const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('estado');
   estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html;
-  // La botonera: 3D o plano, y cómo está armado el campo.
+  // La botonera: 3D o plano (el armado del campo lo pone el panel: acá no se cambia).
   const vista = incVistaPreferida();
   const seg = (items, actual, fn) => '<div class="seg">' + items.map(([k, t]) => '<button class="' + (actual === k ? 'on' : '') + '" onclick="' + fn + '(\'' + k + '\')">' + (ICO[k] || '') + t + '</button>').join('') + '</div>';
-  document.getElementById('vistas').innerHTML = seg([['3d', '3D'], ['2d', 'Plano']], vista, 'elegirVista') + seg([['campos', 'Campo de pie'], ['asientos', 'Con asientos']], armado, 'elegirArmado');
+  document.getElementById('vistas').innerHTML = seg([['3d', '3D'], ['2d', 'Plano']], vista, 'elegirVista');
   // La incidencia tocada: su lugar, elegido en el plano (la cámara va hasta ahí).
   const focoI = focoInc ? delD.find(i => String(i.id) === focoInc) : null; if (!focoI) focoInc = '';
   // El plano, el mismo que el del panel (desde el 5-nov, sin el modo ax de bloques planos).
