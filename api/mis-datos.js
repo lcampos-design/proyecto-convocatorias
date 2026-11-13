@@ -54,7 +54,7 @@ export function armarMail({ nombre, link, invitado, inscripciones }) {
     ? 'Necesitamos que revises y completes tus datos (la fecha de nacimiento, los estudios, la cuenta para pagarte…). Te lleva un par de minutos.'
     : inscripciones
       ? 'Pediste ver tus inscripciones. Desde este link ves dónde estás anotado/a, podés darte de baja y actualizar tus datos.'
-      : 'Pediste cambiar tus datos de inscripción. Desde este link podés actualizarlos.';
+      : 'Pediste ver tus datos. Desde este link los actualizás o, si todavía no te inscribiste, completás tu inscripción.';
   const text = `${hola}:\n\n${intro}\n\n${link}\n\nEl link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.\n\nShow Business Solutions`;
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111827">
   <p style="font-size:15px">${esc(hola)}:</p>

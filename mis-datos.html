@@ -335,10 +335,18 @@ async function cargar() {
     return;
   }
   const d = data;
-  // Quien está en la nómina pero nunca llenó el formulario (lo cargó el equipo) no tiene dónde guardar estos datos.
+  // Quien todavía no llenó el formulario (lo cargó el equipo, o sólo tiene un contrato, como los del Arena que
+  // firman con el mail de la disponibilidad): que se registre con el formulario de siempre, con el nombre y el
+  // mail ya puestos. Después, con su CUIL, actualiza sus datos acá.
   cargarInscripciones();
   if (!d.con_inscripcion) {
-    $('hola').innerHTML = 'Hola' + (d.nombre ? ', <strong>' + esc(String(d.nombre).trim().split(/\s+/)[0]) + '</strong>' : '') + '. Acá ves tus inscripciones. Tu ficha la cargó nuestro equipo, así que tus datos los actualizamos nosotros: escribinos a ' + (d.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com') + '.';
+    const area = d.area === 'externos' ? 'externos' : 'movistar_arena';
+    $('hola').innerHTML = 'Hola' + (d.nombre ? ', <strong>' + esc(String(d.nombre).trim().split(/\s+/)[0]) + '</strong>' : '') + '. Todavía no completaste tu inscripción: completala y quedan cargados tus datos (contacto, CBU, alimentación, disponibilidad). Después, con tu CUIL, los actualizás acá cuando quieras.'
+      + '<div style="margin-top:14px"><button type="button" class="btn" id="btnRegistrarme">Completar mi inscripción</button></div>';
+    $('btnRegistrarme').onclick = () => {
+      try { sessionStorage.setItem('prefillInscripcion', JSON.stringify({ nombre: d.nombre || '', email: d.email || '' })); } catch (_) {}
+      location.href = '/candidato?area=' + area;
+    };
     $('bloqueDatos').classList.add('oculto');
     paso(2);
     return;
