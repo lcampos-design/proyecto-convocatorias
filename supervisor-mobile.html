@@ -1009,7 +1009,6 @@ const INC_REFERENCIAS_DE = {
   platea: ['Pasillo', 'Escalera', 'Vomitorio', 'Fila', 'Butaca'], vip: ['Palco', 'Pasillo', 'Escalera'], corner: ['Pasillo', 'Escalera', 'Fila', 'Butaca'],
   gastro: ['Barra', 'Fila'], banio: ['Adentro', 'Fila', 'Puerta del baño'], puerta: ['Molinetes', 'Control', 'Fila'],
   enfermeria: ['Adentro', 'Puerta'], servicio: ['Adentro', 'Fila'], calle: ['Fila de ingreso', 'Vereda', 'Esquina'],
-  salida: ['Puerta de salida', 'Escalera', 'Pasillo'],
   anillo: ['Pasillo', 'Escalera'], back: ['Pasillo', 'Escalera']
 };
 function incReferenciasDe(sector) {
@@ -1191,12 +1190,6 @@ function incPisoDe(s) { return (s && (s.piso || { campo: 'PB', baja: 'P1', alta:
 // El piso que se está mirando ('' = todos), por aparato.
 function incPisoElegido() { try { const p = localStorage.getItem('incPiso') || ''; return INC_PISOS.some(x => x[0] === p) ? p : ''; } catch (_) { return ''; } }
 const incPlanos = new Set();
-// Si una salida de evacuación se dibuja: sólo con un piso elegido (en el estadio completo se
-// mezclarían los cuatro) y con la capa "Salidas" prendida o el tipo elegido en la leyenda; con
-// algo abierto (o elegida), siempre.
-function incSalidaOculta(s, pisoSel, capas, tipoSel, n, sel) {
-  return !!s && s.t === 'salida' && !n && !sel && (!pisoSel || (!capas.salidas && tipoSel !== 'salida'));
-}
 function incElegirPiso(p) {
   try { localStorage.setItem('incPiso', p || ''); } catch (_) {}
   // Si se estaba presentando el Arena por fuera, elegir un piso (o el estadio completo) hace entrar.
@@ -1205,15 +1198,12 @@ function incElegirPiso(p) {
 }
 // Lo que se muestra del plano, por aparato: los nombres de los sectores, los
 // puestos del anillo, sus íconos (sin ellos, el puesto queda y no recarga) y las
-// calles, y las salidas de evacuación (apagadas de entrada: se ven en un piso
-// a la vez, no en el estadio completo). Lo que tiene algo abierto (o está
-// elegido) se ve siempre.
-const INC_CAPAS = [['nombres', 'Nombres'], ['puestos', 'Puestos'], ['iconos', 'Íconos'], ['calles', 'Calles'], ['salidas', 'Salidas']];
-const INC_CAPAS_TODAS = { nombres: true, puestos: true, iconos: true, calles: true, salidas: true };
-const INC_CAPAS_INICIO = Object.assign({}, INC_CAPAS_TODAS, { salidas: false });
+// calles. Lo que tiene algo abierto (o está elegido) se ve siempre.
+const INC_CAPAS = [['nombres', 'Nombres'], ['puestos', 'Puestos'], ['iconos', 'Íconos'], ['calles', 'Calles']];
+const INC_CAPAS_TODAS = { nombres: true, puestos: true, iconos: true, calles: true };
 function incCapas() {
-  try { const c = JSON.parse(localStorage.getItem('incCapas') || '{}'); return Object.assign({}, INC_CAPAS_INICIO, c && typeof c === 'object' ? c : {}); }
-  catch (_) { return Object.assign({}, INC_CAPAS_INICIO); }
+  try { const c = JSON.parse(localStorage.getItem('incCapas') || '{}'); return Object.assign({}, INC_CAPAS_TODAS, c && typeof c === 'object' ? c : {}); }
+  catch (_) { return Object.assign({}, INC_CAPAS_TODAS); }
 }
 function incCambiarCapa(k) {
   const c = incCapas(); if (!(k in INC_CAPAS_TODAS)) return;
@@ -1238,8 +1228,6 @@ const INC_TIPOS_LUGAR = {
   banio: { nombre: 'Baños', ico: 'banio', w: 11, h: 22 },
   enfermeria: { nombre: 'Enfermería', ico: 'enfermeria', w: 11, h: 16 },
   servicio: { nombre: 'Punto de servicio', ico: 'servicio', w: 11, h: 18 },
-  // Las posiciones de salida de los planos de evacuación del Arena.
-  salida: { nombre: 'Salida de evacuación', ico: 'salida', w: 7, h: 7 },
   // Las calles de afuera, para reportar filas e ingresos: no son de ningún piso.
   calle: { nombre: 'Calle', w: 300, h: 18 }
 };
@@ -1331,61 +1319,7 @@ const INC_LUGARES_BASE = [
   { id: 'Baños Sede 2 (VIP)', t: 'banio', txt: 'S2', cx: 391.5, cy: 143, w: 11, h: 22, ang: 0, piso: 'VIP' },
   { id: 'Baños Sede 3 (VIP)', t: 'banio', txt: 'S3', cx: 391.5, cy: 230, w: 11, h: 22, ang: 0, piso: 'VIP' },
   { id: 'Baños Cancha (P3)', t: 'banio', txt: 'C', cx: 36, cy: -12, w: 22, h: 40, ang: 0, piso: 'P3' },
-  { id: 'Baños Sede (P3)', t: 'banio', txt: 'S', cx: 384, cy: -12, w: 22, h: 40, ang: 0, piso: 'P3' },
-  // Las salidas de evacuación: las posiciones de salida de los planos de evacuación que mandó el
-  // Arena el 13-nov-2026, piso por piso (ubicadas a ojo sobre los planos: se acomodan desde el
-  // panel). Planta baja: tres por calle, sobre Muñecas y sobre Corrientes; tres hacia las vías y
-  // seis en el campo. Las de afuera (fuera de la fachada) van con la calle.
-  { id: 'Salida campo 1', t: 'salida', txt: '', cx: 210, cy: 54, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida campo 2', t: 'salida', txt: '', cx: 121.7, cy: 131.1, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida campo 3', t: 'salida', txt: '', cx: 296.6, cy: 131.1, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida campo 4', t: 'salida', txt: '', cx: 210, cy: 182.4, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida campo 5', t: 'salida', txt: '', cx: 191, cy: 278, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida campo 6', t: 'salida', txt: '', cx: 230, cy: 278, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida Muñecas 1', t: 'salida', txt: '', cx: -10, cy: 86.8, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida Muñecas 2', t: 'salida', txt: '', cx: -10, cy: 182.4, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida Muñecas 3', t: 'salida', txt: '', cx: -10, cy: 308.3, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida Corrientes 1', t: 'salida', txt: '', cx: 430, cy: 86.8, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida Corrientes 2', t: 'salida', txt: '', cx: 430, cy: 182.4, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida Corrientes 3', t: 'salida', txt: '', cx: 430, cy: 308.3, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida Vías 1', t: 'salida', txt: '', cx: -27.5, cy: -85, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida Vías 2', t: 'salida', txt: '', cx: 400, cy: -85, w: 7, h: 7, ang: 0, piso: 'PB' },
-  { id: 'Salida Vías 3', t: 'salida', txt: '', cx: 445, cy: -85, w: 7, h: 7, ang: 0, piso: 'PB' },
-  // Platea baja (P1): cuatro por costado en el pasillo, una en cada vomitorio y una sobre Humboldt.
-  { id: 'Salida Cancha 1 (P1)', t: 'salida', txt: '', cx: 74.4, cy: 90.1, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida Cancha 2 (P1)', t: 'salida', txt: '', cx: 59.4, cy: 109.6, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida Cancha 3 (P1)', t: 'salida', txt: '', cx: 59.4, cy: 182, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida Cancha 4 (P1)', t: 'salida', txt: '', cx: 68.8, cy: 251.7, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida vomitorio Cancha (P1)', t: 'salida', txt: '', cx: 133.9, cy: 189, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida Sede 1 (P1)', t: 'salida', txt: '', cx: 343.9, cy: 90.1, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida Sede 2 (P1)', t: 'salida', txt: '', cx: 358.9, cy: 109.6, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida Sede 3 (P1)', t: 'salida', txt: '', cx: 358.9, cy: 179.3, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida Sede 4 (P1)', t: 'salida', txt: '', cx: 355.6, cy: 251.7, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida vomitorio Sede (P1)', t: 'salida', txt: '', cx: 289.8, cy: 189, w: 7, h: 7, ang: 0, piso: 'P1' },
-  { id: 'Salida Humboldt (P1)', t: 'salida', txt: '', cx: 214.7, cy: 290, w: 7, h: 7, ang: 0, piso: 'P1' },
-  // VIP (piso 2): tres del lado Cancha y dos del lado Sede, las dos esquinas y tres sobre Humboldt;
-  // en cada casino (Diamante y Trébol), dos personas: una en el bar y otra en la platea.
-  { id: 'Salida Cancha 1 (VIP)', t: 'salida', txt: '', cx: 42.2, cy: 81.8, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida Cancha 2 (VIP)', t: 'salida', txt: '', cx: 42.2, cy: 160.8, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida Cancha 3 (VIP)', t: 'salida', txt: '', cx: 42.2, cy: 229.9, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida Sede 1 (VIP)', t: 'salida', txt: '', cx: 373.4, cy: 117.6, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida Sede 2 (VIP)', t: 'salida', txt: '', cx: 371.9, cy: 206.5, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida esquina Cancha (VIP)', t: 'salida', txt: '', cx: 52.5, cy: 291.6, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida Humboldt 1 (VIP)', t: 'salida', txt: '', cx: 132.4, cy: 300.3, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida Humboldt 2 (VIP)', t: 'salida', txt: '', cx: 210.7, cy: 299, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida Humboldt 3 (VIP)', t: 'salida', txt: '', cx: 283.8, cy: 300.3, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida esquina Sede (VIP)', t: 'salida', txt: '', cx: 368.9, cy: 292.9, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida Casino Diamante (VIP)', t: 'salida', txt: '', cx: 71.8, cy: 1.6, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  { id: 'Salida Casino Trébol (VIP)', t: 'salida', txt: '', cx: 345.3, cy: 1.6, w: 7, h: 7, ang: 0, piso: 'VIP' },
-  // Platea alta (P3): una en cada costado y en cada esquina, tres en los vomitorios y una sobre Humboldt.
-  { id: 'Salida vomitorio Cancha (P3)', t: 'salida', txt: '', cx: 91, cy: 91, w: 7, h: 7, ang: 0, piso: 'P3' },
-  { id: 'Salida vomitorio Sede (P3)', t: 'salida', txt: '', cx: 329, cy: 91, w: 7, h: 7, ang: 0, piso: 'P3' },
-  { id: 'Salida Cancha 1 (P3)', t: 'salida', txt: '', cx: 34, cy: 123.4, w: 7, h: 7, ang: 0, piso: 'P3' },
-  { id: 'Salida Sede 1 (P3)', t: 'salida', txt: '', cx: 385.7, cy: 123.4, w: 7, h: 7, ang: 0, piso: 'P3' },
-  { id: 'Salida vomitorio Humboldt (P3)', t: 'salida', txt: '', cx: 213, cy: 263, w: 7, h: 7, ang: 0, piso: 'P3' },
-  { id: 'Salida Cancha 2 (P3)', t: 'salida', txt: '', cx: 44.9, cy: 257.2, w: 7, h: 7, ang: 0, piso: 'P3' },
-  { id: 'Salida Sede 2 (P3)', t: 'salida', txt: '', cx: 364.3, cy: 257.2, w: 7, h: 7, ang: 0, piso: 'P3' },
-  { id: 'Salida Humboldt (P3)', t: 'salida', txt: '', cx: 213, cy: 305.7, w: 7, h: 7, ang: 0, piso: 'P3' }
+  { id: 'Baños Sede (P3)', t: 'banio', txt: 'S', cx: 384, cy: -12, w: 22, h: 40, ang: 0, piso: 'P3' }
 ]);
 // El cartel de un puesto sin todo en mayúsculas ("CAM" → "Cam.", "AV. DORREGO" →
 // "Av. Dorrego"): si es uno de los de siempre, como ése; si no, cada palabra de
@@ -1414,7 +1348,7 @@ function incNormalizarLugares(lista) {
     const txt = incSinMayusculas(id, String(l.txt == null ? '' : l.txt).trim().slice(0, calle ? 24 : 6));
     const rubro = calle ? '' : String(l.rubro == null ? '' : l.rubro).trim().slice(0, 40);
     return Object.assign({ id, t: l.t, txt, cx: num(l.cx, -40, 460, 210), cy: num(l.cy, -90, 390, 304), w: num(l.w, lim.w[0], lim.w[1], tipo.w), h: num(l.h, lim.h[0], lim.h[1], tipo.h), ang: num(l.ang, -180, 180, 0), piso }, rubro ? { rubro } : {});
-  }).filter(Boolean).slice(0, 160);
+  }).filter(Boolean).slice(0, 80);
 }
 let incLugaresArena = incNormalizarLugares(INC_LUGARES_BASE), incVersionPlano = 0;
 // Si no cambió nada, el plano no se rehace (el 3D se rehace cuando cambia la versión).
@@ -1548,10 +1482,10 @@ async function incCargarPlanoArena() {
       return p ? Object.assign({}, l, { piso: p }) : l;
     });
     // Y uno guardado antes de que hubiera calles, o gastronomía, baños,
-    // enfermería, camarines, producción o salidas de evacuación en algún piso:
-    // se le suman los de siempre (los de ese piso).
+    // enfermería, camarines o producción en algún piso: se le suman los de
+    // siempre (los de ese piso).
     if (!lista.some(l => l && l.t === 'calle')) lista = lista.concat(INC_CALLES_BASE);
-    INC_PISOS.forEach(([p]) => ['gastro', 'banio', 'enfermeria', 'servicio', 'salida'].forEach(t => {
+    INC_PISOS.forEach(([p]) => ['gastro', 'banio', 'enfermeria', 'servicio'].forEach(t => {
       if (!lista.some(l => l && l.t === t && l.piso === p)) lista = lista.concat(INC_LUGARES_BASE.filter(l => l.t === t && l.piso === p));
     }));
     const nuevos = incNormalizarLugares(lista);
@@ -1577,8 +1511,7 @@ const INC_ICONOS = {
   gastro: 'M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z',
   banio: 'M5.5 22v-7.5H4V9c0-1.1.9-2 2-2h3c1.1 0 2 .9 2 2v5.5H9.5V22h-4zM18 22v-6h3l-2.54-7.63C18.18 7.55 17.42 7 16.56 7h-.12c-.86 0-1.63.55-1.9 1.37L12 16h3v6h3zM7.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm9 0c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2z',
   enfermeria: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z',
-  servicio: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',
-  salida: 'M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z'
+  servicio: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'
 };
 // Todo lo que se toca en el plano: el anillo primero (queda abajo), los
 // puestos, las plateas y el campo.
@@ -1642,17 +1575,9 @@ function incZonaCuenta(sector) {
   const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
   if (!s) return 'otros';
   if (s.t === 'calle') return 'calle';
-  // Las salidas de evacuación: las de afuera, con la calle; las de adentro, con la zona de su piso.
-  if (s.t === 'salida') return incSalidaAfuera(s) ? 'calle' : { PB: 'bowl', P1: 'platea_baja', VIP: 'vip', P3: 'platea_alta' }[s.piso] || 'anillo';
   if (s.t === 'puerta') return 'cortatickets';
   if (s.lugar || s.t === 'anillo' || s.t === 'back') return 'anillo';
   return { campo: 'bowl', baja: 'platea_baja', alta: 'platea_alta', vip: 'vip' }[s.t] || 'otros';
-}
-// Una salida de evacuación de afuera (en la calle o hacia las vías, fuera de la fachada).
-function incSalidaAfuera(s) {
-  if (!s || s.t !== 'salida') return false;
-  const x = s.lx != null ? s.lx : s.cx, y = s.ly != null ? s.ly : s.cy;
-  return x < 20 || x > 400 || y < -46 || y > 320;
 }
 function incZonaNombre(z) { return (INC_ZONAS_CUENTA.find(x => x[0] === z) || [])[1] || String(z || ''); }
 // La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
@@ -1660,7 +1585,6 @@ function incZonaNombre(z) { return (INC_ZONAS_CUENTA.find(x => x[0] === z) || []
 function incZona(sector) {
   const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
   if (!s) return '';
-  if (s.t === 'salida') return incSalidaAfuera(s) ? 'Afuera' : { PB: 'Campo · PB', P1: 'Platea baja · P1', VIP: 'Premium · VIP', P3: 'Platea alta · P3' }[s.piso] || '';
   return s.t === 'baja' ? 'Platea baja · P1' : s.t === 'alta' ? 'Platea alta · P3' : s.t === 'campo' ? 'PB' : s.t === 'calle' ? 'Afuera' : s.t === 'vip' ? 'Premium · ' + incPisoDe(s) : s.lugar ? 'Anillo · ' + s.piso : '';
 }
 // La ficha de un lugar (al tocarlo en el panel o en la gerencia): qué es, su
@@ -1808,7 +1732,7 @@ function incFichaHTML(sector, op, clase) {
 }
 // ── Buscar y filtrar ──
 // El tipo de puesto que se quiere ver ('' = todos), por aparato, como el piso.
-const INC_TIPOS_FILTRO = ['puerta', 'gastro', 'banio', 'enfermeria', 'servicio', 'salida'];
+const INC_TIPOS_FILTRO = ['puerta', 'gastro', 'banio', 'enfermeria', 'servicio'];
 function incTipoElegido() { try { const t = localStorage.getItem('incTipo') || ''; return INC_TIPOS_FILTRO.includes(t) ? t : ''; } catch (_) { return ''; } }
 function incElegirTipo(t) {
   try { localStorage.setItem('incTipo', INC_TIPOS_FILTRO.includes(t) ? t : ''); } catch (_) {}
@@ -1945,7 +1869,7 @@ const INC_TEMA = {
     baja: ['#1f4fcf', '#5b8dff'], alta: ['#3d86f2', '#8cc0ff'], campo: ['#4cc9f7', '#a6e6ff'],
     anillo: ['#2a3d5e', '#3d557d'], back: ['#24375a', '#3d557d'], vip: ['#dfe7f2', '#9fb0c8'],
     puerta: ['#9ee6ff', '#4fb3ff'], gastro: ['#b84ad8', '#e2a6f5'], banio: ['#6f8fc0', '#a9c2e6'], enfermeria: ['#ffffff', '#a9c2e6'], servicio: ['#3e5579', '#6f8fc0'],
-    salida: ['#1f9d5c', '#6fd39c'], calle: ['#0c1a2e', '#3d557d']
+    calle: ['#0c1a2e', '#3d557d']
   },
   tinta: '#ffffff', tintaPiso: '#9fbbe3', tintaTipo: { campo: '#0b1b33', puerta: '#0b1b33', enfermeria: '#0b1b33', vip: '#0b1b33' },
   fondo: ['#173a66', '#0f2a4d', '#0a1d3a'], fachada: '#3f7fc4',
@@ -1961,7 +1885,7 @@ const INC_VENTANA_ABAJO = '(max-width:640px),(orientation:portrait) and (max-wid
 // En el orden en que se recorre el Arena: las puertas, el campo (PB), la
 // platea baja (P1), el VIP, la alta (P3) y después los puestos. Los "otros
 // puntos" del anillo son los camarines y la producción.
-const INC_LEYENDA = [['puerta', 'Puertas'], ['campo', 'Campo'], ['baja', 'Platea baja'], ['vip', 'VIP'], ['alta', 'Platea alta'], ['banio', 'Baños'], ['gastro', 'Gastronomía'], ['enfermeria', 'Enfermería'], ['servicio', 'Camarines y producción'], ['salida', 'Salidas de evacuación'], ['calle', 'Calles']];
+const INC_LEYENDA = [['puerta', 'Puertas'], ['campo', 'Campo'], ['baja', 'Platea baja'], ['vip', 'VIP'], ['alta', 'Platea alta'], ['banio', 'Baños'], ['gastro', 'Gastronomía'], ['enfermeria', 'Enfermería'], ['servicio', 'Camarines y producción'], ['calle', 'Calles']];
 const INC_LEYENDA_ZONAS = ['campo', 'baja', 'vip', 'alta'];
 // El piso de cada zona (tocar la zona en la leyenda lleva a ese piso).
 const INC_LEYENDA_PISO = { campo: 'PB', baja: 'P1', vip: 'VIP', alta: 'P3' };
@@ -1971,7 +1895,7 @@ const INC_LEYENDA_PISO = { campo: 'PB', baja: 'P1', vip: 'VIP', alta: 'P3' };
 // círculo de las incidencias (blanco: ningún color del semáforo). Cada cosa se toca (ver
 // incLeyendaAccion); lo que se está mirando queda marcado.
 function incLeyendaHTML(clase, modo) {
-  const col = INC_TEMA.color, tipoSel = incTipoElegido(), pisoSel = incPisoElegido(), hay = new Set(incLugaresArena.filter(l => l.t !== 'salida' || pisoSel).map(l => l.t));
+  const col = INC_TEMA.color, hay = new Set(incLugaresArena.map(l => l.t)), tipoSel = incTipoElegido(), pisoSel = incPisoElegido();
   const zona = t => INC_LEYENDA_ZONAS.includes(t), tocable = modo !== true;
   const on = t => zona(t) ? pisoSel === INC_LEYENDA_PISO[t] : tipoSel === t;
   const titulo = (t, n) => {
@@ -2032,7 +1956,6 @@ function incPlanoSVG(op) {
     const nv = niveles[s.id], n = cuentas[s.id] || 0, sel = op.sel === s.id, col = TM.color[s.t], v = nv ? INC_NIVELES[nv] : null;
     const calle = s.t === 'calle';
     if (s.lugar && s.piso && pisoSel && s.piso !== pisoSel) return '';
-    if (incSalidaOculta(s, pisoSel, capas, tipoSel, n, sel)) return '';
     if (!n && ((calle && !capas.calles) || (s.lugar && !calle && !capas.puestos) || (s.lugar && !calle && tipoSel && s.t !== tipoSel))) return '';
     if (s.lugar) {
       const a = s.ang * Math.PI / 180, ex = Math.abs(s.w / 2 * Math.cos(a)) + Math.abs(s.h / 2 * Math.sin(a)), ey = Math.abs(s.w / 2 * Math.sin(a)) + Math.abs(s.h / 2 * Math.cos(a));
@@ -2148,7 +2071,7 @@ function incPlanoSVG(op) {
 // tiene WebGL o el 3D falla, queda el plano en 2D: nunca se queda sin plano.
 // La platea baja arranca a 7, como en el Arena: abajo, la pared del campo (con sus
 // columnas y las salidas) y la cinta LED de adelante.
-const INC_3D_ALTURA = { campo: 1.4, baja: [7, 17], alta: [30, 45], vip: 26, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, salida: 1.2, puerta: 13, calle: 0.5 };
+const INC_3D_ALTURA = { campo: 1.4, baja: [7, 17], alta: [30, 45], vip: 26, anillo: 0.8, back: 1.2, gastro: 6, banio: 6, enfermeria: 6, servicio: 6, puerta: 13, calle: 0.5 };
 // Los pisos, como en un edificio: a qué altura está el anillo de cada uno. El
 // de P1, arriba de la platea baja (el corner, a la misma altura); el del VIP,
 // un poco más arriba, a la altura de los palcos y el lounge (como un palco de
@@ -2175,9 +2098,9 @@ const INC_TEMA_3D = {
   luces: { hemi: [0xe8f0ff, 0x1a2a48, 0.8], clave: 0.55, contra: 0.3, escenario: 0.35 },
   color: {
     baja: [0x2557dc, 0x16348c], alta: [0x4a8ff5, 0x2a5fb8], campo: [0x3fb8ec, 0x1b7fb0], anillo: [0x2c4063, 0x1a2944], back: [0x26395b, 0x17243d], vip: [0xe3eaf5, 0x8d9db6],
-    puerta: [0x9ee6ff, 0x9ee6ff], gastro: [0xbf55e0, 0x7d2a9a], banio: [0x7896c6, 0x44608c], enfermeria: [0xffffff, 0xc6d4e8], servicio: [0x44608a, 0x26395b], salida: [0x1f9d5c, 0x11663b], calle: [0x0f1d33, 0x0a1424]
+    puerta: [0x9ee6ff, 0x9ee6ff], gastro: [0xbf55e0, 0x7d2a9a], banio: [0x7896c6, 0x44608c], enfermeria: [0xffffff, 0xc6d4e8], servicio: [0x44608a, 0x26395b], calle: [0x0f1d33, 0x0a1424]
   },
-  borde: { baja: 0x8cc0ff, alta: 0xb5d8ff, campo: 0xd2f3ff, anillo: 0x4f7fb8, back: 0x4f7fb8, vip: 0xffffff, puerta: 0x9ee6ff, gastro: 0xf0c8fb, banio: 0xd2e2f7, enfermeria: 0xa9c2e6, servicio: 0xa9c2e6, salida: 0x6fd39c, calle: 0x3d6ea8 },
+  borde: { baja: 0x8cc0ff, alta: 0xb5d8ff, campo: 0xd2f3ff, anillo: 0x4f7fb8, back: 0x4f7fb8, vip: 0xffffff, puerta: 0x9ee6ff, gastro: 0xf0c8fb, banio: 0xd2e2f7, enfermeria: 0xa9c2e6, servicio: 0xa9c2e6, calle: 0x3d6ea8 },
   opBorde: { baja: 0.5, alta: 0.5, campo: 0.6, anillo: 0.55, back: 0.55, vip: 0.9, calle: 0.55 }, opBordeOtro: 0.7, sel: 0xffffff,
   brillo: 0.1,   // cuánto brilla cada zona con su propio color: la luz LED, suave
   halo: ['rgba(56,160,255,.18)', 'rgba(56,160,255,.06)'],
@@ -3725,7 +3648,7 @@ function incPlano3D(cont, op0) {
         // salvo lo que tiene algo abierto; sin nombres, los sectores quedan sin su cartel.
         const otroPiso = !!(pisoSel && p.piso && p.piso !== pisoSel);
         const iP = ordenPiso(p.nivelDe), arriba = !!pisoSel && iP > iSel, abajo = !!pisoSel && iP >= 0 && iP < iSel;
-        const fuera = (p.lugar && otroPiso) || (!p.lugar && arriba) || incSalidaOculta(p, pisoSel, editar ? INC_CAPAS_TODAS : capas, tipoSel, n, p.sel) || (!n && ((p.t === 'calle' && !capas.calles) || (p.lugar && p.t !== 'calle' && (!capas.puestos || (tipoSel && p.t !== tipoSel)))));
+        const fuera = (p.lugar && otroPiso) || (!p.lugar && arriba) || (!n && ((p.t === 'calle' && !capas.calles) || (p.lugar && p.t !== 'calle' && (!capas.puestos || (tipoSel && p.t !== tipoSel)))));
         const apagado = abajo && !p.lugar;
         p.grupo.visible = !fuera;
         if (p.apagado !== apagado) { p.apagado = apagado; apagar(p.mats, apagado); }
@@ -4243,15 +4166,13 @@ function incDondeHTML(q) {
   const p = incPisoDonde(), de = f => todos.filter(f);
   // Lo de cada piso: primero los baños, después la gastronomía y lo demás.
   const RANGO = { banio: 0, gastro: 1, enfermeria: 2, servicio: 3 }, rango = x => RANGO[x.t] == null ? 9 : RANGO[x.t];
-  const enPiso = piso => de(x => x.lugar && x.piso === piso && x.t !== 'puerta' && x.t !== 'calle' && x.t !== 'salida').sort((a, b) => rango(a) - rango(b));
-  // Las salidas de evacuación (de los planos del Arena), aparte: las de cada piso y, en los exteriores, las de afuera.
-  const salidas = piso => grupo('Salidas de evacuación', de(x => x.t === 'salida' && (piso === 'EXT' ? incSalidaAfuera(x) : x.piso === piso && !incSalidaAfuera(x))), false);
+  const enPiso = piso => de(x => x.lugar && x.piso === piso && x.t !== 'puerta' && x.t !== 'calle').sort((a, b) => rango(a) - rango(b));
   let html = '<div class="sv-pisos">' + INC_DONDE.map(([k, t]) => '<button type="button" class="' + (p === k ? 'on' : '') + '" onclick="incElegirPisoDonde(\'' + k + '\')">' + t + '</button>').join('') + '</div>';
-  if (p === 'EXT') html += grupo('Ingresos', de(x => x.t === 'puerta').sort((a, b) => num(a) - num(b)), false) + grupo('Calles', de(x => x.t === 'calle'), false) + salidas('EXT')
+  if (p === 'EXT') html += grupo('Ingresos', de(x => x.t === 'puerta').sort((a, b) => num(a) - num(b)), false) + grupo('Calles', de(x => x.t === 'calle'), false)
     + '<div class="sv-ayuda"><b>Para avisar desde los exteriores:</b> filas de ingreso desbordadas, congestión en la vereda, cortes o lo que pase en la calle.</div>';
-  else if (p === 'PB') html += grupo('Sectores del campo', de(x => x.t === 'campo'), true) + grupo('Pasillos y backstage', de(x => x.t === 'anillo' || x.t === 'back'), false) + grupo('En planta baja', enPiso('PB'), false) + salidas('PB');
-  else if (p === 'VIP') html += grupo('Sectores', de(x => x.t === 'vip' && !x.lugar), false) + grupo('En el VIP', enPiso('VIP'), false) + salidas('VIP');
-  else html += grupo('Sectores', de(x => x.t === (p === 'P1' ? 'baja' : 'alta')).sort((a, b) => num(a) - num(b)), true) + grupo(p === 'P1' ? 'En el piso 1' : 'En el piso 3', enPiso(p), false) + salidas(p);
+  else if (p === 'PB') html += grupo('Sectores del campo', de(x => x.t === 'campo'), true) + grupo('Pasillos y backstage', de(x => x.t === 'anillo' || x.t === 'back'), false) + grupo('En planta baja', enPiso('PB'), false);
+  else if (p === 'VIP') html += grupo('Sectores', de(x => x.t === 'vip' && !x.lugar), false) + grupo('En el VIP', enPiso('VIP'), false);
+  else html += grupo('Sectores', de(x => x.t === (p === 'P1' ? 'baja' : 'alta')).sort((a, b) => num(a) - num(b)), true) + grupo(p === 'P1' ? 'En el piso 1' : 'En el piso 3', enPiso(p), false);
   return html + '<div class="sv-rotulo">¿No está en la lista?</div><div class="sv-sectores anchos">' + boton({ id: INC_LUGARES[0] }, true) + '</div>';
 }
 
