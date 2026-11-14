@@ -72,7 +72,7 @@ export default async function handler(req, res) {
   // En la página, arriba a la derecha, "Descargar PDF" (no sale al imprimir).
   const barra = `<style>.dl{position:fixed;top:16px;right:16px;z-index:10;display:inline-flex;align-items:center;gap:8px;background:#1a1a1a;color:#fff;text-decoration:none;font:600 13px Poppins,sans-serif;padding:11px 16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}.dl svg{width:16px;height:16px}@media print{.dl{display:none}}</style>`
     + `<a class="dl" href="/informe?t=${encodeURIComponent(t)}&pdf=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Descargar PDF</a>`;
-  // En la compu, el informe centrado (como una hoja) y la marca de agua entera, del ancho del informe (como en el PDF), no de la pantalla; en el celular, como un documento que se agranda con los dedos.
-  html = html.replace('</head>', '<style>@media screen{body{max-width:1040px;margin:28px auto!important;padding:0 16px}body::before{background-size:min(1040px,92vw) auto!important}}</style></head>').replace('<body>', '<body>' + barra);
+  // En la compu, el informe centrado (como una hoja) y la marca de agua entera y desvanecida hacia los bordes (sin el corte seco que en el PDF tapa el borde de la hoja); en el celular, como un documento que se agranda con los dedos.
+  html = html.replace('</head>', '<style>@media screen{body{max-width:1040px;margin:28px auto!important;padding:0 16px}body::before{width:min(1240px,100vw,177.78vh)!important}}</style></head>').replace('<body>', '<body>' + barra);
   return res.status(200).send(html);
 }
