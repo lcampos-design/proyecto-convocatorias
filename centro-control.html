@@ -3754,9 +3754,9 @@ function informe() {
   const html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe de incidencias · ' + incEsc(s.nombre) + '</title>'
     + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"><style>'
     + 'body{font-family:Poppins,sans-serif;color:' + P.tinta + ';margin:28px;font-size:11px;font-variant-numeric:tabular-nums}'
-    // La pieza de marca de SBS de fondo, como marca de agua: entera (SBS y la frase, no sólo la B), en gris y muy suave, en cada hoja (y que la impresora no saque ni el fondo ni la marca).
+    // La pieza de marca de SBS de fondo, como marca de agua: entera (SBS y la frase, no sólo la B), en gris muy suave y perdiéndose hacia los bordes (fondo-sbs-marca.png ya viene así: la máscara CSS no sale al imprimir), en cada hoja (y que la impresora no saque ni el fondo ni la marca).
     + 'html{background:' + P.fondo + '}html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    + 'body::before{content:"";position:fixed;inset:0;z-index:-1;background:url(' + location.origin + '/fondo-sbs.jpg) center/contain no-repeat;opacity:' + P.marca + ';filter:grayscale(1)}'
+    + 'body::before{content:"";position:fixed;left:50%;top:50%;width:min(100vw,177.78vh);aspect-ratio:16/9;transform:translate(-50%,-50%);z-index:-1;background:url(' + location.origin + '/fondo-sbs-marca.png) center/100% 100% no-repeat}'
     + '.k{font-size:10.5px;font-weight:700;color:' + P.gris + '}'
     + 'h1{font-size:20px;font-weight:600;letter-spacing:-.3px;margin:3px 0 0}h2{font-size:11.5px;font-weight:400;color:' + P.gris + ';margin:2px 0 0}'
     + 'h3{font-size:11.5px;font-weight:700;color:' + P.tinta + ';margin:0 0 6px}'
