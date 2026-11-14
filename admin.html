@@ -3053,7 +3053,7 @@ function uid() { return crypto.randomUUID(); }
 const ROTULOS = { pendiente:'Pendiente', contactado:'Contactado', confirmado:'Confirmado',
   no_asiste:'No asiste', en_revision:'En revisión', aprobado:'Aprobado', rechazado:'Rechazado',
   enviada:'Enviada', descartada:'Descartada', creado:'Creado', enviado:'Enviado',
-  reenviado:'Reenviado', visto:'Visto', consentimiento:'Consentimiento', firmado:'Firmado' };
+  reenviado:'Reenviado', recordatorio:'Recordatorio', visto:'Visto', consentimiento:'Consentimiento', firmado:'Firmado' };
 function rotulo(v) {
   const k = String(v == null ? '' : v).trim();
   return ROTULOS[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ') : '');
@@ -11964,7 +11964,7 @@ function populateCtFilters() {
 }
 
 // Cómo se nombra cada paso de la trazabilidad, acá y en el detalle de un borrado.
-const CT_EVENTO = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i class="ic ic-sobre"></i> Enviado', visto: '<i class="ic ic-ojo"></i> Visto', consentimiento: '<i class="ic ic-tilde-circ"></i> Consentimiento', firmado: '<i class="ic ic-firma"></i> Firmado', reenviado: '↻ Reenviado', codigo_enviado: '<i class="ic ic-sobre"></i> Código enviado', codigo_ok: '<i class="ic ic-tilde-circ"></i> Código verificado', documento_agregado: '<i class="ic ic-doc"></i> Documento agregado', documento_quitado: '<i class="ic ic-doc"></i> Documento sacado', anulado: '✕ Anulado (planilla de presentes)' };
+const CT_EVENTO = { creado: '<i class="ic ic-lapiz"></i> Creado', enviado: '<i class="ic ic-sobre"></i> Enviado', visto: '<i class="ic ic-ojo"></i> Visto', consentimiento: '<i class="ic ic-tilde-circ"></i> Consentimiento', firmado: '<i class="ic ic-firma"></i> Firmado', reenviado: '↻ Reenviado', recordatorio: '<i class="ic ic-sobre"></i> Recordatorio (automático)', codigo_enviado: '<i class="ic ic-sobre"></i> Código enviado', codigo_ok: '<i class="ic ic-tilde-circ"></i> Código verificado', documento_agregado: '<i class="ic ic-doc"></i> Documento agregado', documento_quitado: '<i class="ic ic-doc"></i> Documento sacado', anulado: '✕ Anulado (planilla de presentes)' };
 
 // ── CONTRATOS BORRADOS ────────────────────────────────────────
 // Lo que se borró no desaparece: contrato_borrar() deja una copia completa en

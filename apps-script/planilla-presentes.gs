@@ -42,7 +42,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '14-nov 1:55, el contrato al instante (sin la media hora)';
+var VERSION = '14-nov 19:00, recordatorios de contratos sin firmar (uno por día, al mediodía)';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -134,6 +134,8 @@ function sincronizar() {
   });
   // El reporte de incidencias del show de anoche, a la 1:30 (si no salió todavía).
   try { reportes_(clave); } catch (e) { Logger.log('Error con el reporte: ' + e); }
+  // Los recordatorios de los contratos sin firmar: una vez por día, desde las 12.
+  try { recordatorios_(clave); } catch (e) { Logger.log('Error con los recordatorios: ' + e); }
 }
 
 function mandar_(p, clave) {
@@ -488,6 +490,7 @@ function leer_(f) {
 //   enviar_reporte: el de hoy, ya, a REPORTE_PARA (por si hace falta antes de la 1:30). Es para cuando el
 //                   show terminó: lo que quedó abierto se da por cerrado, como a la 1:30.
 var URL_REPORTE = 'https://convocatorias.show-bs.com/api/reporte-incidencias';
+var URL_RECORDATORIOS = 'https://convocatorias.show-bs.com/api/recordatorios';
 var REPORTE_DESDE = 90;   // minutos desde la medianoche: 1:30
 var TZ_AR = 'America/Argentina/Buenos_Aires';
 var NIVELES_ = { 1: { nombre: 'Leve', una: 'leve', plural: 'leves', color: '#667080', letra: 'L' }, 2: { nombre: 'Medio', una: 'media', plural: 'medias', color: '#8A6900', letra: 'M' }, 3: { nombre: 'Grave', una: 'grave', plural: 'graves', color: '#D62839', letra: 'G' } };
@@ -509,6 +512,43 @@ function pedirReporte_(fecha, clave, cerrar) {
   var resp = UrlFetchApp.fetch(URL_REPORTE, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(cerrar ? { fecha: fecha, cerrar: true, pdf: true } : { fecha: fecha, pdf: true }) });
   try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
 }
+// ── Recordatorios de los contratos sin firmar (14-nov) ──
+// Uno por día, al mediodía, a cada contrato enviado y sin firmar (de cualquier show: Arena, Externos y
+// España), hasta que lo firme o venza el link (7 días). Lo decide la plataforma (api/recordatorios.js);
+// acá sólo se pide una vez por día, desde las 12 (y hasta las 20, por si a esa hora el script no corrió).
+// La propiedad "recordatorios_<fecha>" queda cuando salieron todos los de ese día.
+function pedirRecordatorios_(clave, extra) {
+  var resp = UrlFetchApp.fetch(URL_RECORDATORIOS, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(extra || {}) });
+  try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
+}
+function recordatorios_(clave) {
+  var ahora = new Date(), hoy = Utilities.formatDate(ahora, TZ_AR, 'yyyy-MM-dd'), hora = Number(Utilities.formatDate(ahora, TZ_AR, 'H'));
+  if (hora < 12 || hora >= 20) return;
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('recordatorios_' + hoy)) return;
+  var vueltas = 0, r, total = 0, problemas = 0;
+  do {
+    r = pedirRecordatorios_(clave);
+    vueltas++;
+    if (r && r.ok) { total += r.enviados || 0; problemas += r.problemas || 0; }
+  } while (r && r.ok && r.pendientes > 0 && vueltas < 8);
+  Logger.log('Recordatorios de contratos sin firmar → ' + total + ' enviados' + (problemas ? ', ' + problemas + ' con problema: ' + JSON.stringify(r.errores || []) : '') + (r && r.ok ? '' : ' · ' + JSON.stringify(r)));
+  if (r && r.ok && !r.pendientes) props.setProperty('recordatorios_' + hoy, new Date().toISOString() + ' · ' + total + ' enviados');
+}
+// Para mirar antes (no manda nada a nadie): un recordatorio de ejemplo a REPORTE_PRUEBA (o a esta
+// casilla) y, en el registro, cuántos saldrían hoy y a quiénes.
+function probar_recordatorio() {
+  var props = PropertiesService.getScriptProperties(), clave = props.getProperty('CLAVE');
+  if (!clave) throw new Error('Falta la propiedad CLAVE.');
+  var yo = String(props.getProperty('REPORTE_PRUEBA') || '').trim() || Session.getEffectiveUser().getEmail();
+  var p = pedirRecordatorios_(clave, { prueba: yo });
+  Logger.log(p && p.ok ? 'Recordatorio de ejemplo mandado a ' + yo : 'No salió el de ejemplo: ' + JSON.stringify(p));
+  var s = pedirRecordatorios_(clave, { simular: true });
+  if (!s || !s.ok) { Logger.log('No se pudo ver cuántos saldrían: ' + JSON.stringify(s)); return; }
+  Logger.log('Si los recordatorios salieran ahora, le llegaría uno a ' + s.saldrian + ' persona(s):');
+  (s.lista || []).forEach(function (x) { Logger.log('   · ' + x.nombre + ' — ' + (x.show || 'sin show') + (x.fecha ? ' ' + x.fecha : '') + (x.estado === 'visto' ? ' (lo abrió)' : ' (no lo abrió)')); });
+}
+
 // Lo que corre en cada vuelta (desde sincronizar).
 function reportes_(clave) {
   var props = PropertiesService.getScriptProperties(), para = String(props.getProperty('REPORTE_PARA') || '').trim();
