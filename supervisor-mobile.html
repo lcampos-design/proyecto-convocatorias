@@ -1126,7 +1126,7 @@ function incReferenciasDe(sector) {
   if (!sector) return INC_REFERENCIAS;
   if (/^Campo [A-N]$/.test(sector)) return INC_REFERENCIAS_DE.asientos;
   if (/^Corner /.test(sector)) return INC_REFERENCIAS_DE.corner;
-  const s = incSectoresPlano('campos').find(x => x.id === sector), t = s ? s.t : '';
+  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.unico).find(x => x.id === sector), t = s ? s.t : '';
   return INC_REFERENCIAS_DE[t === 'baja' || t === 'alta' ? 'platea' : t] || INC_REFERENCIAS;
 }
 function incRefRapidaHTML(idCampo, sector) { return '<div class="inc-ref-rapida">' + incReferenciasDe(sector).map(r => '<button type="button" onclick="incRefRapida(\'' + idCampo + '\',\'' + r + '\')">' + r + '</button>').join('') + '</div>'; }
@@ -1211,7 +1211,7 @@ function incAbiertasTexto(n, pn) {
 // General): cada sector con su tamaño (la 104, la 303 y la 305 son las
 // grandes; la 103, la 105, la 302, la 304, la 308 y la 310, las angostas) y
 // las esquinas en diagonal (107, 113, 306, 312). El campo se arma de dos
-// maneras: de pie (delantero y trasero) o con asientos (sectores A a N).
+// maneras: de pie con un solo campo (campo único), de pie con delantero y trasero, o con asientos (sectores A a N).
 const INC_PLANO_TRIBUNAS = [
   // Platea baja, izquierda (la 101, junto al escenario, hoy es el corner: va con el Premium)
   { id: 'Platea 102', txt: '102', t: 'baja', r: [100, 44, 40, 25] },
@@ -1256,6 +1256,10 @@ const INC_PLANO_TRIBUNAS = [
   { id: 'Platea 317', txt: '317', t: 'alta', r: [328, 38, 32, 31] }
 ];
 const INC_PLANO_CAMPO = {
+  // De pie, todo el campo uno solo (la ficha técnica dice "campo único").
+  unico: [
+    { id: 'Campo', txt: 'Campo', t: 'campo', r: [150, 36, 120, 170] }
+  ],
   campos: [
     { id: 'Campo delantero', txt: 'Campo delantero', t: 'campo', r: [150, 36, 120, 82] },
     { id: 'Campo trasero',   txt: 'Campo trasero',   t: 'campo', r: [150, 122, 120, 84] }
@@ -1448,7 +1452,7 @@ function incSinMayusculas(id, txt) {
 // Deja una lista de puestos en condiciones: tipos conocidos, nombres únicos
 // (y que no choquen con un sector), medidas dentro del plano.
 function incNormalizarLugares(lista) {
-  const fijos = new Set(INC_PLANO_ZONAS.concat(INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO.campos, INC_PLANO_CAMPO.asientos).map(s => s.id).concat(INC_LUGARES).map(x => x.toLowerCase()));
+  const fijos = new Set(INC_PLANO_ZONAS.concat(INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO.unico, INC_PLANO_CAMPO.campos, INC_PLANO_CAMPO.asientos).map(s => s.id).concat(INC_LUGARES).map(x => x.toLowerCase()));
   const vistos = new Set(), num = (v, a, b, d) => { const n = Number(v); return v !== null && v !== '' && isFinite(n) ? Math.min(b, Math.max(a, Math.round(n * 10) / 10)) : d; };
   return (Array.isArray(lista) ? lista : []).map(l => {
     const tipo = l && INC_TIPOS_LUGAR[l.t]; if (!tipo) return null;
@@ -1637,12 +1641,14 @@ const INC_ICONOS = {
 // puestos, las plateas y el campo.
 function incSectoresPlano(armado) { return INC_PLANO_ZONAS.concat(incLugaresArena.map(incLugarForma), INC_PLANO_TRIBUNAS, INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos); }
 // Si ya hay incidencias en "Campo A".."Campo N", el show es con asientos.
-function incArmadoDe(lista) { return (lista || []).some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : 'campos'; }
+function incArmadoDe(lista) { const l = lista || []; return l.some(i => /^Campo [A-N]$/.test(i.sector || '')) ? 'asientos' : l.some(i => i.sector === 'Campo') ? 'unico' : 'campos'; }
+// Los armados que valen: campo único (de pie), delantero y trasero (de pie) y con asientos.
+const INC_ARMADOS_OK = ['unico', 'campos', 'asientos'];
 // El armado del campo (de pie o con asientos) es del show, no del aparato: se
 // elige una vez en el panel (en el menú del show) y lo ven todos igual; la
 // gerencia y los supervisores no lo cambian. Sólo si la base todavía no lo
 // guarda (falta correr centro-control-armado.sql), queda en el aparato.
-const incArmados = {};   // id del show → 'campos' | 'asientos'
+const incArmados = {};   // id del show → 'unico' | 'campos' | 'asientos'
 let incArmadosEnBase = true;
 async function incCargarArmados() {
   if (!incArmadosEnBase) return false;
@@ -1650,7 +1656,7 @@ async function incCargarArmados() {
     const { data, error } = await sb.rpc('cc_armados');
     if (error) { if (/cc_armados/.test(error.message || '')) incArmadosEnBase = false; return false; }
     let cambio = false;
-    Object.entries(data || {}).forEach(([k, v]) => { if ((v === 'campos' || v === 'asientos') && incArmados[k] !== v) { incArmados[k] = v; cambio = true; } });
+    Object.entries(data || {}).forEach(([k, v]) => { if (INC_ARMADOS_OK.includes(v) && incArmados[k] !== v) { incArmados[k] = v; cambio = true; } });
     return cambio;
   } catch (_) { return false; }
 }
@@ -1658,10 +1664,10 @@ function incArmadoDelShow(convId, lista) {
   if (incArmados[convId]) return incArmados[convId];
   // Lo que quedó guardado en el aparato (de cuando se elegía ahí) ya no cuenta: manda la base.
   let local = ''; if (!incArmadosEnBase) { try { local = localStorage.getItem('incArmado:' + convId) || ''; } catch (_) {} }
-  return local === 'campos' || local === 'asientos' ? local : incArmadoDe(lista);
+  return INC_ARMADOS_OK.includes(local) ? local : incArmadoDe(lista);
 }
 async function incGuardarArmado(convId, a) {
-  if (!convId || (a !== 'campos' && a !== 'asientos')) return;
+  if (!convId || !INC_ARMADOS_OK.includes(a)) return;
   incArmados[convId] = a;
   try { localStorage.setItem('incArmado:' + convId, a); } catch (_) {}
   if (!incArmadosEnBase) return;
@@ -1693,7 +1699,7 @@ async function incRefrescarPlano() { return incTraerDatos(Promise.all([incCargar
 // celular, las incidencias se eligen y se agrupan por estas zonas (sin el plano).
 const INC_ZONAS_CUENTA = [['calle', 'Calle'], ['cortatickets', 'Cortatickets'], ['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['vip', 'VIP'], ['platea_alta', 'Platea alta'], ['otros', 'Otros lugares']];
 function incZonaCuenta(sector) {
-  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
+  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos, INC_PLANO_CAMPO.unico).find(x => x.id === sector);
   if (!s) return 'otros';
   if (s.t === 'calle') return 'calle';
   if (s.t === 'puerta') return 'cortatickets';
@@ -1704,7 +1710,7 @@ function incZonaNombre(z) { return (INC_ZONAS_CUENTA.find(x => x[0] === z) || []
 // La zona de un lugar, para decir dónde queda, con su piso: "Platea alta · P3",
 // "Platea baja · P1", "PB" (el campo) o "Anillo · P1" (los puestos).
 function incZona(sector) {
-  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
+  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos, INC_PLANO_CAMPO.unico).find(x => x.id === sector);
   if (!s) return '';
   return s.t === 'baja' ? 'Platea baja · P1' : s.t === 'alta' ? 'Platea alta · P3' : s.t === 'campo' ? 'PB' : s.t === 'calle' ? 'Afuera' : s.t === 'vip' ? 'Premium · ' + incPisoDe(s) : s.lugar ? 'Anillo · ' + s.piso : '';
 }
@@ -1712,7 +1718,7 @@ function incZona(sector) {
 // código, de qué piso es y de qué lado queda (Cancha a la izquierda, Sede a la
 // derecha; el fondo da a Humboldt).
 function incFichaDatos(sector) {
-  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos).find(x => x.id === sector);
+  const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos, INC_PLANO_CAMPO.unico).find(x => x.id === sector);
   if (!s) return null;
   const zonas = { baja: 'Platea baja', alta: 'Platea alta', vip: 'Premium', campo: 'Campo', anillo: 'Anillo', back: 'Backstage' };
   const x = s.lx !== undefined ? s.lx : s.r[0] + s.r[2] / 2, y = s.ly !== undefined ? s.ly : s.r[1] + s.r[3] / 2;
