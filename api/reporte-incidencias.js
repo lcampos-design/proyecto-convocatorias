@@ -4,7 +4,8 @@
 // vía mail desde convocatorias.arena". El script de la planilla de presentes
 // (apps-script/planilla-presentes.gs), que corre cada 5 minutos con la cuenta del Arena, pide acá
 // las incidencias de los shows de una fecha, arma el PDF (como el "Informe" de la gerencia) y lo
-// manda desde esa casilla. Acá sólo se leen los datos: nada se cambia.
+// manda desde esa casilla. Lo único que cambia: terminado el show (a la 1:30 del día siguiente), lo que
+// quedó abierto se da por cerrado ("Cerrada al terminar el show (sin resolución cargada)").
 //
 // La fecha es la del show (la función): lo cargado entre las 6 de la mañana de ese día y las 6 del
 // día siguiente, como en el Centro de Control. Entran los shows del Centro de Control del Arena,
@@ -30,12 +31,17 @@ export function ventana(fecha) {
   const desde = new Date(fecha + 'T09:00:00Z');
   return { desde: desde.toISOString(), hasta: new Date(desde.getTime() + 24 * 3600 * 1000).toISOString() };
 }
+// El show terminó: a la 1:30 del día siguiente (Buenos Aires), cuando sale el reporte.
+export function cierreDe(fecha) { return new Date(new Date(fecha + 'T09:00:00Z').getTime() + 19.5 * 3600 * 1000); }
+// Lo que se cerró solo al terminar (sin resolución cargada): no cuenta para la resolución media.
+export const RESOLUCION_CIERRE = 'Cerrada al terminar el show (sin resolución cargada)';
 export function showsDelDia(convs, fecha) {
   return (convs || []).filter(c => c.centro_control && esArena(c.area) && !esPrueba(c.nombre) && fechasDe(c).includes(fecha));
 }
 
-async function sb(servicio, ruta) {
-  const r = await fetch(`${SB_URL}/rest/v1/${ruta}`, { headers: { apikey: servicio, Authorization: `Bearer ${servicio}` } });
+async function sb(servicio, ruta, op) {
+  op = op || {};
+  const r = await fetch(`${SB_URL}/rest/v1/${ruta}`, { method: op.method || 'GET', headers: Object.assign({ apikey: servicio, Authorization: `Bearer ${servicio}`, 'Content-Type': 'application/json' }, op.headers || {}), body: op.body === undefined ? undefined : JSON.stringify(op.body) });
   const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch (_) {}
   return { ok: r.ok, status: r.status, data: j };
 }
@@ -55,12 +61,20 @@ export default async function handler(req, res) {
   if (!rc.ok) return res.status(500).json({ error: 'No se pudieron leer los shows' });
   const shows = showsDelDia(rc.data, fecha);
   const { desde, hasta } = ventana(fecha);
-  const salida = [];
+  const salida = [], terminado = Date.now() >= cierreDe(fecha).getTime();
   for (const c of shows) {
+    // Terminado el show, lo que quedó abierto se da por cerrado (si no, en el reporte no tiene sentido).
+    if (terminado) {
+      const ahora = new Date().toISOString();
+      await sb(servicio, `incidencias?conv_id=eq.${c.id}&estado=eq.abierta&created_at=gte.${encodeURIComponent(desde)}&created_at=lt.${encodeURIComponent(hasta)}`,
+        { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: { estado: 'resuelta', resolucion: RESOLUCION_CIERRE, resuelta_at: ahora, resuelta_por_nombre: 'Al terminar el show', updated_at: ahora } });
+    }
     const ri = await sb(servicio, `incidencias?select=id,created_at,sector,ubicacion,categoria,tipo,nivel,acciones,nota,estado,resolucion,resuelta_at`
       + `&conv_id=eq.${c.id}&created_at=gte.${encodeURIComponent(desde)}&created_at=lt.${encodeURIComponent(hasta)}&order=created_at.asc&limit=2000`);
     if (!ri.ok) return res.status(500).json({ error: 'No se pudieron leer las incidencias' });
-    salida.push({ conv_id: c.id, nombre: String(c.nombre || '').split(' — ')[0].trim(), venue: c.venue || 'Movistar Arena', fecha, incidencias: ri.data || [] });
+    // Las que se cerraron solas van sin la hora de cierre: así el reporte no las cuenta en la resolución media.
+    const lista = (ri.data || []).map(i => i.resolucion === RESOLUCION_CIERRE ? Object.assign({}, i, { resuelta_at: null }) : i);
+    salida.push({ conv_id: c.id, nombre: String(c.nombre || '').split(' — ')[0].trim(), venue: c.venue || 'Movistar Arena', fecha, cerradas_al_final: lista.filter(i => i.resolucion === RESOLUCION_CIERRE).length, incidencias: lista });
   }
   return res.status(200).json({ ok: true, fecha, shows: salida });
 }
