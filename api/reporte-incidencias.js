@@ -5,7 +5,8 @@
 // (apps-script/planilla-presentes.gs), que corre cada 5 minutos con la cuenta del Arena, pide acá
 // las incidencias de los shows de una fecha, arma el PDF (como el "Informe" de la gerencia) y lo
 // manda desde esa casilla. Lo único que cambia: terminado el show (a la 1:30 del día siguiente), lo que
-// quedó abierto se da por cerrado ("Cerrada al terminar el show (sin resolución cargada)").
+// quedó abierto se da por cerrado ("Cerrada al terminar el show (sin resolución cargada)"); si se manda
+// a mano antes (cerrar: true, "enviar_reporte" del script), también.
 //
 // La fecha es la del show (la función): lo cargado entre las 6 de la mañana de ese día y las 6 del
 // día siguiente, como en el Centro de Control. Entran los shows del Centro de Control del Arena,
@@ -61,7 +62,8 @@ export default async function handler(req, res) {
   if (!rc.ok) return res.status(500).json({ error: 'No se pudieron leer los shows' });
   const shows = showsDelDia(rc.data, fecha);
   const { desde, hasta } = ventana(fecha);
-  const salida = [], terminado = Date.now() >= cierreDe(fecha).getTime();
+  // Terminado: a la 1:30, o antes si se manda a mano ("enviar_reporte" del script, con cerrar: el show ya terminó).
+  const salida = [], terminado = cuerpo.cerrar === true || Date.now() >= cierreDe(fecha).getTime();
   for (const c of shows) {
     // Terminado el show, lo que quedó abierto se da por cerrado (si no, en el reporte no tiene sentido).
     if (terminado) {
