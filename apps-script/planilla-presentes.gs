@@ -41,9 +41,13 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '13-nov, con la disponibilidad y el reporte';
+var VERSION = '14-nov, reporte y 30 minutos de espera';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
+// El contrato sale a los 30 minutos de la P (propiedad ESPERA_MINUTOS para cambiarlo; 0 = enseguida):
+// así una P puesta por error se corrige antes de que le llegue el mail. La hora de la P es la de la
+// columna HORARIO (la planilla la completa sola al poner la P), leída en la zona horaria de la planilla.
+var ESPERA_MINUTOS = 30;
 var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 // La programación: cada 5 minutos.
@@ -402,6 +406,19 @@ function mailDe_(d, fila) {
   return Object.keys(docs).length > 1 ? null : hits[hits.length - 1];
 }
 
+// La marca de PRESENTES: sólo "P" o "Presente" (presente) y "A" o "Ausente" (ausente); lo demás, sin marca
+// (antes, cualquier cosa que empezara con P contaba como presente: "Pendiente", "Pidió cambio").
+function marca_(v) {
+  var w = String(v || '').normalize('NFD').replace(TILDES_, '').toUpperCase().trim().split(/[^A-Z]+/)[0] || '';
+  return w === 'P' || w === 'PRESENTE' ? 'P' : w === 'A' || w === 'AUSENTE' ? 'A' : '';
+}
+// "13/11/2026 17:56:18" (como la escribe la planilla) → el momento, en la zona horaria de la planilla.
+function horaDe_(v, tz) {
+  var s = String(v || '').trim(), m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!m) return null;
+  try { return Utilities.parseDate(m[1] + '/' + m[2] + '/' + m[3] + ' ' + m[4] + ':' + m[5] + ':' + (m[6] || '00'), tz || TZ_AR, 'd/M/yyyy H:mm:ss').getTime(); }
+  catch (_) { return null; }
+}
 // Una planilla → { archivo, fecha, show, filas: [{ sector, cuil, rol, obs, apellido, nombre, marca, mail, doc }] }.
 // El nombre trae la fecha y el show: SUPERVISORES 08/11 "FIESTA FA". El año, el de
 // cuando se creó la planilla (si la fecha quedó muy atrás, es del año siguiente).
@@ -414,7 +431,12 @@ function leer_(f) {
   var fecha = anio + '-' + ('0' + mes).slice(-2) + '-' + ('0' + dia).slice(-2);
   var show = String(m[4] || '').trim();
   // Cada sector es un bloque con su encabezado (SECTOR · APELLIDO · NOMBRE · CUIL · … · PRESENTES).
-  var valores = SpreadsheetApp.openById(f.getId()).getSheets()[0].getDataRange().getDisplayValues();
+  var libro = SpreadsheetApp.openById(f.getId()), tz = libro.getSpreadsheetTimeZone ? libro.getSpreadsheetTimeZone() : TZ_AR;
+  var valores = libro.getSheets()[0].getDataRange().getDisplayValues();
+  // Sin la propiedad (o vacía), la de siempre: 30 minutos. Number(null) da 0, por eso no se usa directo.
+  var ep = PropertiesService.getScriptProperties().getProperty('ESPERA_MINUTOS');
+  var espera = ep === null || String(ep).trim() === '' ? ESPERA_MINUTOS : Number(ep);
+  if (!(espera >= 0)) espera = ESPERA_MINUTOS;
   var filas = [], sector = '', col = null;
   valores.forEach(function (fila) {
     var arriba = fila.map(function (v) { return String(v).trim().toUpperCase(); });
@@ -423,7 +445,7 @@ function leer_(f) {
       sector = String(fila[0]).trim();
       var iObs = -1;
       arriba.forEach(function (v, i) { if (iObs < 0 && /^OBSERVACI[OÓ]N/.test(v)) iObs = i; });
-      col = { cuil: iCuil, pres: iPres, ape: arriba.indexOf('APELLIDO'), nom: arriba.indexOf('NOMBRE'), obs: iObs };
+      col = { cuil: iCuil, pres: iPres, ape: arriba.indexOf('APELLIDO'), nom: arriba.indexOf('NOMBRE'), obs: iObs, hora: arriba.indexOf('HORARIO') };
       return;
     }
     if (!col) return;
@@ -436,8 +458,11 @@ function leer_(f) {
       obs: col.obs >= 0 ? String(fila[col.obs] || '').trim() : '',
       apellido: col.ape >= 0 ? String(fila[col.ape]).trim() : '',
       nombre: col.nom >= 0 ? String(fila[col.nom]).trim() : '',
-      marca: String(fila[col.pres] || '').trim().toUpperCase().charAt(0)
+      marca: marca_(fila[col.pres])
     });
+    // Todavía no pasó la espera desde la P: va, pero el contrato sale en una vuelta siguiente.
+    var x = filas[filas.length - 1], t = x.marca === 'P' && espera > 0 && col.hora >= 0 ? horaDe_(fila[col.hora], tz) : null;
+    if (t && Date.now() - t < espera * 60000) x.espera = true;
   });
   // El mail de la disponibilidad del mes (y el documento que dejó ahí), para quien la plataforma no tenga.
   var d = disponibilidad_(fecha);
