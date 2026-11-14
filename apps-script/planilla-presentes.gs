@@ -42,7 +42,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '14-nov, reporte y 30 minutos de espera';
+var VERSION = '14-nov, reporte (enviar_reporte cierra lo abierto) y 30 minutos de espera';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale a los 30 minutos de la P (propiedad ESPERA_MINUTOS para cambiarlo; 0 = enseguida):
@@ -484,7 +484,8 @@ function leer_(f) {
 // (separados por coma). Uno por show y por fecha: no se repite. Si a la 1:30 no salió (el script
 // estaba apagado), sale a la mañana, hasta las 14.
 //   probar_reporte: el de hoy (lo cargado hasta ahora), sólo a esta casilla, para ver cómo queda.
-//   enviar_reporte: el de hoy, ya, a REPORTE_PARA (por si hace falta antes de la 1:30).
+//   enviar_reporte: el de hoy, ya, a REPORTE_PARA (por si hace falta antes de la 1:30). Es para cuando el
+//                   show terminó: lo que quedó abierto se da por cerrado, como a la 1:30.
 var URL_REPORTE = 'https://convocatorias.show-bs.com/api/reporte-incidencias';
 var REPORTE_DESDE = 90;   // minutos desde la medianoche: 1:30
 var TZ_AR = 'America/Argentina/Buenos_Aires';
@@ -502,8 +503,9 @@ function reporteFechaDebida_(ahora) {
   if (min >= 360 && min < 840) return fAr_(new Date(ahora.getTime() - 30 * 3600000), 'yyyy-MM-dd');
   return '';
 }
-function pedirReporte_(fecha, clave) {
-  var resp = UrlFetchApp.fetch(URL_REPORTE, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify({ fecha: fecha }) });
+// cerrar: el show ya terminó (el envío a mano): lo que quedó abierto se da por cerrado, como a la 1:30.
+function pedirReporte_(fecha, clave, cerrar) {
+  var resp = UrlFetchApp.fetch(URL_REPORTE, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(cerrar ? { fecha: fecha, cerrar: true } : { fecha: fecha }) });
   try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
 }
 // Lo que corre en cada vuelta (desde sincronizar).
@@ -536,8 +538,9 @@ function probar_reporte() {
 function enviar_reporte() {
   var props = PropertiesService.getScriptProperties(), clave = props.getProperty('CLAVE'), para = String(props.getProperty('REPORTE_PARA') || '').trim();
   if (!clave || !para) throw new Error('Faltan las propiedades CLAVE o REPORTE_PARA.');
-  var f = diaFuncion_(), r = pedirReporte_(f, clave);
+  var f = diaFuncion_(), r = pedirReporte_(f, clave, true);
   if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
+  if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
   (r.shows || []).forEach(function (s) { mandarReporte_(s, para, false); props.setProperty('rep_' + f + '_' + s.conv_id, new Date().toISOString()); Logger.log('Enviado: ' + s.nombre); });
   props.setProperty('rep_' + f, new Date().toISOString() + ' · a mano');
 }
@@ -641,7 +644,7 @@ function htmlReporte_(s, logo) {
       + '<td style="' + td + ';font-weight:bold;color:' + NIVELES_[nv].color + '">' + NIVELES_[nv].nombre + ' · ' + cods[i.id] + '</td>'
       + '<td style="' + td + '">' + (i.acciones || []).map(esc_).join('<br>') + '</td>'
       + '<td style="' + td + '">' + (derivadoA_(i).map(esc_).join(', ') || '—') + '</td>'
-      + '<td style="' + td + '">' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + esc_(i.resolucion || '') : '<b>Abierta</b>') + '</td></tr>';
+      + '<td style="' + td + '">' + (i.estado === 'resuelta' ? (i.resuelta_at ? fh(i.resuelta_at) + ' · ' : '') + esc_(i.resolucion || '') : '<b>Abierta</b>') + '</td></tr>';
   }).join('');
   return '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;color:' + T + ';font-size:10px;margin:0">'
     + '<table style="border-collapse:collapse;width:100%;border-bottom:2px solid ' + T + ';margin-bottom:12px"><tr>'
