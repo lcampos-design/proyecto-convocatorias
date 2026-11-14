@@ -32,10 +32,16 @@
  *     vez Google pide permiso para ver el Drive y las planillas: aceptar.)
  *  4. "revisar": qué pasaría si todos tuvieran "P", sin mandar nada.
  *  5. "instalar": deja programado que corra solo cada 5 minutos. Listo.
+ *
+ *  EL REPORTE DE INCIDENCIAS (al terminar cada show del Arena, desde esta casilla):
+ *  - Propiedad REPORTE_PARA = los mails que lo reciben, separados por coma.
+ *  - "probar_reporte": el de hoy, sólo a esta casilla, para ver cómo queda (la primera
+ *    vez Google pide permiso para mandar mails: aceptar).
+ *  - Sale solo a la 1:30 de la noche del show; "enviar_reporte" lo manda ya.
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '13-nov, con la disponibilidad';
+var VERSION = '13-nov, con la disponibilidad y el reporte';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -120,6 +126,8 @@ function sincronizar() {
       Logger.log('Error con ' + f.getName() + ': ' + e);
     }
   });
+  // El reporte de incidencias del show de anoche, a la 1:30 (si no salió todavía).
+  try { reportes_(clave); } catch (e) { Logger.log('Error con el reporte: ' + e); }
 }
 
 function mandar_(p, clave) {
@@ -440,4 +448,182 @@ function leer_(f) {
     if (x.cuil.length !== 11 && String(x.doc || '').length !== 11) { var c = cuilDeAltas_(d, x); if (c) { x.doc = c; x.deAltas = true; } }
   });
   return { archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: show, disponibilidad: d.total, filas: filas };
+}
+
+// ── El reporte de incidencias de cada show, al terminar (13-nov-2026) ──
+// Pedido de Thomas: "que finalizado el show se envíe automáticamente el reporte de incidencias vía
+// mail desde convocatorias.arena". A la 1:30 (hora del Arena) de la noche del show, la vuelta de cada
+// 5 minutos le pide a la plataforma las incidencias de los shows de esa fecha, arma el PDF (como el
+// "Informe" de la gerencia) y lo manda desde esta casilla a los mails de la propiedad REPORTE_PARA
+// (separados por coma). Uno por show y por fecha: no se repite. Si a la 1:30 no salió (el script
+// estaba apagado), sale a la mañana, hasta las 14.
+//   probar_reporte: el de hoy (lo cargado hasta ahora), sólo a esta casilla, para ver cómo queda.
+//   enviar_reporte: el de hoy, ya, a REPORTE_PARA (por si hace falta antes de la 1:30).
+var URL_REPORTE = 'https://convocatorias.show-bs.com/api/reporte-incidencias';
+var REPORTE_DESDE = 90;   // minutos desde la medianoche: 1:30
+var TZ_AR = 'America/Argentina/Buenos_Aires';
+var NIVELES_ = { 1: { nombre: 'Leve', una: 'leve', plural: 'leves', color: '#667080', letra: 'L' }, 2: { nombre: 'Medio', una: 'media', plural: 'medias', color: '#8A6900', letra: 'M' }, 3: { nombre: 'Grave', una: 'grave', plural: 'graves', color: '#D62839', letra: 'G' } };
+var DERIVA_ = [[/seguridad/i, 'Seguridad'], [/socorrismo|enfermer[ií]a|SAME|ambulancia/i, 'Servicio médico'], [/polic[ií]a/i, 'Policía'], [/mantenimiento/i, 'Mantenimiento'], [/boleter[ií]a/i, 'Boletería'], [/coordinaci[oó]n/i, 'Coordinación'], [/Atenci[oó]n al Cliente/i, 'Atención al Cliente']];
+var DIAS_ = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+function fAr_(d, fmt) { return Utilities.formatDate(d, TZ_AR, fmt); }
+function diaFuncion_(ahora) { return fAr_(new Date((ahora || new Date()).getTime() - 6 * 3600000), 'yyyy-MM-dd'); }
+// Qué fecha toca mandar ahora: de 1:30 a 6, el show de esta noche; de 6 a 14, el de anoche (si no salió).
+function reporteFechaDebida_(ahora) {
+  ahora = ahora || new Date();
+  var hm = fAr_(ahora, 'HH:mm').split(':'), min = Number(hm[0]) * 60 + Number(hm[1]);
+  if (min >= REPORTE_DESDE && min < 360) return diaFuncion_(ahora);
+  if (min >= 360 && min < 840) return fAr_(new Date(ahora.getTime() - 30 * 3600000), 'yyyy-MM-dd');
+  return '';
+}
+function pedirReporte_(fecha, clave) {
+  var resp = UrlFetchApp.fetch(URL_REPORTE, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify({ fecha: fecha }) });
+  try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
+}
+// Lo que corre en cada vuelta (desde sincronizar).
+function reportes_(clave) {
+  var props = PropertiesService.getScriptProperties(), para = String(props.getProperty('REPORTE_PARA') || '').trim();
+  if (!para) return;
+  var f = reporteFechaDebida_();
+  if (!f || props.getProperty('rep_' + f)) return;
+  var r = pedirReporte_(f, clave);
+  if (!r || !r.ok) { Logger.log('Reporte ' + f + ': ' + JSON.stringify(r)); return; }
+  var todos = true;
+  (r.shows || []).forEach(function (s) {
+    var k = 'rep_' + f + '_' + s.conv_id;
+    if (props.getProperty(k)) return;
+    try { mandarReporte_(s, para, false); props.setProperty(k, new Date().toISOString()); Logger.log('Reporte enviado: ' + s.nombre + ' ' + f); }
+    catch (e) { todos = false; Logger.log('No salió el reporte de ' + s.nombre + ': ' + e); }
+  });
+  if (todos) props.setProperty('rep_' + f, new Date().toISOString() + ' · ' + (r.shows || []).length + ' show(s)');
+}
+function probar_reporte() {
+  var clave = PropertiesService.getScriptProperties().getProperty('CLAVE');
+  if (!clave) throw new Error('Falta la propiedad CLAVE.');
+  var f = diaFuncion_(), r = pedirReporte_(f, clave), yo = Session.getEffectiveUser().getEmail();
+  if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
+  if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
+  r.shows.forEach(function (s) { mandarReporte_(s, yo, true); Logger.log('Prueba mandada a ' + yo + ': ' + s.nombre + ' · ' + s.incidencias.length + ' incidencias'); });
+  Logger.log('Destinatarios para el envío de verdad (REPORTE_PARA): ' + (PropertiesService.getScriptProperties().getProperty('REPORTE_PARA') || '(falta la propiedad)'));
+}
+function enviar_reporte() {
+  var props = PropertiesService.getScriptProperties(), clave = props.getProperty('CLAVE'), para = String(props.getProperty('REPORTE_PARA') || '').trim();
+  if (!clave || !para) throw new Error('Faltan las propiedades CLAVE o REPORTE_PARA.');
+  var f = diaFuncion_(), r = pedirReporte_(f, clave);
+  if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
+  (r.shows || []).forEach(function (s) { mandarReporte_(s, para, false); props.setProperty('rep_' + f + '_' + s.conv_id, new Date().toISOString()); Logger.log('Enviado: ' + s.nombre); });
+  props.setProperty('rep_' + f, new Date().toISOString() + ' · a mano');
+}
+
+function mandarReporte_(s, para, prueba) {
+  var ddmm = s.fecha.slice(8, 10) + '/' + s.fecha.slice(5, 7);
+  var asunto = (prueba ? '[Prueba] ' : '') + 'Reporte de incidencias - ' + s.nombre + ' ' + ddmm;
+  var pdf = Utilities.newBlob(htmlReporte_(s, logoReporte_()), MimeType.HTML, 'reporte.html').getAs(MimeType.PDF)
+    .setName('Reporte de incidencias - ' + s.nombre + ' ' + ddmm.replace('/', '-') + '.pdf');
+  var c = cuerpoReporte_(s);
+  MailApp.sendEmail({ to: para, subject: asunto, body: c.texto, htmlBody: c.html, name: 'Show Business Solutions', attachments: [pdf] });
+}
+var logoCache_ = null;
+function logoReporte_() {
+  if (logoCache_ !== null) return logoCache_;
+  try { logoCache_ = 'data:image/png;base64,' + Utilities.base64Encode(UrlFetchApp.fetch('https://convocatorias.show-bs.com/logo-sbs.png').getBlob().getBytes()); }
+  catch (_) { logoCache_ = ''; }
+  return logoCache_;
+}
+
+// ── Los números del show (los mismos que el "Informe" de la gerencia) ──
+function derivadoA_(i) { var a = []; (i.acciones || []).forEach(function (x) { DERIVA_.forEach(function (d) { if (d[0].test(x) && a.indexOf(d[1]) < 0) a.push(d[1]); }); }); return a; }
+function nivel_(i) { return NIVELES_[i.nivel] ? i.nivel : 1; }
+function minutosTexto_(ms) { var m = Math.round(ms / 60000); return m < 60 ? m + ' min' : m < 1440 ? Math.floor(m / 60) + ' h ' + ('0' + (m % 60)).slice(-2) + ' min' : Math.floor(m / 1440) + ' d ' + Math.floor((m % 1440) / 60) + ' h'; }
+// "G1", "M2": por gravedad, en el orden en que se cargaron.
+function codigos_(l) {
+  var cod = {}, n = {};
+  l.slice().sort(function (a, b) { return String(a.created_at).localeCompare(String(b.created_at)) || String(a.id).localeCompare(String(b.id)); })
+    .forEach(function (i) { var nv = nivel_(i); n[nv] = (n[nv] || 0) + 1; cod[i.id] = NIVELES_[nv].letra + n[nv]; });
+  return cod;
+}
+// El momento más cargado: franjas de 15, 30, 60 o 120 minutos (la más fina que deje 16 o menos), como la gerencia.
+function pico_(l) {
+  var ts = l.map(function (i) { return new Date(i.created_at).getTime(); }).filter(function (t) { return !isNaN(t); }).sort(function (a, b) { return a - b; });
+  if (!ts.length) return '';
+  var paso = [15, 30, 60, 120].filter(function (p) { return (ts[ts.length - 1] - ts[0]) / (p * 60000) < 16; })[0] || 240, pms = paso * 60000, off = 3 * 3600000;
+  var ini = Math.floor((ts[0] - off) / pms) * pms + off, mejor = null;
+  for (var a = ini; a <= ts[ts.length - 1]; a += pms) {
+    var n = ts.filter(function (t) { return t >= a && t < a + pms; }).length;
+    if (n > (mejor ? mejor.n : 0)) mejor = { a: a, n: n };
+  }
+  return mejor ? fAr_(new Date(mejor.a), 'HH:mm') : '';
+}
+function cuentaPor_(l, fn) {
+  var m = {}; l.forEach(function (i) { var k = fn(i) || '—'; m[k] = (m[k] || 0) + 1; });
+  return Object.keys(m).map(function (k) { return [k, m[k]]; }).sort(function (a, b) { return b[1] - a[1] || a[0].localeCompare(b[0]); });
+}
+function resumenReporte_(s) {
+  var l = s.incidencias || [], res = l.filter(function (i) { return i.estado === 'resuelta'; });
+  var tiempos = res.filter(function (i) { return i.resuelta_at && i.created_at; }).map(function (i) { return new Date(i.resuelta_at) - new Date(i.created_at); }).filter(function (x) { return x >= 0; });
+  return {
+    total: l.length, abiertas: l.length - res.length, resueltas: res.length,
+    porNivel: [3, 2, 1].map(function (nv) { return [nv, l.filter(function (i) { return nivel_(i) === nv; }).length]; }),
+    asistencias: l.filter(function (i) { return i.categoria === 'Asistencia'; }).length,
+    derivadas: l.filter(function (i) { return derivadoA_(i).length; }).length,
+    tMedio: tiempos.length ? minutosTexto_(tiempos.reduce(function (a, b) { return a + b; }, 0) / tiempos.length) : '—',
+    pico: pico_(l) || '—'
+  };
+}
+
+// ── El mail ──
+function cuerpoReporte_(s) {
+  var r = resumenReporte_(s), d = new Date(s.fecha + 'T12:00:00-03:00');
+  var cuando = DIAS_[Number(fAr_(d, 'u')) % 7] + ' ' + Number(s.fecha.slice(8, 10)) + ' de ' + MESES[Number(s.fecha.slice(5, 7)) - 1];
+  var partes = r.porNivel.filter(function (p) { return p[1]; }).map(function (p) { return p[1] + ' ' + (p[1] === 1 ? NIVELES_[p[0]].una : NIVELES_[p[0]].plural); });
+  var detalle = r.total ? r.total + (r.total === 1 ? ' incidencia' : ' incidencias') + ' (' + (partes.length > 1 ? partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1] : partes[0]) + '), ' + r.resueltas + (r.resueltas === 1 ? ' resuelta' : ' resueltas') + '.' : 'no se registraron incidencias.';
+  var t1 = 'Les compartimos el reporte de incidencias del show de ' + s.nombre + ' del ' + cuando + ' en el ' + (s.venue || 'Movistar Arena') + ': ' + detalle;
+  var texto = 'Hola:\n\n' + t1 + '\n\nVa adjunto en PDF.\n\nSaludos,\nShow Business Solutions\nconvocatorias.arena@show-bs.com';
+  var P = 'margin:0 0 14px;font-size:15px;line-height:1.6;color:#1A1A1A';
+  var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px">'
+    + '<p style="' + P + '">Hola:</p><p style="' + P + '">' + esc_(t1) + '</p><p style="' + P + '">Va adjunto en PDF.</p>'
+    + '<p style="' + P + '">Saludos,<br>Show Business Solutions<br><span style="color:#5C5C5C">convocatorias.arena@show-bs.com</span></p></div>';
+  return { texto: texto, html: html };
+}
+function esc_(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+// ── El PDF: el "Informe" de la gerencia, en tablas (lo que entiende el conversor de Google) ──
+function htmlReporte_(s, logo) {
+  var l = (s.incidencias || []).slice().sort(function (a, b) { return String(a.created_at).localeCompare(String(b.created_at)); });
+  var r = resumenReporte_(s), cods = codigos_(l), T = '#1A1A1A', G = '#5C5C5C', L = '#DADADA';
+  var fh = function (iso) { return iso ? fAr_(new Date(iso), 'dd/MM HH:mm') : ''; };
+  var cuando = s.fecha.slice(8, 10) + '/' + s.fecha.slice(5, 7) + '/' + s.fecha.slice(0, 4);
+  var num = function (v, t) { return '<td style="border:1.5px solid ' + T + ';padding:7px 9px;width:14%"><div style="font-size:16px;font-weight:bold">' + esc_(v) + '</div><div style="font-size:8.5px;color:' + G + '">' + t + '</div></td>'; };
+  var tabla = function (titulo, pares) {
+    return '<td style="vertical-align:top;width:33%;padding-right:14px"><div style="font-size:10.5px;font-weight:bold;margin:0 0 5px">' + titulo + '</div><table style="border-collapse:collapse;width:100%">'
+      + (pares.length ? pares : [['—', 0]]).map(function (p) { return '<tr><td style="border-bottom:1px solid ' + L + ';padding:4px 5px;font-size:10px">' + esc_(p[0]) + '</td><td style="border-bottom:1px solid ' + L + ';padding:4px 5px;text-align:right;font-weight:bold;font-size:10px">' + p[1] + '</td></tr>'; }).join('') + '</table></td>';
+  };
+  var th = function (t) { return '<th style="background:' + T + ';color:#FFFFFF;padding:5px;text-align:left;font-size:9px">' + t + '</th>'; };
+  var td = 'border-bottom:1px solid ' + L + ';padding:5px;vertical-align:top;font-size:9px';
+  var filas = l.map(function (i) {
+    var nv = nivel_(i);
+    return '<tr><td style="' + td + '">' + fh(i.created_at) + '</td>'
+      + '<td style="' + td + '">' + esc_(i.sector) + (i.ubicacion ? '<br><span style="color:' + G + '">' + esc_(i.ubicacion) + '</span>' : '') + '</td>'
+      + '<td style="' + td + '">' + esc_(i.tipo) + '<br><span style="color:' + G + '">' + esc_(i.categoria) + '</span>' + (i.nota ? '<br>' + esc_(i.nota) : '') + '</td>'
+      + '<td style="' + td + ';font-weight:bold;color:' + NIVELES_[nv].color + '">' + NIVELES_[nv].nombre + ' · ' + cods[i.id] + '</td>'
+      + '<td style="' + td + '">' + (i.acciones || []).map(esc_).join('<br>') + '</td>'
+      + '<td style="' + td + '">' + (derivadoA_(i).map(esc_).join(', ') || '—') + '</td>'
+      + '<td style="' + td + '">' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + esc_(i.resolucion || '') : '<b>Abierta</b>') + '</td></tr>';
+  }).join('');
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;color:' + T + ';font-size:10px;margin:0">'
+    + '<table style="border-collapse:collapse;width:100%;border-bottom:2px solid ' + T + ';margin-bottom:12px"><tr>'
+    + (logo ? '<td style="width:52px;padding:0 12px 10px 0"><img src="' + logo + '" width="42" height="42"></td>' : '')
+    + '<td style="padding:0 0 10px 0"><div style="font-size:9.5px;font-weight:bold;color:' + G + '">AX · Audience Experience · Informe del show</div>'
+    + '<div style="font-size:18px;font-weight:bold;margin:2px 0">Informe de incidencias · ' + esc_(s.nombre) + '</div>'
+    + '<div style="font-size:10px;color:' + G + '">' + cuando + ' · ' + esc_(s.venue || 'Movistar Arena') + ' · generado ' + fAr_(new Date(), 'dd/MM/yyyy HH:mm') + '</div></td></tr></table>'
+    + '<table style="border-collapse:separate;border-spacing:6px 0;width:100%;margin:0 0 16px -6px"><tr>'
+    + num(r.total, 'Incidencias') + num(r.abiertas, 'Abiertas') + num(r.porNivel[0][1], 'Graves') + num(r.asistencias, 'Asistencias') + num(r.derivadas, 'Derivadas') + num(r.tMedio, 'Resolución media') + num(r.pico, 'Momento más cargado')
+    + '</tr></table>'
+    + '<table style="border-collapse:collapse;width:100%;margin-bottom:16px"><tr>'
+    + tabla('Gravedad', r.porNivel.map(function (p) { return [NIVELES_[p[0]].nombre, p[1]]; })) + tabla('Categoría', cuentaPor_(l, function (i) { return i.categoria; })) + tabla('Sector', cuentaPor_(l, function (i) { return i.sector; }))
+    + '</tr></table>'
+    + '<div style="font-size:10.5px;font-weight:bold;margin:0 0 5px">Línea de tiempo</div>'
+    + (l.length ? '<table style="border-collapse:collapse;width:100%"><tr>' + th('Cuándo') + th('Sector') + th('Qué pasó') + th('Gravedad') + th('Qué se hizo') + th('Derivado a') + th('Cómo se resolvió') + '</tr>' + filas + '</table>'
+      : '<div style="font-size:10px;color:' + G + '">No se registraron incidencias en este show.</div>')
+    + '</body></html>';
 }
