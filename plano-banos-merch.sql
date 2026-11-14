@@ -16,6 +16,11 @@
 --  Cambia el plano guardado y las incidencias ya cargadas, a la vez, así cada
 --  una sigue en su lugar real. Antes guarda una copia en el esquema respaldo.
 --  No toca datos de nadie: sólo nombres y posiciones de lugares.
+--
+--  OJO (14-nov, ya corrido): la parte del plano guardado estuvo mal (el guardado
+--  sólo tenía los baños de ejemplo de la primera versión, que la página
+--  reemplaza por los de siempre) y se deshizo con plano-banos-arreglo.sql. Lo
+--  de las incidencias quedó bien. No volver a correr.
 -- ============================================================
 
 create schema if not exists respaldo;
