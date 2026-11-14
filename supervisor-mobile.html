@@ -248,6 +248,7 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .sv-vivo{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border-radius:999px;background:var(--tinta);color:var(--fondo);font:600 12px var(--inc-fuente);white-space:nowrap}
 .sv-vivo::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--fondo);animation:svTitila 1.6s infinite}
 .sv-vivo.mal{background:var(--media);color:var(--media-letra)}.sv-vivo.mal::before{background:var(--media-letra);animation:none}
+.sv-vivo.fin{background:var(--tarjeta);color:var(--gris)}.sv-vivo.fin::before{display:none}
 .sv-cuentas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .sv-cuenta{padding:10px 11px;border-radius:14px;font:600 12px var(--inc-fuente);display:flex;flex-direction:column;gap:3px;background:var(--tarjeta);color:var(--tinta)}
 .sv-cuenta b{font:900 26px/1 var(--inc-fuente);display:flex;align-items:center;gap:7px}
@@ -420,7 +421,7 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
     </button>
     <button class="hub-card" onclick="openIncid()">
       <div class="hub-ic inc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></div>
-      <div style="flex:1;min-width:0"><div class="hub-t">Incidencias</div><div class="hub-s">Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector</div><div class="hub-chips" id="hubIncid"></div></div>
+      <div style="flex:1;min-width:0"><div class="hub-t">Incidencias</div><div class="hub-s" id="hubIncidS">Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector</div><div class="hub-chips" id="hubIncid"></div></div>
     </button>
     <button class="hub-card" id="hubContratosCard" onclick="openContratos()">
       <div class="hub-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 15.5c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3.5-.5"/></svg></div>
@@ -733,7 +734,9 @@ function renderHome() {
   const cont = document.getElementById('homeContent');
   if (!convs.length) { cont.innerHTML = `<div class="empty-state"><div class="empty-title">Sin shows asignados</div><div>Todavía no te asignaron ningún show</div></div>`; return; }
   // Como en la gerencia: el de hoy (con su contorno) y los que vienen, del más próximo al más
-  // lejano; los de prueba ("Prueba" en el nombre), aparte. Los que ya pasaron no se muestran.
+  // lejano; los de prueba ("Prueba" en el nombre), aparte. Los que ya pasaron (desde que arrancó el
+  // piloto, SV_ANTERIORES_DESDE), en "Anteriores", del más reciente al más viejo: se abren para ver
+  // lo que pasó (incidencias, informe, contratos), sin cargar nada.
   // En los shows del Centro de Control cada fecha es un show; en los demás, una tarjeta por
   // convocatoria, con la próxima fecha.
   const hoy = incHoyFuncion(), items = [];
@@ -741,7 +744,10 @@ function renderHome() {
     const fs = svFechasDe(c), vienen = fs.filter(f => f >= hoy), cc = enControl(c);
     if (cc && incEsPrueba(c)) (vienen.length ? vienen : fs.length ? fs.slice(-1) : ['']).forEach(f => items.push({ c, f, g: 'prueba' }));
     else if (!fs.length) items.push({ c, f: '', g: 'proximos' });
-    else if (cc) vienen.forEach(f => items.push({ c, f, g: f === hoy ? 'hoy' : 'proximos' }));
+    else if (cc) {
+      vienen.forEach(f => items.push({ c, f, g: f === hoy ? 'hoy' : 'proximos' }));
+      fs.filter(f => f < hoy && f >= SV_ANTERIORES_DESDE).forEach(f => items.push({ c, f, g: 'anteriores' }));
+    }
     else if (vienen.length) items.push({ c, f: vienen[0], g: vienen[0] === hoy ? 'hoy' : 'proximos', varias: fs.length });
   });
   if (!items.length) { cont.innerHTML = `<div class="empty-state"><div class="empty-title">Sin shows de hoy en adelante</div><div>Cuando se sume uno, aparece acá</div></div>`; return; }
@@ -757,8 +763,8 @@ function renderHome() {
       <span class="flecha">›</span>
     </div>`;
   };
-  cont.innerHTML = [['hoy', 'Hoy'], ['proximos', 'Próximos'], ['prueba', 'Prueba']].map(([k, nombre]) => {
-    const l = items.filter(x => x.g === k).sort(orden);
+  cont.innerHTML = [['hoy', 'Hoy'], ['proximos', 'Próximos'], ['anteriores', 'Anteriores'], ['prueba', 'Prueba']].map(([k, nombre]) => {
+    const l = items.filter(x => x.g === k).sort(k === 'anteriores' ? (a, b) => orden(b, a) : orden);
     return l.length ? '<div class="grupo">' + nombre + '</div>' + l.map(tarjeta).join('') : '';
   }).join('');
 }
@@ -774,6 +780,9 @@ function enControl(c) { return !!c && (controlIds ? controlIds.has(c.id) : incEs
 var svFechaAbierta = '';
 function svFechasDe(c) { return String((c && c.fecha) || '').split(',').map(f => f.trim()).filter(Boolean).sort(); }
 function svFechaDe(c) { const fs = svFechasDe(c), hoy = incHoyFuncion(); return fs.includes(svFechaAbierta) ? svFechaAbierta : fs.includes(hoy) ? hoy : fs.find(f => f > hoy) || fs[fs.length - 1] || ''; }
+// La fecha abierta ya pasó (se entró desde "Anteriores"): se ve todo lo de ese día, pero no se carga nada.
+const SV_ANTERIORES_DESDE = '2026-11-13';
+function svTerminado(c) { const f = svFechaDe(c || convs.find(x => x.id === currentConvId)); return !!f && f < incHoyFuncion(); }
 async function openShow(convId, fecha) {
   currentConvId = convId;
   const c = convs.find(x => x.id === convId); if (!c) return;
@@ -781,21 +790,26 @@ async function openShow(convId, fecha) {
   const fTxt = svFechaDe(c) ? fmtFecha(svFechaDe(c)) : '';
   if (!enControl(c)) return openConv(convId);
   // La cuenta de una zona: antes de empezar, quién supervisa hoy (una vez por show).
-  if (svZona && !svSinNombre(svZona) && !svTurnoDe(convId)) { svPedirTurno(convId); return; }
+  if (svZona && !svSinNombre(svZona) && !svTurnoDe(convId) && !svTerminado(c)) { svPedirTurno(convId); return; }
   // El nombre del show, sin "— Movistar Arena" (son todos del Arena), como en la sala y en la gerencia.
   document.getElementById('showTitulo').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
-  const quien = svQuienHoy(convId);
+  const terminado = svTerminado(c), quien = terminado ? '' : svQuienHoy(convId);
   document.getElementById('showSub').innerHTML = esc(fTxt) + (quien ? (fTxt ? ' · ' : '') + '<span class="sv-quien">' + esc(quien) + '</span> <button type="button" class="sv-noyo" onclick="svNoSoyYo()">No soy yo</button>' : '');
   const total = c.personas || 0, hechos = c.con_feedback || 0;
   document.getElementById('hubEquipo').innerHTML = '<span class="hub-chip">' + total + ' persona' + (total === 1 ? '' : 's') + '</span><span class="hub-chip">' + hechos + '/' + total + ' con feedback</span>';
   document.getElementById('hubIncid').innerHTML = '<span class="hub-chip">Cargando…</span>';
+  document.getElementById('hubIncidS').textContent = terminado ? 'Lo que pasó en todo el estadio ese día, y el informe' : 'Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector';
   showScreen('screenShow');
   svPintarHubContratos(convId);
   const { data, error } = await sb.rpc('sup_incidencias', { p_conv_id: convId });
-  const abiertas = (!error && data ? data : []).filter(i => i.estado !== 'resuelta');
+  // Sólo las de la fecha abierta (un show de varias fechas no suma las de los otros días).
+  const fsShow = svFechasDe(c), dia = svFechaDe(c);
+  const delDia = (!error && data ? data : []).filter(i => !dia || svFechaDeFuncion(i, fsShow) === dia);
+  const abiertas = delDia.filter(i => i.estado !== 'resuelta');
   const n = nv => abiertas.filter(i => (i.nivel || 1) === nv).length;
   document.getElementById('hubIncid').innerHTML = error ? '<span class="hub-chip">Sin conexión</span>'
     : abiertas.length ? [3, 2, 1].filter(n).map(nv => '<span class="hub-chip n' + nv + '">' + n(nv) + ' ' + INC_NIVELES[nv].nombre.toLowerCase() + '</span>').join('')
+    : terminado ? '<span class="hub-chip">' + (delDia.length ? delDia.length + (delDia.length === 1 ? ' incidencia, resuelta' : ' incidencias, todas resueltas') : 'Sin incidencias') + '</span>'
     : '<span class="hub-chip" style="background:var(--tinta);color:var(--fondo)">Sin incidencias abiertas</span>';
 }
 // ── Contratos: quién firmó y quién no (contratos-supervisores.sql) ──
@@ -814,11 +828,11 @@ async function svPintarHubContratos(convId) {
   chips.innerHTML = '<span class="hub-chip">Cargando…</span>';
   const r = await svCargarContratos(convId); if (currentConvId !== convId) return;
   if (!r.ok) { chips.innerHTML = '<span class="hub-chip">' + esc(r.error || 'No disponible') + '</span>'; return; }
-  const fechas = r.fechas || [], dia = fechas.find(x => x.fecha === svFechaDe(convs.find(c => c.id === convId) || {})) || fechas[0];
+  const fechas = r.fechas || [], f = svFechaDe(convs.find(c => c.id === convId) || {}), dia = f ? fechas.find(x => x.fecha === f) : fechas[0];
   if (!dia) { chips.innerHTML = '<span class="hub-chip">Todavía no salió ninguno</span>'; return; }
   const sin = dia.total - dia.firmados;
   chips.innerHTML = (sin ? '<span class="hub-chip">' + sin + ' sin firmar</span>' : '<span class="hub-chip" style="background:var(--tinta);color:var(--fondo)">Todos firmaron</span>')
-    + '<span class="hub-chip">' + dia.firmados + '/' + dia.total + ' firmados' + (dia.fecha ? ' · ' + esc(fmtFecha(dia.fecha).slice(0, 6)) : '') + '</span>';
+    + '<span class="hub-chip">' + dia.firmados + '/' + dia.total + ' firmados</span>';
 }
 function svEstadoContrato(p) {
   if (p.estado === 'firmado') return ['firmado', 'Firmado'];
@@ -827,14 +841,19 @@ function svEstadoContrato(p) {
   if (p.estado === 'pendiente') return ['', 'Pendiente · sin enviar'];
   return ['', 'Pendiente · no lo abrió'];
 }
+// Las fechas que se muestran: sólo la del show abierto (un show de varias fechas no mezcla los días).
+function svCtFechas(r) {
+  const dia = svFechaDe(convs.find(x => x.id === currentConvId) || {});
+  return ((r && r.fechas) || []).filter(x => x.total && (!dia || x.fecha === dia));
+}
 async function openContratos() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
-  document.getElementById('ctPendSub').textContent = String(c.nombre || '').split(' — ')[0];
+  document.getElementById('ctPendSub').textContent = String(c.nombre || '').split(' — ')[0] + (svFechaDe(c) ? ' · ' + fmtFecha(svFechaDe(c)) : '');
   document.getElementById('ctPendLista').innerHTML = '<div class="empty-state"><div class="empty-title">Cargando…</div></div>';
   showScreen('screenContratos');
   svCtDatos = await svCargarContratos(currentConvId);
   // Una cuenta de zona arranca en su sector (si hay contratos de ese sector); las demás, en todos.
-  const sectores = [...new Set(((svCtDatos && svCtDatos.fechas) || []).flatMap(x => x.personas.map(p => p.sector || '')).filter(Boolean))];
+  const sectores = [...new Set(svCtFechas(svCtDatos).flatMap(x => x.personas.map(p => p.sector || '')).filter(Boolean))];
   const propio = svZona && sectores.find(sc => svCtClave(sc) === svCtClave(SV_ZONAS[svZona]));
   if (!svCtSector || !sectores.includes(svCtSector)) svCtSector = propio || '';
   svPintarContratos();
@@ -842,7 +861,7 @@ async function openContratos() {
 function svPintarContratos() {
   const lista = document.getElementById('ctPendLista'), r = svCtDatos;
   if (!r || !r.ok) { lista.innerHTML = '<div class="empty-state"><div class="empty-title">' + esc((r && r.error) || 'No disponible') + '</div></div>'; document.getElementById('ctPendFiltro').innerHTML = ''; document.getElementById('ctPendSector').style.display = 'none'; return; }
-  const fechas = (r.fechas || []).filter(x => x.total);
+  const fechas = svCtFechas(r);
   const deSector = p => !svCtSector || (p.sector || '') === svCtSector;
   const todas = fechas.flatMap(x => x.personas.filter(deSector));
   const nSin = todas.filter(svCtPendiente).length, nCon = todas.length - nSin;
@@ -852,7 +871,7 @@ function svPintarContratos() {
   const sel = document.getElementById('ctPendSector');
   sel.style.display = sectores.length > 1 ? '' : 'none';
   sel.innerHTML = '<option value="">Todos los sectores</option>' + sectores.map(sc => '<option value="' + esc(sc) + '"' + (sc === svCtSector ? ' selected' : '') + '>' + esc(sc.charAt(0) + sc.slice(1).toLowerCase()) + '</option>').join('');
-  if (!fechas.length) { lista.innerHTML = '<div class="empty-state"><div class="empty-title">Todavía no salió ningún contrato de este show</div></div>'; return; }
+  if (!fechas.length) { lista.innerHTML = '<div class="empty-state"><div class="empty-title">Todavía no salió ningún contrato ' + (svFechaDe(convs.find(x => x.id === currentConvId) || {}) ? 'de esta fecha' : 'de este show') + '</div></div>'; return; }
   const pasa = p => deSector(p) && (svCtFiltro === 'todos' || (svCtFiltro === 'pend' ? svCtPendiente(p) : !svCtPendiente(p)));
   lista.innerHTML = fechas.map(x => {
     const gente = x.personas.filter(pasa), enSector = x.personas.filter(deSector), firm = enSector.filter(p => !svCtPendiente(p)).length;
@@ -4091,8 +4110,12 @@ async function openIncid() {
   // El nombre del show, sin "— Movistar Arena" (son todos del Arena).
   document.getElementById('incShowN').textContent = String(c.nombre || '').split(' — ').filter((p, i) => !i || !/^\s*movistar arena\s*$/i.test(p)).join(' — ');
   const fTxt = svFechaDe(c) ? fmtFecha(svFechaDe(c)) : '';
-  document.getElementById('incSub').textContent = fTxt + (svQuienHoy(c.id) ? (fTxt ? ' · ' : '') + svQuienHoy(c.id) : '');
-  incLista = []; incVistos = null; incNuevos = new Set(); incFiltroSup = 'abiertas'; incAbiertaSup = '';
+  const terminado = svTerminado(c), quien = terminado ? 'Terminado' : svQuienHoy(c.id);
+  document.getElementById('incSub').textContent = fTxt + (quien ? (fTxt ? ' · ' : '') + quien : '');
+  // Un show que ya pasó se abre en "Todas" (lo abierto se cerró con el reporte) y sin el botón de cargar.
+  incLista = []; incVistos = null; incNuevos = new Set(); incFiltroSup = terminado ? 'todas' : 'abiertas'; incAbiertaSup = '';
+  document.querySelector('#screenIncid .sv-pie').style.display = terminado ? 'none' : '';
+  document.querySelector('#screenIncid .sv-plano-ayuda').textContent = terminado ? 'Tocá un sector para ver lo que pasó ahí.' : 'Tocá un sector: ves lo abierto ahí y podés cargar.';
   // En el celular, la sala arranca en la zona de la cuenta (si pasó en otra, se elige en el desplegable).
   incZonaSup = svZona && !svSinSector(svZona) ? svZona : 'todas';
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
@@ -4208,17 +4231,18 @@ async function cargarIncid() {
   const { data, error } = await sb.rpc('sup_incidencias', { p_conv_id: currentConvId });
   const vivo = document.getElementById('incVivo');
   if (error) { toast('No se pudieron traer las incidencias'); if (vivo) { vivo.textContent = 'Sin conexión'; vivo.className = 'sv-vivo mal'; } return; }
-  if (vivo) { vivo.textContent = 'En vivo'; vivo.className = 'sv-vivo'; }
+  if (vivo) { const fin = svTerminado(); vivo.textContent = fin ? 'Terminado' : 'En vivo'; vivo.className = 'sv-vivo' + (fin ? ' fin' : ''); }
   incLista = data || [];
   incNuevos = incVistos ? new Set(incLista.filter(i => !incVistos.has(i.id)).map(i => i.id)) : new Set();
   incVistos = new Set(incLista.map(i => i.id));
   renderIncid();
 }
-// Lo abierto y todo lo del show abierto (de su fecha, como en la gerencia). Antes iba por el día de
-// calendario y a la medianoche lo resuelto de la noche desaparecía ("terminó el día y no lo vemos").
+// Lo del show abierto, de su fecha (como en la gerencia), abierto o resuelto. Antes iba por el día de
+// calendario y a la medianoche lo resuelto de la noche desaparecía ("terminó el día y no lo vemos"); y
+// lo abierto de otra fecha se sumaba: cada fecha muestra sólo lo suyo (lo abierto se cierra con el reporte).
 function incVisibles() {
   const c = convs.find(x => x.id === currentConvId), fs = svFechasDe(c), dia = svFechaDe(c);
-  return incLista.filter(i => i.estado !== 'resuelta' || (dia ? svFechaDeFuncion(i, fs) === dia : incDiaFuncion(i.created_at) === incHoyFuncion()));
+  return incLista.filter(i => dia ? svFechaDeFuncion(i, fs) === dia : (i.estado !== 'resuelta' || incDiaFuncion(i.created_at) === incHoyFuncion()));
 }
 // Arriba, lo abierto por gravedad; abajo, los tickets de todos los sectores, con "Resolver".
 function renderIncid() {
@@ -4249,7 +4273,7 @@ function renderIncid() {
   const visibles = incOrdenar(deZona).filter(i => incFiltroSup === 'todas' || i.estado !== 'resuelta');
   if (!visibles.length) {
     const res = deZona.length - abiertasZ.length;
-    cont.innerHTML = '<div class="sv-vacio">' + (zonaElegida && !deZona.length ? 'Sin incidencias en ' + incEsc(incZonaNombre(zonaElegida)) + ' en este show. Para ver las demás, elegí «Todas las zonas».' : deZona.length ? 'No hay incidencias abiertas' + (zonaElegida ? ' en ' + incEsc(incZonaNombre(zonaElegida)) : '') + '. ' + (res === 1 ? 'La resuelta de hoy está' : 'Las ' + res + ' resueltas de hoy están') + ' en “Todas”.' : 'Sin incidencias en este show. Para cargar una, tocá “+ Cargar incidencia”.') + '</div>';
+    cont.innerHTML = '<div class="sv-vacio">' + (zonaElegida && !deZona.length ? 'Sin incidencias en ' + incEsc(incZonaNombre(zonaElegida)) + ' en este show. Para ver las demás, elegí «Todas las zonas».' : deZona.length ? 'No hay incidencias abiertas' + (zonaElegida ? ' en ' + incEsc(incZonaNombre(zonaElegida)) : '') + '. ' + (res === 1 ? 'La resuelta está' : 'Las ' + res + ' resueltas están') + ' en “Todas”.' : 'Sin incidencias en este show.' + (svTerminado() ? '' : ' Para cargar una, tocá “+ Cargar incidencia”.')) + '</div>';
     incNuevos = new Set(); return;
   }
   const cods = incCodigos(incLista);
@@ -4284,7 +4308,7 @@ function svRenderPlano(lista) {
   const armado = incArmadoDelShow(currentConvId, incLista), res = incResumenSectores(lista);
   const cv = convs.find(x => x.id === currentConvId);
   incMontarPlano(pl, { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: svSectorSel, onclick: 'svTocarSector',
-    titulo: cv ? cv.nombre : '', detalle: lista, accionPantalla: { texto: 'Cargar acá', fn: 'svCargarEn' } });
+    titulo: cv ? cv.nombre : '', detalle: lista, accionPantalla: svTerminado() ? null : { texto: 'Cargar acá', fn: 'svCargarEn' } });
   if (vista === '3d' && incSin3D) svAviso3D('En este celular el 3D no se pudo cargar: se muestra el plano 2D.');
   else if (pl._inc3d) { svVigilar3D(pl); const n = document.getElementById('svPlanoNota'); if (n && n.classList.contains('on') && /no se pudo cargar/.test(n.textContent)) svAviso3D(''); }
 }
@@ -4314,7 +4338,7 @@ function svTocarSector(id) {
   if (svSectorSel) { const pl = document.getElementById('svPlano'); if (pl && pl.scrollIntoView) setTimeout(() => pl.scrollIntoView({ block: 'end', behavior: 'smooth' }), 80); }
 }
 function svElegirVista(v) { incGuardarVista(v); renderIncid(); }
-function svCargarEn(sector) { svSectorSel = ''; incTocarSector(sector); }
+function svCargarEn(sector) { if (svTerminado()) return toast('Este show ya terminó: no se cargan incidencias'); svSectorSel = ''; incTocarSector(sector); }
 // Tocar un ticket lo despliega con todo; otra vez, lo cierra.
 function incTocarTarjeta(id) { incAbiertaSup = incAbiertaSup === String(id) ? '' : String(id); renderIncid(); }
 
@@ -4325,6 +4349,7 @@ function incTocarTarjeta(id) { incAbiertaSup = incAbiertaSup === String(id) ? ''
 const INC_DONDE = [['PB', 'Campo'], ['P1', 'Platea baja'], ['VIP', 'VIP'], ['P3', 'Platea alta'], ['EXT', 'Exteriores']];
 function incPisoDonde() { try { const p = localStorage.getItem('incPisoDonde'); return INC_DONDE.some(x => x[0] === p) ? p : 'P1'; } catch (_) { return 'P1'; } }
 function incAbrirDonde() {
+  if (svTerminado()) return toast('Este show ya terminó: no se cargan incidencias');
   incHoja = { modo: 'donde', q: '' };
   // La cuenta de una zona abre en el piso de su zona; si pasó en otro lado, cambia de piso o lo busca.
   if (svZona && SV_ZONA_PISO[svZona]) { try { localStorage.setItem('incPisoDonde', SV_ZONA_PISO[svZona]); } catch (_) {} }
