@@ -13,6 +13,10 @@
   ],
   "rewrites": [
     {
+      "source": "/informe",
+      "destination": "/api/informe"
+    },
+    {
       "source": "/:pagina",
       "destination": "/:pagina.html"
     }
@@ -38,6 +42,10 @@
   ],
   "functions": {
     "api/reporte-incidencias.js": {
+      "maxDuration": 60,
+      "includeFiles": "node_modules/@sparticuz/chromium/bin/**"
+    },
+    "api/informe.js": {
       "maxDuration": 60,
       "includeFiles": "node_modules/@sparticuz/chromium/bin/**"
     }

@@ -42,7 +42,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '14-nov 1:15, reporte con el PDF del sistema';
+var VERSION = '14-nov 1:30, reporte con el PDF del sistema y el link';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale a los 30 minutos de la P (propiedad ESPERA_MINUTOS para cambiarlo; 0 = enseguida):
@@ -620,13 +620,14 @@ function cuerpoReporte_(s) {
   var res = r.total && r.resueltas === r.total ? (r.total === 1 ? 'resuelta' : 'todas resueltas') : r.resueltas + (r.resueltas === 1 ? ' resuelta' : ' resueltas');
   if (r.total) detalle = r.total + (r.total === 1 ? ' incidencia' : ' incidencias') + ' (' + (partes.length > 1 ? partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1] : partes[0]) + '), ' + res + '.';
   var t1 = 'Les compartimos el reporte de incidencias del show de ' + s.nombre + ' del ' + cuando + ' en el ' + (s.venue || 'Movistar Arena') + ': ' + detalle;
-  var t2 = 'Va adjunto en PDF, con el resumen y la línea de tiempo de cada incidencia.';
-  var texto = 'Hola:\n\n' + t1 + '\n\n' + t2 + '\n\nSaludos,\nShow Business Solutions\nconvocatorias.arena@show-bs.com';
+  var t2 = s.link ? 'Pueden verlo en el sistema y descargarlo desde ahí. También va adjunto en PDF, con el resumen y la línea de tiempo de cada incidencia.' : 'Va adjunto en PDF, con el resumen y la línea de tiempo de cada incidencia.';
+  var texto = 'Hola:\n\n' + t1 + '\n\n' + t2 + (s.link ? '\n\nVer el informe: ' + s.link : '') + '\n\nSaludos,\nShow Business Solutions\nconvocatorias.arena@show-bs.com';
   var SITIO = 'https://convocatorias.show-bs.com', P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
   var html = '<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif">'
     + '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">'
     + '<img src="' + SITIO + '/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">'
     + '<p style="' + P + '">Hola:</p><p style="' + P + '">' + esc_(t1) + '</p><p style="' + P + '">' + esc_(t2) + '</p>'
+    + (s.link ? '<p style="margin:22px 0"><a href="' + esc_(s.link) + '" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Ver el informe</a></p>' : '')
     + '<div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">'
     + '<img src="' + SITIO + '/firmas/firma-arena.jpg" alt="Show Business Solutions · Convocatorias Movistar Arena" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0"></div>'
     + '</div>'
