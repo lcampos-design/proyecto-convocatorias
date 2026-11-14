@@ -156,12 +156,15 @@ export function normalizarFilas(filas) {
   (Array.isArray(filas) ? filas : []).slice(0, MAX_FILAS).forEach(f => {
     const cuil = String((f && f.cuil) || '').replace(/\D/g, '');
     if (cuil.length < 7) return;
-    const m = String((f && f.marca) || '').trim().toUpperCase().charAt(0);
-    const marca = m === 'P' ? 'P' : m === 'A' ? 'A' : '';
+    // Sólo "P"/"Presente" y "A"/"Ausente" (lo demás, sin marca: "Pendiente" no es presente).
+    const w = String((f && f.marca) || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim().split(/[^A-Z]+/)[0] || '';
+    const marca = w === 'P' || w === 'PRESENTE' ? 'P' : w === 'A' || w === 'AUSENTE' ? 'A' : '';
     const fila = { cuil, marca, sector: String(f.sector || '').trim().slice(0, 40), rol: String(f.rol || '').trim().slice(0, 40), obs: String(f.obs || '').trim().slice(0, 80), apellido: String(f.apellido || '').trim().slice(0, 80), nombre: String(f.nombre || '').trim().slice(0, 80) };
     // De la disponibilidad del mes (lo agrega el script): el mail y el CUIL o DNI que dejó ahí la persona.
     const mail = String(f.mail || '').trim().toLowerCase().slice(0, 120), doc = String(f.doc || '').replace(/\D/g, '');
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) fila.mail = mail;
+    // El script la manda con "espera" si la P es de hace menos de 30 minutos: el contrato sale después.
+    if (f.espera === true) fila.espera = true;
     if (doc.length >= 7 && doc.length <= 11 && doc !== cuil) fila.doc = doc;
     const antes = por.get(cuil);
     if (!antes || (marca === 'P' && antes.marca !== 'P') || (marca && !antes.marca)) por.set(cuil, fila);
@@ -272,6 +275,8 @@ export function decidir(fila, ctx) {
     if (!ctx.conv) return { resultado: 'sin_show', detalle: 'No hay un show del Arena con esa fecha en el panel' };
     const tarifa = tarifaDe(ctx.cfg, ctx.fecha, fila.sector, fila.rol, fila.obs);
     if (!tarifa) { const p = puestoDe(ctx.cfg, fila.sector, fila.rol, fila.obs); return { resultado: 'sin_monto', detalle: p ? 'Falta el monto de ' + p + ' para ' + String(ctx.fecha).slice(5, 7) + '/' + String(ctx.fecha).slice(0, 4) : 'Falta decir qué puesto lleva ' + (fila.sector || 'ese sector') }; }
+    // La P es de hace un rato: todavía no (por si fue un error). Sale en una vuelta siguiente.
+    if (fila.espera) return { resultado: 'en_espera', detalle: 'Sale a los 30 minutos de la P' };
     return { resultado: 'mandar', persona, contrato, tarifa };
   }
   if (contrato && contrato.estado === 'firmado') return { resultado: 'firmado_ausente', contrato, detalle: 'Firmó, pero la planilla ya no le da el presente' };
