@@ -12179,9 +12179,10 @@ const PP_RESULTADO = {
   anulado: ['#fee2e2', '#991b1b', 'Anulado'], ausente: ['#f3f4f6', '#6b7280', 'Ausente'], pendiente: ['#fef3c7', '#92400e', 'Por salir'], en_espera: ['#fef3c7', '#92400e', 'Sale en un rato'],
   firmado_ausente: ['#fef3c7', '#92400e', 'Firmó y figura ausente'], sin_persona: ['#fee2e2', '#991b1b', 'No está en la nómina'],
   cuil_incompleto: ['#fee2e2', '#991b1b', 'CUIL incompleto'], sin_mail: ['#fee2e2', '#991b1b', 'Sin mail'], sin_monto: ['#fef3c7', '#92400e', 'Falta el monto'],
-  sin_show: ['#fef3c7', '#92400e', 'Sin show en el panel'], sin_plantilla: ['#fee2e2', '#991b1b', 'Falta el modelo'], error_mail: ['#fee2e2', '#991b1b', 'No salió el mail']
+  sin_show: ['#fef3c7', '#92400e', 'Sin show en el panel'], sin_plantilla: ['#fee2e2', '#991b1b', 'Falta el modelo'], error_mail: ['#fee2e2', '#991b1b', 'No salió el mail'],
+  doc_distinto: ['#fee2e2', '#991b1b', 'Dos documentos: revisar']
 };
-const PP_PROBLEMAS = ['sin_persona', 'cuil_incompleto', 'sin_mail', 'sin_monto', 'sin_show', 'sin_plantilla', 'error_mail', 'firmado_ausente'];
+const PP_PROBLEMAS = ['sin_persona', 'cuil_incompleto', 'sin_mail', 'sin_monto', 'sin_show', 'sin_plantilla', 'error_mail', 'firmado_ausente', 'doc_distinto'];
 let ppCfg = null, ppMes = '', ppFilas = null, ppContratos = {}, ppAbiertas = new Set();
 const ppClave = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 function ppBadge(k) { const [bg, fg, t] = PP_RESULTADO[k] || ['#f3f4f6', '#6b7280', k || '—']; return `<span style="background:${bg};color:${fg};font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap">${e(t)}</span>`; }

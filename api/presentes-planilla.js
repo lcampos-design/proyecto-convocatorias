@@ -216,12 +216,24 @@ export function patronApellido(apellido) {
 // La persona con ese apellido y ese nombre: todas las palabras del apellido y la primera del
 // nombre tienen que estar en su nombre. Primero en la nómina y, si no, en las inscripciones; sólo
 // si hay una sola (con dos personas con el mismo nombre no se manda) y con documento.
+// Un CUIL con el dígito verificador bien (no está mal tipeado). El de 10 al final (que ARCA corrige con el 23) no
+// se puede saber: cuenta como no válido.
+export function cuilValido(cuil) {
+  const d = String(cuil || '').replace(/\D/g, '');
+  if (d.length !== 11) return false;
+  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const suma = pesos.reduce((t, p, i) => t + p * Number(d[i]), 0), r = 11 - (suma % 11);
+  return (r === 11 ? 0 : r) === Number(d[10]);
+}
 export function elegirPorNombre(cands, fila) {
   const ap = palabrasDe(fila.apellido), nom = palabrasDe(fila.nombre)[0];
   if (!ap.length || !nom) return null;
+  // Con un CUIL válido en la planilla, quien tenga otro DNI es otra persona con el mismo nombre (13-nov: un
+  // contrato le llegó a una homónima de la nómina): por el nombre sólo se busca si el CUIL está mal escrito.
+  const nPlanilla = cuilValido(fila.cuil) ? nucleoDe(fila.cuil) : '';
   const coincide = c => { const t = new Set(palabrasDe(c.nombre)); return ap.every(w => t.has(w)) && t.has(nom); };
   for (const fuente of ['nomina', 'inscripcion']) {
-    const l = (cands || []).filter(c => c.fuente === fuente && c.nucleo && coincide(c));
+    const l = (cands || []).filter(c => c.fuente === fuente && c.nucleo && coincide(c) && (!nPlanilla || c.nucleo === nPlanilla));
     if (!l.length) continue;
     if (new Set(l.map(c => c.nucleo)).size > 1) return { ambigua: true, nombre: l[0].nombre, porNombre: true };
     return Object.assign({}, l.slice().sort((a, b) => (b.email ? 1 : 0) - (a.email ? 1 : 0))[0], { como: 'nombre' });
@@ -272,6 +284,12 @@ export function contratoDe(fila, persona, ctx) {
 export function decidir(fila, ctx) {
   const persona = ctx.personas.get(fila.cuil);
   const contrato = contratoDe(fila, persona, ctx);
+  // Ya tiene uno de esta fecha, pero con otro documento que el de la persona de ahora: no se manda otro ni se
+  // anula solo; se revisa a mano cuál es el correcto (13-nov: dos contratos para la misma fila).
+  if (fila.marca === 'P' && contrato && persona && persona.nucleo && contrato.doc_nucleo && contrato.doc_nucleo !== persona.nucleo && contrato.estado !== 'firmado')
+    return { resultado: 'doc_distinto', contrato, detalle: 'Ya tiene un contrato de esta fecha con otro documento: revisá cuál es el correcto y anulá el otro' };
+  if (fila.marca === 'P' && contrato && persona && persona.nucleo && contrato.doc_nucleo && contrato.doc_nucleo !== persona.nucleo)
+    return { resultado: 'doc_distinto', contrato, detalle: 'Firmó un contrato de esta fecha con otro documento: revisá cuál es el correcto' };
   if (fila.marca === 'P') {
     if (!persona) return { resultado: fila.cuil.length === 11 || fila.cuil.length <= 8 ? 'sin_persona' : 'cuil_incompleto', detalle: fila.cuil.length === 11 || fila.cuil.length <= 8 ? (ctx.disponibilidad ? 'No está en la nómina, ni en las inscripciones, ni en la disponibilidad del mes' : 'No está en la nómina ni en las inscripciones') : 'El CUIL de la planilla está incompleto (' + fila.cuil.length + ' números) y no se encontró a nadie con ese apellido' };
     if (persona.ambigua && persona.porNombre) return { resultado: 'sin_persona', detalle: 'El CUIL no coincide y hay más de una persona con ese nombre: revisá el CUIL en la planilla' };
