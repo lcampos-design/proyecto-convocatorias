@@ -258,9 +258,20 @@ export function conDisponibilidad(p, fila, cands) {
   if (!nucleo || (cands || []).some(c => c.nucleo === nucleo)) return p;
   return { fuente: 'disponibilidad', como: 'disponibilidad', id: null, nombre: (fila.nombre + ' ' + fila.apellido).trim(), email: fila.mail, cuit: doc, nucleo, mailDe: 'disponibilidad' };
 }
+// El contrato que ya tiene esa fila (de esa fecha, sin anular). No sólo por el documento de la persona: si cambia
+// el documento con que se la encuentra (la disponibilidad o las altas de ARCA traen otro), también por el de la
+// planilla, el de la disponibilidad, el contrato que ya tenía esa fila y la persona. El 13-nov salieron contratos
+// duplicados porque a las 18:22 se encontró a algunas personas con otro documento y no se vio el anterior.
+export function contratoDe(fila, persona, ctx) {
+  const porDoc = k => (k && ctx.contratos.get(k)) || null;
+  const previo = ctx.antes && ctx.antes.get(fila.cuil);
+  return porDoc(persona && persona.nucleo) || porDoc(nucleoDe(fila.cuil)) || porDoc(nucleoDe(fila.doc))
+    || (previo && previo.contrato_id && ctx.porId && ctx.porId.get(previo.contrato_id))
+    || (persona && persona.id && ctx.porPersona && ctx.porPersona.get(persona.id)) || null;
+}
 export function decidir(fila, ctx) {
   const persona = ctx.personas.get(fila.cuil);
-  const contrato = ctx.contratos.get((persona && persona.nucleo) || nucleoDe(fila.cuil)) || null;
+  const contrato = contratoDe(fila, persona, ctx);
   if (fila.marca === 'P') {
     if (!persona) return { resultado: fila.cuil.length === 11 || fila.cuil.length <= 8 ? 'sin_persona' : 'cuil_incompleto', detalle: fila.cuil.length === 11 || fila.cuil.length <= 8 ? (ctx.disponibilidad ? 'No está en la nómina, ni en las inscripciones, ni en la disponibilidad del mes' : 'No está en la nómina ni en las inscripciones') : 'El CUIL de la planilla está incompleto (' + fila.cuil.length + ' números) y no se encontró a nadie con ese apellido' };
     if (persona.ambigua && persona.porNombre) return { resultado: 'sin_persona', detalle: 'El CUIL no coincide y hay más de una persona con ese nombre: revisá el CUIL en la planilla' };
@@ -276,7 +287,7 @@ export function decidir(fila, ctx) {
     const tarifa = tarifaDe(ctx.cfg, ctx.fecha, fila.sector, fila.rol, fila.obs);
     if (!tarifa) { const p = puestoDe(ctx.cfg, fila.sector, fila.rol, fila.obs); return { resultado: 'sin_monto', detalle: p ? 'Falta el monto de ' + p + ' para ' + String(ctx.fecha).slice(5, 7) + '/' + String(ctx.fecha).slice(0, 4) : 'Falta decir qué puesto lleva ' + (fila.sector || 'ese sector') }; }
     // La P es de hace un rato: todavía no (por si fue un error). Sale en una vuelta siguiente.
-    if (fila.espera) return { resultado: 'en_espera', detalle: 'Sale a los 30 minutos de la P' };
+    if (fila.espera) return { resultado: 'en_espera', detalle: 'Todavía no pasó la espera después de la P (propiedad ESPERA_MINUTOS del script)' };
     return { resultado: 'mandar', persona, contrato, tarifa };
   }
   if (contrato && contrato.estado === 'firmado') return { resultado: 'firmado_ausente', contrato, detalle: 'Firmó, pero la planilla ya no le da el presente' };
@@ -371,7 +382,8 @@ export default async function handler(req, res) {
     filas.forEach(f => { if (!f.mail || !buscar.includes(f.cuil)) return; const p = conDisponibilidad(personas.get(f.cuil) || null, f, candsDe(f)); if (p) personas.set(f.cuil, p); });
   }
 
-  const ctx = { personas, contratos, cfg, plantilla, conv, fecha, disponibilidad: Number(cuerpo.disponibilidad) > 0 };
+  const porId = new Map((rc.data || []).map(c => [c.id, c])), porPersona = new Map((rc.data || []).filter(c => c.persona_id).map(c => [c.persona_id, c]));
+  const ctx = { personas, contratos, porId, porPersona, antes, cfg, plantilla, conv, fecha, disponibilidad: Number(cuerpo.disponibilidad) > 0 };
 
   // Revisar (desde el script, antes del show): qué pasaría si todos tuvieran "P", sin mandar ni guardar nada.
   if (cuerpo.simular) {
