@@ -1833,7 +1833,7 @@ function incEstadoSalaHTML(abiertas) {
   const de = abiertas.filter(i => (i.nivel || 1) === peor), vieja = de.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
   const s = de.length === 1 ? '' : 's';
   return { clase: peor === 3 ? 'grave' : 'medio', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.6"/></svg>'
-    + '<span>' + de.length + ' incidencia' + s + (peor === 3 ? ' grave' + s : ' de gravedad media') + '</span>'
+    + '<span>' + de.length + ' incidencia' + s + (peor === 3 ? ' grave' + s : ' de criticidad media') + '</span>'
     + (peor === 3 ? '<small>Aviso inmediato al responsable del Arena</small>' : '')
     + '<span class="hace">Desde hace ' + incEsc(incMinutos(Date.now() - new Date(vieja.created_at))) + '</span>' };
 }
@@ -4151,8 +4151,8 @@ function svInforme() {
     + '<div class="nums">' + num(l.length, 'Incidencias') + num(abiertas, 'Abiertas') + num(l.filter(i => (i.nivel || 1) === 3).length, 'Graves')
     + num(l.filter(i => i.categoria === 'Asistencia').length, 'Asistencias') + num(l.filter(i => incDerivadoA(i).length).length, 'Derivadas')
     + num(m.tMedio == null ? '—' : incMinutos(m.tMedio), 'Resolución media') + num(m.pico ? incEsc(m.pico.etq) : '—', 'Momento más cargado') + '</div>'
-    + '<div class="res">' + tabla('Gravedad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, l.filter(i => (i.nivel || 1) === nv).length])) + tabla('Categoría', cuenta(i => i.categoria)) + tabla('Sector', cuenta(i => i.sector)) + '</div>'
-    + '<h3>Línea de tiempo</h3><table><tr><th>Cuándo</th><th>Sector</th><th>Qué pasó</th><th>Gravedad</th><th>Qué se hizo</th><th>Derivado a</th><th>Cómo se resolvió</th></tr>'
+    + '<div class="res">' + tabla('Criticidad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, l.filter(i => (i.nivel || 1) === nv).length])) + tabla('Categoría', cuenta(i => i.categoria)) + tabla('Sector', cuenta(i => i.sector)) + '</div>'
+    + '<h3>Línea de tiempo</h3><table><tr><th>Cuándo</th><th>Sector</th><th>Qué pasó</th><th>Criticidad</th><th>Qué se hizo</th><th>Derivado a</th><th>Cómo se resolvió</th></tr>'
     + l.map(i => '<tr><td>' + fh(i.created_at) + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + '</td>'
       + '<td class="niv" style="color:' + P.niv(INC_NIVELES[i.nivel] ? i.nivel : 1) + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
       + '<td>' + (incDerivadoA(i).map(incEsc).join(', ') || '—') + '</td>'
@@ -4409,7 +4409,7 @@ function renderIncHoja() {
       '<button type="button" class="inc-opc' + (h.tipo === t[0] ? ' on' : '') + '" onclick="incElegirTipo(' + ti + ')">' + incEsc(t[0]) + '</button>').join('') + '</div>';
   }
   if (h.tipo) {
-    html += '<div class="inc-paso">Gravedad</div><div class="inc-niveles">' + [1, 2, 3].map(nv => {
+    html += '<div class="inc-paso">Criticidad</div><div class="inc-niveles">' + [1, 2, 3].map(nv => {
       const v = INC_NIVELES[nv], on = h.nivel === nv;
       return '<button type="button" class="inc-nivel n' + nv + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="incElegirNivel(' + nv + ')"><strong>' + v.nombre + '</strong><span>' + v.ayuda + '</span></button>';
     }).join('') + '</div>';
