@@ -15,8 +15,10 @@
 // Usa la misma clave que el envío de contratos (PRESENTES_CLAVE, en Vercel y en el script).
 
 import crypto from 'crypto';
+import { htmlInforme, pdfDeHtml } from './_lib/informe-pdf.js';
 
-export const config = { maxDuration: 30 };
+// Con pdf: true, el PDF de cada show lo imprime Chromium (el Informe de la gerencia, idéntico): hasta un minuto.
+export const config = { maxDuration: 60 };
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 
 function claveOk(dada, esperada) {
@@ -63,6 +65,7 @@ export default async function handler(req, res) {
   const shows = showsDelDia(rc.data, fecha);
   const { desde, hasta } = ventana(fecha);
   // Terminado: a la 1:30, o antes si se manda a mano ("enviar_reporte" del script, con cerrar: el show ya terminó).
+  let pagina = null;   // centro-control.html, una vez por pedido
   const salida = [], terminado = cuerpo.cerrar === true || Date.now() >= cierreDe(fecha).getTime();
   for (const c of shows) {
     // Terminado el show, lo que quedó abierto se da por cerrado (si no, en el reporte no tiene sentido).
@@ -76,7 +79,15 @@ export default async function handler(req, res) {
     if (!ri.ok) return res.status(500).json({ error: 'No se pudieron leer las incidencias' });
     // Las que se cerraron solas van sin la hora de cierre: así el reporte no las cuenta en la resolución media.
     const lista = (ri.data || []).map(i => i.resolucion === RESOLUCION_CIERRE ? Object.assign({}, i, { resuelta_at: null }) : i);
-    salida.push({ conv_id: c.id, nombre: String(c.nombre || '').split(' — ')[0].trim(), venue: c.venue || 'Movistar Arena', fecha, cerradas_al_final: lista.filter(i => i.resolucion === RESOLUCION_CIERRE).length, incidencias: lista });
+    const show = { conv_id: c.id, nombre: String(c.nombre || '').split(' — ')[0].trim(), venue: c.venue || 'Movistar Arena', fecha, cerradas_al_final: lista.filter(i => i.resolucion === RESOLUCION_CIERRE).length, incidencias: lista };
+    // El PDF: el Informe de la gerencia, con las incidencias tal cual están en la base. Si falla, el script usa el suyo.
+    if (cuerpo.pdf === true) {
+      try {
+        if (!pagina) { const rp = await fetch('https://convocatorias.show-bs.com/centro-control.html', { headers: { 'Cache-Control': 'no-cache' } }); if (!rp.ok) throw new Error('centro-control.html: ' + rp.status); pagina = await rp.text(); }
+        show.pdf = await pdfDeHtml(await htmlInforme({ id: c.id, nombre: c.nombre, fecha: c.fecha }, fecha, ri.data || [], pagina));
+      } catch (e) { show.pdf_error = String((e && e.message) || e).slice(0, 300); }
+    }
+    salida.push(show);
   }
   return res.status(200).json({ ok: true, fecha, shows: salida });
 }

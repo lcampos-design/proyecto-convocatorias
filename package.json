@@ -1,0 +1,10 @@
+{
+  "name": "convocatorias-sbs",
+  "private": true,
+  "description": "Las funciones de /api. El PDF del reporte de incidencias se imprime con Chromium.",
+  "engines": { "node": "22.x" },
+  "dependencies": {
+    "@sparticuz/chromium": "143.0.4",
+    "puppeteer-core": "24.35.0"
+  }
+}

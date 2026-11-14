@@ -42,7 +42,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '14-nov 1:00, reporte con el mail de SBS';
+var VERSION = '14-nov 1:15, reporte con el PDF del sistema';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale a los 30 minutos de la P (propiedad ESPERA_MINUTOS para cambiarlo; 0 = enseguida):
@@ -505,7 +505,7 @@ function reporteFechaDebida_(ahora) {
 }
 // cerrar: el show ya terminó (el envío a mano): lo que quedó abierto se da por cerrado, como a la 1:30.
 function pedirReporte_(fecha, clave, cerrar) {
-  var resp = UrlFetchApp.fetch(URL_REPORTE, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(cerrar ? { fecha: fecha, cerrar: true } : { fecha: fecha }) });
+  var resp = UrlFetchApp.fetch(URL_REPORTE, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(cerrar ? { fecha: fecha, cerrar: true, pdf: true } : { fecha: fecha, pdf: true }) });
   try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
 }
 // Lo que corre en cada vuelta (desde sincronizar).
@@ -520,6 +520,7 @@ function reportes_(clave) {
   (r.shows || []).forEach(function (s) {
     var k = 'rep_' + f + '_' + s.conv_id;
     if (props.getProperty(k)) return;
+    if (!s.pdf) { todos = false; Logger.log('Reporte de ' + s.nombre + ' ' + f + ': no llegó el PDF del sistema (' + (s.pdf_error || 'sin detalle') + '); lo intento en la vuelta siguiente.'); return; }
     try { mandarReporte_(s, para, false); props.setProperty(k, new Date().toISOString()); Logger.log('Reporte enviado: ' + s.nombre + ' ' + f); }
     catch (e) { todos = false; Logger.log('No salió el reporte de ' + s.nombre + ': ' + e); }
   });
@@ -532,7 +533,7 @@ function probar_reporte() {
   var f = reporteFechaDebida_() || diaFuncion_(), r = pedirReporte_(f, clave), yo = String(PropertiesService.getScriptProperties().getProperty('REPORTE_PRUEBA') || '').trim() || Session.getEffectiveUser().getEmail();
   if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
   if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
-  r.shows.forEach(function (s) { mandarReporte_(s, yo, true); Logger.log('Prueba mandada a ' + yo + ': ' + s.nombre + ' · ' + s.incidencias.length + ' incidencias'); });
+  r.shows.forEach(function (s) { mandarReporte_(s, yo, true); Logger.log('Prueba mandada a ' + yo + ': ' + s.nombre + ' · ' + s.incidencias.length + ' incidencias · PDF: ' + (s.pdf ? 'el Informe del sistema' : 'el de respaldo de Google (' + (s.pdf_error || 'sin detalle') + ')')); });
   Logger.log('Destinatarios para el envío de verdad (REPORTE_PARA): ' + (PropertiesService.getScriptProperties().getProperty('REPORTE_PARA') || '(falta la propiedad)'));
 }
 function enviar_reporte() {
@@ -541,6 +542,8 @@ function enviar_reporte() {
   var f = reporteFechaDebida_() || diaFuncion_(), r = pedirReporte_(f, clave, true);
   if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
   if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
+  var faltan = (r.shows || []).filter(function (s) { return !s.pdf; });
+  if (faltan.length) { Logger.log('No mandé nada: no llegó el PDF del sistema (' + (faltan[0].pdf_error || 'sin detalle') + '). Probá de nuevo en un minuto.'); return; }
   (r.shows || []).forEach(function (s) { mandarReporte_(s, para, false); props.setProperty('rep_' + f + '_' + s.conv_id, new Date().toISOString()); Logger.log('Enviado: ' + s.nombre); });
   props.setProperty('rep_' + f, new Date().toISOString() + ' · a mano');
 }
@@ -548,8 +551,9 @@ function enviar_reporte() {
 function mandarReporte_(s, para, prueba) {
   var ddmm = s.fecha.slice(8, 10) + '/' + s.fecha.slice(5, 7);
   var asunto = (prueba ? '[Prueba] ' : '') + 'Reporte de incidencias - ' + s.nombre + ' ' + ddmm;
-  var pdf = Utilities.newBlob(htmlReporte_(s, logoReporte_()), MimeType.HTML, 'reporte.html').getAs(MimeType.PDF)
-    .setName('Reporte de incidencias - ' + s.nombre + ' ' + ddmm.replace('/', '-') + '.pdf');
+  var nombrePdf = 'Reporte de incidencias - ' + s.nombre + ' ' + ddmm.replace('/', '-') + '.pdf';
+  var pdf = s.pdf ? Utilities.newBlob(Utilities.base64Decode(s.pdf), MimeType.PDF, nombrePdf)
+    : Utilities.newBlob(htmlReporte_(s, logoReporte_()), MimeType.HTML, 'reporte.html').getAs(MimeType.PDF).setName(nombrePdf);
   var c = cuerpoReporte_(s), o = { to: para, subject: asunto, body: c.texto, htmlBody: c.html, name: 'Show Business Solutions', attachments: [pdf] };
   // En copia (REPORTE_CC) y en copia oculta (REPORTE_CCO), separados por coma; la prueba, sin copias.
   if (!prueba) {
