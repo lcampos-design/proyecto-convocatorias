@@ -431,10 +431,10 @@ const INC_REFERENCIAS = ['Pasillo', 'Escalera', 'Vomitorio', 'Fila', 'Butaca', '
 // Según dónde pasó, los atajos que tienen sentido ahí (no todos siempre).
 const INC_REFERENCIAS_DE = {
   campo: ['Valla', 'Pit', 'FOH', 'Pasillo'], asientos: ['Valla', 'Pit', 'FOH', 'Pasillo', 'Fila', 'Butaca'],
-  platea: ['Pasillo', 'Escalera', 'Vomitorio', 'Fila', 'Butaca'], vip: ['Palco', 'Pasillo', 'Escalera'], corner: ['Pasillo', 'Escalera', 'Fila', 'Butaca'],
+  platea: ['Pasillo', 'Escalera', 'Ascensores', 'Vomitorio', 'Fila', 'Butaca'], vip: ['Palco', 'Pasillo', 'Escalera', 'Ascensores'], corner: ['Pasillo', 'Escalera', 'Ascensores', 'Fila', 'Butaca'],
   gastro: ['Barra', 'Fila'], banio: ['Adentro', 'Fila', 'Puerta del baño'], puerta: ['Molinetes', 'Control', 'Fila'],
   enfermeria: ['Adentro', 'Puerta'], servicio: ['Adentro', 'Fila'], calle: ['Fila de ingreso', 'Vereda', 'Esquina'],
-  anillo: ['Pasillo', 'Escalera'], back: ['Pasillo', 'Escalera']
+  anillo: ['Pasillo', 'Escalera', 'Ascensores'], back: ['Pasillo', 'Escalera']
 };
 function incReferenciasDe(sector) {
   if (!sector) return INC_REFERENCIAS;
@@ -696,8 +696,9 @@ const INC_LUGARES_BASE = [
   { id: 'Cancha externo 2 (Pepsi)', t: 'gastro', txt: 'CE2', cx: 28.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'PB' },
   { id: 'Cancha interno 2 (Patagonia)', t: 'gastro', txt: 'CI2', cx: 43.5, cy: 214, w: 11, h: 18, ang: 0, piso: 'PB' },
   { id: 'Cancha 3 (eventual)', t: 'gastro', txt: 'C3', cx: 28.5, cy: 241, w: 11, h: 12, ang: 0, piso: 'PB' },
-  { id: 'Puerta 3', t: 'puerta', txt: 'P3', cx: 46, cy: 289, w: 22, h: 12, ang: 50.4, piso: 'PB' },
-  { id: 'Puerta 4', t: 'puerta', txt: 'P4', cx: 210, cy: 318, w: 40, h: 12, ang: 0, piso: 'PB' },
+  // La de la esquina de Humboldt, lado Cancha, es la 4; la del medio de Humboldt no tiene número (Luca, 13-nov).
+  { id: 'Puerta 4', t: 'puerta', txt: 'P4', cx: 46, cy: 289, w: 22, h: 12, ang: 50.4, piso: 'PB' },
+  { id: 'Puerta Humboldt', t: 'puerta', txt: 'Humb.', cx: 210, cy: 318, w: 40, h: 12, ang: 0, piso: 'PB' },
   { id: 'Puerta 5', t: 'puerta', txt: 'P5', cx: 374, cy: 289, w: 22, h: 12, ang: -50.4, piso: 'PB' },
   // Al fondo, detrás del escenario, una por lado: las salidas hacia las vías del plano de evacuación
   // de planta baja que mandó el Arena el 13-nov-2026 (no tienen número).
@@ -725,8 +726,8 @@ const INC_LUGARES_BASE = [
   { id: 'Patagonia (P1)', t: 'gastro', txt: 'Pat.', cx: 43.5, cy: 214, w: 11, h: 20, ang: 0, piso: 'P1' },
   { id: 'Sede externo 01', t: 'gastro', txt: 'SE01', cx: 391.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'P1' },
   { id: 'Sede externo 02', t: 'gastro', txt: 'SE02', cx: 391.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'P1' },
-  { id: 'Branca', t: 'gastro', txt: 'Bra.', cx: 376.5, cy: 214, w: 11, h: 20, ang: 0, piso: 'P1' },
-  { id: 'Stella Artois', t: 'gastro', txt: 'Ste.', cx: 58.1, cy: 279.7, w: 16, h: 32, ang: -42.3, piso: 'P1' },
+  { id: 'Branca', t: 'gastro', txt: 'Bra.', cx: 58.1, cy: 279.7, w: 16, h: 32, ang: -42.3, piso: 'P1' },
+  { id: 'Stella Artois', t: 'gastro', txt: 'Ste.', cx: 376.5, cy: 214, w: 11, h: 20, ang: 0, piso: 'P1' },
   // Gastronomía, tercer piso: las cuatro barras, afuera, y Beer Garden y
   // Fernetería en las esquinas de Humboldt, contra los ventanales.
   { id: 'Cancha 1', t: 'gastro', txt: 'C1', cx: 28.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'P3' },
