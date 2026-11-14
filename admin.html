@@ -1393,7 +1393,7 @@ tr:hover td{background:#f9f9fb}
           <div class="nom-mas">
             <button class="bar-btn ico" onclick="toggleCcMas(event)" title="Informe Excel, el campo, quitar del Centro" aria-label="Más acciones">⋯</button>
             <div class="nom-mas-menu" id="ccMasMenu">
-              <button class="btn btn-sm" onclick="exportIncidencias()" title="El informe del show: resumen por gravedad, categoría y sector, y el detalle con la línea de tiempo">↓ Informe Excel</button>
+              <button class="btn btn-sm" onclick="exportIncidencias()" title="El informe del show: resumen por criticidad, categoría y sector, y el detalle con la línea de tiempo">↓ Informe Excel</button>
               <button class="btn btn-sm" id="ccArmadoBtn" onclick="ccCambiarArmado()" title="Cómo va el campo en este show (lo dice la ficha técnica del Arena): la gerencia y los supervisores lo ven así, en todas sus fechas">Campo con asientos</button>
               <button class="btn btn-sm" id="ccQuitar" onclick="ccQuitarShow()" title="La gerencia deja de verlo y los supervisores ya no cargan incidencias en este show">Quitar del Centro</button>
             </div>
@@ -1487,7 +1487,7 @@ tr:hover td{background:#f9f9fb}
       <div class="fg"><label>Categoría *</label><select class="fi" id="incNCat" onchange="incNuevaCat()"></select></div>
       <div class="fg"><label>Qué pasó *</label><select class="fi" id="incNTipo" onchange="incNuevaTipo()"></select></div>
     </div>
-    <div class="fg"><label>Gravedad</label><div id="incNNivel" class="inc-n-niveles"></div></div>
+    <div class="fg"><label>Criticidad</label><div id="incNNivel" class="inc-n-niveles"></div></div>
     <div class="fg"><label>Qué se hizo</label><div id="incNAcc" class="inc-n-acc"></div></div>
     <div class="fg"><label>Nota</label><textarea class="fi" id="incNNota" maxlength="1000" placeholder="Opcional"></textarea></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mIncNueva')">Cancelar</button><button class="btn btn-primary" id="incNGuardar" onclick="incGuardarNuevaAdm()">Cargar incidencia</button></div>
@@ -5911,7 +5911,7 @@ function incEstadoSalaHTML(abiertas) {
   const de = abiertas.filter(i => (i.nivel || 1) === peor), vieja = de.slice().sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
   const s = de.length === 1 ? '' : 's';
   return { clase: peor === 3 ? 'grave' : 'medio', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.6"/></svg>'
-    + '<span>' + de.length + ' incidencia' + s + (peor === 3 ? ' grave' + s : ' de gravedad media') + '</span>'
+    + '<span>' + de.length + ' incidencia' + s + (peor === 3 ? ' grave' + s : ' de criticidad media') + '</span>'
     + (peor === 3 ? '<small>Aviso inmediato al responsable del Arena</small>' : '')
     + '<span class="hace">Desde hace ' + incEsc(incMinutos(Date.now() - new Date(vieja.created_at))) + '</span>' };
 }
@@ -8786,7 +8786,7 @@ function renderIncidAdm() {
   const elegido = incNivelAdm ? String(incNivelAdm) : (incFiltroAdm === 'resueltas' || incFiltroAdm === 'todas' ? incFiltroAdm : '');
   // Como en la gerencia: el punto de color y qué es, arriba; el número grande (y "abiertas"), abajo.
   const nombres = { 3: 'Grave', 2: 'Medio', 1: 'Leve' };
-  const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat' + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="incTocarStatAdm(\'' + clave + '\')" title="Ver ' + ({ 3: 'las graves abiertas', 2: 'las de gravedad media abiertas', 1: 'las leves abiertas', resueltas: 'las resueltas', todas: 'todas' })[clave] + ' en el listado">'
+  const stat = (num, txt, sufijo, color, late, clave) => '<button type="button" class="stat' + (late ? ' pulso' : '') + (elegido === clave ? ' on' : '') + '" style="--c:' + color + '" onclick="incTocarStatAdm(\'' + clave + '\')" title="Ver ' + ({ 3: 'las graves abiertas', 2: 'las de criticidad media abiertas', 1: 'las leves abiertas', resueltas: 'las resueltas', todas: 'todas' })[clave] + ' en el listado">'
     + '<span class="stat-t"><i></i>' + txt + '</span><span class="stat-n"><b>' + num + '</b>' + (sufijo ? '<small>' + sufijo + '</small>' : '') + '</span></button>';
   document.getElementById('incResumenAdm').innerHTML = [3, 2, 1].map(nv => stat(n(nv), nombres[nv], 'abiertas', INC_NIVELES[nv].color, nv === 3 && n(3), String(nv))).join('')
     + stat(delDia.length - abiertas.length, 'Resueltas', '', '#94a3b8', false, 'resueltas') + stat(delDia.length, 'En total', '', '#0b1b33', false, 'todas');
@@ -8870,13 +8870,13 @@ function exportIncidencias() {
   const abiertas = lista.filter(i => i.estado !== 'resuelta').length;
   const filas = [], cabeceras = [];
   const bloque = (titulo, pares) => { cabeceras.push(filas.length); filas.push([titulo, 'Cantidad']); pares.forEach(p => filas.push([p[0], p[1]])); filas.push([]); };
-  bloque('Gravedad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, lista.filter(i => (i.nivel || 1) === nv).length]));
+  bloque('Criticidad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, lista.filter(i => (i.nivel || 1) === nv).length]));
   bloque('Estado', [['Resueltas', lista.length - abiertas], ['Abiertas', abiertas]]);
   bloque('Categoría', cuenta(i => i.categoria));
   bloque('Sector', cuenta(i => i.sector));
   bloque('Qué pasó', cuenta(i => i.tipo));
   const fh = iso => { const d = incDia(iso); return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + ' ' + incHora(iso) : ''; };
-  const detalle = [['cuándo', 'sector', 'referencia', 'categoría', 'qué pasó', 'gravedad', 'qué se hizo', 'nota', 'estado', 'cómo se resolvió', 'resuelta', 'cargó']].concat(
+  const detalle = [['cuándo', 'sector', 'referencia', 'categoría', 'qué pasó', 'criticidad', 'qué se hizo', 'nota', 'estado', 'cómo se resolvió', 'resuelta', 'cargó']].concat(
     lista.slice().sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || ''))).map(i => [
       fh(i.created_at), i.sector || '', i.ubicacion || '', i.categoria || '', i.tipo || '', (INC_NIVELES[i.nivel] || {}).nombre || '',
       (i.acciones || []).join(' · '), i.nota || '', i.estado === 'resuelta' ? 'Resuelta' : 'Abierta', i.resolucion || '', fh(i.resuelta_at), i.creada_por_nombre || '']));

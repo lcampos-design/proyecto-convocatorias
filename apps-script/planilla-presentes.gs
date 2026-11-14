@@ -670,10 +670,10 @@ function htmlReporte_(s, logo) {
     + num(r.total, 'Incidencias') + num(r.abiertas, 'Abiertas') + num(r.porNivel[0][1], 'Graves') + num(r.asistencias, 'Asistencias') + num(r.derivadas, 'Derivadas') + num(r.tMedio, 'Resolución media') + num(r.pico, 'Momento más cargado')
     + '</tr></table>'
     + '<table style="border-collapse:collapse;width:100%;margin-bottom:16px"><tr>'
-    + tabla('Gravedad', r.porNivel.map(function (p) { return [NIVELES_[p[0]].nombre, p[1]]; })) + tabla('Categoría', cuentaPor_(l, function (i) { return i.categoria; })) + tabla('Sector', cuentaPor_(l, function (i) { return i.sector; }))
+    + tabla('Criticidad', r.porNivel.map(function (p) { return [NIVELES_[p[0]].nombre, p[1]]; })) + tabla('Categoría', cuentaPor_(l, function (i) { return i.categoria; })) + tabla('Sector', cuentaPor_(l, function (i) { return i.sector; }))
     + '</tr></table>'
     + '<div style="font-size:10.5px;font-weight:bold;margin:0 0 5px">Línea de tiempo</div>'
-    + (l.length ? '<table style="border-collapse:collapse;width:100%"><tr>' + th('Cuándo') + th('Sector') + th('Qué pasó') + th('Gravedad') + th('Qué se hizo') + th('Derivado a') + th('Cómo se resolvió') + '</tr>' + filas + '</table>'
+    + (l.length ? '<table style="border-collapse:collapse;width:100%"><tr>' + th('Cuándo') + th('Sector') + th('Qué pasó') + th('Criticidad') + th('Qué se hizo') + th('Derivado a') + th('Cómo se resolvió') + '</tr>' + filas + '</table>'
       : '<div style="font-size:10px;color:' + G + '">No se registraron incidencias en este show.</div>')
     + '</body></html>';
 }
