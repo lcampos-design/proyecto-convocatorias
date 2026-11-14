@@ -5854,7 +5854,7 @@ function incTarjetaHTML(i, op) {
     : (i.acciones || []).length ? '<div class="inc-tj-estado">✓ ' + incEsc(i.acciones[0]) + '</div>'
     : (i.nivel || 1) >= 2 ? '<div class="inc-tj-estado mal">Sin derivar todavía</div>' : '';
   const fila = (t, html) => html ? '<div class="inc-tj-f"><span>' + t + '</span><div>' + html + '</div></div>' : '';
-  const tardo = resuelta && i.resuelta_at && i.created_at ? new Date(i.resuelta_at) - new Date(i.created_at) : -1;
+  const tardo = resuelta && i.resuelta_at && i.created_at && !/^Cerrada al terminar el show/.test(i.resolucion || '') ? new Date(i.resuelta_at) - new Date(i.created_at) : -1;
   const det = !abierta ? '' : '<div class="inc-tj-det" onclick="event.stopPropagation()">'
     + fila('Dónde', '<b>' + incEsc(i.sector) + '</b>' + (i.ubicacion ? ' · ' + incEsc(i.ubicacion) : '') + (f ? '<div class="inc-tj-chips">' + incFichaChips(f) + '</div>' : ''))
     + fila('Qué es', incEsc(i.categoria || '') + ' · ' + v.nombre)
@@ -7999,7 +7999,8 @@ function incFranjaNombre(v) {
 // Los números del show.
 function incMetricas(lista) {
   const l = lista || [];
-  const resueltas = l.filter(i => i.estado === 'resuelta' && i.resuelta_at && i.created_at);
+  // Las que se cerraron solas al terminar el show (sin resolución cargada) no cuentan para la resolución media.
+  const resueltas = l.filter(i => i.estado === 'resuelta' && i.resuelta_at && i.created_at && !/^Cerrada al terminar el show/.test(i.resolucion || ''));
   const tiempos = resueltas.map(i => new Date(i.resuelta_at) - new Date(i.created_at)).filter(x => x >= 0);
   const franjas = incFranjas(l);
   const pico = franjas.reduce((m, f) => { const n = f.n[0] + f.n[1] + f.n[2]; return n > (m ? m.total : 0) ? { ...f, total: n } : m; }, null);
