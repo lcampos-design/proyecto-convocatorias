@@ -42,13 +42,14 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '14-nov 1:20, reporte con el PDF del sistema, el link y Hola a todos';
+var VERSION = '14-nov 1:55, el contrato al instante (sin la media hora)';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
-// El contrato sale a los 30 minutos de la P (propiedad ESPERA_MINUTOS para cambiarlo; 0 = enseguida):
-// así una P puesta por error se corrige antes de que le llegue el mail. La hora de la P es la de la
-// columna HORARIO (la planilla la completa sola al poner la P), leída en la zona horaria de la planilla.
-var ESPERA_MINUTOS = 30;
+// El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
+// 14-nov: "lo de la media hora no va, tiene que ser al instante". Si algún día se quiere un margen para
+// corregir una P puesta por error: la propiedad ESPERA_MINUTOS (los minutos desde la hora de la P, la
+// columna HORARIO, leída en la zona horaria de la planilla).
+var ESPERA_MINUTOS = 0;
 var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 // La programación: cada 5 minutos.
@@ -434,7 +435,7 @@ function leer_(f) {
   // Cada sector es un bloque con su encabezado (SECTOR · APELLIDO · NOMBRE · CUIL · … · PRESENTES).
   var libro = SpreadsheetApp.openById(f.getId()), tz = libro.getSpreadsheetTimeZone ? libro.getSpreadsheetTimeZone() : TZ_AR;
   var valores = libro.getSheets()[0].getDataRange().getDisplayValues();
-  // Sin la propiedad (o vacía), la de siempre: 30 minutos. Number(null) da 0, por eso no se usa directo.
+  // Sin la propiedad (o vacía), la de siempre: al instante (ESPERA_MINUTOS). Number(null) da 0, por eso no se usa directo.
   var ep = PropertiesService.getScriptProperties().getProperty('ESPERA_MINUTOS');
   var espera = ep === null || String(ep).trim() === '' ? ESPERA_MINUTOS : Number(ep);
   if (!(espera >= 0)) espera = ESPERA_MINUTOS;
