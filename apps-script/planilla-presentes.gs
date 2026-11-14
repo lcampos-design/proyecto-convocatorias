@@ -34,7 +34,8 @@
  *  5. "instalar": deja programado que corra solo cada 5 minutos. Listo.
  *
  *  EL REPORTE DE INCIDENCIAS (al terminar cada show del Arena, desde esta casilla):
- *  - Propiedad REPORTE_PARA = los mails que lo reciben, separados por coma.
+ *  - Propiedad REPORTE_PARA = los mails que lo reciben, separados por coma; REPORTE_CC, los de
+ *    la copia, y REPORTE_CCO, los de la copia oculta (opcionales).
  *  - "probar_reporte": el de hoy, sólo a esta casilla (o a REPORTE_PRUEBA), para ver cómo queda (la primera
  *    vez Google pide permiso para mandar mails: aceptar).
  *  - Sale solo a la 1:30 de la noche del show; "enviar_reporte" lo manda ya.
@@ -546,8 +547,14 @@ function mandarReporte_(s, para, prueba) {
   var asunto = (prueba ? '[Prueba] ' : '') + 'Reporte de incidencias - ' + s.nombre + ' ' + ddmm;
   var pdf = Utilities.newBlob(htmlReporte_(s, logoReporte_()), MimeType.HTML, 'reporte.html').getAs(MimeType.PDF)
     .setName('Reporte de incidencias - ' + s.nombre + ' ' + ddmm.replace('/', '-') + '.pdf');
-  var c = cuerpoReporte_(s);
-  MailApp.sendEmail({ to: para, subject: asunto, body: c.texto, htmlBody: c.html, name: 'Show Business Solutions', attachments: [pdf] });
+  var c = cuerpoReporte_(s), o = { to: para, subject: asunto, body: c.texto, htmlBody: c.html, name: 'Show Business Solutions', attachments: [pdf] };
+  // En copia (REPORTE_CC) y en copia oculta (REPORTE_CCO), separados por coma; la prueba, sin copias.
+  if (!prueba) {
+    var props = PropertiesService.getScriptProperties(), cc = String(props.getProperty('REPORTE_CC') || '').trim(), cco = String(props.getProperty('REPORTE_CCO') || '').trim();
+    if (cc) o.cc = cc;
+    if (cco) o.bcc = cco;
+  }
+  MailApp.sendEmail(o);
 }
 var logoCache_ = null;
 function logoReporte_() {
