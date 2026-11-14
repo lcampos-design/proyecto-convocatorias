@@ -35,7 +35,7 @@
  *
  *  EL REPORTE DE INCIDENCIAS (al terminar cada show del Arena, desde esta casilla):
  *  - Propiedad REPORTE_PARA = los mails que lo reciben, separados por coma.
- *  - "probar_reporte": el de hoy, sólo a esta casilla, para ver cómo queda (la primera
+ *  - "probar_reporte": el de hoy, sólo a esta casilla (o a REPORTE_PRUEBA), para ver cómo queda (la primera
  *    vez Google pide permiso para mandar mails: aceptar).
  *  - Sale solo a la 1:30 de la noche del show; "enviar_reporte" lo manda ya.
  *  Para apagarlo: ejecutar "desinstalar".
@@ -525,7 +525,8 @@ function reportes_(clave) {
 function probar_reporte() {
   var clave = PropertiesService.getScriptProperties().getProperty('CLAVE');
   if (!clave) throw new Error('Falta la propiedad CLAVE.');
-  var f = diaFuncion_(), r = pedirReporte_(f, clave), yo = Session.getEffectiveUser().getEmail();
+  // La prueba va a REPORTE_PRUEBA (un mail que se pueda mirar) o, si no está, a esta casilla.
+  var f = diaFuncion_(), r = pedirReporte_(f, clave), yo = String(PropertiesService.getScriptProperties().getProperty('REPORTE_PRUEBA') || '').trim() || Session.getEffectiveUser().getEmail();
   if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
   if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
   r.shows.forEach(function (s) { mandarReporte_(s, yo, true); Logger.log('Prueba mandada a ' + yo + ': ' + s.nombre + ' · ' + s.incidencias.length + ' incidencias'); });
