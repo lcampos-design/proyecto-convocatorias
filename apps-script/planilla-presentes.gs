@@ -521,9 +521,11 @@ function pedirRecordatorios_(clave, extra) {
   var resp = UrlFetchApp.fetch(URL_RECORDATORIOS, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(extra || {}) });
   try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
 }
+// Arrancan el 15-nov al mediodía (así, pegando el script hoy, se puede mirar antes con probar_recordatorio).
+var RECORDATORIOS_DESDE = '2026-11-15';
 function recordatorios_(clave) {
   var ahora = new Date(), hoy = Utilities.formatDate(ahora, TZ_AR, 'yyyy-MM-dd'), hora = Number(Utilities.formatDate(ahora, TZ_AR, 'H'));
-  if (hora < 12 || hora >= 20) return;
+  if (hoy < RECORDATORIOS_DESDE || hora < 12 || hora >= 20) return;
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('recordatorios_' + hoy)) return;
   var vueltas = 0, r, total = 0, problemas = 0;
