@@ -2395,7 +2395,7 @@ tr:hover td{background:#f9f9fb}
       <button class="btn btn-sec" onclick="closeM('mContratoTrace')">Cerrar</button>
       <button class="btn btn-sec" id="ctLinkBtn" onclick="copiarLinkDeContrato()" style="display:none">Copiar link de firma</button>
       <button class="btn btn-sec" id="ctRenovarBtn" onclick="renovarLinkFirma()" style="display:none" title="Corre la fecha de vencimiento sin cambiar el link: el que ya lo tiene lo puede volver a usar">↻ Renovar link</button>
-      <button class="btn btn-sec" id="ctPdfBtn" onclick="descargarContratoSinFirmar()" style="display:none">↓ Descargar PDF</button>
+      <button class="btn btn-sec" id="ctPdfBtn" onclick="descargarContratoSinFirmar()" style="display:none" title="El contrato como se le mandó: firmado sólo por SBS. La firma del trabajador y la hoja de auditoría aparecen cuando firma (y ahí se baja con «Descargar PDF firmado»).">↓ PDF sin firmar (sólo SBS)</button>
       <button class="btn btn-sec" id="ctReenviarBtn" onclick="reenviarContrato()" style="display:none">↻ Reenviar mail</button>
       <button class="btn btn-primary" id="ctDescargarBtn" onclick="descargarContratoFirmado()" style="display:none">↓ Descargar PDF firmado</button>
     </div>
@@ -10746,7 +10746,7 @@ async function descargarContratoSinFirmar() {
   btn.disabled = true; btn.textContent = 'Generando...';
   try { await bajarContratoPDF(ctTraceRow); }
   catch (err) { toast('Error: ' + (err.message || 'no se pudo generar el PDF')); }
-  btn.disabled = false; btn.textContent = '↓ Descargar PDF';
+  btn.disabled = false; btn.textContent = '↓ PDF sin firmar (sólo SBS)';
 }
 
 async function sendConfirmationMail() {
