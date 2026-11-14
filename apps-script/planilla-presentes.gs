@@ -42,7 +42,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '14-nov, reporte (enviar_reporte cierra lo abierto) y 30 minutos de espera';
+var VERSION = '14-nov 1:00, reporte con el mail de SBS';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale a los 30 minutos de la P (propiedad ESPERA_MINUTOS para cambiarlo; 0 = enseguida):
@@ -529,7 +529,7 @@ function probar_reporte() {
   var clave = PropertiesService.getScriptProperties().getProperty('CLAVE');
   if (!clave) throw new Error('Falta la propiedad CLAVE.');
   // La prueba va a REPORTE_PRUEBA (un mail que se pueda mirar) o, si no está, a esta casilla.
-  var f = diaFuncion_(), r = pedirReporte_(f, clave), yo = String(PropertiesService.getScriptProperties().getProperty('REPORTE_PRUEBA') || '').trim() || Session.getEffectiveUser().getEmail();
+  var f = reporteFechaDebida_() || diaFuncion_(), r = pedirReporte_(f, clave), yo = String(PropertiesService.getScriptProperties().getProperty('REPORTE_PRUEBA') || '').trim() || Session.getEffectiveUser().getEmail();
   if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
   if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
   r.shows.forEach(function (s) { mandarReporte_(s, yo, true); Logger.log('Prueba mandada a ' + yo + ': ' + s.nombre + ' · ' + s.incidencias.length + ' incidencias'); });
@@ -538,7 +538,7 @@ function probar_reporte() {
 function enviar_reporte() {
   var props = PropertiesService.getScriptProperties(), clave = props.getProperty('CLAVE'), para = String(props.getProperty('REPORTE_PARA') || '').trim();
   if (!clave || !para) throw new Error('Faltan las propiedades CLAVE o REPORTE_PARA.');
-  var f = diaFuncion_(), r = pedirReporte_(f, clave, true);
+  var f = reporteFechaDebida_() || diaFuncion_(), r = pedirReporte_(f, clave, true);
   if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
   if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
   (r.shows || []).forEach(function (s) { mandarReporte_(s, para, false); props.setProperty('rep_' + f + '_' + s.conv_id, new Date().toISOString()); Logger.log('Enviado: ' + s.nombre); });
@@ -613,12 +613,21 @@ function cuerpoReporte_(s) {
   var cuando = DIAS_[Number(fAr_(d, 'u')) % 7] + ' ' + Number(s.fecha.slice(8, 10)) + ' de ' + MESES[Number(s.fecha.slice(5, 7)) - 1];
   var partes = r.porNivel.filter(function (p) { return p[1]; }).map(function (p) { return p[1] + ' ' + (p[1] === 1 ? NIVELES_[p[0]].una : NIVELES_[p[0]].plural); });
   var detalle = r.total ? r.total + (r.total === 1 ? ' incidencia' : ' incidencias') + ' (' + (partes.length > 1 ? partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1] : partes[0]) + '), ' + r.resueltas + (r.resueltas === 1 ? ' resuelta' : ' resueltas') + '.' : 'no se registraron incidencias.';
+  var res = r.total && r.resueltas === r.total ? (r.total === 1 ? 'resuelta' : 'todas resueltas') : r.resueltas + (r.resueltas === 1 ? ' resuelta' : ' resueltas');
+  if (r.total) detalle = r.total + (r.total === 1 ? ' incidencia' : ' incidencias') + ' (' + (partes.length > 1 ? partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1] : partes[0]) + '), ' + res + '.';
   var t1 = 'Les compartimos el reporte de incidencias del show de ' + s.nombre + ' del ' + cuando + ' en el ' + (s.venue || 'Movistar Arena') + ': ' + detalle;
-  var texto = 'Hola:\n\n' + t1 + '\n\nVa adjunto en PDF.\n\nSaludos,\nShow Business Solutions\nconvocatorias.arena@show-bs.com';
-  var P = 'margin:0 0 14px;font-size:15px;line-height:1.6;color:#1A1A1A';
-  var html = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px">'
-    + '<p style="' + P + '">Hola:</p><p style="' + P + '">' + esc_(t1) + '</p><p style="' + P + '">Va adjunto en PDF.</p>'
-    + '<p style="' + P + '">Saludos,<br>Show Business Solutions<br><span style="color:#5C5C5C">convocatorias.arena@show-bs.com</span></p></div>';
+  var t2 = 'Va adjunto en PDF, con el resumen y la línea de tiempo de cada incidencia.';
+  var texto = 'Hola:\n\n' + t1 + '\n\n' + t2 + '\n\nSaludos,\nShow Business Solutions\nconvocatorias.arena@show-bs.com';
+  var SITIO = 'https://convocatorias.show-bs.com', P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
+  var html = '<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif">'
+    + '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">'
+    + '<img src="' + SITIO + '/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">'
+    + '<p style="' + P + '">Hola:</p><p style="' + P + '">' + esc_(t1) + '</p><p style="' + P + '">' + esc_(t2) + '</p>'
+    + '<div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">'
+    + '<img src="' + SITIO + '/firmas/firma-arena.jpg" alt="Show Business Solutions · Convocatorias Movistar Arena" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0"></div>'
+    + '</div>'
+    + '<div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">Show Business Solutions · convocatorias.arena@show-bs.com<br>Instagram @showbs · @showbspain</div>'
+    + '</div>';
   return { texto: texto, html: html };
 }
 function esc_(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -634,7 +643,7 @@ function htmlReporte_(s, logo) {
     return '<td style="vertical-align:top;width:33%;padding-right:14px"><div style="font-size:10.5px;font-weight:bold;margin:0 0 5px">' + titulo + '</div><table style="border-collapse:collapse;width:100%">'
       + (pares.length ? pares : [['—', 0]]).map(function (p) { return '<tr><td style="border-bottom:1px solid ' + L + ';padding:4px 5px;font-size:10px">' + esc_(p[0]) + '</td><td style="border-bottom:1px solid ' + L + ';padding:4px 5px;text-align:right;font-weight:bold;font-size:10px">' + p[1] + '</td></tr>'; }).join('') + '</table></td>';
   };
-  var th = function (t) { return '<th style="background:' + T + ';color:#FFFFFF;padding:5px;text-align:left;font-size:9px">' + t + '</th>'; };
+  var th = function (t) { return '<th bgcolor="' + T + '" style="background-color:' + T + ';color:#FFFFFF;padding:5px;text-align:left;font-size:9px;font-weight:bold"><font color="#FFFFFF">' + t + '</font></th>'; };
   var td = 'border-bottom:1px solid ' + L + ';padding:5px;vertical-align:top;font-size:9px';
   var filas = l.map(function (i) {
     var nv = nivel_(i);
@@ -646,7 +655,7 @@ function htmlReporte_(s, logo) {
       + '<td style="' + td + '">' + (derivadoA_(i).map(esc_).join(', ') || '—') + '</td>'
       + '<td style="' + td + '">' + (i.estado === 'resuelta' ? (i.resuelta_at ? fh(i.resuelta_at) + ' · ' : '') + esc_(i.resolucion || '') : '<b>Abierta</b>') + '</td></tr>';
   }).join('');
-  return '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;color:' + T + ';font-size:10px;margin:0">'
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Poppins,Arial,Helvetica,sans-serif;color:' + T + ';font-size:10px;margin:0">'
     + '<table style="border-collapse:collapse;width:100%;border-bottom:2px solid ' + T + ';margin-bottom:12px"><tr>'
     + (logo ? '<td style="width:52px;padding:0 12px 10px 0"><img src="' + logo + '" width="42" height="42"></td>' : '')
     + '<td style="padding:0 0 10px 0"><div style="font-size:9.5px;font-weight:bold;color:' + G + '">AX · Audience Experience · Informe del show</div>'
