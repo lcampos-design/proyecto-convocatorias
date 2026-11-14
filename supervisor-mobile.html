@@ -4460,6 +4460,10 @@ function incPayloadNueva(h, convId) {
 async function incGuardarNueva() {
   incLeerCampos();
   const h = incHoja; if (!h || !h.cat || !h.tipo) { toast('Elegí qué pasó'); return; }
+  // «Otro lugar» pero escribieron que fue en el campo, y el campo es único: que vaya al Campo (el 13/11 quedaron
+  // cinco en «Otro lugar» y no contaban en el campo).
+  if (h.sector === INC_LUGARES[0] && /\bcampo\b/i.test((h.ubicacion || '') + ' ' + (h.nota || '')) && incArmadoDelShow(currentConvId, incLista) === 'unico'
+      && confirm('Escribiste que fue en el campo. ¿La cargo en «Campo»?')) h.sector = 'Campo';
   const btn = document.getElementById('incGuardarBtn'); btn.disabled = true; btn.textContent = 'Guardando...';
   const { data, error } = await sb.rpc('sup_incidencia_crear', incPayloadNueva(h, currentConvId));
   if (error || !data || !data.ok) { toast((data && data.error) || 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Guardar incidencia'; return; }
