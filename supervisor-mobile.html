@@ -1393,15 +1393,19 @@ const INC_LUGARES_BASE = [
   // adentro: los baños y el interno, enfrentado con el externo 2.
   { id: 'Camarines', t: 'servicio', txt: 'Cam.', cx: 36, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
   { id: 'Enfermería', t: 'enfermeria', txt: '', cx: 28.5, cy: 40, w: 11, h: 15, ang: 0, piso: 'PB' },
+  // Los baños accesibles de planta baja (14-nov): al lado de la enfermería, de Patagonia, de Smirnoff y del merch store.
+  { id: 'Baño accesible Enfermería', t: 'banio', txt: 'Acc', cx: 43.5, cy: 42, w: 11, h: 12, ang: 0, piso: 'PB' },
   { id: 'Cancha externo 1 (Paty)', t: 'gastro', txt: 'CE1', cx: 28.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'PB' },
   { id: 'Puerta 8', t: 'puerta', txt: 'P8', cx: 22, cy: 92, w: 22, h: 12, ang: 90, piso: 'PB' },
-  { id: 'Baños 1', t: 'banio', txt: '1', cx: 43.5, cy: 107, w: 11, h: 28, ang: 0, piso: 'PB' },
-  { id: 'Baños 2', t: 'banio', txt: '2', cx: 43.5, cy: 140, w: 11, h: 28, ang: 0, piso: 'PB' },
+  // Los baños, con su nombre (eran 1 y 2): el de hombres, el más cerca del escenario.
+  { id: 'Baños Hombres Cancha', t: 'banio', txt: 'H', cx: 43.5, cy: 107, w: 11, h: 28, ang: 0, piso: 'PB' },
+  { id: 'Baños Mujeres Cancha', t: 'banio', txt: 'M', cx: 43.5, cy: 140, w: 11, h: 28, ang: 0, piso: 'PB' },
+  { id: 'Baño accesible Patagonia', t: 'banio', txt: 'Acc', cx: 43.5, cy: 196, w: 11, h: 12, ang: 0, piso: 'PB' },
   { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 22, cy: 184, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Cancha externo 2 (Pepsi)', t: 'gastro', txt: 'CE2', cx: 28.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'PB' },
   { id: 'Cancha interno 2 (Patagonia)', t: 'gastro', txt: 'CI2', cx: 43.5, cy: 214, w: 11, h: 18, ang: 0, piso: 'PB' },
   { id: 'Cancha 3 (eventual)', t: 'gastro', txt: 'C3', cx: 28.5, cy: 241, w: 11, h: 12, ang: 0, piso: 'PB' },
-  // La de la esquina de Humboldt, lado Cancha, es la 4; la del medio de Humboldt no tiene número (Luca, 13-nov).
+  // La de la esquina de Humboldt, lado Cancha, es la 4; la del medio de Humboldt no tiene número (el coordinador, 13-nov).
   { id: 'Puerta 4', t: 'puerta', txt: 'P4', cx: 46, cy: 289, w: 22, h: 12, ang: 50.4, piso: 'PB' },
   { id: 'Puerta Humboldt', t: 'puerta', txt: 'Humb.', cx: 210, cy: 318, w: 40, h: 12, ang: 0, piso: 'PB' },
   { id: 'Puerta 5', t: 'puerta', txt: 'P5', cx: 374, cy: 289, w: 22, h: 12, ang: -50.4, piso: 'PB' },
@@ -1413,13 +1417,17 @@ const INC_LUGARES_BASE = [
   // y el interno adentro.
   { id: 'Sede externo 2 (7UP)', t: 'gastro', txt: 'SE2', cx: 391.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'PB' },
   { id: 'Sede interno 2 (Smirnoff)', t: 'gastro', txt: 'SI2', cx: 376.5, cy: 214, w: 11, h: 18, ang: 0, piso: 'PB' },
+  { id: 'Baño accesible Smirnoff', t: 'banio', txt: 'Acc', cx: 376.5, cy: 196, w: 11, h: 12, ang: 0, piso: 'PB' },
   { id: 'Sede externo 3 (Día)', t: 'gastro', txt: 'SE3', cx: 391.5, cy: 241, w: 11, h: 12, ang: 0, piso: 'PB' },
   { id: 'Puerta 7', t: 'puerta', txt: 'P7', cx: 398, cy: 184, w: 22, h: 12, ang: 90, piso: 'PB' },
-  { id: 'Baños 3', t: 'banio', txt: '3', cx: 376.5, cy: 140, w: 11, h: 28, ang: 0, piso: 'PB' },
-  { id: 'Baños 4', t: 'banio', txt: '4', cx: 376.5, cy: 107, w: 11, h: 28, ang: 0, piso: 'PB' },
+  { id: 'Baños Mujeres Sede', t: 'banio', txt: 'M', cx: 376.5, cy: 140, w: 11, h: 28, ang: 0, piso: 'PB' },
+  { id: 'Baños Hombres Sede', t: 'banio', txt: 'H', cx: 376.5, cy: 107, w: 11, h: 28, ang: 0, piso: 'PB' },
   { id: 'Puerta 9', t: 'puerta', txt: 'P9', cx: 398, cy: 92, w: 22, h: 12, ang: 90, piso: 'PB' },
   { id: 'Sede externo 1 (Kit Kat)', t: 'gastro', txt: 'SE1', cx: 391.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'PB' },
-  { id: 'Producción', t: 'servicio', txt: 'Prod.', cx: 384, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
+  // "Acreditaciones" (antes "Producción": así se lo reconoce) y el merch store, donde está la enfermería del otro lado.
+  { id: 'Acreditaciones', t: 'servicio', txt: 'Acred.', cx: 384, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
+  { id: 'Merch store', t: 'servicio', txt: 'Merch', cx: 391.5, cy: 40, w: 11, h: 15, ang: 0, piso: 'PB' },
+  { id: 'Baño accesible Merch store', t: 'banio', txt: 'Acc', cx: 376.5, cy: 42, w: 11, h: 12, ang: 0, piso: 'PB' },
   // Gastronomía, primer piso: las cuatro barras externas, afuera (algunos días
   // figuran con el sponsor: Gordon's, McCain, Hellmann's); las internas,
   // adentro, enfrentadas con la externa 02. Las grandes (Stella Artois, y en
@@ -1447,10 +1455,15 @@ const INC_LUGARES_BASE = [
   // costado en el medio, contra la pared que da al bowl; en el VIP, tres por
   // costado contra la pared de afuera; en P3, al final del pasillo, junto a la
   // 301 y la 317, a lo largo como un rectángulo.
-  { id: 'Baños Cancha 1 (P1)', t: 'banio', txt: 'C1', cx: 43.5, cy: 108, w: 11, h: 22, ang: 0, piso: 'P1' },
-  { id: 'Baños Cancha 2 (P1)', t: 'banio', txt: 'C2', cx: 43.5, cy: 132, w: 11, h: 22, ang: 0, piso: 'P1' },
-  { id: 'Baños Sede 1 (P1)', t: 'banio', txt: 'S1', cx: 376.5, cy: 108, w: 11, h: 22, ang: 0, piso: 'P1' },
-  { id: 'Baños Sede 2 (P1)', t: 'banio', txt: 'S2', cx: 376.5, cy: 132, w: 11, h: 22, ang: 0, piso: 'P1' },
+  // En P1 (14-nov): hombres y mujeres (eran Cancha 1 y 2, Sede 1 y 2), con un accesible de cada lado.
+  { id: 'Baño accesible Cancha 1 (P1)', t: 'banio', txt: 'Acc', cx: 43.5, cy: 89, w: 11, h: 12, ang: 0, piso: 'P1' },
+  { id: 'Baños Hombres Cancha (P1)', t: 'banio', txt: 'H', cx: 43.5, cy: 108, w: 11, h: 22, ang: 0, piso: 'P1' },
+  { id: 'Baños Mujeres Cancha (P1)', t: 'banio', txt: 'M', cx: 43.5, cy: 132, w: 11, h: 22, ang: 0, piso: 'P1' },
+  { id: 'Baño accesible Cancha 2 (P1)', t: 'banio', txt: 'Acc', cx: 43.5, cy: 151, w: 11, h: 12, ang: 0, piso: 'P1' },
+  { id: 'Baño accesible Sede 1 (P1)', t: 'banio', txt: 'Acc', cx: 376.5, cy: 89, w: 11, h: 12, ang: 0, piso: 'P1' },
+  { id: 'Baños Hombres Sede (P1)', t: 'banio', txt: 'H', cx: 376.5, cy: 108, w: 11, h: 22, ang: 0, piso: 'P1' },
+  { id: 'Baños Mujeres Sede (P1)', t: 'banio', txt: 'M', cx: 376.5, cy: 132, w: 11, h: 22, ang: 0, piso: 'P1' },
+  { id: 'Baño accesible Sede 2 (P1)', t: 'banio', txt: 'Acc', cx: 376.5, cy: 151, w: 11, h: 12, ang: 0, piso: 'P1' },
   { id: 'Baños Cancha 1 (VIP)', t: 'banio', txt: 'C1', cx: 28.5, cy: 66, w: 11, h: 22, ang: 0, piso: 'VIP' },
   { id: 'Baños Cancha 2 (VIP)', t: 'banio', txt: 'C2', cx: 28.5, cy: 152, w: 11, h: 22, ang: 0, piso: 'VIP' },
   { id: 'Baños Cancha 3 (VIP)', t: 'banio', txt: 'C3', cx: 28.5, cy: 236, w: 11, h: 22, ang: 0, piso: 'VIP' },
@@ -1458,7 +1471,9 @@ const INC_LUGARES_BASE = [
   { id: 'Baños Sede 2 (VIP)', t: 'banio', txt: 'S2', cx: 391.5, cy: 143, w: 11, h: 22, ang: 0, piso: 'VIP' },
   { id: 'Baños Sede 3 (VIP)', t: 'banio', txt: 'S3', cx: 391.5, cy: 230, w: 11, h: 22, ang: 0, piso: 'VIP' },
   { id: 'Baños Cancha (P3)', t: 'banio', txt: 'C', cx: 36, cy: -12, w: 22, h: 40, ang: 0, piso: 'P3' },
-  { id: 'Baños Sede (P3)', t: 'banio', txt: 'S', cx: 384, cy: -12, w: 22, h: 40, ang: 0, piso: 'P3' }
+  { id: 'Baños Sede (P3)', t: 'banio', txt: 'S', cx: 384, cy: -12, w: 22, h: 40, ang: 0, piso: 'P3' },
+  { id: 'Baño accesible Cancha (P3)', t: 'banio', txt: 'Acc', cx: 36, cy: 14, w: 22, h: 10, ang: 0, piso: 'P3' },
+  { id: 'Baño accesible Sede (P3)', t: 'banio', txt: 'Acc', cx: 384, cy: 14, w: 22, h: 10, ang: 0, piso: 'P3' }
 ]);
 // El cartel de un puesto sin todo en mayúsculas ("CAM" → "Cam.", "AV. DORREGO" →
 // "Av. Dorrego"): si es uno de los de siempre, como ése; si no, cada palabra de
@@ -1904,7 +1919,8 @@ function incBuscarLugares(q, armado) {
   }
   return lugares.map(s => {
     const id = incSinTildes(s.id), cods = [incSinTildes(s.txt), incSinTildes(s.lugar ? incTxtLugar(s) : '')].filter(Boolean), tipo = incSinTildes(s.lugar ? INC_TIPOS_LUGAR[s.t].nombre : '');
-    const puntos = id === t || cods.includes(t) ? 0 : id.startsWith(t) || cods.some(x => x.startsWith(t)) ? 1 : id.includes(t) || (tipo && tipo.startsWith(t)) ? 2 : -1;
+    const disca = /^disc/.test(t) && 'discapacidad'.startsWith(t.slice(0, 12)) && id.includes('accesible');
+    const puntos = id === t || cods.includes(t) ? 0 : id.startsWith(t) || cods.some(x => x.startsWith(t)) ? 1 : id.includes(t) || (tipo && tipo.startsWith(t)) || disca ? 2 : -1;
     return { s, puntos };
   }).filter(x => x.puntos >= 0).sort((a, b) => a.puntos - b.puntos).slice(0, 14).map(x => x.s);
 }
@@ -2032,7 +2048,7 @@ const INC_VENTANA_ABAJO = '(max-width:640px),(orientation:portrait) and (max-wid
 // En el orden en que se recorre el Arena: las puertas, el campo (PB), la
 // platea baja (P1), el VIP, la alta (P3) y después los puestos. Los "otros
 // puntos" del anillo son los camarines y la producción.
-const INC_LEYENDA = [['puerta', 'Puertas'], ['campo', 'Campo'], ['baja', 'Platea baja'], ['vip', 'VIP'], ['alta', 'Platea alta'], ['banio', 'Baños'], ['gastro', 'Gastronomía'], ['enfermeria', 'Enfermería'], ['servicio', 'Camarines y producción'], ['calle', 'Calles']];
+const INC_LEYENDA = [['puerta', 'Puertas'], ['campo', 'Campo'], ['baja', 'Platea baja'], ['vip', 'VIP'], ['alta', 'Platea alta'], ['banio', 'Baños'], ['gastro', 'Gastronomía'], ['enfermeria', 'Enfermería'], ['servicio', 'Camarines, acreditaciones y merch'], ['calle', 'Calles']];
 const INC_LEYENDA_ZONAS = ['campo', 'baja', 'vip', 'alta'];
 // El piso de cada zona (tocar la zona en la leyenda lleva a ese piso).
 const INC_LEYENDA_PISO = { campo: 'PB', baja: 'P1', vip: 'VIP', alta: 'P3' };
