@@ -47,7 +47,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '15-nov 11:00, el reporte sin PDF adjunto (el PDF se baja del link)';
+var VERSION = '15-nov 11:15, el reporte sin PDF adjunto ni detalle por criticidad (todo en el link)';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -737,10 +737,10 @@ function resumenReporte_(s) {
 function cuerpoReporte_(s) {
   var r = resumenReporte_(s), d = new Date(s.fecha + 'T12:00:00-03:00');
   var cuando = DIAS_[Number(fAr_(d, 'u')) % 7] + ' ' + Number(s.fecha.slice(8, 10)) + ' de ' + MESES[Number(s.fecha.slice(5, 7)) - 1];
-  var partes = r.porNivel.filter(function (p) { return p[1]; }).map(function (p) { return p[1] + ' ' + (p[1] === 1 ? NIVELES_[p[0]].una : NIVELES_[p[0]].plural); });
-  var detalle = r.total ? r.total + (r.total === 1 ? ' incidencia' : ' incidencias') + ' (' + (partes.length > 1 ? partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1] : partes[0]) + '), ' + r.resueltas + (r.resueltas === 1 ? ' resuelta' : ' resueltas') + '.' : 'no se registraron incidencias.';
+  // Sin el detalle por criticidad (Thomas, 15-nov): si después se corrige una, el número del mail queda viejo; el
+  // detalle está en el link, siempre actualizado. Queda el total y si están resueltas (a la 1:30 se cierra lo abierto).
   var res = r.total && r.resueltas === r.total ? (r.total === 1 ? 'resuelta' : 'todas resueltas') : r.resueltas + (r.resueltas === 1 ? ' resuelta' : ' resueltas');
-  if (r.total) detalle = r.total + (r.total === 1 ? ' incidencia' : ' incidencias') + ' (' + (partes.length > 1 ? partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1] : partes[0]) + '), ' + res + '.';
+  var detalle = r.total ? r.total + (r.total === 1 ? ' incidencia' : ' incidencias') + ', ' + res + '.' : 'no se registraron incidencias.';
   var t1 = 'Les compartimos el reporte de incidencias del show de ' + s.nombre + ' del ' + cuando + ' en el ' + (s.venue || 'Movistar Arena') + ': ' + detalle;
   var t2 = s.link ? 'Pueden verlo en el sistema, siempre actualizado, con el resumen y la línea de tiempo de cada incidencia. Si lo necesitan en PDF, se descarga desde ahí.' : 'Va adjunto en PDF, con el resumen y la línea de tiempo de cada incidencia.';
   var texto = 'Hola a todos:\n\n' + t1 + '\n\n' + t2 + (s.link ? '\n\nVer el informe: ' + s.link : '') + '\n\nSaludos,\nShow Business Solutions\nconvocatorias.arena@show-bs.com';
