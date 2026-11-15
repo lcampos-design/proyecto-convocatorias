@@ -4390,8 +4390,8 @@ function incTocarTarjeta(id) { incAbiertaSup = incAbiertaSup === String(id) ? ''
 // Se elige el sector: el piso (Campo, Platea baja, VIP, Platea alta) con sus
 // sectores y lo que tiene ese piso (baños, gastronomía…), o Exteriores (los
 // ingresos y las calles, para avisar filas desbordadas y congestiones). O se busca.
-const INC_DONDE = [['PB', 'Campo'], ['P1', 'Platea baja'], ['VIP', 'VIP'], ['P3', 'Platea alta'], ['CT', 'Cortatickets'], ['EXT', 'Exteriores']];
-// Cortatickets y Exteriores, separados (Thomas, 15-nov: "una cosa es Calle, que sería Exteriores, y otra cosa es
+const INC_DONDE = [['PB', 'Campo'], ['P1', 'Platea baja'], ['VIP', 'VIP'], ['P3', 'Platea alta'], ['CT', 'Cortatickets'], ['EXT', 'Calle']];
+// Cortatickets y Calle, separados (Thomas, 15-nov: "Exteriores que sea Calle, que es el lenguaje nuestro"; "una cosa es Calle, que sería Exteriores, y otra cosa es
 // Cortatickets, que lo puntualizaría en las puertas, que es donde están los molinetes").
 function incPisoDonde() { try { const p = localStorage.getItem('incPisoDonde'); return INC_DONDE.some(x => x[0] === p) ? p : 'P1'; } catch (_) { return 'P1'; } }
 function incAbrirDonde() {
@@ -4431,7 +4431,7 @@ function incDondeHTML(q) {
   if (p === 'CT') html += grupo('Puertas de ingreso', de(x => x.t === 'puerta').sort((a, b) => (num(a) || 99) - (num(b) || 99)), false)
     + '<div class="sv-ayuda"><b>Cortatickets:</b> lo que pase en los molinetes de cada puerta (lectores, entradas, filas para entrar).</div>';
   else if (p === 'EXT') html += grupo('Calles', de(x => x.t === 'calle'), false)
-    + '<div class="sv-ayuda"><b>Exteriores:</b> congestión en la vereda, filas que llegan a la calle, cortes o lo que pase afuera.</div>';
+    + '<div class="sv-ayuda"><b>Calle:</b> congestión en la vereda, filas que llegan a la calle, cortes o lo que pase afuera.</div>';
   else if (p === 'PB') html += grupo('Sectores del campo', de(x => x.t === 'campo'), true) + grupo('Pasillos y backstage', de(x => x.t === 'anillo' || x.t === 'back'), false) + grupo('En planta baja', enPiso('PB'), false);
   else if (p === 'VIP') html += grupo('Sectores', de(x => x.t === 'vip' && !x.lugar), false) + grupo('En el VIP', enPiso('VIP'), false);
   else html += grupo('Sectores', de(x => x.t === (p === 'P1' ? 'baja' : 'alta')).sort((a, b) => num(a) - num(b)), true) + grupo(p === 'P1' ? 'En el piso 1' : 'En el piso 3', enPiso(p), false);
