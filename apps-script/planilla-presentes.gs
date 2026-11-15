@@ -44,10 +44,15 @@
  *  - "probar_reporte": el de hoy, sólo a esta casilla (o a REPORTE_PRUEBA), para ver cómo queda (la primera
  *    vez Google pide permiso para mandar mails: aceptar).
  *  - Sale solo a la 1:30 de la noche del show; "enviar_reporte" lo manda ya.
+ *
+ *  EL INFORME PARA SOCIOS (15-nov): uno solo, con incidencias, contratos y personal, por link a una página siempre
+ *  actualizada. Sale el día siguiente del show, desde las 12, a la propiedad SOCIOS_PARA (mails separados por coma).
+ *  Los socios ya no van en REPORTE_PARA / REPORTE_CC / REPORTE_CCO (ése es el del Arena).
+ *  - "probar_socios": el del show de ayer, sólo a esta casilla (o a REPORTE_PRUEBA), para ver cómo queda.
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '15-nov 12:00, el contrato va con el CUIL del alta de ARCA';
+var VERSION = '15-nov 13:00, informe para socios (incidencias, contratos y personal) y CUIL del alta de ARCA';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -141,6 +146,8 @@ function sincronizar() {
   try { reportes_(clave); } catch (e) { Logger.log('Error con el reporte: ' + e); }
   // Los recordatorios de los contratos sin firmar: una vez por día, desde las 12.
   try { recordatorios_(clave); } catch (e) { Logger.log('Error con los recordatorios: ' + e); }
+  // El informe para socios del show de ayer: una vez, desde las 12.
+  try { socios_(clave); } catch (e) { Logger.log('Error con el informe para socios: ' + e); }
 }
 
 function mandar_(p, clave) {
@@ -691,6 +698,59 @@ function enviar_reporte() {
   if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
   (r.shows || []).forEach(function (s) { mandarReporte_(s, para, false); props.setProperty('rep_' + f + '_' + s.conv_id, new Date().toISOString()); Logger.log('Enviado: ' + s.nombre); });
   props.setProperty('rep_' + f, new Date().toISOString() + ' · a mano');
+}
+
+// ── El informe para socios (15-nov) ──
+// Thomas: "que no reciban más el informe sólo con los del Arena, sino que reciban sólo uno ellos con el informe de
+// incidencias, informe de contratos, etc., para poner todo en uno"; "como con los del Arena, que reciben un link a un
+// portal"; al día siguiente, a las 12 (ya firmó la mayoría). El link lo arma la plataforma (/socios?t=…).
+var SOCIOS_DESDE = '2026-11-16';
+function socios_(clave) {
+  var props = PropertiesService.getScriptProperties(), para = String(props.getProperty('SOCIOS_PARA') || '').trim();
+  if (!para) return;
+  var ahora = new Date(), hoy = fAr_(ahora, 'yyyy-MM-dd'), hora = Number(fAr_(ahora, 'H'));
+  if (hoy < SOCIOS_DESDE || hora < 12 || hora >= 20) return;
+  var f = fAr_(new Date(ahora.getTime() - 24 * 3600000), 'yyyy-MM-dd');   // el show de ayer
+  if (props.getProperty('soc_' + f)) return;
+  var r = pedirReporte_(f, clave);
+  if (!r || !r.ok) { Logger.log('Informe para socios ' + f + ': ' + JSON.stringify(r)); return; }
+  var todos = true;
+  (r.shows || []).forEach(function (s) {
+    var k = 'soc_' + f + '_' + s.conv_id;
+    if (props.getProperty(k)) return;
+    if (!s.link_socios) { todos = false; Logger.log('Informe para socios de ' + s.nombre + ': no llegó el link'); return; }
+    try { mandarSocios_(s, para, false); props.setProperty(k, new Date().toISOString()); Logger.log('Informe para socios enviado: ' + s.nombre + ' ' + f); }
+    catch (e) { todos = false; Logger.log('No salió el informe para socios de ' + s.nombre + ': ' + e); }
+  });
+  if (todos) props.setProperty('soc_' + f, new Date().toISOString() + ' · ' + (r.shows || []).length + ' show(s)');
+}
+// Para mirarlo antes: el del show de ayer, sólo a REPORTE_PRUEBA (o a esta casilla).
+function probar_socios() {
+  var props = PropertiesService.getScriptProperties(), clave = props.getProperty('CLAVE');
+  if (!clave) throw new Error('Falta la propiedad CLAVE.');
+  var yo = String(props.getProperty('REPORTE_PRUEBA') || '').trim() || Session.getEffectiveUser().getEmail();
+  var f = fAr_(new Date(Date.now() - 24 * 3600000), 'yyyy-MM-dd'), r = pedirReporte_(f, clave);
+  if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
+  if (!(r.shows || []).length) { Logger.log('Ayer (' + f + ') no hubo shows del Centro de Control del Arena.'); return; }
+  r.shows.forEach(function (s) { mandarSocios_(s, yo, true); Logger.log('Prueba mandada a ' + yo + ': ' + s.nombre + ' ' + f); });
+  Logger.log('Destinatarios para el envío de verdad (SOCIOS_PARA): ' + (props.getProperty('SOCIOS_PARA') || '(falta la propiedad)'));
+}
+function mandarSocios_(s, para, prueba) {
+  var ddmm = s.fecha.slice(8, 10) + '/' + s.fecha.slice(5, 7), d = new Date(s.fecha + 'T12:00:00-03:00');
+  var cuando = DIAS_[Number(fAr_(d, 'u')) % 7] + ' ' + Number(s.fecha.slice(8, 10)) + ' de ' + MESES[Number(s.fecha.slice(5, 7)) - 1];
+  var t1 = 'Les compartimos el informe del show de ' + s.nombre + ' del ' + cuando + ' en el ' + (s.venue || 'Movistar Arena') + ': los contratos, el personal y las incidencias, en un solo lugar.';
+  var t2 = 'Está siempre actualizado (por ejemplo, con los contratos que se firmen después). Si lo necesitan en PDF, se descarga desde ahí.';
+  var texto = 'Hola:\n\n' + t1 + '\n\n' + t2 + '\n\nVer el informe: ' + s.link_socios + '\n\nSaludos,\nGerencia de RR. HH. · Show Business Solutions';
+  var SITIO = 'https://convocatorias.show-bs.com', P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
+  var html = '<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif">'
+    + '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">'
+    + '<img src="' + SITIO + '/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">'
+    + '<p style="' + P + '">Hola:</p><p style="' + P + '">' + esc_(t1) + '</p><p style="' + P + '">' + esc_(t2) + '</p>'
+    + '<p style="margin:22px 0"><a href="' + esc_(s.link_socios) + '" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Ver el informe</a></p>'
+    + '<div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">'
+    + '<img src="' + SITIO + '/firmas/firma-rrhh.jpg" alt="Show Business Solutions · Gerencia de RR. HH." width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0"></div>'
+    + '</div></div>';
+  MailApp.sendEmail({ to: para, subject: (prueba ? '[Prueba] ' : '') + 'Informe del show - ' + s.nombre + ' ' + ddmm, body: texto, htmlBody: html, name: 'Show Business Solutions' });
 }
 
 function mandarReporte_(s, para, prueba) {

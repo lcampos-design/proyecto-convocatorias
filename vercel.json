@@ -17,6 +17,10 @@
       "destination": "/api/informe"
     },
     {
+      "source": "/socios",
+      "destination": "/api/informe?tipo=socios"
+    },
+    {
       "source": "/:pagina",
       "destination": "/:pagina.html"
     }

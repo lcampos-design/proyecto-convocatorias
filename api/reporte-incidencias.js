@@ -16,7 +16,7 @@
 
 import crypto from 'crypto';
 import { htmlInforme, pdfDeHtml } from './_lib/informe-pdf.js';
-import { linkInforme } from './informe.js';
+import { linkInforme, linkSocios } from './informe.js';
 
 // Con pdf: true, el PDF de cada show lo imprime Chromium (el Informe de la gerencia, idéntico): hasta un minuto.
 export const config = { maxDuration: 60 };
@@ -83,6 +83,8 @@ export default async function handler(req, res) {
     const show = { conv_id: c.id, nombre: String(c.nombre || '').split(' — ')[0].trim(), venue: c.venue || 'Movistar Arena', fecha, cerradas_al_final: lista.filter(i => i.resolucion === RESOLUCION_CIERRE).length, incidencias: lista };
     // El link al informe en el sistema (con "Descargar PDF"), para el mail.
     show.link = linkInforme(clave, c.id, fecha);
+    // El de los socios (incidencias, contratos y personal en uno), para su mail del día siguiente.
+    show.link_socios = linkSocios(clave, c.id, fecha);
     // El PDF: el Informe de la gerencia, con las incidencias tal cual están en la base. Si falla, el script usa el suyo.
     if (cuerpo.pdf === true) {
       try {
