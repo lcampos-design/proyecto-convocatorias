@@ -110,6 +110,10 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;text-align:center;margin:0 0 26px}
 .login-t .mano{display:block;font-size:.78em;margin-top:8px}
 .lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin-bottom:6px}
+/* El ojito de la contraseña: dentro del campo, a la derecha. */
+.clave-caja{position:relative;margin-bottom:16px}.clave-caja input{margin-bottom:0;padding-right:50px}
+.clave-ver{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:10px;background:none;color:var(--tinta);opacity:.55;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.clave-ver:hover,.clave-ver:focus-visible{opacity:1}
 /* 16 px: en el iPhone, con menos, la página se agranda sola al tocar el campo. */
 .in{width:100%;min-height:46px;padding:10px 12px;border:2px solid var(--linea);border-radius:12px;font:16px var(--inc-fuente);outline:none;margin-bottom:16px;background:var(--fondo);color:var(--tinta)}
 .in:focus{border-color:var(--tinta)}
@@ -329,7 +333,7 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
       <label class="lbl" for="lgEmail">Email</label>
       <input class="in" type="email" id="lgEmail" autocomplete="username" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')ingresar()">
       <label class="lbl" for="lgPass">Contraseña</label>
-      <input class="in" type="password" id="lgPass" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')ingresar()">
+      <div class="clave-caja"><input class="in" type="password" id="lgPass" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')ingresar()"><button type="button" class="clave-ver" onclick="verClave(this)" aria-label="Mostrar contraseña" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
       <div class="err" id="lgErr"></div>
       <button class="btn-ok" id="lgBtn" onclick="ingresar()">Ingresar</button>
     </div>
@@ -3455,6 +3459,15 @@ async function iniciar() {
   let { data: { session } } = await sb.auth.getSession();
   if (!session) { try { await traerSesionDelPanel('gerencia'); } catch (_) {} ({ data: { session } } = await sb.auth.getSession()); }
   if (session) entrar(); else pantalla('pLogin');
+}
+// El ojito de la contraseña (Mercedes, 14-nov: "sería bueno que tenga el ojito de ver la contraseña cuando la escribís").
+const OJO_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+function verClave(btn) {
+  const i = btn.parentNode.querySelector('input'), ver = i.type === 'password';
+  i.type = ver ? 'text' : 'password';
+  btn.setAttribute('aria-label', ver ? 'Ocultar contraseña' : 'Mostrar contraseña'); btn.setAttribute('aria-pressed', ver ? 'true' : 'false');
+  btn.innerHTML = ver ? OJO_SVG.replace('</svg>', '<path d="M3 3l18 18"/></svg>') : OJO_SVG;
+  i.focus();
 }
 async function ingresar() {
   const err = document.getElementById('lgErr'), btn = document.getElementById('lgBtn');

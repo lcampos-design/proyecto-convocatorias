@@ -112,6 +112,10 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 /* 16 px: en el iPhone, con menos, la página se agranda sola al tocar el campo. */
 .l-in{width:100%;min-height:46px;padding:10px 12px;background:var(--fondo);border:2px solid var(--linea);border-radius:12px;color:var(--tinta);font:16px var(--inc-fuente);outline:none;margin-bottom:16px}
 .l-in:focus{border-color:var(--tinta)}
+/* El ojito de la contraseña: dentro del campo, a la derecha. */
+.clave-caja{position:relative;margin-bottom:16px}.clave-caja input{margin-bottom:0;padding-right:50px}
+.clave-ver{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:10px;background:none;color:var(--tinta);opacity:.55;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.clave-ver:hover,.clave-ver:focus-visible{opacity:1}
 .l-in::placeholder{color:var(--placeholder)}
 .l-in:-webkit-autofill,.l-in:-webkit-autofill:hover,.l-in:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px var(--fondo) inset;-webkit-text-fill-color:var(--tinta);caret-color:var(--tinta)}
 .l-err{display:none;background:var(--grave);color:var(--grave-letra);border-radius:10px;padding:10px 12px;font:400 12px var(--inc-fuente);margin-bottom:14px}
@@ -376,7 +380,7 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
       <label class="lbl" for="loginEmail">Usuario</label>
       <input type="text" id="loginEmail" class="l-in" placeholder="Ej: plateabaja (o tu email)" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter')doLogin()">
       <label class="lbl">Contraseña</label>
-      <input type="password" id="loginPass" class="l-in" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="clave-caja"><input type="password" id="loginPass" class="l-in" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"><button type="button" class="clave-ver" onclick="verClave(this)" aria-label="Mostrar contraseña" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
       <div class="l-err" id="loginErr"></div>
       <button class="l-btn" id="loginBtn" onclick="doLogin()">Ingresar</button>
     </div>
@@ -683,6 +687,15 @@ function svNoSoyYo() { svPedirTurno(currentConvId, true); }
 // "Platea baja · Ana López", para las barras.
 function svQuienHoy(convId) { const t = svZona && svTurnoDe(convId); return t ? SV_ZONAS[svZona] + ' · ' + t.nombre + ' ' + t.apellido : ''; }
 
+// El ojito de la contraseña (Mercedes, 14-nov: "sería bueno que tenga el ojito de ver la contraseña cuando la escribís").
+const OJO_SVG = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+function verClave(btn) {
+  const i = btn.parentNode.querySelector('input'), ver = i.type === 'password';
+  i.type = ver ? 'text' : 'password';
+  btn.setAttribute('aria-label', ver ? 'Ocultar contraseña' : 'Mostrar contraseña'); btn.setAttribute('aria-pressed', ver ? 'true' : 'false');
+  btn.innerHTML = ver ? OJO_SVG.replace('</svg>', '<path d="M3 3l18 18"/></svg>') : OJO_SVG;
+  i.focus();
+}
 async function doLogin() {
   const btn = document.getElementById('loginBtn'), err = document.getElementById('loginErr');
   const email = svUsuarioAMail(document.getElementById('loginEmail').value), pass = document.getElementById('loginPass').value;
