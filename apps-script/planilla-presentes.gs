@@ -8,6 +8,11 @@
  * de esa fecha a los presentes y anula el de los que pasan a ausentes.
  * Si una planilla no cambió desde la última vez, no la vuelve a mandar.
  *
+ * Los CUIL mal escritos: si la plataforma encontró a la persona con otro CUIL,
+ * la celda queda en amarillo con una nota con el del sistema, para que los
+ * supervisores lo corrijan (la nota se va sola cuando se corrige). Para eso la
+ * cuenta del script tiene que poder editar la planilla; si no, sólo lo avisa.
+ *
  * El mail: la plataforma lo toma de la nómina o de las inscripciones. Para
  * los que no están ahí (o no tienen mail), este script lo busca en las
  * respuestas de disponibilidad del mes del show ("Disponibilidad Noviembre
@@ -42,7 +47,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '14-nov 19:00, recordatorios de contratos sin firmar (uno por día, al mediodía)';
+var VERSION = '15-nov 0:30, marca en la planilla los CUIL mal escritos y firma Gerencia de RR. HH.';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -101,7 +106,7 @@ function revisar() {
     p.simular = true;
     var r = mandar_(p, clave);
     if (!r || !r.ok) { Logger.log(f.getName() + ' → ' + JSON.stringify(r)); return; }
-    Logger.log(f.getName() + ' → ' + r.fecha + ' · show del panel: ' + (r.show || '(ninguno)') + ' · ' + r.filas + ' personas · ' + JSON.stringify(r.porResultado));
+    Logger.log(f.getName() + ' → ' + r.fecha + ' · show del panel: ' + (r.show || '(ninguno)') + ' · ' + r.filas + ' personas · ' + JSON.stringify(r.porResultado) + marcarYContar_(f, p, r, true));
     lineaDisponibilidad_(p);
     (r.problemas || []).forEach(function (x) { Logger.log('   ' + x.sector + ' · ' + x.apellido + ', ' + x.nombre + ' → ' + x.resultado + (x.detalle ? ' (' + x.detalle + ')' : '')); });
   });
@@ -127,7 +132,7 @@ function sincronizar() {
       // Se recuerda sólo si salió todo: si quedó algo para corregir (un monto que faltaba, un
       // mail), en la próxima vuelta se manda de nuevo y sale apenas se corrige en el panel.
       if (r && r.ok && !r.pendientes && !r.problemas) guardado.setProperty('h_' + f.getId(), huella);
-      Logger.log(f.getName() + ' → ' + JSON.stringify(r));
+      Logger.log(f.getName() + ' → ' + JSON.stringify(sinCuiles_(r)) + marcarYContar_(f, p, r, false));
     } catch (e) {
       Logger.log('Error con ' + f.getName() + ': ' + e);
     }
@@ -441,8 +446,8 @@ function leer_(f) {
   var ep = PropertiesService.getScriptProperties().getProperty('ESPERA_MINUTOS');
   var espera = ep === null || String(ep).trim() === '' ? ESPERA_MINUTOS : Number(ep);
   if (!(espera >= 0)) espera = ESPERA_MINUTOS;
-  var filas = [], sector = '', col = null;
-  valores.forEach(function (fila) {
+  var filas = [], sector = '', col = null, celdas = [];
+  valores.forEach(function (fila, nFila) {
     var arriba = fila.map(function (v) { return String(v).trim().toUpperCase(); });
     var iCuil = arriba.indexOf('CUIL'), iPres = arriba.indexOf('PRESENTES');
     if (iCuil >= 0 && iPres >= 0) {
@@ -464,6 +469,8 @@ function leer_(f) {
       nombre: col.nom >= 0 ? String(fila[col.nom]).trim() : '',
       marca: marca_(fila[col.pres])
     });
+    // Dónde está su CUIL en la planilla (para marcarlo si está mal escrito).
+    celdas.push({ r: nFila, c: col.cuil, cuil: cuil, marca: filas[filas.length - 1].marca });
     // Todavía no pasó la espera desde la P: va, pero el contrato sale en una vuelta siguiente.
     var x = filas[filas.length - 1], t = x.marca === 'P' && espera > 0 && col.hora >= 0 ? horaDe_(fila[col.hora], tz) : null;
     if (t && Date.now() - t < espera * 60000) x.espera = true;
@@ -476,7 +483,77 @@ function leer_(f) {
     // Sin un CUIL completo (ni en la planilla ni en la disponibilidad): el de la planilla de altas de ARCA.
     if (x.cuil.length !== 11 && String(x.doc || '').length !== 11) { var c = cuilDeAltas_(d, x); if (c) { x.doc = c; x.deAltas = true; } }
   });
-  return { archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: show, disponibilidad: d.total, filas: filas };
+  var p = { archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: show, disponibilidad: d.total, filas: filas };
+  // Las celdas no viajan a la plataforma ni cuentan para la huella (no enumerable: JSON.stringify las saltea).
+  Object.defineProperty(p, 'celdas', { value: celdas, enumerable: false });
+  return p;
+}
+
+// ── Los CUIL mal escritos, marcados en la misma planilla (Thomas, 14-nov) ──
+// "Generalmente las planillas de supervisores tienen errores en números de DNI/CUIL." Cuando la plataforma
+// encontró a la persona con otro CUIL (por el nombre, el DNI de la disponibilidad o el alta de ARCA), la celda
+// del CUIL queda con una nota con el del sistema y, si no tenía color, pintada de amarillo, para que los
+// supervisores lo corrijan. El número no se toca: lo corrige una persona. Cuando se corrige (la celda pasa a
+// tener el CUIL de la nota, o uno válido que la plataforma ya no marca), la nota y el color se van solos.
+// Una nota escrita por alguien no se pisa. Si la cuenta del script no puede editar la planilla, sólo lo avisa.
+var NOTA_FIRMA_ = 'Nota automática del sistema de contratos: se borra sola cuando se corrige el CUIL.';
+var COLOR_CUIL_ = '#fff2cc';
+function cuilValido_(c) {
+  c = String(c || '').replace(/\D/g, '');
+  if (c.length !== 11) return false;
+  var pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2], s = 0;
+  for (var i = 0; i < 10; i++) s += pesos[i] * Number(c[i]);
+  var r = 11 - (s % 11);
+  return (r === 11 ? 0 : r) === Number(c[10]);
+}
+// todas: la plataforma miró todas las filas ("revisar"); si no, sólo las que tienen marca.
+function marcarCuiles_(f, p, cuiles, todas) {
+  var celdas = p.celdas || [], cuenta = { marcadas: 0, borradas: 0 };
+  if (!celdas.length) return cuenta;
+  var porCuil = {};
+  (cuiles || []).forEach(function (x) { porCuil[x.cuil] = x; });
+  var hoja = SpreadsheetApp.openById(f.getId()).getSheets()[0], porCol = {};
+  celdas.forEach(function (c) { (porCol[c.c] = porCol[c.c] || []).push(c); });
+  Object.keys(porCol).forEach(function (k) {
+    var l = porCol[k], col = Number(k) + 1;
+    var r0 = Math.min.apply(null, l.map(function (c) { return c.r; })), r1 = Math.max.apply(null, l.map(function (c) { return c.r; }));
+    var rango = hoja.getRange(r0 + 1, col, r1 - r0 + 1, 1), notas = rango.getNotes(), fondos = rango.getBackgrounds();
+    l.forEach(function (c) {
+      var i = c.r - r0, nota = String(notas[i][0] || ''), fondo = String(fondos[i][0] || '').toLowerCase();
+      var nuestra = nota.indexOf(NOTA_FIRMA_) >= 0, x = porCuil[c.cuil], celda = hoja.getRange(c.r + 1, col);
+      if (x) {
+        var texto = 'Revisar el CUIL: ' + x.motivo + '.\nEn el sistema figura ' + x.correcto + '.\n\n' + NOTA_FIRMA_;
+        if (nota === texto || (nota && !nuestra)) return;
+        celda.setNote(texto);
+        if (fondo === '#ffffff' || fondo === '') celda.setBackground(COLOR_CUIL_);
+        cuenta.marcadas++;
+      } else if (nuestra) {
+        var m = nota.match(/\d{2}-\d{8}-\d/), bueno = m ? m[0].replace(/\D/g, '') : '';
+        var revisada = todas || !!c.marca;
+        if (!(c.cuil === bueno || (revisada && cuilValido_(c.cuil)))) return;   // todavía no se corrigió
+        celda.clearNote();
+        if (fondo === COLOR_CUIL_) celda.setBackground(null);
+        cuenta.borradas++;
+      }
+    });
+  });
+  return cuenta;
+}
+// Lo que devolvió la plataforma, para el registro: sin la lista de CUIL (no van al registro de ejecuciones).
+function sinCuiles_(r) {
+  if (!r || typeof r !== 'object') return r;
+  var o = {}; Object.keys(r).forEach(function (k) { if (k !== 'cuiles') o[k] = r[k]; });
+  if (r.cuiles && r.cuiles.length) o.cuilesParaCorregir = r.cuiles.length;
+  return o;
+}
+function marcarYContar_(f, p, r, todas) {
+  if (!r || !r.ok || !r.cuiles) return '';
+  try {
+    var c = marcarCuiles_(f, p, r.cuiles, todas);
+    return c.marcadas || c.borradas ? ' · CUIL en la planilla: ' + c.marcadas + ' marcados, ' + c.borradas + ' corregidos' : '';
+  } catch (e) {
+    return ' · No pude marcar los CUIL mal escritos en la planilla (¿la cuenta del script puede editarla?): ' + e;
+  }
 }
 
 // ── El reporte de incidencias de cada show, al terminar (13-nov-2026) ──

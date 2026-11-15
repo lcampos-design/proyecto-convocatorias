@@ -225,6 +225,23 @@ export function cuilValido(cuil) {
   const suma = pesos.reduce((t, p, i) => t + p * Number(d[i]), 0), r = 11 - (suma % 11);
   return (r === 11 ? 0 : r) === Number(d[10]);
 }
+// Los CUIL de la planilla para corregir (Thomas, 14-nov: "generalmente las planillas de supervisores tienen
+// errores en números de DNI/CUIL"): cuando se encontró a la persona con otro CUIL válido (por el nombre, el
+// DNI de la disponibilidad o el alta de ARCA), el del sistema, para que el script lo marque en la misma
+// planilla y los supervisores lo corrijan. No cambia nada acá: el contrato sale igual con el del sistema.
+export function cuilesACorregir(filas, personas) {
+  const out = [];
+  for (const f of filas) {
+    const p = personas.get(f.cuil);
+    if (!p || p.ambigua || p.distinta) continue;
+    const bueno = String(p.cuit || '').replace(/\D/g, '');
+    if (!cuilValido(bueno) || bueno === f.cuil) continue;
+    const motivo = f.cuil.length < 11 ? 'le faltan números' : f.cuil.length > 11 ? 'tiene números de más'
+      : !cuilValido(f.cuil) ? 'está mal escrito (no da el dígito verificador)' : 'no coincide con el de esta persona en el sistema';
+    out.push({ cuil: f.cuil, correcto: bueno.slice(0, 2) + '-' + bueno.slice(2, 10) + '-' + bueno.slice(10), motivo });
+  }
+  return out;
+}
 export function elegirPorNombre(cands, fila) {
   const ap = palabrasDe(fila.apellido), nom = palabrasDe(fila.nombre)[0];
   if (!ap.length || !nom) return null;
@@ -413,7 +430,7 @@ export default async function handler(req, res) {
       if (d.resultado === 'mandar' && d.tarifa) porResultado['puesto: ' + d.tarifa.puesto] = (porResultado['puesto: ' + d.tarifa.puesto] || 0) + 1;
       if (d.resultado === 'mandar' && d.persona && d.persona.mailDe === 'disponibilidad') porResultado['con el mail de la disponibilidad'] = (porResultado['con el mail de la disponibilidad'] || 0) + 1;
     }
-    return res.status(200).json({ ok: true, simulacion: true, fecha, show: (conv && conv.nombre) || '', filas: filas.length, porResultado, problemas: problemas.slice(0, 80) });
+    return res.status(200).json({ ok: true, simulacion: true, fecha, show: (conv && conv.nombre) || '', filas: filas.length, porResultado, problemas: problemas.slice(0, 80), cuiles: cuilesACorregir(filas, personas) });
   }
   const registro = [], cuenta = { enviados: 0, anulados: 0, pendientes: 0, problemas: 0 };
   const ahora = () => new Date().toISOString();
@@ -477,5 +494,5 @@ export default async function handler(req, res) {
     }));
     await sbFetch(servicio, 'planilla_presentes?on_conflict=fecha,cuil', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: filasReg });
   }
-  return res.status(200).json(Object.assign({ ok: true, fecha, show: show || (conv && conv.nombre) || '', filas: filas.length }, cuenta));
+  return res.status(200).json(Object.assign({ ok: true, fecha, show: show || (conv && conv.nombre) || '', filas: filas.length }, cuenta, { cuiles: cuilesACorregir(filas, personas) }));
 }
