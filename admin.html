@@ -5997,7 +5997,9 @@ function incBuscarLugares(q, armado) {
   return lugares.map(s => {
     const id = incSinTildes(s.id), cods = [incSinTildes(s.txt), incSinTildes(s.lugar ? incTxtLugar(s) : '')].filter(Boolean), tipo = incSinTildes(s.lugar ? INC_TIPOS_LUGAR[s.t].nombre : '');
     const disca = /^disc/.test(t) && 'discapacidad'.startsWith(t.slice(0, 12)) && id.includes('accesible');
-    const puntos = id === t || cods.includes(t) ? 0 : id.startsWith(t) || cods.some(x => x.startsWith(t)) ? 1 : id.includes(t) || (tipo && tipo.startsWith(t)) || disca ? 2 : -1;
+    // Las puertas son donde está Corta tickets (Luca, 15-nov: "no hay lugar para cargar incidencias en corta"): "corta", "molinete", "ingreso" o "acceso" las encuentran.
+    const corta = s.t === 'puerta' && t.length >= 4 && ['corta tickets', 'cortatickets', 'molinete', 'ingreso', 'acceso'].some(w => w.startsWith(t));
+    const puntos = id === t || cods.includes(t) ? 0 : id.startsWith(t) || cods.some(x => x.startsWith(t)) ? 1 : id.includes(t) || (tipo && tipo.startsWith(t)) || disca || corta ? 2 : -1;
     return { s, puntos };
   }).filter(x => x.puntos >= 0).sort((a, b) => a.puntos - b.puntos).slice(0, 14).map(x => x.s);
 }
