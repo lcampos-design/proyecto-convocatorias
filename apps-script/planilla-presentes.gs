@@ -672,7 +672,7 @@ function cuerpoReporte_(s) {
     + '<p style="' + P + '">Hola a todos:</p><p style="' + P + '">' + esc_(t1) + '</p><p style="' + P + '">' + esc_(t2) + '</p>'
     + (s.link ? '<p style="margin:22px 0"><a href="' + esc_(s.link) + '" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Ver el informe</a></p>' : '')
     + '<div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">'
-    + '<img src="' + SITIO + '/firmas/firma-arena.jpg" alt="Show Business Solutions · Convocatorias Movistar Arena" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0"></div>'
+    + '<img src="' + SITIO + '/firmas/firma-rrhh.jpg" alt="Show Business Solutions · Gerencia de RR. HH." width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0"></div>'
     + '</div>'
     + '<div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">Show Business Solutions · convocatorias.arena@show-bs.com<br>Instagram @showbs · @showbspain</div>'
     + '</div>';

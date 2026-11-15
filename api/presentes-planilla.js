@@ -138,7 +138,7 @@ export function armarMail({ nombre, fecha, show, link }) {
     <p style="${P}">O copiá este link: <a href="${esc(link)}" style="color:#534AB7;text-decoration:underline">${esc(link)}</a></p>
     <p style="${P}">El link vence en 7 días. Cualquier duda, respondé este mail.</p>
     <div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">
-      <img src="${SITIO}/firmas/firma-arena.jpg" alt="Show Business Solutions" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0">
+      <img src="${SITIO}/firmas/firma-rrhh.jpg" alt="Show Business Solutions" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0">
     </div>
   </div>
   <div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">

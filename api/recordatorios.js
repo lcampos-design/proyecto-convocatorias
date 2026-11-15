@@ -22,7 +22,7 @@ export const config = { maxDuration: 60 };
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SITIO = 'https://convocatorias.show-bs.com';
 const CASILLA = { arena: 'convocatorias.arena@show-bs.com', externos: 'convocatorias.externos@show-bs.com' };
-const FIRMA_MAIL = { arena: 'firmas/firma-arena.jpg', externos: 'firmas/firma-externos.jpg' };
+const FIRMA_MAIL = { arena: 'firmas/firma-rrhh.jpg', externos: 'firmas/firma-rrhh.jpg' };
 export const MAX_ENVIOS = 25;
 const TZ = 'America/Argentina/Buenos_Aires';
 

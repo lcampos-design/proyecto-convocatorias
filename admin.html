@@ -10346,10 +10346,12 @@ function openMailModalFromPost(postId) {
 }
 
 // Firma como imagen, una por cada área. Los archivos van en la carpeta /firmas.
+// Desde el 14-nov-2026 las dos son la misma: "Gerencia de RR. HH.", sin teléfono (pedido de Mercedes y
+// Thomas). firma-arena.jpg y firma-externos.jpg quedan para los mails que ya salieron.
 // La URL se arma sola con el dominio actual. Dejar '' para no incluir imagen de firma.
 const SIGNATURE_IMG = {
-  movistar: 'firmas/firma-arena.jpg',    // mails de Movistar Arena (convocatorias.arena@show-bs.com)
-  externos: 'firmas/firma-externos.jpg'  // mails de Externos (convocatorias.externos@show-bs.com)
+  movistar: 'firmas/firma-rrhh.jpg',     // mails de Movistar Arena (convocatorias.arena@show-bs.com)
+  externos: 'firmas/firma-rrhh.jpg'      // mails de Externos (convocatorias.externos@show-bs.com)
 };
 // Logo del encabezado del mail. Archivo en la raíz del sitio (misma carpeta que admin.html).
 // Dejar '' para volver al título de texto.
