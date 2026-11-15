@@ -47,7 +47,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '15-nov 0:30, marca en la planilla los CUIL mal escritos y firma Gerencia de RR. HH.';
+var VERSION = '15-nov 11:00, el reporte sin PDF adjunto (el PDF se baja del link)';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -559,8 +559,8 @@ function marcarYContar_(f, p, r, todas) {
 // ── El reporte de incidencias de cada show, al terminar (13-nov-2026) ──
 // Pedido de Thomas: "que finalizado el show se envíe automáticamente el reporte de incidencias vía
 // mail desde convocatorias.arena". A la 1:30 (hora del Arena) de la noche del show, la vuelta de cada
-// 5 minutos le pide a la plataforma las incidencias de los shows de esa fecha, arma el PDF (como el
-// "Informe" de la gerencia) y lo manda desde esta casilla a los mails de la propiedad REPORTE_PARA
+// 5 minutos le pide a la plataforma las incidencias de los shows de esa fecha y manda el reporte, con el link al
+// "Informe" de la gerencia (siempre actualizado, con Descargar PDF; desde el 15-nov sin PDF adjunto), desde esta casilla a los mails de la propiedad REPORTE_PARA
 // (separados por coma). Uno por show y por fecha: no se repite. Si a la 1:30 no salió (el script
 // estaba apagado), sale a la mañana, hasta las 14.
 //   probar_reporte: el de hoy (lo cargado hasta ahora), sólo a esta casilla, para ver cómo queda.
@@ -586,7 +586,7 @@ function reporteFechaDebida_(ahora) {
 }
 // cerrar: el show ya terminó (el envío a mano): lo que quedó abierto se da por cerrado, como a la 1:30.
 function pedirReporte_(fecha, clave, cerrar) {
-  var resp = UrlFetchApp.fetch(URL_REPORTE, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(cerrar ? { fecha: fecha, cerrar: true, pdf: true } : { fecha: fecha, pdf: true }) });
+  var resp = UrlFetchApp.fetch(URL_REPORTE, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(cerrar ? { fecha: fecha, cerrar: true } : { fecha: fecha }) });
   try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
 }
 // ── Recordatorios de los contratos sin firmar (14-nov) ──
@@ -640,7 +640,6 @@ function reportes_(clave) {
   (r.shows || []).forEach(function (s) {
     var k = 'rep_' + f + '_' + s.conv_id;
     if (props.getProperty(k)) return;
-    if (!s.pdf) { todos = false; Logger.log('Reporte de ' + s.nombre + ' ' + f + ': no llegó el PDF del sistema (' + (s.pdf_error || 'sin detalle') + '); lo intento en la vuelta siguiente.'); return; }
     try { mandarReporte_(s, para, false); props.setProperty(k, new Date().toISOString()); Logger.log('Reporte enviado: ' + s.nombre + ' ' + f); }
     catch (e) { todos = false; Logger.log('No salió el reporte de ' + s.nombre + ': ' + e); }
   });
@@ -653,7 +652,7 @@ function probar_reporte() {
   var f = reporteFechaDebida_() || diaFuncion_(), r = pedirReporte_(f, clave), yo = String(PropertiesService.getScriptProperties().getProperty('REPORTE_PRUEBA') || '').trim() || Session.getEffectiveUser().getEmail();
   if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
   if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
-  r.shows.forEach(function (s) { mandarReporte_(s, yo, true); Logger.log('Prueba mandada a ' + yo + ': ' + s.nombre + ' · ' + s.incidencias.length + ' incidencias · PDF: ' + (s.pdf ? 'el Informe del sistema' : 'el de respaldo de Google (' + (s.pdf_error || 'sin detalle') + ')')); });
+  r.shows.forEach(function (s) { mandarReporte_(s, yo, true); Logger.log('Prueba mandada a ' + yo + ': ' + s.nombre + ' · ' + s.incidencias.length + ' incidencias · ' + (s.link ? 'con el link al informe (sin PDF adjunto)' : 'sin link: con el PDF de respaldo adjunto')); });
   Logger.log('Destinatarios para el envío de verdad (REPORTE_PARA): ' + (PropertiesService.getScriptProperties().getProperty('REPORTE_PARA') || '(falta la propiedad)'));
 }
 function enviar_reporte() {
@@ -662,8 +661,6 @@ function enviar_reporte() {
   var f = reporteFechaDebida_() || diaFuncion_(), r = pedirReporte_(f, clave, true);
   if (!r || !r.ok) { Logger.log('No se pudo: ' + JSON.stringify(r)); return; }
   if (!(r.shows || []).length) { Logger.log('Hoy (' + f + ') no hay shows del Centro de Control del Arena.'); return; }
-  var faltan = (r.shows || []).filter(function (s) { return !s.pdf; });
-  if (faltan.length) { Logger.log('No mandé nada: no llegó el PDF del sistema (' + (faltan[0].pdf_error || 'sin detalle') + '). Probá de nuevo en un minuto.'); return; }
   (r.shows || []).forEach(function (s) { mandarReporte_(s, para, false); props.setProperty('rep_' + f + '_' + s.conv_id, new Date().toISOString()); Logger.log('Enviado: ' + s.nombre); });
   props.setProperty('rep_' + f, new Date().toISOString() + ' · a mano');
 }
@@ -671,10 +668,15 @@ function enviar_reporte() {
 function mandarReporte_(s, para, prueba) {
   var ddmm = s.fecha.slice(8, 10) + '/' + s.fecha.slice(5, 7);
   var asunto = (prueba ? '[Prueba] ' : '') + 'Reporte de incidencias - ' + s.nombre + ' ' + ddmm;
-  var nombrePdf = 'Reporte de incidencias - ' + s.nombre + ' ' + ddmm.replace('/', '-') + '.pdf';
-  var pdf = s.pdf ? Utilities.newBlob(Utilities.base64Decode(s.pdf), MimeType.PDF, nombrePdf)
-    : Utilities.newBlob(htmlReporte_(s, logoReporte_()), MimeType.HTML, 'reporte.html').getAs(MimeType.PDF).setName(nombrePdf);
-  var c = cuerpoReporte_(s), o = { to: para, subject: asunto, body: c.texto, htmlBody: c.html, name: 'Show Business Solutions', attachments: [pdf] };
+  var c = cuerpoReporte_(s), o = { to: para, subject: asunto, body: c.texto, htmlBody: c.html, name: 'Show Business Solutions' };
+  // Sin PDF adjunto (Thomas, 15-nov: 'si editamos la gravedad, el pdf está con la data vieja; si lo quieren en pdf,
+  // que lo descarguen del link'): el link muestra siempre lo actualizado y tiene 'Descargar PDF'. Sólo si no
+  // llegó el link (no debería pasar) va el PDF de respaldo, para que el mail no salga vacío.
+  if (!s.link) {
+    var nombrePdf = 'Reporte de incidencias - ' + s.nombre + ' ' + ddmm.replace('/', '-') + '.pdf';
+    o.attachments = [s.pdf ? Utilities.newBlob(Utilities.base64Decode(s.pdf), MimeType.PDF, nombrePdf)
+      : Utilities.newBlob(htmlReporte_(s, logoReporte_()), MimeType.HTML, 'reporte.html').getAs(MimeType.PDF).setName(nombrePdf)];
+  }
   // En copia (REPORTE_CC) y en copia oculta (REPORTE_CCO), separados por coma; la prueba, sin copias.
   if (!prueba) {
     var props = PropertiesService.getScriptProperties(), cc = String(props.getProperty('REPORTE_CC') || '').trim(), cco = String(props.getProperty('REPORTE_CCO') || '').trim();
@@ -740,7 +742,7 @@ function cuerpoReporte_(s) {
   var res = r.total && r.resueltas === r.total ? (r.total === 1 ? 'resuelta' : 'todas resueltas') : r.resueltas + (r.resueltas === 1 ? ' resuelta' : ' resueltas');
   if (r.total) detalle = r.total + (r.total === 1 ? ' incidencia' : ' incidencias') + ' (' + (partes.length > 1 ? partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1] : partes[0]) + '), ' + res + '.';
   var t1 = 'Les compartimos el reporte de incidencias del show de ' + s.nombre + ' del ' + cuando + ' en el ' + (s.venue || 'Movistar Arena') + ': ' + detalle;
-  var t2 = s.link ? 'Pueden verlo en el sistema y descargarlo desde ahí. También va adjunto en PDF, con el resumen y la línea de tiempo de cada incidencia.' : 'Va adjunto en PDF, con el resumen y la línea de tiempo de cada incidencia.';
+  var t2 = s.link ? 'Pueden verlo en el sistema, siempre actualizado, con el resumen y la línea de tiempo de cada incidencia. Si lo necesitan en PDF, se descarga desde ahí.' : 'Va adjunto en PDF, con el resumen y la línea de tiempo de cada incidencia.';
   var texto = 'Hola a todos:\n\n' + t1 + '\n\n' + t2 + (s.link ? '\n\nVer el informe: ' + s.link : '') + '\n\nSaludos,\nShow Business Solutions\nconvocatorias.arena@show-bs.com';
   var SITIO = 'https://convocatorias.show-bs.com', P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
   var html = '<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif">'
