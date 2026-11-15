@@ -651,7 +651,7 @@ const svSinSector = z => z === 'coordinador' || z === 'corporativo';
 const svSinNombre = z => z === 'corporativo';
 const svQuienTitulo = z => z === 'coordinador' ? '¿Quién coordina hoy?' : z === 'corporativo' ? '¿Quién está en Corporativo hoy?' : '¿Quién supervisa ' + SV_ZONAS[z] + ' hoy?';
 // En "¿Dónde pasó?", el piso con el que abre cada zona (después puede elegir otro).
-const SV_ZONA_PISO = { anillo: 'PB', bowl: 'PB', platea_baja: 'P1', vip: 'VIP', platea_alta: 'P3', cortatickets: 'EXT', calle: 'EXT' };
+const SV_ZONA_PISO = { anillo: 'PB', bowl: 'PB', platea_baja: 'P1', vip: 'VIP', platea_alta: 'P3', cortatickets: 'CT', calle: 'EXT' };
 const SV_DOMINIO_ZONAS = 'zonas.show-bs.com';
 let svZona = null, svTurnoConv = null;
 function svUsuarioAMail(u) { u = String(u || '').trim(); return u && !u.includes('@') ? u.toLowerCase().replace(/\s+/g, '') + '@' + SV_DOMINIO_ZONAS : u; }
@@ -4390,7 +4390,9 @@ function incTocarTarjeta(id) { incAbiertaSup = incAbiertaSup === String(id) ? ''
 // Se elige el sector: el piso (Campo, Platea baja, VIP, Platea alta) con sus
 // sectores y lo que tiene ese piso (baños, gastronomía…), o Exteriores (los
 // ingresos y las calles, para avisar filas desbordadas y congestiones). O se busca.
-const INC_DONDE = [['PB', 'Campo'], ['P1', 'Platea baja'], ['VIP', 'VIP'], ['P3', 'Platea alta'], ['EXT', 'Corta y calle']];
+const INC_DONDE = [['PB', 'Campo'], ['P1', 'Platea baja'], ['VIP', 'VIP'], ['P3', 'Platea alta'], ['CT', 'Cortatickets'], ['EXT', 'Exteriores']];
+// Cortatickets y Exteriores, separados (Thomas, 15-nov: "una cosa es Calle, que sería Exteriores, y otra cosa es
+// Cortatickets, que lo puntualizaría en las puertas, que es donde están los molinetes").
 function incPisoDonde() { try { const p = localStorage.getItem('incPisoDonde'); return INC_DONDE.some(x => x[0] === p) ? p : 'P1'; } catch (_) { return 'P1'; } }
 function incAbrirDonde() {
   if (svTerminado()) return toast('Este show ya terminó: no se cargan incidencias');
@@ -4426,8 +4428,10 @@ function incDondeHTML(q) {
   const RANGO = { banio: 0, gastro: 1, enfermeria: 2, servicio: 3 }, rango = x => RANGO[x.t] == null ? 9 : RANGO[x.t];
   const enPiso = piso => de(x => x.lugar && x.piso === piso && x.t !== 'puerta' && x.t !== 'calle').sort((a, b) => rango(a) - rango(b));
   let html = '<div class="sv-pisos">' + INC_DONDE.map(([k, t]) => '<button type="button" class="' + (p === k ? 'on' : '') + '" onclick="incElegirPisoDonde(\'' + k + '\')">' + t + '</button>').join('') + '</div>';
-  if (p === 'EXT') html += grupo('Corta tickets · ingresos', de(x => x.t === 'puerta').sort((a, b) => (num(a) || 99) - (num(b) || 99)), false) + grupo('Calles', de(x => x.t === 'calle'), false)
-    + '<div class="sv-ayuda"><b>Corta tickets:</b> lo que pase en cada ingreso (molinetes, lectores, filas, entradas). <b>Calle:</b> congestión en la vereda, cortes o lo que pase afuera.</div>';
+  if (p === 'CT') html += grupo('Puertas de ingreso', de(x => x.t === 'puerta').sort((a, b) => (num(a) || 99) - (num(b) || 99)), false)
+    + '<div class="sv-ayuda"><b>Cortatickets:</b> lo que pase en los molinetes de cada puerta (lectores, entradas, filas para entrar).</div>';
+  else if (p === 'EXT') html += grupo('Calles', de(x => x.t === 'calle'), false)
+    + '<div class="sv-ayuda"><b>Exteriores:</b> congestión en la vereda, filas que llegan a la calle, cortes o lo que pase afuera.</div>';
   else if (p === 'PB') html += grupo('Sectores del campo', de(x => x.t === 'campo'), true) + grupo('Pasillos y backstage', de(x => x.t === 'anillo' || x.t === 'back'), false) + grupo('En planta baja', enPiso('PB'), false);
   else if (p === 'VIP') html += grupo('Sectores', de(x => x.t === 'vip' && !x.lugar), false) + grupo('En el VIP', enPiso('VIP'), false);
   else html += grupo('Sectores', de(x => x.t === (p === 'P1' ? 'baja' : 'alta')).sort((a, b) => num(a) - num(b)), true) + grupo(p === 'P1' ? 'En el piso 1' : 'En el piso 3', enPiso(p), false);
