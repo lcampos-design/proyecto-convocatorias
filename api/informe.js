@@ -17,6 +17,17 @@ const firma = (secreto, convId, fecha) => crypto.createHmac('sha256', secreto).u
 export function linkInforme(secreto, convId, fecha) {
   return SITIO + '/informe?t=' + Buffer.from(convId + '|' + fecha).toString('base64url') + '.' + firma(secreto, convId, fecha);
 }
+// Al cambiar PRESENTES_CLAVE (15-nov-2026), los links que ya recibió el Arena estaban firmados con la
+// anterior: siguen abriendo con INFORME_CLAVE_ANTERIOR (en Vercel), pero sólo los de los informes de hasta
+// ANTERIOR_HASTA. Los nuevos se firman con la clave nueva; con la vieja no se puede armar un link de un show
+// que venga.
+export const ANTERIOR_HASTA = '2026-11-15';
+export function leerTokenConAnterior(secreto, anterior, t) {
+  const tok = leerToken(secreto, t);
+  if (tok || !anterior || anterior === secreto) return tok;
+  const viejo = leerToken(anterior, t);
+  return viejo && viejo.fecha <= ANTERIOR_HASTA ? viejo : null;
+}
 // El token → { convId, fecha }, o null si no es válido.
 export function leerToken(secreto, t) {
   const [a, b] = String(t || '').split('.');
@@ -45,7 +56,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') { res.setHeader('Allow', 'GET'); return res.status(405).send('Método no permitido'); }
   const secreto = process.env.PRESENTES_CLAVE || '', servicio = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const t = String((req.query && req.query.t) || ''), quierePdf = String((req.query && req.query.pdf) || '') === '1';
-  const tok = leerToken(secreto, t);
+  const tok = leerTokenConAnterior(secreto, process.env.INFORME_CLAVE_ANTERIOR || '', t);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   if (!tok) return res.status(404).send(pagina('Link inválido', 'Este link no es válido. Pedile el informe a Show Business Solutions.'));
   if (!servicio) return res.status(500).send(pagina('No disponible', 'El informe no está disponible en este momento. Probá de nuevo en un rato.'));
