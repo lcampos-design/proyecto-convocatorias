@@ -5200,6 +5200,10 @@ const INC_CATALOGO = [
 ];
 function incCategoria(cat) { return INC_CATALOGO.find(c => c.cat === cat) || INC_CATALOGO[INC_CATALOGO.length - 1]; }
 function incNivelDe(cat, tipo) { const t = incCategoria(cat).tipos.find(x => x[0] === tipo); return t ? t[1] : 1; }
+// La criticidad con un criterio fijo (Thomas, 15-nov): la del tipo, y Grave si se derivó en ambulancia o se avisó a la
+// policía. No se elige a mano; la base hace lo mismo (incidencias-criterio.sql).
+const INC_SUBEN_A_GRAVE = ['Se derivó en ambulancia (SAME)', 'Se dio aviso a la policía'];
+function incSubeAGrave(acciones) { return (acciones || []).some(a => INC_SUBEN_A_GRAVE.includes(a)); }
 // Lugares que no están dibujados en el plano (el anillo, con sus puertas,
 // la gastronomía y los baños, y las calles de afuera, sí lo están).
 const INC_LUGARES = ['Otro lugar'];
@@ -8593,20 +8597,26 @@ function incNuevaCategoria() { return INC_CATALOGO[+document.getElementById('inc
 function incNuevaCat() {
   const c = incNuevaCategoria();
   document.getElementById('incNTipo').innerHTML = c.tipos.map((t, i) => '<option value="' + i + '">' + e(t[0]) + '</option>').join('');
-  document.getElementById('incNAcc').innerHTML = c.acciones.map((a, i) => '<label class="inc-n-check"><input type="checkbox" value="' + i + '"> ' + e(a) + '</label>').join('');
+  document.getElementById('incNAcc').innerHTML = c.acciones.map((a, i) => '<label class="inc-n-check"><input type="checkbox" value="' + i + '" onchange="incNuevaTipo()"> ' + e(a) + '</label>').join('');
   incNuevaTipo();
 }
-function incNuevaTipo() { const t = incNuevaCategoria().tipos[+document.getElementById('incNTipo').value || 0]; incNuevaNivel(t ? t[1] : 1); }
-function incNuevaNivel(nv) {
+function incNuevaAcciones() { const c = incNuevaCategoria(); return [...document.querySelectorAll('#incNAcc input:checked')].map(x => c.acciones[+x.value]).filter(Boolean); }
+function incNuevaTipo() {
+  const t = incNuevaCategoria().tipos[+document.getElementById('incNTipo').value || 0], base = t ? t[1] : 1, sube = incSubeAGrave(incNuevaAcciones());
+  incNuevaNivel(sube ? 3 : base, sube && base < 3);
+}
+// Se muestra, no se elige.
+function incNuevaNivel(nv, subio) {
   incNuevaNivelAdm = nv;
-  document.getElementById('incNNivel').innerHTML = [1, 2, 3].map(k => '<button type="button" class="inc-n-nivel" style="' + (k === nv ? 'background:' + INC_NIVELES[k].fondo + ';border-color:' + INC_NIVELES[k].color + ';color:' + INC_NIVELES[k].color : '') + '" aria-pressed="' + (k === nv) + '" onclick="incNuevaNivel(' + k + ')">' + INC_NIVELES[k].nombre + '<small>' + INC_NIVELES[k].ayuda + '</small></button>').join('');
+  const v = INC_NIVELES[nv] || INC_NIVELES[1];
+  document.getElementById('incNNivel').innerHTML = '<div class="inc-n-nivel" style="grid-column:1/-1;cursor:default;background:' + v.fondo + ';border-color:' + v.color + ';color:' + v.color + '">' + v.nombre + '<small>' + (subio ? 'Grave porque se derivó en ambulancia o se avisó a la policía' : 'La define el tipo de incidencia · ' + v.ayuda) + '</small></div>';
 }
 async function incGuardarNuevaAdm() {
   const sector = document.getElementById('incNLugar').value;
   if (!sector) { toast('Elegí dónde pasó'); return; }
   const c = incNuevaCategoria(), t = c.tipos[+document.getElementById('incNTipo').value || 0] || c.tipos[0];
   const acciones = [...document.querySelectorAll('#incNAcc input:checked')].map(x => c.acciones[+x.value]).filter(Boolean);
-  const fila = { conv_id: ccConvId, sector, ubicacion: document.getElementById('incNRef').value.trim() || null, categoria: c.cat, tipo: t[0], nivel: incNuevaNivelAdm, acciones,
+  const fila = { conv_id: ccConvId, sector, ubicacion: document.getElementById('incNRef').value.trim() || null, categoria: c.cat, tipo: t[0], nivel: incSubeAGrave(acciones) ? 3 : t[1], acciones,
     nota: document.getElementById('incNNota').value.trim() || null, estado: 'abierta', creada_por_nombre: 'Panel · ' + ((document.getElementById('userEmail') || {}).textContent || '').trim() };
   const btn = document.getElementById('incNGuardar'); btn.disabled = true;
   try {

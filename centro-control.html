@@ -3808,6 +3808,7 @@ function informe() {
     + num(l.filter(i => i.categoria === 'Asistencia').length, 'Asistencias') + num(l.filter(i => incDerivadoA(i).length).length, 'Derivadas')
     + num(m.tMedio == null ? '—' : incMinutos(m.tMedio), 'Resolución media') + num(m.pico ? incEsc(m.pico.etq) : '—', 'Momento más cargado') + '</div>'
     + '<div class="res">' + tabla('Criticidad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, l.filter(i => (i.nivel || 1) === nv).length])) + tabla('Categoría', cuenta(i => i.categoria)) + tabla('Sector', cuenta(i => i.sector)) + '</div>'
+    + '<p style="font-size:11px;color:#5c5c5c;margin:-8px 0 18px">Criticidad: la define el tipo de incidencia; pasa a Grave si hubo derivación en ambulancia o aviso a la policía.</p>'
     + '<h3>Línea de tiempo</h3><table><tr><th>Cuándo</th><th>Sector</th><th>Qué pasó</th><th>Criticidad</th><th>Qué se hizo</th><th>Derivado a</th><th>Cómo se resolvió</th></tr>'
     + l.map(i => '<tr><td>' + fh(i.created_at) + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + '</td>'
       + '<td class="niv" style="color:' + P.niv(INC_NIVELES[i.nivel] ? i.nivel : 1) + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
