@@ -166,6 +166,9 @@ export function normalizarFilas(filas) {
     // El script la manda con "espera" si la P es de hace menos de 30 minutos: el contrato sale después.
     if (f.espera === true) fila.espera = true;
     if (doc.length >= 7 && doc.length <= 11 && doc !== cuil) fila.doc = doc;
+    // El CUIL del alta de ARCA de esa persona (lo busca el script en la planilla de altas, por el nombre y parecido al de la planilla).
+    const alta = String(f.alta || '').replace(/D/g, '');
+    if (cuilValido(alta) && alta !== cuil) fila.alta = alta;
     const antes = por.get(cuil);
     if (!antes || (marca === 'P' && antes.marca !== 'P') || (marca && !antes.marca)) por.set(cuil, fila);
   });
@@ -395,15 +398,28 @@ export default async function handler(req, res) {
   const personas = new Map();
   if (buscar.length) {
     // También el documento que la persona dejó en la disponibilidad, por si el de la planilla está mal.
-    const docs = filas.filter(f => f.doc && buscar.includes(f.cuil)).map(f => f.doc);
+    // El CUIL del alta de ARCA manda sobre el de la planilla (Thomas, 15-nov: "no puedo estar corrigiendo en cada planilla, tenemos
+    // que ver no sólo para ella sino para los demás"): la planilla la escriben los supervisores a mano; el alta la validó ARCA.
+    // Sólo en las filas que todavía no tienen contrato: lo que ya salió no se toca (si se rearmara, saldría otro contrato).
+    const conAlta = f => !!f.alta && !((antes.get(f.cuil) || {}).contrato_id);
+    const deBusqueda = f => conAlta(f) ? Object.assign({}, f, { cuil: f.alta }) : f;   // la fila, como si la planilla dijera el del alta
+    const docs = filas.filter(f => buscar.includes(f.cuil)).flatMap(f => [f.doc, f.alta].filter(Boolean));
     const rb = await sbJson(servicio, 'rpc/presentes_buscar_personas', { method: 'POST', body: { p_cuils: [...new Set(buscar.concat(docs))] } });
     if (!rb.ok) return res.status(500).json({ error: 'Falta correr contratos-presentes.sql en Supabase', detalle: (rb.data && rb.data.message) || '' });
     const porCuil = new Map(); (rb.data || []).forEach(p => { if (!porCuil.has(p.buscado)) porCuil.set(p.buscado, []); porCuil.get(p.buscado).push(p); });
-    const candsDe = f => (porCuil.get(f.cuil) || []).concat(f.doc ? porCuil.get(f.doc) || [] : []);
-    filas.forEach(f => {
+    const candsDe = f => (porCuil.get(f.cuil) || []).concat(f.doc ? porCuil.get(f.doc) || [] : []).concat(f.alta ? porCuil.get(f.alta) || [] : []);
+    const elegir = f => {
       let p = elegirPersona(porCuil.get(f.cuil) || [], f);
       if ((!p || p.distinta || p.ambigua) && f.doc) { const q = elegirPersona(porCuil.get(f.doc) || [], f); if (q && !q.distinta && !q.ambigua) p = q; else if (!p) p = q; }
-      if (p) personas.set(f.cuil, p);
+      return p;
+    };
+    // Con el alta: a quien encuentre el de la planilla sólo si tiene el mismo apellido (su ficha tiene otro número); si no,
+    // el de la planilla puede ser de otra persona (la que el supervisor anotó por error), y a ésa no se le manda nada.
+    const mismoApellido = (p, f) => { const ws = palabrasDe(f.apellido).filter(w => w.length >= 3), t = palabrasDe(p.nombre || ''); return ws.length > 0 && ws.some(w => t.includes(w)); };
+    filas.forEach(f0 => {
+      let p = elegir(deBusqueda(f0));
+      if (conAlta(f0) && (!p || p.distinta || p.ambigua)) { const q = elegir(f0); if (q && !q.distinta && !q.ambigua && mismoApellido(q, f0)) p = q; }
+      if (p) personas.set(f0.cuil, p);
     });
     // A los que el CUIL no llevó a nadie: por el apellido y el nombre (una sola consulta para todos).
     const faltan = filas.filter(f => buscar.includes(f.cuil) && (!personas.has(f.cuil) || personas.get(f.cuil).distinta) && patronApellido(f.apellido));
@@ -415,10 +431,12 @@ export default async function handler(req, res) {
         sbJson(servicio, `solicitudes?select=nombre,email,cuit,created_at&${or}&order=created_at.desc&limit=5000`)
       ]);
       const cands = candidatosPorNombre(rpn.ok ? rpn.data : [], rsn.ok ? rsn.data : []);
-      faltan.forEach(f => { const p = elegirPorNombre(cands, f); if (p) personas.set(f.cuil, p); });
+      faltan.forEach(f => { const p = elegirPorNombre(cands, deBusqueda(f)) || (conAlta(f) ? elegirPorNombre(cands, f) : null); if (p) personas.set(f.cuil, p); });
     }
     // Lo que todavía falta (la persona o su mail), con el mail de la disponibilidad del mes.
-    filas.forEach(f => { if (!f.mail || !buscar.includes(f.cuil)) return; const p = conDisponibilidad(personas.get(f.cuil) || null, f, candsDe(f)); if (p) personas.set(f.cuil, p); });
+    filas.forEach(f => { if (!f.mail || !buscar.includes(f.cuil)) return; const fb = conAlta(f) ? Object.assign({}, f, { cuil: f.alta, doc: f.alta }) : f; const p = conDisponibilidad(personas.get(f.cuil) || null, fb, candsDe(f)); if (p) personas.set(f.cuil, p); });
+    // El contrato, con el CUIL del alta (aunque la ficha o la inscripción tengan otro): es la misma persona (mismo nombre).
+    filas.forEach(f => { const p = personas.get(f.cuil); if (!conAlta(f) || !p || p.ambigua || p.distinta) return; personas.set(f.cuil, Object.assign({}, p, { cuit: f.alta, nucleo: nucleoDe(f.alta), deAlta: true })); });
   }
 
   const porId = new Map((rc.data || []).map(c => [c.id, c])), porPersona = new Map((rc.data || []).filter(c => c.persona_id).map(c => [c.persona_id, c]));

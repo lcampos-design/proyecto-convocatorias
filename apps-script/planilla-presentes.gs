@@ -47,7 +47,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '15-nov 11:15, el reporte sin PDF adjunto ni detalle por criticidad (todo en el link)';
+var VERSION = '15-nov 12:00, el contrato va con el CUIL del alta de ARCA';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -87,7 +87,7 @@ function lineaDisponibilidad_(p) {
     + (d.archivos.length ? d.archivos.join(' · ') : 'no encontré respuestas de ese mes') + ' · ' + d.total + ' mails leídos · '
     + p.filas.filter(function (x) { return !!x.mail; }).length + ' de ' + p.filas.length + ' de la planilla con mail ahí');
   var incompletos = p.filas.filter(function (x) { return x.cuil.length !== 11; });
-  Logger.log('   Altas de ARCA: ' + (d.altasArchivos.length ? d.altasArchivos.join(' · ') : 'no la encontré') + ' · de ' + incompletos.length + ' con el CUIL incompleto en la planilla, '
+  Logger.log('   Altas de ARCA: ' + (d.altasArchivos.length ? d.altasArchivos.join(' · ') : 'no la encontré') + ' · ' + p.filas.filter(function (x) { return x.alta; }).length + ' con otro CUIL en el alta (va el del alta) · de ' + incompletos.length + ' con el CUIL incompleto en la planilla, '
     + incompletos.filter(function (x) { return String(x.doc || '').length === 11; }).length + ' tienen el completo (' + p.filas.filter(function (x) { return x.deAltas; }).length + ' de la planilla de altas)');
   d.notas.slice(0, 10).forEach(function (n) { Logger.log('      ' + n); });
   if (!d.archivos.length) Logger.log('      Vi ' + d.vistos.length + ' planillas o formularios' + (d.vistos.length ? ': ' + d.vistos.slice(0, 12).join(' · ') : ''));
@@ -369,6 +369,32 @@ function cuilDeAltas_(d, fila) {
   var k = Object.keys(docs).filter(function (c) { return encaja_(c, [fila.cuil, fila.doc]); });
   return k.length === 1 ? k[0] : '';
 }
+// ── El CUIL del alta de ARCA para cada fila (15-nov) ──
+// Thomas: "no puedo estar corrigiendo en cada planilla, tenemos que ver no sólo para ella sino para los demás". El de la
+// planilla lo escriben los supervisores a mano; el de la planilla de altas lo validó ARCA. Se busca por el nombre (todas las
+// palabras del apellido y la primera del nombre: una sola persona) y sólo si se parece al de la planilla (le falta un número,
+// es el DNI solo, otro prefijo o dígito verificador, uno o dos números distintos, dos números al revés): así no se le pone el
+// de un homónimo. La plataforma usa ése para el contrato (en las filas que todavía no tienen contrato) y marca la celda.
+function cerca_(cuil, parcial) {
+  var p = String(parcial || '').replace(/D/g, '');
+  if (!p) return false;
+  if (encaja_(cuil, [p])) return true;
+  if (p.length !== 11) return false;
+  var a = cuil.slice(2, 10), b = p.slice(2, 10), dif = 0, i;
+  for (i = 0; i < 8; i++) if (a[i] !== b[i]) dif++;
+  if (dif <= 2) return true;
+  for (i = 0; i < 7; i++) if (a.slice(0, i) + a[i + 1] + a[i] + a.slice(i + 2) === b) return true;
+  return false;
+}
+function altaDe_(d, fila) {
+  var ap = palabras_(fila.apellido), nom = palabras_(fila.nombre)[0];
+  if (!ap.length || !nom || !d.altas || !d.altas.length) return '';
+  var docs = {};
+  d.altas.forEach(function (g) { if (ap.every(function (w) { return g.palabras.indexOf(w) >= 0; }) && g.palabras.indexOf(nom) >= 0) docs[g.doc] = 1; });
+  var k = Object.keys(docs);
+  if (k.length !== 1 || !cuilValido_(k[0])) return '';
+  return cerca_(k[0], fila.cuil) || cerca_(k[0], fila.doc) ? k[0] : '';
+}
 function encaja_(cuil, parciales) {
   return parciales.some(function (p) {
     p = String(p || '').replace(/\D/g, '');
@@ -482,6 +508,8 @@ function leer_(f) {
     if (h) { x.mail = h.mail; if (h.doc) x.doc = h.doc; }
     // Sin un CUIL completo (ni en la planilla ni en la disponibilidad): el de la planilla de altas de ARCA.
     if (x.cuil.length !== 11 && String(x.doc || '').length !== 11) { var c = cuilDeAltas_(d, x); if (c) { x.doc = c; x.deAltas = true; } }
+    // El del alta de ARCA, si es otro que el de la planilla: es el que va en el contrato.
+    var a = altaDe_(d, x); if (a && a !== x.cuil) x.alta = a;
   });
   var p = { archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: show, disponibilidad: d.total, filas: filas };
   // Las celdas no viajan a la plataforma ni cuentan para la huella (no enumerable: JSON.stringify las saltea).
