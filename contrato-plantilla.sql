@@ -24,7 +24,7 @@ insert into public.config (key, value)
 values ('contrato_plantilla', jsonb_build_object(
   'ar', 'CONTRATO DE TRABAJO A PLAZO FIJO
 
-En Buenos Aires a los días {{fecha_inicio}} al {{fecha_fin}} de {{anio}} entre: {{nombre}} con CUIL N° {{cuil}} cuyo domicilio es: _______________________________________ en adelante "EL TRABAJADOR" y representada por Richard Rickemberg, DNI 32558207, en su carácter de Socio Gerente, con domicilio en Ramallo 4608, de la Ciudad Autónoma de Buenos Aires, en adelante "LA EMPRESA" SHOW BUSINESS SOLUTIONS, celebran el presente CONTRATO DE TRABAJO A PLAZO FIJO (Art.93 de la Ley 20.744), con sujeción a las siguientes normas:
+En Buenos Aires a los días {{fecha_inicio}} al {{fecha_fin}} de {{anio}} entre: {{nombre}} con CUIL N° {{cuil}} cuyo domicilio es: _______________________________________ en adelante "EL TRABAJADOR" y representada por Richard Rickemberg, DNI __________, en su carácter de Socio Gerente, con domicilio en Ramallo 4608, de la Ciudad Autónoma de Buenos Aires, en adelante "LA EMPRESA" SHOW BUSINESS SOLUTIONS, celebran el presente CONTRATO DE TRABAJO A PLAZO FIJO (Art.93 de la Ley 20.744), con sujeción a las siguientes normas:
 
 Primera: La empresa contrata al trabajador para desempeñar tareas de {{puesto}}. Las actividades mencionadas revisten naturaleza transitoria, conforme a lo normado por el ART 90 de la LCT, y se desarrollarán en el {{venue}}.
 
