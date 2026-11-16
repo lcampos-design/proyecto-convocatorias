@@ -52,7 +52,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '15-nov 13:00, informe para socios (incidencias, contratos y personal) y CUIL del alta de ARCA';
+var VERSION = '15-nov 22:30, link a todos los informes en los mails (Arena y socios)';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -740,13 +740,14 @@ function mandarSocios_(s, para, prueba) {
   var cuando = DIAS_[Number(fAr_(d, 'u')) % 7] + ' ' + Number(s.fecha.slice(8, 10)) + ' de ' + MESES[Number(s.fecha.slice(5, 7)) - 1];
   var t1 = 'Les compartimos el informe del show de ' + s.nombre + ' del ' + cuando + ' en el ' + (s.venue || 'Movistar Arena') + ': los contratos, el personal y las incidencias, en un solo lugar.';
   var t2 = 'Está siempre actualizado (por ejemplo, con los contratos que se firmen después). Si lo necesitan en PDF, se descarga desde ahí.';
-  var texto = 'Hola:\n\n' + t1 + '\n\n' + t2 + '\n\nVer el informe: ' + s.link_socios + '\n\nSaludos,\nGerencia de RR. HH. · Show Business Solutions';
+  var texto = 'Hola:\n\n' + t1 + '\n\n' + t2 + '\n\nVer el informe: ' + s.link_socios + (s.link_todos_socios ? '\n\nTodos los informes, en un solo lugar: ' + s.link_todos_socios : '') + '\n\nSaludos,\nGerencia de RR. HH. · Show Business Solutions';
   var SITIO = 'https://convocatorias.show-bs.com', P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
   var html = '<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif">'
     + '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">'
     + '<img src="' + SITIO + '/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">'
     + '<p style="' + P + '">Hola:</p><p style="' + P + '">' + esc_(t1) + '</p><p style="' + P + '">' + esc_(t2) + '</p>'
     + '<p style="margin:22px 0"><a href="' + esc_(s.link_socios) + '" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Ver el informe</a></p>'
+    + (s.link_todos_socios ? '<p style="' + P + '">Todos los informes de los shows, en un solo lugar: <a href="' + esc_(s.link_todos_socios) + '" style="color:#0f1117;font-weight:bold">ver todos los informes</a>.</p>' : '')
     + '<div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">'
     + '<img src="' + SITIO + '/firmas/firma-rrhh.jpg" alt="Show Business Solutions · Gerencia de RR. HH." width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0"></div>'
     + '</div></div>';
@@ -831,13 +832,14 @@ function cuerpoReporte_(s) {
   var detalle = r.total ? r.total + (r.total === 1 ? ' incidencia' : ' incidencias') + ', ' + res + '.' : 'no se registraron incidencias.';
   var t1 = 'Les compartimos el reporte de incidencias del show de ' + s.nombre + ' del ' + cuando + ' en el ' + (s.venue || 'Movistar Arena') + ': ' + detalle;
   var t2 = s.link ? 'Pueden verlo en el sistema, siempre actualizado, con el resumen y la línea de tiempo de cada incidencia. Si lo necesitan en PDF, se descarga desde ahí.' : 'Va adjunto en PDF, con el resumen y la línea de tiempo de cada incidencia.';
-  var texto = 'Hola a todos:\n\n' + t1 + '\n\n' + t2 + (s.link ? '\n\nVer el informe: ' + s.link : '') + '\n\nSaludos,\nShow Business Solutions\nconvocatorias.arena@show-bs.com';
+  var texto = 'Hola a todos:\n\n' + t1 + '\n\n' + t2 + (s.link ? '\n\nVer el informe: ' + s.link : '') + (s.link_todos ? '\n\nTodos los informes, en un solo lugar: ' + s.link_todos : '') + '\n\nSaludos,\nShow Business Solutions\nconvocatorias.arena@show-bs.com';
   var SITIO = 'https://convocatorias.show-bs.com', P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
   var html = '<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif">'
     + '<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">'
     + '<img src="' + SITIO + '/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">'
     + '<p style="' + P + '">Hola a todos:</p><p style="' + P + '">' + esc_(t1) + '</p><p style="' + P + '">' + esc_(t2) + '</p>'
     + (s.link ? '<p style="margin:22px 0"><a href="' + esc_(s.link) + '" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Ver el informe</a></p>' : '')
+    + (s.link_todos ? '<p style="' + P + '">Todos los informes de los shows, en un solo lugar: <a href="' + esc_(s.link_todos) + '" style="color:#0f1117;font-weight:bold">ver todos los informes</a>.</p>' : '')
     + '<div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">'
     + '<img src="' + SITIO + '/firmas/firma-rrhh.jpg" alt="Show Business Solutions · Gerencia de RR. HH." width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0"></div>'
     + '</div>'

@@ -16,7 +16,7 @@
 
 import crypto from 'crypto';
 import { htmlInforme, pdfDeHtml } from './_lib/informe-pdf.js';
-import { linkInforme, linkSocios } from './informe.js';
+import { linkInforme, linkSocios, linkTodos } from './informe.js';
 
 // Con pdf: true, el PDF de cada show lo imprime Chromium (el Informe de la gerencia, idéntico): hasta un minuto.
 export const config = { maxDuration: 60 };
@@ -85,6 +85,9 @@ export default async function handler(req, res) {
     show.link = linkInforme(clave, c.id, fecha);
     // El de los socios (incidencias, contratos y personal en uno), para su mail del día siguiente.
     show.link_socios = linkSocios(clave, c.id, fecha);
+    // La carpeta con todos los informes (un link fijo), para el pie del mail: la del Arena y la de los socios.
+    show.link_todos = linkTodos(clave, 'informe');
+    show.link_todos_socios = linkTodos(clave, 'socios');
     // El PDF: el Informe de la gerencia, con las incidencias tal cual están en la base. Si falla, el script usa el suyo.
     if (cuerpo.pdf === true) {
       try {

@@ -36,6 +36,79 @@ export function leerTokenConAnterior(secreto, anterior, t, tipo) {
   const viejo = leerToken(anterior, t, tipo);
   return viejo && viejo.fecha <= ANTERIOR_HASTA ? viejo : null;
 }
+// ── La carpeta con todos los informes (15-nov) ──
+// Thomas: "que haya una carpeta donde estén todos los informes, los que se abren con un link, para facilitar al
+// Arena su vista; ponerlo en el cuerpo del mail automático, tipo 'pueden ver los informes por acá'". Un link fijo
+// (no vence ni cambia por show): la lista de los shows del Arena desde el piloto, del más nuevo al más viejo, cada
+// uno con su informe. El de los socios (tipo socios) lleva a los suyos (con contratos y personal).
+const firmaTodos = (secreto, p) => crypto.createHmac('sha256', secreto).update(p).digest('base64url').slice(0, 32);
+export function linkTodos(secreto, tipo) {
+  const p = 'todos|' + (tipo === 'socios' ? 'socios' : 'informe');
+  return SITIO + '/informes?t=' + Buffer.from(p).toString('base64url') + '.' + firmaTodos(secreto, p);
+}
+export function leerTodos(secreto, t) {
+  const [a, b] = String(t || '').split('.');
+  if (!a || !b || !secreto) return null;
+  let p = '';
+  try { p = Buffer.from(a, 'base64url').toString('utf8'); } catch (_) { return null; }
+  if (!/^todos\|(informe|socios)$/.test(p)) return null;
+  const e = Buffer.from(firmaTodos(secreto, p)), d = Buffer.from(b);
+  return e.length === d.length && crypto.timingSafeEqual(e, d) ? p.split('|')[1] : null;
+}
+// Los shows que entran (como el reporte de la 1:30: del Centro de Control, del Arena, sin los de prueba), cada fecha
+// después de su 1:30 (cuando ya salió el informe) y desde que arrancó el piloto.
+export const DESDE_PILOTO = '2026-11-13';
+const fechasDe = c => String((c && c.fecha) || '').split(',').map(x => x.trim()).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x));
+const esArena = area => /arena|movistar/i.test(String(area || ''));
+const esPrueba = nombre => /prueba/i.test(String(nombre || ''));
+const cierreDe = fecha => new Date(new Date(fecha + 'T09:00:00Z').getTime() + 19.5 * 3600 * 1000);
+export function informesDe(convs, ahora) {
+  const out = [];
+  (convs || []).filter(c => c.centro_control && esArena(c.area) && !esPrueba(c.nombre)).forEach(c => fechasDe(c).forEach(fecha => {
+    if (fecha >= DESDE_PILOTO && cierreDe(fecha).getTime() <= ahora) out.push({ conv: c, fecha });
+  }));
+  return out.sort((a, b) => b.fecha.localeCompare(a.fecha) || String(a.conv.nombre).localeCompare(String(b.conv.nombre)));
+}
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const escH = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// La página: una fila por show y fecha, con lo principal y el botón a su informe.
+export function paginaTodos(tipo, filas) {
+  const socios = tipo === 'socios';
+  const fila = x => {
+    const d = new Date(x.fecha + 'T12:00:00Z'), dia = DIAS[d.getUTCDay()] + ' ' + d.getUTCDate() + ' de ' + MESES[d.getUTCMonth()];
+    const nombre = String(x.conv.nombre || '').split(' — ')[0].trim();
+    const partes = [x.incidencias + (x.incidencias === 1 ? ' incidencia' : ' incidencias') + (x.graves ? ' · ' + x.graves + (x.graves === 1 ? ' grave' : ' graves') : '')];
+    if (socios && x.contratos) partes.push(x.firmados + ' de ' + x.contratos + ' contratos firmados');
+    return '<a class="fila" href="' + escH(x.link) + '"><div class="dia"><b>' + d.getUTCDate() + '</b><span>' + MESES[d.getUTCMonth()].slice(0, 3) + '</span></div>'
+      + '<div class="que"><div class="n">' + escH(nombre) + '</div><div class="s">' + escH(dia.charAt(0).toUpperCase() + dia.slice(1)) + ' · Movistar Arena</div><div class="m">' + escH(partes.join(' · ')) + '</div></div>'
+      + '<div class="ir">Ver el informe<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></div></a>';
+  };
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>' + (socios ? 'Informes para socios' : 'Informes de incidencias') + ' · Movistar Arena</title>'
+    + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"><style>'
+    + '*{box-sizing:border-box}html{background:#fff}body{margin:0;font-family:Poppins,sans-serif;color:#1a1a1a;background:#fff}'
+    + '.hoja{max-width:760px;margin:0 auto;padding:40px 16px 56px}'
+    + '.cab{display:flex;align-items:center;gap:14px;padding-bottom:22px;border-bottom:2px solid #1a1a1a;margin-bottom:22px}.cab img{width:52px;height:52px}'
+    + '.k{font-size:12px;font-weight:600;color:#5c5c5c}h1{font-size:24px;line-height:1.2;margin:2px 0 0;font-weight:700}'
+    + '.intro{font-size:14px;color:#5c5c5c;line-height:1.6;margin:0 0 20px}'
+    + '.fila{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid #dadada;border-radius:14px;margin-bottom:10px;text-decoration:none;color:inherit;background:#fff}'
+    + '.fila:hover{border-color:#1a1a1a}.fila:focus-visible{outline:3px solid #1a1a1a;outline-offset:2px}'
+    + '.dia{flex:0 0 56px;height:56px;border-radius:12px;background:#f1f1f1;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}'
+    + '.dia b{font-size:22px;font-weight:700}.dia span{font-size:11px;font-weight:600;color:#5c5c5c;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}'
+    + '.que{flex:1;min-width:0}.n{font-size:16px;font-weight:600}.s{font-size:13px;color:#5c5c5c;margin-top:2px}.m{font-size:13px;margin-top:6px}'
+    + '.ir{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;background:#1a1a1a;color:#fff;padding:10px 14px;border-radius:10px}.ir svg{width:16px;height:16px}'
+    + '.vacio{padding:28px;border:1px dashed #dadada;border-radius:14px;text-align:center;color:#5c5c5c;font-size:14px}'
+    + '@media (max-width:560px){.fila{flex-wrap:wrap}.ir{width:100%;justify-content:center}}'
+    + '</style></head><body><div class="hoja">'
+    + '<div class="cab"><img src="' + SITIO + '/logo-sbs.png" alt="Show Business Solutions"><div><div class="k">AX · Audience Experience · Show Business Solutions</div><h1>'
+    + (socios ? 'Informes para socios' : 'Informes de incidencias') + '</h1></div></div>'
+    + '<p class="intro">' + (socios ? 'Cada show del Movistar Arena, con los contratos, el personal y las incidencias. ' : 'Cada show del Movistar Arena, con su informe de incidencias. ')
+    + 'Están siempre actualizados y, si lo necesitan en PDF, se descarga desde cada informe.</p>'
+    + (filas.length ? filas.map(fila).join('') : '<div class="vacio">Todavía no hay informes.</div>')
+    + '</div></body></html>';
+}
+
 // El token → { convId, fecha }, o null si no es válido.
 export function leerToken(secreto, t, tipo) {
   const [a, b] = String(t || '').split('.');
@@ -79,6 +152,33 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') { res.setHeader('Allow', 'GET'); return res.status(405).send('Método no permitido'); }
   const secreto = process.env.PRESENTES_CLAVE || '', servicio = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const t = String((req.query && req.query.t) || ''), quierePdf = String((req.query && req.query.pdf) || '') === '1';
+  if (String((req.query && req.query.vista) || '') === 'todos') {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    const anterior = process.env.INFORME_CLAVE_ANTERIOR || '';
+    const tt = String((req.query && req.query.t) || ''), tipoT = leerTodos(secreto, tt) || (anterior && anterior !== secreto ? leerTodos(anterior, tt) : null);
+    if (!tipoT) return res.status(404).send(pagina('Link inválido', 'Este link no es válido. Pedile los informes a Show Business Solutions.'));
+    if (!servicio) return res.status(500).send(pagina('No disponible', 'Los informes no están disponibles en este momento. Probá de nuevo en un rato.'));
+    const rc = await sb(servicio, 'convocatorias?select=id,nombre,fecha,area,centro_control&centro_control=eq.true&limit=1000');
+    if (!rc.ok) return res.status(500).send(pagina('No disponible', 'No se pudieron leer los shows. Probá de nuevo en un rato.'));
+    const lista = informesDe(rc.data || [], Date.now());
+    const ids = [...new Set(lista.map(x => x.conv.id))];
+    let incs = [], cts = [];
+    if (ids.length) {
+      const [ri2, rk2] = await Promise.all([
+        sb(servicio, `incidencias?select=conv_id,created_at,nivel&conv_id=in.(${ids.join(',')})&created_at=gte.${DESDE_PILOTO}T09:00:00Z&limit=20000`),
+        tipoT === 'socios' ? sb(servicio, `contratos?select=conv_id,fecha_show,estado&conv_id=in.(${ids.join(',')})&estado=neq.anulado&limit=20000`) : Promise.resolve({ ok: true, data: [] })
+      ]);
+      incs = ri2.ok ? ri2.data || [] : []; cts = rk2.ok ? rk2.data || [] : [];
+    }
+    const filas = lista.map(x => {
+      const desde = new Date(x.fecha + 'T09:00:00Z').getTime(), hasta = desde + 24 * 3600 * 1000;
+      const l = incs.filter(i => i.conv_id === x.conv.id && new Date(i.created_at).getTime() >= desde && new Date(i.created_at).getTime() < hasta);
+      const k = cts.filter(c => c.conv_id === x.conv.id && c.fecha_show === x.fecha);
+      return Object.assign({}, x, { incidencias: l.length, graves: l.filter(i => i.nivel === 3).length, contratos: k.length, firmados: k.filter(c => c.estado === 'firmado').length,
+        link: tipoT === 'socios' ? linkSocios(secreto, x.conv.id, x.fecha) : linkInforme(secreto, x.conv.id, x.fecha) });
+    });
+    return res.status(200).send(paginaTodos(tipoT, filas));
+  }
   const tipo = String((req.query && req.query.tipo) || '') === 'socios' ? 'socios' : 'informe';
   const tok = leerTokenConAnterior(secreto, process.env.INFORME_CLAVE_ANTERIOR || '', t, tipo);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
