@@ -63,7 +63,9 @@ textarea.fi{height:70px;resize:vertical}
 .file-area:hover{border-color:#1a1a1a;background:#f4f4f5}
 .file-area input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .oculto{display:none}
-.pie-rrhh{position:relative;z-index:1;text-align:center;padding:4px 16px 28px}.pie-rrhh span{display:inline-block;background:rgba(15,17,23,.78);color:#d4d4d8;font-size:11px;padding:6px 14px;border-radius:999px}
+/* El pie, como en candidato: una tarjeta blanca con "Show Business Solutions © 2026" y la leyenda de la Gerencia de RR. HH., abajo de todo (aunque la página tenga poco). */
+.container{display:flex;flex-direction:column;min-height:calc(100vh - 150px);margin-bottom:0;padding-bottom:28px}
+.site-footer{margin-top:auto;border:1px solid #e5e7eb;border-radius:12px;padding:20px 16px;text-align:center;background:rgba(255,255,255,.95)}
 </style>
 </head>
 <body>
@@ -201,10 +203,13 @@ textarea.fi{height:70px;resize:vertical}
     <div class="ok" id="listo" style="display:block"></div>
     <p class="nota" style="margin-top:14px">Si te olvidaste de algo, podés volver a este link hasta que venza (24 horas desde que lo pediste).</p>
   </div>
-</div>
 
-<!-- La leyenda de la Gerencia de RR. HH., abajo de todo (16-nov). -->
-<footer class="pie-rrhh"><span>Proyecto llevado a cabo por la Gerencia de RR. HH.</span></footer>
+  <!-- La leyenda de la Gerencia de RR. HH., abajo de todo (16-nov). -->
+  <footer class="site-footer">
+    <div style="font-size:11px;color:#9ca3af">Show Business Solutions © 2026</div>
+    <div style="margin-top:4px;font-size:11px;color:#9ca3af">Proyecto llevado a cabo por la Gerencia de RR. HH.</div>
+  </footer>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
