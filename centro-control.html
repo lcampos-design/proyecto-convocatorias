@@ -3807,6 +3807,9 @@ function informe() {
     // La pieza de marca de SBS de fondo, como marca de agua: entera (SBS y la frase, no sólo la B), en gris muy suave y perdiéndose hacia los bordes (fondo-sbs-marca.png ya viene así: la máscara CSS no sale al imprimir), en cada hoja (y que la impresora no saque ni el fondo ni la marca).
     + 'html{background:' + P.fondo + '}html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     + 'body::before{content:"";position:fixed;left:50%;top:50%;width:min(100vw,177.78vh);aspect-ratio:16/9;transform:translate(-50%,-50%);z-index:-1;background:url(' + location.origin + '/fondo-sbs-marca.png) center/100% 100% no-repeat}'
+    // En pantalla, la pieza entera de borde a borde, como en las apps (16-nov); con el celular parado, entera de ancho arriba y fundiéndose hacia abajo, como en las apps. Al imprimir (A4 parado) queda la de arriba.
+    + '@media screen{body::before{inset:0;left:0;top:0;width:auto;height:auto;aspect-ratio:auto;transform:none;opacity:.07;background:url(' + location.origin + '/fondo-sbs.jpg) center/cover no-repeat}}'
+    + '@media screen and (max-aspect-ratio:3/4){body::before{background:linear-gradient(rgba(255,255,255,0),#fff) 0 34vw/100% 23vw no-repeat,url(' + location.origin + '/fondo-sbs.jpg) center 0/100% auto no-repeat}}'
     + '.k{font-size:10.5px;font-weight:700;color:' + P.gris + '}'
     + 'h1{font-size:20px;font-weight:600;letter-spacing:-.3px;margin:3px 0 0}h2{font-size:11.5px;font-weight:400;color:' + P.gris + ';margin:2px 0 0}'
     + 'h3{font-size:11.5px;font-weight:700;color:' + P.tinta + ';margin:0 0 6px}'

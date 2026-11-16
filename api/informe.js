@@ -88,8 +88,10 @@ export function paginaTodos(tipo, filas) {
     + '<title>' + (socios ? 'Informes para socios' : 'Informes de incidencias') + ' · Movistar Arena</title>'
     + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"><style>'
     + '*{box-sizing:border-box}html{background:#fff}body{margin:0;font-family:Poppins,sans-serif;color:#1a1a1a}'
-    // La marca de SBS de fondo, como en el informe (Thomas, 16-nov: "el wallpaper de SBS de fondo, como el del informe").
-    + 'body::before{content:"";position:fixed;left:50%;top:50%;width:min(100vw,177.78vh);aspect-ratio:16/9;transform:translate(-50%,-50%);z-index:-1;background:url(' + SITIO + '/fondo-sbs-marca.png) center/100% 100% no-repeat}'
+    // La marca de SBS de fondo, como en el informe (Thomas, 16-nov: "el wallpaper de SBS de fondo, como el del informe"), entera de
+    // borde a borde, como en las apps; con el celular parado, entera de ancho arriba y fundiéndose hacia abajo.
+    + 'body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.07;background:url(' + SITIO + '/fondo-sbs.jpg) center/cover no-repeat}'
+    + '@media (max-aspect-ratio:3/4){body::before{background:linear-gradient(rgba(255,255,255,0),#fff) 0 34vw/100% 23vw no-repeat,url(' + SITIO + '/fondo-sbs.jpg) center 0/100% auto no-repeat}}'
     + '.hoja{max-width:760px;margin:0 auto;padding:40px 16px 56px}'
     + '.cab{display:flex;align-items:center;gap:14px;padding-bottom:22px;border-bottom:2px solid #1a1a1a;margin-bottom:22px}.cab img{width:52px;height:52px}'
     + '.k{font-size:12px;font-weight:600;color:#5c5c5c}h1{font-size:24px;line-height:1.2;margin:2px 0 0;font-weight:700}'
