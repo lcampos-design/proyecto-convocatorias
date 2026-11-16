@@ -66,9 +66,10 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .logout-btn svg{width:17px;height:17px;flex-shrink:0;display:block}
 .logout-btn.ico{padding:0;width:44px}
 @media(max-width:420px){.sv-informe{padding:0;width:44px}.sv-informe span{display:none}}
+.pie-rrhh{position:relative;z-index:1;text-align:center;font-size:11px;color:var(--gris);padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));letter-spacing:.01em}
 .screen{display:none;padding-bottom:env(safe-area-inset-bottom,16px)}.screen.active{display:block}
 /* El ingreso: una caja de vidrio con el logo y "Supervisores". */
-.login-wrap{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:20px}
+.login-wrap{min-height:calc(100vh - 60px - 64px);display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;border-radius:22px}
 .login-marcas{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 20px}
 .login-logo{width:68px;height:68px;display:block;filter:var(--logo-filtro)}
@@ -576,6 +577,8 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
   </div>
 </div>
 
+<!-- La leyenda de la Gerencia de RR. HH., abajo de todo (16-nov). -->
+<footer class="pie-rrhh">Proyecto llevado a cabo por la Gerencia de RR. HH.</footer>
 <div class="toast-mob" id="toastMob"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -4246,7 +4249,7 @@ function svInforme() {
       + '<td class="niv" style="color:' + P.niv(INC_NIVELES[i.nivel] ? i.nivel : 1) + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
       + '<td>' + (incDerivadoA(i).map(incEsc).join(', ') || '—') + '</td>'
       + '<td>' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')
-    + '</table><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
+    + '</table><p style="margin:22px 0 0;text-align:center;font-size:9.5px;color:' + P.gris + '">Proyecto llevado a cabo por la Gerencia de RR. HH.</p><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
   const w = window.open('', '_blank');
   if (!w) { alert('El navegador bloqueó la ventana del informe. Permití las ventanas emergentes para este sitio.'); return; }
   w.document.open(); w.document.write(html); w.document.close();

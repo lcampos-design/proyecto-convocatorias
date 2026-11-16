@@ -55,6 +55,7 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 
 /* Los controles de formulario no heredan la tipografia de la pagina: hay que pedirselo. */
 button,input,select,textarea,optgroup,option{font-family:inherit}
+.pie-rrhh{position:relative;z-index:1;text-align:center;font-size:11px;color:#9ca3af;margin-top:-28px;padding:0 16px 28px}@media print{.pie-rrhh{display:none}}
 </style>
 </head>
 <body>
@@ -64,6 +65,8 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
   <div class="page-title">Contrato de trabajo</div>
 </div>
 <div class="wrap"><div id="content"><div class="card"><div class="center">Cargando…</div></div></div></div>
+<!-- La leyenda de la Gerencia de RR. HH., abajo de todo (16-nov). -->
+<footer class="pie-rrhh">Proyecto llevado a cabo por la Gerencia de RR. HH.</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>

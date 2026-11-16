@@ -104,12 +104,14 @@ export function paginaTodos(tipo, filas) {
     + '.ir{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;background:#1a1a1a;color:#fff;padding:10px 14px;border-radius:10px}.ir svg{width:16px;height:16px}'
     + '.vacio{padding:28px;border:1px dashed #dadada;border-radius:14px;text-align:center;color:#5c5c5c;font-size:14px}'
     + '@media (max-width:560px){.fila{flex-wrap:wrap}.ir{width:100%;justify-content:center}}'
+    + '.pie{margin-top:28px;text-align:center;font-size:11px;color:#8a8a8a}'
     + '</style></head><body><div class="hoja">'
     + '<div class="cab"><img src="' + SITIO + '/logo-sbs.png" alt="Show Business Solutions"><div><div class="k">AX · Audience Experience · Show Business Solutions</div><h1>'
     + (socios ? 'Informes para socios' : 'Informes de incidencias') + '</h1></div></div>'
     + '<p class="intro">' + (socios ? 'Cada show del Movistar Arena, con los contratos, el personal y las incidencias. ' : 'Cada show del Movistar Arena, con su informe de incidencias. ')
     + 'Están siempre actualizados y, si lo necesitan en PDF, se descarga desde cada informe.</p>'
     + (filas.length ? filas.map(fila).join('') : '<div class="vacio">Todavía no hay informes.</div>')
+    + '<p class="pie">Proyecto llevado a cabo por la Gerencia de RR. HH.</p>'
     + '</div></body></html>';
 }
 
@@ -133,7 +135,7 @@ async function sb(servicio, ruta) {
 const pagina = (titulo, texto) => `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulo}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"></head>
 <body style="margin:0;font-family:Poppins,sans-serif;background:#fff;color:#1a1a1a;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box">
-<div style="max-width:420px;text-align:center"><img src="${SITIO}/logo-sbs.png" alt="SBS" width="56" height="56"><h1 style="font-size:20px;margin:16px 0 8px">${titulo}</h1><p style="color:#5c5c5c;line-height:1.6;margin:0">${texto}</p></div></body></html>`;
+<div style="max-width:420px;text-align:center"><img src="${SITIO}/logo-sbs.png" alt="SBS" width="56" height="56"><h1 style="font-size:20px;margin:16px 0 8px">${titulo}</h1><p style="color:#5c5c5c;line-height:1.6;margin:0">${texto}</p><p style="margin:28px 0 0;font-size:11px;color:#8a8a8a">Proyecto llevado a cabo por la Gerencia de RR. HH.</p></div></body></html>`;
 
 // Para los socios: arriba, los contratos y el personal del show; abajo, el informe de incidencias de siempre. Sin nombres:
 // sólo cuántos. Pendiente = enviado sin firmar (lo abrió o no); les llega un recordatorio por día hasta que firmen.

@@ -97,9 +97,10 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 @media(max-width:560px){body[data-pantalla="pShow"] .bar-txt{display:none}body[data-pantalla="pShow"] .bar-acc{margin-left:auto}}
 @media(max-width:400px){body[data-pantalla="pShow"] .bar-logo{display:none}}
 .wrap{max-width:1180px;margin:0 auto;padding:28px max(18px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
+.pie-rrhh{position:relative;z-index:1;text-align:center;font-size:11px;color:var(--gris);padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));letter-spacing:.01em}
 .pantalla{display:none}.pantalla.on{display:block}
 /* El ingreso: una caja. */
-.login{min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:20px}
+.login{min-height:calc(100vh - 64px - 64px);display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;border-radius:22px}
 /* Las dos marcas juntas, como una colaboración: el SBS calado (las letras, del color del bloque) y la M de Movistar; en el modo claro, las dos en negro. */
 .login-marcas{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 20px}
@@ -380,6 +381,9 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
     </section>
   </div>
 </div>
+
+<!-- La leyenda de la Gerencia de RR. HH., abajo de todo (16-nov). -->
+<footer class="pie-rrhh">Proyecto llevado a cabo por la Gerencia de RR. HH.</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -3831,7 +3835,7 @@ function informe() {
       + '<td class="niv" style="color:' + P.niv(INC_NIVELES[i.nivel] ? i.nivel : 1) + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
       + '<td>' + (incDerivadoA(i).map(incEsc).join(', ') || '—') + '</td>'
       + '<td>' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')
-    + '</table><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
+    + '</table><p style="margin:22px 0 0;text-align:center;font-size:9.5px;color:' + P.gris + '">Proyecto llevado a cabo por la Gerencia de RR. HH.</p><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
   const w = window.open('', '_blank');
   if (!w) { alert('El navegador bloqueó la ventana del informe. Permití las ventanas emergentes para este sitio.'); return; }
   w.document.open(); w.document.write(html); w.document.close();

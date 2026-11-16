@@ -1053,6 +1053,7 @@ tr:hover td{background:#f9f9fb}
 .d-tile.a-ex .d-tile-n{color:var(--externos)}
 .d-tile.a-es .d-tile-n{color:var(--espana)}
 
+.pie-rrhh{text-align:center;font-size:11px;color:#8e8e93;padding:28px 16px 24px}.pie-rrhh.en-login{position:absolute;left:0;right:0;bottom:14px;padding:0 16px}
 </style>
 <style>.cc-armado-ops{display:flex;flex-direction:column;gap:4px;padding:6px 0;border-top:1px solid var(--r-line,#e5e7eb);border-bottom:1px solid var(--r-line,#e5e7eb);margin:4px 0}.cc-armado-ops span{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--r-muted,#6b7280);padding:2px 8px}.cc-armado-ops .btn.on{background:#1a1a1a;color:#fff}.cc-armado-ops .btn.on::after{content:' ✓'}</style>
 </head>
@@ -1072,6 +1073,7 @@ tr:hover td{background:#f9f9fb}
     <button class="l-btn" id="loginBtn" onclick="doLogin()">Ingresar</button>
     <div style="text-align:center;margin-top:14px"><a href="#" id="olvideLink" onclick="event.preventDefault();mandarRecupero()" style="font-size:12px;color:#534AB7;text-decoration:none">Olvidé mi contraseña</a></div>
   </div>
+  <div class="pie-rrhh en-login">Proyecto llevado a cabo por la Gerencia de RR. HH.</div>
 </div>
 
 <!-- ══ LOADING ══ -->
@@ -1570,6 +1572,8 @@ tr:hover td{background:#f9f9fb}
   <div style="padding:20px 24px" id="ctContent"><div class="empty">Cargando...</div></div>
 </div>
 
+<!-- La leyenda de la Gerencia de RR. HH., abajo de todo (16-nov). -->
+<footer class="pie-rrhh">Proyecto llevado a cabo por la Gerencia de RR. HH.</footer>
 </div><!-- /app -->
 
 <!-- MODALES -->
