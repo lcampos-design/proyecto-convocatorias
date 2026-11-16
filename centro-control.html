@@ -722,6 +722,14 @@ const INC_LUGARES_BASE = [
   { id: 'Baños Mujeres Sede', t: 'banio', txt: 'M', cx: 376.5, cy: 140, w: 11, h: 28, ang: 0, piso: 'PB' },
   { id: 'Baños Hombres Sede', t: 'banio', txt: 'H', cx: 376.5, cy: 107, w: 11, h: 28, ang: 0, piso: 'PB' },
   { id: 'Puerta 9', t: 'puerta', txt: 'P9', cx: 398, cy: 92, w: 22, h: 12, ang: 90, piso: 'PB' },
+  // Los molinetes de Cortatickets (Luca, 15-nov: "Humboldt, Dorrego y Corrientes hagamos; y estaría bueno diferenciar
+  // en Humboldt y Dorrego los molinetes premium"). Van como puertas (Cortatickets) y por ahora entre el edificio y
+  // la calle; la ubicación exacta se define con ellos.
+  { id: 'Molinetes Humboldt', t: 'puerta', txt: 'Mol.', cx: 170, cy: 334, w: 30, h: 10, ang: 0, piso: 'PB' },
+  { id: 'Molinetes Humboldt Premium', t: 'puerta', txt: 'Prem.', cx: 250, cy: 334, w: 30, h: 10, ang: 0, piso: 'PB' },
+  { id: 'Molinetes Dorrego', t: 'puerta', txt: 'Mol.', cx: 170, cy: -46, w: 30, h: 10, ang: 0, piso: 'PB' },
+  { id: 'Molinetes Dorrego Premium', t: 'puerta', txt: 'Prem.', cx: 250, cy: -46, w: 30, h: 10, ang: 0, piso: 'PB' },
+  { id: 'Molinetes Corrientes', t: 'puerta', txt: 'Mol.', cx: 414, cy: 137, w: 30, h: 10, ang: 90, piso: 'PB' },
   { id: 'Sede externo 1 (Kit Kat)', t: 'gastro', txt: 'SE1', cx: 391.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'PB' },
   // "Acreditaciones" (antes "Producción": así se lo reconoce) y el merch store, donde está la enfermería del otro lado.
   { id: 'Acreditaciones', t: 'servicio', txt: 'Acred.', cx: 384, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
@@ -913,6 +921,7 @@ const INC_PLANO_V1 = {
 // El plano guardado desde el panel. Si no hay nada guardado (o la base
 // todavía no lo tiene), queda el de siempre. Devuelve si cambió algo.
 const INC_SALIDAS_FONDO_DESDE = '2026-11-13T15:50:00Z';
+const INC_MOLINETES_DESDE = '2026-11-16T00:40:00Z';
 async function incCargarPlanoArena() {
   try {
     const { data, error } = await sb.rpc('plano_arena');
@@ -946,6 +955,9 @@ async function incCargarPlanoArena() {
     // las sacan desde el editor y guardan, quedan afuera.
     if (!(data.updated_at && new Date(data.updated_at) > new Date(INC_SALIDAS_FONDO_DESDE)))
       INC_LUGARES_BASE.filter(l => /^Salida fondo /.test(l.id)).forEach(l => { if (!lista.some(x => x && String(x.id == null ? '' : x.id).trim().toLowerCase() === l.id.toLowerCase())) lista = lista.concat([l]); });
+    // Los molinetes (15-nov-2026): igual.
+    if (!(data.updated_at && new Date(data.updated_at) > new Date(INC_MOLINETES_DESDE)))
+      INC_LUGARES_BASE.filter(l => /^Molinetes /.test(l.id)).forEach(l => { if (!lista.some(x => x && String(x.id == null ? '' : x.id).trim().toLowerCase() === l.id.toLowerCase())) lista = lista.concat([l]); });
     const nuevos = incNormalizarLugares(lista);
     if (JSON.stringify(nuevos) === JSON.stringify(incLugaresArena)) return false;
     incLugaresArena = nuevos; incVersionPlano++;
@@ -1219,8 +1231,8 @@ function incBuscarLugares(q, armado) {
   return lugares.map(s => {
     const id = incSinTildes(s.id), cods = [incSinTildes(s.txt), incSinTildes(s.lugar ? incTxtLugar(s) : '')].filter(Boolean), tipo = incSinTildes(s.lugar ? INC_TIPOS_LUGAR[s.t].nombre : '');
     const disca = /^disc/.test(t) && 'discapacidad'.startsWith(t.slice(0, 12)) && id.includes('accesible');
-    // Las puertas son donde está Corta tickets (Luca, 15-nov: "no hay lugar para cargar incidencias en corta"): "corta", "molinete", "ingreso" o "acceso" las encuentran.
-    const corta = s.t === 'puerta' && t.length >= 4 && ['corta tickets', 'cortatickets', 'molinete', 'ingreso', 'acceso'].some(w => w.startsWith(t));
+    // Las puertas y los molinetes son Cortatickets (Luca, 15-nov: "no hay lugar para cargar incidencias en corta"): "corta", "ingreso" o "acceso" los encuentran.
+    const corta = s.t === 'puerta' && t.length >= 4 && ['corta tickets', 'cortatickets', 'ingreso', 'acceso'].some(w => w.startsWith(t));
     const puntos = id === t || cods.includes(t) ? 0 : id.startsWith(t) || cods.some(x => x.startsWith(t)) ? 1 : id.includes(t) || (tipo && tipo.startsWith(t)) || disca || corta ? 2 : -1;
     return { s, puntos };
   }).filter(x => x.puntos >= 0).sort((a, b) => a.puntos - b.puntos).slice(0, 14).map(x => x.s);
