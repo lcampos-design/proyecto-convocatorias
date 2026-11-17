@@ -610,9 +610,10 @@ function incRectRot(cx, cy, w, d, ang) {
 function incEspejo(p) { return p.split(' ').map(par => { const xy = par.split(',').map(Number); return (420 - xy[0]) + ',' + xy[1]; }).join(' '); }
 const INC_ANILLO_LADO = '50,-44 50,236 104,290 120,290 120,318 70,318 22,260 22,-44';
 const INC_PLANO_ZONAS = [
-  { id: 'Anillo izquierdo', txt: 'Anillo', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 226, rot: -90 },
-  { id: 'Anillo fondo', txt: 'Anillo', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
-  { id: 'Anillo derecho', txt: 'Anillo', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
+  // Los tramos del anillo, como los llaman en el Arena (Luca, 17-nov): Cancha, Humboldt (el fondo) y Sede.
+  { id: 'Anillo Cancha', txt: 'Anillo', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 226, rot: -90 },
+  { id: 'Anillo Humboldt', txt: 'Anillo', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
+  { id: 'Anillo Sede', txt: 'Anillo', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
   { id: 'Backstage', txt: 'Backstage', t: 'back', r: [50, -44, 320, 24] },
   // El Premium (el VIP): los palcos a los costados y el lounge enfrente del
   // escenario, entre la platea baja (P1) y la alta (P3); y los corners, también

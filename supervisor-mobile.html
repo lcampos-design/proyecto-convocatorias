@@ -1335,9 +1335,10 @@ function incRectRot(cx, cy, w, d, ang) {
 function incEspejo(p) { return p.split(' ').map(par => { const xy = par.split(',').map(Number); return (420 - xy[0]) + ',' + xy[1]; }).join(' '); }
 const INC_ANILLO_LADO = '50,-44 50,236 104,290 120,290 120,318 70,318 22,260 22,-44';
 const INC_PLANO_ZONAS = [
-  { id: 'Anillo izquierdo', txt: 'Anillo', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 226, rot: -90 },
-  { id: 'Anillo fondo', txt: 'Anillo', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
-  { id: 'Anillo derecho', txt: 'Anillo', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
+  // Los tramos del anillo, como los llaman en el Arena (Luca, 17-nov): Cancha, Humboldt (el fondo) y Sede.
+  { id: 'Anillo Cancha', txt: 'Anillo', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 226, rot: -90 },
+  { id: 'Anillo Humboldt', txt: 'Anillo', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
+  { id: 'Anillo Sede', txt: 'Anillo', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
   { id: 'Backstage', txt: 'Backstage', t: 'back', r: [50, -44, 320, 24] },
   // El Premium (el VIP): los palcos a los costados y el lounge enfrente del
   // escenario, entre la platea baja (P1) y la alta (P3); y los corners, también
@@ -4460,7 +4461,7 @@ function incDondeHTML(q) {
     + '<div class="sv-ayuda"><b>Cortatickets:</b> lo que pase en los molinetes (lectores, entradas, filas para entrar) o en cada puerta.</div>';
   else if (p === 'EXT') html += grupo('Calles', de(x => x.t === 'calle'), false)
     + '<div class="sv-ayuda"><b>Calle:</b> congestión en la vereda, filas que llegan a la calle, cortes o lo que pase afuera.</div>';
-  else if (p === 'PB') html += grupo('Sectores del campo', de(x => x.t === 'campo'), true) + grupo('Pasillos y backstage', de(x => x.t === 'anillo' || x.t === 'back'), false) + grupo('En planta baja', enPiso('PB'), false);
+  else if (p === 'PB') html += grupo('Sectores del campo', de(x => x.t === 'campo'), true) + grupo('Anillo y backstage', de(x => x.t === 'anillo' || x.t === 'back'), false) + grupo('En planta baja', enPiso('PB'), false);
   else if (p === 'VIP') html += grupo('Sectores', de(x => x.t === 'vip' && !x.lugar), false) + grupo('En el VIP', enPiso('VIP'), false)
     + grupo('Recepciones y Premium', INC_LUGARES_PREMIUM.map(id => ({ id })), false)
     + '<div class="sv-ayuda"><b>Recepciones y Premium:</b> lo que pase en las recepciones (impresoras, lectores, el sistema, pulseras), en el estacionamiento o en los Premium Points.</div>';

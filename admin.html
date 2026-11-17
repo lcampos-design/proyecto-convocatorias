@@ -5388,9 +5388,10 @@ function incRectRot(cx, cy, w, d, ang) {
 function incEspejo(p) { return p.split(' ').map(par => { const xy = par.split(',').map(Number); return (420 - xy[0]) + ',' + xy[1]; }).join(' '); }
 const INC_ANILLO_LADO = '50,-44 50,236 104,290 120,290 120,318 70,318 22,260 22,-44';
 const INC_PLANO_ZONAS = [
-  { id: 'Anillo izquierdo', txt: 'Anillo', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 226, rot: -90 },
-  { id: 'Anillo fondo', txt: 'Anillo', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
-  { id: 'Anillo derecho', txt: 'Anillo', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
+  // Los tramos del anillo, como los llaman en el Arena (Luca, 17-nov): Cancha, Humboldt (el fondo) y Sede.
+  { id: 'Anillo Cancha', txt: 'Anillo', t: 'anillo', p: INC_ANILLO_LADO, lx: 37, ly: 226, rot: -90 },
+  { id: 'Anillo Humboldt', txt: 'Anillo', t: 'anillo', r: [120, 290, 180, 28], lx: 210, ly: 302 },
+  { id: 'Anillo Sede', txt: 'Anillo', t: 'anillo', p: incEspejo(INC_ANILLO_LADO), lx: 383, ly: 226, rot: 90 },
   { id: 'Backstage', txt: 'Backstage', t: 'back', r: [50, -44, 320, 24] },
   // El Premium (el VIP): los palcos a los costados y el lounge enfrente del
   // escenario, entre la platea baja (P1) y la alta (P3); y los corners, también
@@ -8610,7 +8611,7 @@ function incAbrirNuevaAdm(sector) {
   const puestos = t => incLugaresArena.filter(l => l.t === t);
   const grupos = [['Campo · PB', INC_PLANO_CAMPO[armado] || INC_PLANO_CAMPO.campos], ['Platea baja (102 a 118) · P1', INC_PLANO_TRIBUNAS.filter(s => s.t === 'baja')], ['Premium · palcos, lounge y corners', INC_PLANO_ZONAS.filter(s => s.t === 'vip')], ['Recepciones y Premium', INC_LUGARES_PREMIUM.map(id => ({ id }))], ['Platea alta (301 a 317) · P3', INC_PLANO_TRIBUNAS.filter(s => s.t === 'alta')],
     ['Puertas', puestos('puerta')], ['Gastronomía', puestos('gastro')], ['Baños', puestos('banio')], ['Enfermería', puestos('enfermeria')], ['Camarines, acreditaciones y merch', puestos('servicio')], ['Calles de afuera', puestos('calle')],
-    ['Pasillo del anillo y backstage', INC_PLANO_ZONAS.filter(s => s.t !== 'vip')], ['Otros', INC_LUGARES.map(id => ({ id }))]].filter(g => g[1].length);
+    ['Anillo y backstage', INC_PLANO_ZONAS.filter(s => s.t !== 'vip')], ['Otros', INC_LUGARES.map(id => ({ id }))]].filter(g => g[1].length);
   const elegido = sector || incSectorAdm || '';
   document.getElementById('incNLugar').innerHTML = '<option value="">Elegí dónde pasó…</option>' + grupos.map(([g, l]) => '<optgroup label="' + g + '">' + l.map(s => '<option value="' + e(s.id) + '"' + (s.id === elegido ? ' selected' : '') + '>' + e(s.id) + (s.piso && s.t !== 'vip' && INC_TIPOS_LUGAR[s.t] ? ' · ' + s.piso : s.t === 'vip' ? ' · ' + incPisoDe(s) : '') + '</option>').join('') + '</optgroup>').join('');
   document.getElementById('incNCat').innerHTML = INC_CATALOGO.map((c, i) => '<option value="' + i + '">' + e(c.cat) + '</option>').join('');
