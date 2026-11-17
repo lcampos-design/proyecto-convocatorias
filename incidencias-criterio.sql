@@ -35,6 +35,7 @@ language sql immutable set search_path = public as $$
         ('Salida obstruida', 3),
         ('Falta personal en el sector', 2), ('Personal descompuesto', 2), ('Problema de conducta o uniforme', 1),
         ('Acompañamiento a ubicación accesible', 1), ('Salida diferenciada', 1), ('Asistencia a persona con discapacidad', 1),
+        ('Falla de la impresora', 2), ('Falla del lector', 2), ('Falla del sistema', 2), ('Problema con pulseras o credenciales', 1),
         ('Otra incidencia', 1)
       ) t(tipo, n) where t.tipo = btrim(coalesce(p_tipo, ''))),
       least(greatest(coalesce(p_actual, 1), 1), 3)),
