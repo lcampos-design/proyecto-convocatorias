@@ -10,7 +10,7 @@
 // su propia firma: el link del Arena no abre el de los socios (ni al revés).
 
 import crypto from 'crypto';
-import { htmlInforme, pdfDeHtml } from './_lib/informe-pdf.js';
+import { htmlInforme, pdfDeHtml, notasDelShow } from './_lib/informe-pdf.js';
 
 export const config = { maxDuration: 60 };
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
@@ -198,8 +198,10 @@ export default async function handler(req, res) {
   const ri = await sb(servicio, `incidencias?select=id,created_at,sector,ubicacion,categoria,tipo,nivel,acciones,nota,estado,resolucion,resuelta_at`
     + `&conv_id=eq.${conv.id}&created_at=gte.${encodeURIComponent(desde.toISOString())}&created_at=lt.${encodeURIComponent(hasta.toISOString())}&order=created_at.asc&limit=2000`);
   if (!ri.ok) return res.status(500).send(pagina('No disponible', 'No se pudo leer el informe. Probá de nuevo en un rato.'));
+  // Las notas de los supervisores de la fecha (17-nov): en la página, con sus fotos; en el PDF, el texto (las fotos quedan en el link).
+  const notas = await notasDelShow(SB_URL, servicio, conv.id, tok.fecha, !quierePdf);
   let html;
-  try { html = await htmlInforme(conv, tok.fecha, ri.data || []); }
+  try { html = await htmlInforme(conv, tok.fecha, ri.data || [], null, notas); }
   catch (e) { return res.status(500).send(pagina('No disponible', 'No se pudo armar el informe. Probá de nuevo en un rato.')); }
   if (tipo === 'socios') {
     const [rk, rp] = await Promise.all([

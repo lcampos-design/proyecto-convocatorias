@@ -139,6 +139,21 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .vivo-pill{font:600 11.5px var(--inc-fuente);letter-spacing:0;color:var(--fondo);background:var(--tinta);padding:3px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:5px}
 .vivo-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--fondo);animation:incLatido 1.4s infinite}
 .flecha{color:var(--gris);font-size:22px}
+/* Las notas de los supervisores (notas.sql): igual en centro-control.html y supervisor-mobile.html. */
+.nt-card{background:var(--fondo);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.nt-card:last-child{margin-bottom:0}
+.nt-cab{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font:400 12px var(--inc-fuente);color:var(--gris)}
+.nt-cab b{font-weight:600;color:var(--tinta);font-size:13px;overflow-wrap:anywhere}
+.nt-txt{white-space:pre-wrap;overflow-wrap:anywhere;font:400 14px/1.5 var(--inc-fuente);color:var(--tinta);margin-top:6px}
+.nt-fotos{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.nt-fotos a,.nt-foto-sin{display:block;width:84px;height:84px;border-radius:10px;overflow:hidden;background:var(--linea)}
+.nt-fotos img{width:100%;height:100%;object-fit:cover;display:block}
+.nt-foto-sin{display:flex;align-items:center;justify-content:center;font:500 11px var(--inc-fuente);color:var(--gris)}
+.nt-arch{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.nt-arch a,.nt-arch span{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:7px 10px;border-radius:10px;border:1px solid var(--linea);font:500 12px var(--inc-fuente);color:var(--tinta);text-decoration:none;overflow-wrap:anywhere}
+.nt-arch svg{width:15px;height:15px;flex:none}
+.nt-borrar{margin-top:10px;background:none;border:0;padding:4px 0;font:600 12px var(--inc-fuente);color:var(--gris);text-decoration:underline;cursor:pointer}
+.t-notas{margin-top:16px;padding:20px}
 .vacio{text-align:center;padding:32px 18px;color:var(--gris);font:400 12px/1.5 var(--inc-fuente);border:2px dashed var(--linea);border-radius:14px}
 .inc-cuenta{font:400 11px var(--inc-fuente);padding:4px 9px;border-radius:999px;background:var(--fondo);color:var(--gris)}
 .inc-cuenta strong{font-weight:700;margin-right:5px;color:var(--tinta)}
@@ -378,6 +393,11 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
     <section class="t-met caja" aria-label="Métricas">
       <h2 class="met-t sec-t"><span class="mano">M<span class="tilde-aire">é</span>tricas</span></h2>
       <div id="metricas"></div>
+    </section>
+    <!-- Las notas de los supervisores de la fecha (notas.sql): lo que escribieron, con sus fotos y archivos. -->
+    <section class="t-notas caja" id="notasCaja" aria-label="Notas de los supervisores" hidden>
+      <h2 class="met-t sec-t"><span class="mano">Notas</span></h2>
+      <div id="notasCC"></div>
     </section>
   </div>
 </div>
@@ -3446,6 +3466,67 @@ function incEstiloMetricas() {
 // ── Centro de Control: lo que ve la gerencia del Movistar Arena ──
 // Sólo lectura. Todo sale de dos funciones de la base (ger_convocatorias y
 // ger_incidencias), que no devuelven nada a quien no es gerencia o admin.
+// ── NOTAS DE LOS SUPERVISORES (notas.sql) ──
+// Este bloque es igual en centro-control.html y supervisor-mobile.html. Pedido de Lupi y Connie (17-nov): "una parte
+// de notas para que los supervisores puedan escribir la situación que haya sucedido y además agregar archivos (imágenes,
+// etc.)", "así dejan de hacer el reporte en el Drive". Cada nota es de una fecha del show. Los archivos están en un
+// depósito privado: se ven con un link que vence (se piden de a muchos y se guardan un rato).
+const NT_URLS = {};
+async function ntFirmar(notas) {
+  const ahora = Date.now(), l = notas || [];
+  const faltan = [...new Set(l.flatMap(n => (n.archivos || []).map(a => a && a.path)).filter(p => p && !(NT_URLS[p] && NT_URLS[p].hasta > ahora + 120000)))];
+  if (faltan.length && sb.storage) {
+    try {
+      const { data } = await sb.storage.from('notas').createSignedUrls(faltan, 6 * 3600);
+      (data || []).forEach(x => { if (x && x.signedUrl && x.path) NT_URLS[x.path] = { url: x.signedUrl, hasta: ahora + 6 * 3600000 }; });
+    } catch (_) {}
+  }
+  l.forEach(n => (n.archivos || []).forEach(a => { if (a && NT_URLS[a.path]) a.url = NT_URLS[a.path].url; }));
+  return l;
+}
+// Las fotos se ven en la nota; HEIC (del iPhone) no lo muestran todos los navegadores: va como archivo.
+function ntEsImagen(a) { return !!a && /^image\//.test(a.tipo || '') && !/hei[cf]/.test(a.tipo || ''); }
+const NT_ICONO_ARCHIVO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+// Una nota: quién y a qué hora, lo que escribió, sus fotos (tocadas, se abren grandes) y sus archivos.
+function notaTarjetaHTML(n, op) {
+  const arch = (n.archivos || []).filter(Boolean), fotos = arch.filter(ntEsImagen), otros = arch.filter(a => !ntEsImagen(a));
+  return '<article class="nt-card">'
+    + '<div class="nt-cab"><b>' + incEsc(n.autor_nombre || 'Supervisor') + '</b><span>' + incHora(n.created_at) + '</span></div>'
+    + (n.texto ? '<div class="nt-txt">' + incEsc(n.texto) + '</div>' : '')
+    + (fotos.length ? '<div class="nt-fotos">' + fotos.map(a => a.url ? '<a href="' + incEsc(a.url) + '" target="_blank" rel="noopener" title="' + incEsc(a.nombre || 'Foto') + '"><img src="' + incEsc(a.url) + '" alt="' + incEsc(a.nombre || 'Foto') + '" loading="lazy"></a>' : '<span class="nt-foto-sin">Foto</span>').join('') + '</div>' : '')
+    + (otros.length ? '<div class="nt-arch">' + otros.map(a => (a.url ? '<a href="' + incEsc(a.url) + '" target="_blank" rel="noopener">' : '<span>') + NT_ICONO_ARCHIVO + incEsc(a.nombre || 'Archivo') + (a.url ? '</a>' : '</span>')).join('') + '</div>' : '')
+    + (op && op.borrar && n.mia ? '<button type="button" class="nt-borrar" onclick="ntBorrar(\'' + incEsc(n.id) + '\')">Borrar</button>' : '')
+    + '</article>';
+}
+// En el informe, después de la línea de tiempo: cuándo, quién y qué pasó. Las fotos y los archivos, en pantalla (el link
+// del informe); al imprimir (el PDF), cuántos son. Sin notas, el informe queda como siempre.
+function informeNotasHTML(notas, P) {
+  if (!notas || !notas.length) return '';
+  const l = notas.slice().sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')));
+  const fh = iso => { const d = incDia(iso); return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + ' ' + incHora(iso) : ''; };
+  const cuantos = arch => { const f = arch.filter(ntEsImagen).length, o = arch.length - f; return [f ? f + (f === 1 ? ' foto' : ' fotos') : '', o ? o + (o === 1 ? ' archivo' : ' archivos') : ''].filter(Boolean).join(' y '); };
+  const adjunto = a => a.url
+    ? (ntEsImagen(a) ? '<a href="' + incEsc(a.url) + '" target="_blank" rel="noopener"><img src="' + incEsc(a.url) + '" alt="' + incEsc(a.nombre || 'Foto') + '"></a>' : '<a class="adj-f" href="' + incEsc(a.url) + '" target="_blank" rel="noopener">' + incEsc(a.nombre || 'Archivo') + '</a>')
+    : '<span class="adj-f">' + incEsc(a.nombre || 'Archivo') + '</span>';
+  return '<style>.nt-t{white-space:pre-wrap}.adj-ver{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}.adj-ver img{width:96px;height:96px;object-fit:cover;border-radius:6px;border:1px solid ' + P.linea + ';display:block}'
+    + '.adj-f{display:inline-block;padding:4px 8px;border:1px solid ' + P.linea + ';border-radius:6px;color:' + P.tinta + ';text-decoration:none}.adj-imp{display:none;color:' + P.gris + '}'
+    + '@media print{.adj-ver{display:none}.adj-imp{display:block}}</style>'
+    + '<h3 style="margin-top:22px">Notas de los supervisores</h3><table><tr><th>Cuándo</th><th>Quién</th><th>Qué pasó</th><th>Fotos y archivos</th></tr>'
+    + l.map(n => {
+      const arch = (n.archivos || []).filter(Boolean);
+      return '<tr><td>' + fh(n.created_at) + '</td><td>' + incEsc(n.autor_nombre || '') + '</td><td class="nt-t">' + incEsc(n.texto || '') + '</td><td>'
+        + (arch.length ? '<div class="adj-ver">' + arch.map(adjunto).join('') + '</div><div class="adj-imp">' + cuantos(arch) + ' (en el link del informe)</div>' : '—') + '</td></tr>';
+    }).join('') + '</table>';
+}
+// Las notas del show (todas sus fechas; las trae ger_notas con las incidencias). El informe toma las de la fecha.
+let notasShow = [];
+function notasDelDia() { return (notasShow || []).filter(n => !dia || n.fecha === dia); }
+function pintarNotas() {
+  const caja = document.getElementById('notasCaja'), cont = document.getElementById('notasCC'); if (!caja || !cont) return;
+  const l = notasDelDia().slice().sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+  caja.hidden = !l.length;
+  cont.innerHTML = l.map(n => notaTarjetaHTML(n)).join('');
+}
 let shows = [], showId = null, lista = [], filtro = 'abiertas', sectorSel = '', dia = null, timer = null, cuentasFuncion = {}, yaEntro = false;
 // Quién entró con la cuenta de cada zona en este show (cuentas-zona.sql), en orden.
 let supervisores = [];
@@ -3641,7 +3722,7 @@ function renderShows() {
 async function abrirShow(id, fecha) {
   const s = shows.find(x => x.id === id); if (!s) return;
   // La fecha es el show: el tablero, el resumen y el informe son de ella.
-  showId = id; lista = []; filtro = 'abiertas'; sectorSel = ''; dia = fecha !== undefined ? fecha : fechaInicial(s); vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = ''; zonaSel = 'todas';
+  showId = id; lista = []; notasShow = []; pintarNotas(); filtro = 'abiertas'; sectorSel = ''; dia = fecha !== undefined ? fecha : fechaInicial(s); vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = ''; zonaSel = 'todas';
   pantalla('pShow');
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
@@ -3664,12 +3745,16 @@ function volverShows() {
 async function cargarIncidencias() {
   const vivo = document.getElementById('vivo');
   const pedidoSup = sb.rpc('ger_supervisores', { p_conv_id: showId }).then(r => r, () => null);
+  // Las notas de los supervisores (sin notas.sql, la función no está: no hay notas que mostrar).
+  const pedidoNotas = sb.rpc('ger_notas', { p_conv_id: showId }).then(r => r, () => null), deShow = showId;
   const { data, error } = await sb.rpc('ger_incidencias', { p_conv_id: showId });
   if (error || data === null) { vivo.textContent = 'Sin conexión'; vivo.className = 'inc-vivo mal'; return; }
   // Sin cuentas-zona.sql la función no está: no hay nadie a cargo que mostrar.
   const rs = await pedidoSup; supervisores = rs && !rs.error && Array.isArray(rs.data) ? rs.data : [];
   vivo.textContent = 'En vivo'; vivo.title = 'Actualizado a las ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo';
   lista = data || [];
+  const rn = await pedidoNotas;
+  if (deShow === showId && rn && !rn.error && Array.isArray(rn.data)) { notasShow = await ntFirmar(rn.data); pintarNotas(); }
   nuevos = vistos ? new Set(lista.filter(i => !vistos.has(i.id)).map(i => i.id)) : new Set();
   vistos = new Set(lista.map(i => i.id));
   render();
@@ -3850,7 +3935,7 @@ function informe() {
       + '<td class="niv" style="color:' + P.niv(INC_NIVELES[i.nivel] ? i.nivel : 1) + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
       + '<td>' + (incDerivadoA(i).map(incEsc).join(', ') || '—') + '</td>'
       + '<td>' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')
-    + '</table><p style="margin:22px 0 0;text-align:center;font-size:9.5px;color:' + P.gris + '">Proyecto llevado a cabo por la Gerencia de RR. HH.</p><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
+    + '</table>' + informeNotasHTML(notasDelDia(), P) + '<p style="margin:22px 0 0;text-align:center;font-size:9.5px;color:' + P.gris + '">Proyecto llevado a cabo por la Gerencia de RR. HH.</p><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
   const w = window.open('', '_blank');
   if (!w) { alert('El navegador bloqueó la ventana del informe. Permití las ventanas emergentes para este sitio.'); return; }
   w.document.open(); w.document.write(html); w.document.close();
