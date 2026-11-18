@@ -49,10 +49,20 @@
  *  actualizada. Sale el día siguiente del show, desde las 12, a la propiedad SOCIOS_PARA (mails separados por coma).
  *  Los socios ya no van en REPORTE_PARA / REPORTE_CC / REPORTE_CCO (ése es el del Arena).
  *  - "probar_socios": el del show de ayer, sólo a esta casilla (o a REPORTE_PRUEBA), para ver cómo queda.
+ *
+ *  LOS CONTRATOS FIRMADOS, AL DRIVE (18-nov): cada 15 minutos guarda los PDF firmados en la carpeta compartida
+ *  de RR. HH., uno por persona, en <carpeta del área>/<mes>/<fecha y show>/ ("11-NOVIEMBRE 26" /
+ *  "13-11 MARÍA BECERRA" / "Nombre - CUIL.pdf"). La primera vez guarda todos los firmados hasta hoy.
+ *  - Propiedades (el código de cada carpeta, lo que va después de /folders/ en su link):
+ *    CARPETA_FIRMADOS_ARENA (Arena y "ambas áreas"), CARPETA_FIRMADOS_EXTERNOS y, si algún día hace falta,
+ *    CARPETA_FIRMADOS_ESPANA. Un área sin su propiedad no se guarda (y queda para cuando se ponga).
+ *  - La cuenta del script tiene que poder agregar archivos en esas carpetas (colaborador de la unidad compartida).
+ *  - "probar_firmados": cuántos faltan guardar y en qué carpetas, sin guardar nada.
+ *  - "guardar_firmados": los guarda ya (sin esperar los 15 minutos).
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '15-nov 22:30, link a todos los informes en los mails (Arena y socios)';
+var VERSION = '18-nov, los contratos firmados se guardan en el Drive de RR. HH.';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -148,6 +158,8 @@ function sincronizar() {
   try { recordatorios_(clave); } catch (e) { Logger.log('Error con los recordatorios: ' + e); }
   // El informe para socios del show de ayer: una vez, desde las 12.
   try { socios_(clave); } catch (e) { Logger.log('Error con el informe para socios: ' + e); }
+  // Los contratos firmados, al Drive de RR. HH.: cada 15 minutos.
+  try { firmados_(clave, false); } catch (e) { Logger.log('Error con los contratos firmados: ' + e); }
 }
 
 function mandar_(p, clave) {
@@ -888,4 +900,76 @@ function htmlReporte_(s, logo) {
     + (l.length ? '<table style="border-collapse:collapse;width:100%"><tr>' + th('Cuándo') + th('Sector') + th('Qué pasó') + th('Criticidad') + th('Qué se hizo') + th('Derivado a') + th('Cómo se resolvió') + '</tr>' + filas + '</table>'
       : '<div style="font-size:10px;color:' + G + '">No se registraron incidencias en este show.</div>')
     + '</body></html>';
+}
+
+// ── Los contratos firmados, al Drive compartido de RR. HH. (18-nov) ──
+// Pedido de Mercedes: "que se descarguen y guarden en el drive en la carpeta del Arena", "tanto del Arena como
+// Externos". La plataforma (api/contratos-firmados.js) da los firmados de a pocos, en orden de firma, con el PDF;
+// acá se guardan en <carpeta del área>/<mes>/<fecha y show>/ y se recuerda hasta cuál se guardó (propiedad
+// firmados_desde_<área>). Si el archivo ya está en esa carpeta, no se repite.
+var URL_FIRMADOS = 'https://convocatorias.show-bs.com/api/contratos-firmados';
+var FIRMADOS_CADA_MIN = 15;
+var FIRMADOS_AREAS = { arena: 'CARPETA_FIRMADOS_ARENA', externos: 'CARPETA_FIRMADOS_EXTERNOS', espana: 'CARPETA_FIRMADOS_ESPANA' };
+function pedirFirmados_(clave, cuerpo) {
+  var resp = UrlFetchApp.fetch(URL_FIRMADOS, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(cuerpo) });
+  try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
+}
+function carpetaCodigo_(v) { var m = String(v || '').match(/[-\w]{25,}/); return m ? m[0] : ''; }
+function subcarpeta_(padre, nombre) { var it = padre.getFoldersByName(nombre); return it.hasNext() ? it.next() : padre.createFolder(nombre); }
+// forzar: sin esperar los 15 minutos (guardar_firmados). Corta a los 2 minutos y medio; sigue en la vuelta siguiente.
+function firmados_(clave, forzar) {
+  var props = PropertiesService.getScriptProperties(), ahora = Date.now();
+  var areas = Object.keys(FIRMADOS_AREAS).filter(function (a) { return carpetaCodigo_(props.getProperty(FIRMADOS_AREAS[a])); });
+  if (!areas.length) return;
+  // Mientras quedan por guardar (la primera vez, todos los de antes), no espera los 15 minutos.
+  if (!forzar && props.getProperty('firmados_quedan') !== 'si' && ahora - Number(props.getProperty('firmados_ultima') || 0) < FIRMADOS_CADA_MIN * 60000) return;
+  props.setProperty('firmados_ultima', String(ahora));
+  var quedan = false, resumen = [];
+  areas.forEach(function (area) {
+    var raiz;
+    try { raiz = DriveApp.getFolderById(carpetaCodigo_(props.getProperty(FIRMADOS_AREAS[area]))); }
+    catch (e) { resumen.push(area + ': no puedo abrir la carpeta (¿la cuenta del script es colaboradora?) · ' + e); return; }
+    var desde = props.getProperty('firmados_desde_' + area) || '2026-01-01T00:00:00Z', guardados = 0, ya = 0;
+    while (Date.now() - ahora < 150000) {
+      var r = pedirFirmados_(clave, { area: area, desde: desde });
+      if (!r || !r.ok) { resumen.push(area + ': no se pudieron pedir · ' + JSON.stringify(r)); return; }
+      for (var i = 0; i < r.contratos.length; i++) {
+        var c = r.contratos[i];
+        try {
+          var dest = subcarpeta_(subcarpeta_(raiz, c.carpeta_mes), c.carpeta_show);
+          if (dest.getFilesByName(c.archivo).hasNext()) ya++;
+          else { dest.createFile(Utilities.newBlob(Utilities.base64Decode(c.pdf), 'application/pdf', c.archivo)); guardados++; }
+          desde = c.firmado_at; props.setProperty('firmados_desde_' + area, desde);
+        } catch (e) { resumen.push(area + ': no se pudo guardar ' + c.archivo + ' · ' + e); quedan = true; return; }
+      }
+      if (r.cursor && r.cursor > desde) { desde = r.cursor; props.setProperty('firmados_desde_' + area, desde); }
+      if (!r.mas) break;
+    }
+    if (Date.now() - ahora >= 150000) quedan = true;
+    if (guardados || ya) resumen.push(area + ': ' + guardados + ' guardado(s)' + (ya ? ', ' + ya + ' ya estaba(n)' : ''));
+  });
+  props.setProperty('firmados_quedan', quedan ? 'si' : 'no');
+  if (resumen.length) Logger.log('Contratos firmados al Drive → ' + resumen.join(' · ') + (quedan ? ' (siguen en la vuelta siguiente)' : ''));
+}
+// Para mirar antes: cuántos faltan guardar y en qué carpetas (no guarda nada).
+function probar_firmados() {
+  var props = PropertiesService.getScriptProperties(), clave = props.getProperty('CLAVE');
+  if (!clave) throw new Error('Falta la propiedad CLAVE.');
+  Logger.log('Versión del script: ' + VERSION);
+  Object.keys(FIRMADOS_AREAS).forEach(function (area) {
+    var cod = carpetaCodigo_(props.getProperty(FIRMADOS_AREAS[area]));
+    if (!cod) { Logger.log(area + ': sin la propiedad ' + FIRMADOS_AREAS[area] + ' (no se guarda).'); return; }
+    try { Logger.log(area + ': carpeta «' + DriveApp.getFolderById(cod).getName() + '» (la abro bien).'); }
+    catch (e) { Logger.log(area + ': NO puedo abrir la carpeta ' + cod + ' — ¿la cuenta del script es colaboradora de la unidad compartida? · ' + e); }
+    var r = pedirFirmados_(clave, { area: area, desde: props.getProperty('firmados_desde_' + area) || '2026-01-01T00:00:00Z', contar: true });
+    if (!r || !r.ok) { Logger.log(area + ': no se pudo preguntar · ' + JSON.stringify(r)); return; }
+    Logger.log(area + ': faltan guardar ' + r.pendientes + ' contrato(s) firmado(s).');
+    Object.keys(r.carpetas || {}).forEach(function (k) { Logger.log('   · ' + k + ': ' + r.carpetas[k]); });
+  });
+}
+// Los guarda ya (sin esperar los 15 minutos).
+function guardar_firmados() {
+  var clave = PropertiesService.getScriptProperties().getProperty('CLAVE');
+  if (!clave) throw new Error('Falta la propiedad CLAVE.');
+  firmados_(clave, true);
 }
