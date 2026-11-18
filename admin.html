@@ -5164,7 +5164,7 @@ function openDetail(id) {
 
 function syncPublicadaBtn(c) {
   const btn = document.getElementById('btnPublicada'); if (!btn) return;
-  if (c.publicada) { btn.textContent = '<i class="ic ic-globo"></i> Publicada'; btn.className = 'btn btn-success btn-sm'; }
+  if (c.publicada) { btn.innerHTML = '<i class="ic ic-globo"></i> Publicada'; btn.className = 'btn btn-success btn-sm'; }
   else { btn.textContent = '○ Publicar'; btn.className = 'btn btn-sec btn-sm'; }
 }
 
@@ -5173,7 +5173,7 @@ async function togglePublicada(id) {
   c.publicada = !c.publicada;
   syncPublicadaBtn(c);
   renderCvList();
-  try { await sbUpdate('convocatorias', id, { publicada: c.publicada }); toast(c.publicada ? '<i class="ic ic-globo"></i> Convocatoria publicada' : 'Convocatoria despublicada'); } catch (_) {}
+  try { await sbUpdate('convocatorias', id, { publicada: c.publicada }); toast(c.publicada ? '✓ Convocatoria publicada' : 'Convocatoria despublicada'); } catch (_) {}
 }
 function closeDetail() { document.getElementById('cv-list').style.display = 'block'; document.getElementById('cv-detail').style.display = 'none'; currentConvId = null; renderCvList(); }
 // Los números de arriba. "En revisión" faltaba: una convocatoria con 61
@@ -9251,7 +9251,7 @@ async function archivarConv(id, val) {
   renderCvList();
   const ab = document.getElementById('btnArchivar');
   if (ab && currentConvId === id) { ab.textContent = val ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar'; syncPublicadaBtn(c); }
-  toast(val ? '<i class="ic ic-caja"></i> Convocatoria archivada' : 'Convocatoria desarchivada');
+  toast(val ? '✓ Convocatoria archivada' : 'Convocatoria desarchivada');
 }
 function toggleArchivar(id) { const c = convs.find(x => x.id === id); if (c) archivarConv(id, !c.archivada); }
 
