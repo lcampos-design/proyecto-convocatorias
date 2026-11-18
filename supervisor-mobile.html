@@ -347,7 +347,9 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
 #screenIncid .inc-tj .inc-tj-linea{font:400 11.5px var(--inc-fuente)}
 #screenIncid .inc-tj .inc-tj-estado{font:600 11.5px var(--inc-fuente)}
 #screenIncid .inc-tj .inc-tj-chips span{border-radius:999px}
-.sv-tj-pie{padding:0 14px 12px 92px}
+.sv-tj-pie{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 12px 92px}
+.sv-detalle{border:1.5px solid currentColor;border-radius:10px;background:none;color:inherit;font:700 13px var(--inc-fuente);padding:0 14px;min-height:40px;cursor:pointer}
+.sv-hora{max-width:180px}
 .sv-resolver{border:0;border-radius:10px;background:var(--tinta);color:var(--fondo);font:700 13px var(--inc-fuente);padding:0 16px;min-height:40px;cursor:pointer}
 /* La hoja para cargar y resolver, en los mismos colores. */
 #incSheet .fb-card{max-width:760px;width:100%;margin:0 auto;max-height:92vh}
@@ -853,7 +855,7 @@ async function openShow(convId, fecha) {
   const total = c.personas || 0, hechos = c.con_feedback || 0;
   document.getElementById('hubEquipo').innerHTML = '<span class="hub-chip">' + total + ' persona' + (total === 1 ? '' : 's') + '</span><span class="hub-chip">' + hechos + '/' + total + ' con feedback</span>';
   document.getElementById('hubIncid').innerHTML = '<span class="hub-chip">Cargando…</span>';
-  document.getElementById('hubIncidS').textContent = terminado ? 'Lo que pasó en todo el estadio ese día, y el informe' : 'Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector, con fotos';
+  document.getElementById('hubIncidS').textContent = terminado ? 'Lo que pasó ese día y el informe. Se pueden sumar detalles, fotos o una que faltó' : 'Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector, con fotos';
   showScreen('screenShow');
   svPintarHubContratos(convId);
   const { data, error } = await sb.rpc('sup_incidencias', { p_conv_id: convId });
@@ -994,6 +996,12 @@ function informeAdjHTML(arch, chico) {
     : '<span class="adj-f">' + incEsc(a.nombre || 'Archivo') + '</span>';
   return '<div class="adj-ver' + c + '">' + l.map(adjunto).join('') + '</div><div class="adj-imp' + c + '">'
     + [f ? f + (f === 1 ? ' foto' : ' fotos') : '', o ? o + (o === 1 ? ' archivo' : ' archivos') : ''].filter(Boolean).join(' y ') + ' (en el link del informe)</div>';
+}
+// Los detalles que se sumaron después, con quién y cuándo (incidencias-detalles.sql).
+function informeDetallesHTML(i) {
+  const fh = iso => { const d = incDia(iso); return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + ' ' + incHora(iso) : ''; };
+  return (i && Array.isArray(i.detalles) ? i.detalles : []).filter(d => d && d.texto)
+    .map(d => '<br><span class="gris">+ ' + fh(d.at) + (d.por_nombre ? ' · ' + incEsc(d.por_nombre) : '') + ':</span> ' + incEsc(d.texto)).join('');
 }
 function informeNotasHTML(notas, P) {
   if (!notas || !notas.length) return '';
@@ -2080,7 +2088,7 @@ function incTarjetaHTML(i, op) {
   const v = INC_NIVELES[i.nivel] || INC_NIVELES[1], resuelta = i.estado === 'resuelta', abierta = !!op.abierta, id = incEsc(i.id);
   const f = incFichaDatos(i.sector), ico = INC_ICONOS_CAT[i.categoria] || INC_ICONOS_CAT.Otro, deriva = incDerivadoA(i);
   const lugar = op.sinLugar ? '' : '<div class="inc-tj-linea">' + incEsc(i.sector) + (f && f.piso ? ' · ' + incEsc(f.piso) : '') + '</div>';
-  const estado = resuelta ? '<div class="inc-tj-estado ok">✓ Resuelta ' + incEsc(incCuando(i.resuelta_at)) + '</div>'
+  const estado = resuelta ? '<div class="inc-tj-estado ok">✓ ' + (i.cargada_at && !i.resuelta_at ? 'Cargada después del show' : 'Resuelta ' + incEsc(incCuando(i.resuelta_at))) + '</div>'
     : deriva.length ? '<div class="inc-tj-estado ok">→ Derivado a ' + incEsc(deriva.join(', ')) + '</div>'
     : (i.acciones || []).length ? '<div class="inc-tj-estado">✓ ' + incEsc(i.acciones[0]) + '</div>'
     : (i.nivel || 1) >= 2 ? '<div class="inc-tj-estado mal">Sin derivar todavía</div>' : '';
@@ -2092,9 +2100,11 @@ function incTarjetaHTML(i, op) {
     + fila('Qué se hizo', (i.acciones || []).map(a => '<div class="inc-tj-acc">✓ ' + incEsc(a) + '</div>').join('') || ((i.nivel || 1) >= 2 && !resuelta ? '<span class="inc-tj-mal">Nadie la tomó todavía</span>' : ''))
     + fila('Derivado a', deriva.map(incEsc).join(', '))
     + fila('Nota', i.nota ? '<div class="inc-tj-nota">' + incEsc(i.nota) + '</div>' : '')
+    + fila('Detalles', incDetallesHTML(i))
     + fila('Fotos', incFotosHTML(i, op))
-    + fila('Cargada', incCuando(i.created_at) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : ''))
-    + (resuelta ? fila('Resuelta', incCuando(i.resuelta_at) + (i.resuelta_por_nombre ? ' · ' + incEsc(i.resuelta_por_nombre) : '') + (tardo >= 0 ? ' · en ' + incEsc(incMinutos(tardo)) : '')
+    + fila(i.cargada_at ? 'Pasó' : 'Cargada', incCuando(i.created_at) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '')
+      + (i.cargada_at ? '<div class="inc-tj-quien">Cargada después del show, ' + incEsc(incCuando(i.cargada_at)) + '</div>' : ''))
+    + (resuelta ? fila('Resuelta', [incCuando(i.resuelta_at), incEsc(i.resuelta_por_nombre || '')].filter(Boolean).join(' · ') + (tardo >= 0 ? ' · en ' + incEsc(incMinutos(tardo)) : '')
       + (i.resolucion ? '<div class="inc-tj-nota">' + incEsc(i.resolucion) + '</div>' : '')) : '')
     + '</div>';
   return '<div class="inc-card inc-tj' + (resuelta ? ' resuelta' : '') + (abierta ? ' abierta' : '') + (op.nueva ? ' nueva' : '') + '" data-inc="' + id + '" data-nivel="' + (INC_NIVELES[i.nivel] ? i.nivel : 1) + '" style="--tj-c:' + v.talon + ';--tj-t:' + v.talonTinta + '"'
@@ -2108,6 +2118,11 @@ function incTarjetaHTML(i, op) {
 // Las fotos y los archivos de la incidencia (incidencias-fotos.sql), en su detalle: con su link (firmado, lo piden la
 // app y la gerencia), las miniaturas, que tocadas se abren grandes; sin link, cuántos son. op.fotosQuitar: la función
 // para sacar una propia (la app, con su × arriba); op.fotosMas(i): lo que va abajo (la app: sumar más).
+// Lo que se sumó después de cargarla (incidencias-detalles.sql): cada detalle, con quién y cuándo.
+function incDetallesHTML(i) {
+  return (i && Array.isArray(i.detalles) ? i.detalles : []).filter(d => d && d.texto).map(d => '<div class="inc-tj-d1"><div class="inc-tj-nota">' + incEsc(d.texto) + '</div>'
+    + '<div class="inc-tj-quien">' + incEsc([incCuando(d.at), d.por_nombre || ''].filter(Boolean).join(' · ')) + '</div></div>').join('');
+}
 function incFotosLista(i) { return (i && Array.isArray(i.archivos) ? i.archivos : []).filter(a => a && a.path); }
 function incFotoEsImagen(a) { return !!a && /^image\//.test(a.tipo || '') && !/hei[cf]/.test(a.tipo || ''); }
 function incFotosHTML(i, op) {
@@ -2134,7 +2149,8 @@ function incEstiloTarjetas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloTj')) return;
   const st = document.createElement('style'); st.id = 'incEstiloTj';
   const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
-  st.textContent = '.inc-tj-fotos{display:flex;flex-wrap:wrap;gap:8px}.inc-tj-fc{position:relative;display:inline-block;max-width:100%}'
+  st.textContent = '.inc-tj-quien{font-size:11px;opacity:.7;margin-top:2px}.inc-tj-d1+.inc-tj-d1{margin-top:8px}'
+    + '.inc-tj-fotos{display:flex;flex-wrap:wrap;gap:8px}.inc-tj-fc{position:relative;display:inline-block;max-width:100%}'
     + '.inc-tj-ft{display:block;width:76px;height:76px;border-radius:8px;overflow:hidden;background:rgba(127,127,127,.18)}.inc-tj-ft img{width:100%;height:100%;object-fit:cover;display:block}'
     + '.inc-tj-fa{display:inline-flex;align-items:center;min-height:34px;padding:6px 10px;border-radius:8px;border:1px solid rgba(127,127,127,.45);color:inherit;text-decoration:none;font-size:12px;font-weight:500;overflow-wrap:anywhere}'
     + '.inc-tj-fq{position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;border:2px solid var(--tj-fondo,#F2EFE6);background:var(--tj-tinta,#141A26);color:var(--tj-fondo,#F2EFE6);font:600 16px/1 ' + INC_FUENTE + ';cursor:pointer;padding:0}'
@@ -4431,7 +4447,8 @@ async function openIncid() {
   document.getElementById('incSub').textContent = fTxt + (quien ? (fTxt ? ' · ' : '') + quien : '');
   // Un show que ya pasó se abre en "Todas" (lo abierto se cerró con el reporte) y sin el botón de cargar.
   incLista = []; incVistos = null; incNuevos = new Set(); incFiltroSup = terminado ? 'todas' : 'abiertas'; incAbiertaSup = '';
-  document.querySelector('#screenIncid .sv-pie').style.display = terminado ? 'none' : '';
+  // Terminado, el botón sirve para cargar una que faltó (con la hora en que pasó).
+  document.querySelector('#screenIncid .sv-cargar').textContent = terminado ? '+ Cargar una que faltó' : '+ Cargar incidencia';
   document.querySelector('#screenIncid .sv-plano-ayuda').textContent = terminado ? 'Tocá un sector para ver lo que pasó ahí.' : 'Tocá un sector: ves lo abierto ahí y podés cargar.';
   // En el celular, la sala arranca en la zona de la cuenta (si pasó en otra, se elige en el desplegable).
   incZonaSup = svZona && !svSinSector(svZona) ? svZona : 'todas';
@@ -4504,10 +4521,10 @@ function svInforme() {
     + '<div class="res">' + tabla('Criticidad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, l.filter(i => (i.nivel || 1) === nv).length])) + tabla('Categoría', cuenta(i => i.categoria)) + tabla('Sector', cuenta(i => i.sector)) + '</div>'
     + '<p style="font-size:11px;color:#5c5c5c;margin:-8px 0 18px">Criticidad: la define el tipo de incidencia; pasa a Grave si hubo derivación en ambulancia o aviso a la policía.</p>'
     + informeAdjEstilo(P) + '<h3>Línea de tiempo</h3><table><tr><th>Cuándo</th><th>Sector</th><th>Qué pasó</th><th>Criticidad</th><th>Qué se hizo</th><th>Derivado a</th><th>Cómo se resolvió</th></tr>'
-    + l.map(i => '<tr><td>' + fh(i.created_at) + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + informeAdjHTML(i.archivos, true) + '</td>'
+    + l.map(i => '<tr><td>' + fh(i.created_at) + (i.cargada_at ? '<br><span class="gris">cargada después</span>' : '') + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + informeDetallesHTML(i) + informeAdjHTML(i.archivos, true) + '</td>'
       + '<td class="niv" style="color:' + P.niv(INC_NIVELES[i.nivel] ? i.nivel : 1) + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
       + '<td>' + (incDerivadoA(i).map(incEsc).join(', ') || '—') + '</td>'
-      + '<td>' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')
+      + '<td>' + (i.estado === 'resuelta' ? (i.resuelta_at ? fh(i.resuelta_at) + ' · ' : '') + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')
     + '</table>' + '<p style="margin:22px 0 0;text-align:center;font-size:9.5px;color:' + P.gris + '">Proyecto llevado a cabo por la Gerencia de RR. HH.</p><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
   const w = window.open('', '_blank');
   if (!w) { alert('El navegador bloqueó la ventana del informe. Permití las ventanas emergentes para este sitio.'); return; }
@@ -4600,10 +4617,17 @@ function renderIncid() {
   const cods = incCodigos(incLista);
   const tarjeta = i => incTarjetaHTML(i, { abierta: String(i.id) === incAbiertaSup, nueva: incNuevos.has(i.id), onclick: 'incTocarTarjeta', codigo: cods[i.id], fotosQuitar: 'incFotoQuitar',
     // Abierta la ficha, abajo: sumar fotos (aunque esté resuelta); y Resolver, si sigue abierta.
-    pie: (String(i.id) === incAbiertaSup ? incFotosMasHTML(i) : '') + (i.estado === 'resuelta' ? '' : '<div class="sv-tj-pie"><button type="button" class="sv-resolver" onclick="event.stopPropagation();incAbrirResolver(\'' + incEsc(i.id) + '\')">Resolver</button></div>') });
+    pie: (String(i.id) === incAbiertaSup ? incFotosMasHTML(i) : '') + incPieHTML(i, String(i.id) === incAbiertaSup) });
   // En el celular con "Todas las zonas": agrupadas por zona, cada una con su título y cuántas abiertas tiene.
   cont.innerHTML = porZona && !zonaElegida ? incPorZonasHTML(visibles, zonaDe, tarjeta) : visibles.map(tarjeta).join('');
   incNuevos = new Set();
+}
+// Abajo del ticket: Resolver (si sigue abierta) y, con la ficha abierta, Agregar detalle (en cualquier momento).
+function incPieHTML(i, abierta) {
+  const id = incEsc(i.id);
+  const b = (abierta ? '<button type="button" class="sv-detalle" onclick="event.stopPropagation();incAbrirDetalle(\'' + id + '\')">Agregar detalle</button>' : '')
+    + (i.estado === 'resuelta' ? '' : '<button type="button" class="sv-resolver" onclick="event.stopPropagation();incAbrirResolver(\'' + id + '\')">Resolver</button>');
+  return b ? '<div class="sv-tj-pie">' + b + '</div>' : '';
 }
 function incPorZonasHTML(visibles, zonaDe, tarjeta) {
   return INC_ZONAS_CUENTA.map(([z, nombre]) => {
@@ -4630,7 +4654,7 @@ function svRenderPlano(lista) {
   const armado = incArmadoDelShow(currentConvId, incLista), res = incResumenSectores(lista);
   const cv = convs.find(x => x.id === currentConvId);
   incMontarPlano(pl, { armado, niveles: res.niveles, cuentas: res.cuentas, porNivel: res.porNivel, sel: svSectorSel, onclick: 'svTocarSector',
-    titulo: cv ? cv.nombre : '', detalle: lista, accionPantalla: svTerminado() ? null : { texto: 'Cargar acá', fn: 'svCargarEn' } });
+    titulo: cv ? cv.nombre : '', detalle: lista, accionPantalla: { texto: svTerminado() ? 'Cargar una que faltó acá' : 'Cargar acá', fn: 'svCargarEn' } });
   if (vista === '3d' && incSin3D) svAviso3D('En este celular el 3D no se pudo cargar: se muestra el plano 2D.');
   else if (pl._inc3d) { svVigilar3D(pl); const n = document.getElementById('svPlanoNota'); if (n && n.classList.contains('on') && /no se pudo cargar/.test(n.textContent)) svAviso3D(''); }
 }
@@ -4660,7 +4684,7 @@ function svTocarSector(id) {
   if (svSectorSel) { const pl = document.getElementById('svPlano'); if (pl && pl.scrollIntoView) setTimeout(() => pl.scrollIntoView({ block: 'end', behavior: 'smooth' }), 80); }
 }
 function svElegirVista(v) { incGuardarVista(v); renderIncid(); }
-function svCargarEn(sector) { if (svTerminado()) return toast('Este show ya terminó: no se cargan incidencias'); svSectorSel = ''; incTocarSector(sector); }
+function svCargarEn(sector) { svSectorSel = ''; incTocarSector(sector); }
 // Tocar un ticket lo despliega con todo; otra vez, lo cierra.
 function incTocarTarjeta(id) { incAbiertaSup = incAbiertaSup === String(id) ? '' : String(id); renderIncid(); }
 
@@ -4673,7 +4697,6 @@ const INC_DONDE = [['PB', 'Campo'], ['P1', 'Platea baja'], ['VIP', 'VIP'], ['P3'
 // Cortatickets, que lo puntualizaría en las puertas, que es donde están los molinetes").
 function incPisoDonde() { try { const p = localStorage.getItem('incPisoDonde'); return INC_DONDE.some(x => x[0] === p) ? p : 'P1'; } catch (_) { return 'P1'; } }
 function incAbrirDonde() {
-  if (svTerminado()) return toast('Este show ya terminó: no se cargan incidencias');
   incHoja = { modo: 'donde', q: '', fotos: (incHoja && incHoja.modo === 'nueva' && incHoja.fotos) || [] };
   // La cuenta de una zona abre en el piso de su zona; si pasó en otro lado, cambia de piso o lo busca.
   if (svZona && SV_ZONA_PISO[svZona]) { try { localStorage.setItem('incPisoDonde', SV_ZONA_PISO[svZona]); } catch (_) {} }
@@ -4725,9 +4748,10 @@ function incTocarSector(sector) {
   // Las fotos elegidas antes de cambiar el lugar siguen.
   const llevar = (incHoja && incHoja.modo === 'donde' && incHoja.fotos) || [];
   if (incHoja && incHoja.fotos && incHoja.fotos !== llevar) adjLimpiar(incHoja.fotos);
-  incHoja = { modo: 'nueva', sector, cat: '', tipo: '', nivel: 1, acciones: [], ubicacion: '', nota: '', fotos: llevar };
-  const t = document.getElementById('incSheetTitulo'); t.textContent = 'Nueva incidencia · ' + sector; t.className = 'fb-title';
-  document.getElementById('incSheetSub').textContent = 'Qué pasó y qué se hizo. Sin nombres ni datos del público.';
+  const tarde = svTerminado();
+  incHoja = { modo: 'nueva', sector, cat: '', tipo: '', nivel: 1, acciones: [], ubicacion: '', nota: '', fotos: llevar, tarde, hora: '', resolucion: '' };
+  const t = document.getElementById('incSheetTitulo'); t.textContent = (tarde ? 'Una que faltó · ' : 'Nueva incidencia · ') + sector; t.className = 'fb-title';
+  document.getElementById('incSheetSub').textContent = tarde ? 'Una que no se cargó durante el show, con la hora en que pasó. Sin nombres ni datos del público.' : 'Qué pasó y qué se hizo. Sin nombres ni datos del público.';
   renderIncHoja();
   document.getElementById('incSheet').classList.remove('hidden');
 }
@@ -4740,11 +4764,45 @@ function incAbrirResolver(id) {
   renderIncHoja();
   document.getElementById('incSheet').classList.remove('hidden');
 }
+// Agregar detalle: un texto (y fotos, si quieren) que se suma a la incidencia con su nombre y su hora, sin borrar lo
+// que ya estaba. En cualquier momento, también después del show (Lupi, 18-nov: "la super de VIP quiere agregar más cosas").
+function incAbrirDetalle(id) {
+  const i = incLista.find(x => x.id === id); if (!i) return;
+  if (incHoja && incHoja.fotos) adjLimpiar(incHoja.fotos);
+  incHoja = { modo: 'detalle', id, detalle: '', fotos: [] };
+  const t = document.getElementById('incSheetTitulo'); t.textContent = 'Agregar detalle · ' + i.tipo; t.className = 'fb-title';
+  document.getElementById('incSheetSub').textContent = i.sector + (i.ubicacion ? ' · ' + i.ubicacion : '') + ' · ' + incCuando(i.created_at) + '. Lo que ya estaba queda igual.';
+  renderIncHoja();
+  document.getElementById('incSheet').classList.remove('hidden');
+}
+async function incGuardarDetalle() {
+  incLeerCampos();
+  const h = incHoja; if (!h || h.modo !== 'detalle') return;
+  const txt = String(h.detalle || '').trim(), fotos = (h.fotos || []).slice();
+  if (!txt && !fotos.length) { toast('Escribí el detalle o sumá una foto'); return; }
+  const btn = document.getElementById('incGuardarBtn'); btn.disabled = true; btn.textContent = 'Guardando...';
+  h.guardando = true;
+  try {
+    if (txt) {
+      const { data, error } = await sb.rpc('sup_incidencia_detalle', { p_id: h.id, p_texto: txt });
+      if (error || !data || !data.ok) throw new Error((data && data.error) || (error && /sup_incidencia_detalle/.test(error.message || '') ? 'Falta correr incidencias-detalles.sql en Supabase' : 'No se pudo guardar. Revisá la conexión y probá de nuevo.'));
+      await incReemplazar(data.incidencia);
+    }
+    if (fotos.length) {
+      try { await incFotosGuardar(h.id, fotos, t => { btn.textContent = t; }); }
+      catch (e) { if (!txt) throw e; toast('El detalle quedó, pero ' + String((e && e.message) || 'la foto no se subió').replace(/^./, c => c.toLowerCase()) + ' Sumala desde su ficha.'); adjLimpiar(fotos); if (incHoja === h) cerrarIncHoja(); renderIncid(); return; }
+    }
+    toast('✓ Detalle agregado');
+    adjLimpiar(fotos);
+    if (incHoja === h) cerrarIncHoja();
+    renderIncid();
+  } catch (e) { h.guardando = false; toast((e && e.message) || 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Guardar detalle'; }
+}
 function cerrarIncHoja() { document.getElementById('incSheet').classList.add('hidden'); if (incHoja && incHoja.fotos && !incHoja.guardando) adjLimpiar(incHoja.fotos); incHoja = null; }
 // Lo escrito en los campos se guarda antes de redibujar la hoja.
 function incLeerCampos() {
   if (!incHoja) return;
-  ['ubicacion', 'nota', 'resolucion'].forEach(k => { const el = document.getElementById('incCampo_' + k); if (el) incHoja[k] = el.value; });
+  ['ubicacion', 'nota', 'resolucion', 'hora', 'detalle'].forEach(k => { const el = document.getElementById('incCampo_' + k); if (el) incHoja[k] = el.value; });
 }
 function renderIncHoja() {
   const h = incHoja; if (!h) return;
@@ -4758,6 +4816,12 @@ function renderIncHoja() {
       + '<div id="svDonde">' + incDondeHTML(h.q) + '</div>';
     return;
   }
+  if (h.modo === 'detalle') {
+    body.innerHTML = '<div class="inc-paso">¿Qué querés agregar?</div><textarea class="fb-ta" id="incCampo_detalle" maxlength="1000" placeholder="Ej: a las 22:30 volvió a fallar y se cambió el rollo">' + incEsc(h.detalle || '') + '</textarea>'
+      + incHojaFotosHTML()
+      + '<button class="fb-send" id="incGuardarBtn" onclick="incGuardarDetalle()">Guardar detalle</button>';
+    return;
+  }
   if (h.modo === 'resolver') {
     const inc = incLista.find(x => x.id === h.id), pasa = inc && (inc.nivel || 1) < 3 && incSubeAGrave(h.acciones);
     body.innerHTML = checklist()
@@ -4769,6 +4833,7 @@ function renderIncHoja() {
   }
   const abiertasAca = incLista.filter(i => i.sector === h.sector && i.estado !== 'resuelta');
   let html = '<button type="button" class="sv-volver" onclick="incAbrirDonde()">← Cambiar el lugar</button>';
+  if (h.tarde) html += '<div class="inc-paso">¿A qué hora pasó?</div><input type="time" class="l-in sv-hora" id="incCampo_hora" value="' + incEsc(h.hora || '') + '" aria-label="A qué hora pasó">';
   html += abiertasAca.length ? '<div class="inc-paso">Abiertas en este lugar</div>' + abiertasAca.map(i =>
     '<div class="inc-mini">' + incNivelChip(i.nivel) + '<span class="t">' + incEsc(i.tipo) + ' · ' + incCuando(i.created_at) + '</span><button class="inc-resolver" onclick="incAbrirResolver(\'' + i.id + '\')">Resolver</button></div>').join('') : '';
   html += '<div class="inc-paso">Categoría</div><div class="inc-grid">' + INC_CATALOGO.map((c, ci) =>
@@ -4783,6 +4848,7 @@ function renderIncHoja() {
     html += checklist();
     html += '<div class="inc-paso">Referencia (opcional)</div><input class="l-in" id="incCampo_ubicacion" maxlength="80" placeholder="Fila, butaca, puerta… (nada del público)" value="' + incEsc(h.ubicacion) + '">' + incRefRapidaHTML('incCampo_ubicacion', h.sector);
     html += '<textarea class="fb-ta" id="incCampo_nota" maxlength="1000" placeholder="Nota (opcional): qué pasó, qué se hizo">' + incEsc(h.nota) + '</textarea>';
+    if (h.tarde) html += '<div class="inc-paso">¿Cómo terminó? (opcional)</div><textarea class="fb-ta" id="incCampo_resolucion" maxlength="1000" placeholder="Ej: se asistió y volvió a su ubicación">' + incEsc(h.resolucion || '') + '</textarea>';
     html += incHojaFotosHTML();
     html += '<button class="fb-send" id="incGuardarBtn" onclick="incGuardarNueva()">Guardar incidencia</button>';
   }
@@ -4824,9 +4890,18 @@ async function incGuardarNueva() {
   // cinco en «Otro lugar» y no contaban en el campo).
   if (h.sector === INC_LUGARES[0] && /\bcampo\b/i.test((h.ubicacion || '') + ' ' + (h.nota || '')) && incArmadoDelShow(currentConvId, incLista) === 'unico'
       && confirm('Escribiste que fue en el campo. ¿La cargo en «Campo»?')) h.sector = 'Campo';
-  const btn = document.getElementById('incGuardarBtn'); btn.disabled = true; btn.textContent = 'Guardando...';
-  const { data, error } = await sb.rpc('sup_incidencia_crear', incPayloadNueva(h, currentConvId));
-  if (error || !data || !data.ok) { toast((data && data.error) || 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Guardar incidencia'; return; }
+  const btn = document.getElementById('incGuardarBtn');
+  let pedido;
+  if (h.tarde) {
+    // La que faltó: la hora es de la función (de las 6 de la mañana a las 6 del día siguiente).
+    const hora = String(h.hora || '').trim(), fecha = svFechaDe(convs.find(x => x.id === currentConvId));
+    if (!/^\d{2}:\d{2}$/.test(hora)) { toast('Poné a qué hora pasó'); const el = document.getElementById('incCampo_hora'); if (el) el.focus(); return; }
+    const dia = +hora.slice(0, 2) < 6 ? new Date(new Date(fecha + 'T12:00:00Z').getTime() + 864e5).toISOString().slice(0, 10) : fecha;
+    pedido = sb.rpc('sup_incidencia_crear_tarde', Object.assign(incPayloadNueva(h, currentConvId), { p_fecha: fecha, p_ocurrio: dia + 'T' + hora + ':00-03:00', p_resolucion: String(h.resolucion || '').trim() || null }));
+  } else pedido = sb.rpc('sup_incidencia_crear', incPayloadNueva(h, currentConvId));
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const { data, error } = await pedido;
+  if (error || !data || !data.ok) { toast((data && data.error) || (error && /sup_incidencia_crear_tarde/.test(error.message || '') ? 'Falta correr incidencias-detalles.sql en Supabase' : 'No se pudo guardar')); btn.disabled = false; btn.textContent = 'Guardar incidencia'; return; }
   incLista.unshift(data.incidencia);
   if (incVistos) incVistos.add(data.incidencia.id);
   incNuevos = new Set([data.incidencia.id]);

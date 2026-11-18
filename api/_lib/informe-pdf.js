@@ -89,18 +89,28 @@ export async function notasDelShow(sbUrl, servicio, convId, fecha, firmar) {
 }
 
 // Las fotos de cada incidencia (incidencias-fotos.sql, 18-nov), sumadas a la lista: sin la cuenta que subió cada una.
+// También sus detalles y si se cargó después del show (incidencias-detalles.sql; sin él, sólo las fotos).
 // firmar: con su link (vence en 7 días), para verlas en el link del informe; sin firmar (el PDF), el informe dice
 // cuántas son. Sin el SQL (la columna no está), la lista queda como vino.
 export async function fotosDeIncidencias(sbUrl, servicio, incidencias, firmar) {
   const l = incidencias || [];
   try {
     const h = { apikey: servicio, Authorization: `Bearer ${servicio}` };
-    const ids = l.map(i => i && i.id).filter(Boolean), arch = {};
+    const ids = l.map(i => i && i.id).filter(Boolean), arch = {}, extra = {};
+    const sinPor = a => { const b = Object.assign({}, a); delete b.por; return b; };
+    let cols = 'id,archivos,detalles,cargada_at';
     for (let k = 0; k < ids.length; k += 100) {
-      const r = await fetch(`${sbUrl}/rest/v1/incidencias?select=id,archivos&id=in.(${ids.slice(k, k + 100).join(',')})`, { headers: h });
+      const url = () => `${sbUrl}/rest/v1/incidencias?select=${cols}&id=in.(${ids.slice(k, k + 100).join(',')})`;
+      let r = await fetch(url(), { headers: h });
+      if (!r.ok && cols !== 'id,archivos') { cols = 'id,archivos'; r = await fetch(url(), { headers: h }); }
       if (!r.ok) return l;
       (await r.json()).forEach(x => {
-        if (x && Array.isArray(x.archivos) && x.archivos.length) arch[x.id] = x.archivos.filter(a => a && a.path).map(a => { const b = Object.assign({}, a); delete b.por; return b; });
+        if (!x) return;
+        if (Array.isArray(x.archivos) && x.archivos.length) arch[x.id] = x.archivos.filter(a => a && a.path).map(sinPor);
+        const e = {};
+        if (Array.isArray(x.detalles) && x.detalles.length) e.detalles = x.detalles.filter(d => d && d.texto).map(sinPor);
+        if (x.cargada_at) e.cargada_at = x.cargada_at;
+        if (Object.keys(e).length) extra[x.id] = e;
       });
     }
     const paths = [...new Set(Object.values(arch).flat().map(a => a.path))];
@@ -110,7 +120,7 @@ export async function fotosDeIncidencias(sbUrl, servicio, incidencias, firmar) {
       const url = {}; (firmados || []).forEach(x => { if (x && x.path && x.signedURL) url[x.path] = `${sbUrl}/storage/v1${x.signedURL}`; });
       Object.values(arch).flat().forEach(a => { if (url[a.path]) a.url = url[a.path]; });
     }
-    return l.map(i => i && arch[i.id] ? Object.assign({}, i, { archivos: arch[i.id] }) : i);
+    return l.map(i => i && (arch[i.id] || extra[i.id]) ? Object.assign({}, i, extra[i.id] || {}, arch[i.id] ? { archivos: arch[i.id] } : {}) : i);
   } catch (_) { return l; }
 }
 

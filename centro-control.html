@@ -1162,7 +1162,7 @@ function incTarjetaHTML(i, op) {
   const v = INC_NIVELES[i.nivel] || INC_NIVELES[1], resuelta = i.estado === 'resuelta', abierta = !!op.abierta, id = incEsc(i.id);
   const f = incFichaDatos(i.sector), ico = INC_ICONOS_CAT[i.categoria] || INC_ICONOS_CAT.Otro, deriva = incDerivadoA(i);
   const lugar = op.sinLugar ? '' : '<div class="inc-tj-linea">' + incEsc(i.sector) + (f && f.piso ? ' · ' + incEsc(f.piso) : '') + '</div>';
-  const estado = resuelta ? '<div class="inc-tj-estado ok">✓ Resuelta ' + incEsc(incCuando(i.resuelta_at)) + '</div>'
+  const estado = resuelta ? '<div class="inc-tj-estado ok">✓ ' + (i.cargada_at && !i.resuelta_at ? 'Cargada después del show' : 'Resuelta ' + incEsc(incCuando(i.resuelta_at))) + '</div>'
     : deriva.length ? '<div class="inc-tj-estado ok">→ Derivado a ' + incEsc(deriva.join(', ')) + '</div>'
     : (i.acciones || []).length ? '<div class="inc-tj-estado">✓ ' + incEsc(i.acciones[0]) + '</div>'
     : (i.nivel || 1) >= 2 ? '<div class="inc-tj-estado mal">Sin derivar todavía</div>' : '';
@@ -1174,9 +1174,11 @@ function incTarjetaHTML(i, op) {
     + fila('Qué se hizo', (i.acciones || []).map(a => '<div class="inc-tj-acc">✓ ' + incEsc(a) + '</div>').join('') || ((i.nivel || 1) >= 2 && !resuelta ? '<span class="inc-tj-mal">Nadie la tomó todavía</span>' : ''))
     + fila('Derivado a', deriva.map(incEsc).join(', '))
     + fila('Nota', i.nota ? '<div class="inc-tj-nota">' + incEsc(i.nota) + '</div>' : '')
+    + fila('Detalles', incDetallesHTML(i))
     + fila('Fotos', incFotosHTML(i, op))
-    + fila('Cargada', incCuando(i.created_at) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : ''))
-    + (resuelta ? fila('Resuelta', incCuando(i.resuelta_at) + (i.resuelta_por_nombre ? ' · ' + incEsc(i.resuelta_por_nombre) : '') + (tardo >= 0 ? ' · en ' + incEsc(incMinutos(tardo)) : '')
+    + fila(i.cargada_at ? 'Pasó' : 'Cargada', incCuando(i.created_at) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '')
+      + (i.cargada_at ? '<div class="inc-tj-quien">Cargada después del show, ' + incEsc(incCuando(i.cargada_at)) + '</div>' : ''))
+    + (resuelta ? fila('Resuelta', [incCuando(i.resuelta_at), incEsc(i.resuelta_por_nombre || '')].filter(Boolean).join(' · ') + (tardo >= 0 ? ' · en ' + incEsc(incMinutos(tardo)) : '')
       + (i.resolucion ? '<div class="inc-tj-nota">' + incEsc(i.resolucion) + '</div>' : '')) : '')
     + '</div>';
   return '<div class="inc-card inc-tj' + (resuelta ? ' resuelta' : '') + (abierta ? ' abierta' : '') + (op.nueva ? ' nueva' : '') + '" data-inc="' + id + '" data-nivel="' + (INC_NIVELES[i.nivel] ? i.nivel : 1) + '" style="--tj-c:' + v.talon + ';--tj-t:' + v.talonTinta + '"'
@@ -1190,6 +1192,11 @@ function incTarjetaHTML(i, op) {
 // Las fotos y los archivos de la incidencia (incidencias-fotos.sql), en su detalle: con su link (firmado, lo piden la
 // app y la gerencia), las miniaturas, que tocadas se abren grandes; sin link, cuántos son. op.fotosQuitar: la función
 // para sacar una propia (la app, con su × arriba); op.fotosMas(i): lo que va abajo (la app: sumar más).
+// Lo que se sumó después de cargarla (incidencias-detalles.sql): cada detalle, con quién y cuándo.
+function incDetallesHTML(i) {
+  return (i && Array.isArray(i.detalles) ? i.detalles : []).filter(d => d && d.texto).map(d => '<div class="inc-tj-d1"><div class="inc-tj-nota">' + incEsc(d.texto) + '</div>'
+    + '<div class="inc-tj-quien">' + incEsc([incCuando(d.at), d.por_nombre || ''].filter(Boolean).join(' · ')) + '</div></div>').join('');
+}
 function incFotosLista(i) { return (i && Array.isArray(i.archivos) ? i.archivos : []).filter(a => a && a.path); }
 function incFotoEsImagen(a) { return !!a && /^image\//.test(a.tipo || '') && !/hei[cf]/.test(a.tipo || ''); }
 function incFotosHTML(i, op) {
@@ -1216,7 +1223,8 @@ function incEstiloTarjetas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloTj')) return;
   const st = document.createElement('style'); st.id = 'incEstiloTj';
   const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
-  st.textContent = '.inc-tj-fotos{display:flex;flex-wrap:wrap;gap:8px}.inc-tj-fc{position:relative;display:inline-block;max-width:100%}'
+  st.textContent = '.inc-tj-quien{font-size:11px;opacity:.7;margin-top:2px}.inc-tj-d1+.inc-tj-d1{margin-top:8px}'
+    + '.inc-tj-fotos{display:flex;flex-wrap:wrap;gap:8px}.inc-tj-fc{position:relative;display:inline-block;max-width:100%}'
     + '.inc-tj-ft{display:block;width:76px;height:76px;border-radius:8px;overflow:hidden;background:rgba(127,127,127,.18)}.inc-tj-ft img{width:100%;height:100%;object-fit:cover;display:block}'
     + '.inc-tj-fa{display:inline-flex;align-items:center;min-height:34px;padding:6px 10px;border-radius:8px;border:1px solid rgba(127,127,127,.45);color:inherit;text-decoration:none;font-size:12px;font-weight:500;overflow-wrap:anywhere}'
     + '.inc-tj-fq{position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;border:2px solid var(--tj-fondo,#F2EFE6);background:var(--tj-tinta,#141A26);color:var(--tj-fondo,#F2EFE6);font:600 16px/1 ' + INC_FUENTE + ';cursor:pointer;padding:0}'
@@ -3550,6 +3558,12 @@ function informeAdjHTML(arch, chico) {
   return '<div class="adj-ver' + c + '">' + l.map(adjunto).join('') + '</div><div class="adj-imp' + c + '">'
     + [f ? f + (f === 1 ? ' foto' : ' fotos') : '', o ? o + (o === 1 ? ' archivo' : ' archivos') : ''].filter(Boolean).join(' y ') + ' (en el link del informe)</div>';
 }
+// Los detalles que se sumaron después, con quién y cuándo (incidencias-detalles.sql).
+function informeDetallesHTML(i) {
+  const fh = iso => { const d = incDia(iso); return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + ' ' + incHora(iso) : ''; };
+  return (i && Array.isArray(i.detalles) ? i.detalles : []).filter(d => d && d.texto)
+    .map(d => '<br><span class="gris">+ ' + fh(d.at) + (d.por_nombre ? ' · ' + incEsc(d.por_nombre) : '') + ':</span> ' + incEsc(d.texto)).join('');
+}
 function informeNotasHTML(notas, P) {
   if (!notas || !notas.length) return '';
   const l = notas.slice().sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')));
@@ -3972,10 +3986,10 @@ function informe() {
     + '<div class="res">' + tabla('Criticidad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, l.filter(i => (i.nivel || 1) === nv).length])) + tabla('Categoría', cuenta(i => i.categoria)) + tabla('Sector', cuenta(i => i.sector)) + '</div>'
     + '<p style="font-size:11px;color:#5c5c5c;margin:-8px 0 18px">Criticidad: la define el tipo de incidencia; pasa a Grave si hubo derivación en ambulancia o aviso a la policía.</p>'
     + informeAdjEstilo(P) + '<h3>Línea de tiempo</h3><table><tr><th>Cuándo</th><th>Sector</th><th>Qué pasó</th><th>Criticidad</th><th>Qué se hizo</th><th>Derivado a</th><th>Cómo se resolvió</th></tr>'
-    + l.map(i => '<tr><td>' + fh(i.created_at) + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + informeAdjHTML(i.archivos, true) + '</td>'
+    + l.map(i => '<tr><td>' + fh(i.created_at) + (i.cargada_at ? '<br><span class="gris">cargada después</span>' : '') + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + informeDetallesHTML(i) + informeAdjHTML(i.archivos, true) + '</td>'
       + '<td class="niv" style="color:' + P.niv(INC_NIVELES[i.nivel] ? i.nivel : 1) + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
       + '<td>' + (incDerivadoA(i).map(incEsc).join(', ') || '—') + '</td>'
-      + '<td>' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')
+      + '<td>' + (i.estado === 'resuelta' ? (i.resuelta_at ? fh(i.resuelta_at) + ' · ' : '') + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')
     + '</table>' + informeNotasHTML(notasDelDia(), P) + '<p style="margin:22px 0 0;text-align:center;font-size:9.5px;color:' + P.gris + '">Proyecto llevado a cabo por la Gerencia de RR. HH.</p><script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>';
   const w = window.open('', '_blank');
   if (!w) { alert('El navegador bloqueó la ventana del informe. Permití las ventanas emergentes para este sitio.'); return; }
