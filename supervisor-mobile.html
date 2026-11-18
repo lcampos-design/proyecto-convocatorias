@@ -243,8 +243,15 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .nt-sel .ic svg{width:20px;height:20px}
 .nt-sel span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
 .nt-sel button{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:0;border-radius:50%;background:none;color:var(--gris);font:600 20px/1 var(--inc-fuente);cursor:pointer}
-.nt-agregar{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;margin-top:10px;border:2px dashed var(--linea);border-radius:12px;font:600 14px var(--inc-fuente);color:var(--tinta);cursor:pointer}
-.nt-agregar svg{width:18px;height:18px}
+.nt-lbl2{margin-top:14px}
+.nt-agregar-fila{display:flex;gap:8px}
+.nt-agregar{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:76px;padding:10px 6px;border:2px dashed var(--linea);border-radius:12px;font:600 14px var(--inc-fuente);color:var(--tinta);text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.nt-agregar:active{background:var(--fondo)}
+.nt-agregar svg{width:24px;height:24px;margin-bottom:2px}
+.nt-agregar small{font:400 11px/1.3 var(--inc-fuente);color:var(--gris)}
+.nt-pc{display:none}
+/* En la compu no hay cámara para sacar la foto: quedan Fotos y Archivo. */
+@media (hover:hover) and (pointer:fine){.nt-cam,.nt-cel{display:none}.nt-pc{display:inline}}
 .nt-ayuda{font:400 12px/1.5 var(--inc-fuente);color:var(--gris);margin-top:10px}
 .nt-fecha{font:600 13px var(--inc-fuente);color:var(--gris);margin:4px 2px 8px}
 .ct-pend-aviso{font:400 13px/1.5 var(--inc-fuente);color:var(--gris);background:var(--fondo);border-radius:12px;padding:10px 12px;margin:0 0 12px}
@@ -486,8 +493,13 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
     <div class="caja" id="ntNueva">
       <label class="lbl" for="ntTexto">¿Qué pasó?</label>
       <textarea class="fb-ta nt-ta" id="ntTexto" maxlength="4000" oninput="ntBorrador()" placeholder="Contá la situación: dónde, a qué hora, qué se hizo. Sin datos del público."></textarea>
+      <div class="lbl nt-lbl2">Fotos o archivos</div>
+      <div class="nt-agregar-fila">
+        <label class="nt-agregar nt-cam"><input type="file" accept="image/*" capture="environment" onchange="ntElegir(this, true)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></svg>Cámara<small>Sacar foto</small></label>
+        <label class="nt-agregar"><input type="file" multiple accept="image/*" onchange="ntElegir(this)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg><span class="nt-cel">Galería</span><span class="nt-pc">Fotos</span><small>Elegir fotos</small></label>
+        <label class="nt-agregar"><input type="file" multiple accept="application/pdf,.pdf,.doc,.docx,.xls,.xlsx" onchange="ntElegir(this)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.4 11.6-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>Archivo<small>PDF, Word, Excel</small></label>
+      </div>
       <div class="nt-adj" id="ntAdj"></div>
-      <label class="nt-agregar"><input type="file" id="ntArchivos" multiple accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx" onchange="ntElegir(this)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.4 11.6-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>Agregar fotos o archivos</label>
       <button class="fb-send" id="ntGuardar" onclick="ntGuardar()">Guardar nota</button>
       <div class="nt-ayuda">Va al informe del show; las fotos y los archivos se ven en el link del informe. Hasta 10 por nota, de hasta 15 MB.</div>
     </div>
@@ -1071,21 +1083,22 @@ function ntPintar() {
   cont.innerHTML = l.length ? '<div class="caja">' + l.map(n => notaTarjetaHTML(n, { borrar: !fin })).join('') + '</div>'
     : '<div class="empty-state"><div class="empty-title">' + (fin ? 'No hubo notas ese día' : 'Todavía no hay notas de esta fecha') + '</div>' + (fin ? '' : '<div>La que guardes aparece acá y en el informe del show</div>') + '</div>';
 }
-function ntElegir(inp) {
+function ntElegir(inp, camara) {
   const nuevos = Array.from((inp && inp.files) || []); if (inp) inp.value = '';
+  const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Argentina/Buenos_Aires' });
   for (const f of nuevos) {
     if (ntSel.length >= NT_MAX) { toast('Hasta ' + NT_MAX + ' archivos por nota'); break; }
     const tipo = ntTipo(f);
     if (!tipo) { toast((f.name || 'Ese archivo') + ': sólo fotos, PDF, Word o Excel'); continue; }
     if (f.size > NT_PESO && !/^image\/(jpeg|png|webp)$/.test(tipo)) { toast((f.name || 'Ese archivo') + ' pesa más de 15 MB'); continue; }
-    ntSel.push({ f, tipo, id: Math.random().toString(36).slice(2), ver: ntEsImagen({ tipo }) && typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(f) : '' });
+    ntSel.push({ f, tipo, nombre: camara ? 'Foto ' + hora + '.jpg' : (f.name || ''), id: Math.random().toString(36).slice(2), ver: ntEsImagen({ tipo }) && typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(f) : '' });
   }
   ntPintarSel();
 }
 function ntQuitar(id) { const i = ntSel.findIndex(x => x.id === id); if (i >= 0) { if (ntSel[i].ver) URL.revokeObjectURL(ntSel[i].ver); ntSel.splice(i, 1); } ntPintarSel(); }
 function ntPintarSel() {
   document.getElementById('ntAdj').innerHTML = ntSel.map(x => '<div class="nt-sel">' + (x.ver ? '<img src="' + esc(x.ver) + '" alt="">' : '<div class="ic">' + NT_ICONO_ARCHIVO + '</div>')
-    + '<span>' + esc(x.f.name || 'Archivo') + '</span><button type="button" onclick="ntQuitar(\'' + x.id + '\')" aria-label="Sacar ' + esc(x.f.name || 'el archivo') + '">×</button></div>').join('');
+    + '<span>' + esc(x.nombre || 'Archivo') + '</span><button type="button" onclick="ntQuitar(\'' + x.id + '\')" aria-label="Sacar ' + esc(x.nombre || 'el archivo') + '">×</button></div>').join('');
 }
 // Una foto: el lado mayor a 1600 px, en JPEG (sobre blanco, por si tiene partes transparentes). Si no se puede, va tal cual.
 async function ntPreparar(x) {
@@ -1097,10 +1110,10 @@ async function ntPreparar(x) {
       const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(img.naturalWidth * k)); cv.height = Math.max(1, Math.round(img.naturalHeight * k));
       const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
       const blob = await new Promise(ok => cv.toBlob(ok, 'image/jpeg', 0.82));
-      if (blob && blob.size < f.size) return { blob, tipo: 'image/jpeg', nombre: String(f.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg' };
+      if (blob && blob.size < f.size) return { blob, tipo: 'image/jpeg', nombre: String(x.nombre || 'foto').replace(/\.[^.]+$/, '') + '.jpg' };
     } catch (_) {}
   }
-  return { blob: f, tipo: x.tipo, nombre: f.name || 'archivo' };
+  return { blob: f, tipo: x.tipo, nombre: x.nombre || 'archivo' };
 }
 // El nombre en el depósito: sin tildes ni espacios (el que se muestra es el original).
 function ntNombreSeguro(n) { return (String(n || 'archivo').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^[-.]+/, '').slice(-80)) || 'archivo'; }
