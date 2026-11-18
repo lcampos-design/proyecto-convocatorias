@@ -1174,6 +1174,7 @@ function incTarjetaHTML(i, op) {
     + fila('Qué se hizo', (i.acciones || []).map(a => '<div class="inc-tj-acc">✓ ' + incEsc(a) + '</div>').join('') || ((i.nivel || 1) >= 2 && !resuelta ? '<span class="inc-tj-mal">Nadie la tomó todavía</span>' : ''))
     + fila('Derivado a', deriva.map(incEsc).join(', '))
     + fila('Nota', i.nota ? '<div class="inc-tj-nota">' + incEsc(i.nota) + '</div>' : '')
+    + fila('Fotos', incFotosHTML(i, op))
     + fila('Cargada', incCuando(i.created_at) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : ''))
     + (resuelta ? fila('Resuelta', incCuando(i.resuelta_at) + (i.resuelta_por_nombre ? ' · ' + incEsc(i.resuelta_por_nombre) : '') + (tardo >= 0 ? ' · en ' + incEsc(incMinutos(tardo)) : '')
       + (i.resolucion ? '<div class="inc-tj-nota">' + incEsc(i.resolucion) + '</div>' : '')) : '')
@@ -1183,14 +1184,44 @@ function incTarjetaHTML(i, op) {
     + ' role="button" tabindex="0" aria-expanded="' + abierta + '" title="' + (abierta ? 'Cerrar el detalle' : 'Ver el detalle' + (op.sinLugar ? '' : ' y el lugar en el plano')) + '">'
     + '<div class="inc-tj-cab"><span class="inc-tj-talon" title="' + (resuelta ? 'Resuelta' : 'Abierta desde las ' + incEsc(incHora(i.created_at))) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + ico + '"/></svg>'
     + '<b>' + (resuelta ? '✓' : incEsc(incCorto(i.created_at))) + '</b><small>' + v.nombre + '</small></span>'
-    + '<div class="inc-tj-txt"><div class="inc-tj-tipo">' + (op.codigo ? '<span class="inc-tj-cod" title="Código de la incidencia">' + incEsc(op.codigo) + '</span>' : '') + incEsc(i.tipo) + '</div>' + lugar + estado + '</div></div>'
+    + '<div class="inc-tj-txt"><div class="inc-tj-tipo">' + (op.codigo ? '<span class="inc-tj-cod" title="Código de la incidencia">' + incEsc(op.codigo) + '</span>' : '') + incEsc(i.tipo) + incFotosCuantasHTML(i) + '</div>' + lugar + estado + '</div></div>'
     + det + (op.pie || '') + '</div>';
 }
+// Las fotos y los archivos de la incidencia (incidencias-fotos.sql), en su detalle: con su link (firmado, lo piden la
+// app y la gerencia), las miniaturas, que tocadas se abren grandes; sin link, cuántos son. op.fotosQuitar: la función
+// para sacar una propia (la app, con su × arriba); op.fotosMas(i): lo que va abajo (la app: sumar más).
+function incFotosLista(i) { return (i && Array.isArray(i.archivos) ? i.archivos : []).filter(a => a && a.path); }
+function incFotoEsImagen(a) { return !!a && /^image\//.test(a.tipo || '') && !/hei[cf]/.test(a.tipo || ''); }
+function incFotosHTML(i, op) {
+  op = op || {};
+  const l = incFotosLista(i), id = incEsc(i.id);
+  let html = '';
+  if (l.length && l.every(a => a.url)) {
+    html = '<div class="inc-tj-fotos">' + l.map(a => {
+      const t = incEsc((a.nombre || (incFotoEsImagen(a) ? 'Foto' : 'Archivo')) + (a.por_nombre ? ' · ' + a.por_nombre : '') + (a.at ? ' · ' + incHora(a.at) : ''));
+      const quitar = op.fotosQuitar && a.mia ? '<button type="button" class="inc-tj-fq" onclick="event.stopPropagation();' + op.fotosQuitar + '(\'' + id + '\',\'' + incEsc(a.path) + '\')" aria-label="Sacar ' + incEsc(a.nombre || 'la foto') + '" title="Sacar">×</button>' : '';
+      return '<span class="inc-tj-fc">' + (incFotoEsImagen(a)
+        ? '<a class="inc-tj-ft" href="' + incEsc(a.url) + '" target="_blank" rel="noopener" title="' + t + '"><img src="' + incEsc(a.url) + '" alt="' + incEsc(a.nombre || 'Foto') + '" loading="lazy"></a>'
+        : '<a class="inc-tj-fa" href="' + incEsc(a.url) + '" target="_blank" rel="noopener" title="' + t + '">' + incEsc(a.nombre || 'Archivo') + '</a>') + quitar + '</span>';
+    }).join('') + '</div>';
+  } else if (l.length) {
+    const fo = l.filter(incFotoEsImagen).length, ot = l.length - fo;
+    html = '<div class="inc-tj-fn">' + [fo ? fo + (fo === 1 ? ' foto' : ' fotos') : '', ot ? ot + (ot === 1 ? ' archivo' : ' archivos') : ''].filter(Boolean).join(' y ') + '</div>';
+  }
+  return html + (op.fotosMas ? op.fotosMas(i) : '');
+}
+// En el ticket cerrado, una camarita con cuántas tiene.
+function incFotosCuantasHTML(i) { const n = incFotosLista(i).length; return n ? '<span class="inc-tj-cam" title="' + n + (n === 1 ? ' foto o archivo' : ' fotos o archivos') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.5"/></svg>' + n + '</span>' : ''; }
 function incEstiloTarjetas() {
   if (typeof document === 'undefined' || !document.getElementById || document.getElementById('incEstiloTj')) return;
   const st = document.createElement('style'); st.id = 'incEstiloTj';
   const MONO = INC_FUENTE;   // Poppins en todo (las cifras, de ancho fijo donde cambian)
-  st.textContent = '.inc-tj-cod{display:inline-block;margin-right:7px;padding:1px 6px;border-radius:4px;background:var(--tj-c);color:var(--tj-t);font-weight:800;font-size:.82em;line-height:1.35;vertical-align:1px;font-variant-numeric:tabular-nums}'
+  st.textContent = '.inc-tj-fotos{display:flex;flex-wrap:wrap;gap:8px}.inc-tj-fc{position:relative;display:inline-block;max-width:100%}'
+    + '.inc-tj-ft{display:block;width:76px;height:76px;border-radius:8px;overflow:hidden;background:rgba(127,127,127,.18)}.inc-tj-ft img{width:100%;height:100%;object-fit:cover;display:block}'
+    + '.inc-tj-fa{display:inline-flex;align-items:center;min-height:34px;padding:6px 10px;border-radius:8px;border:1px solid rgba(127,127,127,.45);color:inherit;text-decoration:none;font-size:12px;font-weight:500;overflow-wrap:anywhere}'
+    + '.inc-tj-fq{position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;border:2px solid var(--tj-fondo,#F2EFE6);background:var(--tj-tinta,#141A26);color:var(--tj-fondo,#F2EFE6);font:600 16px/1 ' + INC_FUENTE + ';cursor:pointer;padding:0}'
+    + '.inc-tj-fn{font-size:12px}.inc-tj-cam{display:inline-flex;align-items:center;gap:3px;margin-left:7px;font-size:.82em;font-weight:600;opacity:.7;vertical-align:1px;white-space:nowrap}.inc-tj-cam svg{width:13px;height:13px}'
+    + '.inc-tj-cod{display:inline-block;margin-right:7px;padding:1px 6px;border-radius:4px;background:var(--tj-c);color:var(--tj-t);font-weight:800;font-size:.82em;line-height:1.35;vertical-align:1px;font-variant-numeric:tabular-nums}'
     + '.inc-tj{position:relative;display:block;margin:0 0 10px;padding:0;border:0;border-radius:12px;background:var(--tj-fondo,#F2EFE6);color:var(--tj-tinta,#141A26);box-shadow:none;overflow:visible;cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .15s}'
     + '.inc-tj:hover{outline-color:rgba(91,150,255,.55)}.inc-tj:focus-visible{outline-color:#5B96FF}.inc-tj.abierta{outline-color:#0062FF}.inc-tj.resuelta{opacity:.8}'
     + '.inc-tj-cab{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr)}'
@@ -3472,16 +3503,18 @@ function incEstiloMetricas() {
 // etc.)", "así dejan de hacer el reporte en el Drive". Cada nota es de una fecha del show. Los archivos están en un
 // depósito privado: se ven con un link que vence (se piden de a muchos y se guardan un rato).
 const NT_URLS = {};
-async function ntFirmar(notas) {
-  const ahora = Date.now(), l = notas || [];
-  const faltan = [...new Set(l.flatMap(n => (n.archivos || []).map(a => a && a.path)).filter(p => p && !(NT_URLS[p] && NT_URLS[p].hasta > ahora + 120000)))];
+// Sirve igual para las incidencias (cada una con sus "archivos"): deposito 'incidencias' (incidencias-fotos.sql).
+async function ntFirmar(notas, deposito) {
+  const dep = deposito || 'notas', k = p => dep + ':' + p, ahora = Date.now(), l = notas || [];
+  const de = n => (n && Array.isArray(n.archivos) ? n.archivos : []);
+  const faltan = [...new Set(l.flatMap(n => de(n).map(a => a && a.path)).filter(p => p && !(NT_URLS[k(p)] && NT_URLS[k(p)].hasta > ahora + 120000)))];
   if (faltan.length && sb.storage) {
     try {
-      const { data } = await sb.storage.from('notas').createSignedUrls(faltan, 6 * 3600);
-      (data || []).forEach(x => { if (x && x.signedUrl && x.path) NT_URLS[x.path] = { url: x.signedUrl, hasta: ahora + 6 * 3600000 }; });
+      const { data } = await sb.storage.from(dep).createSignedUrls(faltan, 6 * 3600);
+      (data || []).forEach(x => { if (x && x.signedUrl && x.path) NT_URLS[k(x.path)] = { url: x.signedUrl, hasta: ahora + 6 * 3600000 }; });
     } catch (_) {}
   }
-  l.forEach(n => (n.archivos || []).forEach(a => { if (a && NT_URLS[a.path]) a.url = NT_URLS[a.path].url; }));
+  l.forEach(n => de(n).forEach(a => { if (a && NT_URLS[k(a.path)]) a.url = NT_URLS[k(a.path)].url; }));
   return l;
 }
 // Las fotos se ven en la nota; HEIC (del iPhone) no lo muestran todos los navegadores: va como archivo.
@@ -3500,23 +3533,30 @@ function notaTarjetaHTML(n, op) {
 }
 // En el informe, después de la línea de tiempo: cuándo, quién y qué pasó. Las fotos y los archivos, en pantalla (el link
 // del informe); al imprimir (el PDF), cuántos son. Sin notas, el informe queda como siempre.
+// Las fotos y los archivos en el informe (de una nota o de una incidencia): en pantalla (el link del informe), las
+// miniaturas, que tocadas se abren; al imprimir (el PDF), cuántos son. chico: las de la línea de tiempo.
+function informeAdjEstilo(P) {
+  return '<style>.nt-t{white-space:pre-wrap}.adj-ver{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}.adj-ver img{width:96px;height:96px;object-fit:cover;border-radius:6px;border:1px solid ' + P.linea + ';display:block}'
+    + '.adj-ver.chico{margin-top:6px}.adj-ver.chico img{width:64px;height:64px}.adj-imp.chico{margin-top:4px}'
+    + '.adj-f{display:inline-block;padding:4px 8px;border:1px solid ' + P.linea + ';border-radius:6px;color:' + P.tinta + ';text-decoration:none}.adj-imp{display:none;color:' + P.gris + '}'
+    + '@media print{.adj-ver{display:none}.adj-imp{display:block}}</style>';
+}
+function informeAdjHTML(arch, chico) {
+  const l = (Array.isArray(arch) ? arch : []).filter(a => a && a.path); if (!l.length) return '';
+  const f = l.filter(ntEsImagen).length, o = l.length - f, c = chico ? ' chico' : '';
+  const adjunto = a => a.url
+    ? (ntEsImagen(a) ? '<a href="' + incEsc(a.url) + '" target="_blank" rel="noopener" title="' + incEsc(a.nombre || 'Foto') + '"><img src="' + incEsc(a.url) + '" alt="' + incEsc(a.nombre || 'Foto') + '"></a>' : '<a class="adj-f" href="' + incEsc(a.url) + '" target="_blank" rel="noopener">' + incEsc(a.nombre || 'Archivo') + '</a>')
+    : '<span class="adj-f">' + incEsc(a.nombre || 'Archivo') + '</span>';
+  return '<div class="adj-ver' + c + '">' + l.map(adjunto).join('') + '</div><div class="adj-imp' + c + '">'
+    + [f ? f + (f === 1 ? ' foto' : ' fotos') : '', o ? o + (o === 1 ? ' archivo' : ' archivos') : ''].filter(Boolean).join(' y ') + ' (en el link del informe)</div>';
+}
 function informeNotasHTML(notas, P) {
   if (!notas || !notas.length) return '';
   const l = notas.slice().sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')));
   const fh = iso => { const d = incDia(iso); return d ? d.slice(8, 10) + '/' + d.slice(5, 7) + ' ' + incHora(iso) : ''; };
-  const cuantos = arch => { const f = arch.filter(ntEsImagen).length, o = arch.length - f; return [f ? f + (f === 1 ? ' foto' : ' fotos') : '', o ? o + (o === 1 ? ' archivo' : ' archivos') : ''].filter(Boolean).join(' y '); };
-  const adjunto = a => a.url
-    ? (ntEsImagen(a) ? '<a href="' + incEsc(a.url) + '" target="_blank" rel="noopener"><img src="' + incEsc(a.url) + '" alt="' + incEsc(a.nombre || 'Foto') + '"></a>' : '<a class="adj-f" href="' + incEsc(a.url) + '" target="_blank" rel="noopener">' + incEsc(a.nombre || 'Archivo') + '</a>')
-    : '<span class="adj-f">' + incEsc(a.nombre || 'Archivo') + '</span>';
-  return '<style>.nt-t{white-space:pre-wrap}.adj-ver{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}.adj-ver img{width:96px;height:96px;object-fit:cover;border-radius:6px;border:1px solid ' + P.linea + ';display:block}'
-    + '.adj-f{display:inline-block;padding:4px 8px;border:1px solid ' + P.linea + ';border-radius:6px;color:' + P.tinta + ';text-decoration:none}.adj-imp{display:none;color:' + P.gris + '}'
-    + '@media print{.adj-ver{display:none}.adj-imp{display:block}}</style>'
-    + '<h3 style="margin-top:22px">Notas de los supervisores</h3><table><tr><th>Cuándo</th><th>Quién</th><th>Qué pasó</th><th>Fotos y archivos</th></tr>'
-    + l.map(n => {
-      const arch = (n.archivos || []).filter(Boolean);
-      return '<tr><td>' + fh(n.created_at) + '</td><td>' + incEsc(n.autor_nombre || '') + '</td><td class="nt-t">' + incEsc(n.texto || '') + '</td><td>'
-        + (arch.length ? '<div class="adj-ver">' + arch.map(adjunto).join('') + '</div><div class="adj-imp">' + cuantos(arch) + ' (en el link del informe)</div>' : '—') + '</td></tr>';
-    }).join('') + '</table>';
+  return '<h3 style="margin-top:22px">Notas de los supervisores</h3><table><tr><th>Cuándo</th><th>Quién</th><th>Qué pasó</th><th>Fotos y archivos</th></tr>'
+    + l.map(n => '<tr><td>' + fh(n.created_at) + '</td><td>' + incEsc(n.autor_nombre || '') + '</td><td class="nt-t">' + incEsc(n.texto || '') + '</td><td>'
+      + (informeAdjHTML(n.archivos) || '—') + '</td></tr>').join('') + '</table>';
 }
 // Las notas del show (todas sus fechas; las trae ger_notas con las incidencias). El informe toma las de la fecha.
 let notasShow = [];
@@ -3752,7 +3792,8 @@ async function cargarIncidencias() {
   // Sin cuentas-zona.sql la función no está: no hay nadie a cargo que mostrar.
   const rs = await pedidoSup; supervisores = rs && !rs.error && Array.isArray(rs.data) ? rs.data : [];
   vivo.textContent = 'En vivo'; vivo.title = 'Actualizado a las ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo';
-  lista = data || [];
+  // Las fotos de cada incidencia, con su link (incidencias-fotos.sql; sin él no hay).
+  lista = await ntFirmar(data || [], 'incidencias');
   const rn = await pedidoNotas;
   if (deShow === showId && rn && !rn.error && Array.isArray(rn.data)) { notasShow = await ntFirmar(rn.data); pintarNotas(); }
   nuevos = vistos ? new Set(lista.filter(i => !vistos.has(i.id)).map(i => i.id)) : new Set();
@@ -3930,8 +3971,8 @@ function informe() {
     + num(m.tMedio == null ? '—' : incMinutos(m.tMedio), 'Resolución media') + num(m.pico ? incEsc(m.pico.etq) : '—', 'Momento más cargado') + '</div>'
     + '<div class="res">' + tabla('Criticidad', [3, 2, 1].map(nv => [INC_NIVELES[nv].nombre, l.filter(i => (i.nivel || 1) === nv).length])) + tabla('Categoría', cuenta(i => i.categoria)) + tabla('Sector', cuenta(i => i.sector)) + '</div>'
     + '<p style="font-size:11px;color:#5c5c5c;margin:-8px 0 18px">Criticidad: la define el tipo de incidencia; pasa a Grave si hubo derivación en ambulancia o aviso a la policía.</p>'
-    + '<h3>Línea de tiempo</h3><table><tr><th>Cuándo</th><th>Sector</th><th>Qué pasó</th><th>Criticidad</th><th>Qué se hizo</th><th>Derivado a</th><th>Cómo se resolvió</th></tr>'
-    + l.map(i => '<tr><td>' + fh(i.created_at) + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + '</td>'
+    + informeAdjEstilo(P) + '<h3>Línea de tiempo</h3><table><tr><th>Cuándo</th><th>Sector</th><th>Qué pasó</th><th>Criticidad</th><th>Qué se hizo</th><th>Derivado a</th><th>Cómo se resolvió</th></tr>'
+    + l.map(i => '<tr><td>' + fh(i.created_at) + '</td><td>' + incEsc(i.sector) + (i.ubicacion ? '<br><span class="gris">' + incEsc(i.ubicacion) + '</span>' : '') + '</td><td>' + incEsc(i.tipo) + '<br><span class="gris">' + incEsc(i.categoria) + '</span>' + (i.nota ? '<br>' + incEsc(i.nota) : '') + informeAdjHTML(i.archivos, true) + '</td>'
       + '<td class="niv" style="color:' + P.niv(INC_NIVELES[i.nivel] ? i.nivel : 1) + '">' + (INC_NIVELES[i.nivel] || INC_NIVELES[1]).nombre + ' · ' + cods[i.id] + '</td><td>' + (i.acciones || []).map(incEsc).join('<br>') + '</td>'
       + '<td>' + (incDerivadoA(i).map(incEsc).join(', ') || '—') + '</td>'
       + '<td>' + (i.estado === 'resuelta' ? fh(i.resuelta_at) + ' · ' + incEsc(i.resolucion || '') : '<strong>Abierta</strong>') + '</td></tr>').join('')

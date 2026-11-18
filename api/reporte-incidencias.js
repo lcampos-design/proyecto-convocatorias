@@ -15,7 +15,7 @@
 // Usa la misma clave que el envío de contratos (PRESENTES_CLAVE, en Vercel y en el script).
 
 import crypto from 'crypto';
-import { htmlInforme, pdfDeHtml, notasDelShow } from './_lib/informe-pdf.js';
+import { htmlInforme, pdfDeHtml, notasDelShow, fotosDeIncidencias } from './_lib/informe-pdf.js';
 import { linkInforme, linkSocios, linkTodos } from './informe.js';
 
 // Con pdf: true, el PDF de cada show lo imprime Chromium (el Informe de la gerencia, idéntico): hasta un minuto.
@@ -94,7 +94,9 @@ export default async function handler(req, res) {
         if (!pagina) { const rp = await fetch('https://convocatorias.show-bs.com/centro-control.html', { headers: { 'Cache-Control': 'no-cache' } }); if (!rp.ok) throw new Error('centro-control.html: ' + rp.status); pagina = await rp.text(); }
         // Con las notas de los supervisores (el texto; las fotos quedan en el link del informe).
         const notas = await notasDelShow(SB_URL, servicio, c.id, fecha, false);
-        show.pdf = await pdfDeHtml(await htmlInforme({ id: c.id, nombre: c.nombre, fecha: c.fecha }, fecha, ri.data || [], pagina, notas));
+        // Y cuántas fotos tiene cada incidencia (las fotos quedan en el link del informe).
+        const conFotos = await fotosDeIncidencias(SB_URL, servicio, ri.data || [], false);
+        show.pdf = await pdfDeHtml(await htmlInforme({ id: c.id, nombre: c.nombre, fecha: c.fecha }, fecha, conFotos, pagina, notas));
       } catch (e) { show.pdf_error = String((e && e.message) || e).slice(0, 300); }
     }
     salida.push(show);

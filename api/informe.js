@@ -10,7 +10,7 @@
 // su propia firma: el link del Arena no abre el de los socios (ni al revés).
 
 import crypto from 'crypto';
-import { htmlInforme, pdfDeHtml, notasDelShow } from './_lib/informe-pdf.js';
+import { htmlInforme, pdfDeHtml, notasDelShow, fotosDeIncidencias } from './_lib/informe-pdf.js';
 
 export const config = { maxDuration: 60 };
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
@@ -200,8 +200,10 @@ export default async function handler(req, res) {
   if (!ri.ok) return res.status(500).send(pagina('No disponible', 'No se pudo leer el informe. Probá de nuevo en un rato.'));
   // Las notas de los supervisores de la fecha (17-nov): en la página, con sus fotos; en el PDF, el texto (las fotos quedan en el link).
   const notas = await notasDelShow(SB_URL, servicio, conv.id, tok.fecha, !quierePdf);
+  // Las fotos de cada incidencia (18-nov): en la página, con su link; en el PDF, cuántas son.
+  const lista = await fotosDeIncidencias(SB_URL, servicio, ri.data || [], !quierePdf);
   let html;
-  try { html = await htmlInforme(conv, tok.fecha, ri.data || [], null, notas); }
+  try { html = await htmlInforme(conv, tok.fecha, lista, null, notas); }
   catch (e) { return res.status(500).send(pagina('No disponible', 'No se pudo armar el informe. Probá de nuevo en un rato.')); }
   if (tipo === 'socios') {
     const [rk, rp] = await Promise.all([

@@ -88,6 +88,32 @@ export async function notasDelShow(sbUrl, servicio, convId, fecha, firmar) {
   } catch (_) { return []; }
 }
 
+// Las fotos de cada incidencia (incidencias-fotos.sql, 18-nov), sumadas a la lista: sin la cuenta que subió cada una.
+// firmar: con su link (vence en 7 días), para verlas en el link del informe; sin firmar (el PDF), el informe dice
+// cuántas son. Sin el SQL (la columna no está), la lista queda como vino.
+export async function fotosDeIncidencias(sbUrl, servicio, incidencias, firmar) {
+  const l = incidencias || [];
+  try {
+    const h = { apikey: servicio, Authorization: `Bearer ${servicio}` };
+    const ids = l.map(i => i && i.id).filter(Boolean), arch = {};
+    for (let k = 0; k < ids.length; k += 100) {
+      const r = await fetch(`${sbUrl}/rest/v1/incidencias?select=id,archivos&id=in.(${ids.slice(k, k + 100).join(',')})`, { headers: h });
+      if (!r.ok) return l;
+      (await r.json()).forEach(x => {
+        if (x && Array.isArray(x.archivos) && x.archivos.length) arch[x.id] = x.archivos.filter(a => a && a.path).map(a => { const b = Object.assign({}, a); delete b.por; return b; });
+      });
+    }
+    const paths = [...new Set(Object.values(arch).flat().map(a => a.path))];
+    if (firmar && paths.length) {
+      const rs = await fetch(`${sbUrl}/storage/v1/object/sign/incidencias`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, h), body: JSON.stringify({ expiresIn: 7 * 24 * 3600, paths }) });
+      const firmados = rs.ok ? await rs.json() : [];
+      const url = {}; (firmados || []).forEach(x => { if (x && x.path && x.signedURL) url[x.path] = `${sbUrl}/storage/v1${x.signedURL}`; });
+      Object.values(arch).flat().forEach(a => { if (url[a.path]) a.url = url[a.path]; });
+    }
+    return l.map(i => i && arch[i.id] ? Object.assign({}, i, { archivos: arch[i.id] }) : i);
+  } catch (_) { return l; }
+}
+
 // El PDF (base64) de ese HTML, con Chromium: A4, con los fondos, como "Guardar como PDF".
 // ejecutable: para probarlo en la compu (Edge o Chrome); en Vercel, el de @sparticuz/chromium.
 export async function pdfDeHtml(html, ejecutable) {
