@@ -348,6 +348,8 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
 #screenIncid .inc-tj .inc-tj-estado{font:600 11.5px var(--inc-fuente)}
 #screenIncid .inc-tj .inc-tj-chips span{border-radius:999px}
 .sv-tj-pie{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 12px 92px}
+/* Con la ficha abierta (abajo de Sumar fotos), los botones van a lo ancho. */
+.sv-tj-fotos + .sv-tj-pie{padding-left:14px}
 .sv-detalle{border:1.5px solid currentColor;border-radius:10px;background:none;color:inherit;font:700 13px var(--inc-fuente);padding:0 14px;min-height:40px;cursor:pointer}
 .sv-hora{max-width:180px}
 .sv-resolver{border:0;border-radius:10px;background:var(--tinta);color:var(--fondo);font:700 13px var(--inc-fuente);padding:0 16px;min-height:40px;cursor:pointer}
@@ -855,7 +857,7 @@ async function openShow(convId, fecha) {
   const total = c.personas || 0, hechos = c.con_feedback || 0;
   document.getElementById('hubEquipo').innerHTML = '<span class="hub-chip">' + total + ' persona' + (total === 1 ? '' : 's') + '</span><span class="hub-chip">' + hechos + '/' + total + ' con feedback</span>';
   document.getElementById('hubIncid').innerHTML = '<span class="hub-chip">Cargando…</span>';
-  document.getElementById('hubIncidS').textContent = terminado ? 'Lo que pasó ese día y el informe. Se pueden sumar detalles, fotos o una que faltó' : 'Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector, con fotos';
+  document.getElementById('hubIncidS').textContent = terminado ? 'Lo que pasó ese día y el informe. Se pueden sumar notas, fotos o una que faltó' : 'Ver lo que pasa en todo el estadio y cargar lo que pase en tu sector, con fotos';
   showScreen('screenShow');
   svPintarHubContratos(convId);
   const { data, error } = await sb.rpc('sup_incidencias', { p_conv_id: convId });
@@ -986,13 +988,32 @@ function informeAdjEstilo(P) {
   return '<style>.nt-t{white-space:pre-wrap}.adj-ver{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start}.adj-ver img{width:96px;height:96px;object-fit:cover;border-radius:6px;border:1px solid ' + P.linea + ';display:block}'
     + '.adj-ver.chico{margin-top:6px}.adj-ver.chico img{width:64px;height:64px}.adj-imp.chico{margin-top:4px}'
     + '.adj-f{display:inline-block;padding:4px 8px;border:1px solid ' + P.linea + ';border-radius:6px;color:' + P.tinta + ';text-decoration:none}.adj-imp{display:none;color:' + P.gris + '}'
-    + '@media print{.adj-ver{display:none}.adj-imp{display:block}}</style>';
+    + '@media print{.adj-ver{display:none}.adj-imp{display:block}}'
+    // El visor: la foto grande encima del informe, sobre negro; con flechas (o deslizando) pasa a las otras.
+    + '.adj-caja{--z:1;position:fixed;left:0;top:0;width:100%;height:100%;z-index:50;display:none;align-items:center;justify-content:center;background:#0E0E0E;padding:calc(68px*var(--z)) calc(12px*var(--z)) calc(76px*var(--z));box-sizing:border-box}.adj-caja.on{display:flex}'
+    + '.adj-caja img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}'
+    + '.adj-caja button{position:absolute;border:0;border-radius:50%;background:#FFFFFF;color:#1A1A1A;font-family:Poppins,sans-serif;font-weight:600;line-height:1;font-size:calc(26px*var(--z));cursor:pointer;width:calc(48px*var(--z));height:calc(48px*var(--z));padding:0}'
+    + '.adj-caja .x{top:calc(12px*var(--z));right:calc(12px*var(--z))}.adj-caja .ant,.adj-caja .sig{top:50%;margin-top:calc(-24px*var(--z))}.adj-caja .ant{left:calc(12px*var(--z))}.adj-caja .sig{right:calc(12px*var(--z))}'
+    + '.adj-caja .pie{position:absolute;left:0;right:0;bottom:calc(22px*var(--z));text-align:center;color:#D0D0D0;font-family:Poppins,sans-serif;font-weight:500;font-size:calc(14px*var(--z))}.adj-caja .pie a{color:#FFFFFF;margin-left:12px}'
+    + '@media print{.adj-caja{display:none!important}}</style>'
+    + '<script>(function(){if(window.adjVer)return;var L=[],k=0,c,x0=null;'
+    + 'function arma(){c=document.createElement("div");c.className="adj-caja";c.innerHTML="<img alt=\\"\\"><button class=\\"x\\" aria-label=\\"Cerrar\\">×</button><button class=\\"ant\\" aria-label=\\"Anterior\\">‹</button><button class=\\"sig\\" aria-label=\\"Siguiente\\">›</button><div class=\\"pie\\"></div>";document.body.appendChild(c);'
+    + 'c.addEventListener("click",function(e){if(e.target===c)cerrar();});c.querySelector(".x").onclick=cerrar;c.querySelector(".ant").onclick=function(){ir(k-1);};c.querySelector(".sig").onclick=function(){ir(k+1);};'
+    + 'c.addEventListener("touchstart",function(e){x0=e.touches[0].clientX;},{passive:true});c.addEventListener("touchend",function(e){if(x0===null)return;var d=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(d)>50)ir(d<0?k+1:k-1);});'
+    + 'document.addEventListener("keydown",function(e){if(!c.classList.contains("on"))return;if(e.key==="Escape")cerrar();if(e.key==="ArrowLeft")ir(k-1);if(e.key==="ArrowRight")ir(k+1);});}'
+    + 'function ir(n){if(!L.length)return;k=(n+L.length)%L.length;var a=L[k],p=c.querySelector(".pie"),t=document.createElement("span"),o=document.createElement("a");c.querySelector("img").src=a.href;'
+    + 't.textContent=(a.title||"Foto")+(L.length>1?" · "+(k+1)+" de "+L.length:"");o.href=a.href;o.target="_blank";o.rel="noopener";o.textContent="Abrir original";p.textContent="";p.appendChild(t);p.appendChild(o);'
+    + 'var m=L.length>1?"":"none";c.querySelector(".ant").style.display=m;c.querySelector(".sig").style.display=m;}'
+    + 'function cerrar(){c.classList.remove("on");document.documentElement.style.overflow="";}'
+    + 'window.adjVer=function(a){if(!c)arma();L=[].slice.call(document.querySelectorAll("a.adj-foto"));k=Math.max(0,L.indexOf(a));ir(k);'
+    + 'var v=window.visualViewport,w=v?v.width:innerWidth,z=Math.max(1,Math.min(4,w/((window.screen&&screen.width)||w)));c.style.setProperty("--z",z);'
+    + 'if(v){c.style.left=v.offsetLeft+"px";c.style.top=v.offsetTop+"px";c.style.width=v.width+"px";c.style.height=v.height+"px";}c.classList.add("on");document.documentElement.style.overflow="hidden";return false;};})();<\/script>';
 }
 function informeAdjHTML(arch, chico) {
   const l = (Array.isArray(arch) ? arch : []).filter(a => a && a.path); if (!l.length) return '';
   const f = l.filter(ntEsImagen).length, o = l.length - f, c = chico ? ' chico' : '';
   const adjunto = a => a.url
-    ? (ntEsImagen(a) ? '<a href="' + incEsc(a.url) + '" target="_blank" rel="noopener" title="' + incEsc(a.nombre || 'Foto') + '"><img src="' + incEsc(a.url) + '" alt="' + incEsc(a.nombre || 'Foto') + '"></a>' : '<a class="adj-f" href="' + incEsc(a.url) + '" target="_blank" rel="noopener">' + incEsc(a.nombre || 'Archivo') + '</a>')
+    ? (ntEsImagen(a) ? '<a class="adj-foto" href="' + incEsc(a.url) + '" target="_blank" rel="noopener" title="' + incEsc(a.nombre || 'Foto') + '" onclick="return window.adjVer ? adjVer(this) : true"><img src="' + incEsc(a.url) + '" alt="' + incEsc(a.nombre || 'Foto') + '"></a>' : '<a class="adj-f" href="' + incEsc(a.url) + '" target="_blank" rel="noopener">' + incEsc(a.nombre || 'Archivo') + '</a>')
     : '<span class="adj-f">' + incEsc(a.nombre || 'Archivo') + '</span>';
   return '<div class="adj-ver' + c + '">' + l.map(adjunto).join('') + '</div><div class="adj-imp' + c + '">'
     + [f ? f + (f === 1 ? ' foto' : ' fotos') : '', o ? o + (o === 1 ? ' archivo' : ' archivos') : ''].filter(Boolean).join(' y ') + ' (en el link del informe)</div>';
@@ -2099,8 +2120,9 @@ function incTarjetaHTML(i, op) {
     + fila('Qué es', incEsc(i.categoria || '') + ' · ' + v.nombre)
     + fila('Qué se hizo', (i.acciones || []).map(a => '<div class="inc-tj-acc">✓ ' + incEsc(a) + '</div>').join('') || ((i.nivel || 1) >= 2 && !resuelta ? '<span class="inc-tj-mal">Nadie la tomó todavía</span>' : ''))
     + fila('Derivado a', deriva.map(incEsc).join(', '))
-    + fila('Nota', i.nota ? '<div class="inc-tj-nota">' + incEsc(i.nota) + '</div>' : '')
-    + fila('Detalles', incDetallesHTML(i))
+    // La nota de cuando se cargó y las que se sumaron después, juntas (cada una de después, con quién y cuándo).
+    + fila((i.nota ? 1 : 0) + incDetallesLista(i).length > 1 ? 'Notas' : 'Nota', (i.nota ? '<div class="inc-tj-d1"><div class="inc-tj-nota">' + incEsc(i.nota) + '</div>'
+      + (incDetallesLista(i).length ? '<div class="inc-tj-quien">Al cargarla</div>' : '') + '</div>' : '') + incDetallesHTML(i))
     + fila('Fotos', incFotosHTML(i, op))
     + fila(i.cargada_at ? 'Pasó' : 'Cargada', incCuando(i.created_at) + (i.creada_por_nombre ? ' · ' + incEsc(i.creada_por_nombre) : '')
       + (i.cargada_at ? '<div class="inc-tj-quien">Cargada después del show, ' + incEsc(incCuando(i.cargada_at)) + '</div>' : ''))
@@ -2118,9 +2140,10 @@ function incTarjetaHTML(i, op) {
 // Las fotos y los archivos de la incidencia (incidencias-fotos.sql), en su detalle: con su link (firmado, lo piden la
 // app y la gerencia), las miniaturas, que tocadas se abren grandes; sin link, cuántos son. op.fotosQuitar: la función
 // para sacar una propia (la app, con su × arriba); op.fotosMas(i): lo que va abajo (la app: sumar más).
-// Lo que se sumó después de cargarla (incidencias-detalles.sql): cada detalle, con quién y cuándo.
+// Las notas que se sumaron después de cargarla (incidencias-detalles.sql; en la base, "detalles"): cada una con quién y cuándo.
+function incDetallesLista(i) { return (i && Array.isArray(i.detalles) ? i.detalles : []).filter(d => d && d.texto); }
 function incDetallesHTML(i) {
-  return (i && Array.isArray(i.detalles) ? i.detalles : []).filter(d => d && d.texto).map(d => '<div class="inc-tj-d1"><div class="inc-tj-nota">' + incEsc(d.texto) + '</div>'
+  return incDetallesLista(i).map(d => '<div class="inc-tj-d1"><div class="inc-tj-nota">' + incEsc(d.texto) + '</div>'
     + '<div class="inc-tj-quien">' + incEsc([incCuando(d.at), d.por_nombre || ''].filter(Boolean).join(' · ')) + '</div></div>').join('');
 }
 function incFotosLista(i) { return (i && Array.isArray(i.archivos) ? i.archivos : []).filter(a => a && a.path); }
@@ -2152,7 +2175,7 @@ function incEstiloTarjetas() {
   st.textContent = '.inc-tj-quien{font-size:11px;opacity:.7;margin-top:2px}.inc-tj-d1+.inc-tj-d1{margin-top:8px}'
     + '.inc-tj-fotos{display:flex;flex-wrap:wrap;gap:8px}.inc-tj-fc{position:relative;display:inline-block;max-width:100%}'
     + '.inc-tj-ft{display:block;width:76px;height:76px;border-radius:8px;overflow:hidden;background:rgba(127,127,127,.18)}.inc-tj-ft img{width:100%;height:100%;object-fit:cover;display:block}'
-    + '.inc-tj-fa{display:inline-flex;align-items:center;min-height:34px;padding:6px 10px;border-radius:8px;border:1px solid rgba(127,127,127,.45);color:inherit;text-decoration:none;font-size:12px;font-weight:500;overflow-wrap:anywhere}'
+    + '.inc-tj-fa:not(:last-child){padding-right:28px !important}.inc-tj-fa{display:inline-flex;align-items:center;min-height:34px;padding:6px 10px;border-radius:8px;border:1px solid rgba(127,127,127,.45);color:inherit;text-decoration:none;font-size:12px;font-weight:500;overflow-wrap:anywhere}'
     + '.inc-tj-fq{position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;border:2px solid var(--tj-fondo,#F2EFE6);background:var(--tj-tinta,#141A26);color:var(--tj-fondo,#F2EFE6);font:600 16px/1 ' + INC_FUENTE + ';cursor:pointer;padding:0}'
     + '.inc-tj-fn{font-size:12px}.inc-tj-cam{display:inline-flex;align-items:center;gap:3px;margin-left:7px;font-size:.82em;font-weight:600;opacity:.7;vertical-align:1px;white-space:nowrap}.inc-tj-cam svg{width:13px;height:13px}'
     + '.inc-tj-cod{display:inline-block;margin-right:7px;padding:1px 6px;border-radius:4px;background:var(--tj-c);color:var(--tj-t);font-weight:800;font-size:.82em;line-height:1.35;vertical-align:1px;font-variant-numeric:tabular-nums}'
@@ -4622,10 +4645,10 @@ function renderIncid() {
   cont.innerHTML = porZona && !zonaElegida ? incPorZonasHTML(visibles, zonaDe, tarjeta) : visibles.map(tarjeta).join('');
   incNuevos = new Set();
 }
-// Abajo del ticket: Resolver (si sigue abierta) y, con la ficha abierta, Agregar detalle (en cualquier momento).
+// Abajo del ticket: Resolver (si sigue abierta) y, con la ficha abierta, Agregar nota (en cualquier momento).
 function incPieHTML(i, abierta) {
   const id = incEsc(i.id);
-  const b = (abierta ? '<button type="button" class="sv-detalle" onclick="event.stopPropagation();incAbrirDetalle(\'' + id + '\')">Agregar detalle</button>' : '')
+  const b = (abierta ? '<button type="button" class="sv-detalle" onclick="event.stopPropagation();incAbrirDetalle(\'' + id + '\')">Agregar nota</button>' : '')
     + (i.estado === 'resuelta' ? '' : '<button type="button" class="sv-resolver" onclick="event.stopPropagation();incAbrirResolver(\'' + id + '\')">Resolver</button>');
   return b ? '<div class="sv-tj-pie">' + b + '</div>' : '';
 }
@@ -4764,13 +4787,13 @@ function incAbrirResolver(id) {
   renderIncHoja();
   document.getElementById('incSheet').classList.remove('hidden');
 }
-// Agregar detalle: un texto (y fotos, si quieren) que se suma a la incidencia con su nombre y su hora, sin borrar lo
+// Agregar nota (en la base, un "detalle"): un texto (y fotos, si quieren) que se suma a la incidencia con su nombre y su hora, sin borrar lo
 // que ya estaba. En cualquier momento, también después del show (Lupi, 18-nov: "la super de VIP quiere agregar más cosas").
 function incAbrirDetalle(id) {
   const i = incLista.find(x => x.id === id); if (!i) return;
   if (incHoja && incHoja.fotos) adjLimpiar(incHoja.fotos);
   incHoja = { modo: 'detalle', id, detalle: '', fotos: [] };
-  const t = document.getElementById('incSheetTitulo'); t.textContent = 'Agregar detalle · ' + i.tipo; t.className = 'fb-title';
+  const t = document.getElementById('incSheetTitulo'); t.textContent = 'Agregar nota · ' + i.tipo; t.className = 'fb-title';
   document.getElementById('incSheetSub').textContent = i.sector + (i.ubicacion ? ' · ' + i.ubicacion : '') + ' · ' + incCuando(i.created_at) + '. Lo que ya estaba queda igual.';
   renderIncHoja();
   document.getElementById('incSheet').classList.remove('hidden');
@@ -4779,24 +4802,24 @@ async function incGuardarDetalle() {
   incLeerCampos();
   const h = incHoja; if (!h || h.modo !== 'detalle') return;
   const txt = String(h.detalle || '').trim(), fotos = (h.fotos || []).slice();
-  if (!txt && !fotos.length) { toast('Escribí el detalle o sumá una foto'); return; }
+  if (!txt && !fotos.length) { toast('Escribí la nota o sumá una foto'); return; }
   const btn = document.getElementById('incGuardarBtn'); btn.disabled = true; btn.textContent = 'Guardando...';
   h.guardando = true;
   try {
     if (txt) {
       const { data, error } = await sb.rpc('sup_incidencia_detalle', { p_id: h.id, p_texto: txt });
-      if (error || !data || !data.ok) throw new Error((data && data.error) || (error && /sup_incidencia_detalle/.test(error.message || '') ? 'Falta correr incidencias-detalles.sql en Supabase' : 'No se pudo guardar. Revisá la conexión y probá de nuevo.'));
+      if (error || !data || !data.ok) throw new Error((data && data.error && String(data.error).replace(/detalles?/g, m => m === 'detalles' ? 'notas' : 'nota')) || (error && /sup_incidencia_detalle/.test(error.message || '') ? 'Falta correr incidencias-detalles.sql en Supabase' : 'No se pudo guardar. Revisá la conexión y probá de nuevo.'));
       await incReemplazar(data.incidencia);
     }
     if (fotos.length) {
       try { await incFotosGuardar(h.id, fotos, t => { btn.textContent = t; }); }
-      catch (e) { if (!txt) throw e; toast('El detalle quedó, pero ' + String((e && e.message) || 'la foto no se subió').replace(/^./, c => c.toLowerCase()) + ' Sumala desde su ficha.'); adjLimpiar(fotos); if (incHoja === h) cerrarIncHoja(); renderIncid(); return; }
+      catch (e) { if (!txt) throw e; toast('La nota quedó, pero ' + String((e && e.message) || 'la foto no se subió').replace(/^./, c => c.toLowerCase()) + ' Sumala desde su ficha.'); adjLimpiar(fotos); if (incHoja === h) cerrarIncHoja(); renderIncid(); return; }
     }
-    toast('✓ Detalle agregado');
+    toast('✓ Nota agregada');
     adjLimpiar(fotos);
     if (incHoja === h) cerrarIncHoja();
     renderIncid();
-  } catch (e) { h.guardando = false; toast((e && e.message) || 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Guardar detalle'; }
+  } catch (e) { h.guardando = false; toast((e && e.message) || 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Guardar nota'; }
 }
 function cerrarIncHoja() { document.getElementById('incSheet').classList.add('hidden'); if (incHoja && incHoja.fotos && !incHoja.guardando) adjLimpiar(incHoja.fotos); incHoja = null; }
 // Lo escrito en los campos se guarda antes de redibujar la hoja.
@@ -4819,7 +4842,7 @@ function renderIncHoja() {
   if (h.modo === 'detalle') {
     body.innerHTML = '<div class="inc-paso">¿Qué querés agregar?</div><textarea class="fb-ta" id="incCampo_detalle" maxlength="1000" placeholder="Ej: a las 22:30 volvió a fallar y se cambió el rollo">' + incEsc(h.detalle || '') + '</textarea>'
       + incHojaFotosHTML()
-      + '<button class="fb-send" id="incGuardarBtn" onclick="incGuardarDetalle()">Guardar detalle</button>';
+      + '<button class="fb-send" id="incGuardarBtn" onclick="incGuardarDetalle()">Guardar nota</button>';
     return;
   }
   if (h.modo === 'resolver') {
