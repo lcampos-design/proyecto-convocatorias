@@ -439,7 +439,9 @@ function incNivelDe(cat, tipo) { const t = incCategoria(cat).tipos.find(x => x[0
 const INC_LUGARES = ['Otro lugar'];
 // Recepciones y Premium (17-nov): lugares que no están dibujados en el plano (no se sabe dónde va cada uno); se eligen de la lista.
 // Connie (Premium Services del Arena): "las Recepciones" y "los sectores Premium (Estacionamiento y Premium Points)".
-const INC_LUGARES_PREMIUM = ['Recepción', 'Estacionamiento', 'Premium Points'];
+// 17-nov (Lupi, de SBS): "las recepciones son recepciones Cancha y Sede"; "Premium Point (PP) hay en Humboldt y en Dorrego";
+// y "una persona a la altura de parking".
+const INC_LUGARES_PREMIUM = ['Recepción Cancha', 'Recepción Sede', 'Premium Point Humboldt', 'Premium Point Dorrego', 'Estacionamiento'];
 // Los pasillos y escaleras van por sector: se elige el sector y, en la
 // referencia, un atajo de un toque.
 const INC_REFERENCIAS = ['Pasillo', 'Escalera', 'Vomitorio', 'Fila', 'Butaca', 'Fila de ingreso'];
@@ -706,14 +708,15 @@ const INC_LUGARES_BASE = [
   { id: 'Enfermería', t: 'enfermeria', txt: '', cx: 28.5, cy: 40, w: 11, h: 15, ang: 0, piso: 'PB' },
   // Los baños accesibles de planta baja (14-nov): al lado de la enfermería, de Patagonia, de Smirnoff y del merch store.
   { id: 'Baño accesible Enfermería', t: 'banio', txt: 'Acc', cx: 43.5, cy: 42, w: 11, h: 12, ang: 0, piso: 'PB' },
-  { id: 'Cancha externo 1 (Paty)', t: 'gastro', txt: 'CE1', cx: 28.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'PB' },
+  // Paty, Pepsi, Kit Kat y 7UP son internas y no llevan número: se reconocen por el nombre (Luca, 17-nov).
+  { id: 'Cancha interno (Paty)', t: 'gastro', txt: 'Paty', cx: 28.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'PB' },
   { id: 'Puerta 8', t: 'puerta', txt: 'P8', cx: 22, cy: 92, w: 22, h: 12, ang: 90, piso: 'PB' },
   // Los baños, con su nombre (eran 1 y 2): el de hombres, el más cerca del escenario.
   { id: 'Baños Hombres Cancha', t: 'banio', txt: 'H', cx: 43.5, cy: 107, w: 11, h: 28, ang: 0, piso: 'PB' },
   { id: 'Baños Mujeres Cancha', t: 'banio', txt: 'M', cx: 43.5, cy: 140, w: 11, h: 28, ang: 0, piso: 'PB' },
   { id: 'Baño accesible Patagonia', t: 'banio', txt: 'Acc', cx: 43.5, cy: 196, w: 11, h: 12, ang: 0, piso: 'PB' },
   { id: 'Puerta 6', t: 'puerta', txt: 'P6', cx: 22, cy: 184, w: 22, h: 12, ang: 90, piso: 'PB' },
-  { id: 'Cancha externo 2 (Pepsi)', t: 'gastro', txt: 'CE2', cx: 28.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'PB' },
+  { id: 'Cancha interno (Pepsi)', t: 'gastro', txt: 'Pep.', cx: 28.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'PB' },
   { id: 'Cancha interno 2 (Patagonia)', t: 'gastro', txt: 'CI2', cx: 43.5, cy: 214, w: 11, h: 18, ang: 0, piso: 'PB' },
   { id: 'Cancha 3 (eventual)', t: 'gastro', txt: 'C3', cx: 28.5, cy: 241, w: 11, h: 12, ang: 0, piso: 'PB' },
   // La de la esquina de Humboldt, lado Cancha, es la 4; la del medio de Humboldt no tiene número (el coordinador, 13-nov).
@@ -726,7 +729,7 @@ const INC_LUGARES_BASE = [
   { id: 'Salida fondo Sede', t: 'puerta', txt: 'Fondo', cx: 370, cy: -46, w: 28, h: 12, ang: 0, piso: 'PB' },
   // Lado Sede (derecha), igual: los externos y el 3 (chico) afuera; los baños
   // y el interno adentro.
-  { id: 'Sede externo 2 (7UP)', t: 'gastro', txt: 'SE2', cx: 391.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'PB' },
+  { id: 'Sede interno (7UP)', t: 'gastro', txt: '7UP', cx: 391.5, cy: 214, w: 11, h: 25, ang: 0, piso: 'PB' },
   { id: 'Sede interno 2 (Smirnoff)', t: 'gastro', txt: 'SI2', cx: 376.5, cy: 214, w: 11, h: 18, ang: 0, piso: 'PB' },
   { id: 'Baño accesible Smirnoff', t: 'banio', txt: 'Acc', cx: 376.5, cy: 196, w: 11, h: 12, ang: 0, piso: 'PB' },
   { id: 'Sede externo 3 (Día)', t: 'gastro', txt: 'SE3', cx: 391.5, cy: 241, w: 11, h: 12, ang: 0, piso: 'PB' },
@@ -736,13 +739,14 @@ const INC_LUGARES_BASE = [
   { id: 'Puerta 9', t: 'puerta', txt: 'P9', cx: 398, cy: 92, w: 22, h: 12, ang: 90, piso: 'PB' },
   // Los molinetes de Cortatickets (Luca, 15-nov: "Humboldt, Dorrego y Corrientes hagamos; y estaría bueno diferenciar
   // en Humboldt y Dorrego los molinetes premium"). Van como puertas (Cortatickets) y por ahora entre el edificio y
-  // la calle; la ubicación exacta se define con ellos.
+  // la calle. Luca, 17-nov (sobre el plano): los de Dorrego, del lado Cancha (sobre Muñecas), a la altura de Camarines
+  // y la Enfermería; los de Corrientes, del lado Sede, a la altura de Acreditaciones y el Merch store.
   { id: 'Molinetes Humboldt', t: 'puerta', txt: 'Mol.', cx: 170, cy: 334, w: 30, h: 10, ang: 0, piso: 'PB' },
   { id: 'Molinetes Humboldt Premium', t: 'puerta', txt: 'Prem.', cx: 250, cy: 334, w: 30, h: 10, ang: 0, piso: 'PB' },
-  { id: 'Molinetes Dorrego', t: 'puerta', txt: 'Mol.', cx: 170, cy: -46, w: 30, h: 10, ang: 0, piso: 'PB' },
-  { id: 'Molinetes Dorrego Premium', t: 'puerta', txt: 'Prem.', cx: 250, cy: -46, w: 30, h: 10, ang: 0, piso: 'PB' },
-  { id: 'Molinetes Corrientes', t: 'puerta', txt: 'Mol.', cx: 414, cy: 137, w: 30, h: 10, ang: 90, piso: 'PB' },
-  { id: 'Sede externo 1 (Kit Kat)', t: 'gastro', txt: 'SE1', cx: 391.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'PB' },
+  { id: 'Molinetes Dorrego', t: 'puerta', txt: 'Mol.', cx: 6, cy: 14, w: 30, h: 10, ang: 90, piso: 'PB' },
+  { id: 'Molinetes Dorrego Premium', t: 'puerta', txt: 'Prem.', cx: 6, cy: 48, w: 30, h: 10, ang: 90, piso: 'PB' },
+  { id: 'Molinetes Corrientes', t: 'puerta', txt: 'Mol.', cx: 414, cy: 36, w: 30, h: 10, ang: 90, piso: 'PB' },
+  { id: 'Sede interno (Kit Kat)', t: 'gastro', txt: 'Kit.', cx: 391.5, cy: 61, w: 11, h: 22, ang: 0, piso: 'PB' },
   // "Acreditaciones" (antes "Producción": así se lo reconoce) y el merch store, donde está la enfermería del otro lado.
   { id: 'Acreditaciones', t: 'servicio', txt: 'Acred.', cx: 384, cy: 20, w: 20, h: 30, ang: 0, piso: 'PB' },
   { id: 'Merch store', t: 'servicio', txt: 'Merch', cx: 391.5, cy: 40, w: 11, h: 15, ang: 0, piso: 'PB' },
@@ -1057,6 +1061,8 @@ async function incRefrescarPlano() { return incTraerDatos(Promise.all([incCargar
 // celular, las incidencias se eligen y se agrupan por estas zonas (sin el plano).
 const INC_ZONAS_CUENTA = [['calle', 'Calle'], ['cortatickets', 'Cortatickets'], ['anillo', 'Anillo'], ['bowl', 'Bowl'], ['platea_baja', 'Platea baja'], ['vip', 'VIP'], ['platea_alta', 'Platea alta'], ['otros', 'Otros lugares']];
 function incZonaCuenta(sector) {
+  // Las recepciones y lo Premium no están en el plano, pero son del VIP (también los nombres genéricos del primer día).
+  if (INC_LUGARES_PREMIUM.includes(sector) || sector === 'Recepción' || sector === 'Premium Points') return 'vip';
   const s = incSectoresPlano('campos').concat(INC_PLANO_CAMPO.asientos, INC_PLANO_CAMPO.unico).find(x => x.id === sector);
   if (!s) return 'otros';
   if (s.t === 'calle') return 'calle';
