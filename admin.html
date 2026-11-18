@@ -1925,6 +1925,19 @@ tr:hover td{background:#f9f9fb}
   </div>
 </div>
 
+<!-- Modal: un grupo guardado para mandar la disponibilidad (config.grupos_envio) -->
+<div class="modal-bg" id="mGrupo" style="display:none" onclick="bgClose('mGrupo',event)">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-title"><span id="grTitulo">Grupo</span><button class="mclose" onclick="closeM('mGrupo')">✕</button></div>
+    <div class="frow">
+      <div class="fg"><label>Nombre del grupo</label><input class="fi" id="grNombre" maxlength="60" placeholder="Ej: Fijos del Arena"></div>
+      <div class="fg"><label>Área</label><select class="fi" id="grArea" onchange="renderGrupo()"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="ambas">Las dos</option></select></div>
+    </div>
+    <div id="grBody"></div>
+    <div class="ma"><button class="btn btn-sec" id="grBorrarBtn" onclick="borrarGrupo()" style="margin-right:auto">Borrar el grupo</button><button class="btn btn-sec" onclick="closeM('mGrupo')">Cancelar</button><button class="btn btn-primary" id="grGuardarBtn" onclick="guardarGrupo()">Guardar</button></div>
+  </div>
+</div>
+
 <!-- Modal: Conflictos de agenda / Buscar por CUIT -->
 <div class="modal-bg" id="mConflictos" style="display:none" onclick="bgClose('mConflictos',event)">
   <div class="modal" style="max-width:640px">
@@ -2612,6 +2625,7 @@ let rotacionConfig = { max_eventos: 3, dias_periodo: 30, modo: 'advertencia' };
 // código, para que se pueda editar desde el panel.
 let contratoPlantillas = {};
 let documentosFirma = [];   // la lista para elegir (config.documentos_firma)
+let gruposEnvio = [];       // los grupos guardados para mandar la disponibilidad (config.grupos_envio)
 let etiquetasPaleta = [], formEtiquetas = [];
 let bajaDiasLimite = 3;
 let ausenciaConfig = { dias: 30, modo: 'advertencia' };
@@ -2951,6 +2965,8 @@ async function loadAll() {
   const docsCfg = (cfgData || []).find(c => c.key === 'documentos_firma');
   documentosFirma = Array.isArray(docsCfg && docsCfg.value) ? docsCfg.value : [];
   cargarAnexosContratos();
+  const grCfg = (cfgData || []).find(c => c.key === 'grupos_envio');
+  gruposEnvio = Array.isArray(grCfg && grCfg.value) ? grCfg.value.filter(g => g && g.id) : [];
   const bajaCfg = (cfgData || []).find(c => c.key === 'baja');
   bajaDiasLimite = (bajaCfg && bajaCfg.value && Number.isFinite(+bajaCfg.value.dias)) ? +bajaCfg.value.dias : 3;
   const ausCfg = (cfgData || []).find(c => c.key === 'ausencia');
@@ -13292,8 +13308,101 @@ function dmGrupos() {
 }
 function dmDestinatarios() {
   const g = dmGrupos(), vistos = new Set(), out = [];
-  ['rec', 'sup', 'ops', 'tag'].forEach(k => { const cb = document.getElementById('dmG_' + k); if (cb && cb.checked) g[k].forEach(p => { const m = String(p.email).trim().toLowerCase(); if (!vistos.has(m)) { vistos.add(m); out.push(p); } }); });
+  const sumar = p => { const m = String(p.email).trim().toLowerCase(); if (!vistos.has(m)) { vistos.add(m); out.push(p); } };
+  ['rec', 'sup', 'ops', 'tag'].forEach(k => { const cb = document.getElementById('dmG_' + k); if (cb && cb.checked) g[k].forEach(sumar); });
+  gruposEnvio.forEach(gr => { const cb = document.getElementById('dmGG_' + gr.id); if (cb && cb.checked) grupoGente(gr).forEach(sumar); });
   return out;
+}
+// ── LOS GRUPOS GUARDADOS ──
+// Mercedes (18-nov): "elegir a quién mandarla y dejarle grupos de gente para mandar siempre a los mismos que
+// seleccionamos". Un grupo es un nombre, un área y la gente de la nómina que se eligió; se guarda en
+// config.grupos_envio y se usa en la disponibilidad del mes (se tilda como los demás grupos).
+// A quién le llega de un grupo: los que siguen en la nómina, con mail y sin OUT.
+function grupoGente(gr) { const ids = new Set((gr && gr.personas) || []); return people.filter(p => ids.has(p.id) && !p.out_flag && p.email); }
+function gruposDelArea(area) { return gruposEnvio.filter(g => !area || !g.area || g.area === area || g.area === 'ambas').sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es')); }
+let grEdit = null;
+function abrirGrupo(id) {
+  const g = gruposEnvio.find(x => x.id === id);
+  const areaMes = (document.getElementById('dmArea') || {}).value || '';
+  grEdit = { id: g ? g.id : '', personas: new Set(g ? g.personas || [] : []), busca: '', soloGrupo: !!g };
+  document.getElementById('grTitulo').textContent = g ? 'Grupo · ' + g.nombre : 'Grupo nuevo';
+  document.getElementById('grNombre').value = g ? g.nombre : '';
+  document.getElementById('grArea').value = g ? (g.area || 'ambas') : (areaMes || 'movistar_arena');
+  document.getElementById('grBorrarBtn').style.display = g ? '' : 'none';
+  showM('mGrupo'); renderGrupo();
+  if (!g) setTimeout(() => document.getElementById('grNombre').focus(), 50);
+}
+// La gente que se puede elegir: la nómina del área del grupo (sin los OUT; "las dos" son Arena y Externos).
+function grBase() {
+  const a = document.getElementById('grArea').value;
+  return people.filter(p => !p.out_flag && (a === 'ambas' ? p.area !== 'espana' : p.area === a));
+}
+function grSumar(tipo) {
+  const base = grBase(), tag = (document.getElementById('grTag') || {}).value || '';
+  const de = tipo === 'rec' ? base.filter(p => p.recomendado) : tipo === 'sup' ? base.filter(p => posicionesDe(p).includes('Supervisor'))
+    : tipo === 'ops' ? base.filter(p => posicionesDe(p).includes('Equipo operaciones')) : tag ? base.filter(p => (p.etiquetas || []).some(t => String(t).toLowerCase() === tag.toLowerCase())) : [];
+  if (!de.length) { toast(tipo === 'tag' && !tag ? 'Elegí una etiqueta' : 'No hay nadie así en la nómina de esa área'); return; }
+  const antes = grEdit.personas.size; de.forEach(p => grEdit.personas.add(p.id));
+  toast('Se sumaron ' + (grEdit.personas.size - antes) + ' al grupo'); renderGrupo();
+}
+function grTocar(id) { if (grEdit.personas.has(id)) grEdit.personas.delete(id); else grEdit.personas.add(id); renderGrupo(true); }
+function grBuscar(v) { grEdit.busca = v; renderGrupo(true); }
+function renderGrupo(soloLista) {
+  if (!grEdit) return;
+  const cont = document.getElementById('grBody');
+  const base = grBase(), enGrupo = people.filter(p => grEdit.personas.has(p.id));
+  const sinMail = enGrupo.filter(p => !p.email || p.out_flag).length;
+  const etiquetas = [...new Set(base.flatMap(p => p.etiquetas || []).map(String))].sort((a, b) => a.localeCompare(b, 'es'));
+  const q = nomPelar(grEdit.busca).trim(), qd = String(grEdit.busca || '').replace(/\D/g, '');
+  const coincide = p => !q || (nomPelar(p.nombre) + ' ' + nomPelar(p.email) + ' ' + nomPelar((p.etiquetas || []).join(' ')) + ' ' + nomPelar(p.localidad)).includes(q) || (qd.length >= 4 && String(p.cuit || '').replace(/\D/g, '').includes(qd));
+  // Los del grupo arriba; después, el resto de la nómina del área.
+  const fuera = grEdit.soloGrupo ? [] : base.filter(p => !grEdit.personas.has(p.id) && coincide(p)).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'));
+  const dentro = enGrupo.filter(coincide).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'));
+  const TOPE = 150, filas = dentro.concat(fuera.slice(0, Math.max(0, TOPE - dentro.length)));
+  const fila = p => { const on = grEdit.personas.has(p.id), meta = [areaCorto(p.area), posicionesDe(p).join(', '), p.out_flag ? 'OUT' : !p.email ? 'sin mail' : ''].filter(Boolean).join(' · ');
+    return '<label style="display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid #f3f4f6;font-size:13px;cursor:pointer' + (on ? ';background:#f9fafb' : '') + '"><input type="checkbox" class="cb"' + (on ? ' checked' : '') + ' onchange="grTocar(\'' + p.id + '\')"><span style="flex:1;min-width:0"><b style="font-weight:600">' + e(p.nombre || 'Sin nombre') + '</b><span style="color:#9ca3af"> · ' + e(meta) + '</span></span></label>'; };
+  const lista = (filas.length ? filas.map(fila).join('') : '<div class="empty" style="padding:18px 0">' + (grEdit.soloGrupo ? 'Todavía no hay nadie en el grupo. Destildá «Ver sólo los del grupo» para elegir de la nómina.' : 'Nadie coincide con la búsqueda.') + '</div>')
+    + (fuera.length > TOPE - dentro.length && !grEdit.soloGrupo ? '<div style="font-size:12px;color:#9ca3af;padding:8px 4px">Se ven ' + Math.max(0, TOPE - dentro.length) + ' de ' + fuera.length + ' de la nómina: buscá por nombre, CUIL o etiqueta para encontrar al resto.</div>' : '');
+  const cuenta = '<b>' + enGrupo.length + '</b> en el grupo' + (sinMail ? ' <span style="color:#9a3412">· ' + sinMail + ' sin mail o en OUT (no les llega)</span>' : '');
+  if (soloLista && document.getElementById('grLista')) { document.getElementById('grLista').innerHTML = lista; document.getElementById('grCuenta').innerHTML = cuenta; return; }
+  cont.innerHTML = '<div style="font-size:12px;color:#6b7280;margin:0 0 6px">Sumar de una vez (de la nómina del área):</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px">'
+    + '<button class="btn btn-sec btn-xs" onclick="grSumar(\'rec\')">Recomendados</button><button class="btn btn-sec btn-xs" onclick="grSumar(\'sup\')">Supervisores</button><button class="btn btn-sec btn-xs" onclick="grSumar(\'ops\')">Equipo de operaciones</button>'
+    + '<select class="filt" id="grTag" style="font-size:12px;padding:4px 8px"><option value="">Etiqueta…</option>' + etiquetas.map(t => '<option>' + e(t) + '</option>').join('') + '</select><button class="btn btn-sec btn-xs" onclick="grSumar(\'tag\')">Sumar la etiqueta</button></div>'
+    + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><input class="fi" id="grBuscar" style="flex:1;min-width:200px" placeholder="Buscar por nombre, CUIL, etiqueta o localidad" value="' + e(grEdit.busca) + '" oninput="grBuscar(this.value)">'
+    + '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" class="cb"' + (grEdit.soloGrupo ? ' checked' : '') + ' onchange="grEdit.soloGrupo=this.checked;renderGrupo(true)"> Ver sólo los del grupo</label></div>'
+    + '<div id="grCuenta" style="font-size:12.5px;color:#374151;margin-bottom:6px">' + cuenta + '</div>'
+    + '<div id="grLista" style="max-height:380px;overflow-y:auto;border-top:1px solid #f3f4f6">' + lista + '</div>';
+}
+// Guardar: se relee lo guardado (por si otro lo cambió mientras tanto) y se reemplaza sólo este grupo.
+async function guardarConfigGrupos(cambiar) {
+  const { data, error } = await sb.from('config').select('value').eq('key', 'grupos_envio').maybeSingle();
+  if (error) throw error;
+  let lista = Array.isArray(data && data.value) ? data.value.filter(g => g && g.id) : [];
+  lista = cambiar(lista);
+  const r = await sb.from('config').upsert({ key: 'grupos_envio', value: lista, updated_at: new Date().toISOString() });
+  if (r.error) throw r.error;
+  gruposEnvio = lista;
+}
+async function guardarGrupo() {
+  const nombre = document.getElementById('grNombre').value.trim(), area = document.getElementById('grArea').value;
+  if (!nombre) { toast('Ponele un nombre al grupo'); document.getElementById('grNombre').focus(); return; }
+  if (!grEdit.personas.size) { toast('Elegí al menos una persona'); return; }
+  if (gruposEnvio.some(g => g.id !== grEdit.id && String(g.nombre).trim().toLowerCase() === nombre.toLowerCase())) { toast('Ya hay un grupo con ese nombre'); return; }
+  const grupo = { id: grEdit.id || uid(), nombre, area, personas: [...grEdit.personas], actualizado: new Date().toISOString() };
+  const btn = document.getElementById('grGuardarBtn'); btn.disabled = true;
+  try {
+    await guardarConfigGrupos(l => l.filter(g => g.id !== grupo.id).concat([grupo]));
+    closeM('mGrupo'); toast('✓ Grupo «' + nombre + '» guardado (' + grupo.personas.length + ')');
+    if (document.getElementById('mDispMes').style.display !== 'none') { renderDispMes(); const cb = document.getElementById('dmGG_' + grupo.id); if (cb) { cb.checked = true; dmContar(); } }
+  } catch (err) { toast('No se pudo guardar el grupo: ' + ((err && err.message) || 'error')); }
+  btn.disabled = false;
+}
+async function borrarGrupo() {
+  const g = gruposEnvio.find(x => x.id === grEdit.id); if (!g) return;
+  if (!confirm('¿Borrar el grupo «' + g.nombre + '»? La gente sigue en la nómina; sólo se borra la lista.')) return;
+  try { await guardarConfigGrupos(l => l.filter(x => x.id !== g.id)); closeM('mGrupo'); toast('Grupo borrado'); if (document.getElementById('mDispMes').style.display !== 'none') renderDispMes(); }
+  catch (err) { toast('No se pudo borrar: ' + ((err && err.message) || 'error')); }
 }
 function dmMensaje() {
   const evs = dmEventos(), mes = dmNombreMes(document.getElementById('dmMes').value);
@@ -13431,7 +13540,12 @@ function renderDispMes() {
       ${grupo('rec', 'Recomendados', g.rec.length)}${grupo('sup', 'Supervisores', g.sup.length)}${grupo('ops', 'Equipo de operaciones', g.ops.length)}
       <span style="display:flex;align-items:center;gap:8px;font-size:13px">${grupo('tag', 'Etiqueta', g.tag.length)}<select class="filt" id="dmTag" onchange="renderDispMes()" style="font-size:12px;padding:4px 8px"><option value="">elegir…</option>${etiquetas.map(t => `<option ${t === tagSel ? 'selected' : ''}>${e(t)}</option>`).join('')}</select></span>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" id="dmMandarBtn" onclick="dmMandar()">Mandar</button><span id="dmCuantos" style="font-size:12px;color:#6b7280"></span></div>`;
+    <div style="font-size:12px;color:#6b7280;margin:14px 0 6px">Grupos guardados</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center">
+      ${gruposDelArea(document.getElementById('dmArea').value).map(gr => `<span style="display:inline-flex;align-items:center;gap:6px"><label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="cb" id="dmGG_${gr.id}" onchange="dmContar()" ${(document.getElementById('dmGG_' + gr.id) || {}).checked ? 'checked' : ''}> ${e(gr.nombre)} <span style="color:#9ca3af">(${grupoGente(gr).length})</span></label><button class="btn btn-sec btn-xs" onclick="abrirGrupo('${gr.id}')" title="Ver o cambiar quiénes están">Editar</button></span>`).join('') || '<span style="font-size:12.5px;color:#9ca3af">Todavía no hay grupos: armá uno con la gente a la que siempre se la mandan.</span>'}
+      <button class="btn btn-sec btn-xs" onclick="abrirGrupo('')">+ Nuevo grupo</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" id="dmMandarBtn" onclick="dmMandar()">Mandar</button><span id="dmCuantos" style="font-size:12px;color:#6b7280"></span></div>`;
   dmContar();
 }
 function dmContar() {
@@ -13458,12 +13572,12 @@ async function dmMandar(restantes) {
   for (let i = 0; i < dest.length; i++) {
     const p = dest[i];
     cuantos.textContent = `Mandando ${i + 1} de ${dest.length}…`;
-    const from = p.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
+    const areaMail = document.getElementById('dmArea').value || p.area, from = areaMail === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
     const texto = `Hola ${String(p.nombre || '').trim().split(/\s+/)[0] || ''}:\n\nYa está abierta la disponibilidad de ${dmNombreMes(mes)}. Marcá qué días podés trabajar en este link (se completa con tu CUIL):\n${dmLink()}\n\n`
       + dmEventos().map(x => `• ${x.c.nombre} — ${x.dias.map(d => fechaDMA(d.fecha).slice(0, 5)).join(', ')}`).join('\n') + '\n\nSi te seleccionan, te llega la confirmación.\n\nShow Business Solutions';
     try {
       const res = await fetch('/api/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-        body: JSON.stringify({ from, to: [p.email], subject: asunto, text: texto, html: renderEmailHtml(texto, from, p.area === 'movistar_arena' ? 'movistar' : 'externos') }) });
+        body: JSON.stringify({ from, to: [p.email], subject: asunto, text: texto, html: renderEmailHtml(texto, from, areaMail === 'movistar_arena' ? 'movistar' : 'externos') }) });
       if (res.ok) ok++;
       else {
         // El tope de Resend (100 por día en el plan gratis): se frena y se deja retomar con los que faltan.
