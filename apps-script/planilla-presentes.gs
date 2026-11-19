@@ -51,18 +51,21 @@
  *  - "probar_socios": el del show de ayer, sólo a esta casilla (o a REPORTE_PRUEBA), para ver cómo queda.
  *
  *  LOS CONTRATOS FIRMADOS, AL DRIVE (18-nov): cada 15 minutos guarda los PDF firmados en la carpeta compartida
- *  de RR. HH., uno por persona, en <carpeta del área>/<mes>/<fecha y show>/ ("11-NOVIEMBRE 26" /
- *  "13-11 MARÍA BECERRA" / "Nombre - CUIL.pdf"). La primera vez guarda todos los firmados hasta hoy.
- *  - Propiedades (el código de cada carpeta, lo que va después de /folders/ en su link):
- *    CARPETA_FIRMADOS_ARENA (Arena y "ambas áreas"), CARPETA_FIRMADOS_EXTERNOS y, si algún día hace falta,
- *    CARPETA_FIRMADOS_ESPANA. Un área sin su propiedad no se guarda (y queda para cuando se ponga).
+ *  de RR. HH., uno por persona, como ya se guardaban a mano: Arena "01- MARÍA BECERRA 13 /11", Externos
+ *  "01- Cancillería 08,09 /11 - Contratos", y adentro "Nombre - Contrato 13-11.pdf". Si la carpeta del show ya
+ *  está (con cualquier número adelante), usa ésa; si no, la crea con el número que sigue. No repite a quien ya
+ *  está guardado (aunque el nombre esté en otro orden o sin tildes). La primera vez guarda todos los firmados.
+ *  - Propiedades: CARPETA_FIRMADOS_ARENA (Arena y "ambas áreas"), CARPETA_FIRMADOS_EXTERNOS y, si algún día hace
+ *    falta, CARPETA_FIRMADOS_ESPANA = el link o el código de la carpeta, con una subcarpeta opcional detrás
+ *    ("código/03 - CONTRATOS DIGITALES": la crea si no está). Para otro año, otra carpeta: "2026:código, 2027:código".
+ *    Un área sin su propiedad no se guarda (y queda para cuando se ponga).
  *  - La cuenta del script tiene que poder agregar archivos en esas carpetas (colaborador de la unidad compartida).
  *  - "probar_firmados": cuántos faltan guardar y en qué carpetas, sin guardar nada.
  *  - "guardar_firmados": los guarda ya (sin esperar los 15 minutos).
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '18-nov, los contratos firmados se guardan en el Drive de RR. HH.';
+var VERSION = '18-nov noche, los contratos firmados al Drive de RR. HH. (carpetas como las de RR. HH.)';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -904,9 +907,8 @@ function htmlReporte_(s, logo) {
 
 // ── Los contratos firmados, al Drive compartido de RR. HH. (18-nov) ──
 // Pedido de Mercedes: "que se descarguen y guarden en el drive en la carpeta del Arena", "tanto del Arena como
-// Externos". La plataforma (api/contratos-firmados.js) da los firmados de a pocos, en orden de firma, con el PDF;
-// acá se guardan en <carpeta del área>/<mes>/<fecha y show>/ y se recuerda hasta cuál se guardó (propiedad
-// firmados_desde_<área>). Si el archivo ya está en esa carpeta, no se repite.
+// Externos". La plataforma (api/contratos-firmados.js) da los firmados de a pocos, en orden de firma, con el PDF,
+// la carpeta del show y el nombre del archivo; acá se guardan y se recuerda hasta cuál (firmados_desde_<área>).
 var URL_FIRMADOS = 'https://convocatorias.show-bs.com/api/contratos-firmados';
 var FIRMADOS_CADA_MIN = 15;
 var FIRMADOS_AREAS = { arena: 'CARPETA_FIRMADOS_ARENA', externos: 'CARPETA_FIRMADOS_EXTERNOS', espana: 'CARPETA_FIRMADOS_ESPANA' };
@@ -914,39 +916,80 @@ function pedirFirmados_(clave, cuerpo) {
   var resp = UrlFetchApp.fetch(URL_FIRMADOS, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(cuerpo) });
   try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
 }
-function carpetaCodigo_(v) { var m = String(v || '').match(/[-\w]{25,}/); return m ? m[0] : ''; }
+// La propiedad: "código", "link", "código/Subcarpeta" o, por año, "2026:código, 2027:código/Subcarpeta".
+function destinos_(valor) {
+  return String(valor || '').split(/[,;\n]+/).map(function (t) { return t.trim(); }).filter(String).map(function (t) {
+    var m = t.match(/^(\d{4})\s*:\s*(.+)$/), anio = m ? m[1] : '', resto = m ? m[2] : t;
+    var cod = (resto.match(/[-\w]{25,}/) || [''])[0], tras = cod ? resto.slice(resto.indexOf(cod) + cod.length) : '';
+    var sub = tras.replace(/^[?#][^/]*/, '').split('/').map(function (x) { return x.trim(); }).filter(String);
+    return { anio: anio, codigo: cod, sub: sub };
+  }).filter(function (d) { return d.codigo; });
+}
+function destinoDe_(lista, anio) { var a = lista.filter(function (d) { return d.anio === anio; })[0]; return a || lista.filter(function (d) { return !d.anio; })[0] || null; }
 function subcarpeta_(padre, nombre) { var it = padre.getFoldersByName(nombre); return it.hasNext() ? it.next() : padre.createFolder(nombre); }
+// Para comparar nombres de carpetas y archivos: sin mayúsculas, tildes ni espacios de más.
+function normal_(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ').trim(); }
+// La carpeta del show dentro de la del área: la que ya está con ese nombre (con o sin "01- " adelante) o una
+// nueva con el número que sigue. Se recuerdan las de cada carpeta durante la vuelta.
+var CARPETAS_SHOW_ = {};
+function carpetaShow_(raiz, nombre) {
+  var k = raiz.getId(), c = CARPETAS_SHOW_[k];
+  if (!c) {
+    c = CARPETAS_SHOW_[k] = { por: {}, max: 0 };
+    var it = raiz.getFolders();
+    while (it.hasNext()) { var f = it.next(), n = f.getName(), m = n.match(/^\s*(\d+)\s*-\s*(.*)$/); if (m) c.max = Math.max(c.max, Number(m[1])); c.por[normal_(m ? m[2] : n)] = f; }
+  }
+  var ya = c.por[normal_(nombre)]; if (ya) return ya;
+  c.max++; var nueva = raiz.createFolder((c.max < 10 ? '0' : '') + c.max + '- ' + nombre); c.por[normal_(nombre)] = nueva;
+  return nueva;
+}
+// Un archivo ya guardado: el mismo nombre (las palabras, en cualquier orden) y lo mismo después del " - ".
+function claveArchivo_(n) { var p = String(n || '').replace(/\.pdf$/i, '').split(' - '), quien = normal_(p.shift()).split(' ').filter(String).sort().join(' '); return quien + '|' + normal_(p.join(' - ')); }
+var ARCHIVOS_ = {};
+function yaEsta_(carpeta, nombre) {
+  var k = carpeta.getId(), c = ARCHIVOS_[k];
+  if (!c) { c = ARCHIVOS_[k] = {}; var it = carpeta.getFiles(); while (it.hasNext()) c[claveArchivo_(it.next().getName())] = true; }
+  return !!c[claveArchivo_(nombre)];
+}
 // forzar: sin esperar los 15 minutos (guardar_firmados). Corta a los 2 minutos y medio; sigue en la vuelta siguiente.
 function firmados_(clave, forzar) {
   var props = PropertiesService.getScriptProperties(), ahora = Date.now();
-  var areas = Object.keys(FIRMADOS_AREAS).filter(function (a) { return carpetaCodigo_(props.getProperty(FIRMADOS_AREAS[a])); });
+  var areas = Object.keys(FIRMADOS_AREAS).filter(function (a) { return destinos_(props.getProperty(FIRMADOS_AREAS[a])).length; });
   if (!areas.length) return;
   // Mientras quedan por guardar (la primera vez, todos los de antes), no espera los 15 minutos.
   if (!forzar && props.getProperty('firmados_quedan') !== 'si' && ahora - Number(props.getProperty('firmados_ultima') || 0) < FIRMADOS_CADA_MIN * 60000) return;
   props.setProperty('firmados_ultima', String(ahora));
   var quedan = false, resumen = [];
   areas.forEach(function (area) {
-    var raiz;
-    try { raiz = DriveApp.getFolderById(carpetaCodigo_(props.getProperty(FIRMADOS_AREAS[area]))); }
-    catch (e) { resumen.push(area + ': no puedo abrir la carpeta (¿la cuenta del script es colaboradora?) · ' + e); return; }
-    var desde = props.getProperty('firmados_desde_' + area) || '2026-01-01T00:00:00Z', guardados = 0, ya = 0;
+    var lista = destinos_(props.getProperty(FIRMADOS_AREAS[area])), raices = {};
+    var raizDe = function (anio) {
+      var d = destinoDe_(lista, anio); if (!d) return null;
+      var k = d.anio + '|' + d.codigo + '|' + d.sub.join('/');
+      if (!raices[k]) { var f = DriveApp.getFolderById(d.codigo); d.sub.forEach(function (n) { f = subcarpeta_(f, n); }); raices[k] = f; }
+      return raices[k];
+    };
+    var desde = props.getProperty('firmados_desde_' + area) || '2026-01-01T00:00:00Z', guardados = 0, ya = 0, sinCarpeta = 0;
     while (Date.now() - ahora < 150000) {
       var r = pedirFirmados_(clave, { area: area, desde: desde });
       if (!r || !r.ok) { resumen.push(area + ': no se pudieron pedir · ' + JSON.stringify(r)); return; }
       for (var i = 0; i < r.contratos.length; i++) {
         var c = r.contratos[i];
         try {
-          var dest = subcarpeta_(subcarpeta_(raiz, c.carpeta_mes), c.carpeta_show);
-          if (dest.getFilesByName(c.archivo).hasNext()) ya++;
-          else { dest.createFile(Utilities.newBlob(Utilities.base64Decode(c.pdf), 'application/pdf', c.archivo)); guardados++; }
+          var raiz = raizDe(c.anio);
+          if (!raiz) sinCarpeta++;
+          else {
+            var dest = carpetaShow_(raiz, c.carpeta_show);
+            if (yaEsta_(dest, c.archivo)) ya++;
+            else { dest.createFile(Utilities.newBlob(Utilities.base64Decode(c.pdf), 'application/pdf', c.archivo)); ARCHIVOS_[dest.getId()][claveArchivo_(c.archivo)] = true; guardados++; }
+          }
           desde = c.firmado_at; props.setProperty('firmados_desde_' + area, desde);
-        } catch (e) { resumen.push(area + ': no se pudo guardar ' + c.archivo + ' · ' + e); quedan = true; return; }
+        } catch (e) { resumen.push(area + ': no se pudo guardar ' + c.archivo + ' · ' + e + ' (¿la cuenta del script es colaboradora de la unidad compartida?)'); quedan = true; return; }
       }
       if (r.cursor && r.cursor > desde) { desde = r.cursor; props.setProperty('firmados_desde_' + area, desde); }
       if (!r.mas) break;
     }
     if (Date.now() - ahora >= 150000) quedan = true;
-    if (guardados || ya) resumen.push(area + ': ' + guardados + ' guardado(s)' + (ya ? ', ' + ya + ' ya estaba(n)' : ''));
+    if (guardados || ya || sinCarpeta) resumen.push(area + ': ' + guardados + ' guardado(s)' + (ya ? ', ' + ya + ' ya estaba(n)' : '') + (sinCarpeta ? ', ' + sinCarpeta + ' de un año sin carpeta' : ''));
   });
   props.setProperty('firmados_quedan', quedan ? 'si' : 'no');
   if (resumen.length) Logger.log('Contratos firmados al Drive → ' + resumen.join(' · ') + (quedan ? ' (siguen en la vuelta siguiente)' : ''));
@@ -957,13 +1000,15 @@ function probar_firmados() {
   if (!clave) throw new Error('Falta la propiedad CLAVE.');
   Logger.log('Versión del script: ' + VERSION);
   Object.keys(FIRMADOS_AREAS).forEach(function (area) {
-    var cod = carpetaCodigo_(props.getProperty(FIRMADOS_AREAS[area]));
-    if (!cod) { Logger.log(area + ': sin la propiedad ' + FIRMADOS_AREAS[area] + ' (no se guarda).'); return; }
-    try { Logger.log(area + ': carpeta «' + DriveApp.getFolderById(cod).getName() + '» (la abro bien).'); }
-    catch (e) { Logger.log(area + ': NO puedo abrir la carpeta ' + cod + ' — ¿la cuenta del script es colaboradora de la unidad compartida? · ' + e); }
+    var lista = destinos_(props.getProperty(FIRMADOS_AREAS[area]));
+    if (!lista.length) { Logger.log(area + ': sin la propiedad ' + FIRMADOS_AREAS[area] + ' (no se guarda).'); return; }
+    lista.forEach(function (d) {
+      try { Logger.log(area + (d.anio ? ' ' + d.anio : '') + ': carpeta «' + DriveApp.getFolderById(d.codigo).getName() + '»' + (d.sub.length ? ' › ' + d.sub.join(' › ') : '') + ' (la abro bien).'); }
+      catch (e) { Logger.log(area + ': NO puedo abrir la carpeta ' + d.codigo + ' — ¿la cuenta del script es colaboradora de la unidad compartida? · ' + e); }
+    });
     var r = pedirFirmados_(clave, { area: area, desde: props.getProperty('firmados_desde_' + area) || '2026-01-01T00:00:00Z', contar: true });
     if (!r || !r.ok) { Logger.log(area + ': no se pudo preguntar · ' + JSON.stringify(r)); return; }
-    Logger.log(area + ': faltan guardar ' + r.pendientes + ' contrato(s) firmado(s).');
+    Logger.log(area + ': faltan revisar ' + r.pendientes + ' contrato(s) firmado(s) (los que ya están en la carpeta no se repiten).');
     Object.keys(r.carpetas || {}).forEach(function (k) { Logger.log('   · ' + k + ': ' + r.carpetas[k]); });
   });
 }

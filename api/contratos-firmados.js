@@ -6,7 +6,7 @@
 //
 // Lo llama el script de la planilla (apps-script/planilla-presentes.gs) con la clave de los presentes
 // (PRESENTES_CLAVE). Devuelve los firmados después de "desde" (la hora de la firma), en orden y de a pocos,
-// con el PDF; el script los guarda en <carpeta del área>/<mes>/<fecha y show>/ y sigue desde el último.
+// con el PDF; el script los guarda en <carpeta del área>/<show y fecha>/ y sigue desde el último.
 // Sólo lee: no cambia nada en la base. Uno firmado hace menos de 10 minutos espera a la vuelta siguiente
 // (el PDF se guarda unos segundos después de la firma).
 //
@@ -21,7 +21,6 @@ export const config = { maxDuration: 60 };
 
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const TZ = 'America/Argentina/Buenos_Aires';
-const MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 const POR_PEDIDO = 8, TOPE_BYTES = 3000000;   // Vercel no deja contestar más de 4,5 MB
 
 const diaAR = d => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
@@ -38,16 +37,21 @@ export function fechaDe(c) {
   const fs = String((c.convocatorias && c.convocatorias.fecha) || '').split(',').map(x => x.trim()).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
   return fs[0] || (c.fecha_firma ? diaAR(new Date(c.fecha_firma)) : diaAR(new Date()));
 }
-// Dónde va y cómo se llama, como las carpetas de Mercedes ("11-NOVIEMBRE 27"): <mes>/<dd-mm SHOW>/<Nombre - CUIL>.pdf.
-export function ubicacion(c) {
+// Dónde va y cómo se llama, como lo que RR. HH. ya guardaba a mano (18-nov):
+//   Arena: "MARÍA BECERRA 13 /11" (una carpeta por fecha) · Externos y España: "Cancillería 08,09 /11 - Contratos"
+//   (una por evento, con sus días del mes) · el archivo: "Nombre - Contrato 13-11.pdf" ("Documento" si es sólo eso).
+// El script le pone adelante el número que sigue ("01- …") si la carpeta todavía no está.
+export function ubicacion(c, area) {
   const f = fechaDe(c), [a, m, d] = f.split('-');
-  const show = limpio(String((c.convocatorias && c.convocatorias.nombre) || 'Sin show').split(' — ')[0]).toUpperCase() || 'SIN SHOW';
-  const nombre = limpio(c.nombre) || 'Sin nombre', cuil = limpio(c.cuil);
-  return {
-    carpeta_mes: m + '-' + MESES[Number(m) - 1] + ' ' + a.slice(2),
-    carpeta_show: d + '-' + m + ' ' + show,
-    archivo: (c.solo_documentos ? 'Documento - ' : '') + nombre + (cuil ? ' - ' + cuil : '') + '.pdf'
-  };
+  const nombreShow = limpio(String((c.convocatorias && c.convocatorias.nombre) || 'Sin show').split(' — ')[0]) || 'Sin show';
+  const nombre = limpio(c.nombre) || 'Sin nombre';
+  let carpeta;
+  if ((area || areaDe(c)) === 'arena') carpeta = nombreShow.toUpperCase() + ' ' + d + ' /' + m;
+  else {
+    const dias = String((c.convocatorias && c.convocatorias.fecha) || '').split(',').map(x => x.trim()).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x) && x.slice(0, 7) === f.slice(0, 7)).sort().map(x => x.slice(8));
+    carpeta = nombreShow + ' ' + (dias.length ? [...new Set(dias)].join(',') : d) + ' /' + m + ' - Contratos';
+  }
+  return { anio: a, carpeta_show: carpeta, archivo: nombre + ' - ' + (c.solo_documentos ? 'Documento' : 'Contrato') + ' ' + d + '-' + m + '.pdf' };
 }
 export function sinPrefijo(pdf) { return String(pdf || '').replace(/^data:[^,]*,/, '').replace(/\s+/g, ''); }
 
@@ -80,7 +84,7 @@ export default async function handler(req, res) {
     const r = await sb(servicio, `contratos?select=${LISTA}&${base}&order=fecha_firma.asc&limit=5000`);
     if (!r.ok) return res.status(500).json({ error: 'No se pudieron leer los contratos', detalle: (r.data && r.data.message) || '' });
     const carpetas = {}, del = (r.data || []).filter(c => areaDe(c) === area);
-    del.forEach(c => { const u = ubicacion(c), k = u.carpeta_mes + ' / ' + u.carpeta_show; carpetas[k] = (carpetas[k] || 0) + 1; });
+    del.forEach(c => { const u = ubicacion(c, area), k = u.anio + ' · ' + u.carpeta_show; carpetas[k] = (carpetas[k] || 0) + 1; });
     return res.status(200).json({ ok: true, area, pendientes: del.length, carpetas });
   }
 
@@ -101,7 +105,7 @@ export default async function handler(req, res) {
     const pdf = pdfDe[c.id] || '';
     if (contratos.length && bytes + pdf.length > TOPE_BYTES) break;
     bytes += pdf.length;
-    contratos.push(Object.assign({ id: c.id, firmado_at: c.fecha_firma, pdf }, ubicacion(c)));
+    contratos.push(Object.assign({ id: c.id, firmado_at: c.fecha_firma, pdf }, ubicacion(c, area)));
   }
   // Se sigue desde el último que va (los de otra área anteriores ya quedaron mirados).
   cursor = contratos[contratos.length - 1].firmado_at;
