@@ -38,6 +38,14 @@
  *  4. "revisar": qué pasaría si todos tuvieran "P", sin mandar nada.
  *  5. "instalar": deja programado que corra solo cada 5 minutos. Listo.
  *
+ *  EXTERNOS (19-nov): también mira las planillas "PRESENTISMO" de cada evento (las de RR. HH., en la carpeta
+ *  del evento), hoja PRESENTES: una P (o E, extra que asistió) en una fecha manda el contrato de ese día desde
+ *  convocatorias.externos; una A lo anula. El evento tiene que estar en el panel (convocatoria de Externos con
+ *  esa fecha y el mismo nombre). El monto es el TOTAL POR PERSONA del puesto en la "INFO RRHH" de la misma
+ *  carpeta (hoja RECURSOS Y VALORES); los mails, también de ahí (hoja CONVOCATORIA). La planilla no se toca.
+ *  Sólo fechas desde el 20-nov-2026 (o la propiedad EXTERNOS_DESDE = AAAA-MM-DD). "probar" y "revisar"
+ *  muestran también lo de Externos. Necesita correr contratos-presentes-externos.sql en Supabase.
+ *
  *  EL REPORTE DE INCIDENCIAS (al terminar cada show del Arena, desde esta casilla):
  *  - Propiedad REPORTE_PARA = los mails que lo reciben, separados por coma; REPORTE_CC, los de
  *    la copia, y REPORTE_CCO, los de la copia oculta (opcionales).
@@ -67,7 +75,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '19-nov, el pie de los mails con la página de SBS e Instagram con link';
+var VERSION = '19-nov tarde, contratos por presente también en Externos';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -98,6 +106,7 @@ function probar() {
       + cuenta(function (x) { return !!x.mail; }) + ' con mail en la disponibilidad');
     lineaDisponibilidad_(p);
   });
+  probarExternos_();
 }
 // Qué respuestas de disponibilidad usó y a cuántos de la planilla les encontró el mail.
 function lineaDisponibilidad_(p) {
@@ -130,13 +139,14 @@ function revisar() {
     lineaDisponibilidad_(p);
     (r.problemas || []).forEach(function (x) { Logger.log('   ' + x.sector + ' · ' + x.apellido + ', ' + x.nombre + ' → ' + x.resultado + (x.detalle ? ' (' + x.detalle + ')' : '')); });
   });
+  revisarExternos_(clave);
 }
 
 // Lo que corre cada 5 minutos.
 function sincronizar() {
   var clave = PropertiesService.getScriptProperties().getProperty('CLAVE');
   if (!clave) throw new Error('Falta la propiedad CLAVE (Configuración del proyecto → Propiedades del script).');
-  var guardado = PropertiesService.getScriptProperties();
+  var guardado = PropertiesService.getScriptProperties(), inicio = Date.now();
   planillas_().forEach(function (f) {
     try {
       var p = leer_(f);
@@ -157,6 +167,8 @@ function sincronizar() {
       Logger.log('Error con ' + f.getName() + ': ' + e);
     }
   });
+  // Externos (19-nov): las planillas "PRESENTISMO" de cada evento.
+  try { sincronizarExternos_(clave, inicio); } catch (e) { Logger.log('Error con Externos: ' + e); }
   // El reporte de incidencias del show de anoche, a la 1:30 (si no salió todavía).
   try { reportes_(clave); } catch (e) { Logger.log('Error con el reporte: ' + e); }
   // Los recordatorios de los contratos sin firmar: una vez por día, desde las 12.
@@ -400,7 +412,7 @@ function cuilDeAltas_(d, fila) {
 // es el DNI solo, otro prefijo o dígito verificador, uno o dos números distintos, dos números al revés): así no se le pone el
 // de un homónimo. La plataforma usa ése para el contrato (en las filas que todavía no tienen contrato) y marca la celda.
 function cerca_(cuil, parcial) {
-  var p = String(parcial || '').replace(/D/g, '');
+  var p = String(parcial || '').replace(/\D/g, '');
   if (!p) return false;
   if (encaja_(cuil, [p])) return true;
   if (p.length !== 11) return false;
@@ -539,6 +551,222 @@ function leer_(f) {
   // Las celdas no viajan a la plataforma ni cuentan para la huella (no enumerable: JSON.stringify las saltea).
   Object.defineProperty(p, 'celdas', { value: celdas, enumerable: false });
   return p;
+}
+
+// ── EXTERNOS (19-nov): la hoja PRESENTES de las planillas "PRESENTISMO" de cada evento ──
+// Las arma RR. HH., una por evento, en la carpeta del evento del Drive de RR. HH. ("02 - PRESENTISMO - CAD Gelatina
+// @CEC - 21-11-2026"): una fila por persona, fecha y turno, con SECTOR / PUESTO · APELLIDO · NOMBRE · CUIL · … · FECHA
+// · … · PRESENTISMO. P = presente, A = ausente, E = extra que asistió (vale como P). También entiende la hoja con una
+// columna por fecha ("21/11/2026 P / A"). Las hojas "Respaldo …" y "CONTROL …" no se leen. La planilla no se toca
+// (Thomas, 19-nov: la columna CONTRATO es de RR. HH.).
+// En la misma carpeta, la "INFO RRHH" del evento: de RECURSOS Y VALORES salen los montos (PUESTO · TOTAL POR PERSONA)
+// y de CONVOCATORIA, los mails (por CUIL o DNI, o por apellido y nombre), para quien la plataforma no los tenga.
+// A la plataforma va una llamada por fecha, con area 'externos'. Sólo las fechas desde EXTERNOS_DESDE (propiedad
+// con una fecha AAAA-MM-DD; sin ella, el 20-nov-2026): lo de antes ya se hizo a mano y no se repite.
+var EXTERNOS_DESDE = '2026-11-20';
+var EXTERNOS_TOPE_MS = 150000;   // en cada vuelta, Externos no sigue después de 2 minutos y medio (lo que falta va en la próxima)
+function desdeExternos_() {
+  var p = String(PropertiesService.getScriptProperties().getProperty('EXTERNOS_DESDE') || '').trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(p) ? p : EXTERNOS_DESDE;
+}
+function planillasExternos_() {
+  var desde = Utilities.formatDate(new Date(Date.now() - HORAS_ATRAS * 3600 * 1000), 'UTC', "yyyy-MM-dd'T'HH:mm:ss");
+  var it = DriveApp.searchFiles('title contains "PRESENTISMO" and mimeType = "application/vnd.google-apps.spreadsheet" and modifiedDate > "' + desde + '" and trashed = false');
+  var lista = [];
+  while (it.hasNext()) {
+    var f = it.next(), n = f.getName();
+    if (/^\s*00\s*-/.test(n) || /\bBASE\b|[ÍI]NDICE|DUPLICAR/i.test(n)) continue;   // las bases para duplicar y el índice
+    lista.push(f);
+  }
+  return lista;
+}
+// Una celda de encabezado, para comparar: sin tildes, en mayúsculas, con un espacio entre palabras.
+function etiqueta_(v) { return String(v == null ? '' : v).normalize('NFD').replace(TILDES_, '').toUpperCase().replace(/\s+/g, ' ').trim(); }
+function siguiente_(fila, c) { for (var i = c + 1; i < fila.length; i++) { var t = String(fila[i] == null ? '' : fila[i]).trim(); if (t) return t; } return ''; }
+// "21/11/2026", "21/11" o "2026-11-21" → "2026-11-21". Sin año, el de cuando se creó la planilla (o el siguiente).
+function isoExt_(txt, creada) {
+  var s = String(txt || ''), m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/), d, mes, anio;
+  if (m) { anio = Number(m[1]); mes = Number(m[2]); d = Number(m[3]); }
+  else {
+    m = s.match(/(\d{1,2})\s*\/\s*(\d{1,2})(?:\s*\/\s*(\d{2,4}))?/);
+    if (!m) return '';
+    d = Number(m[1]); mes = Number(m[2]);
+    anio = m[3] ? Number(m[3].length === 2 ? '20' + m[3] : m[3]) : creada.getFullYear();
+    if (!m[3] && mes < creada.getMonth() + 1 - 6) anio++;
+  }
+  if (!(d >= 1 && d <= 31 && mes >= 1 && mes <= 12)) return '';
+  return anio + '-' + ('0' + mes).slice(-2) + '-' + ('0' + d).slice(-2);
+}
+// P / Presente / E / Extra (extra que asistió) → P; A / Ausente → A; lo demás, sin marca.
+function marcaExt_(v) {
+  var w = etiqueta_(v).split(/[^A-Z]+/)[0] || '';
+  return w === 'P' || w === 'PRESENTE' || w === 'E' || w === 'EXTRA' ? 'P' : w === 'A' || w === 'AUSENTE' ? 'A' : '';
+}
+// Las filas de una hoja: busca el encabezado (APELLIDO y CUIL en la misma fila; a veces la fila de abajo completa los
+// que van en celdas combinadas) y lee hasta el próximo encabezado. Una fila por fecha.
+function filasExterno_(v, creada) {
+  var out = [], col = null;
+  for (var r = 0; r < v.length; r++) {
+    var lab = v[r].map(etiqueta_), iApe = lab.indexOf('APELLIDO'), iCuil = lab.indexOf('CUIL');
+    if (iApe >= 0 && iCuil >= 0) {
+      var sub = r + 1 < v.length ? v[r + 1].map(etiqueta_) : [];
+      var L = lab.map(function (x, i) { return x || sub[i] || ''; });
+      var c = { ape: iApe, cuil: iCuil, nom: L.indexOf('NOMBRE'), sector: -1, fecha: L.indexOf('FECHA'), pres: -1, obs: -1, turno: L.indexOf('TURNO'), fechas: [] };
+      L.forEach(function (x, i) {
+        if (c.sector < 0 && /^(SECTOR|PUESTO|CARGO)/.test(x)) c.sector = i;
+        if (c.pres < 0 && /^(PRESENTISMO|ASISTENCIA|PRESENTES?)$/.test(x)) c.pres = i;
+        if (c.obs < 0 && /^OBSERVACI/.test(x)) c.obs = i;
+        var m = x.match(/\d{1,2}\s*\/\s*\d{1,2}(?:\s*\/\s*\d{2,4})?/);
+        if (m && /\bP\b/.test(x.replace(m[0], ' '))) { var fe = isoExt_(m[0], creada); if (fe) c.fechas.push({ i: i, fecha: fe }); }
+      });
+      col = (c.fecha >= 0 && c.pres >= 0) || c.fechas.length ? c : null;
+      continue;
+    }
+    if (!col) continue;
+    var fila = v[r], cuil = String(fila[col.cuil] || '').replace(/\D/g, '');
+    if (cuil.length < 7) continue;
+    var obs = [col.turno >= 0 ? fila[col.turno] : '', col.obs >= 0 ? fila[col.obs] : ''].map(function (t) { return String(t || '').trim(); }).filter(String).join(' · ');
+    var base = { sector: col.sector >= 0 ? String(fila[col.sector] || '').trim() : '', cuil: cuil, obs: obs.slice(0, 80),
+      apellido: String(fila[col.ape] || '').trim(), nombre: col.nom >= 0 ? String(fila[col.nom] || '').trim() : '' };
+    var una = function (fecha, celda) { var x = {}; Object.keys(base).forEach(function (k) { x[k] = base[k]; }); x.fecha = fecha; x.marca = marcaExt_(celda); out.push(x); };
+    if (col.fecha >= 0 && col.pres >= 0) { var f1 = isoExt_(fila[col.fecha], creada); if (f1) una(f1, fila[col.pres]); }
+    else col.fechas.forEach(function (d) { una(d.fecha, fila[d.i]); });
+  }
+  return out;
+}
+// "02 - PRESENTISMO - CAD Gelatina @CEC - 21-11-2026" → { evento: "CAD Gelatina", lugar: "CEC", nombre: "CAD Gelatina @CEC" }.
+function nombreExterno_(n) {
+  var s = String(n || '').replace(/^\s*\d+\s*-\s*/, '').replace(/^\s*PRESENTISMO(\s+RRHH)?\s*-\s*/i, '').replace(/^\s*PRESENTES\s+/i, '');
+  s = s.split(/\s+-\s+/)[0].trim();
+  var a = s.split('@');
+  return { nombre: s, evento: a[0].trim(), lugar: a.length > 1 ? a.slice(1).join('@').trim() : '' };
+}
+// Una planilla de Externos → { evento, lugar, nombre, hojas, filas: [{ fecha, sector, cuil, obs, apellido, nombre, marca }] }.
+function leerExterno_(f) {
+  var creada = f.getDateCreated(), desdeNombre = nombreExterno_(f.getName());
+  var evento = '', lugar = '', filas = [], hojas = [];
+  SpreadsheetApp.openById(f.getId()).getSheets().forEach(function (h) {
+    if (/^(RESPALDO|CONTROL|INSTRUCCION|LEEME|COMO USAR)/.test(etiqueta_(h.getName()))) return;
+    var v = h.getDataRange().getDisplayValues();
+    for (var r = 0; r < Math.min(v.length, 12); r++) for (var c = 0; c < v[r].length; c++) {
+      var e = etiqueta_(v[r][c]);
+      if (!evento && (e === 'EVENTO' || e === 'EVENTO / SERVICIO')) evento = siguiente_(v[r], c);
+      if (!lugar && (e === 'LUGAR' || e === 'LUGAR / DIRECCION')) lugar = siguiente_(v[r], c);
+    }
+    var l = filasExterno_(v, creada);
+    if (l.length) { hojas.push(h.getName()); filas = filas.concat(l); }
+  });
+  return { evento: (evento || desdeNombre.evento).slice(0, 80), lugar: (lugar || desdeNombre.lugar).slice(0, 120), nombre: desdeNombre.nombre, hojas: hojas, filas: filas };
+}
+// La INFO RRHH del evento (en la misma carpeta que la planilla): los montos y los mails.
+function infoRrhh_(f) {
+  var res = { archivo: '', tarifas: [], d: { porNucleo: {}, gente: [], items: [] } }, padres = f.getParents();
+  while (padres.hasNext()) {
+    var it = padres.next().getFilesByType(MimeType.GOOGLE_SHEETS), mejor = null;
+    while (it.hasNext()) { var x = it.next(); if (/INFO\s*RRHH|RRHH\s*INFO/i.test(x.getName()) && (!mejor || x.getLastUpdated() > mejor.getLastUpdated())) mejor = x; }
+    if (mejor) { leerInfo_(mejor, res); res.archivo = mejor.getName(); break; }
+  }
+  return res;
+}
+function leerInfo_(x, res) {
+  var ya = {};
+  SpreadsheetApp.openById(x.getId()).getSheets().forEach(function (h) {
+    if (/^RESPALDO/.test(etiqueta_(h.getName()))) return;
+    var v = h.getDataRange().getDisplayValues();
+    for (var r = 0; r < v.length; r++) {
+      var lab = v[r].map(etiqueta_), iP = lab.indexOf('PUESTO'), iM = -1, iMa = -1;
+      lab.forEach(function (t, i) { if (iM < 0 && /^(TOTAL POR PERSONA|MONTO|VALOR|REMUNERACION)/.test(t)) iM = i; if (iMa < 0 && /^(MAIL|E-?MAIL|CORREO)/.test(t)) iMa = i; });
+      // Montos: PUESTO · … · TOTAL POR PERSONA, hasta la primera fila sin puesto (sin las de TOTAL).
+      if (iP >= 0 && iM >= 0) for (var k = r + 1; k < v.length; k++) {
+        var puesto = String(v[k][iP] || '').trim();
+        if (!puesto) break;
+        if (/^TOTAL/i.test(puesto) || ya[etiqueta_(puesto)] || !/\d/.test(String(v[k][iM] || ''))) continue;
+        ya[etiqueta_(puesto)] = 1;
+        res.tarifas.push({ puesto: puesto, monto: String(v[k][iM]).trim() });
+      }
+      // Mails: APELLIDO · NOMBRE · CUIL · DNI · … · MAIL, hasta el próximo encabezado.
+      var iA = lab.indexOf('APELLIDO'), iN = lab.indexOf('NOMBRE'), iC = lab.indexOf('CUIL'), iD = lab.indexOf('DNI');
+      if (iA >= 0 && iMa >= 0) for (var k2 = r + 1; k2 < v.length; k2++) {
+        var fila = v[k2];
+        if (etiqueta_(fila[iA]) === 'APELLIDO') break;
+        var mail = String(fila[iMa] || '').trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) continue;
+        var doc = String(iC >= 0 ? fila[iC] : '').replace(/\D/g, '') || String(iD >= 0 ? fila[iD] : '').replace(/\D/g, '');
+        indexar_(res.d, { mail: mail, doc: doc, palabras: palabras_(String(fila[iA] || '') + ' ' + (iN >= 0 ? String(fila[iN] || '') : '')) });
+      }
+    }
+  });
+}
+// Lo que va a la plataforma: una llamada por fecha (desde EXTERNOS_DESDE), con los montos y los mails de la INFO RRHH.
+function externosPorFecha_(f, p) {
+  p = p || leerExterno_(f);
+  var desde = desdeExternos_(), info = infoRrhh_(f), porFecha = {};
+  p.filas.forEach(function (x) { if (x.fecha >= desde) (porFecha[x.fecha] = porFecha[x.fecha] || []).push(x); });
+  return Object.keys(porFecha).sort().map(function (fecha) {
+    var d = disponibilidad_(fecha);
+    var filas = porFecha[fecha].map(function (x) {
+      var y = { sector: x.sector, cuil: x.cuil, rol: '', obs: x.obs, apellido: x.apellido, nombre: x.nombre, marca: x.marca };
+      var h = mailDe_(info.d, y) || mailDe_(d, y);
+      if (h) { y.mail = h.mail; var doc = String(h.doc || '').replace(/\D/g, ''); if (doc && doc !== y.cuil) y.doc = doc; }
+      var a = altaDe_(d, y); if (a && a !== y.cuil) y.alta = a;
+      return y;
+    });
+    var q = { area: 'externos', archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: p.evento, nombres: [p.nombre], lugar: p.lugar, tarifas: info.tarifas, disponibilidad: d.total, filas: filas };
+    Object.defineProperty(q, 'info', { value: info.archivo, enumerable: false });
+    return q;
+  });
+}
+// En cada vuelta (desde sincronizar): cada fecha que cambió desde la última vez que salió bien.
+function sincronizarExternos_(clave, inicio) {
+  var guardado = PropertiesService.getScriptProperties(), hoy = Utilities.formatDate(new Date(), TZ_AR, 'yyyy-MM-dd');
+  planillasExternos_().forEach(function (f) {
+    if (Date.now() - inicio > EXTERNOS_TOPE_MS) return;
+    try {
+      var lista = externosPorFecha_(f);
+      if (!lista.length) return;
+      var k = 'he_' + f.getId(), hechas = {};
+      try { hechas = JSON.parse(guardado.getProperty(k) || '{}') || {}; } catch (_) { hechas = {}; }
+      lista.forEach(function (p) {
+        if (Date.now() - inicio > EXTERNOS_TOPE_MS) return;
+        var huella = Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, JSON.stringify(p)));
+        if (hechas[p.fecha] === huella) return;
+        var vueltas = 0, r;
+        do { r = mandar_(p, clave); vueltas++; } while (r && r.ok && r.pendientes > 0 && vueltas < 8);
+        if (r && r.ok && !r.pendientes && !r.problemas) hechas[p.fecha] = huella; else delete hechas[p.fecha];
+        Logger.log('Externos · ' + f.getName() + ' · ' + p.fecha + ' → ' + JSON.stringify(sinCuiles_(r)));
+      });
+      // Sólo se recuerdan las fechas de los últimos 60 días.
+      var limite = Utilities.formatDate(new Date(Date.now() - 60 * 86400000), TZ_AR, 'yyyy-MM-dd');
+      Object.keys(hechas).forEach(function (fe) { if (fe < limite) delete hechas[fe]; });
+      guardado.setProperty(k, JSON.stringify(hechas));
+    } catch (e) { Logger.log('Error con ' + f.getName() + ' (Externos): ' + e); }
+  });
+}
+// Para "probar": qué lee de cada planilla de Externos, sin mandar nada.
+function probarExternos_() {
+  var desde = desdeExternos_(), lista = planillasExternos_();
+  Logger.log('EXTERNOS [script ' + VERSION + '] — planillas "PRESENTISMO" que cambiaron en las últimas ' + HORAS_ATRAS + ' horas: ' + lista.length + ' · fechas desde ' + desde);
+  lista.forEach(function (f) {
+    var p = leerExterno_(f);
+    if (!p.filas.length) { Logger.log('   ' + f.getName() + ' → no encontré la tabla (APELLIDO, CUIL y FECHA + PRESENTISMO, o una columna por fecha "dd/mm P / A")'); return; }
+    var info = infoRrhh_(f), fechas = {};
+    p.filas.forEach(function (x) { var o = fechas[x.fecha] = fechas[x.fecha] || { n: 0, P: 0, A: 0 }; o.n++; if (x.marca) o[x.marca]++; });
+    Logger.log('   ' + f.getName() + ' → evento "' + p.evento + '"' + (p.lugar ? ' en "' + p.lugar + '"' : '') + ' · hojas: ' + p.hojas.join(', ')
+      + ' · INFO RRHH: ' + (info.archivo ? '"' + info.archivo + '" (montos: ' + (info.tarifas.length ? info.tarifas.map(function (t) { return t.puesto + ' ' + t.monto; }).join(', ') : 'no encontré RECURSOS Y VALORES con PUESTO y TOTAL POR PERSONA') + ' · ' + info.d.items.length + ' mails)' : 'no está en la carpeta'));
+    Object.keys(fechas).sort().forEach(function (fe) { var o = fechas[fe]; Logger.log('      ' + fe + (fe < desde ? ' (antes de ' + desde + ': no se manda)' : '') + ' · ' + o.n + ' filas · ' + o.P + ' P/E · ' + o.A + ' A'); });
+  });
+}
+// Para "revisar": qué pasaría si todos tuvieran P, fecha por fecha, sin mandar nada.
+function revisarExternos_(clave) {
+  planillasExternos_().forEach(function (f) {
+    externosPorFecha_(f).forEach(function (p) {
+      p.simular = true;
+      var r = mandar_(p, clave);
+      if (!r || !r.ok) { Logger.log('Externos · ' + f.getName() + ' · ' + p.fecha + ' → ' + JSON.stringify(r)); return; }
+      Logger.log('Externos · ' + f.getName() + ' · ' + p.fecha + ' → evento del panel: ' + (r.show || '(ninguno: crealo desde el calendario de Externos)') + ' · ' + r.filas + ' personas · ' + JSON.stringify(r.porResultado));
+      (r.problemas || []).slice(0, 40).forEach(function (x) { Logger.log('   ' + x.sector + ' · ' + x.apellido + ', ' + x.nombre + ' → ' + x.resultado + (x.detalle ? ' (' + x.detalle + ')' : '')); });
+    });
+  });
 }
 
 // ── Los CUIL mal escritos, marcados en la misma planilla (Thomas, 14-nov) ──

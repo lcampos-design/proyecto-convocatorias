@@ -12139,7 +12139,7 @@ function renderCtNav() {
   const tab = (k, t, cuenta, title) => `<div class="atab${ctTab === k ? ' active' : ''}${k === 'borrados' ? ' atab-out' : ''}" data-ct="${k}" onclick="setCtTab('${k}')"${title ? ' title="' + e(title) + '"' : ''}>${t}${cuenta != null ? ' <span class="tc">' + cuenta + '</span>' : ''}</div>`;
   nav.innerHTML = `<div class="ct-nav ct-nav-${ctArea}"><div class="ct-cab"><button class="btn btn-sec btn-xs" onclick="setCtArea('')">← Contratos</button><h3>${e(ctNombreArea(ctArea))}</h3></div>`
     + (ctTab === 'presentes' ? '' : `<div class="ct-meses">${meses.map(m => `<button class="ct-mes${ctMes === m ? ' on' : ''}" onclick="setCtMes('${m}')">${e(ctMesTxt(m))}<small>${n(m)}</small></button>`).join('')}<button class="ct-mes${!ctMes ? ' on' : ''}" onclick="setCtMes('')">Todos<small>${delArea.length}</small></button></div>`)
-    + `<div class="atabs">${tab('activos', 'Contratos', ctMes ? n(ctMes) : delArea.length)}${ctArea === 'arena' ? tab('presentes', 'Por presente', null, 'Los contratos que salen solos de las planillas de presentes') : ''}${tab('borrados', 'Borrados', borr)}</div></div>`;
+    + `<div class="atabs">${tab('activos', 'Contratos', ctMes ? n(ctMes) : delArea.length)}${ctArea === 'arena' || ctArea === 'externos' ? tab('presentes', 'Por presente', null, 'Los contratos que salen solos de las planillas de presentes') : ''}${tab('borrados', 'Borrados', borr)}</div></div>`;
 }
 // La portada: un recuadro por área, como los del Tablero (el color de cada área), con lo del mes.
 function renderCtHome() {
@@ -12322,19 +12322,25 @@ async function renderPorPresente(recargar) {
   if (!ppFilas || recargar) {
     cont.innerHTML = '<div class="empty">Cargando...</div>';
     const desde = new Date(Date.now() - 62 * 864e5).toISOString().slice(0, 10);
-    const [rf, rc, rk] = await Promise.all([
-      sb.from('planilla_presentes').select('fecha,show,archivo_id,sector,cuil,apellido,nombre,marca,resultado,detalle,contrato_id,actualizado').gte('fecha', desde).order('fecha', { ascending: false }).limit(5000),
-      sb.from('contratos').select('id,estado,fecha_show').eq('origen', 'planilla').gte('fecha_show', desde).limit(5000),
+    // 19-nov: también Externos (columna "area"; sin ella, antes de correr contratos-presentes-externos.sql, todo es del Arena).
+    const colsPP = 'fecha,show,archivo_id,sector,cuil,apellido,nombre,marca,resultado,detalle,contrato_id,actualizado';
+    const leerPP = cols => sb.from('planilla_presentes').select(cols).gte('fecha', desde).order('fecha', { ascending: false }).limit(5000);
+    let [rf, rc, rk] = await Promise.all([
+      leerPP(colsPP + ',area'),
+      sb.from('contratos').select('id,estado,fecha_show').in('origen', ['planilla', 'planilla_externos']).gte('fecha_show', desde).limit(5000),
       sb.from('config').select('value').eq('key', 'contratos_presentes').maybeSingle()
     ]);
+    if (rf.error && /area/.test(rf.error.message || '')) rf = await leerPP(colsPP);
     if (rf.error) { cont.innerHTML = '<div class="empty">' + (/planilla_presentes/.test(rf.error.message || '') ? 'Primero hay que correr contratos-presentes.sql en Supabase.' : 'No se pudo cargar: ' + e(rf.error.message || '')) + '</div>'; return; }
     ppFilas = rf.data || [];
     ppContratos = {}; (rc.data || []).forEach(c => { ppContratos[c.id] = c; });
     ppCfg = (rk.data && rk.data.value && typeof rk.data.value === 'object') ? rk.data.value : { venue: 'Movistar Arena', porDefecto: 'Orientador', sectores: {}, roles: {}, meses: {} };
     if (!ppCfg.meses) ppCfg.meses = {};
   }
+  // Las filas del área que se está viendo (Arena o Externos).
+  const ppExt = ctArea === 'externos', ppDe = ppFilas.filter(f => (f.area || 'arena') === (ppExt ? 'externos' : 'arena'));
   const hoyMes = hoyLocalISO().slice(0, 7);
-  const meses = [...new Set([hoyMes].concat(Object.keys(ppCfg.meses), ppFilas.map(f => String(f.fecha).slice(0, 7))))].sort().reverse();
+  const meses = [...new Set([hoyMes].concat(Object.keys(ppCfg.meses), ppDe.map(f => String(f.fecha).slice(0, 7))))].sort().reverse();
   if (!ppMes) ppMes = hoyMes;
   // Los puestos y su monto en el mes (como el Excel de cada mes). Un mes nuevo arranca con los
   // puestos del último que tenga montos, para completar.
@@ -12346,7 +12352,7 @@ async function renderPorPresente(recargar) {
   const montoDe = n => { const k = Object.keys(delMes).find(x => ppClave(x) === ppClave(n)); return k ? montoANumero(delMes[k]) : 0; };
   // Qué puesto lleva cada bloque de las planillas (el que no figura: el de siempre).
   const bloques = []; const sumarB = n => { if (n && !bloques.some(x => ppClave(x) === ppClave(n))) bloques.push(n); };
-  PP_SECTORES.forEach(sumarB); Object.keys(ppCfg.sectores || {}).forEach(sumarB); ppFilas.forEach(f => sumarB(f.sector ? f.sector.charAt(0) + f.sector.slice(1).toLowerCase() : ''));
+  PP_SECTORES.forEach(sumarB); Object.keys(ppCfg.sectores || {}).forEach(sumarB); ppDe.forEach(f => sumarB(f.sector ? f.sector.charAt(0) + f.sector.slice(1).toLowerCase() : ''));
   const puestoBloque = n => { const k = Object.keys(ppCfg.sectores || {}).find(x => ppClave(x) === ppClave(n)); return k ? ppCfg.sectores[k] : ''; };
   const opciones = (sel, siempre) => (siempre ? `<option value="">${e(ppCfg.porDefecto || '—')} (el de siempre)</option>` : '') + puestos.map(p => `<option${ppClave(p) === ppClave(sel) ? ' selected' : ''}>${e(p)}</option>`).join('');
   const porRol = {}; Object.entries(ppCfg.roles || {}).forEach(([k, p]) => { (porRol[p] = porRol[p] || []).push(k); });
@@ -12366,23 +12372,34 @@ async function renderPorPresente(recargar) {
     ${Object.keys(porRol).length ? `<div style="font-size:12px;color:var(--r-muted);margin-top:8px">Además, por lo que dice la fila: ${Object.entries(porRol).map(([p, ks]) => '«' + e(ks.join(' / ')) + '» en OBSERVACIÓN o en la primera columna → ' + e(p)).join(' · ')}.</div>` : ''}
     <div style="margin-top:12px;display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="ppGuardarMontos(${puestos.length}, ${bloques.length})">Guardar (montos de ${e(mesTxt)})</button><button class="btn btn-sec btn-sm" onclick="renderPorPresente(true)">↻ Actualizar</button><button class="btn btn-sec btn-sm" onclick="ppAbrirVista()" title="El contrato y el mail que le llegan a quien tiene la P: con el modelo de contrato guardado, el puesto y el monto del mes">Ver lo que sale</button></div>
   </div>`;
-  // Por fecha: cuántos salieron, cuántos firmaron, cuántos se anularon y lo que hay que corregir.
-  const fechas = [...new Set(ppFilas.map(f => f.fecha))];
-  const porFecha = fechas.map(fe => {
-    const filas = ppFilas.filter(f => f.fecha === fe), c = filas.map(f => f.contrato_id && ppContratos[f.contrato_id]).filter(Boolean);
+  // Externos: los montos no se cargan acá (salen de la INFO RRHH de cada evento).
+  const infoExt = `<div class="ct-caja" style="padding:16px 20px;margin-bottom:18px;font-size:13px;line-height:1.65">
+    <strong style="font-size:14px">Externos: cómo sale cada contrato</strong>
+    <div style="margin-top:6px">Cada <b>P</b> (o <b>E</b>, extra que asistió) en la hoja PRESENTES de la planilla "PRESENTISMO" del evento manda al instante el contrato de ese día, desde convocatorias.externos. Una <b>A</b> lo anula.</div>
+    <div>El puesto es el SECTOR / PUESTO de la fila y el monto, el TOTAL POR PERSONA de ese puesto en la <b>INFO RRHH</b> del evento (hoja RECURSOS Y VALORES, en la misma carpeta).</div>
+    <div>El evento tiene que estar en el panel: una convocatoria de Externos con esa fecha y el mismo nombre (se crea desde el calendario, en "Disponibilidad del mes"). Si no está, queda "Sin show en el panel".</div>
+  </div>`;
+  // Por fecha (en Externos, por fecha y evento): cuántos salieron, cuántos firmaron, cuántos se anularon y lo que hay que corregir.
+  const grupoDe = f => ppExt ? f.fecha + '|' + (f.show || '') : f.fecha;
+  const grupos = [...new Set(ppDe.map(grupoDe))];
+  const porFecha = grupos.map(g => {
+    const fe = g.split('|')[0];
+    const filas = ppDe.filter(f => grupoDe(f) === g), c = filas.map(f => f.contrato_id && ppContratos[f.contrato_id]).filter(Boolean);
     const firmados = c.filter(x => x.estado === 'firmado').length, anulados = c.filter(x => x.estado === 'anulado').length, salieron = c.filter(x => x.estado !== 'anulado').length;
-    const problemas = filas.filter(f => PP_PROBLEMAS.includes(f.resultado)), abierta = ppAbiertas.has(fe);
+    const problemas = filas.filter(f => PP_PROBLEMAS.includes(f.resultado)), abierta = ppAbiertas.has(g);
     const fila = f => { const ct = f.contrato_id && ppContratos[f.contrato_id]; return `<tr><td>${e([f.apellido, f.nombre].filter(Boolean).join(', ') || f.cuil)}</td><td>${e(f.sector || '')}</td><td style="font-family:monospace;font-size:12px">${e(f.cuil)}</td><td>${e(f.marca || '—')}</td><td>${ct ? estadoBadge(ct.estado) : ppBadge(f.resultado)}</td><td style="font-size:12px;color:var(--r-muted)">${e(f.detalle || '')}</td></tr>`; };
     const lista = abierta ? filas : problemas;
     const show = filas.find(f => f.show) || {}, arch = filas.find(f => f.archivo_id) || {};
     return `<div class="ct-caja" style="padding:16px 20px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><strong>${e(fmtFecha(fe))}${show.show ? ' · ' + e(show.show) : ''}</strong>
         <span style="font-size:12.5px;color:var(--r-muted)">${salieron} contrato${salieron === 1 ? '' : 's'} · ${firmados} firmado${firmados === 1 ? '' : 's'} · ${anulados} anulado${anulados === 1 ? '' : 's'}${problemas.length ? ' · <b style="color:#991b1b">' + problemas.length + ' para corregir</b>' : ''}</span>
-        <span style="margin-left:auto;display:flex;gap:6px">${arch.archivo_id ? `<a class="btn btn-sec btn-xs" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/${encodeURIComponent(arch.archivo_id)}/edit">Abrir la planilla</a>` : ''}<button class="btn btn-sec btn-xs" onclick="ppVer('${fe}')">${abierta ? 'Ver sólo lo que hay que corregir' : 'Ver todos (' + filas.length + ')'}</button></span></div>
+        <span style="margin-left:auto;display:flex;gap:6px">${arch.archivo_id ? `<a class="btn btn-sec btn-xs" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/${encodeURIComponent(arch.archivo_id)}/edit">Abrir la planilla</a>` : ''}<button class="btn btn-sec btn-xs" onclick="ppVer(${e(JSON.stringify(g))})">${abierta ? 'Ver sólo lo que hay que corregir' : 'Ver todos (' + filas.length + ')'}</button></span></div>
       ${lista.length ? `<div class="tbl-wrap" style="margin-top:10px"><table><thead><tr><th>Persona</th><th>Sector</th><th>CUIL</th><th>Marca</th><th>Estado</th><th></th></tr></thead><tbody>${lista.map(fila).join('')}</tbody></table></div>` : '<div style="font-size:12.5px;color:#166534;margin-top:8px">Todo en orden.</div>'}
     </div>`;
   }).join('');
-  cont.innerHTML = montos + (porFecha || '<div class="empty">Todavía no llegó ninguna planilla. Cuando el script de la planilla de presentes esté andando, acá aparece cada fecha.</div>');
+  cont.innerHTML = ppExt
+    ? infoExt + (porFecha || '<div class="empty">Todavía no llegó ninguna planilla de Externos. Cuando RR. HH. marque una P en la hoja PRESENTES de un evento, acá aparece cada fecha.</div>')
+    : montos + (porFecha || '<div class="empty">Todavía no llegó ninguna planilla. Cuando el script de la planilla de presentes esté andando, acá aparece cada fecha.</div>');
 }
 // Lo que sale con cada P: el mismo texto y el mismo mail que arma api/presentes-planilla.js
 // (armarTexto y armarMail), con el modelo de contrato guardado, el puesto y su monto en el mes y

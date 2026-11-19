@@ -20,6 +20,17 @@
 // función tiene un tiempo máximo): el resto vuelve como "pendientes" y el
 // script vuelve a llamar.
 //
+// Externos (19-nov): el mismo script manda también la hoja PRESENTES de las planillas "PRESENTISMO" de cada
+// evento (las arma RR. HH.: una fila por persona, fecha y turno; P, A o E = extra que asistió, que vale como P),
+// con area: 'externos', una llamada por fecha. Lo distinto (Thomas, 19-nov):
+//  - el evento tiene que estar en el panel, como en el Arena: una convocatoria de Externos con esa fecha y con
+//    alguna palabra del nombre en común (se crea desde el calendario de Externos en "Disponibilidad del mes");
+//  - el puesto es el SECTOR / PUESTO de la fila y el monto, el TOTAL POR PERSONA de ese puesto en la "INFO RRHH"
+//    del evento (hoja RECURSOS Y VALORES; el script la manda como "tarifas");
+//  - el mail sale de convocatorias.externos y dice el lugar del evento;
+//  - los contratos llevan origen 'planilla_externos' y las filas, area 'externos': no se cruzan con los del Arena
+//    (una persona puede tener los dos el mismo día). Necesita contratos-presentes-externos.sql.
+//
 // Variables de entorno en Vercel (nunca en el código):
 //   SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY (ya estaban) y PRESENTES_CLAVE
 //   (la clave que lleva el script de la planilla; la misma en los dos lados).
@@ -31,6 +42,7 @@ export const config = { maxDuration: 60 };
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SITIO = 'https://convocatorias.show-bs.com';
 const REMITENTE = 'convocatorias.arena@show-bs.com';
+const REMITENTE_EXT = 'convocatorias.externos@show-bs.com';
 const FIRMA_CONTRATO = 'firmas/firma-richard.png';
 export const MAX_ENVIOS = 20;
 const MAX_FILAS = 600;
@@ -120,19 +132,21 @@ export function armarTexto(plantilla, d) {
 
 // ── El mail ──
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-export function armarMail({ nombre, fecha, show, link }) {
+// lugar: el de Externos ("Centro de Convenciones…"); sin pasarlo, el Arena. Vacío: no dice dónde.
+export function armarMail({ nombre, fecha, show, link, lugar }) {
   const pila = String(nombre || '').trim().split(/\s+/)[0] || '';
   const hola = pila ? 'Hola, ' + pila.charAt(0).toUpperCase() + pila.slice(1).toLowerCase() : 'Hola';
   const cuando = fechaMail(fecha), que = show ? ' (' + show + ')' : '';
+  const enLugar = lugar === undefined ? ' en el Movistar Arena' : String(lugar || '').trim() ? ' en ' + String(lugar).trim() : '';
   // Empieza con "Contrato ·", como dice la guía para firmar desde el celular (Mer, 13-nov).
   const subject = `Contrato · ${show ? show + ' · ' : ''}${fechaLarga(fecha).toLowerCase()}`;
-  const text = `${hola}:\n\nGracias por trabajar con nosotros el ${cuando}${que} en el Movistar Arena.\n\nPara firmar tu contrato de esa fecha, entrá a este link:\n${link}\n\nEl link vence en 7 días. Cualquier duda, respondé este mail.\n\nSaludos,\nShow Business Solutions`;
+  const text = `${hola}:\n\nGracias por trabajar con nosotros el ${cuando}${que}${enLugar}.\n\nPara firmar tu contrato de esa fecha, entrá a este link:\n${link}\n\nEl link vence en 7 días. Cualquier duda, respondé este mail.\n\nSaludos,\nShow Business Solutions`;
   const P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
   const html = `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
     <img src="${SITIO}/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">
     <p style="${P}">${esc(hola)}:</p>
-    <p style="${P}">Gracias por trabajar con nosotros el ${esc(cuando)}${esc(que)} en el Movistar Arena.</p>
+    <p style="${P}">Gracias por trabajar con nosotros el ${esc(cuando)}${esc(que)}${esc(enLugar)}.</p>
     <p style="${P}">Para firmar tu contrato de esa fecha, tocá el botón:</p>
     <p style="margin:22px 0"><a href="${esc(link)}" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Firmar mi contrato</a></p>
     <p style="${P}">O copiá este link: <a href="${esc(link)}" style="color:#534AB7;text-decoration:underline">${esc(link)}</a></p>
@@ -181,6 +195,45 @@ export function elegirShow(convs, show) {
   const puntos = c => { const t = n(c.nombre); return (buscado && t.includes(buscado) ? 10 : 0) + palabras.filter(w => t.includes(w)).length + (c.centro_control ? 0.5 : 0); };
   return (convs || []).slice().sort((a, b) => puntos(b) - puntos(a))[0] || null;
 }
+// ── Externos (19-nov) ── (sinTildes está más abajo; las funciones se usan después de cargado el módulo)
+// Palabras que no sirven para reconocer un evento (están en muchos nombres).
+const GENERICAS_EXT = new Set(('fiesta show shows evento eventos festival masivo privado servicio presentismo presentes info rrhh base '
+  + 'del de la las los el en al con por para fin ano anio sbs contratos acreditacion acreditaciones capacitacion tentativo borrador '
+  + 'enero febrero marzo abril mayo junio julio agosto septiembre setiembre octubre noviembre diciembre disponibilidad').split(' '));
+function palabrasEvento(s) { return sinTildes(s).split(/[^a-z0-9]+/).filter(w => w.length > 2 && !/^\d+$/.test(w) && !GENERICAS_EXT.has(w)); }
+// La convocatoria de Externos de esa fecha para el evento de la planilla: la que comparte más palabras del nombre
+// ("CAD Gelatina" ↔ "CAD Gelatina @CEC"). Sin ninguna en común, ninguna: no se ata a otro evento del mismo día (por
+// ejemplo, a la disponibilidad del mes, que tiene todas las fechas).
+export function elegirEvento(convs, nombres) {
+  const buscadas = [...new Set((nombres || []).flatMap(palabrasEvento))];
+  if (!buscadas.length) return null;
+  const parecida = (a, b) => a === b || (a.length >= 5 && b.length >= 5 && (a.startsWith(b) || b.startsWith(a)));
+  const puntos = c => { const t = palabrasEvento(c.nombre); return buscadas.filter(w => t.some(x => parecida(w, x))).length; };
+  const l = (convs || []).map(c => ({ c, p: puntos(c) })).filter(x => x.p > 0).sort((a, b) => b.p - a.p);
+  return l.length ? l[0].c : null;
+}
+// La raíz de un puesto, para aparear el SECTOR / PUESTO de la fila con el PUESTO de la INFO RRHH: la primera palabra,
+// sin tildes, sin "/a" ni lo que va entre paréntesis, sin plural ni género ("SUPERVISORES" = "Supervisor/a" = "supervisora").
+export function raizPuesto(s) {
+  const w = sinTildes(s).replace(/\/\s*[a-z]{1,2}\b/g, ' ').replace(/\(.*?\)/g, ' ').split(/[^a-z]+/).filter(x => x.length > 1)[0] || '';
+  return w.replace(/(es|as|os|s)$/, '').replace(/[ao]$/, '');
+}
+export function tituloPuesto(s) { const t = String(s || '').trim().replace(/\s+/g, ' ').toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); }
+// El puesto (el de la fila) y el monto (el TOTAL POR PERSONA de ese puesto en la INFO RRHH) de una fila de Externos.
+export function tarifaExterna(tarifas, sector) {
+  const r = raizPuesto(sector);
+  if (!r || /^(backup|reserva|suplente)/.test(r)) return null;
+  const t = (tarifas || []).find(x => { const k = raizPuesto(x && x.puesto); return k && (k === r || (k.length >= 5 && r.length >= 5 && (k.startsWith(r) || r.startsWith(k)))); });
+  const monto = t ? montoANumero(t.monto) : 0;
+  return monto > 0 ? { monto, puesto: tituloPuesto(sector) } : null;
+}
+function sinMontoExterno(ctx, sector) {
+  if (/backup|reserva|suplente/i.test(sector || '')) return 'La fila dice "' + sector + '": poné en SECTOR / PUESTO el puesto que cubrió';
+  if (!raizPuesto(sector)) return 'Falta el puesto en SECTOR / PUESTO';
+  if (!(ctx.tarifas || []).length) return 'No encontré los montos en la INFO RRHH del evento (hoja RECURSOS Y VALORES, con PUESTO y TOTAL POR PERSONA, en la misma carpeta)';
+  return 'Falta el monto de "' + sector + '" en la INFO RRHH (hoja RECURSOS Y VALORES; hay: ' + ctx.tarifas.map(t => t.puesto).join(', ') + ')';
+}
+
 // Qué hacer con una fila: lo decide sin tocar nada (se prueba aparte).
 // El DNI de 8 números que lleva adentro un CUIL (o el DNI suelto). Con 10 números no se sabe.
 export function nucleoDe(doc) { const d = String(doc || '').replace(/\D/g, ''); return d.length === 11 ? d.slice(2, 10) : d.length >= 7 && d.length <= 8 ? d.padStart(8, '0') : ''; }
@@ -351,8 +404,9 @@ export function decidir(fila, ctx) {
     if (contrato) return { resultado: 'mandar', persona, contrato };
     if (!String(persona.email || '').includes('@')) return { resultado: 'sin_mail', detalle: ctx.disponibilidad ? 'No tiene mail en la nómina ni en la disponibilidad del mes' : 'No tiene mail en la nómina' };
     if (!ctx.plantilla) return { resultado: 'sin_plantilla', detalle: 'Falta el modelo de contrato en el panel' };
-    if (!ctx.conv) return { resultado: 'sin_show', detalle: 'No hay un show del Arena con esa fecha en el panel' };
-    const tarifa = tarifaDe(ctx.cfg, ctx.fecha, fila.sector, fila.rol, fila.obs);
+    if (!ctx.conv) return { resultado: 'sin_show', detalle: ctx.ext ? 'No hay un evento de Externos con esa fecha y ese nombre en el panel (se crea desde el calendario de Externos, en "Disponibilidad del mes")' : 'No hay un show del Arena con esa fecha en el panel' };
+    const tarifa = ctx.ext ? tarifaExterna(ctx.tarifas, fila.sector) : tarifaDe(ctx.cfg, ctx.fecha, fila.sector, fila.rol, fila.obs);
+    if (!tarifa && ctx.ext) return { resultado: 'sin_monto', detalle: sinMontoExterno(ctx, fila.sector) };
     if (!tarifa) { const p = puestoDe(ctx.cfg, fila.sector, fila.rol, fila.obs); return { resultado: 'sin_monto', detalle: p ? 'Falta el monto de ' + p + ' para ' + String(ctx.fecha).slice(5, 7) + '/' + String(ctx.fecha).slice(0, 4) : 'Falta decir qué puesto lleva ' + (fila.sector || 'ese sector') }; }
     // La P es de hace un rato: todavía no (por si fue un error). Sale en una vuelta siguiente.
     if (fila.espera) return { resultado: 'en_espera', detalle: 'Todavía no pasó la espera después de la P (propiedad ESPERA_MINUTOS del script)' };
@@ -373,11 +427,11 @@ function sbFetch(servicio, ruta, op = {}) {
 }
 async function sbJson(servicio, ruta, op) { const r = await sbFetch(servicio, ruta, op); const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch (_) {} return { ok: r.ok, status: r.status, data: j }; }
 const espera = ms => new Promise(r => setTimeout(r, ms));
-async function mandarMail(resend, para, mail) {
+async function mandarMail(resend, para, mail, de) {
   for (let intento = 0; ; intento++) {
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { 'Authorization': `Bearer ${resend}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: REMITENTE, to: [para], subject: mail.subject, text: mail.text, html: mail.html })
+      body: JSON.stringify({ from: de || REMITENTE, to: [para], subject: mail.subject, text: mail.text, html: mail.html })
     });
     if (r.ok) return { ok: true };
     const cuerpo = await r.json().catch(() => null), txt = JSON.stringify(cuerpo || {});
@@ -403,21 +457,32 @@ export default async function handler(req, res) {
   const show = String(cuerpo.show || '').trim().slice(0, 80);
   const archivo = String((cuerpo.archivo && cuerpo.archivo.id) || '').slice(0, 120);
   const filas = normalizarFilas(cuerpo.filas);
+  // Externos (19-nov): otra área y otro origen (no se cruzan con el Arena), el evento por el nombre y los montos de la INFO RRHH.
+  const ext = cuerpo.area === 'externos', area = ext ? 'externos' : 'arena', origen = ext ? 'planilla_externos' : 'planilla';
+  const lugar = String(cuerpo.lugar || '').trim().slice(0, 120);
+  const tarifas = ext ? (Array.isArray(cuerpo.tarifas) ? cuerpo.tarifas : []).slice(0, 40)
+    .map(t => ({ puesto: String((t && t.puesto) || '').trim().slice(0, 60), monto: t && t.monto })).filter(t => t.puesto && montoANumero(t.monto) > 0) : [];
 
   // Lo que ya hay de esa fecha: los contratos de la planilla (los no anulados) y lo último que dijo.
-  const [rc, rp, rcfg, rconv] = await Promise.all([
-    sbJson(servicio, `contratos?select=id,persona_id,doc_nucleo,estado,token,email,nombre&fecha_show=eq.${fecha}&origen=eq.planilla&estado=neq.anulado`),
-    sbJson(servicio, `planilla_presentes?select=cuil,marca,resultado,persona_id,contrato_id&fecha=eq.${fecha}`),
+  const colsPres = 'cuil,marca,resultado,persona_id,contrato_id';
+  const [rc, rp0, rcfg, rconv] = await Promise.all([
+    sbJson(servicio, `contratos?select=id,persona_id,doc_nucleo,estado,token,email,nombre&fecha_show=eq.${fecha}&origen=eq.${origen}&estado=neq.anulado`),
+    sbJson(servicio, `planilla_presentes?select=${colsPres}&fecha=eq.${fecha}&area=eq.${area}`),
     sbJson(servicio, `config?select=key,value&key=in.(contratos_presentes,contrato_plantilla)`),
-    sbJson(servicio, `convocatorias?select=id,nombre,venue,area,fecha,centro_control&area=eq.movistar_arena&fecha=like.*${fecha}*`)
+    sbJson(servicio, `convocatorias?select=id,nombre,venue,area,fecha,centro_control&area=eq.${ext ? 'externos' : 'movistar_arena'}&fecha=like.*${fecha}*`)
   ]);
-  if (!rc.ok || !rp.ok) return res.status(500).json({ error: 'Falta correr contratos-presentes.sql en Supabase', detalle: (rc.data && rc.data.message) || (rp.data && rp.data.message) || '' });
+  // Sin la columna "area" (antes de correr contratos-presentes-externos.sql), el Arena sigue como siempre.
+  let rp = rp0;
+  const conArea = rp0.ok;
+  if (!rp.ok && !ext) rp = await sbJson(servicio, `planilla_presentes?select=${colsPres}&fecha=eq.${fecha}`);
+  if (!rc.ok || !rp.ok) return res.status(500).json({ error: ext ? 'Falta correr contratos-presentes-externos.sql en Supabase' : 'Falta correr contratos-presentes.sql en Supabase', detalle: (rc.data && rc.data.message) || (rp.data && rp.data.message) || '' });
   const contratos = new Map((rc.data || []).map(c => [c.doc_nucleo, c]));
   const antes = new Map((rp.data || []).map(x => [x.cuil, x]));
   const cfgs = Object.fromEntries((rcfg.data || []).map(x => [x.key, x.value]));
   const cfg = cfgs.contratos_presentes || {};
   const plantilla = String(((cfgs.contrato_plantilla || {}).ar) || '').trim();
-  const conv = elegirShow(rconv.ok ? rconv.data : [], show);
+  const conv = ext ? elegirEvento(rconv.ok ? rconv.data : [], [show].concat(Array.isArray(cuerpo.nombres) ? cuerpo.nombres.slice(0, 3).map(String) : []))
+    : elegirShow(rconv.ok ? rconv.data : [], show);
 
   // Las personas: las de las filas que importan (con marca, o que ya tenían algo).
   const buscar = filas.filter(f => cuerpo.simular || f.marca || antes.has(f.cuil)).map(f => f.cuil);
@@ -469,7 +534,7 @@ export default async function handler(req, res) {
   }
 
   const porId = new Map((rc.data || []).map(c => [c.id, c])), porPersona = new Map((rc.data || []).filter(c => c.persona_id).map(c => [c.persona_id, c]));
-  const ctx = { personas, contratos, porId, porPersona, antes, cfg, plantilla, conv, fecha, disponibilidad: Number(cuerpo.disponibilidad) > 0 };
+  const ctx = { personas, contratos, porId, porPersona, antes, cfg, plantilla, conv, fecha, disponibilidad: Number(cuerpo.disponibilidad) > 0, ext, tarifas };
 
   // Revisar (desde el script, antes del show): qué pasaría si todos tuvieran "P", sin mandar ni guardar nada.
   if (cuerpo.simular) {
@@ -498,13 +563,14 @@ export default async function handler(req, res) {
           const p = dec.persona, t = dec.tarifa, dia = fechaLarga(fecha);
           const datos = {
             nombre: String(p.nombre || (fila.nombre + ' ' + fila.apellido)).trim(), cuil: String(p.cuit || '').length === 11 ? p.cuit : fila.cuil.length === 11 ? fila.cuil : (p.cuit || fila.cuil),
-            puesto: t.puesto || tituloSector(fila.sector), venue: String(cfg.venue || (conv && conv.venue) || 'Movistar Arena'),
+            puesto: t.puesto || tituloSector(fila.sector),
+            venue: ext ? String((conv && conv.venue) || lugar || '') : String(cfg.venue || (conv && conv.venue) || 'Movistar Arena'),
             fecha_inicio: dia, fecha_fin: dia, anio: fecha.slice(0, 4),
             monto_letras: numeroALetras(t.monto), monto_numero: montoFormateado(t.monto), fecha_firma_doc: hoyLarga()
           };
           const ri = await sbJson(servicio, 'contratos', {
             method: 'POST', headers: { 'Prefer': 'return=representation' },
-            body: Object.assign({}, datos, { conv_id: conv.id, persona_id: p.id || null, doc_nucleo: p.nucleo, email: p.email, texto_contrato: armarTexto(plantilla, datos), estado: 'pendiente', firma_empleador_img: FIRMA_CONTRATO, fecha_show: fecha, origen: 'planilla', sector: fila.sector || null })
+            body: Object.assign({}, datos, { conv_id: conv.id, persona_id: p.id || null, doc_nucleo: p.nucleo, email: p.email, texto_contrato: armarTexto(plantilla, datos), estado: 'pendiente', firma_empleador_img: FIRMA_CONTRATO, fecha_show: fecha, origen, sector: fila.sector || null })
           });
           if (!ri.ok || !Array.isArray(ri.data) || !ri.data[0]) {
             // Otra vuelta lo creó al mismo tiempo (uno por persona y por fecha): queda para la próxima.
@@ -513,15 +579,16 @@ export default async function handler(req, res) {
             continue;
           }
           c = ri.data[0];
-          await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: c.id, tipo: 'creado', meta: { origen: 'planilla', archivo, sector: fila.sector || null } } });
+          await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: c.id, tipo: 'creado', meta: { origen, archivo, sector: fila.sector || null } } });
           contratos.set(p.nucleo, c);
         }
         contratoId = c.id;
         if (cuenta.enviados) await espera(600);   // Resend: 2 por segundo para toda la cuenta
-        const envio = await mandarMail(resend, c.email || dec.persona.email, armarMail({ nombre: c.nombre || dec.persona.nombre, fecha, show: show || (conv && conv.nombre), link: `${SITIO}/contrato.html?t=${c.token}` }));
+        const mail = armarMail({ nombre: c.nombre || dec.persona.nombre, fecha, show: show || (conv && conv.nombre), link: `${SITIO}/contrato.html?t=${c.token}`, lugar: ext ? ((conv && conv.venue) || lugar) : undefined });
+        const envio = await mandarMail(resend, c.email || dec.persona.email, mail, ext ? REMITENTE_EXT : REMITENTE);
         if (envio.ok) {
           await sbFetch(servicio, `contratos?id=eq.${c.id}`, { method: 'PATCH', body: { estado: 'enviado', fecha_envio: ahora() } });
-          await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: c.id, tipo: 'enviado', meta: { origen: 'planilla' } } });
+          await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: c.id, tipo: 'enviado', meta: { origen } } });
           resultado = 'enviado'; detalle = null; cuenta.enviados++;
         } else {
           resultado = envio.tope ? 'pendiente' : 'error_mail'; detalle = envio.tope ? 'Resend pidió esperar: sale en la próxima vuelta' : 'No salió el mail: ' + envio.error;
@@ -532,7 +599,7 @@ export default async function handler(req, res) {
     } else if (resultado === 'anular') {
       const motivo = fila.marca === 'A' ? 'Ausente en la planilla' : 'Le sacaron el presente en la planilla';
       const ra = await sbFetch(servicio, `contratos?id=eq.${dec.contrato.id}&estado=neq.firmado`, { method: 'PATCH', body: { estado: 'anulado', vence_el: ahora(), anulado_at: ahora(), anulado_motivo: motivo } });
-      if (ra.ok) { await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: dec.contrato.id, tipo: 'anulado', meta: { origen: 'planilla', motivo } } }); contratos.delete(dec.contrato.doc_nucleo || ((personas.get(fila.cuil) || {}).nucleo)); resultado = 'anulado'; detalle = motivo; cuenta.anulados++; }
+      if (ra.ok) { await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: dec.contrato.id, tipo: 'anulado', meta: { origen, motivo } } }); contratos.delete(dec.contrato.doc_nucleo || ((personas.get(fila.cuil) || {}).nucleo)); resultado = 'anulado'; detalle = motivo; cuenta.anulados++; }
       else { resultado = 'error_mail'; detalle = 'No se pudo anular'; cuenta.problemas++; }
     } else if (['sin_persona', 'cuil_incompleto', 'sin_mail', 'sin_monto', 'sin_show', 'sin_plantilla', 'firmado_ausente'].includes(resultado)) cuenta.problemas++;
     registro.push({ fila, resultado, detalle, persona: personas.get(fila.cuil), contratoId });
@@ -544,7 +611,9 @@ export default async function handler(req, res) {
       fecha, show: show || null, archivo_id: archivo || null, sector: fila.sector || null, cuil: fila.cuil, apellido: fila.apellido || null, nombre: fila.nombre || null,
       marca: fila.marca || null, persona_id: (persona && !persona.ambigua && persona.id) || null, contrato_id: contratoId || null, resultado, detalle, actualizado: ahora()
     }));
-    await sbFetch(servicio, 'planilla_presentes?on_conflict=fecha,cuil', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: filasReg });
+    // Con la columna "area", una fila por área, fecha y CUIL; sin ella (el SQL de Externos sin correr), como antes.
+    if (conArea) await sbFetch(servicio, 'planilla_presentes?on_conflict=area,fecha,cuil', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: filasReg.map(x => Object.assign({ area }, x)) });
+    else await sbFetch(servicio, 'planilla_presentes?on_conflict=fecha,cuil', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: filasReg });
   }
   return res.status(200).json(Object.assign({ ok: true, fecha, show: show || (conv && conv.nombre) || '', filas: filas.length }, cuenta, { cuiles: cuilesACorregir(filas, personas, ctx) }));
 }

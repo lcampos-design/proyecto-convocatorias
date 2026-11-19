@@ -206,10 +206,13 @@ export default async function handler(req, res) {
   try { html = await htmlInforme(conv, tok.fecha, lista, null, notas); }
   catch (e) { return res.status(500).send(pagina('No disponible', 'No se pudo armar el informe. Probá de nuevo en un rato.')); }
   if (tipo === 'socios') {
-    const [rk, rp] = await Promise.all([
+    // Los presentes de la planilla de su área (19-nov: también hay de Externos; sin la columna "area", todos, como antes).
+    const areaPres = conv.area === 'externos' ? 'externos' : 'arena';
+    let [rk, rp] = await Promise.all([
       sb(servicio, `contratos?select=estado&conv_id=eq.${conv.id}&fecha_show=eq.${tok.fecha}&estado=neq.anulado&limit=5000`),
-      sb(servicio, `planilla_presentes?select=cuil&fecha=eq.${tok.fecha}&marca=eq.P&limit=5000`)
+      sb(servicio, `planilla_presentes?select=cuil&fecha=eq.${tok.fecha}&marca=eq.P&area=eq.${areaPres}&limit=5000`)
     ]);
+    if (!rp.ok && areaPres === 'arena') rp = await sb(servicio, `planilla_presentes?select=cuil&fecha=eq.${tok.fecha}&marca=eq.P&limit=5000`);
     if (!rk.ok) return res.status(500).send(pagina('No disponible', 'No se pudieron leer los contratos. Probá de nuevo en un rato.'));
     html = conContratos(html, rk.data || [], rp.ok ? (rp.data || []).length : null);
   }
