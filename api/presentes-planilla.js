@@ -219,7 +219,11 @@ export function raizPuesto(s) {
   const w = sinTildes(s).replace(/\/\s*[a-z]{1,2}\b/g, ' ').replace(/\(.*?\)/g, ' ').split(/[^a-z]+/).filter(x => x.length > 1)[0] || '';
   return w.replace(/(es|as|os|s)$/, '').replace(/[ao]$/, '');
 }
-export function tituloPuesto(s) { const t = String(s || '').trim().replace(/\s+/g, ' ').toLowerCase(); return t.charAt(0).toUpperCase() + t.slice(1); }
+// Sin la cantidad que a veces trae el título del bloque ("Orientadores · 40", "Supervisores (4)").
+export function tituloPuesto(s) {
+  const t = String(s || '').trim().replace(/\s*[·•|:]\s*\d+\s*$/, '').replace(/\s*\(\s*\d+\s*\)\s*$/, '').replace(/\s+/g, ' ').toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
 // El puesto (el de la fila) y el monto (el TOTAL POR PERSONA de ese puesto en la INFO RRHH) de una fila de Externos.
 export function tarifaExterna(tarifas, sector) {
   const r = raizPuesto(sector);

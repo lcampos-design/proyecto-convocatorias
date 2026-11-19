@@ -82,7 +82,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '19-nov 13:00, Externos: sin puesto en la fila, el del bloque';
+var VERSION = '19-nov 13:15, Externos: el puesto del bloque sin la cantidad';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -668,7 +668,7 @@ function filasExterno_(v, creada) {
       // El título del bloque ("SUPERVISORES", "ORIENTADORES"), en la primera columna del encabezado: el puesto de las
       // filas que no lo dicen (19-nov: en CAD Gelatina los orientadores no tenían SECTOR).
       var b0 = String(v[r][0] || '').trim(), bloque = /[A-Za-z]{3,}/.test(b0) && !/^(SECTOR|PUESTO|CARGO|APELLIDO|NOMBRE|N[°º]?|NRO|NUMERO)\b/.test(lab[0])
-        ? b0.replace(/(OR|ER)ES$/i, '$1').replace(/([^S])S$/i, '$1') : '';   // en singular: "ORIENTADORES" → "ORIENTADOR"
+        ? b0.split(/\s*[·•|:(\-–—]\s*|\s+\d/)[0].trim().replace(/(OR|ER)ES$/i, '$1').replace(/([^S])S$/i, '$1') : '';   // sin la cantidad y en singular: "ORIENTADORES · 40" → "ORIENTADOR"
       var c = { ape: iApe, cuil: iCuil, nom: L.indexOf('NOMBRE'), sector: -1, fecha: L.indexOf('FECHA'), pres: -1, obs: -1, turno: L.indexOf('TURNO'), fechas: [], bloque: bloque };
       L.forEach(function (x, i) {
         if (c.sector < 0 && /^(SECTOR|PUESTO|CARGO)/.test(x)) c.sector = i;
