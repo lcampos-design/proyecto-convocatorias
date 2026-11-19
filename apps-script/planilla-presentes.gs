@@ -43,6 +43,8 @@
  *  convocatorias.externos; una A lo anula. El evento tiene que estar en el panel (convocatoria de Externos con
  *  esa fecha y el mismo nombre). El monto es el TOTAL POR PERSONA del puesto en la "INFO RRHH" de la misma
  *  carpeta (hoja RECURSOS Y VALORES); los mails, también de ahí (hoja CONVOCATORIA). La planilla no se toca.
+ *  Propiedad CARPETA_EXTERNOS = el link de la carpeta "1 - EVENTOS 2026 [Por mes]" (la de las carpetas por mes y
+ *  por evento; para otro año, otra separada por coma): sin ella no ve la unidad compartida de RR. HH.
  *  Sólo fechas desde el 20-nov-2026 (o la propiedad EXTERNOS_DESDE = AAAA-MM-DD). "probar" y "revisar"
  *  muestran también lo de Externos. Necesita correr contratos-presentes-externos.sql en Supabase.
  *
@@ -75,7 +77,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '19-nov tarde, contratos por presente también en Externos';
+var VERSION = '19-nov 11:00, Externos: recorre la carpeta de eventos (CARPETA_EXTERNOS)';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -569,16 +571,47 @@ function desdeExternos_() {
   var p = String(PropertiesService.getScriptProperties().getProperty('EXTERNOS_DESDE') || '').trim();
   return /^\d{4}-\d{2}-\d{2}$/.test(p) ? p : EXTERNOS_DESDE;
 }
+// Dónde están: la carpeta de la propiedad CARPETA_EXTERNOS (el link o el código de "1 - EVENTOS 2026 [Por mes]"; para
+// otro año, otra separada por coma), con sus carpetas por mes ("11-NOVIEMBRE 26") y por evento ("21-11 - CAD Gelatina
+// @CEC"). Sólo el mes anterior, éste y el siguiente. La búsqueda de todo el Drive no ve la unidad compartida de RR. HH.
+// (19-nov: "probar" no encontraba ninguna), así que se recorren las carpetas; además, por si hay alguna fuera de ahí.
+var ULTIMO_RECORRIDO_EXT_ = { carpetas: 0, raices: [], errores: [] };
 function planillasExternos_() {
   var desde = Utilities.formatDate(new Date(Date.now() - HORAS_ATRAS * 3600 * 1000), 'UTC', "yyyy-MM-dd'T'HH:mm:ss");
-  var it = DriveApp.searchFiles('title contains "PRESENTISMO" and mimeType = "application/vnd.google-apps.spreadsheet" and modifiedDate > "' + desde + '" and trashed = false');
-  var lista = [];
-  while (it.hasNext()) {
-    var f = it.next(), n = f.getName();
-    if (/^\s*00\s*-/.test(n) || /\bBASE\b|[ÍI]NDICE|DUPLICAR/i.test(n)) continue;   // las bases para duplicar y el índice
-    lista.push(f);
-  }
+  var q = 'title contains "PRESENTISMO" and mimeType = "application/vnd.google-apps.spreadsheet" and modifiedDate > "' + desde + '" and trashed = false';
+  var lista = [], vistos = {}, sirve = function (f) {
+    var n = f.getName();
+    if (vistos[f.getId()] || /^\s*00\s*-/.test(n) || /\bBASE\b|[ÍI]NDICE|DUPLICAR/i.test(n)) return;   // las bases para duplicar y el índice
+    vistos[f.getId()] = 1; lista.push(f);
+  };
+  var mesActual = Number(Utilities.formatDate(new Date(), TZ_AR, 'M')), meses = {};
+  [mesActual - 1, mesActual, mesActual + 1].forEach(function (m) { meses[((m + 11) % 12) + 1] = 1; });
+  ULTIMO_RECORRIDO_EXT_ = { carpetas: 0, raices: [], errores: [] };
+  var visitar = function (carpeta, nivel) {
+    var n = carpeta.getName(), mes = mesDeCarpeta_(n);
+    if (mes && !meses[mes]) return;                               // otro mes
+    if (nivel > 0 && /CONTRATO|RECIBO|FIRMAD/i.test(n)) return;   // los contratos guardados, no
+    ULTIMO_RECORRIDO_EXT_.carpetas++;
+    var it = carpeta.searchFiles(q);
+    while (it.hasNext()) sirve(it.next());
+    if (nivel < 3) { var sub = carpeta.getFolders(); while (sub.hasNext()) visitar(sub.next(), nivel + 1); }
+  };
+  String(PropertiesService.getScriptProperties().getProperty('CARPETA_EXTERNOS') || '').split(',').forEach(function (t) {
+    var m = String(t).match(/[-\w]{25,}/);
+    if (!m) return;
+    try { var c = DriveApp.getFolderById(m[0]); ULTIMO_RECORRIDO_EXT_.raices.push(c.getName()); visitar(c, 0); }
+    catch (e) { ULTIMO_RECORRIDO_EXT_.errores.push(m[0] + ': ' + e); }
+  });
+  var it2 = DriveApp.searchFiles(q);
+  while (it2.hasNext()) sirve(it2.next());
   return lista;
+}
+// "11-NOVIEMBRE 26" → 11 (una carpeta de un mes); "21-11 - CAD Gelatina" → 0 (no es de un mes).
+function mesDeCarpeta_(n) {
+  var m = etiqueta_(n).match(/^\d{1,2}\s*[-.]?\s*([A-Z]+)/);
+  if (!m) return 0;
+  var i = MESES.map(function (x) { return x.toUpperCase(); }).indexOf(m[1] === 'SETIEMBRE' ? 'SEPTIEMBRE' : m[1]);
+  return i >= 0 ? i + 1 : 0;
 }
 // Una celda de encabezado, para comparar: sin tildes, en mayúsculas, con un espacio entre palabras.
 function etiqueta_(v) { return String(v == null ? '' : v).normalize('NFD').replace(TILDES_, '').toUpperCase().replace(/\s+/g, ' ').trim(); }
@@ -745,7 +778,10 @@ function sincronizarExternos_(clave, inicio) {
 // Para "probar": qué lee de cada planilla de Externos, sin mandar nada.
 function probarExternos_() {
   var desde = desdeExternos_(), lista = planillasExternos_();
-  Logger.log('EXTERNOS [script ' + VERSION + '] — planillas "PRESENTISMO" que cambiaron en las últimas ' + HORAS_ATRAS + ' horas: ' + lista.length + ' · fechas desde ' + desde);
+  var rr = ULTIMO_RECORRIDO_EXT_;
+  Logger.log('EXTERNOS [script ' + VERSION + '] — planillas "PRESENTISMO" que cambiaron en las últimas ' + HORAS_ATRAS + ' horas: ' + lista.length + ' · fechas desde ' + desde
+    + ' · ' + (rr.raices.length ? 'carpeta "' + rr.raices.join('", "') + '" (' + rr.carpetas + ' carpetas mirando el mes anterior, éste y el siguiente)' : 'falta la propiedad CARPETA_EXTERNOS = el link de la carpeta "1 - EVENTOS 2026 [Por mes]" (sin ella no ve la unidad compartida de RR. HH.)')
+    + (rr.errores.length ? ' · no pude abrir: ' + rr.errores.join(' · ') : ''));
   lista.forEach(function (f) {
     var p = leerExterno_(f);
     if (!p.filas.length) { Logger.log('   ' + f.getName() + ' → no encontré la tabla (APELLIDO, CUIL y FECHA + PRESENTISMO, o una columna por fecha "dd/mm P / A")'); return; }

@@ -26,7 +26,7 @@ language sql immutable set search_path = public as $$
   select greatest(
     coalesce(
       (select t.n from (values
-        ('Desmayo / descompensación', 2), ('Lesión o caída', 2), ('Persona alcoholizada o intoxicada', 2), ('Emergencia médica grave', 3),
+        ('Desmayo / descompensación', 2), ('Vértigo', 2), ('Lesión o caída', 2), ('Persona alcoholizada o intoxicada', 2), ('Emergencia médica grave', 3),
         ('Pelea o agresión', 3), ('Persona agresiva o molesta', 2), ('Ingreso indebido / sin entrada', 2), ('Objeto prohibido', 1), ('Robo o hurto', 2),
         ('Fila larga en el ingreso', 1), ('Fila de ingreso desbordada', 2), ('Molinete o lector de entradas que no anda', 2),
         ('Demora en la apertura de puertas', 2), ('Amontonamiento o empujones en el ingreso', 3),
