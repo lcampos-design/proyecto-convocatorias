@@ -36,6 +36,7 @@
 //   (la clave que lleva el script de la planilla; la misma en los dos lados).
 
 import crypto from 'crypto';
+import { TIPO_GOOGLE, esMicrosoft } from './_lib/correo-google.js';
 
 export const config = { maxDuration: 60 };
 
@@ -549,7 +550,7 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ ok: true, simulacion: true, fecha, show: (conv && conv.nombre) || '', filas: filas.length, porResultado, problemas: problemas.slice(0, 80), cuiles: cuilesACorregir(filas, personas, ctx) });
   }
-  const registro = [], cuenta = { enviados: 0, anulados: 0, pendientes: 0, problemas: 0 };
+  const registro = [], cuenta = { enviados: 0, anulados: 0, pendientes: 0, problemas: 0, porGoogle: 0 };
   const ahora = () => new Date().toISOString();
   for (const fila of filas) {
     const dec = decidir(fila, ctx);
@@ -583,6 +584,17 @@ export default async function handler(req, res) {
           contratos.set(p.nucleo, c);
         }
         contratoId = c.id;
+        // Hotmail, Outlook, Live (19-nov): Microsoft frena lo que llega por Resend ("Delivery Delayed"). Queda en la fila
+        // y el script lo manda por Google en esta misma vuelta (api/correo-google.js). Sólo si el script lo sabe hacer.
+        const para = c.email || dec.persona.email;
+        if (cuerpo.google === true && esMicrosoft(para)) {
+          const ya = await sbJson(servicio, `contrato_eventos?select=id&contrato_id=eq.${c.id}&tipo=eq.${TIPO_GOOGLE}&limit=1`);
+          if (!(ya.ok && Array.isArray(ya.data) && ya.data.length))
+            await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: c.id, tipo: TIPO_GOOGLE, meta: { motivo: 'contrato', origen, show: show || (conv && conv.nombre) || '', lugar: ext ? ((conv && conv.venue) || lugar || '') : null } } });
+          resultado = 'por_google'; detalle = 'Sale por Google (Hotmail y Outlook frenan los mails del sistema)'; cuenta.porGoogle++;
+          registro.push({ fila, resultado, detalle, persona: dec.persona, contratoId });
+          continue;
+        }
         if (cuenta.enviados) await espera(600);   // Resend: 2 por segundo para toda la cuenta
         const mail = armarMail({ nombre: c.nombre || dec.persona.nombre, fecha, show: show || (conv && conv.nombre), link: `${SITIO}/contrato.html?t=${c.token}`, lugar: ext ? ((conv && conv.venue) || lugar) : undefined });
         const envio = await mandarMail(resend, c.email || dec.persona.email, mail, ext ? REMITENTE_EXT : REMITENTE);

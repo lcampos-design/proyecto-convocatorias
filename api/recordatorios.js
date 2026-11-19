@@ -16,6 +16,7 @@
 // { prueba: "mail" } → uno de ejemplo (datos inventados, sin link de verdad) a ese mail.
 
 import crypto from 'crypto';
+import { TIPO_GOOGLE, esMicrosoft } from './_lib/correo-google.js';
 
 export const config = { maxDuration: 60 };
 
@@ -143,16 +144,27 @@ export default async function handler(req, res) {
 
   const [rc, re] = await Promise.all([
     sbJson(servicio, `contratos?select=id,nombre,email,token,estado,fecha_envio,vence_el,fecha_show,solo_documentos,convocatorias(nombre,area,fecha)&estado=in.(enviado,visto)&vence_el=gt.${encodeURIComponent(ahora.toISOString())}&fecha_envio=lt.${encodeURIComponent(inicio)}&order=fecha_envio.asc&limit=2000`),
-    sbJson(servicio, `contrato_eventos?select=contrato_id&tipo=in.(enviado,reenviado,recordatorio)&fecha=gte.${encodeURIComponent(inicio)}&limit=10000`)
+    // También los que hoy quedaron en la fila para salir por Google (19-nov): ya tienen su mail del día.
+    sbJson(servicio, `contrato_eventos?select=contrato_id&tipo=in.(enviado,reenviado,recordatorio,${TIPO_GOOGLE})&fecha=gte.${encodeURIComponent(inicio)}&limit=10000`)
   ]);
   if (!rc.ok || !re.ok) return res.status(500).json({ error: 'No se pudieron leer los contratos', detalle: (rc.data && rc.data.message) || (re.data && re.data.message) || '' });
-  const toca = aQuienes(rc.data, (re.data || []).map(e => e.contrato_id), ahora);
+  let toca = aQuienes(rc.data, (re.data || []).map(e => e.contrato_id), ahora);
 
   if (cuerpo.simular) {
     return res.status(200).json({ ok: true, saldrian: toca.length, lista: toca.slice(0, 300).map(c => { const { show, fecha } = showYFecha(c); return { nombre: c.nombre, show, fecha, estado: c.estado }; }) });
   }
 
-  const cuenta = { enviados: 0, problemas: 0 }, errores = [];
+  const cuenta = { enviados: 0, problemas: 0, porGoogle: 0 }, errores = [];
+  // Hotmail, Outlook, Live (19-nov): a la fila, y el script los manda por Google (api/correo-google.js). No cuentan
+  // para el tope de Resend.
+  if (cuerpo.google === true) {
+    const google = toca.filter(c => esMicrosoft(c.email));
+    if (google.length) {
+      const ri = await sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: google.map(c => ({ contrato_id: c.id, tipo: TIPO_GOOGLE, meta: { motivo: 'recordatorio', origen: 'automatico' } })) });
+      if (ri.ok) cuenta.porGoogle = google.length;
+    }
+    if (cuenta.porGoogle) toca = toca.filter(c => !esMicrosoft(c.email));
+  }
   const tanda = toca.slice(0, MAX_ENVIOS);
   for (let i = 0; i < tanda.length; i++) {
     const c = tanda[i];
@@ -168,5 +180,5 @@ export default async function handler(req, res) {
     }
   }
   const pendientes = Math.max(0, toca.length - cuenta.enviados - cuenta.problemas);
-  return res.status(200).json({ ok: true, enviados: cuenta.enviados, pendientes, problemas: cuenta.problemas, errores });
+  return res.status(200).json({ ok: true, enviados: cuenta.enviados, pendientes, problemas: cuenta.problemas, porGoogle: cuenta.porGoogle, errores });
 }

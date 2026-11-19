@@ -48,6 +48,11 @@
  *  Sólo fechas desde el 20-nov-2026 (o la propiedad EXTERNOS_DESDE = AAAA-MM-DD). "probar" y "revisar"
  *  muestran también lo de Externos. Necesita correr contratos-presentes-externos.sql en Supabase.
  *
+ *  HOTMAIL Y OUTLOOK (19-nov): Microsoft frena los mails que salen por Resend ("Delivery Delayed"). Los contratos,
+ *  recordatorios y reenvíos a casillas de Hotmail, Outlook, Live o MSN salen desde esta cuenta de Google, en cada
+ *  vuelta (con "Responder" a convocatorias.arena o .externos). La primera vez reenvía así los de los últimos días
+ *  que nadie abrió. "probar_google": cuántos hay en la fila, sin mandar nada.
+ *
  *  EL REPORTE DE INCIDENCIAS (al terminar cada show del Arena, desde esta casilla):
  *  - Propiedad REPORTE_PARA = los mails que lo reciben, separados por coma; REPORTE_CC, los de
  *    la copia, y REPORTE_CCO, los de la copia oculta (opcionales).
@@ -77,7 +82,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '19-nov 11:00, Externos: recorre la carpeta de eventos (CARPETA_EXTERNOS)';
+var VERSION = '19-nov 12:00, los mails a Hotmail/Outlook salen por Google';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -171,6 +176,8 @@ function sincronizar() {
   });
   // Externos (19-nov): las planillas "PRESENTISMO" de cada evento.
   try { sincronizarExternos_(clave, inicio); } catch (e) { Logger.log('Error con Externos: ' + e); }
+  // Los mails a Hotmail/Outlook/Live, por Google (19-nov): los contratos de recién, los reenvíos del panel.
+  try { correoGoogle_(clave); } catch (e) { Logger.log('Error con los mails por Google: ' + e); }
   // El reporte de incidencias del show de anoche, a la 1:30 (si no salió todavía).
   try { reportes_(clave); } catch (e) { Logger.log('Error con el reporte: ' + e); }
   // Los recordatorios de los contratos sin firmar: una vez por día, desde las 12.
@@ -549,7 +556,8 @@ function leer_(f) {
     // El del alta de ARCA, si es otro que el de la planilla: es el que va en el contrato.
     var a = altaDe_(d, x); if (a && a !== x.cuil) x.alta = a;
   });
-  var p = { archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: show, disponibilidad: d.total, filas: filas };
+  // google: los de Hotmail/Outlook los manda este script por Google (19-nov, correoGoogle_).
+  var p = { archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: show, disponibilidad: d.total, google: true, filas: filas };
   // Las celdas no viajan a la plataforma ni cuentan para la huella (no enumerable: JSON.stringify las saltea).
   Object.defineProperty(p, 'celdas', { value: celdas, enumerable: false });
   return p;
@@ -744,7 +752,7 @@ function externosPorFecha_(f, p) {
       var a = altaDe_(d, y); if (a && a !== y.cuil) y.alta = a;
       return y;
     });
-    var q = { area: 'externos', archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: p.evento, nombres: [p.nombre], lugar: p.lugar, tarifas: info.tarifas, disponibilidad: d.total, filas: filas };
+    var q = { area: 'externos', archivo: { id: f.getId(), nombre: f.getName() }, fecha: fecha, show: p.evento, nombres: [p.nombre], lugar: p.lugar, tarifas: info.tarifas, disponibilidad: d.total, google: true, filas: filas };
     Object.defineProperty(q, 'info', { value: info.archivo, enumerable: false });
     return q;
   });
@@ -803,6 +811,55 @@ function revisarExternos_(clave) {
       (r.problemas || []).slice(0, 40).forEach(function (x) { Logger.log('   ' + x.sector + ' · ' + x.apellido + ', ' + x.nombre + ' → ' + x.resultado + (x.detalle ? ' (' + x.detalle + ')' : '')); });
     });
   });
+}
+
+// ── Los mails a Hotmail, Outlook y Live, por Google (19-nov) ──
+// En Resend, los contratos del 18-nov a Hotmail quedaron "Delivery Delayed": Microsoft frena lo que llega desde
+// Resend. Thomas: "que salgan por Google". La plataforma deja esos mails en una fila (contratos por presente,
+// recordatorios y reenvíos del panel) y acá salen con MailApp, desde esta cuenta (con "Responder" a la casilla del
+// área), y se le avisa a la plataforma cuáles salieron. La primera vez, además, pone en la fila los contratos a esas
+// casillas de los últimos días que nadie abrió (los demorados). MailApp ya tiene permiso (lo usan los reportes).
+var URL_CORREO = 'https://convocatorias.show-bs.com/api/correo-google';
+function pedirCorreo_(clave, cuerpo) {
+  var resp = UrlFetchApp.fetch(URL_CORREO, { method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { 'x-clave': clave }, payload: JSON.stringify(cuerpo) });
+  try { return JSON.parse(resp.getContentText()); } catch (_) { return { ok: false, status: resp.getResponseCode() }; }
+}
+function correoGoogle_(clave) {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('google_demorados') !== 'hecho') {
+    var d = pedirCorreo_(clave, { accion: 'demorados' });
+    if (d && d.ok) { props.setProperty('google_demorados', 'hecho'); Logger.log('Por Google: ' + d.encolados + ' contratos a Hotmail/Outlook que nadie abrió, para reenviar'); }
+    else Logger.log('Por Google: no pude pedir los demorados: ' + JSON.stringify(d));
+  }
+  var total = 0;
+  for (var vuelta = 0; vuelta < 6; vuelta++) {
+    var r = pedirCorreo_(clave, { accion: 'pendientes' });
+    if (!r || !r.ok) { Logger.log('Por Google: no pude leer la fila: ' + JSON.stringify(r)); return total; }
+    if (!r.items || !r.items.length) break;
+    var hechos = [], cupo = MailApp.getRemainingDailyQuota();
+    r.items.forEach(function (it) {
+      if (hechos.length >= cupo) return;
+      try {
+        MailApp.sendEmail({ to: it.para, subject: it.subject, body: it.text, htmlBody: it.html, name: 'Show Business Solutions', replyTo: it.responder });
+        hechos.push(it.pedido);
+      } catch (e) { Logger.log('Por Google: no salió un mail (' + e + ')'); }
+    });
+    if (!hechos.length) break;
+    var c = pedirCorreo_(clave, { accion: 'enviados', pedidos: hechos });
+    total += hechos.length;
+    // Si la plataforma no lo anotó, no se sigue (si no, en la vuelta siguiente saldrían de nuevo).
+    if (!c || !c.ok) { Logger.log('Por Google: salieron ' + hechos.length + ' pero no pude avisarle a la plataforma: ' + JSON.stringify(c)); break; }
+    if (hechos.length < r.items.length || !r.mas) break;
+  }
+  if (total) Logger.log('Por Google: ' + total + ' mails a Hotmail/Outlook/Live');
+  return total;
+}
+// Para mirar: cuántos hay en la fila, sin mandar nada.
+function probar_google() {
+  var clave = PropertiesService.getScriptProperties().getProperty('CLAVE');
+  var r = pedirCorreo_(clave, { accion: 'pendientes' });
+  Logger.log('[script ' + VERSION + '] Por Google: ' + (r && r.ok ? r.items.length + ' mails en la fila' + (r.mas ? ' (y más)' : '') + ' · quedan ' + MailApp.getRemainingDailyQuota() + ' envíos de Google hoy' : 'no pude leer la fila: ' + JSON.stringify(r))
+    + ' · demorados: ' + (PropertiesService.getScriptProperties().getProperty('google_demorados') === 'hecho' ? 'ya se pusieron en la fila' : 'se ponen en la fila en la próxima vuelta'));
 }
 
 // ── Los CUIL mal escritos, marcados en la misma planilla (Thomas, 14-nov) ──
@@ -921,13 +978,14 @@ function recordatorios_(clave) {
   if (hoy < RECORDATORIOS_DESDE || hora < 12 || hora >= 20) return;
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('recordatorios_' + hoy)) return;
-  var vueltas = 0, r, total = 0, problemas = 0;
+  var vueltas = 0, r, total = 0, problemas = 0, google = 0;
   do {
-    r = pedirRecordatorios_(clave);
+    r = pedirRecordatorios_(clave, { google: true });   // los de Hotmail/Outlook, a la fila de Google (19-nov)
     vueltas++;
-    if (r && r.ok) { total += r.enviados || 0; problemas += r.problemas || 0; }
+    if (r && r.ok) { total += r.enviados || 0; problemas += r.problemas || 0; google += r.porGoogle || 0; }
   } while (r && r.ok && r.pendientes > 0 && vueltas < 8);
-  Logger.log('Recordatorios de contratos sin firmar → ' + total + ' enviados' + (problemas ? ', ' + problemas + ' con problema: ' + JSON.stringify(r.errores || []) : '') + (r && r.ok ? '' : ' · ' + JSON.stringify(r)));
+  if (google) correoGoogle_(clave);
+  Logger.log('Recordatorios de contratos sin firmar → ' + total + ' enviados' + (google ? ' + ' + google + ' por Google (Hotmail/Outlook)' : '') + (problemas ? ', ' + problemas + ' con problema: ' + JSON.stringify(r.errores || []) : '') + (r && r.ok ? '' : ' · ' + JSON.stringify(r)));
   if (r && r.ok && !r.pendientes) props.setProperty('recordatorios_' + hoy, new Date().toISOString() + ' · ' + total + ' enviados');
 }
 // Para mirar antes (no manda nada a nadie): un recordatorio de ejemplo a REPORTE_PRUEBA (o a esta
