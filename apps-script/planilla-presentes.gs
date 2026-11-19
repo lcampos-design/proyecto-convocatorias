@@ -82,7 +82,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '19-nov 12:00, los mails a Hotmail/Outlook salen por Google';
+var VERSION = '19-nov 12:30, Hotmail por Google + Externos más liviano';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -594,22 +594,35 @@ function planillasExternos_() {
   };
   var mesActual = Number(Utilities.formatDate(new Date(), TZ_AR, 'M')), meses = {};
   [mesActual - 1, mesActual, mesActual + 1].forEach(function (m) { meses[((m + 11) % 12) + 1] = 1; });
-  ULTIMO_RECORRIDO_EXT_ = { carpetas: 0, raices: [], errores: [] };
-  var visitar = function (carpeta, nivel) {
-    var n = carpeta.getName(), mes = mesDeCarpeta_(n);
-    if (mes && !meses[mes]) return;                               // otro mes
-    if (nivel > 0 && /CONTRATO|RECIBO|FIRMAD/i.test(n)) return;   // los contratos guardados, no
-    ULTIMO_RECORRIDO_EXT_.carpetas++;
-    var it = carpeta.searchFiles(q);
-    while (it.hasNext()) sirve(it.next());
-    if (nivel < 3) { var sub = carpeta.getFolders(); while (sub.hasNext()) visitar(sub.next(), nivel + 1); }
-  };
-  String(PropertiesService.getScriptProperties().getProperty('CARPETA_EXTERNOS') || '').split(',').forEach(function (t) {
-    var m = String(t).match(/[-\w]{25,}/);
-    if (!m) return;
-    try { var c = DriveApp.getFolderById(m[0]); ULTIMO_RECORRIDO_EXT_.raices.push(c.getName()); visitar(c, 0); }
-    catch (e) { ULTIMO_RECORRIDO_EXT_.errores.push(m[0] + ': ' + e); }
-  });
+  ULTIMO_RECORRIDO_EXT_ = { carpetas: 0, raices: [], errores: [], deCache: false };
+  // Recorrer todas las carpetas lleva unos 20 segundos: se hace cada media hora (y siempre en "probar" y "revisar") y se
+  // guardan las planillas "PRESENTISMO" que hay; en las vueltas del medio sólo se mira si cambió alguna de ésas.
+  var cache = CacheService.getScriptCache(), guardadas = FRESCO_ ? null : cache.get('ext_planillas');
+  if (guardadas) {
+    ULTIMO_RECORRIDO_EXT_.deCache = true;
+    var limite = new Date(Date.now() - HORAS_ATRAS * 3600 * 1000).getTime();
+    JSON.parse(guardadas).forEach(function (id) {
+      try { var f = DriveApp.getFileById(id); if (!f.isTrashed() && f.getLastUpdated().getTime() > limite) sirve(f); } catch (_) {}
+    });
+  } else {
+    var todas = [], qTodas = 'title contains "PRESENTISMO" and mimeType = "application/vnd.google-apps.spreadsheet" and trashed = false';
+    var visitar = function (carpeta, nivel) {
+      var n = carpeta.getName(), mes = mesDeCarpeta_(n);
+      if (mes && !meses[mes]) return;                               // otro mes
+      if (nivel > 0 && /CONTRATO|RECIBO|FIRMAD/i.test(n)) return;   // los contratos guardados, no
+      ULTIMO_RECORRIDO_EXT_.carpetas++;
+      var it = carpeta.searchFiles(qTodas), limite2 = new Date(Date.now() - HORAS_ATRAS * 3600 * 1000).getTime();
+      while (it.hasNext()) { var f = it.next(); todas.push(f.getId()); if (f.getLastUpdated().getTime() > limite2) sirve(f); }
+      if (nivel < 3) { var sub = carpeta.getFolders(); while (sub.hasNext()) visitar(sub.next(), nivel + 1); }
+    };
+    String(PropertiesService.getScriptProperties().getProperty('CARPETA_EXTERNOS') || '').split(',').forEach(function (t) {
+      var m = String(t).match(/[-\w]{25,}/);
+      if (!m) return;
+      try { var c = DriveApp.getFolderById(m[0]); ULTIMO_RECORRIDO_EXT_.raices.push(c.getName()); visitar(c, 0); }
+      catch (e) { ULTIMO_RECORRIDO_EXT_.errores.push(m[0] + ': ' + e); }
+    });
+    if (ULTIMO_RECORRIDO_EXT_.raices.length && !ULTIMO_RECORRIDO_EXT_.errores.length) { try { cache.put('ext_planillas', JSON.stringify(todas), 1800); } catch (_) {} }
+  }
   var it2 = DriveApp.searchFiles(q);
   while (it2.hasNext()) sirve(it2.next());
   return lista;
@@ -785,6 +798,7 @@ function sincronizarExternos_(clave, inicio) {
 }
 // Para "probar": qué lee de cada planilla de Externos, sin mandar nada.
 function probarExternos_() {
+  FRESCO_ = true;
   var desde = desdeExternos_(), lista = planillasExternos_();
   var rr = ULTIMO_RECORRIDO_EXT_;
   Logger.log('EXTERNOS [script ' + VERSION + '] — planillas "PRESENTISMO" que cambiaron en las últimas ' + HORAS_ATRAS + ' horas: ' + lista.length + ' · fechas desde ' + desde
