@@ -48,8 +48,10 @@ export function ubicacion(c, area) {
   let carpeta;
   if ((area || areaDe(c)) === 'arena') carpeta = nombreShow.toUpperCase() + ' ' + d + ' /' + m;
   else {
+    // El nombre sin los pedazos que son sólo fechas ("Cancillería · Palacio Libertad y UCA · 8 y 9 11"): los días ya van al final.
+    const sinFechas = nombreShow.split(/\s+·\s+/).filter(p => !/^\d{1,2}(\s*(y|,|-|al|a)\s*\d{1,2})*(\s*[\/.-]?\s*\d{1,2})?(\s*[\/.-]\s*\d{2,4})?$/i.test(p.trim())).join(' · ') || nombreShow;
     const dias = String((c.convocatorias && c.convocatorias.fecha) || '').split(',').map(x => x.trim()).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x) && x.slice(0, 7) === f.slice(0, 7)).sort().map(x => x.slice(8));
-    carpeta = nombreShow + ' ' + (dias.length ? [...new Set(dias)].join(',') : d) + ' /' + m + ' - Contratos';
+    carpeta = sinFechas + ' ' + (dias.length ? [...new Set(dias)].join(',') : d) + ' /' + m + ' - Contratos';
   }
   return { anio: a, carpeta_show: carpeta, archivo: nombre + ' - ' + (c.solo_documentos ? 'Documento' : 'Contrato') + ' ' + d + '-' + m + '.pdf' };
 }
