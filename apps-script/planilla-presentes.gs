@@ -67,7 +67,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '18-nov 22:00, los contratos firmados al Drive de RR. HH. + "autorizar"';
+var VERSION = '19-nov, el pie de los mails con la página de SBS e Instagram con link';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -860,7 +860,7 @@ function cuerpoReporte_(s) {
     + '<div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">'
     + '<img src="' + SITIO + '/firmas/firma-rrhh.jpg" alt="Show Business Solutions · Gerencia de RR. HH." width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0"></div>'
     + '</div>'
-    + '<div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">Show Business Solutions · convocatorias.arena@show-bs.com<br>Instagram @showbs · @showbspain</div>'
+    + '<div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">Show Business Solutions · <a href="https://show-bs.com/" style="color:#9ca3af;text-decoration:underline">show-bs.com</a><br>Instagram <a href="https://www.instagram.com/showbs/" style="color:#9ca3af;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9ca3af;text-decoration:underline">@showbspain</a></div>'
     + '</div>';
   return { texto: texto, html: html };
 }

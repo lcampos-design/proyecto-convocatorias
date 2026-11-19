@@ -82,8 +82,8 @@ export function armarRecordatorio(c) {
     </div>
   </div>
   <div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">
-    Show Business Solutions · ${casilla}<br>
-    Instagram @showbs · @showbspain
+    Show Business Solutions · <a href="https://show-bs.com/" style="color:#9ca3af;text-decoration:underline">show-bs.com</a><br>
+    Instagram <a href="https://www.instagram.com/showbs/" style="color:#9ca3af;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9ca3af;text-decoration:underline">@showbspain</a>
   </div>
 </div>`;
   return { from: casilla, subject, text, html };
