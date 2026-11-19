@@ -12597,6 +12597,9 @@ function descargarContratoFirmado() {
 // hay que modificarlo"; hasta ahora se hacía con SQL). Queda en la trazabilidad; el código para firmar, los
 // recordatorios y los reenvíos van al mail nuevo. Después ofrece reenviarlo. Uno firmado no se toca (la base
 // tampoco lo deja).
+// 18-nov: el mail nuevo también queda en la nómina (si ahí estaba el viejo o no había ninguno) y en los otros
+// contratos sin firmar de la persona que tenían el viejo. Antes, el contrato del show siguiente salía otra vez
+// al mail que no andaba, porque la planilla de presentes lo toma de la nómina.
 async function cambiarMailContrato() {
   const row = ctTraceRow;
   if (!row || row.estado === 'firmado' || row.estado === 'anulado') return;
@@ -12606,9 +12609,29 @@ async function cambiarMailContrato() {
   const { data, error } = await sb.from('contratos').update({ email: nuevo }).eq('id', row.id).neq('estado', 'firmado').select('id');
   if (error || !data || !data.length) { toast('No se pudo cambiar el mail' + (error && error.message ? ': ' + error.message : '')); return; }
   await sb.from('contrato_eventos').insert({ contrato_id: row.id, tipo: 'mail_cambiado', meta: { antes: row.email || null, nuevo } });
+  const viejo = String(row.email || '').trim().toLowerCase(), tambien = [];
   row.email = nuevo;
   const enLista = contratos.find(c => c.id === row.id); if (enLista) enLista.email = nuevo;
-  toast('✓ Mail cambiado');
+  const nuc = docNucleo(row.cuil || '');
+  const per = (row.persona_id && people.find(p => p.id === row.persona_id)) || (!row.persona_id && nuc ? people.find(p => p.cuit && docNucleo(p.cuit) === nuc) : null);
+  try {
+    if (per && (!String(per.email || '').includes('@') || String(per.email).trim().toLowerCase() === viejo)) {
+      const rp = await sb.from('personas').update({ email: nuevo }).eq('id', per.id).select('id');
+      if (!rp.error && rp.data && rp.data.length) { per.email = nuevo; tambien.push('la nómina'); }
+    }
+    const otros = viejo ? contratos.filter(c => c.id !== row.id && c.estado !== 'firmado' && c.estado !== 'anulado'
+      && String(c.email || '').trim().toLowerCase() === viejo
+      && ((row.persona_id && c.persona_id === row.persona_id) || (nuc && docNucleo(c.cuil || '') === nuc))) : [];
+    let n = 0;
+    for (const c of otros) {
+      const rc = await sb.from('contratos').update({ email: nuevo }).eq('id', c.id).neq('estado', 'firmado').select('id');
+      if (rc.error || !rc.data || !rc.data.length) continue;
+      await sb.from('contrato_eventos').insert({ contrato_id: c.id, tipo: 'mail_cambiado', meta: { antes: c.email || null, nuevo, junto_con: row.id } });
+      c.email = nuevo; n++;
+    }
+    if (n) tambien.push(n === 1 ? 'otro contrato sin firmar' : n + ' contratos sin firmar más');
+  } catch (_) {}
+  toast('✓ Mail cambiado' + (tambien.length ? ' (también en ' + listaY(tambien) + ')' : ''));
   if (confirm(`¿Reenviarle el contrato ahora a ${nuevo}?`)) await reenviarContrato(true);
   else verContratoTrace(row.id);
 }
