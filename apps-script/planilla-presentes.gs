@@ -62,10 +62,12 @@
  *  - La cuenta del script tiene que poder agregar archivos en esas carpetas (colaborador de la unidad compartida).
  *  - "probar_firmados": cuántos faltan guardar y en qué carpetas, sin guardar nada.
  *  - "guardar_firmados": los guarda ya (sin esperar los 15 minutos).
+ *  - Si el registro dice que falta el permiso del Drive: ejecutar "autorizar" y, en la ventana de Google, tocar
+ *    "Seleccionar todo" y "Continuar" (al autorizar se pueden destildar permisos, y el de guardar queda afuera).
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '18-nov noche, los contratos firmados al Drive de RR. HH. (carpetas como las de RR. HH.)';
+var VERSION = '18-nov 22:00, los contratos firmados al Drive de RR. HH. + "autorizar"';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -983,7 +985,7 @@ function firmados_(clave, forzar) {
             else { dest.createFile(Utilities.newBlob(Utilities.base64Decode(c.pdf), 'application/pdf', c.archivo)); ARCHIVOS_[dest.getId()][claveArchivo_(c.archivo)] = true; guardados++; }
           }
           desde = c.firmado_at; props.setProperty('firmados_desde_' + area, desde);
-        } catch (e) { resumen.push(area + ': no se pudo guardar ' + c.archivo + ' · ' + e + ' (¿la cuenta del script es colaboradora de la unidad compartida?)'); quedan = true; return; }
+        } catch (e) { resumen.push(area + ': no se pudo guardar ' + c.archivo + ' · ' + e + (/auth\/drive|permiso para llamar|permission to call/i.test(String(e)) ? ' → falta el permiso de Google para guardar en el Drive: ejecutar "autorizar" y aceptar todo' : ' (¿la cuenta del script es colaboradora de la unidad compartida?)')); quedan = true; return; }
       }
       if (r.cursor && r.cursor > desde) { desde = r.cursor; props.setProperty('firmados_desde_' + area, desde); }
       if (!r.mas) break;
@@ -1011,6 +1013,16 @@ function probar_firmados() {
     Logger.log(area + ': faltan revisar ' + r.pendientes + ' contrato(s) firmado(s) (los que ya están en la carpeta no se repiten).');
     Object.keys(r.carpetas || {}).forEach(function (k) { Logger.log('   · ' + k + ': ' + r.carpetas[k]); });
   });
+}
+// Vuelve a pedir los permisos que falten (por ejemplo, el de guardar en el Drive). Desde el editor: elegir
+// "autorizar", Ejecutar y, en la ventana de Google, "Seleccionar todo" y "Continuar".
+function autorizar() {
+  if (typeof ScriptApp.requireAllScopes === 'function') {
+    ScriptApp.requireAllScopes(ScriptApp.AuthMode.FULL);
+    Logger.log('Listo: el script tiene todos los permisos que necesita. Ahora se puede ejecutar "guardar_firmados".');
+  } else {
+    Logger.log('Esta versión de Apps Script no deja pedirlos de nuevo desde acá: en myaccount.google.com/connections (con esta cuenta) quitarle el acceso a este proyecto y volver a ejecutar "guardar_firmados"; en la ventana de Google, "Seleccionar todo".');
+  }
 }
 // Los guarda ya (sin esperar los 15 minutos).
 function guardar_firmados() {
