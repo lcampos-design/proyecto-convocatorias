@@ -167,7 +167,7 @@ export function normalizarFilas(filas) {
     if (f.espera === true) fila.espera = true;
     if (doc.length >= 7 && doc.length <= 11 && doc !== cuil) fila.doc = doc;
     // El CUIL del alta de ARCA de esa persona (lo busca el script en la planilla de altas, por el nombre y parecido al de la planilla).
-    const alta = String(f.alta || '').replace(/D/g, '');
+    const alta = String(f.alta || '').replace(/\D/g, '');
     if (cuilValido(alta) && alta !== cuil) fila.alta = alta;
     const antes = por.get(cuil);
     if (!antes || (marca === 'P' && antes.marca !== 'P') || (marca && !antes.marca)) por.set(cuil, fila);
@@ -305,7 +305,7 @@ export function correccionesDeMail(eventos) {
   (eventos || []).slice().sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || ''))).forEach(e => {
     const meta = e.meta || {}, c = e.contratos || {};
     const antes = String(meta.antes || '').trim().toLowerCase(), nuevo = String(meta.nuevo || '').trim().toLowerCase();
-    if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(nuevo)) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nuevo)) return;
     [...new Set([nucleoDe(c.cuil), nucleoDe(c.doc_nucleo)].filter(Boolean))].forEach(n => {
       if (!m.has(n)) m.set(n, { nuevo, antes: new Set() });
       if (antes) m.get(n).antes.add(antes);
