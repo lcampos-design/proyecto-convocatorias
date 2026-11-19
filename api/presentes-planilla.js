@@ -294,6 +294,32 @@ export function conDisponibilidad(p, fila, cands) {
   if (!nucleo || (cands || []).some(c => c.nucleo === nucleo)) return p;
   return { fuente: 'disponibilidad', como: 'disponibilidad', id: null, nombre: (fila.nombre + ' ' + fila.apellido).trim(), email: fila.mail, cuit: doc, nucleo, mailDe: 'disponibilidad' };
 }
+// ── El mail corregido a mano (18-nov) ──
+// Si en el panel se le cambió el mail a un contrato de la persona ("Cambiar mail"), los contratos siguientes salen al
+// mail nuevo, aunque la nómina, la inscripción o la disponibilidad del mes tengan todavía el viejo, y aunque no esté en
+// la nómina (Thomas, 18-nov: "que esté OK para siempre, no para uno en particular"; el contrato del show siguiente
+// salía otra vez al mail que no andaba). Sólo si el que trae es uno de los que se corrigieron o no trae ninguno: si la
+// persona dejó después otro distinto, se usa ése. Vale el último cambio.
+export function correccionesDeMail(eventos) {
+  const m = new Map();
+  (eventos || []).slice().sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || ''))).forEach(e => {
+    const meta = e.meta || {}, c = e.contratos || {};
+    const antes = String(meta.antes || '').trim().toLowerCase(), nuevo = String(meta.nuevo || '').trim().toLowerCase();
+    if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(nuevo)) return;
+    [...new Set([nucleoDe(c.cuil), nucleoDe(c.doc_nucleo)].filter(Boolean))].forEach(n => {
+      if (!m.has(n)) m.set(n, { nuevo, antes: new Set() });
+      if (antes) m.get(n).antes.add(antes);
+    });
+  });
+  return m;
+}
+export function conMailCorregido(p, correcciones) {
+  if (!p || p.ambigua || p.distinta || !p.nucleo || !correcciones) return p;
+  const k = correcciones.get(p.nucleo); if (!k) return p;
+  const actual = String(p.email || '').trim().toLowerCase();
+  if (actual === k.nuevo || (actual.includes('@') && !k.antes.has(actual))) return p;
+  return Object.assign({}, p, { email: k.nuevo, mailDe: 'corregido' });
+}
 // El contrato que ya tiene esa fila (de esa fecha, sin anular). No sólo por el documento de la persona: si cambia
 // el documento con que se la encuentra (la disponibilidad o las altas de ARCA traen otro), también por el de la
 // planilla, el de la disponibilidad, el contrato que ya tenía esa fila y la persona. El 13-nov salieron contratos
@@ -437,6 +463,9 @@ export default async function handler(req, res) {
     filas.forEach(f => { if (!f.mail || !buscar.includes(f.cuil)) return; const fb = conAlta(f) ? Object.assign({}, f, { cuil: f.alta, doc: f.alta }) : f; const p = conDisponibilidad(personas.get(f.cuil) || null, fb, candsDe(f)); if (p) personas.set(f.cuil, p); });
     // El contrato, con el CUIL del alta (aunque la ficha o la inscripción tengan otro): es la misma persona (mismo nombre).
     filas.forEach(f => { const p = personas.get(f.cuil); if (!conAlta(f) || !p || p.ambigua || p.distinta) return; personas.set(f.cuil, Object.assign({}, p, { cuit: f.alta, nucleo: nucleoDe(f.alta), deAlta: true })); });
+    // El mail que se corrigió a mano en un contrato anterior (ver conMailCorregido).
+    const rm = await sbJson(servicio, 'contrato_eventos?select=fecha,meta,contratos(cuil,doc_nucleo)&tipo=eq.mail_cambiado&order=fecha.desc&limit=5000');
+    if (rm.ok) { const corr = correccionesDeMail(rm.data); if (corr.size) personas.forEach((p, k) => personas.set(k, conMailCorregido(p, corr))); }
   }
 
   const porId = new Map((rc.data || []).map(c => [c.id, c])), porPersona = new Map((rc.data || []).filter(c => c.persona_id).map(c => [c.persona_id, c]));
@@ -451,6 +480,7 @@ export default async function handler(req, res) {
       if (k !== 'saldria' && k !== 'ya_tenia' && k !== 'firmado') problemas.push({ sector: f.sector, apellido: f.apellido, nombre: f.nombre, resultado: k, detalle: d.detalle || '' });
       if (d.resultado === 'mandar' && d.tarifa) porResultado['puesto: ' + d.tarifa.puesto] = (porResultado['puesto: ' + d.tarifa.puesto] || 0) + 1;
       if (d.resultado === 'mandar' && d.persona && d.persona.mailDe === 'disponibilidad') porResultado['con el mail de la disponibilidad'] = (porResultado['con el mail de la disponibilidad'] || 0) + 1;
+      if (d.resultado === 'mandar' && d.persona && d.persona.mailDe === 'corregido') porResultado['con el mail corregido a mano'] = (porResultado['con el mail corregido a mano'] || 0) + 1;
     }
     return res.status(200).json({ ok: true, simulacion: true, fecha, show: (conv && conv.nombre) || '', filas: filas.length, porResultado, problemas: problemas.slice(0, 80), cuiles: cuilesACorregir(filas, personas, ctx) });
   }
