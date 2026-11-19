@@ -82,7 +82,7 @@
  *  Para apagarlo: ejecutar "desinstalar".
  */
 
-var VERSION = '19-nov 12:30, Hotmail por Google + Externos más liviano';
+var VERSION = '19-nov 13:00, Externos: sin puesto en la fila, el del bloque';
 var URL_PLATAFORMA = 'https://convocatorias.show-bs.com/api/presentes-planilla';
 var HORAS_ATRAS = 36;   // qué planillas mira: las que cambiaron en el último día y medio
 // El contrato sale al instante: en la vuelta siguiente a la P (el script corre cada 5 minutos). Thomas,
@@ -665,7 +665,11 @@ function filasExterno_(v, creada) {
     if (iApe >= 0 && iCuil >= 0) {
       var sub = r + 1 < v.length ? v[r + 1].map(etiqueta_) : [];
       var L = lab.map(function (x, i) { return x || sub[i] || ''; });
-      var c = { ape: iApe, cuil: iCuil, nom: L.indexOf('NOMBRE'), sector: -1, fecha: L.indexOf('FECHA'), pres: -1, obs: -1, turno: L.indexOf('TURNO'), fechas: [] };
+      // El título del bloque ("SUPERVISORES", "ORIENTADORES"), en la primera columna del encabezado: el puesto de las
+      // filas que no lo dicen (19-nov: en CAD Gelatina los orientadores no tenían SECTOR).
+      var b0 = String(v[r][0] || '').trim(), bloque = /[A-Za-z]{3,}/.test(b0) && !/^(SECTOR|PUESTO|CARGO|APELLIDO|NOMBRE|N[°º]?|NRO|NUMERO)\b/.test(lab[0])
+        ? b0.replace(/(OR|ER)ES$/i, '$1').replace(/([^S])S$/i, '$1') : '';   // en singular: "ORIENTADORES" → "ORIENTADOR"
+      var c = { ape: iApe, cuil: iCuil, nom: L.indexOf('NOMBRE'), sector: -1, fecha: L.indexOf('FECHA'), pres: -1, obs: -1, turno: L.indexOf('TURNO'), fechas: [], bloque: bloque };
       L.forEach(function (x, i) {
         if (c.sector < 0 && /^(SECTOR|PUESTO|CARGO)/.test(x)) c.sector = i;
         if (c.pres < 0 && /^(PRESENTISMO|ASISTENCIA|PRESENTES?)$/.test(x)) c.pres = i;
@@ -680,7 +684,8 @@ function filasExterno_(v, creada) {
     var fila = v[r], cuil = String(fila[col.cuil] || '').replace(/\D/g, '');
     if (cuil.length < 7) continue;
     var obs = [col.turno >= 0 ? fila[col.turno] : '', col.obs >= 0 ? fila[col.obs] : ''].map(function (t) { return String(t || '').trim(); }).filter(String).join(' · ');
-    var base = { sector: col.sector >= 0 ? String(fila[col.sector] || '').trim() : '', cuil: cuil, obs: obs.slice(0, 80),
+    var enFila = col.sector >= 0 ? String(fila[col.sector] || '').trim() : '';
+    var base = { sector: enFila || col.bloque, deBloque: !enFila && !!col.bloque, cuil: cuil, obs: obs.slice(0, 80),
       apellido: String(fila[col.ape] || '').trim(), nombre: col.nom >= 0 ? String(fila[col.nom] || '').trim() : '' };
     var una = function (fecha, celda) { var x = {}; Object.keys(base).forEach(function (k) { x[k] = base[k]; }); x.fecha = fecha; x.marca = marcaExt_(celda); out.push(x); };
     if (col.fecha >= 0 && col.pres >= 0) { var f1 = isoExt_(fila[col.fecha], creada); if (f1) una(f1, fila[col.pres]); }
@@ -710,6 +715,18 @@ function leerExterno_(f) {
     var l = filasExterno_(v, creada);
     if (l.length) { hojas.push(h.getName()); filas = filas.concat(l); }
   });
+  // La misma persona y fecha en dos hojas (PRESENTES y la de una columna por fecha): una sola fila, con la marca que
+  // haya (P antes que A) y el puesto de la que lo diga.
+  var una = {}, orden = [];
+  filas.forEach(function (x) {
+    var k = x.fecha + '|' + x.cuil, y = una[k];
+    if (!y) { una[k] = x; orden.push(k); return; }
+    var gana = (x.marca === 'P' && y.marca !== 'P') || (x.marca && !y.marca) ? x : y, otra = gana === x ? y : x;
+    if ((!gana.sector || gana.deBloque) && otra.sector && !otra.deBloque) { gana.sector = otra.sector; gana.deBloque = false; }
+    else if (!gana.sector && otra.sector) { gana.sector = otra.sector; gana.deBloque = otra.deBloque; }
+    una[k] = gana;
+  });
+  filas = orden.map(function (k) { return una[k]; });
   return { evento: (evento || desdeNombre.evento).slice(0, 80), lugar: (lugar || desdeNombre.lugar).slice(0, 120), nombre: desdeNombre.nombre, hojas: hojas, filas: filas };
 }
 // La INFO RRHH del evento (en la misma carpeta que la planilla): los montos y los mails.
