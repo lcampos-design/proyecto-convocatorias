@@ -2911,7 +2911,10 @@ async function loadAll() {
     // respuesta en 1.000 filas: con más gente, las fichas más nuevas no
     // llegaban nunca (no aparecían al buscarlas aunque estuvieran
     // aceptadas). Se pide de a tandas de 1.000.
-    const rp = await traerEnTandas((a, b) => sb.rpc('personas_lista').range(a, b), 'personas');
+    // 21-nov: de a una tanda por pedido (personas_lista_tanda, velocidad-nomina-2.sql): cada tanda calcula sólo lo
+    // suyo. Sin esa función, la de siempre.
+    let rp = await traerEnTandas((a, b) => sb.rpc('personas_lista_tanda', { p_desde: a, p_cantidad: b - a + 1 }), 'personas');
+    if (rp.error && !rp.data.length) rp = await traerEnTandas((a, b) => sb.rpc('personas_lista').range(a, b), 'personas');
     let todas = rp.data, error = rp.error;
     if (todas.length && error) toast('La nómina no terminó de cargar (' + todas.length + ' personas): recargá la página');
     if (todas.length) {
