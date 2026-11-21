@@ -377,6 +377,11 @@ tr:hover td{background:#fafaf8}
 textarea.fi{height:64px;resize:vertical}
 .frow{display:flex;gap:12px}.frow .fg{flex:1}
 .ma{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+/* 21-nov (Mercedes: "se ve medio chico y no deja ver la totalidad de opciones abajo"): el detalle del contrato, más
+   grande, con el tamaño a gusto (se agranda desde la esquina de abajo a la derecha y se recuerda) y los botones que
+   no entran pasan a otra línea. */
+.modal.modal-redim{width:min(860px,94vw);max-width:96vw;max-height:94vh;min-width:min(420px,94vw);min-height:260px;resize:both;overflow:auto}
+.modal.modal-redim .ma{flex-wrap:wrap}
 .divider{height:1px;background:#f3f4f6;margin:14px 0}
 .csv-ta{width:100%;height:110px;padding:10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;font-variant-numeric:tabular-nums;outline:none;resize:vertical}
 .csv-ta:focus{border-color:#534AB7}
@@ -2409,7 +2414,7 @@ tr:hover td{background:#f9f9fb}
 </div>
 
 <div class="modal-bg" id="mContratoTrace" style="display:none" onclick="bgClose('mContratoTrace',event)">
-  <div class="modal" style="max-width:520px">
+  <div class="modal modal-redim">
     <div class="modal-title"><span><i class="ic ic-doc"></i> Contrato — <span id="ctTraceNombre"></span></span><button class="mclose" onclick="closeM('mContratoTrace')">✕</button></div>
     <div id="ctTraceBody"><div class="empty">Cargando...</div></div>
     <div class="ma">
@@ -2820,9 +2825,85 @@ function setLoad(on, msg = '', pct = 0) {
   if (on) { document.getElementById('loadMsg').textContent = msg; document.getElementById('loadFill').style.width = pct + '%'; }
 }
 
+// Trae todas las filas de una consulta de a tandas de 1.000 (Supabase corta cada respuesta en 1.000), varias a la vez:
+// tantas como hacían falta la última vez, y después de a dos hasta que una venga incompleta (21-nov: de a una por
+// vez, con la nómina grande, el panel tardaba). pedir(desde, hasta) → promesa de { data, error }.
+async function traerEnTandas(pedir, clave) {
+  const TANDA = 1000;
+  let previas = 0;
+  try { previas = Number(localStorage.getItem('tandas_' + clave)) || 0; } catch (_) {}
+  const filas = [];
+  let error = null, desde = 0, lote = Math.min(12, Math.max(1, Math.ceil((previas + 300) / TANDA))), seguir = true;
+  while (seguir) {
+    const pedidos = [];
+    for (let i = 0; i < lote; i++) pedidos.push(pedir(desde + i * TANDA, desde + (i + 1) * TANDA - 1));
+    const res = await Promise.all(pedidos);
+    for (const x of res) {
+      if (!x || x.error || !Array.isArray(x.data)) { error = (x && x.error) || new Error('sin datos'); seguir = false; break; }
+      for (const f of x.data) filas.push(f);
+      if (x.data.length < TANDA) { seguir = false; break; }
+    }
+    desde += lote * TANDA; lote = 2;
+  }
+  try { if (!error) localStorage.setItem('tandas_' + clave, String(filas.length)); } catch (_) {}
+  return { data: filas, error };
+}
+
 async function loadAll() {
   setLoad(true, 'Cargando nómina...', 15);
   people = [];
+  // 21-nov: todo lo demás se pide ya, a la vez que la nómina (antes, primero la nómina entera y recién después lo demás).
+  const pResto = Promise.all([
+    sb.from('convocatorias').select('*').order('created_at'),
+    sb.from('puestos').select('*').order('created_at'),
+    (async () => {
+      // Paginado: Supabase devuelve máx. 1000 filas por consulta. Al pasar las 1000
+      // postulaciones, las más nuevas no se cargaban nunca: se agregaba gente al puesto,
+      // se guardaba bien en la base, y al recargar no aparecía (y los cupos daban mal).
+      return traerEnTandas((a, b) => sb.from('postulaciones').select('*').order('created_at').order('id').range(a, b), 'postulaciones');
+    })(),
+    (async () => {
+      // Paginado, como las postulaciones: con las planillas de feedback se pasan
+      // las 1000 enseguida, y sin todos el semáforo de algunos saldría mal.
+      return traerEnTandas((a, b) => sb.from('feedbacks').select('*').order('created_at').order('id').range(a, b), 'feedbacks');
+    })(),
+    sb.from('user_profiles').select('*'),
+    sb.from('supervisor_convocatorias').select('*'),
+    (async () => {
+      // Paginado (Supabase trae máx. 1000 por request) y sólo con lo que la lista
+      // usa: nombre, documento, área, puesto, localidad, fecha y estado, más lo
+      // que necesita el mail. Los textos largos (experiencia, formación,
+      // observaciones), los datos bancarios y el CV son la mayor parte del peso
+      // y sólo hacen falta al abrir una solicitud o al aprobarla, así que se
+      // buscan ahí, de a una fila (ver solCompleta). Nacimiento, estudios e
+      // idiomas son cortos y los usan los filtros de la nómina; la alimentación,
+      // el Excel para supervisores (las viandas).
+      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,estado,conv_id,puesto_id,puesto_nombre,created_at,antecedentes,beneficio_social,fecha_nacimiento,estudios,idiomas,alimentacion';
+      // Del CV, sólo el nombre del archivo: alcanza para saber si mandó uno (la nómina lo
+      // muestra a quien lo tiene sólo en su inscripción) sin bajar el archivo. Si la base no
+      // lo deja pedir así, se trae la lista sin eso.
+      // 21-nov: ahora está guardado aparte, en la columna cv_nombre (velocidad-nomina.sql). Sacarlo del CV
+      // (archivo_cv->>nombre) obligaba a la base a leer el CV entero de cada inscripción: tardaba, se cortaba, y la
+      // nómina se quedaba sin saber quién mandó CV ("Ver datos" en lugar de "Ver CV"). Sin esa columna, como antes;
+      // si tampoco, sin el dato.
+      const pedir = extra => traerEnTandas((a, b) => sb.from('solicitudes').select(cols + extra).order('created_at', { ascending: false }).order('id').range(a, b), 'solicitudes');
+      let r = await pedir(',cv_nombre');
+      if (r.error && !r.data.length) r = await pedir(',cv_nombre:archivo_cv->>nombre');
+      if (r.error && !r.data.length) r = await pedir('');
+      return { data: r.data };
+    })(),
+    sb.from('config').select('*'),
+    sb.from('notificaciones').select('*').order('created_at', { ascending: false }),
+    sb.from('respuestas').select('*').order('received_at', { ascending: false }),
+    // Sin texto_contrato/pdf_firmado/firma_png (pesados) — se traen bajo demanda al ver el detalle.
+    (async () => {
+      const cols = 'id,conv_id,persona_id,postulacion_id,puesto_id,nombre,cuil,email,puesto,estado,fecha_creacion,fecha_envio,fecha_visto,fecha_firma,token';
+      // De a tandas (21-nov: así de una vez, pasados los 1.000 contratos los más viejos no llegaban).
+      const pedir = c => traerEnTandas((a, b) => sb.from('contratos').select(c).order('fecha_creacion', { ascending: false }).order('id').range(a, b), 'contratos');
+      const r = await pedir(cols + ',fecha_show,sector,origen');
+      return r.error && !r.data.length ? await pedir(cols) : r;
+    })()
+  ]);
   // La Nómina se trae SIN el archivo del CV (cv.archivo.datos pesa cientos de MB con muchas personas
   // y hacía que la consulta cortara y quedara en 0). El base64 se baja por persona bajo demanda.
   {
@@ -2830,13 +2911,8 @@ async function loadAll() {
     // respuesta en 1.000 filas: con más gente, las fichas más nuevas no
     // llegaban nunca (no aparecían al buscarlas aunque estuvieran
     // aceptadas). Se pide de a tandas de 1.000.
-    let todas = [], error = null;
-    for (let desde = 0; ; desde += 1000) {
-      const r = await sb.rpc('personas_lista').range(desde, desde + 999);
-      if (r.error || !Array.isArray(r.data)) { error = r.error || new Error('sin datos'); break; }
-      todas = todas.concat(r.data);
-      if (r.data.length < 1000) break;
-    }
+    const rp = await traerEnTandas((a, b) => sb.rpc('personas_lista').range(a, b), 'personas');
+    let todas = rp.data, error = rp.error;
     if (todas.length && error) toast('La nómina no terminó de cargar (' + todas.length + ' personas): recargá la página');
     if (todas.length) {
       const vistos = new Set();
@@ -2859,79 +2935,14 @@ async function loadAll() {
   }
   setLoad(true, `Cargando nómina... (${people.length})`, 60);
   setLoad(true, 'Cargando convocatorias...', 70);
-  const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }, { data: ctData }] = await Promise.all([
-    sb.from('convocatorias').select('*').order('created_at'),
-    sb.from('puestos').select('*').order('created_at'),
-    (async () => {
-      // Paginado: Supabase devuelve máx. 1000 filas por consulta. Al pasar las 1000
-      // postulaciones, las más nuevas no se cargaban nunca: se agregaba gente al puesto,
-      // se guardaba bien en la base, y al recargar no aparecía (y los cupos daban mal).
-      let all = [], f = 0;
-      while (true) {
-        const { data, error } = await sb.from('postulaciones').select('*').order('created_at').range(f, f + 999);
-        if (error || !data?.length) break;
-        all = all.concat(data);
-        if (data.length < 1000) break;
-        f += 1000;
-      }
-      return { data: all };
-    })(),
-    (async () => {
-      // Paginado, como las postulaciones: con las planillas de feedback se pasan
-      // las 1000 enseguida, y sin todos el semáforo de algunos saldría mal.
-      let all = [], f = 0;
-      while (true) {
-        const { data, error } = await sb.from('feedbacks').select('*').order('created_at').range(f, f + 999);
-        if (error || !data?.length) break;
-        all = all.concat(data);
-        if (data.length < 1000) break;
-        f += 1000;
-      }
-      return { data: all };
-    })(),
-    sb.from('user_profiles').select('*'),
-    sb.from('supervisor_convocatorias').select('*'),
-    (async () => {
-      // Paginado (Supabase trae máx. 1000 por request) y sólo con lo que la lista
-      // usa: nombre, documento, área, puesto, localidad, fecha y estado, más lo
-      // que necesita el mail. Los textos largos (experiencia, formación,
-      // observaciones), los datos bancarios y el CV son la mayor parte del peso
-      // y sólo hacen falta al abrir una solicitud o al aprobarla, así que se
-      // buscan ahí, de a una fila (ver solCompleta). Nacimiento, estudios e
-      // idiomas son cortos y los usan los filtros de la nómina; la alimentación,
-      // el Excel para supervisores (las viandas).
-      const cols = 'id,nombre,area,email,tel,localidad,cuit,puesto_interes,estado,conv_id,puesto_id,puesto_nombre,created_at,antecedentes,beneficio_social,fecha_nacimiento,estudios,idiomas,alimentacion';
-      // Del CV, sólo el nombre del archivo: alcanza para saber si mandó uno (la nómina lo
-      // muestra a quien lo tiene sólo en su inscripción) sin bajar el archivo. Si la base no
-      // lo deja pedir así, se trae la lista sin eso.
-      let conCv = ',cv_nombre:archivo_cv->>nombre';
-      let all = [], f = 0;
-      while (true) {
-        let { data, error } = await sb.from('solicitudes').select(cols + conCv).order('created_at', { ascending: false }).range(f, f + 999);
-        if (error && conCv && !f) { conCv = ''; ({ data, error } = await sb.from('solicitudes').select(cols).order('created_at', { ascending: false }).range(f, f + 999)); }
-        if (error || !data?.length) break;
-        all = all.concat(data);
-        if (data.length < 1000) break;
-        f += 1000;
-      }
-      return { data: all };
-    })(),
-    sb.from('config').select('*'),
-    sb.from('notificaciones').select('*').order('created_at', { ascending: false }),
-    sb.from('respuestas').select('*').order('received_at', { ascending: false }),
-    // Sin texto_contrato/pdf_firmado/firma_png (pesados) — se traen bajo demanda al ver el detalle.
-    (async () => {
-      const cols = 'id,conv_id,persona_id,postulacion_id,puesto_id,nombre,cuil,email,puesto,estado,fecha_creacion,fecha_envio,fecha_visto,fecha_firma,token';
-      const r = await sb.from('contratos').select(cols + ',fecha_show,sector,origen').order('fecha_creacion', { ascending: false });
-      return r.error ? await sb.from('contratos').select(cols).order('fecha_creacion', { ascending: false }) : r;
-    })()
-  ]);
+  const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }, { data: ctData }] = await pResto;
   convs = (cData || []).map(c => ({
     ...c,
     puestos: (pData || []).filter(p => p.conv_id === c.id).map(p => ({ id: p.id, nombre: p.nombre, cupos: p.cupos, area: p.area || '', desc: p.descripcion || '', remuneracion: p.remuneracion || '' }))
   }));
+  const porIdPersona = new Map((people || []).map(x => [x.id, x]));
   posts = (postData || []).map(p => {
-    const persona = (people || []).find(x => x.id === p.persona_id);
+    const persona = porIdPersona.get(p.persona_id);
     return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, presentes: (p.presentes && typeof p.presentes === 'object') ? p.presentes : {}, cuit: persona?.cuit || p.cuit || null, confirmacion: p.confirmacion || null, confirmacion_at: p.confirmacion_at || null };
   });
   feedbacks = fbData || [];
@@ -4768,6 +4779,16 @@ async function cargarPlanillaSol(personaId) {
   pintarPlanillaSol('cvSolBox', sol);
   const completa = await solCompleta(sol.id);
   pintarPlanillaSol('cvSolBox', completa || sol);
+  // 21-nov (Mercedes: "cuando están en nómina aceptados, no se ven los cv"): si la lista no sabía que mandó CV, igual se
+  // ve, porque la inscripción completa ya está acá. Y queda anotado, para que la fila diga "Ver CV".
+  const cvSol = completa && cvPrincipal(completa.archivo_cv), extrasSol = completa ? cvExtras(completa.archivo_cv) : [];
+  if (completa && !(p.cv && p.cv.archivo) && (cvSol || extrasSol.length) && !document.getElementById('cvPrevBox') && document.getElementById('cvSolBox')) {
+    if (cvSol && !completa.cv_nombre) { completa.cv_nombre = cvSol.nombre || 'cv'; indexarSolicitudes(); }
+    document.getElementById('cvSolBox').insertAdjacentHTML('afterend', '<div class="cv-section-divider"></div><div id="cvPrevBox"></div>');
+    const dl = document.getElementById('cvDownloadBtn'); if (dl && dl.dataset.id === personaId && cvSol) dl.style.display = 'inline-flex';
+    cargarVistaCvSol(personaId, completa);
+    if (typeof nomRefresh === 'function') nomRefresh();
+  }
   await pintarCambiosDatos('cvSolBox', p);
 }
 // Lo que cambió la persona desde /mis-datos, con el valor de antes (lo más nuevo arriba).
@@ -12652,6 +12673,21 @@ async function cambiarMailContrato() {
   if (confirm(`¿Reenviarle el contrato ahora a ${nuevo}?`)) await reenviarContrato(true);
   else verContratoTrace(row.id);
 }
+
+// El tamaño del detalle del contrato (21-nov): el que se eligió tirando de la esquina, para la próxima vez.
+(function () {
+  const caja = document.querySelector('#mContratoTrace .modal'); if (!caja || !window.ResizeObserver) return;
+  try {
+    const t = JSON.parse(localStorage.getItem('ctTraceTam') || 'null');
+    if (t && t.w > 300 && t.h > 200) { caja.style.width = Math.min(t.w, innerWidth * 0.96) + 'px'; caja.style.height = Math.min(t.h, innerHeight * 0.94) + 'px'; }
+  } catch (_) {}
+  let reloj = null;
+  new ResizeObserver(() => {
+    if (document.getElementById('mContratoTrace').style.display !== 'flex' || !caja.style.width) return;
+    clearTimeout(reloj);
+    reloj = setTimeout(() => { try { localStorage.setItem('ctTraceTam', JSON.stringify({ w: caja.offsetWidth, h: caja.offsetHeight })); } catch (_) {} }, 400);
+  }).observe(caja);
+})();
 
 async function reenviarContrato(sinPreguntar) {
   if (!ctTraceRow) return;
