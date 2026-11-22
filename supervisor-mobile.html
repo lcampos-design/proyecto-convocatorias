@@ -156,6 +156,12 @@ body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo)
 .sem{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font:700 11px var(--inc-fuente);flex-shrink:0}
 .sem-1{background:#1F6E43;color:#CFF5DC}.sem-2{background:var(--media);color:var(--media-letra)}.sem-3{background:var(--grave);color:var(--grave-letra)}
 .chevron{color:var(--gris);font-size:18px;margin-left:auto;flex-shrink:0}
+/* Equipo (22-nov): los nuevos arriba (feedback obligatorio), los que ya vinieron abajo (opcional). */
+.eq-grupo{font:600 13px var(--inc-fuente);color:var(--gris);margin:18px 16px -6px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.eq-grupo b{color:var(--tinta);font-weight:600}
+.sv-nuevo{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font:600 10.5px var(--inc-fuente);background:var(--tinta);color:var(--fondo);vertical-align:1px}
+.sv-nuevo.suave{background:var(--fondo);color:var(--tinta);border:1px solid var(--linea)}
+.person-meta .falta{color:var(--tinta);font-weight:600}
 /* Las hojas que suben de abajo (feedback, quién supervisa, cargar o resolver): del tono del bloque, redondeadas arriba. */
 .fb-sheet{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;justify-content:flex-end}
 .fb-sheet.hidden{display:none}
@@ -513,7 +519,7 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
   <div class="wrap">
     <div class="titulo"><h1 class="sec-t" id="convScreenTitle"><span class="mano">Equipo</span>y feedback</h1><div class="titulo-s" id="convScreenSub"></div></div>
     <button class="fb-send" style="margin-top:0" onclick="openLista()">Pasar lista</button>
-    <div id="convPersonList" class="persona-lista"></div>
+    <div id="convPersonList"></div>
   </div>
 </div>
 
@@ -545,10 +551,10 @@ body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv
   <div class="fb-card">
     <div class="fb-handle"></div>
     <div class="fb-title" id="fbPersonName">Persona</div>
-    <div class="fb-sub">Puntuá del 1 al 5 en cada cosa. El color sale solo.</div>
+    <div class="fb-sub" id="fbSub">Puntuá del 1 al 5 en cada cosa. El color sale solo.</div>
     <div id="fbCriterios"></div>
     <div class="fb-res" id="fbResultado"></div>
-    <textarea class="fb-ta" id="fbComentario" placeholder="Comentario (opcional)..."></textarea>
+    <textarea class="fb-ta" id="fbComentario" placeholder="Comentario (opcional)..." oninput="pintarFbElegidos()"></textarea>
     <button class="fb-send" id="fbSendBtn" onclick="sendFeedback()">Enviar feedback</button>
     <div class="fb-prev" id="fbPrevSection" style="display:none">
       <div class="fb-prev-title">Mis feedbacks anteriores para esta persona</div>
@@ -1156,26 +1162,50 @@ async function openConv(convId) {
   document.getElementById('convScreenSub').textContent = c.nombre + (svFechaDe(c) ? ' · ' + fmtFecha(svFechaDe(c)) : '');
   document.getElementById('convPersonList').innerHTML = '<div class="empty-state"><div class="empty-title">Cargando...</div></div>';
   showScreen('screenConv');
-  // La base decide qué gente es de este recital y si es de este supervisor.
-  const { data, error } = await sb.rpc('sup_equipo', { p_conv_id: convId });
+  // La base decide qué gente es de este recital y si es de este supervisor; con la fecha del show
+  // abierto, dice también quién es nuevo y qué feedback ya tiene ese día (historial-feedback.sql).
+  // Sin ese SQL, como antes.
+  const dia = svFechaDe(c);
+  let { data, error } = await sb.rpc('sup_equipo', { p_conv_id: convId, p_fecha: dia || null });
+  if (error) ({ data, error } = await sb.rpc('sup_equipo', { p_conv_id: convId }));
   people = (!error && data) || [];
-  const myPeople = people;
-  if (!myPeople.length) { document.getElementById('convPersonList').innerHTML = `<div class="empty-state"><div class="empty-title">Sin personas asignadas</div></div>`; return; }
-  document.getElementById('convPersonList').innerHTML = myPeople.map(p => {
-    const sem = p.semaforo || 1;
-    const fb = (p.mis_feedbacks || []).length;
+  svEqDia = dia;
+  renderEquipo(c);
+}
+// El feedback de esta cuenta para el día abierto (los de antes del 22-nov no tienen fecha: cuentan en cualquier día).
+var svEqDia = '';
+function svFbDelDia(p) { return (p.mis_feedbacks || []).filter(f => !f.fecha || !svEqDia || f.fecha === svEqDia); }
+function svConTrayectoria() { return people.some(p => p && 'nuevo' in p); }
+function svQueEs(p) { return !svConTrayectoria() ? '' : p.primera_vez ? 'Primera vez' : p.nuevo ? 'Nuevo' : ''; }
+// 22-nov (Mercedes): a los nuevos (su primer show, o su primer mes en el Arena) el feedback es obligatorio; a los que
+// ya vinieron, opcional, y si pasó algo alcanza con un comentario.
+function renderEquipo(c) {
+  const cont = document.getElementById('convPersonList');
+  if (!people.length) { cont.innerHTML = `<div class="persona-lista"><div class="empty-state"><div class="empty-title">Sin personas asignadas</div></div></div>`; return; }
+  const fila = p => {
+    const sem = p.semaforo || 1, mios = svFbDelDia(p), otros = (p.feedbacks_dia || 0) - mios.length, que = svQueEs(p);
     const initials = p.nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-    const avatarBg = '';
+    const trayecto = !svConTrayectoria() ? '' : p.primera_vez ? 'Su primer show' : (p.antes === 1 ? '1 show antes' : p.antes + ' shows antes');
+    const estado = mios.length ? '<span style="color:var(--tinta);font-weight:600">Feedback dado</span>'
+      : otros > 0 ? 'Ya tiene feedback de otro supervisor'
+      : que ? '<span class="falta">Falta el feedback</span>' : svConTrayectoria() ? 'Opcional' : 'Sin feedback todavía';
     return `<div class="person-row" onclick="openFbSheet('${p.id}','${c.id}')">
-      <div class="person-avatar" style="${avatarBg}">${initials}</div>
+      <div class="person-avatar">${initials}</div>
       <div style="flex:1;min-width:0">
-        <div class="person-name">${esc(p.nombre)}</div>
-        <div class="person-meta">${areaNombre(p.area)}${fb?' · <span style="color:var(--tinta);font-weight:600">Feedback dado</span>':' · Sin feedback todavía'}</div>
+        <div class="person-name">${esc(p.nombre)}${que ? `<span class="sv-nuevo${que === 'Nuevo' ? ' suave' : ''}">${que}</span>` : ''}</div>
+        <div class="person-meta">${[areaNombre(p.area), trayecto, estado].filter(Boolean).join(' · ')}</div>
       </div>
       <span class="sem sem-${sem}">${sem}</span>
       <span class="chevron">›</span>
     </div>`;
-  }).join('');
+  };
+  if (!svConTrayectoria()) { cont.innerHTML = '<div class="persona-lista">' + people.map(fila).join('') + '</div>'; return; }
+  // Primero los nuevos (los de primera vez arriba); después los que ya vinieron.
+  const nuevos = people.filter(p => p.nuevo).sort((a, b) => (b.primera_vez ? 1 : 0) - (a.primera_vez ? 1 : 0) || String(a.nombre).localeCompare(String(b.nombre), 'es'));
+  const resto = people.filter(p => !p.nuevo);
+  const hechos = nuevos.filter(p => svFbDelDia(p).length || (p.feedbacks_dia || 0) > 0).length;
+  cont.innerHTML = (nuevos.length ? `<div class="eq-grupo"><span>Nuevos · <b>feedback obligatorio</b></span><span><b>${hechos} de ${nuevos.length}</b> con feedback</span></div><div class="persona-lista">${nuevos.map(fila).join('')}</div>` : '')
+    + (resto.length ? `<div class="eq-grupo"><span>Ya vinieron · <b>opcional</b></span><span>si pasó algo, un comentario</span></div><div class="persona-lista">${resto.map(fila).join('')}</div>` : '');
 }
 
 function goHome() { showScreen('screenHome'); renderHome(); }
@@ -1185,14 +1215,22 @@ function openFbSheet(personaId, convId) {
   fbPersonId = personaId; fbConvId = convId; fbValores = {};
   const p = people.find(x => x.id === personaId);
   document.getElementById('fbPersonName').textContent = p?.nombre || '';
-  document.getElementById('fbComentario').value = '';
+  // Qué se pide: a los nuevos, los cuatro criterios; a los que ya vinieron, es opcional y alcanza con un comentario.
+  const que = p ? svQueEs(p) : '', opcional = svConTrayectoria() && !que;
+  document.getElementById('fbSub').textContent = que === 'Primera vez' ? 'Es su primer show: el feedback es obligatorio. Puntuá del 1 al 5 en cada cosa; el color sale solo.'
+    : que === 'Nuevo' ? 'Es nuevo (su primer mes): el feedback es obligatorio. Puntuá del 1 al 5 en cada cosa; el color sale solo.'
+    : opcional ? 'Ya vino ' + (p.antes === 1 ? '1 vez' : p.antes + ' veces') + ': el feedback es opcional. Puntuá los cuatro o, si pasó algo, dejá sólo un comentario.'
+    : 'Puntuá del 1 al 5 en cada cosa. El color sale solo.';
+  const ta = document.getElementById('fbComentario');
+  ta.value = ''; ta.placeholder = opcional ? 'Si pasó algo, contalo acá…' : 'Comentario (opcional)...';
   document.getElementById('fbSendBtn').disabled = true;
   renderFbCriterios();
   const myFbs = (p && p.mis_feedbacks) || [];
   const prev = document.getElementById('fbPrevSection');
   if (myFbs.length) {
     prev.style.display = 'block';
-    document.getElementById('fbPrevList').innerHTML = myFbs.map(f => `<div class="fb-prev-item"><span class="sem sem-${f.puntaje}">${f.puntaje}</span><div><div style="font-size:12px;color:var(--tinta)">${f.promedio != null ? '<strong>' + f.promedio + ' de 5</strong> · ' : ''}${esc(f.comentario||'Sin comentario')}</div><div style="font-size:11px;color:var(--gris)">${f.created_at?new Date(f.created_at).toLocaleDateString('es-AR'):''}</div></div></div>`).join('');
+    const cuando = f => f.fecha ? fmtFecha(f.fecha) : f.created_at ? new Date(f.created_at).toLocaleDateString('es-AR') : '';
+    document.getElementById('fbPrevList').innerHTML = myFbs.map(f => `<div class="fb-prev-item">${f.puntaje ? `<span class="sem sem-${f.puntaje}">${f.puntaje}</span>` : '<span class="sem" style="background:var(--fondo);color:var(--tinta)">✎</span>'}<div><div style="font-size:12px;color:var(--tinta)">${f.promedio != null ? '<strong>' + f.promedio + ' de 5</strong> · ' : f.puntaje ? '' : '<strong>Comentario</strong> · '}${esc(f.comentario||'Sin comentario')}</div><div style="font-size:11px;color:var(--gris)">${esc(cuando(f))}${f.supervisor ? ' · ' + esc(f.supervisor) : ''}</div></div></div>`).join('');
   } else { prev.style.display = 'none'; }
   document.getElementById('fbSheet').classList.remove('hidden');
   setTimeout(() => document.getElementById('fbComentario').blur(), 10);
@@ -1234,41 +1272,57 @@ function pintarFbElegidos() {
     b.classList.toggle('on', fbValores[b.dataset.c] === +b.dataset.n);
   });
   const puestos = FB_CRITERIOS.filter(c => fbValores[c.id]).length;
-  const res = document.getElementById('fbResultado');
+  const res = document.getElementById('fbResultado'), btn = document.getElementById('fbSendBtn');
+  btn.textContent = 'Enviar feedback';
   if (puestos < FB_CRITERIOS.length) {
+    // A quien ya vino, sin puntuar nada, alcanza con el comentario.
+    if (!puestos && fbSoloComentario()) {
+      res.className = 'fb-res'; res.textContent = 'Sin puntajes: se guarda sólo el comentario';
+      btn.textContent = 'Guardar comentario'; btn.disabled = false; return;
+    }
     res.className = 'fb-res';
     res.textContent = `Faltan ${FB_CRITERIOS.length - puestos} de ${FB_CRITERIOS.length}`;
-    document.getElementById('fbSendBtn').disabled = true;
+    btn.disabled = true;
     return;
   }
   const prom = FB_CRITERIOS.reduce((t, c) => t + fbValores[c.id], 0) / FB_CRITERIOS.length;
   const col = colorDePromedio(prom);
   res.className = 'fb-res fb-res-' + col;
   res.innerHTML = `Promedio <strong>${prom.toFixed(2)}</strong> de 5 → <strong>${NOMBRE_COLOR[col]}</strong>`;
-  document.getElementById('fbSendBtn').disabled = false;
+  btn.disabled = false;
+}
+// Sólo el comentario: a quien ya vino (no a un nuevo), con algo escrito y sin ningún puntaje.
+function fbSoloComentario() {
+  const p = people.find(x => x.id === fbPersonId);
+  return !!p && svConTrayectoria() && !svQueEs(p) && !!document.getElementById('fbComentario').value.trim() && !FB_CRITERIOS.some(c => fbValores[c.id]);
 }
 async function sendFeedback() {
+  const soloComentario = fbSoloComentario();
   const faltan = FB_CRITERIOS.filter(c => !fbValores[c.id]);
-  if (faltan.length) { toast('Falta puntuar: ' + faltan.map(c => c.titulo).join(', ')); return; }
-  const btn = document.getElementById('fbSendBtn'); btn.disabled = true; btn.textContent = 'Enviando...';
+  if (faltan.length && !soloComentario) { toast('Falta puntuar: ' + faltan.map(c => c.titulo).join(', ')); return; }
+  const btn = document.getElementById('fbSendBtn'), textoBtn = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
   const comentario = document.getElementById('fbComentario').value.trim();
   try {
     // El color y el semáforo los calcula la base, con la misma cuenta que el
     // panel. Antes el color se elegía a ojo y el promedio lo hacía el
     // teléfono con la lista que tenía cargada: dos supervisores a la vez se
-    // pisaban.
-    const { data, error } = await sb.rpc('sup_feedback', {
+    // pisaban. Desde el 22-nov va con la fecha del show abierto (un show de
+    // varias fechas tiene un feedback por fecha) y puede ir sin puntajes.
+    const args = {
       p_persona_id: fbPersonId, p_conv_id: fbConvId,
-      p_actitud: fbValores.actitud, p_consignas: fbValores.consignas,
-      p_presencia: fbValores.presencia, p_iniciativa: fbValores.iniciativa,
+      p_actitud: soloComentario ? null : fbValores.actitud, p_consignas: soloComentario ? null : fbValores.consignas,
+      p_presencia: soloComentario ? null : fbValores.presencia, p_iniciativa: soloComentario ? null : fbValores.iniciativa,
       p_comentario: comentario || null
-    });
+    };
+    let { data, error } = await sb.rpc('sup_feedback', Object.assign({ p_fecha: svEqDia || null }, args));
+    // Sin historial-feedback.sql, la de antes (sin fecha y siempre con los cuatro).
+    if (error && !soloComentario) ({ data, error } = await sb.rpc('sup_feedback', args));
     if (error) throw error;
-    if (!data || !data.ok) { toast(data && data.error ? data.error : 'No se pudo guardar'); btn.disabled = false; btn.textContent = 'Enviar feedback'; return; }
+    if (!data || !data.ok) { toast(data && data.error ? data.error : 'No se pudo guardar'); btn.disabled = false; btn.textContent = textoBtn; return; }
     closeFbSheet();
     await openConv(currentConvId);
-    toast('✓ Feedback guardado');
-  } catch (err) { toast('Error al guardar'); btn.disabled = false; btn.textContent = 'Enviar feedback'; }
+    toast(soloComentario ? '✓ Comentario guardado' : '✓ Feedback guardado');
+  } catch (err) { toast('Error al guardar'); btn.disabled = false; btn.textContent = textoBtn; }
 }
 
 // ── Pasar lista ──

@@ -901,6 +901,21 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .fbv-tabla table{width:100%;border-collapse:collapse;font-size:12.5px}
 .fbv-tabla th{position:sticky;top:0;background:#fafafa;text-align:left;font-size:11px;font-weight:600;color:var(--r-muted);padding:8px 10px;border-bottom:1px solid var(--r-line)}
 .fbv-tabla td{padding:9px 10px;border-bottom:1px solid #f3f4f6;vertical-align:top}
+/* Historial (22-nov): los shows por mes, de dónde sale cada uno, la búsqueda, las planillas y el feedback por supervisor. */
+.hi-mes{font-size:13px;font-weight:700;color:var(--r-ink);margin:18px 0 8px}.hi-mes:first-of-type{margin-top:4px}
+.hi-mes small{font-weight:500;color:var(--r-muted);margin-left:6px}
+.hi-tabla{max-height:none;margin-top:0}
+.hi-tabla tbody tr{cursor:pointer}.hi-tabla tbody tr:hover td{background:#fafafa}
+.hi-fuente{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:#f3f4f6;color:#4b5563;margin:1px 2px 1px 0}
+.hi-res{border:1px solid var(--r-line);border-radius:9px;margin:6px 0 10px;max-height:240px;overflow:auto}
+.hi-res-f{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-bottom:1px solid #f3f4f6;font-size:13px}
+.hi-res-f:last-child{border-bottom:0}.hi-res-f small{display:block;font-size:11px;color:var(--r-muted)}
+.hi-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.hi-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:999px;background:#f3f4f6;font-size:12px}
+.hi-chip small{color:var(--r-muted)}.hi-chip button{border:0;background:transparent;cursor:pointer;color:var(--r-muted);font-size:12px;padding:0 4px}
+.hi-plan{border:1px solid var(--r-line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.hi-plan-no{background:#fafafa}.hi-plan-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px}.hi-plan-cab small{color:var(--r-muted)}
+.hi-barra{display:flex;height:8px;border-radius:999px;overflow:hidden;background:#f3f4f6;gap:2px}.hi-barra i{display:block;height:100%}
 .fbv-tabla td:first-child{width:28px}
 .fbv-nom{font-weight:600;color:#1a1a1a}
 .fbv-sub{font-size:11px;color:var(--r-muted);margin:1px 0 6px}
@@ -1106,6 +1121,7 @@ tr:hover td{background:#f9f9fb}
     <button class="mnav-btn" data-s="solicitudes" onclick="goSec('solicitudes')">Postulantes <span id="solNavBadge" style="background:#dc2626;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
     <button class="mnav-btn" data-s="convs" onclick="goSec('convs')">Convocatorias</button>
     <button class="mnav-btn" data-s="contratos" onclick="goSec('contratos')">Contratos</button>
+    <button class="mnav-btn" data-s="historial" onclick="goSec('historial')">Historial</button>
     <button class="mnav-btn" data-s="control" id="navControl" onclick="goSec('control')">Centro de Control</button>
     <button class="mnav-btn" data-s="supervisores" id="navSupervisores" onclick="goSec('supervisores')" style="display:none">Supervisores</button>
     <button class="mnav-btn" style="display:none" data-s="candidatos" onclick="goSec('candidatos')">Candidatos <span id="candNavBadge" style="background:#1d4ed8;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
@@ -1583,6 +1599,28 @@ tr:hover td{background:#f9f9fb}
     <button class="btn btn-sec btn-sm" onclick="openDocsFirma()" title="Constancias, planillas: lo que algunas personas firman además del contrato">Documentos para firmar</button>
   </div>
   <div style="padding:20px 24px" id="ctContent"><div class="empty">Cargando...</div></div>
+</div>
+
+<!-- HISTORIAL (22-nov): quién fue a cada show (lo del panel y lo cargado a mano o con las planillas del año) y el feedback por supervisor. -->
+<div id="sec-historial" class="sec">
+  <div class="ctrlbar">
+    <div style="flex:1;min-width:220px">
+      <div style="font-size:15px;font-weight:700;color:var(--r-ink)">Historial y feedback</div>
+      <div style="font-size:12px;color:var(--r-muted)">Quién fue a cada show, y el feedback de cada supervisor</div>
+    </div>
+    <div class="cc-seg cc-tabs" role="tablist" aria-label="Historial">
+      <button class="on" id="hiTabShows" role="tab" onclick="hiTab('shows')">Shows</button>
+      <button id="hiTabSup" role="tab" onclick="hiTab('sup')">Feedback por supervisor</button>
+    </div>
+  </div>
+  <div class="ctrlbar" id="hiBarra">
+    <input type="text" class="srch" id="hiSrch" placeholder="Buscar un show o una persona..." oninput="renderHistorialSec()">
+    <select class="filt" id="hiArea" onchange="renderHistorialSec()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select>
+    <select class="filt" id="hiMes" onchange="renderHistorialSec()"><option value="">Todos los meses</option></select>
+    <button class="btn btn-sec btn-sm" onclick="openHiPlanillas()" title="Las planillas de presentismo o de convocatoria de este año: cada una es un show"><i class="ic ic-planilla"></i> Subir planillas</button>
+    <button class="btn btn-primary btn-sm" onclick="openHiCargar()">+ Cargar un show</button>
+  </div>
+  <div style="padding:20px 24px" id="hiContent"><div class="empty">Cargando...</div></div>
 </div>
 
 <!-- La leyenda de la Gerencia de RR. HH., abajo de todo (16-nov). -->
@@ -2238,6 +2276,73 @@ tr:hover td{background:#f9f9fb}
     <div class="ma">
       <button class="btn btn-sec" onclick="closeM('mFbVarios')">Cancelar</button>
       <button class="btn btn-primary" id="fbvBtn" onclick="doFbVarios()" disabled>Cargar feedbacks</button>
+    </div>
+  </div>
+</div>
+
+<!-- Historial: un show (quiénes fueron) -->
+<div class="modal-bg" id="mHiVer" style="display:none" onclick="bgClose('mHiVer',event)">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-title"><span id="hiVerTit">Show</span><button class="mclose" onclick="closeM('mHiVer')">✕</button></div>
+    <div id="hiVerSub" style="font-size:12.5px;color:var(--r-muted);margin:-6px 0 12px"></div>
+    <div class="fg" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" class="fi" id="hiVerBus" placeholder="Sumar a alguien: nombre o CUIL (desde 3 letras)" oninput="hiVerBuscar()" style="flex:1;min-width:220px">
+    </div>
+    <div id="hiVerRes"></div>
+    <div id="hiVerLista" class="fbv-tabla"></div>
+    <div class="ma">
+      <button class="btn btn-sec" id="hiVerBorrar" onclick="hiVerBorrarTodo()" style="margin-right:auto;display:none">Quitar lo cargado de este show</button>
+      <button class="btn btn-primary" onclick="closeM('mHiVer')">Listo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Historial: cargar un show a mano -->
+<div class="modal-bg" id="mHiCargar" style="display:none" onclick="bgClose('mHiCargar',event)">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-title"><span>Cargar un show</span><button class="mclose" onclick="closeM('mHiCargar')">✕</button></div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">
+      Un show que pasó y quiénes fueron. Si ya está cargado (o tiene contratos), lo repetido no se duplica: sumate a lo que hay.
+    </div>
+    <div class="frow">
+      <div class="fg" style="flex:2"><label>Show o evento *</label><input type="text" class="fi" id="hiCarEvento" list="hiEventos" placeholder="Ej: Lollapalooza · Hipódromo de San Isidro"></div>
+      <div class="fg"><label>Fecha *</label><input type="date" class="fi" id="hiCarFecha"></div>
+      <div class="fg"><label>Área *</label><select class="fi" id="hiCarArea"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select></div>
+    </div>
+    <datalist id="hiEventos"></datalist>
+    <div class="fg"><label>Puesto (opcional, para todos)</label><input type="text" class="fi" id="hiCarPuesto" placeholder="Ej: Orientador"></div>
+    <div class="fg"><label>Quiénes fueron</label>
+      <input type="text" class="fi" id="hiCarBus" placeholder="Buscar en la nómina: nombre o CUIL (desde 3 letras)" oninput="hiCarBuscar()">
+      <div id="hiCarRes"></div>
+    </div>
+    <div class="fg"><label>O pegá una lista (un nombre o un CUIL por renglón)</label>
+      <textarea class="fi" id="hiCarPegar" rows="4" style="height:96px" placeholder="Pérez, Juan&#10;27-12345678-3&#10;…"></textarea>
+      <button class="btn btn-sec btn-sm" style="margin-top:6px" onclick="hiCarPegarLista()">Buscarlos en la nómina</button>
+      <div id="hiCarNoEstan" style="font-size:12px;color:#9a3412;margin-top:6px"></div>
+    </div>
+    <div id="hiCarElegidos"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mHiCargar')">Cancelar</button>
+      <button class="btn btn-primary" id="hiCarBtn" onclick="hiCarGuardar()" disabled>Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Historial: subir las planillas del año -->
+<div class="modal-bg" id="mHiPlan" style="display:none" onclick="bgClose('mHiPlan',event)">
+  <div class="modal" style="max-width:1000px">
+    <div class="modal-title"><span><i class="ic ic-planilla"></i> Subir planillas del año</span><button class="mclose" onclick="closeM('mHiPlan')">✕</button></div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">
+      Una o varias planillas a la vez (Excel .xlsx o CSV; las de Google se bajan con <em>Archivo → Descargar → Microsoft Excel</em>): de presentismo, de convocatoria o cualquier lista con nombre y CUIL. <strong>Cada planilla es un show</strong>: el evento y la fecha salen de la planilla o del nombre del archivo; si no, se completan acá. Si tiene presentismo, entran sólo los P (y E); si tiene una columna por fecha, cada fecha por separado. Quien no está en la nómina queda guardado con su CUIL.
+    </div>
+    <div class="frow" style="align-items:flex-end">
+      <div class="fg" style="flex:2"><input type="file" id="hiPlanFile" accept=".xlsx,.csv,.txt" multiple style="font-size:12px" onchange="hiPlanLeer()"></div>
+      <div class="fg"><label>Área (si la planilla no lo dice)</label><select class="fi" id="hiPlanArea" onchange="hiPlanAreaDefecto()"><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select></div>
+    </div>
+    <div id="hiPlanPrev"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mHiPlan')">Cancelar</button>
+      <button class="btn btn-primary" id="hiPlanBtn" onclick="hiPlanCargar()" disabled>Cargar</button>
     </div>
   </div>
 </div>
@@ -2912,6 +3017,9 @@ async function loadAll() {
       return r.error && !r.data.length ? await pedir(cols) : r;
     })()
   ]);
+  // 22-nov: el historial cargado a mano o con las planillas del año (historial-feedback.sql), también a la vez. Sin esa
+  // tabla, vacío (y la sección Historial avisa que falta el SQL).
+  const pHistorial = traerEnTandas((a, b) => sb.from('historial_shows').select('id,area,evento,fecha,persona_id,doc,nombre,puesto,origen,archivo,created_at').order('fecha').order('id').range(a, b), 'historial');
   // La Nómina se trae SIN el archivo del CV (cv.archivo.datos pesa cientos de MB con muchas personas
   // y hacía que la consulta cortara y quedara en 0). El base64 se baja por persona bajo demanda.
   {
@@ -2964,6 +3072,7 @@ async function loadAll() {
   notificaciones = notifData || [];
   respuestas = respData || [];
   contratos = ctData || [];
+  { const rh = await pHistorial; historialFalta = !!rh.error && !rh.data.length; historialShows = rh.data || []; }
   // Se empareja una sola vez, acá, para que las comparaciones con 'espana'
   // repartidas por todo el panel (pestañas, contadores, filtros) funcionen sin
   // tener que tocarlas una por una.
@@ -3127,6 +3236,7 @@ function goSec(s) {
   if (s === 'respuestas') renderRespuestas();
   if (s === 'contratos') { ctArea = ''; renderContratos(); }   // siempre entra por la portada (Arena, Externos, España)
   if (s === 'control') renderCentroControl();
+  if (s === 'historial') renderHistorialSec();
 }
 
 function renderDashboard() {
@@ -9576,17 +9686,19 @@ async function exportPresentes() {
         .sort((a, b) => apellidoYNombre(a.nombre).apellido.localeCompare(apellidoYNombre(b.nombre).apellido, 'es'));
       if (!gente.length) return;
       cabeceras.push(filas.length);
-      filas.push([String(sec.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'CUIL', 'TELEFONO', 'CONFIRMÓ', 'PRESENTES', 'HORARIO', 'OBSERVACIÓN', 'BREAK', 'ALIMENTACIÓN']);
+      filas.push([String(sec.nombre || '').toUpperCase(), 'APELLIDO', 'NOMBRE', 'CUIL', 'TELEFONO', 'CONFIRMÓ', 'PRESENTES', 'HORARIO', 'OBSERVACIÓN', 'BREAK', 'ALIMENTACIÓN', 'NUEVO']);
       gente.forEach((x, i) => {
         const pers = personaDe(x);
         const nm = apellidoYNombre(x.nombre || (pers && pers.nombre) || '');
+        // 22-nov: a los nuevos el feedback es obligatorio (su primer show, o su primer mes en el área).
+        const nuevo = rotuloNuevo(trayectoriaDe(pers || { id: x.personaId || '', cuit: x.cuit || '' }, areaDeShow(c.area), sl.fecha, c.id));
         filas.push([i + 1, nm.apellido, nm.nombre, (pers && pers.cuit) || x.cuit || '', (pers && pers.tel) || '', confirmoDe(x),
-                    marca(x), sl.horario || '', x.notas || '', '', alimentacionDe(x)]);
+                    marca(x), sl.horario || '', x.notas || '', '', alimentacionDe(x), nuevo]);
       });
       filas.push([]);
     });
     return { nombre: fechaLinda(sl.fecha).slice(0, 5) + (sl.horario ? ' ' + sl.horario : ''), filas, cabeceras, negritas: [0],
-             titulo: 'Planilla de presentes · ' + (c.nombre || ''), subtitulo: fechaLinda(sl.fecha) + (sl.horario ? ' · ' + sl.horario : '') + (c.venue ? ' · ' + c.venue : '') };
+             titulo: 'Planilla de presentes · ' + (c.nombre || ''), subtitulo: fechaLinda(sl.fecha) + (sl.horario ? ' · ' + sl.horario : '') + (c.venue ? ' · ' + c.venue : '') + ' · NUEVO o PRIMERA VEZ: el feedback es obligatorio' };
   });
 
   descargarLibro(`supervisores-${(c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase()}.xlsx`, hojas);
@@ -9694,13 +9806,16 @@ const FB_COLUMNAS = { cuil: /\b(cuil|cuit|dni|documento)\b/, actitud: /actitud/,
 function bajarPlanillaFeedback() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   const puestoDe = id => ((c.puestos || []).find(p => p.id === id) || {}).nombre || '';
-  const gente = listaConvocados().map(x => { const p = people.find(q => q.id === x.personaId) || {}; return { cuil: p.cuit || x.cuit || '', nombre: p.nombre || x.nombre || '', puesto: puestoDe(x.puestoId) }; })
+  // 22-nov: quién es nuevo ese día (la fecha de hoy si es del show; si no, la próxima o la última), para que lo evalúen sí o sí.
+  const fs = slotsDe(c).map(s => s.fecha).filter(Boolean).sort(), hoy = hoyLocalISO(), dia = fs.includes(hoy) ? hoy : fs.find(f => f > hoy) || fs[fs.length - 1] || hoy;
+  const gente = listaConvocados().map(x => { const p = people.find(q => q.id === x.personaId) || {}; return { cuil: p.cuit || x.cuit || '', nombre: p.nombre || x.nombre || '', puesto: puestoDe(x.puestoId),
+      nuevo: rotuloNuevo(trayectoriaDe(p.id ? p : { id: x.personaId || '', cuit: x.cuit || '' }, areaDeShow(c.area), dia, c.id)) }; })
     .sort((a, b) => a.puesto.localeCompare(b.puesto, 'es') || a.nombre.localeCompare(b.nombre, 'es'));
   if (!gente.length) { toast('No hay nadie convocado para evaluar'); return; }
-  const filas = [['CUIL', 'Apellido y nombre', 'Puesto'].concat(FB_CRITERIOS.map(k => k.titulo), ['Comentario', 'Evaluó'])]
-    .concat(gente.map(g => [g.cuil, g.nombre, g.puesto, '', '', '', '', '', '']));
+  const filas = [['CUIL', 'Apellido y nombre', 'Puesto', 'Nuevo'].concat(FB_CRITERIOS.map(k => k.titulo), ['Comentario', 'Evaluó'])]
+    .concat(gente.map(g => [g.cuil, g.nombre, g.puesto, g.nuevo, '', '', '', '', '', '']));
   const archivo = 'feedback-' + (c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.xlsx';
-  descargarLibro(archivo, [{ nombre: 'Feedback', titulo: 'Feedback · ' + (c.nombre || ''), subtitulo: 'Cada criterio del 1 al 5, sin decimales · el promedio da el color: 3,5 o más verde, más de 2 amarillo, 2 o menos rojo · a quien no evaluaste, dejalo en blanco', filas }]);
+  descargarLibro(archivo, [{ nombre: 'Feedback', titulo: 'Feedback · ' + (c.nombre || ''), subtitulo: 'Cada criterio del 1 al 5, sin decimales · el promedio da el color: 3,5 o más verde, más de 2 amarillo, 2 o menos rojo · NUEVO o PRIMERA VEZ: obligatorio · a quien no evaluaste, dejalo en blanco', filas }]);
 }
 let fbImport = null;   // lo leído de la planilla: qué se carga y qué no
 function openImportFeedback() {
@@ -9998,6 +10113,8 @@ async function doFbVarios() {
     const com = comentarioDe(f), k = clave(f.personaId, f.convId, f.v, com);
     if (ya.has(k) || ya.has(clave(f.personaId, f.convId, f.v, f.comentario))) { repetidas++; return; } ya.add(k);
     const base = { id: uid(), persona_id: f.personaId, conv_id: f.convId || null, supervisor_id: currentUserId || null, supervisor_nombre: f.responsable || 'Planilla de feedback', comentario: com || null };
+    // 22-nov: la fecha del show, si la jornada la dice entera (con historial-feedback.sql, que agrega la columna).
+    const fj = fbvFecha(f.jornada); if (!historialFalta) base.fecha = /^\d{4}-\d{2}-\d{2}$/.test(fj) ? fj : null;
     if (f.v) evals.push(Object.assign(base, { puntaje: fbvCriterios(f.v).color }, f.v));
     else obs.push(Object.assign(base, { puntaje: null }));
   });
@@ -13753,6 +13870,9 @@ function eventosDePersona(p) {
     const conv = convs.find(c => c.id === x.convId);
     ev.set(x.convId + '|', { convId: x.convId, fecha: convFechasArr(conv)[0] || '' });
   });
+  // 22-nov: y lo cargado en el historial (a mano o con las planillas del año), si ese día no estaba ya.
+  const dias = new Set([...ev.values()].map(x => x.fecha));
+  historialDePersona(p).forEach(h => { const f = String(h.fecha || '').slice(0, 10); if (!f || dias.has(f)) return; dias.add(f); ev.set('h|' + h.id, { convId: '', fecha: f, historial: h }); });
   return [...ev.values()];
 }
 // Índices que se rehacen sólo cuando cambia la lista (la nómina los consulta por cada fila).
@@ -13845,7 +13965,24 @@ function openHistorial(personaId) {
     <div><div style="font-size:20px;font-weight:700;color:${aus.ausencias>0?'#991b1b':'#0f6e56'}">${aus.ausencias}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Ausencias${aus.penalizado?' <i class="ic ic-prohibido"></i>':''}</div></div>
     ${p.cuit ? `<div><div style="font-size:13px;font-weight:600;color:#374151">${e(p.cuit)}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">CUIT</div></div>` : ''}
   `;
-  if (!myPosts.length && !misContratos.length) { document.getElementById('mHistBody').innerHTML = '<div class="empty">Sin historial todavía</div>'; showM('mHistorial'); return; }
+  // 22-nov: lo cargado en el historial (a mano o con las planillas del año), cada día por separado, y desde acá se
+  // carga otro show de esta persona.
+  const misHist = historialDePersona(p).slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  const primero = eventos.map(x => x.fecha).filter(f => f && f <= hoyIso).sort()[0];
+  if (primero) document.getElementById('mHistStats').insertAdjacentHTML('beforeend', `<div><div style="font-size:15px;font-weight:700;color:#374151;padding-top:4px">${e(fechaDMA(primero))}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Primer show</div></div>`);
+  const barraHist = `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-sec btn-xs" onclick="closeM('mHistorial');openHiCargar('${p.id}')" title="Un show que pasó y no está acá (queda en el historial)">+ Cargar un show</button></div>`;
+  const histHTML = misHist.map(h => `
+    <div class="hist-item">
+      <div class="hist-dot confirmado"></div>
+      <div class="hist-info">
+        <div class="hist-title">${e(h.evento)}</div>
+        <div class="hist-meta">${e(fmtFecha(String(h.fecha).slice(0, 10)))} · ${areaLargo(h.area)}</div>
+        <div class="hist-tags">${h.puesto ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;background:#f3f4f6">${e(h.puesto)}</span>` : ''}<span style="padding:2px 8px;border-radius:999px;font-size:10px;background:#eef2ff;color:#3730a3">${h.origen === 'planilla' ? 'Planilla' + (h.archivo ? ' · ' + e(h.archivo) : '') : 'Cargado a mano'}</span>
+          <button class="btn btn-sec btn-xs" onclick="hiQuitar(['${h.id}'],'${p.id}')">Quitar</button></div>
+      </div>
+      <span style="display:none" data-ult="${e(String(h.fecha).slice(0, 10))}"></span>
+    </div>`);
+  if (!myPosts.length && !misContratos.length) { document.getElementById('mHistBody').innerHTML = barraHist + (histHTML.length ? histHTML.join('') : '<div class="empty">Sin historial todavía</div>'); showM('mHistorial'); return; }
   const grouped = {}, ctPorConv = {};
   myPosts.forEach(post => { if (!grouped[post.convId]) grouped[post.convId] = []; grouped[post.convId].push(post); });
   misContratos.forEach(c => { const k = c.conv_id || ''; if (!grouped[k]) grouped[k] = []; (ctPorConv[k] = ctPorConv[k] || []).push(c); });
@@ -13856,7 +13993,12 @@ function openHistorial(personaId) {
   const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', confirmado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
   const asistBadge = a => a === 'ausente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b">✗ Ausente</span>` : a === 'presente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#d1fae5;color:#065f46">✓ Presente</span>` : '';
   const penalBanner = aus.penalizado ? `<div style="background:#fff7f7;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#991b1b"><i class="ic ic-prohibido"></i> <strong>Penalizado por ausencia</strong> — no reconvocar hasta el ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} (${aus.ausencias} ausencia/s).</div>` : '';
-  document.getElementById('mHistBody').innerHTML = penalBanner + sorted.map(({ conv, posts: pp, cts }) => `
+  // Lo del panel y lo cargado en el historial, juntos y del más nuevo al más viejo.
+  const items = sorted.map(x => ({ ult: x.ult, html: histConvHTML(x) })).concat(misHist.map((h, i) => ({ ult: String(h.fecha).slice(0, 10), html: histHTML[i] })))
+    .sort((a, b) => String(b.ult).localeCompare(String(a.ult)));
+  document.getElementById('mHistBody').innerHTML = penalBanner + barraHist + items.map(x => x.html).join('');
+  showM('mHistorial');
+  function histConvHTML({ conv, posts: pp, cts }) { return `
     <div class="hist-item">
       <div class="hist-dot ${pp[0]?.estado || (cts.some(c => c.estado !== 'anulado') ? 'confirmado' : 'rechazado')}"></div>
       <div class="hist-info">
@@ -13870,8 +14012,459 @@ function openHistorial(personaId) {
           <span style="min-width:92px">${e(fmtFecha(fechaDeContrato(c)))}</span><span style="color:#6b7280">${e(c.puesto || '')}</span>${estadoBadge(c.estado)}
           <button class="btn btn-sec btn-xs" onclick="closeM('mHistorial');verContratoTrace('${c.id}')">Ver contrato</button></div>`).join('')}</div>` : ''}
       </div>
-    </div>`).join('');
-  showM('mHistorial');
+    </div>`; }
+}
+
+// ── HISTORIAL DEL AÑO Y FEEDBACK POR SUPERVISOR (22-nov) ──
+// Mercedes: "necesito una sección en la que lo pueda cargar manual, para poner en qué show fue cada uno" y "yo puedo
+// subir todas las planillas de este año". Lo que el panel ya sabe (contratos, convocatorias en las que quedó) se ve
+// solo; lo de antes se carga acá, a mano o con las planillas, en historial_shows (historial-feedback.sql). Con todo
+// eso se sabe quién es nuevo: la app del supervisor lo calcula igual, en la base (trayectoria).
+let historialShows = [], historialFalta = false;
+let hiIdxLista = null, hiIdxLargo = -1, hiIdxPersona = new Map(), hiIdxDoc = new Map();
+function historialDePersona(p) {
+  if (!p) return [];
+  if (hiIdxLista !== historialShows || hiIdxLargo !== historialShows.length) {
+    hiIdxLista = historialShows; hiIdxLargo = historialShows.length; hiIdxPersona = new Map(); hiIdxDoc = new Map();
+    historialShows.forEach(h => {
+      if (h.persona_id) { if (!hiIdxPersona.has(h.persona_id)) hiIdxPersona.set(h.persona_id, []); hiIdxPersona.get(h.persona_id).push(h); }
+      if (h.doc) { if (!hiIdxDoc.has(h.doc)) hiIdxDoc.set(h.doc, []); hiIdxDoc.get(h.doc).push(h); }
+    });
+  }
+  const d = docNucleo(p.cuit || ''), vistos = new Set(), r = [];
+  (hiIdxPersona.get(p.id) || []).concat(d ? hiIdxDoc.get(d) || [] : []).forEach(h => { if (!vistos.has(h.id)) { vistos.add(h.id); r.push(h); } });
+  return r;
+}
+// La ficha de un documento (el DNI de adentro del CUIL), con un índice que se rehace sólo si cambia la nómina.
+let pDocLista = null, pDocLargo = -1, pDocIdx = new Map();
+function personaPorDoc(d) {
+  if (!d) return null;
+  if (pDocLista !== people || pDocLargo !== people.length) { pDocLista = people; pDocLargo = people.length; pDocIdx = new Map(); people.forEach(p => { const k = docNucleo(p.cuit || ''); if (k && !pDocIdx.has(k)) pDocIdx.set(k, p); }); }
+  return pDocIdx.get(d) || null;
+}
+function areaDeShow(a) { const x = normArea(a); return x === 'externos' || x === 'espana' ? x : 'movistar_arena'; }
+// Los días que trabajó, con su área: contratos (sin anulados), convocatorias en las que quedó (aprobado o confirmado,
+// sin ausente; no la que se excluye) y lo cargado en el historial. La misma cuenta que trayectoria() en la base.
+function fechasTrabajadas(p, convExcluir) {
+  const out = [];
+  contratosDePersona(p).forEach(c => { if (c.estado === 'anulado') return; const conv = convs.find(x => x.id === c.conv_id), f = fechaDeContrato(c); if (f) out.push({ fecha: f, area: conv ? normArea(conv.area) : 'movistar_arena' }); });
+  postsDePersona(p.id).forEach(x => {
+    if (!['aprobado', 'confirmado'].includes(x.estado) || x.asistencia === 'ausente' || x.convId === convExcluir) return;
+    const conv = convs.find(c => c.id === x.convId); if (!conv) return;
+    convFechasArr(conv).forEach(f => out.push({ fecha: f, area: normArea(conv.area) }));
+  });
+  historialDePersona(p).forEach(h => out.push({ fecha: String(h.fecha || '').slice(0, 10), area: h.area }));
+  return out.filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x.fecha));
+}
+// Nuevo: su primer show en esa área fue este mes (en el Arena, a los nuevos se los evalúa todas las fechas del mes).
+// Primera vez: nunca fue a un show antes de esa fecha.
+function trayectoriaDe(p, area, dia, convExcluir) {
+  const fs = fechasTrabajadas(p, convExcluir).filter(x => x.fecha < dia), enArea = fs.filter(x => x.area === area || x.area === 'ambas');
+  const antes = new Set(fs.map(x => x.fecha)).size, antesArea = new Set(enArea.map(x => x.fecha)).size, primeraArea = enArea.map(x => x.fecha).sort()[0] || '';
+  return { antes, antesArea, primeraArea, primeraVez: !antes, nuevo: !antesArea || primeraArea >= String(dia).slice(0, 7) + '-01' };
+}
+function rotuloNuevo(t) { return t.primeraVez ? 'PRIMERA VEZ' : t.nuevo ? 'NUEVO' : ''; }
+
+const HI_FUENTES = { contratos: 'Contratos', convocatoria: 'Convocatoria', planilla: 'Planilla', cargado: 'Cargado a mano' };
+const HI_MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+function hiMesNombre(ym) { const [y, m] = String(ym).split('-'); return (HI_MESES[+m - 1] || ym) + ' ' + (y || ''); }
+function hiNorm(s) { return nomPelar(s).replace(/\s+/g, ' ').trim(); }
+const hiAttr = k => encodeURIComponent(k).replace(/'/g, '%27');
+let hiTabActual = 'shows';
+function hiTab(t) {
+  hiTabActual = t;
+  document.getElementById('hiTabShows').classList.toggle('on', t === 'shows');
+  document.getElementById('hiTabSup').classList.toggle('on', t === 'sup');
+  document.getElementById('hiBarra').style.display = t === 'shows' ? '' : 'none';
+  renderHistorialSec();
+}
+// Todos los shows que ya pasaron, con quiénes fueron: los contratos (por fecha), las convocatorias del panel sin
+// contratos (una por convocatoria) y lo cargado. Se rehace sólo si cambió algo.
+let hiCache = null;
+function hiShowsTodos() {
+  const c = hiCache;
+  if (c && c.h === historialShows && c.hl === historialShows.length && c.c === contratos && c.cl === contratos.length && c.p === posts && c.pl === posts.length && c.v === convs && c.vl === convs.length && c.pe === people) return c.l;
+  const hoy = hoyLocalISO(), m = new Map(), convPorId = new Map(convs.map(x => [x.id, x]));
+  const show = (area, fecha, evento, extra) => {
+    const k = area + '|' + fecha + '|' + hiNorm(evento);
+    let s = m.get(k); if (!s) { s = Object.assign({ k, area, fecha, evento, gente: new Map(), fuentes: new Set() }, extra || {}); m.set(k, s); }
+    return s;
+  };
+  const sumar = (s, g) => {
+    const per = g.personaId ? personaPorId(g.personaId) : personaPorDoc(g.doc);
+    if (per) { g.personaId = per.id; g.nombre = per.nombre || g.nombre; if (!g.doc) g.doc = docNucleo(per.cuit || ''); }
+    const clave = g.personaId || (g.doc ? 'd' + g.doc : 'n' + hiNorm(g.nombre));
+    const ya = s.gente.get(clave);
+    if (!ya) { s.gente.set(clave, Object.assign({ hids: g.hid ? [g.hid] : [] }, g)); return; }
+    if (g.hid) ya.hids.push(g.hid);
+    if (!ya.puesto && g.puesto) ya.puesto = g.puesto;
+    if (!String(ya.fuente).includes(g.fuente)) ya.fuente += ' · ' + g.fuente;
+  };
+  contratos.forEach(ct => {
+    if (ct.estado === 'anulado') return;
+    const f = fechaDeContrato(ct); if (!/^\d{4}-\d{2}-\d{2}$/.test(f) || f >= hoy) return;
+    const conv = convPorId.get(ct.conv_id);
+    const s = show(areaDeShow(conv && conv.area), f, conv ? conv.nombre : 'Evento sin convocatoria en el panel', { convId: ct.conv_id || '' });
+    s.fuentes.add('contratos');
+    sumar(s, { personaId: ct.persona_id || '', doc: docNucleo(ct.cuil || ''), nombre: ct.nombre || '', puesto: ct.puesto || '', fuente: ct.estado === 'firmado' ? 'Contrato firmado' : 'Contrato sin firmar' });
+  });
+  const conContratos = new Set(contratos.filter(ct => ct.estado !== 'anulado' && ct.conv_id).map(ct => ct.conv_id));
+  posts.forEach(x => {
+    if (!['aprobado', 'confirmado'].includes(x.estado) || x.asistencia === 'ausente' || conContratos.has(x.convId)) return;
+    const conv = convPorId.get(x.convId); if (!conv) return;
+    const fs = convFechasArr(conv).filter(f => /^\d{4}-\d{2}-\d{2}$/.test(f)).sort(); if (!fs.length || fs[fs.length - 1] >= hoy) return;
+    const s = show(areaDeShow(conv.area), fs[0], conv.nombre, { convId: conv.id, fechas: fs });
+    s.fuentes.add('convocatoria');
+    sumar(s, { personaId: x.personaId || '', doc: docNucleo(x.cuit || ''), nombre: x.nombre || '', puesto: ((conv.puestos || []).find(q => q.id === x.puestoId) || {}).nombre || '', fuente: 'Convocatoria' });
+  });
+  historialShows.forEach(h => {
+    const s = show(h.area, String(h.fecha).slice(0, 10), h.evento);
+    s.fuentes.add(h.origen === 'planilla' ? 'planilla' : 'cargado');
+    sumar(s, { personaId: h.persona_id || '', doc: h.doc || '', nombre: h.nombre || '', puesto: h.puesto || '', fuente: h.origen === 'planilla' ? 'Planilla' : 'Cargado a mano', hid: h.id, archivo: h.archivo || '' });
+  });
+  const l = [...m.values()].sort((a, b) => b.fecha.localeCompare(a.fecha) || String(a.evento).localeCompare(String(b.evento), 'es'));
+  hiCache = { h: historialShows, hl: historialShows.length, c: contratos, cl: contratos.length, p: posts, pl: posts.length, v: convs, vl: convs.length, pe: people, l };
+  return l;
+}
+function renderHistorialSec() {
+  const cont = document.getElementById('hiContent'); if (!cont) return;
+  if (hiTabActual === 'sup') { renderHiSupervisores(cont); return; }
+  const aviso = historialFalta ? '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#9a3412;margin-bottom:14px">Para cargar shows a mano o con planillas falta correr <strong>historial-feedback.sql</strong> en Supabase. Mientras tanto se ve lo que el panel ya sabe (contratos y convocatorias).</div>' : '';
+  const todos = hiShowsTodos(), selMes = document.getElementById('hiMes'), mesAct = selMes.value;
+  const meses = [...new Set(todos.map(s => s.fecha.slice(0, 7)))].sort().reverse();
+  selMes.innerHTML = '<option value="">Todos los meses</option>' + meses.map(m => `<option value="${m}"${m === mesAct ? ' selected' : ''}>${hiMesNombre(m)}</option>`).join('');
+  const area = document.getElementById('hiArea').value, crudo = document.getElementById('hiSrch').value, q = hiNorm(crudo);
+  const doc = /\d{6,}/.test(crudo) ? docNucleo(crudo.replace(/\D/g, '')) : '';
+  const l = todos.filter(s => (!area || s.area === area) && (!mesAct || s.fecha.startsWith(mesAct))
+    && (!q || (doc ? [...s.gente.values()].some(g => g.doc === doc) : hiNorm(s.evento).includes(q) || [...s.gente.values()].some(g => hiNorm(g.nombre).includes(q)))));
+  if (!l.length) { cont.innerHTML = aviso + '<div class="empty">' + (todos.length ? 'Nada con ese filtro.' : 'Todavía no hay shows en el historial. Cargá uno a mano o subí las planillas del año.') + '</div>'; return; }
+  const porMes = new Map(); l.forEach(s => { const m = s.fecha.slice(0, 7); if (!porMes.has(m)) porMes.set(m, []); porMes.get(m).push(s); });
+  const tot = l.reduce((t, s) => t + s.gente.size, 0);
+  cont.innerHTML = aviso + `<div style="font-size:12.5px;color:var(--r-muted);margin-bottom:12px"><b style="color:var(--r-ink)">${l.length}</b> show${l.length === 1 ? '' : 's'} · <b style="color:var(--r-ink)">${tot}</b> presencia${tot === 1 ? '' : 's'}</div>`
+    + [...porMes.entries()].map(([m, ss]) => `<div class="hi-mes">${hiMesNombre(m)} <small>${ss.length} show${ss.length === 1 ? '' : 's'}</small></div>
+      <div class="fbv-tabla hi-tabla"><table><tbody>${ss.map(s => `<tr onclick="hiVer('${hiAttr(s.k)}')">
+        <td style="width:96px;white-space:nowrap">${fechaDMA(s.fecha)}${s.fechas && s.fechas.length > 1 ? '<div class="fbv-sub">' + s.fechas.length + ' fechas</div>' : ''}</td>
+        <td><div class="fbv-nom">${e(s.evento)}</div></td>
+        <td style="width:100px"><span class="a-badge ${areaClase(s.area)}">${areaCorto(s.area)}</span></td>
+        <td style="width:110px;white-space:nowrap"><b>${s.gente.size}</b> persona${s.gente.size === 1 ? '' : 's'}</td>
+        <td style="width:240px">${[...s.fuentes].map(f => '<span class="hi-fuente">' + HI_FUENTES[f] + '</span>').join(' ')}</td></tr>`).join('')}</tbody></table></div>`).join('');
+}
+
+// ── Un show: quiénes fueron, sumar o quitar ──
+let hiVerK = '';
+function hiVer(kEnc) { hiVerK = decodeURIComponent(kEnc); document.getElementById('hiVerBus').value = ''; document.getElementById('hiVerRes').innerHTML = ''; renderHiVer(); showM('mHiVer'); }
+function hiShowActual() { return hiShowsTodos().find(s => s.k === hiVerK) || null; }
+function renderHiVer() {
+  const s = hiShowActual(), lista = document.getElementById('hiVerLista');
+  if (!s) { lista.innerHTML = '<div class="empty">Ya no queda nadie en este show.</div>'; document.getElementById('hiVerBorrar').style.display = 'none'; return; }
+  document.getElementById('hiVerTit').textContent = s.evento;
+  document.getElementById('hiVerSub').textContent = (s.fechas && s.fechas.length > 1 ? s.fechas.map(fechaDMA).join(', ') : fechaDMA(s.fecha)) + ' · ' + areaLargo(s.area) + ' · ' + s.gente.size + ' persona' + (s.gente.size === 1 ? '' : 's');
+  const gente = [...s.gente.values()].sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'));
+  lista.innerHTML = '<table><thead><tr><th>Persona</th><th>Puesto</th><th>De dónde sale</th><th></th></tr></thead><tbody>' + gente.map(g => `<tr>
+    <td>${g.personaId ? `<a href="#" onclick="event.preventDefault();closeM('mHiVer');openHistorial('${g.personaId}')">${eN(g.nombre || 'Sin nombre')}</a>` : eN(g.nombre || 'Sin nombre') + '<div class="fbv-sub">No está en la nómina' + (g.doc ? ' · DNI ' + e(g.doc) : '') + '</div>'}</td>
+    <td>${e(g.puesto || '—')}</td>
+    <td>${e(g.fuente)}${g.archivo ? '<div class="fbv-sub">' + e(g.archivo) + '</div>' : ''}</td>
+    <td style="text-align:right">${g.hids.length ? `<button class="btn btn-sec btn-xs" onclick="hiQuitar(['${g.hids.join("','")}'])" title="Quitar lo cargado (a mano o con planilla) de esta persona en este show">Quitar</button>` : ''}</td></tr>`).join('') + '</tbody></table>';
+  document.getElementById('hiVerBorrar').style.display = gente.some(g => g.hids.length) ? '' : 'none';
+}
+// En la nómina: por documento (desde 6 números) o por nombre (todas las palabras).
+function hiBuscarNomina(q) {
+  const t = String(q || '').trim(); if (t.length < 3) return [];
+  if (/\d{6,}/.test(t)) { const p = personaPorDoc(docNucleo(t.replace(/\D/g, ''))); return p ? [p] : []; }
+  const w = fbvPalabras(t); if (!w.length) return [];
+  return people.filter(p => { const n = nomPelar(p.nombre); return w.every(x => n.includes(x)); }).slice(0, 10);
+}
+function hiResultadosHTML(l, q, yaEsta, fn) {
+  if (!l.length) return String(q || '').trim().length >= 3 ? '<div class="fbi-msg">No aparece en la nómina.</div>' : '';
+  return '<div class="hi-res">' + l.map(p => `<div class="hi-res-f"><span>${eN(p.nombre)}<small>${areaCorto(p.area)}${p.cuit ? ' · ' + e(p.cuit) : ''}</small></span>${yaEsta(p) ? '<small>ya está</small>' : `<button class="btn btn-primary btn-xs" onclick="${fn}('${p.id}')">Sumar</button>`}</div>`).join('') + '</div>';
+}
+function hiVerBuscar() {
+  const s = hiShowActual(), q = document.getElementById('hiVerBus').value;
+  document.getElementById('hiVerRes').innerHTML = s ? hiResultadosHTML(hiBuscarNomina(q), q, p => s.gente.has(p.id), 'hiVerSumar') : '';
+}
+async function hiVerSumar(pid) {
+  const s = hiShowActual(); if (!s) return;
+  if (await hiGuardarFilas([{ area: s.area, evento: s.evento, fecha: s.fecha, persona_id: pid, origen: 'manual' }])) { renderHiVer(); hiVerBuscar(); renderHistorialSec(); }
+}
+function hiVerBorrarTodo() {
+  const s = hiShowActual(); if (!s) return;
+  const ids = [...s.gente.values()].flatMap(g => g.hids); if (!ids.length) return;
+  hiQuitar(ids, '', '¿Quitar las ' + ids.length + ' presencias cargadas en este show? Lo que sale de contratos o convocatorias queda.');
+}
+async function hiQuitar(ids, personaId, pregunta) {
+  if (!ids || !ids.length) return;
+  if (!confirm(pregunta || (ids.length === 1 ? '¿Quitar esta presencia del historial?' : '¿Quitar estas ' + ids.length + ' presencias del historial?'))) return;
+  const { error } = await sb.from('historial_shows').delete().in('id', ids);
+  if (error) { toast('No se pudo quitar: ' + (error.message || error)); return; }
+  const fuera = new Set(ids); historialShows = historialShows.filter(h => !fuera.has(h.id));
+  toast('✓ Quitado del historial');
+  renderHistorialSec(); nomRefresh();
+  if (document.getElementById('mHiVer').style.display !== 'none') renderHiVer();
+  if (personaId) openHistorial(personaId);
+}
+// Guarda filas en historial_shows (de a 500) y suma al panel lo que entró. Devuelve { cargadas, ya } o null si falló.
+async function hiGuardarFilas(filas, avance) {
+  if (historialFalta) { toast('Falta correr historial-feedback.sql en Supabase'); return null; }
+  let cargadas = 0, ya = 0; const nuevas = [];
+  for (let i = 0; i < filas.length; i += 500) {
+    if (avance) avance(i, filas.length);
+    const { data, error } = await sb.rpc('historial_cargar', { p_filas: filas.slice(i, i + 500) });
+    if (error || !data || !data.ok) { toast('No se pudo guardar' + (cargadas ? ' todo (entraron ' + cargadas + ')' : '') + ': ' + ((error && error.message) || (data && data.error) || 'error')); historialShows = historialShows.concat(nuevas); hiCache = null; return null; }
+    cargadas += data.cargadas || 0; ya += data.ya_estaban || 0; (data.filas || []).forEach(f => nuevas.push(f));
+  }
+  historialShows = historialShows.concat(nuevas);
+  nomRefresh();
+  return { cargadas, ya };
+}
+
+// ── Cargar un show a mano ──
+let hiCarSel = new Map();   // clave → { personaId, nombre, cuil }
+function openHiCargar(personaId) {
+  hiCarSel = new Map();
+  ['hiCarEvento', 'hiCarFecha', 'hiCarPuesto', 'hiCarBus', 'hiCarPegar'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('hiCarRes').innerHTML = ''; document.getElementById('hiCarNoEstan').textContent = '';
+  document.getElementById('hiCarArea').value = document.getElementById('hiArea').value || 'movistar_arena';
+  document.getElementById('hiEventos').innerHTML = [...new Set(hiShowsTodos().map(s => s.evento).concat(convs.map(c => c.nombre)).filter(Boolean))].slice(0, 500).map(n => `<option value="${e(n)}">`).join('');
+  const p = personaId ? personaPorId(personaId) : null;
+  if (p) { hiCarSel.set(p.id, { personaId: p.id, nombre: p.nombre }); document.getElementById('hiCarArea').value = areaDeShow(p.area); }
+  renderHiCarElegidos(); showM('mHiCargar');
+}
+function hiCarBuscar() { const q = document.getElementById('hiCarBus').value; document.getElementById('hiCarRes').innerHTML = hiResultadosHTML(hiBuscarNomina(q), q, p => hiCarSel.has(p.id), 'hiCarSumar'); }
+function hiCarSumar(pid) { const p = personaPorId(pid); if (!p) return; hiCarSel.set(p.id, { personaId: p.id, nombre: p.nombre }); hiCarBuscar(); renderHiCarElegidos(); }
+function hiCarSacar(k) { hiCarSel.delete(decodeURIComponent(k)); renderHiCarElegidos(); hiCarBuscar(); }
+// Una lista pegada: con CUIL, por documento (si no está en la nómina, queda con su CUIL); sin CUIL, por nombre, sólo si
+// es claro quién es. Lo que no se encuentra queda escrito abajo, para buscarlo a mano.
+function hiCarPegarLista() {
+  const noEstan = [];
+  document.getElementById('hiCarPegar').value.split(/\r?\n/).map(x => x.trim()).filter(Boolean).forEach(linea => {
+    const dig = (linea.match(/\d[\d.\- ]{5,}\d/) || [''])[0].replace(/\D/g, '');
+    if (dig.length >= 7) {
+      const p = personaPorDoc(docNucleo(dig));
+      if (p) hiCarSel.set(p.id, { personaId: p.id, nombre: p.nombre });
+      else hiCarSel.set('d' + docNucleo(dig), { personaId: '', cuil: dig, nombre: linea.replace(/\d[\d.\- ]{5,}\d/, '').replace(/[,;\t|]+/g, ' ').trim() });
+      return;
+    }
+    const cands = fbvCandidatos(linea).filter(x => !x.suelta), pid = fbvClaro(cands, 4, x => x.p.id);
+    if (pid) { const p = personaPorId(pid); hiCarSel.set(pid, { personaId: pid, nombre: p ? p.nombre : linea }); } else noEstan.push(linea);
+  });
+  document.getElementById('hiCarPegar').value = noEstan.join('\n');
+  document.getElementById('hiCarNoEstan').textContent = noEstan.length ? 'No encontré a ' + noEstan.length + ' (quedaron arriba): buscalos a mano o pegá su CUIL.' : '';
+  renderHiCarElegidos();
+}
+function renderHiCarElegidos() {
+  const l = [...hiCarSel.entries()];
+  document.getElementById('hiCarElegidos').innerHTML = l.length ? '<div class="fbi-res" style="margin-bottom:6px"><strong>' + l.length + '</strong> para cargar</div><div class="hi-chips">'
+    + l.map(([k, x]) => `<span class="hi-chip">${eN(x.nombre || x.cuil || '')}${x.personaId ? '' : ' <small>(no está en la nómina)</small>'}<button onclick="hiCarSacar('${hiAttr(k)}')" aria-label="Sacar">✕</button></span>`).join('') + '</div>' : '';
+  const b = document.getElementById('hiCarBtn'); b.disabled = !l.length; b.textContent = l.length ? 'Guardar ' + l.length : 'Guardar';
+}
+async function hiCarGuardar() {
+  const evento = document.getElementById('hiCarEvento').value.trim(), fecha = document.getElementById('hiCarFecha').value, area = document.getElementById('hiCarArea').value, puesto = document.getElementById('hiCarPuesto').value.trim();
+  if (!evento) { toast('Poné el nombre del show'); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { toast('Poné la fecha del show'); return; }
+  if (!hiCarSel.size) return;
+  const b = document.getElementById('hiCarBtn'); b.disabled = true; b.textContent = 'Guardando…';
+  const r = await hiGuardarFilas([...hiCarSel.values()].map(x => ({ area, evento, fecha, persona_id: x.personaId || null, cuil: x.cuil || null, nombre: x.nombre || null, puesto: puesto || null, origen: 'manual' })));
+  renderHiCarElegidos();
+  if (!r) return;
+  closeM('mHiCargar'); renderHistorialSec();
+  toast('✓ ' + r.cargadas + ' cargada' + (r.cargadas === 1 ? '' : 's') + (r.ya ? ' · ' + r.ya + ' ya estaba' + (r.ya === 1 ? '' : 'n') : ''));
+}
+
+// ── Subir las planillas del año ──
+// Cada planilla es un show. Se busca la fila de encabezados (CUIL o DNI y el nombre), y arriba de ella el evento, el
+// lugar y la fecha; si no están, salen del nombre del archivo ("02 - PRESENTISMO - CAD Gelatina @CEC - 21-11-2026").
+// Si hay una columna de presentismo, entran los P (y E, el extra que vino); si hay una columna por fecha, cada fecha
+// marcada por separado. El título de un bloque ("ORIENTADORES · 40") es el puesto de los que siguen.
+const HI_COL = {
+  doc: /\b(cuil|cuit|dni|documento)\b/,
+  completo: /\b(apellidos? y nombres?|nombres? y apellidos?|nombre completo)\b|^persona$/,
+  apellido: /^apellidos?$/,
+  nombre: /^nombres?$/,
+  puesto: /^(sector|puesto|rol|funcion|cargo|posicion|tarea)\b/,
+  fecha: /^(fecha|dia|jornada)\b/,
+  presente: /presentismo|asistencia|^presente|^asistio|^p a( e)?$/
+};
+let hiPlan = [];
+function openHiPlanillas() {
+  hiPlan = []; document.getElementById('hiPlanFile').value = ''; document.getElementById('hiPlanPrev').innerHTML = '';
+  document.getElementById('hiPlanArea').value = document.getElementById('hiArea').value || 'movistar_arena';
+  hiPlanBoton(); showM('mHiPlan');
+}
+function hiFechaDe(v, anio) {
+  const s = String(v == null ? '' : v).trim(); let m;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})/))) return +m[1] >= 2020 && +m[1] <= 2100 ? m[0] : '';
+  if ((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2,4}))?(?!\d)/))) {
+    let y = m[3] ? +m[3] : +anio || 0; if (!y) return ''; if (y < 100) y += 2000;
+    const d = +m[1], mo = +m[2]; if (d < 1 || d > 31 || mo < 1 || mo > 12 || y < 2020 || y > 2100) return '';
+    return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+  return '';
+}
+function hiMarca(v) { const t = hiNorm(v); if (!t) return ''; if (/^(p|e|pe|presente|si|asistio|x)\b/.test(t)) return 'P'; if (/^(a|ausente|no|falto)\b/.test(t)) return 'A'; return '?'; }
+async function hiPlanHojas(f) {
+  if (/\.xls$/i.test(f.name)) throw new Error('es un Excel viejo (.xls): abrilo y guardalo como .xlsx');
+  if (/\.xlsx$/i.test(f.name)) {
+    const libro = new ExcelJS.Workbook(); await libro.xlsx.load(await f.arrayBuffer());
+    return libro.worksheets.map(h => { const filas = []; h.eachRow({ includeEmpty: true }, fila => { filas[fila.number - 1] = Array.from((fila.values || []).slice(1), textoDeCelda); }); for (let i = 0; i < filas.length; i++) if (!filas[i]) filas[i] = []; return { nombre: h.name, filas }; });
+  }
+  return [{ nombre: '', filas: csvAFilas(await f.text()) }];
+}
+// La fila de encabezados de una hoja y sus columnas (o null si no tiene nombre de persona).
+function hiEncabezado(filas) {
+  for (let i = 0; i < Math.min(filas.length, 60); i++) {
+    const cab = (filas[i] || []).map(x => hiNorm(x)), idx = re => cab.findIndex(x => re.test(x));
+    const col = { doc: idx(HI_COL.doc), completo: idx(HI_COL.completo), apellido: idx(HI_COL.apellido), nombre: idx(HI_COL.nombre), puesto: idx(HI_COL.puesto), fecha: idx(HI_COL.fecha), presente: idx(HI_COL.presente) };
+    // Una sola columna "Nombre" (sin la del apellido) trae el nombre completo.
+    if (col.completo < 0 && col.apellido < 0 && col.nombre >= 0) { col.completo = col.nombre; col.nombre = -1; }
+    if (col.completo < 0 && !(col.apellido >= 0 && col.nombre >= 0)) continue;
+    return { i, col };
+  }
+  return null;
+}
+function hiLimpiarArchivo(nombre) {
+  return String(nombre || '').replace(/\.[a-z0-9]+$/i, '').replace(/^\s*\d+\s*-\s*/, '').replace(/\b(presentismo|info rrhh|planilla( de)? presentes|convocatoria)\b\s*-?\s*/ig, '')
+    .replace(/(\d{1,2})[-_.\/](\d{1,2})[-_.\/](\d{2,4})/, '').replace(/[\s\-–_]+$/, '').replace(/^[\s\-–_]+/, '').trim();
+}
+async function hiPlanAnalizar(f) {
+  const hojas = await hiPlanHojas(f);
+  // La hoja: la de presentes si la hay; si no, la primera con encabezados (sin los respaldos ni las bases).
+  const candidatas = hojas.filter(h => !/respaldo|^base|indice|índice|recursos/i.test(h.nombre)).map(h => ({ h, cab: hiEncabezado(h.filas) })).filter(x => x.cab);
+  const elegida = candidatas.find(x => /present/i.test(x.h.nombre) && x.cab.col.doc >= 0) || candidatas.find(x => x.cab.col.doc >= 0) || candidatas[0];
+  if (!elegida) return { archivo: f.name, error: 'No encontré la fila de encabezados (una columna de CUIL o DNI y otra con el nombre).' };
+  const { h, cab } = elegida, { i: iCab, col } = cab, filas = h.filas;
+  // Arriba de los encabezados: el evento, el lugar y la fecha (o el título de la planilla de presentes del panel).
+  let evento = '', lugar = '', fechaTop = '';
+  const anioArch = (f.name.match(/\b(20\d{2})\b/) || [])[1] || String(new Date().getFullYear());
+  for (let r = 0; r < iCab; r++) {
+    const fila = filas[r] || [], txt = j => String(fila[j] == null ? '' : fila[j]).trim();
+    if (/planilla de presentes/i.test(txt(0))) { evento = evento || txt(1); lugar = lugar || txt(2); fechaTop = fechaTop || hiFechaDe(txt(3), anioArch); continue; }
+    for (let j = 0; j < fila.length; j++) {
+      const k = hiNorm(fila[j]); if (!k) continue;
+      const valor = () => { const dos = txt(j).split(':'); if (dos.length > 1 && dos[1].trim()) return dos.slice(1).join(':').trim(); for (let x = j + 1; x < fila.length; x++) if (txt(x)) return txt(x); return ''; };
+      if (/^evento\b/.test(k) && !evento) evento = valor();
+      else if (/^lugar\b/.test(k) && !lugar) lugar = valor();
+      else if (/^fechas?\b/.test(k) && !fechaTop) fechaTop = hiFechaDe(valor(), anioArch);
+    }
+  }
+  const fechaArch = (() => { const m = f.name.match(/(\d{1,2})[-_.\/](\d{1,2})[-_.\/](\d{2,4})/); return m ? hiFechaDe(m[1] + '/' + m[2] + '/' + m[3]) : ''; })();
+  const fecha = fechaTop || fechaArch;
+  evento = evento || hiLimpiarArchivo(f.name) || h.nombre;
+  if (lugar && !new RegExp(lugar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(evento)) evento += ' @ ' + lugar;
+  const pista = (evento + ' ' + lugar + ' ' + f.name).toLowerCase();
+  const areaAdiv = /movistar|arena/.test(pista) ? 'movistar_arena' : /@|extern/.test(pista) ? 'externos' : /espa|madrid/.test(pista) ? 'espana' : '';
+  // Una columna por fecha (el encabezado es una fecha): cada una marcada por separado.
+  const cabFila = filas[iCab] || [], fijas = new Set(Object.values(col).filter(x => x >= 0));
+  const colFechas = []; cabFila.forEach((x, j) => { if (fijas.has(j)) return; const fe = hiFechaDe(x, (fecha || '').slice(0, 4) || anioArch); if (fe) colFechas.push({ j, fecha: fe }); });
+  const salida = [], sinQuien = [], vistos = new Set(); let ausentes = 0, sinMarca = 0, bloque = '';
+  const singular = t => String(t || '').replace(/[·(].*$/, '').replace(/\d+/g, '').trim().replace(/(?<=[a-záéíóúñ])es$/i, '').replace(/(?<=[aeiouáéíóú])s$/i, '').trim();
+  for (let r = iCab + 1; r < filas.length; r++) {
+    const fila = filas[r] || [], cel = j => j == null || j < 0 ? '' : String(fila[j] == null ? '' : fila[j]).trim();
+    const llenas = fila.filter(x => String(x == null ? '' : x).trim()).length; if (!llenas) continue;
+    const docTxt = cel(col.doc), dig = docTxt.replace(/\D/g, ''), d = dig.length >= 7 ? docNucleo(dig) : '';
+    let nombre = col.completo >= 0 ? cel(col.completo) : [cel(col.apellido), cel(col.nombre)].filter(Boolean).join(' ');
+    if (col.doc >= 0 && HI_COL.doc.test(hiNorm(docTxt))) continue;                       // otra fila de encabezados
+    if (!d && llenas === 1) { const t = fila.find(x => String(x == null ? '' : x).trim()); bloque = singular(t); continue; }   // el título de un bloque
+    if (!d && !nombre) continue;
+    if (!d && /^(total|pedido|asistencias|backup|reserva|observ)/.test(hiNorm(nombre))) continue;
+    const puesto = cel(col.puesto) || bloque;
+    let dias = [];
+    if (colFechas.length) colFechas.forEach(cf => { const m = hiMarca(cel(cf.j)); if (m === 'P') dias.push(cf.fecha); else if (m === 'A') ausentes++; });
+    else {
+      if (col.presente >= 0) { const m = hiMarca(cel(col.presente)); if (m === 'A') { ausentes++; continue; } if (m !== 'P') { sinMarca++; continue; } }
+      dias = [col.fecha >= 0 ? hiFechaDe(cel(col.fecha), (fecha || '').slice(0, 4) || anioArch) || '' : ''];
+    }
+    if (!dias.length) continue;
+    // Quién es: por documento; si no tiene, por el nombre (sólo si es claro).
+    let personaId = '';
+    if (d) { const p = personaPorDoc(d); if (p) personaId = p.id; }
+    else { const pid = fbvClaro(fbvCandidatos(nombre).filter(x => !x.suelta), 4, x => x.p.id); if (pid) personaId = pid; else { sinQuien.push(nombre); continue; } }
+    dias.forEach(dia => { const k = (personaId || d) + '|' + dia; if (vistos.has(k)) return; vistos.add(k); salida.push({ personaId, doc: d, cuil: dig, nombre: personaId ? (personaPorId(personaId) || {}).nombre || nombre : nombre, puesto, fecha: dia }); });
+  }
+  return { archivo: f.name, hoja: h.nombre, evento, fecha, area: areaAdiv || document.getElementById('hiPlanArea').value, areaAdiv: !!areaAdiv, filas: salida, ausentes, sinMarca, sinQuien, cargar: true };
+}
+async function hiPlanLeer() {
+  const files = [...document.getElementById('hiPlanFile').files], prev = document.getElementById('hiPlanPrev');
+  hiPlan = []; hiPlanBoton();
+  if (!files.length) { prev.innerHTML = ''; return; }
+  prev.innerHTML = '<div class="fbi-msg">Leyendo ' + files.length + ' planilla' + (files.length === 1 ? '' : 's') + '…</div>';
+  for (const f of files) { try { hiPlan.push(await hiPlanAnalizar(f)); } catch (err) { hiPlan.push({ archivo: f.name, error: 'No pude leerla: ' + (err && err.message || err) }); } }
+  renderHiPlan();
+}
+function hiPlanAreaDefecto() { const a = document.getElementById('hiPlanArea').value; hiPlan.forEach(x => { if (!x.error && !x.areaAdiv) x.area = a; }); renderHiPlan(); }
+function hiPlanFechas(x) { return [...new Set(x.filas.map(f => f.fecha || x.fecha).filter(Boolean))].sort(); }
+function hiPlanLista(x) { return !x.error && x.filas.length && x.evento.trim() && x.filas.every(f => f.fecha || /^\d{4}-\d{2}-\d{2}$/.test(x.fecha)); }
+function renderHiPlan() {
+  document.getElementById('hiPlanPrev').innerHTML = hiPlan.map((x, i) => {
+    if (x.error) return `<div class="hi-plan"><div class="hi-plan-cab"><b>${e(x.archivo)}</b></div><div class="fbi-msg fbi-mal">${e(x.error)}</div></div>`;
+    const enNomina = x.filas.filter(f => f.personaId).length, soloCuil = x.filas.length - enNomina, porFila = x.filas.some(f => f.fecha), fechas = hiPlanFechas(x);
+    const faltaFecha = !porFila && !/^\d{4}-\d{2}-\d{2}$/.test(x.fecha) || x.filas.some(f => !f.fecha) && !/^\d{4}-\d{2}-\d{2}$/.test(x.fecha);
+    return `<div class="hi-plan${hiPlanLista(x) && x.cargar ? '' : ' hi-plan-no'}">
+      <div class="hi-plan-cab"><label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" ${x.cargar && hiPlanLista(x) ? 'checked' : ''}${hiPlanLista(x) ? '' : ' disabled'} onchange="hiPlan[${i}].cargar=this.checked;renderHiPlan()"><b>${e(x.archivo)}</b></label>${x.hoja ? '<small>hoja «' + e(x.hoja) + '»</small>' : ''}</div>
+      <div class="frow" style="margin-top:8px">
+        <div class="fg" style="flex:2"><label>Show o evento</label><input class="fi" value="${e(x.evento)}" onchange="hiPlan[${i}].evento=this.value;renderHiPlan()"></div>
+        <div class="fg"><label>Fecha${porFila ? 's' : ''}</label>${porFila && !x.filas.some(f => !f.fecha) ? `<div class="fbi-msg">${fechas.length} fecha${fechas.length === 1 ? '' : 's'}: ${fechas.slice(0, 6).map(f => fechaDMA(f).slice(0, 5)).join(', ')}${fechas.length > 6 ? '…' : ''}</div>` : `<input type="date" class="fi" value="${/^\d{4}-\d{2}-\d{2}$/.test(x.fecha) ? x.fecha : ''}" onchange="hiPlan[${i}].fecha=this.value;renderHiPlan()"${faltaFecha ? ' style="border-color:#f59e0b"' : ''}>`}</div>
+        <div class="fg"><label>Área</label><select class="fi" onchange="hiPlan[${i}].area=this.value;hiPlan[${i}].areaAdiv=true;renderHiPlan()">${[['movistar_arena', 'Movistar Arena'], ['externos', 'Externos'], ['espana', 'España']].map(([v, t]) => `<option value="${v}"${x.area === v ? ' selected' : ''}>${t}</option>`).join('')}</select></div>
+      </div>
+      <div class="fbi-sub"><b style="color:var(--r-ink)">${x.filas.length}</b> presencia${x.filas.length === 1 ? '' : 's'} · ${enNomina} en la nómina${soloCuil ? ' · ' + soloCuil + ' sólo con su CUIL (no ' + (soloCuil === 1 ? 'está' : 'están') + ' en la nómina)' : ''}${x.ausentes ? ' · ' + x.ausentes + ' ausente' + (x.ausentes === 1 ? '' : 's') + ' (no se carga' + (x.ausentes === 1 ? '' : 'n') + ')' : ''}${x.sinMarca ? ' · ' + x.sinMarca + ' sin marca de presentismo (no se carga' + (x.sinMarca === 1 ? '' : 'n') + ')' : ''}${x.sinQuien.length ? ' · ' + x.sinQuien.length + ' sin CUIL y sin encontrarlos por el nombre (no se carga' + (x.sinQuien.length === 1 ? '' : 'n') + ')' : ''}${faltaFecha ? ' · <b style="color:#b45309">falta la fecha</b>' : ''}${!x.filas.length ? ' · <b style="color:#b45309">no hay nadie para cargar</b>' : ''}</div>
+      ${x.filas.length || x.sinQuien.length ? `<details style="margin-top:6px"><summary style="font-size:12px;cursor:pointer;color:var(--r-muted)">Ver quiénes</summary><div class="fbv-tabla" style="max-height:260px"><table><thead><tr><th>Persona</th><th>Puesto</th><th>Fecha</th></tr></thead><tbody>${x.filas.slice(0, 400).map(f => `<tr><td>${eN(f.nombre)}${f.personaId ? '' : '<div class="fbv-sub">No está en la nómina · CUIL ' + e(f.cuil) + '</div>'}</td><td>${e(f.puesto || '—')}</td><td>${fechaDMA(f.fecha || x.fecha)}</td></tr>`).join('')}${x.sinQuien.map(n => `<tr class="fbv-no"><td>${eN(n)}<div class="fbv-sub">Sin CUIL y no lo encontré por el nombre: no se carga</div></td><td></td><td></td></tr>`).join('')}</tbody></table></div></details>` : ''}
+    </div>`;
+  }).join('');
+  hiPlanBoton();
+}
+function hiPlanBoton() {
+  const n = hiPlan.filter(x => x.cargar && hiPlanLista(x)).reduce((t, x) => t + x.filas.length, 0), b = document.getElementById('hiPlanBtn');
+  b.disabled = !n; b.textContent = n ? 'Cargar ' + n + ' presencia' + (n === 1 ? '' : 's') : 'Cargar';
+}
+async function hiPlanCargar() {
+  const elegidas = hiPlan.filter(x => x.cargar && hiPlanLista(x)); if (!elegidas.length) return;
+  const filas = elegidas.flatMap(x => x.filas.map(f => ({ area: x.area, evento: x.evento.trim(), fecha: f.fecha || x.fecha, persona_id: f.personaId || null, cuil: f.cuil || null, nombre: f.nombre || null, puesto: f.puesto || null, origen: 'planilla', archivo: x.archivo })));
+  const b = document.getElementById('hiPlanBtn'); b.disabled = true;
+  const r = await hiGuardarFilas(filas, (i, n) => { b.textContent = 'Cargando… ' + Math.round(i * 100 / n) + '%'; });
+  hiPlanBoton();
+  if (!r) return;
+  closeM('mHiPlan'); renderHistorialSec();
+  toast('✓ ' + r.cargadas + ' presencia' + (r.cargadas === 1 ? '' : 's') + ' cargada' + (r.cargadas === 1 ? '' : 's') + (r.ya ? ' · ' + r.ya + ' ya estaba' + (r.ya === 1 ? '' : 'n') : ''));
+}
+
+// ── Feedback por supervisor ──
+// Cuántas evaluaciones hizo cada uno, el promedio que pone y cómo se reparten los colores (para ver quién es más
+// exigente o más generoso). El nombre sin la zona: "Ana López (Bowl)" y "Ana López (VIP)" son la misma persona.
+let hiSupAbierto = '';
+function supDeFeedback(f) {
+  const n = String(f.supervisor_nombre || '').replace(/\s*\([^)]*\)\s*$/, '').replace(/\s+/g, ' ').trim();
+  return !n || /^planilla de feedback$/i.test(n) ? '' : n;
+}
+function renderHiSupervisores(cont) {
+  const grupos = new Map();
+  feedbacks.forEach(f => {
+    const n = supDeFeedback(f), k = hiNorm(n) || '-';
+    if (!grupos.has(k)) grupos.set(k, { k, nombres: new Map(), fbs: [] });
+    const g = grupos.get(k); g.nombres.set(n, (g.nombres.get(n) || 0) + 1); g.fbs.push(f);
+  });
+  if (!grupos.size) { cont.innerHTML = '<div class="empty">Todavía no hay feedbacks.</div>'; return; }
+  const proms = feedbacks.map(promedioFb).filter(x => x != null), general = proms.length ? proms.reduce((t, x) => t + x, 0) / proms.length : null;
+  const filas = [...grupos.values()].map(g => {
+    const nombre = g.k === '-' ? 'Sin dato de quién evaluó' : [...g.nombres.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    const ps = g.fbs.map(promedioFb).filter(x => x != null), col = k => ps.filter(x => colorDePromedio(x) === k).length;
+    const ult = g.fbs.map(f => f.fecha || String(f.created_at || '').slice(0, 10)).filter(Boolean).sort().pop() || '';
+    return { g, nombre, evals: ps.length, prom: ps.length ? ps.reduce((t, x) => t + x, 0) / ps.length : null, v: col(1), a: col(2), r: col(3), obs: g.fbs.length - ps.length, ult };
+  }).sort((a, b) => (a.g.k === '-') - (b.g.k === '-') || b.evals - a.evals || a.nombre.localeCompare(b.nombre, 'es'));
+  const barra = x => { const t = x.v + x.a + x.r; if (!t) return ''; const w = n => (n * 100 / t).toFixed(1) + '%'; return `<div class="hi-barra" title="${x.v} en verde · ${x.a} en amarillo · ${x.r} en rojo"><i style="width:${w(x.v)};background:#16a34a"></i><i style="width:${w(x.a)};background:#eab308"></i><i style="width:${w(x.r)};background:#dc2626"></i></div>`; };
+  cont.innerHTML = `<div style="font-size:12.5px;color:var(--r-muted);margin-bottom:12px">${feedbacks.length} feedbacks en total${general != null ? ' · promedio general <b style="color:var(--r-ink)">' + general.toFixed(2) + '</b> de 5' : ''}. Tocá un supervisor para ver los suyos.</div>
+    <div class="fbv-tabla hi-tabla"><table><thead><tr><th>Supervisor</th><th>Evaluaciones</th><th>Promedio que pone</th><th style="width:200px">Verde · Amarillo · Rojo</th><th>Comentarios sueltos</th><th>Último</th></tr></thead><tbody>`
+    + filas.map(x => `<tr onclick="hiSupAbrir('${hiAttr(x.g.k)}')"><td><div class="fbv-nom">${e(x.nombre)}</div></td><td><b>${x.evals}</b></td>
+        <td>${x.prom != null ? '<span class="sem sem-' + colorDePromedio(x.prom) + '" style="vertical-align:middle">' + colorDePromedio(x.prom) + '</span> <b>' + x.prom.toFixed(2) + '</b>' + (general != null ? ' <small style="color:var(--r-muted)">(' + (x.prom - general >= 0 ? '+' : '') + (x.prom - general).toFixed(2) + ')</small>' : '') : '—'}</td>
+        <td>${barra(x)}<div class="fbv-sub">${x.v} · ${x.a} · ${x.r}</div></td><td>${x.obs || '—'}</td><td>${x.ult ? fechaDMA(x.ult) : '—'}</td></tr>`
+        + (hiSupAbierto === x.g.k ? `<tr><td colspan="6" style="background:#fafafa">${hiSupDetalle(x.g.fbs)}</td></tr>` : '')).join('') + '</tbody></table></div>';
+}
+function hiSupAbrir(kEnc) { const k = decodeURIComponent(kEnc); hiSupAbierto = hiSupAbierto === k ? '' : k; renderHistorialSec(); }
+function hiSupDetalle(fbs) {
+  const l = fbs.slice().sort((a, b) => String(b.fecha || b.created_at || '').localeCompare(String(a.fecha || a.created_at || ''))).slice(0, 300);
+  return '<table style="width:100%"><tbody>' + l.map(f => {
+    const p = personaPorId(f.persona_id), conv = f.conv_id ? convs.find(c => c.id === f.conv_id) : null, pr = promedioFb(f);
+    return `<tr><td style="width:90px">${fechaDMA(f.fecha || String(f.created_at || '').slice(0, 10))}</td><td>${p ? `<a href="#" onclick="event.preventDefault();openFbHistory('${p.id}')">${eN(p.nombre)}</a>` : 'Persona borrada'}</td><td>${conv ? e(conv.nombre) : '—'}</td>
+      <td style="white-space:nowrap">${pr != null ? '<span class="sem sem-' + colorDePromedio(pr) + '" style="vertical-align:middle">' + colorDePromedio(pr) + '</span> ' + pr.toFixed(2) : f.puntaje == null ? '<span class="fb-obs">Observación</span>' : '<span class="sem sem-' + f.puntaje + '">' + f.puntaje + '</span>'}</td><td>${e(f.comentario || '')}</td></tr>`;
+  }).join('') + '</tbody></table>' + (fbs.length > 300 ? '<div class="fbi-sub">Los 300 más nuevos de ' + fbs.length + '.</div>' : '');
 }
 
 // ── CONFLICTOS DE AGENDA / BUSCAR POR CUIT ──
@@ -13982,6 +14575,8 @@ async function keepAsMaster(masterId) {
     for (const dup of dups) {
       await sb.from('postulaciones').update({ persona_id: masterId }).eq('persona_id', dup.id);
       await sb.from('feedbacks').update({ persona_id: masterId }).eq('persona_id', dup.id);
+      // El historial cargado (22-nov) pasa a la ficha que queda.
+      if (!historialFalta) { try { await sb.from('historial_shows').update({ persona_id: masterId }).eq('persona_id', dup.id); historialShows = historialShows.map(h => h.persona_id === dup.id ? Object.assign({}, h, { persona_id: masterId }) : h); } catch (_) {} }
       posts.filter(x => x.personaId === dup.id).forEach(x => x.personaId = masterId);
       feedbacks.filter(x => x.persona_id === dup.id).forEach(x => x.persona_id = masterId);
       await sbDelete('personas', dup.id);
@@ -14177,7 +14772,7 @@ function fbItemHTML(f) {
     </div>
     ${desglose}
     ${f.comentario ? `<div style="margin-top:4px;color:#374151;font-size:12px">${e(f.comentario)}</div>` : ''}
-    <div class="fb-meta">${f.created_at ? new Date(f.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</div>
+    <div class="fb-meta">${f.fecha ? 'Show del ' + fmtFecha(String(f.fecha).slice(0, 10)) + ' · cargado ' : ''}${f.created_at ? new Date(f.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</div>
   </div>`;
 }
 // El feedback en la ficha ("Ver datos"): el semáforo, el promedio y los tres
