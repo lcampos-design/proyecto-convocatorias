@@ -4189,7 +4189,7 @@ async function savePerson() {
   const cambioBanco = editPersonId ? leerBancoPersona() : null;
   if (cambioBanco === false) return;
   const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null, etiquetas: formEtiquetas.slice(), posiciones: formPosiciones.slice(), localidad: document.getElementById('pLocalidad').value.trim() || null, recomendado: document.getElementById('pRecom').checked };
-  if (editPersonId) { const i = people.findIndex(x => x.id === editPersonId); if (i >= 0) people[i] = { ...people[i], ...d }; }
+  if (editPersonId) { const i = people.findIndex(x => x.id === editPersonId); if (i >= 0) people[i] = { ...people[i], ...d }; pIdxLista = null; }
   else people.push(d);
   nomRefresh(); closeM('mPerson');
   try { await sbUpsert('personas', d); toast(editPersonId ? 'Actualizada' : 'Persona agregada'); } catch (_) {}
@@ -13709,17 +13709,63 @@ function exportarDisponibilidad() {
   descargarExcel(`disponibilidad-${String(c.nombre || '').slice(0, 30).replace(/\s+/g, '-')}-${new Date().toISOString().slice(0, 10)}.xlsx`, [hdrs, ...rows, footer], 'Disponibilidad', { titulo: 'Disponibilidad · ' + (c.nombre || ''), subtitulo: dispRows.length + ' respuesta' + (dispRows.length === 1 ? '' : 's'), negritas: [rows.length + 1] });
 }
 // ── ROTACIÓN ──
+// Los contratos de cada persona (por su ficha o por su documento), con un índice que se rehace sólo cuando cambia la
+// lista: el historial y la rotación lo consultan por cada fila de la nómina.
+let ctIdxLista = null, ctIdxLargo = -1, ctIdxPorPersona = new Map(), ctIdxPorDoc = new Map();
+function contratosDePersona(p) {
+  if (!p) return [];
+  if (ctIdxLista !== contratos || ctIdxLargo !== contratos.length) {
+    ctIdxLista = contratos; ctIdxLargo = contratos.length; ctIdxPorPersona = new Map(); ctIdxPorDoc = new Map();
+    contratos.forEach(c => {
+      if (c.persona_id) { if (!ctIdxPorPersona.has(c.persona_id)) ctIdxPorPersona.set(c.persona_id, []); ctIdxPorPersona.get(c.persona_id).push(c); }
+      const d = docNucleo(c.cuil || ''); if (d) { if (!ctIdxPorDoc.has(d)) ctIdxPorDoc.set(d, []); ctIdxPorDoc.get(d).push(c); }
+    });
+  }
+  const d = docNucleo(p.cuit || ''), vistos = new Set(), r = [];
+  (ctIdxPorPersona.get(p.id) || []).concat(d ? ctIdxPorDoc.get(d) || [] : []).forEach(c => { if (!vistos.has(c.id)) { vistos.add(c.id); r.push(c); } });
+  return r;
+}
+// La fecha que trabajó con un contrato: la del show (por presente) o la primera de su convocatoria.
+function fechaDeContrato(c) {
+  if (/^\d{4}-\d{2}-\d{2}/.test(String(c.fecha_show || ''))) return String(c.fecha_show).slice(0, 10);
+  const conv = convs.find(x => x.id === c.conv_id), f = convFechasArr(conv)[0];
+  return f || String(c.fecha_creacion || '').slice(0, 10);
+}
+// Los eventos en que trabajó (21-nov, Mercedes: "que también relacione con los contratos, y ahí va a poder saltar en
+// qué eventos estuvo"): cada fecha con contrato (sin los anulados) y cada convocatoria del panel en la que quedó y que
+// no tiene contrato. Clave → { convId, fecha }.
+function eventosDePersona(p) {
+  const ev = new Map(), conContrato = new Set();
+  contratosDePersona(p).forEach(c => {
+    if (c.estado === 'anulado') return;
+    const f = fechaDeContrato(c); ev.set((c.conv_id || '') + '|' + f, { convId: c.conv_id || '', fecha: f }); if (c.conv_id) conContrato.add(c.conv_id);
+  });
+  postsDePersona(p.id).forEach(x => {
+    if (x.estado === 'rechazado' || conContrato.has(x.convId)) return;
+    const conv = convs.find(c => c.id === x.convId);
+    ev.set(x.convId + '|', { convId: x.convId, fecha: convFechasArr(conv)[0] || '' });
+  });
+  return [...ev.values()];
+}
+// Índices que se rehacen sólo cuando cambia la lista (la nómina los consulta por cada fila).
+let pIdxLista = null, pIdxLargo = -1, pIdx = new Map(), poIdxLista = null, poIdxLargo = -1, poIdx = new Map();
+function personaPorId(id) {
+  if (pIdxLista !== people || pIdxLargo !== people.length) { pIdxLista = people; pIdxLargo = people.length; pIdx = new Map(people.map(x => [x.id, x])); }
+  return pIdx.get(id) || null;
+}
+function postsDePersona(id) {
+  if (poIdxLista !== posts || poIdxLargo !== posts.length) {
+    poIdxLista = posts; poIdxLargo = posts.length; poIdx = new Map();
+    posts.forEach(x => { if (!poIdx.has(x.personaId)) poIdx.set(x.personaId, []); poIdx.get(x.personaId).push(x); });
+  }
+  return poIdx.get(id) || [];
+}
 function checkRotacion(personaId) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - rotacionConfig.dias_periodo);
-  const recentConvIds = new Set(
-    posts.filter(p => {
-      if (p.personaId !== personaId || p.estado === 'rechazado') return false;
-      const conv = convs.find(c => c.id === p.convId);
-      return conv?.fecha && new Date(conv.fecha + 'T00:00:00') >= cutoff;
-    }).map(p => p.convId)
-  );
-  return { count: recentConvIds.size, excede: recentConvIds.size >= rotacionConfig.max_eventos, max: rotacionConfig.max_eventos };
+  const p = personaPorId(personaId);
+  const recientes = p ? eventosDePersona(p).filter(x => x.fecha && new Date(x.fecha + 'T00:00:00') >= cutoff).length : 0;
+  return { count: recientes, excede: recientes >= rotacionConfig.max_eventos, max: rotacionConfig.max_eventos };
 }
 
 // Seguimiento de ausentes: cuenta faltas y si está "en penalidad" (no reconvocar hasta X días después de la última falta).
@@ -13778,35 +13824,43 @@ function openHistorial(personaId) {
   const p = people.find(x => x.id === personaId); if (!p) return;
   document.getElementById('mHistTitle').textContent = `Historial — ${p.nombre}`;
   const myPosts = posts.filter(x => x.personaId === personaId);
-  const uniqueConvIds = [...new Set(myPosts.map(x => x.convId))];
+  // 21-nov: también los contratos (por presente o desde el panel), aunque no se la haya convocado por la plataforma.
+  const misContratos = contratosDePersona(p), eventos = eventosDePersona(p);
   const rot = checkRotacion(personaId);
   const aus = checkAusencia(p);
-  const lastConv = uniqueConvIds.map(cid => convs.find(c => c.id === cid)).filter(c => c?.fecha).sort((a,b) => b.fecha.localeCompare(a.fecha))[0];
-  const daysSince = lastConv ? Math.floor((new Date() - new Date(lastConv.fecha + 'T00:00:00')) / 86400000) : null;
+  const hoyIso = hoyLocalISO(), ultimo = eventos.map(x => x.fecha).filter(f => f && f <= hoyIso).sort().pop();
+  const daysSince = ultimo ? Math.floor((new Date() - new Date(ultimo + 'T00:00:00')) / 86400000) : null;
   document.getElementById('mHistStats').innerHTML = `
-    <div><div style="font-size:20px;font-weight:700;color:#111827">${uniqueConvIds.length}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Recitales</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:#111827">${eventos.length}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px" title="Cada fecha con contrato (sin los anulados) y cada convocatoria en la que quedó">Eventos</div></div>
     <div><div style="font-size:20px;font-weight:700;color:${rot.excede?'#c2410c':'#0f6e56'}">${rot.count}/${rot.max}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Últimos ${rotacionConfig.dias_periodo}d</div></div>
     ${daysSince !== null ? `<div><div style="font-size:20px;font-weight:700;color:#534AB7">${daysSince}d</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Desde último</div></div>` : ''}
     <div><div style="font-size:20px;font-weight:700;color:${aus.ausencias>0?'#991b1b':'#0f6e56'}">${aus.ausencias}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Ausencias${aus.penalizado?' <i class="ic ic-prohibido"></i>':''}</div></div>
     ${p.cuit ? `<div><div style="font-size:13px;font-weight:600;color:#374151">${e(p.cuit)}</div><div style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">CUIT</div></div>` : ''}
   `;
-  if (!myPosts.length) { document.getElementById('mHistBody').innerHTML = '<div class="empty">Sin historial todavía</div>'; showM('mHistorial'); return; }
-  const grouped = {};
+  if (!myPosts.length && !misContratos.length) { document.getElementById('mHistBody').innerHTML = '<div class="empty">Sin historial todavía</div>'; showM('mHistorial'); return; }
+  const grouped = {}, ctPorConv = {};
   myPosts.forEach(post => { if (!grouped[post.convId]) grouped[post.convId] = []; grouped[post.convId].push(post); });
-  const sorted = Object.entries(grouped).map(([cid, pp]) => ({ conv: convs.find(c => c.id === cid), posts: pp })).sort((a, b) => (b.conv?.fecha||'').localeCompare(a.conv?.fecha||''));
+  misContratos.forEach(c => { const k = c.conv_id || ''; if (!grouped[k]) grouped[k] = []; (ctPorConv[k] = ctPorConv[k] || []).push(c); });
+  // Lo más nuevo arriba: la última fecha con contrato o, si no hay, la de la convocatoria.
+  const ultimaDe = (cid, conv) => (ctPorConv[cid] || []).map(fechaDeContrato).concat(convFechasArr(conv)).filter(Boolean).sort().pop() || '';
+  const sorted = Object.entries(grouped).map(([cid, pp]) => { const conv = convs.find(c => c.id === cid); return { conv, cid, posts: pp, cts: (ctPorConv[cid] || []).slice().sort((a, b) => fechaDeContrato(b).localeCompare(fechaDeContrato(a))), ult: ultimaDe(cid, conv) }; })
+    .sort((a, b) => b.ult.localeCompare(a.ult));
   const stColors = { pendiente:'#fef3c7;color:#92400e', en_revision:'#e0f2fe;color:#0369a1', aprobado:'#d1fae5;color:#065f46', confirmado:'#d1fae5;color:#065f46', rechazado:'#fee2e2;color:#991b1b' };
   const asistBadge = a => a === 'ausente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#fee2e2;color:#991b1b">✗ Ausente</span>` : a === 'presente' ? `<span style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;background:#d1fae5;color:#065f46">✓ Presente</span>` : '';
   const penalBanner = aus.penalizado ? `<div style="background:#fff7f7;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#991b1b"><i class="ic ic-prohibido"></i> <strong>Penalizado por ausencia</strong> — no reconvocar hasta el ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} (${aus.ausencias} ausencia/s).</div>` : '';
-  document.getElementById('mHistBody').innerHTML = penalBanner + sorted.map(({ conv, posts: pp }) => `
+  document.getElementById('mHistBody').innerHTML = penalBanner + sorted.map(({ conv, posts: pp, cts }) => `
     <div class="hist-item">
-      <div class="hist-dot ${pp[0]?.estado||'pendiente'}"></div>
+      <div class="hist-dot ${pp[0]?.estado || (cts.some(c => c.estado !== 'anulado') ? 'confirmado' : 'rechazado')}"></div>
       <div class="hist-info">
-        <div class="hist-title">${conv ? e(conv.nombre) : 'Convocatoria eliminada'}</div>
-        <div class="hist-meta">${conv?.fecha ? fmtFecha(conv.fecha) : ''}${conv?.area ? ' · ' + ({movistar_arena:'Movistar Arena',externos:'Externos',espana:'España',ambas:'Ambas'}[conv.area]||conv.area) : ''}</div>
+        <div class="hist-title">${conv ? e(conv.nombre) : cts.length ? 'Evento sin convocatoria en el panel' : 'Convocatoria eliminada'}</div>
+        <div class="hist-meta">${conv?.fecha && !cts.length ? fmtFecha(convFechasArr(conv)[0]) : ''}${conv?.area ? (conv?.fecha && !cts.length ? ' · ' : '') + ({movistar_arena:'Movistar Arena',externos:'Externos',espana:'España',ambas:'Ambas'}[conv.area]||conv.area) : ''}</div>
         <div class="hist-tags">${pp.map(post => {
           const puestoNom = (conv?.puestos||[]).find(pu => pu.id === post.puestoId)?.nombre || 'Puesto';
           return `<span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${e(puestoNom)}</span>${asistBadge(post.asistencia)}`;
         }).join('')}</div>
+        ${cts.length ? `<div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">${cts.map(c => `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:#374151">
+          <span style="min-width:92px">${e(fmtFecha(fechaDeContrato(c)))}</span><span style="color:#6b7280">${e(c.puesto || '')}</span>${estadoBadge(c.estado)}
+          <button class="btn btn-sec btn-xs" onclick="closeM('mHistorial');verContratoTrace('${c.id}')">Ver contrato</button></div>`).join('')}</div>` : ''}
       </div>
     </div>`).join('');
   showM('mHistorial');
