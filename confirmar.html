@@ -75,12 +75,16 @@ async function go(){
       if (RESP === 'si') {
         show('<div class="ic">' + ICONO_SI + '</div><div class="t">¡Gracias' + esc(nombre) + '!</div>'
           + '<div class="center">Registramos que <strong>CONFIRMÁS</strong> tu asistencia' + conv + '. ¡Nos vemos!</div>'
+          + '<div class="center" id="contratoAviso" style="margin-top:12px"></div>'
           + '<div class="note">¿Te equivocaste? Volvé al mail y tocá el otro botón.</div>');
       } else {
         show('<div class="ic">' + ICONO_NO + '</div><div class="t">Listo' + esc(nombre) + '</div>'
           + '<div class="center">Registramos que <strong>NO vas a asistir</strong>' + conv + '. Gracias por avisar.</div>'
           + '<div class="note">¿Te equivocaste? Volvé al mail y tocá el otro botón.</div>');
       }
+      // Contrato al confirmar (22-nov): en los puestos que lo llevan, el contrato sale ahora (con el "sí") o se anula
+      // (con el "no"). Para los demás, no pasa nada.
+      contratoAlConfirmar();
       return;
     }
     show('<div class="center">No pudimos registrar tu respuesta (el link puede no corresponder a una convocatoria activa). Escribinos a la coordinación.</div>');
@@ -89,6 +93,15 @@ async function go(){
     const det = e && (e.message || e.details) ? ' <span style="color:#9ca3af;font-size:12px">(' + esc((e.code ? '[' + e.code + '] ' : '') + (e.message || '') + (e.details ? ' — ' + e.details : '')) + ')</span>' : '';
     show('<div class="center">Hubo un error al registrar tu respuesta. Probá de nuevo en un rato.' + det + '</div>');
   }
+}
+async function contratoAlConfirmar() {
+  try {
+    const r = await fetch('/api/contrato-al-confirmar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ c: CUIT, v: CONV, r: RESP }) });
+    const d = await r.json().catch(() => null), aviso = document.getElementById('contratoAviso');
+    if (!aviso || !d || !d.ok) return;
+    if (d.enviado) aviso.innerHTML = 'Te acabamos de mandar tu <strong>contrato</strong> por mail, para firmarlo.';
+    else if (d.porGoogle) aviso.innerHTML = 'En unos minutos te llega tu <strong>contrato</strong> por mail, para firmarlo.';
+  } catch (_) {}
 }
 go();
 </script>

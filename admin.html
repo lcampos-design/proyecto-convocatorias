@@ -1800,7 +1800,8 @@ tr:hover td{background:#f9f9fb}
       <div class="fg"><label>Cupos *</label><input type="number" class="fi" id="puCupos" min="1" placeholder="0"></div>
       <div class="fg"><label>Área</label><select class="fi" id="puArea"><option value="">Sin especificar</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select></div>
     </div>
-    <div class="fg"><label>Remuneración por jornada</label><input type="text" class="fi" id="puRemu" placeholder="Ej: $47.682 — si queda vacío, vale la de la convocatoria"></div>
+    <div class="fg"><label id="puRemuLbl">Remuneración por jornada</label><input type="text" class="fi" id="puRemu" placeholder="Ej: $47.682 — si queda vacío, vale la de la convocatoria"></div>
+    <label id="puAlConfirmarFg" style="display:none;align-items:flex-start;gap:8px;margin:0 0 12px;font-size:13px;color:#374151;cursor:pointer"><input type="checkbox" id="puAlConfirmar" style="width:16px;height:16px;margin-top:2px" onchange="puAlConfirmarCambio()"> <span>Contrato al confirmar <span style="font-weight:400;color:#9ca3af">— para coordinadores, operadores y otros de varios días: un solo contrato por todo el período, con la remuneración de arriba como total. No va en el mail de confirmación: sale solo cuando la persona toca ✓ CONFIRMO (y no espera la P de la planilla)</span></span></label>
     <div class="fg"><label>Descripción</label><textarea class="fi" id="puDesc" placeholder="Requisitos, horarios..."></textarea></div>
     <div class="ma"><button class="btn btn-sec" onclick="closeM('mPuesto')">Cancelar</button><button class="btn btn-primary" onclick="savePuesto()">Guardar</button></div>
   </div>
@@ -3057,8 +3058,10 @@ async function loadAll() {
   const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }, { data: ctData }] = await pResto;
   convs = (cData || []).map(c => ({
     ...c,
-    puestos: (pData || []).filter(p => p.conv_id === c.id).map(p => ({ id: p.id, nombre: p.nombre, cupos: p.cupos, area: p.area || '', desc: p.descripcion || '', remuneracion: p.remuneracion || '' }))
+    puestos: (pData || []).filter(p => p.conv_id === c.id).map(p => ({ id: p.id, nombre: p.nombre, cupos: p.cupos, area: p.area || '', desc: p.descripcion || '', remuneracion: p.remuneracion || '', alConfirmar: !!p.contrato_al_confirmar }))
   }));
+  // Contrato al confirmar (22-nov): la columna está si la trae algún puesto (contrato-al-confirmar.sql).
+  puestosConAlConfirmar = (pData || []).some(p => Object.prototype.hasOwnProperty.call(p, 'contrato_al_confirmar'));
   const porIdPersona = new Map((people || []).map(x => [x.id, x]));
   posts = (postData || []).map(p => {
     const persona = porIdPersona.get(p.persona_id);
@@ -9260,7 +9263,7 @@ function puestoCardHTML(p, c) {
   const libres = Math.max(0, p.cupos - usados);
   return `<div class="puesto-card">
     <div class="puesto-info">
-      <div class="puesto-name">${eN(p.nombre)}${p.area ? ` <span class="a-badge ${areaClase(p.area)}">${areaLargo(p.area)}</span>` : ''}</div>
+      <div class="puesto-name">${eN(p.nombre)}${p.area ? ` <span class="a-badge ${areaClase(p.area)}">${areaLargo(p.area)}</span>` : ''}${alConfirmarDe(c, p.id) ? ' <span class="a-badge" style="background:#eef2ff;color:#3730a3" title="Un solo contrato por todo el período: sale solo cuando la persona toca ✓ CONFIRMO">Contrato al confirmar</span>' : ''}</div>
       ${p.desc ? `<div class="puesto-desc">${e(p.desc)}</div>` : ''}
     </div>
     <div class="puesto-cupo" title="${pct}% ocupado">
@@ -9399,15 +9402,39 @@ async function archivarConv(id, val) {
 }
 function toggleArchivar(id) { const c = convs.find(x => x.id === id); if (c) archivarConv(id, !c.archivada); }
 
-function openAddPuesto() { editPuestoId = null; document.getElementById('mPuestoTitle').textContent = 'Agregar puesto'; ['puNombre', 'puDesc', 'puRemu'].forEach(i => document.getElementById(i).value = ''); document.getElementById('puCupos').value = ''; document.getElementById('puArea').value = ''; showM('mPuesto'); }
-function openEditPuesto(pid) { const c = convs.find(x => x.id === currentConvId); if (!c) return; const p = (c.puestos || []).find(x => x.id === pid); if (!p) return; editPuestoId = pid; document.getElementById('mPuestoTitle').textContent = 'Editar puesto'; document.getElementById('puNombre').value = p.nombre; document.getElementById('puCupos').value = p.cupos; document.getElementById('puArea').value = p.area || ''; document.getElementById('puDesc').value = p.desc || ''; document.getElementById('puRemu').value = p.remuneracion || ''; showM('mPuesto'); }
+function openAddPuesto() { editPuestoId = null; document.getElementById('mPuestoTitle').textContent = 'Agregar puesto'; ['puNombre', 'puDesc', 'puRemu'].forEach(i => document.getElementById(i).value = ''); document.getElementById('puCupos').value = ''; document.getElementById('puArea').value = ''; puAlConfirmarMostrar(false); showM('mPuesto'); }
+// Contrato al confirmar (22-nov, Externos): el tilde sólo en las convocatorias de Externos. Con el tilde, la
+// remuneración del puesto es el total del período (no por jornada).
+function puAlConfirmarMostrar(marcado) {
+  const c = convs.find(x => x.id === currentConvId), ext = !!c && normArea(c.area) === 'externos';
+  document.getElementById('puAlConfirmarFg').style.display = ext ? 'flex' : 'none';
+  document.getElementById('puAlConfirmar').checked = ext && !!marcado;
+  puAlConfirmarCambio();
+}
+function puAlConfirmarCambio() {
+  const si = document.getElementById('puAlConfirmar').checked;
+  document.getElementById('puRemuLbl').textContent = si ? 'Remuneración total del período' : 'Remuneración por jornada';
+  document.getElementById('puRemu').placeholder = si ? 'Ej: $300.000 por los 5 días' : 'Ej: $47.682 — si queda vacío, vale la de la convocatoria';
+}
+// ¿Esta persona va por "contrato al confirmar"? Su puesto lo tiene tildado y la convocatoria es de Externos.
+function alConfirmarDe(conv, puestoId) {
+  if (!conv || normArea(conv.area) !== 'externos' || !puestoId) return false;
+  const p = (conv.puestos || []).find(x => x.id === puestoId);
+  return !!(p && p.alConfirmar);
+}
+let puestosConAlConfirmar = false;   // si la base ya tiene la columna (contrato-al-confirmar.sql)
+function openEditPuesto(pid) { const c = convs.find(x => x.id === currentConvId); if (!c) return; const p = (c.puestos || []).find(x => x.id === pid); if (!p) return; editPuestoId = pid; document.getElementById('mPuestoTitle').textContent = 'Editar puesto'; document.getElementById('puNombre').value = p.nombre; document.getElementById('puCupos').value = p.cupos; document.getElementById('puArea').value = p.area || ''; document.getElementById('puDesc').value = p.desc || ''; document.getElementById('puRemu').value = p.remuneracion || ''; puAlConfirmarMostrar(p.alConfirmar); showM('mPuesto'); }
 
 async function savePuesto() {
   const nom = document.getElementById('puNombre').value.trim(), cupos = parseInt(document.getElementById('puCupos').value); if (!nom) { toast('El nombre es obligatorio'); return; } if (!cupos || cupos < 1) { toast('Los cupos deben ser mayor a 0'); return; }
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   const d = { id: editPuestoId || uid(), conv_id: currentConvId, nombre: nom, cupos, area: document.getElementById('puArea').value || null, descripcion: document.getElementById('puDesc').value.trim() || null, remuneracion: document.getElementById('puRemu').value.trim() || null };
-  if (editPuestoId) { const p = (c.puestos || []).find(x => x.id === editPuestoId); if (p) { p.nombre = nom; p.cupos = cupos; p.area = d.area || ''; p.desc = d.descripcion || ''; p.remuneracion = d.remuneracion || ''; } }
-  else { if (!c.puestos) c.puestos = []; c.puestos.push({ id: d.id, nombre: nom, cupos, area: d.area || '', desc: d.descripcion || '', remuneracion: d.remuneracion || '' }); }
+  // Contrato al confirmar: sólo si la base ya tiene la columna (si no, el puesto no se guardaría).
+  const alConf = document.getElementById('puAlConfirmarFg').style.display !== 'none' && document.getElementById('puAlConfirmar').checked;
+  if (alConf && !puestosConAlConfirmar) { toast('Para el contrato al confirmar falta correr contrato-al-confirmar.sql en Supabase'); return; }
+  if (puestosConAlConfirmar) d.contrato_al_confirmar = alConf;
+  if (editPuestoId) { const p = (c.puestos || []).find(x => x.id === editPuestoId); if (p) { p.nombre = nom; p.cupos = cupos; p.area = d.area || ''; p.desc = d.descripcion || ''; p.remuneracion = d.remuneracion || ''; p.alConfirmar = alConf; } }
+  else { if (!c.puestos) c.puestos = []; c.puestos.push({ id: d.id, nombre: nom, cupos, area: d.area || '', desc: d.descripcion || '', remuneracion: d.remuneracion || '', alConfirmar: alConf }); }
   renderPuestos(); renderDetStats(); closeM('mPuesto');
   try { await sbUpsert('puestos', d); toast(editPuestoId ? 'Puesto actualizado' : 'Puesto agregado'); } catch (_) {}
 }
@@ -10677,6 +10704,21 @@ const QM_NOTAS = {
   documento: 'Sin contrato: sólo el documento que tildes abajo (para quien ya firmó el contrato, por ejemplo). Se firma online igual, con el mismo link y el mismo código.'
 };
 function queMandas(p) { const r = document.querySelector('input[name="' + p + 'Que"]:checked'); return r ? r.value : 'conf'; }
+// Contrato al confirmar (22-nov, Externos): lo que se suma a la confirmación (antes del saludo) y el aviso del modal.
+const TXT_AL_CONFIRMAR = 'Cuando confirmes tu asistencia con el botón de abajo, te llega por mail tu contrato por todo el período, para firmarlo online.';
+function conAvisoAlConfirmar(body) {
+  const m = String(body).match(/\n[ \t]*(Saludos[^\n]*)(?![\s\S]*\nSaludos)/i);
+  return m ? body.slice(0, m.index).replace(/\s+$/, '') + '\n\n' + TXT_AL_CONFIRMAR + '\n' + body.slice(m.index) : body + '\n\n' + TXT_AL_CONFIRMAR;
+}
+// La postulación del mail individual (cuando se abrió desde un puesto).
+function mailPostDeCtx() { return mailSolId && String(mailSolId).startsWith('__post__') ? posts.find(x => x.id === String(mailSolId).slice(8)) || null : null; }
+function notaAlConfirmar(p, q) {
+  if (q !== 'ambos') return '';
+  const conv = convs.find(c => c.id === (p === 'bm' ? currentConvId : mailContratoCtx && mailContratoCtx.convId)); if (!conv) return '';
+  const pids = p === 'bm' ? bulkMailRecipients.map(r => r.puestoId) : [(mailPostDeCtx() || {}).puestoId];
+  const nombres = [...new Set(pids.filter(pid => alConfirmarDe(conv, pid)).map(pid => ((conv.puestos || []).find(x => x.id === pid) || {}).nombre || ''))].filter(Boolean);
+  return nombres.length ? ' En ' + nombres.map(n => '«' + n + '»').join(', ') + ' el contrato no va en este mail: queda armado y sale solo cuando la persona toca ✓ CONFIRMO.' : '';
+}
 function elegirQueMandas(p, valor) {
   if (valor) document.querySelectorAll('input[name="' + p + 'Que"]').forEach(r => { r.checked = r.value === valor; });
   const bm = p === 'bm', q = queMandas(p);
@@ -10692,7 +10734,7 @@ function elegirQueMandas(p, valor) {
   document.getElementById(bm ? 'bmSoloContratoFields' : 'mailSoloContratoFields').style.display = soloDoc ? 'none' : 'block';
   const lblDocs = document.querySelector('#' + p + 'DocsFg > label'); if (lblDocs) lblDocs.textContent = soloDoc ? 'Qué documento va (sin contrato)' : 'Documentos que firma junto con el contrato';
   const notaDocs = document.getElementById(p + 'DocsNota'); if (notaDocs) notaDocs.textContent = notaDocsTexto(soloDoc);
-  document.getElementById(p + 'QueNota').textContent = QM_NOTAS[q] || '';
+  document.getElementById(p + 'QueNota').textContent = (QM_NOTAS[q] || '') + notaAlConfirmar(p, q);
   const area = bm ? bmFromArea : mailFromArea, ev = bm ? bmConvNombreCtx : mailConvNombreCtx;
   document.getElementById(bm ? 'bmSubject' : 'mailSubject').value = q === 'contrato'
     ? 'Contrato de trabajo - ' + (ev || '[EVENTO]') + (area === 'movistar' ? ' - Movistar Arena' : '')
@@ -10833,6 +10875,12 @@ function prepMailTemplate(area) {
     document.getElementById('mcFechaFin').value = rango.fin;
     document.getElementById('mcAnio').value = rango.anio;
     llenarMontoYAvisos('mc', conv);
+    // Contrato al confirmar (22-nov): el monto es la remuneración del puesto (el total del período).
+    const postCtx = mailPostDeCtx();
+    if (postCtx && alConfirmarDe(conv, postCtx.puestoId)) {
+      const n = montoANumero(remuneracionDe(conv, postCtx.puestoId));
+      if (n) { document.getElementById('mcMontoNumero').value = montoFormateado(n); document.getElementById('mcMontoLetras').value = numeroALetras(n); }
+    }
     document.getElementById('mcFechaFirmaDoc').value = fechaHoyTexto();
     renderDocsTicks('mail');
   }
@@ -11055,7 +11103,21 @@ async function sendConfirmationMail() {
   try {
     let attachments, contratoRow;
     const soloDoc = queMandas('mail') === 'documento';
-    if (document.getElementById('mailAdjContrato')?.checked) {
+    // Contrato al confirmar (22-nov, Externos): el contrato queda armado, pero no va en este mail; sale solo cuando
+    // toca ✓ CONFIRMO (api/contrato-al-confirmar.js).
+    const postMail = mailPostDeCtx(), convMail = convs.find(c => c.id === mailContratoCtx?.convId);
+    const diferido = !!document.getElementById('mailAdjContrato')?.checked && queMandas('mail') === 'ambos' && !!postMail && alConfirmarDe(convMail, postMail.puestoId);
+    if (diferido) {
+      const datos = {
+        nombre: v('mcNombre'), cuil: v('mcCuil'), puesto: v('mcPuesto'), venue: convMail?.venue || '',
+        fecha_inicio: v('mcFechaInicio'), fecha_fin: v('mcFechaFin'), anio: v('mcAnio'),
+        monto_letras: v('mcMontoLetras'), monto_numero: v('mcMontoNumero'), fecha_firma_doc: v('mcFechaFirmaDoc')
+      };
+      const faltan = faltanDatosContrato(datos);
+      if (faltan.length) { toast('No se envió: al contrato le falta ' + faltan.join(', ')); return; }
+      contratoRow = await crearContrato(datos, mailContratoCtx?.convId, mailContratoCtx?.personaId, to, postMail.id, postMail.puestoId, mailFromArea, anexosElegidos('mail'), false, { origen: 'al_confirmar', doc_nucleo: docNucleo(datos.cuil) || null });
+      body = conAvisoAlConfirmar(body);
+    } else if (document.getElementById('mailAdjContrato')?.checked) {
       const conv = convs.find(c => c.id === mailContratoCtx?.convId);
       const anexosMail = anexosElegidos('mail');
       if (soloDoc && !anexosMail.length) { toast('Tildá el documento que va'); return; }
@@ -11084,8 +11146,8 @@ async function sendConfirmationMail() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || data.error || 'Error al enviar');
-    if (contratoRow) await marcarContratoEnviado(contratoRow.id);
-    toast('✓ Mail enviado a ' + to);
+    if (contratoRow && !diferido) await marcarContratoEnviado(contratoRow.id);
+    toast('✓ Mail enviado a ' + to + (diferido ? ' · el contrato sale cuando confirme' : ''));
     closeM('mMailConf');
   } catch (err) {
     toast('Error: ' + err.message);
@@ -11276,9 +11338,16 @@ async function sendBulkMail() {
     let body = bodyTpl.replace(/\{nombre\}/g, r.nombre || '')
       .replace(/\{puesto\}/g, (puestoDeR && puestoDeR.nombre) || v('bmcPuesto') || 'STAFF')
       .replace(/\{monto\}/g, remuneracionDe(conv, r.puestoId) || v('bmFMonto'));
+    // Contrato al confirmar (22-nov, Externos): el contrato queda armado, pero no va en este mail; sale solo cuando
+    // toca ✓ CONFIRMO (api/contrato-al-confirmar.js).
+    const diferido = adjContrato && que === 'ambos' && alConfirmarDe(conv, r.puestoId);
     try {
       let attachments, contratoRow;
-      if (adjContrato) {
+      if (diferido) {
+        contratoRow = r.contratoRow || await crearContrato(datosDe(r), currentConvId, r.personaId, r.email, r.postulacionId, r.puestoId, bmFromArea, anexosBm, false, { origen: 'al_confirmar', doc_nucleo: docNucleo(r.cuit) || null });
+        r.contratoRow = contratoRow;
+        body = conAvisoAlConfirmar(body);
+      } else if (adjContrato) {
         const datos = datosDe(r);
         // Si el envío se frenó por el tope de Resend y se retoma, el contrato de esta persona ya está creado: no se arma otro.
         contratoRow = r.contratoRow || await crearContrato(datos, currentConvId, r.personaId, r.email, r.postulacionId, r.puestoId, bmFromArea, anexosBm, soloDoc);
@@ -11291,7 +11360,7 @@ async function sendBulkMail() {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
         body: JSON.stringify({ from, to: [r.email], subject, html: renderEmailHtml(body, from, bmFromArea, (que === 'contrato' || soloDoc) ? null : { cuit: r.cuit, convId: currentConvId, firma: await confFirma(r.cuit, currentConvId) }), text: body, ...(attachments ? { attachments } : {}) })
       });
-      if (res.ok) { ok++; if (contratoRow) await marcarContratoEnviado(contratoRow.id); }
+      if (res.ok) { ok++; if (contratoRow && !diferido) await marcarContratoEnviado(contratoRow.id); }
       else {
         // Si Resend llegó a su tope (100 por día en el plan gratis), seguir es fallar uno
         // por uno: se frena acá, se dice cuántos faltan y se deja retomar desde ese.
@@ -11824,7 +11893,7 @@ function titulosDe(anexos) { return (Array.isArray(anexos) ? anexos : []).map(a 
 function listaY(xs) { return xs.length <= 1 ? xs.join('') : xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1]; }
 
 // ── Alta y estado de contratos ──
-async function crearContrato(datos, convId, personaId, email, postulacionId, puestoId, area, anexos, soloDocumentos) {
+async function crearContrato(datos, convId, personaId, email, postulacionId, puestoId, area, anexos, soloDocumentos, extra) {
   // El modelo lo decide el área de la convocatoria, que es la que sabe si el
   // show es en España. El parámetro "area" de acá es para el remitente del
   // mail y no distingue país.
@@ -11844,7 +11913,9 @@ async function crearContrato(datos, convId, personaId, email, postulacionId, pue
     firma_empleador_img: FIRMA_CONTRATO,
     // Los documentos que firma junto con el contrato (congelados acá, como el texto).
     ...(anexos && anexos.length ? { anexos } : {}),
-    ...(soloDocumentos ? { solo_documentos: true } : {})
+    ...(soloDocumentos ? { solo_documentos: true } : {}),
+    // Contrato al confirmar (22-nov): origen 'al_confirmar' y el DNI, para que lo encuentre quien lo manda al confirmar.
+    ...(extra || {})
   };
   const { data, error } = await sb.from('contratos').insert(row).select().single();
   if (error) {
@@ -12202,7 +12273,9 @@ async function bajarContratosZip() {
 // caso, subcategorizar los pendientes"): los pendientes dicen además si se mandó y si lo abrió.
 const CT_PENDIENTES = ['pendiente', 'enviado', 'visto'];
 function ctEstadoCoincide(estado, filtro) { return !filtro || (filtro === 'pend' ? CT_PENDIENTES.includes(estado || 'pendiente') : estado === filtro); }
-function estadoBadge(estado) {
+function estadoBadge(estado, row) {
+  // Contrato al confirmar (22-nov): armado, esperando que la persona toque CONFIRMO.
+  if (estado === 'pendiente' && row && row.origen === 'al_confirmar') return `<span style="background:#eef2ff;color:#3730a3;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap" title="Sale solo cuando la persona toca ✓ CONFIRMO en el mail">Pendiente<span style="font-weight:400"> · sale al confirmar</span></span>`;
   const map = {
     pendiente: ['#fef3c7', '#92400e', 'Pendiente', 'sin enviar'], enviado: ['#fef3c7', '#92400e', 'Pendiente', 'no lo abrió'],
     visto: ['#fef3c7', '#92400e', 'Pendiente', 'lo abrió'], firmado: ['#dcfce7', '#166534', 'Firmado', ''],
@@ -12356,7 +12429,7 @@ async function renderContratosBorrados() {
       <td>${e(c.cuil || '')}</td>
       <td>${e(c.puesto || '')}</td>
       <td>${e(conv?.nombre || '—')}</td>
-      <td>${estadoBadge(c.estado)}</td>
+      <td>${estadoBadge(c.estado, c)}</td>
       <td class="cm" title="${e(c.motivo || '')}">${e(c.motivo || '')}</td>
       <td class="cm" title="${e(c.borrado_por_mail || '')}">${e(c.borrado_por_mail || '—')}</td>
       <td style="white-space:nowrap;font-size:12px;color:#6b7280">${cuando}</td>
@@ -12627,7 +12700,7 @@ function renderContratos() {
       <td>${e(c.cuil || '')}</td>
       <td>${c.solo_documentos ? '<span class="pill-doc" style="margin:0 6px 0 0;background:#fef3c7;color:#92400e">Sin contrato</span>' : ''}${e(c.puesto || '')}${pillDocs(c)}</td>
       <td>${e(ctShowDe(c))}</td>
-      <td>${estadoBadge(c.estado)}</td>
+      <td>${estadoBadge(c.estado, c)}</td>
       <td>${fecha}</td>
       <td><button class="btn btn-sec btn-xs" onclick="verContratoTrace('${c.id}')">Ver</button></td>
     </tr>`;
@@ -12697,7 +12770,7 @@ async function verContratoTrace(id) {
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span><strong>Mail:</strong> ${e(row.email || '—')}</span>${row.estado !== 'firmado' && row.estado !== 'anulado' ? '<button class="btn btn-sec btn-xs" onclick="cambiarMailContrato()">Cambiar mail</button>' : ''}</div>
       <div><strong>Puesto:</strong> ${e(row.puesto || '')}</div>
       <div><strong>Show:</strong> ${e(ctShowDe(row))}</div>
-      <div><strong>Estado:</strong> ${estadoBadge(row.estado)}</div>
+      <div><strong>Estado:</strong> ${estadoBadge(row.estado, row)}</div>
       ${htmlCtAnexos(row)}
       ${lineaVencimiento(row)}
     </div>
@@ -12873,7 +12946,7 @@ function renderPersonContratos(p) {
     const fecha = c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
     return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:12px">
       <div style="flex:1;color:#374151">${e(conv?.nombre || c.puesto || 'Contrato')} <span style="color:#9ca3af">— ${fecha}</span></div>
-      ${estadoBadge(c.estado)}
+      ${estadoBadge(c.estado, c)}
       <button class="btn btn-sec btn-xs" onclick="verContratoTrace('${c.id}')">Ver</button>
     </div>`;
   }).join('');
@@ -14011,7 +14084,7 @@ function openHistorial(personaId) {
           return `<span style="padding:2px 8px;border-radius:999px;font-size:10px;background:${stColors[post.estado]||'#f3f4f6'}">${e(puestoNom)}</span>${asistBadge(post.asistencia)}`;
         }).join('')}</div>
         ${cts.length ? `<div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">${cts.map(c => `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:#374151">
-          <span style="min-width:92px">${e(fmtFecha(fechaDeContrato(c)))}</span><span style="color:#6b7280">${e(c.puesto || '')}</span>${estadoBadge(c.estado)}
+          <span style="min-width:92px">${e(fmtFecha(fechaDeContrato(c)))}</span><span style="color:#6b7280">${e(c.puesto || '')}</span>${estadoBadge(c.estado, c)}
           <button class="btn btn-sec btn-xs" onclick="closeM('mHistorial');verContratoTrace('${c.id}')">Ver contrato</button></div>`).join('')}</div>` : ''}
       </div>
     </div>`; }

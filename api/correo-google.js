@@ -12,7 +12,7 @@
 
 import crypto from 'crypto';
 import { TIPO_GOOGLE, esMicrosoft } from './_lib/correo-google.js';
-import { armarMail } from './presentes-planilla.js';
+import { armarMail, armarMailPeriodo } from './presentes-planilla.js';
 import { armarRecordatorio } from './recordatorios.js';
 
 export const config = { maxDuration: 60 };
@@ -49,6 +49,12 @@ export function mailDelPedido(motivo, meta, c) {
   const show = String((meta && meta.show) || nombreShow(c) || '').trim();
   const lugar = area === 'externos' ? String((meta && meta.lugar) || (c.convocatorias && c.convocatorias.venue) || '') : undefined;
   if (motivo === 'recordatorio') { const m = armarRecordatorio(c); return { subject: m.subject, text: m.text, html: m.html, responder: m.from || CASILLA[area] }; }
+  // Contrato al confirmar (Externos, 22-nov): uno por todo el período, del primero al último día.
+  if (c.origen === 'al_confirmar') {
+    const fs = String((c.convocatorias && c.convocatorias.fecha) || '').split(',').map(x => x.trim()).filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
+    const m = armarMailPeriodo({ nombre: c.nombre, desde: fs[0], hasta: fs[fs.length - 1], show, puesto: c.puesto, link, lugar: area === 'externos' ? lugar : 'Movistar Arena' });
+    return { subject: (motivo === 'reenvio' ? 'Reenvío — ' : '') + m.subject, text: m.text, html: m.html, responder: CASILLA[area] };
+  }
   if (fecha) {
     const m = armarMail({ nombre: c.nombre, fecha, show, link, lugar });
     return { subject: (motivo === 'reenvio' ? 'Reenvío — ' : '') + m.subject, text: m.text, html: m.html, responder: CASILLA[area] };
@@ -71,7 +77,7 @@ export default async function handler(req, res) {
   let cuerpo;
   try { cuerpo = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {}); } catch (_) { return res.status(400).json({ error: 'El pedido no es JSON' }); }
   const hace = dias => encodeURIComponent(new Date(Date.now() - dias * 864e5).toISOString());
-  const colsC = 'id,nombre,email,token,estado,fecha_show,fecha_envio,vence_el,solo_documentos,convocatorias(nombre,area,fecha,venue)';
+  const colsC = 'id,nombre,email,token,estado,fecha_show,fecha_envio,vence_el,solo_documentos,origen,puesto,convocatorias(nombre,area,fecha,venue)';
 
   if (cuerpo.accion === 'demorados') {
     const or = 'or=(' + ['hotmail', 'outlook', 'live', 'msn'].map(d => `email.ilike.*@${d}.*`).join(',') + ')';

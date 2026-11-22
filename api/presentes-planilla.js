@@ -164,6 +164,41 @@ export function armarMail({ nombre, fecha, show, link, lugar }) {
   return { subject, text, html };
 }
 
+// El mail del contrato por todo un período (Externos, contrato al confirmar: api/contrato-al-confirmar.js), del
+// primero al último día, con el puesto. Mismo diseño que el de un día.
+export function armarMailPeriodo({ nombre, desde, hasta, show, puesto, link, lugar }) {
+  const pila = String(nombre || '').trim().split(/\s+/)[0] || '';
+  const hola = pila ? 'Hola, ' + pila.charAt(0).toUpperCase() + pila.slice(1).toLowerCase() : 'Hola';
+  const unDia = !hasta || hasta === desde;
+  const cuando = !desde ? '' : unDia ? 'el ' + fechaMail(desde) : 'del ' + fechaMail(desde) + ' al ' + fechaMail(hasta);
+  const como = String(puesto || '').trim() ? ' como ' + String(puesto).trim() : '';
+  const que = show ? ' en ' + show : '', donde = String(lugar || '').trim() ? ' (' + String(lugar).trim() + ')' : '';
+  const rango = !desde ? '' : unDia ? fechaLarga(desde).toLowerCase() : fechaLarga(desde).toLowerCase() + ' al ' + fechaLarga(hasta).toLowerCase();
+  const sub = [show, rango].filter(Boolean).join(' · '), subject = sub ? 'Contrato · ' + sub : 'Contrato de trabajo';
+  const frase = `Gracias por confirmar. Ya está tu contrato${como}${que}${donde}${cuando ? ', ' + cuando : ''}.`;
+  const text = `${hola}:\n\n${frase}\n\nPara firmarlo, entrá a este link:\n${link}\n\nEl link vence en 7 días. Cualquier duda, respondé este mail.\n\nSaludos,\nShow Business Solutions`;
+  const P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
+  const html = `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
+    <img src="${SITIO}/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">
+    <p style="${P}">${esc(hola)}:</p>
+    <p style="${P}">${esc(frase)}</p>
+    <p style="${P}">Para firmarlo, tocá el botón:</p>
+    <p style="margin:22px 0"><a href="${esc(link)}" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Firmar mi contrato</a></p>
+    <p style="${P}">O copiá este link: <a href="${esc(link)}" style="color:#534AB7;text-decoration:underline">${esc(link)}</a></p>
+    <p style="${P}">El link vence en 7 días. Cualquier duda, respondé este mail.</p>
+    <div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">
+      <img src="${SITIO}/firmas/firma-rrhh.jpg" alt="Show Business Solutions" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0">
+    </div>
+  </div>
+  <div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">
+    Show Business Solutions · <a href="https://show-bs.com/" style="color:#9ca3af;text-decoration:underline">show-bs.com</a><br>
+    Instagram <a href="https://www.instagram.com/showbs/" style="color:#9ca3af;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9ca3af;text-decoration:underline">@showbspain</a>
+  </div>
+</div>`;
+  return { subject, text, html };
+}
+
 // ── La fila que manda la planilla ──
 // La marca: "P" (presente), "A" (ausente) o vacío. Una misma persona en dos sectores: gana la "P".
 export function normalizarFilas(filas) {
@@ -389,6 +424,15 @@ export function contratoDe(fila, persona, ctx) {
     || (previo && previo.contrato_id && ctx.porId && ctx.porId.get(previo.contrato_id))
     || (persona && persona.id && ctx.porPersona && ctx.porPersona.get(persona.id)) || null;
 }
+// El contrato por todo el período (contrato al confirmar, Externos) de esa persona en el evento, si lo tiene.
+const variantesDoc = d => { const t = String(d || '').replace(/\D/g, ''); if (!t) return []; const s = t.replace(/^0+/, ''); return [t, s, s.padStart(8, '0')]; };
+export function claveMapaPeriodo(c) { return [c.persona_id].concat(variantesDoc(c.doc_nucleo), variantesDoc(nucleoDe(c.cuil))).filter(Boolean); }
+export function periodoDe(fila, persona, ctx) {
+  if (!ctx.periodo || !ctx.periodo.size) return null;
+  const ks = [persona && persona.id].concat(variantesDoc(persona && persona.nucleo), variantesDoc(nucleoDe(persona && persona.cuit)), variantesDoc(nucleoDe(fila.cuil))).filter(Boolean);
+  for (const k of ks) { const c = ctx.periodo.get(k); if (c) return c; }
+  return null;
+}
 export function decidir(fila, ctx) {
   const persona = ctx.personas.get(fila.cuil);
   const contrato = contratoDe(fila, persona, ctx);
@@ -403,6 +447,9 @@ export function decidir(fila, ctx) {
     if (persona.ambigua && persona.porNombre) return { resultado: 'sin_persona', detalle: 'El CUIL no coincide y hay más de una persona con ese nombre: revisá el CUIL en la planilla' };
     if (persona.ambigua) return { resultado: 'cuil_incompleto', detalle: 'Con ese documento hay más de una persona: revisá el CUIL en la planilla' };
     if (persona.distinta) return { resultado: 'sin_persona', detalle: 'Con ese DNI hay alguien en la nómina con otro apellido: revisá el CUIL en la planilla' };
+    // Externos (22-nov): su puesto es de "contrato al confirmar" y ya tiene el de todo el período: no lleva uno por día.
+    const periodo = !contrato && periodoDe(fila, persona, ctx);
+    if (periodo) return { resultado: 'ya_tenia', contrato: periodo, detalle: 'Tiene el contrato por todo el período (sale al confirmar)' };
     if (contrato && contrato.estado === 'firmado') return { resultado: 'firmado', contrato };
     if (contrato && contrato.estado !== 'pendiente') return { resultado: 'ya_tenia', contrato };
     // Armado en una vuelta anterior, pero el mail no salió: se vuelve a mandar (el contrato ya está hecho).
@@ -539,7 +586,13 @@ export default async function handler(req, res) {
   }
 
   const porId = new Map((rc.data || []).map(c => [c.id, c])), porPersona = new Map((rc.data || []).filter(c => c.persona_id).map(c => [c.persona_id, c]));
-  const ctx = { personas, contratos, porId, porPersona, antes, cfg, plantilla, conv, fecha, disponibilidad: Number(cuerpo.disponibilidad) > 0, ext, tarifas };
+  // Externos (22-nov): los que tienen el contrato de todo el período (puesto "contrato al confirmar") en este evento.
+  const periodo = new Map();
+  if (ext && conv) {
+    const rpe = await sbJson(servicio, `contratos?select=id,persona_id,doc_nucleo,cuil,estado&conv_id=eq.${conv.id}&origen=eq.al_confirmar&estado=neq.anulado`);
+    if (rpe.ok && Array.isArray(rpe.data)) rpe.data.forEach(c => claveMapaPeriodo(c).forEach(k => { if (!periodo.has(k)) periodo.set(k, c); }));
+  }
+  const ctx = { personas, contratos, porId, porPersona, antes, cfg, plantilla, conv, fecha, disponibilidad: Number(cuerpo.disponibilidad) > 0, ext, tarifas, periodo };
 
   // Revisar (desde el script, antes del show): qué pasaría si todos tuvieran "P", sin mandar ni guardar nada.
   if (cuerpo.simular) {
