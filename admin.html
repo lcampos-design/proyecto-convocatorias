@@ -3065,6 +3065,8 @@ async function loadAll() {
     return { id: p.id, convId: p.conv_id, puestoId: p.puesto_id, personaId: p.persona_id, nombre: p.nombre, estado: p.estado, notas: p.notas || '', asistencia: p.asistencia || null, presentes: (p.presentes && typeof p.presentes === 'object') ? p.presentes : {}, cuit: persona?.cuit || p.cuit || null, confirmacion: p.confirmacion || null, confirmacion_at: p.confirmacion_at || null };
   });
   feedbacks = fbData || [];
+  // Si la base ya tiene la fecha del show en cada feedback (historial-feedback.sql): se ve en lo que llegó.
+  fbConFecha = feedbacks.length ? Object.prototype.hasOwnProperty.call(feedbacks[0], 'fecha') : false;
   userProfiles = upData || [];
   supConvLinks = scData || [];
   solicitudes = solData || [];
@@ -10114,7 +10116,7 @@ async function doFbVarios() {
     if (ya.has(k) || ya.has(clave(f.personaId, f.convId, f.v, f.comentario))) { repetidas++; return; } ya.add(k);
     const base = { id: uid(), persona_id: f.personaId, conv_id: f.convId || null, supervisor_id: currentUserId || null, supervisor_nombre: f.responsable || 'Planilla de feedback', comentario: com || null };
     // 22-nov: la fecha del show, si la jornada la dice entera (con historial-feedback.sql, que agrega la columna).
-    const fj = fbvFecha(f.jornada); if (!historialFalta) base.fecha = /^\d{4}-\d{2}-\d{2}$/.test(fj) ? fj : null;
+    const fj = fbvFecha(f.jornada); if (fbConFecha) base.fecha = /^\d{4}-\d{2}-\d{2}$/.test(fj) ? fj : null;
     if (f.v) evals.push(Object.assign(base, { puntaje: fbvCriterios(f.v).color }, f.v));
     else obs.push(Object.assign(base, { puntaje: null }));
   });
@@ -14020,7 +14022,7 @@ function openHistorial(personaId) {
 // subir todas las planillas de este año". Lo que el panel ya sabe (contratos, convocatorias en las que quedó) se ve
 // solo; lo de antes se carga acá, a mano o con las planillas, en historial_shows (historial-feedback.sql). Con todo
 // eso se sabe quién es nuevo: la app del supervisor lo calcula igual, en la base (trayectoria).
-let historialShows = [], historialFalta = false;
+let historialShows = [], historialFalta = false, fbConFecha = false;
 let hiIdxLista = null, hiIdxLargo = -1, hiIdxPersona = new Map(), hiIdxDoc = new Map();
 function historialDePersona(p) {
   if (!p) return [];
