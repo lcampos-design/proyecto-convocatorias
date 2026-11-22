@@ -863,6 +863,14 @@ button,input,select,textarea,optgroup,option{font-family:inherit}
 tr.cv-rapida-fila td{background:#eef4ff!important}
 /* En pantallas anchas, la nómina se corre para que el panel no la tape. */
 @media(min-width:1100px){body.cv-rapida-on #sec-nomina{padding-right:464px}}
+/* 22-nov (Mercedes: que no se "descajete" al tocar el ojo): con la vista rápida abierta, la tabla deja afuera el mail,
+   el teléfono y las notas (están en la ficha) y el nombre conserva su ancho: antes se achicaba hasta una palabra por línea. */
+#nomTabla td.cn{min-width:190px}
+@media(min-width:1100px){
+  body.cv-rapida-on #nomTabla th:nth-child(6), body.cv-rapida-on #nomTabla td:nth-child(6),
+  body.cv-rapida-on #nomTabla th:nth-child(7), body.cv-rapida-on #nomTabla td:nth-child(7),
+  body.cv-rapida-on #nomTabla th:nth-child(8), body.cv-rapida-on #nomTabla td:nth-child(8){display:none}
+}
 
 
 /* Documento que no puede existir: se marca, no se corrige solo */
@@ -1256,7 +1264,7 @@ tr:hover td{background:#f9f9fb}
     <span style="color:#c4b5fd">|</span>
     <button class="btn btn-sm btn-danger" onclick="openOutBulk()"><i class="ic ic-prohibido"></i> Marcar OUT</button>
   </div>
-  <div class="tbl-wrap"><table>
+  <div class="tbl-wrap"><table id="nomTabla">
     <thead><tr>
       <th style="width:36px"><input type="checkbox" id="selAll" class="cb" onchange="toggleAll()"></th>
       <th>Nombre</th><th>Área</th><th>Estado</th><th>CUIL/CUIT</th><th>Email</th><th>Teléfono</th><th>Notas</th><th style="width:96px">Acc.</th>
