@@ -88,6 +88,7 @@ body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);fo
 .inc-vivo{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;border-radius:10px;background:var(--tinta);color:var(--fondo);font:600 13px var(--inc-fuente);letter-spacing:0;white-space:nowrap}
 .inc-vivo::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--fondo);animation:incLatido 1.6s infinite}
 .inc-vivo.mal{background:var(--media);color:var(--media-letra)}.inc-vivo.mal::before{background:var(--media-letra)}.inc-vivo.mal::before{animation:none}
+.inc-vivo.fin{background:var(--tarjeta);color:var(--gris)}.inc-vivo.fin::before{display:none}
 .atras{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border:0;border-radius:10px;background:var(--fondo);color:var(--tinta);font-size:18px;cursor:pointer}
 .atras:hover{background:var(--bloque-2)}
 button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-offset:2px}
@@ -3772,32 +3773,39 @@ if (typeof window !== 'undefined' && window.addEventListener) {
   window.addEventListener('resize', () => { clearTimeout(esperaForma); esperaForma = setTimeout(() => { if (document.body.dataset.pantalla === 'pShow') render(); }, 200); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarNombre);
 }
+// Los shows que ya pasaron, desde que arrancó el piloto (como en la app de supervisores).
+const GER_ANTERIORES_DESDE = '2026-11-13';
+// La fecha abierta ya pasó (se entró desde "Anteriores"): se ve todo lo de ese día y el informe.
+function terminado() { return !!dia && dia < incHoyFuncion(); }
 function renderShows() {
   // Hoy es el día de la función: la madrugada (antes de las 6) todavía es la noche del show.
   const hoy = incHoyFuncion();
-  const grupos = { hoy: [], proximos: [], prueba: [] };
+  const grupos = { hoy: [], proximos: [], anteriores: [], prueba: [] };
   // Una tarjeta por función (cada fecha es un show), del más próximo al más lejano. Los que ya
-  // pasaron no se muestran. Los de prueba ("Prueba" en el nombre) van aparte; si ya pasaron, queda
-  // la última fecha.
+  // pasaron (desde GER_ANTERIORES_DESDE), en "Anteriores", del más reciente al más viejo. Los de
+  // prueba ("Prueba" en el nombre) van aparte; si ya pasaron, queda la última fecha.
   funciones().forEach(e => {
     if (incEsPrueba(e.s)) { const fs = fechasDe(e.s); if (!e.f || e.f >= hoy || (e.f === fs[fs.length - 1] && !fs.some(f => f >= hoy))) grupos.prueba.push(e); }
     else if (e.f === hoy) grupos.hoy.push(e);
     else if (!e.f || e.f > hoy) grupos.proximos.push(e);
+    else if (e.f >= GER_ANTERIORES_DESDE) grupos.anteriores.push(e);
   });
-  const orden = (a, b) => (a.f || '9999').localeCompare(b.f || '9999');
-  grupos.proximos.sort(orden); grupos.prueba.sort(orden);
+  const orden = (a, b) => (a.f || '9999').localeCompare(b.f || '9999') || String(a.s.nombre || '').localeCompare(String(b.s.nombre || ''));
+  grupos.proximos.sort(orden); grupos.prueba.sort(orden); grupos.anteriores.sort((a, b) => orden(b, a));
   const tarjeta = (e, vivo) => '<div class="show' + (vivo ? ' hoy' : '') + '" onclick="abrirShow(\'' + e.s.id + '\',\'' + e.f + '\')"><div class="show-main"><div class="show-n">' + incEsc(sinArena(e.s.nombre)) + (vivo ? '<span class="vivo-pill">Hoy</span>' : '') + '</div>'
     + '<div class="show-f">' + (e.f ? resumenFechas({ fecha: e.f }) : 'Sin fechas') + '</div><div class="show-chips">' + chipsAbiertas(e) + '</div></div><span class="flecha">›</span></div>';
   const body = document.getElementById('showsBody');
   if (!shows.length) { body.innerHTML = '<div class="vacio">Todavía no hay shows en el Centro de Control. Cuando el equipo de SBS sume uno, aparece acá.</div>'; return; }
   const bloque = (t, l) => l.length ? '<div class="grupo">' + t + '</div><div class="shows-grid">' + l.map(s => tarjeta(s, !!s.f && s.f === hoy)).join('') + '</div>' : '';
-  body.innerHTML = (bloque('Hoy', grupos.hoy) + bloque('Próximos', grupos.proximos) + bloque('Prueba', grupos.prueba))
+  body.innerHTML = (bloque('Hoy', grupos.hoy) + bloque('Próximos', grupos.proximos) + bloque('Anteriores', grupos.anteriores) + bloque('Prueba', grupos.prueba))
     || '<div class="vacio">No hay shows de hoy en adelante. Cuando el equipo de SBS sume uno, aparece acá.</div>';
 }
 async function abrirShow(id, fecha) {
   const s = shows.find(x => x.id === id); if (!s) return;
   // La fecha es el show: el tablero, el resumen y el informe son de ella.
-  showId = id; lista = []; notasShow = []; pintarNotas(); filtro = 'abiertas'; sectorSel = ''; dia = fecha !== undefined ? fecha : fechaInicial(s); vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = ''; zonaSel = 'todas';
+  showId = id; lista = []; notasShow = []; pintarNotas(); sectorSel = ''; dia = fecha !== undefined ? fecha : fechaInicial(s); vistos = null; nuevos = new Set(); nivelSel = 0; focoInc = catSel = franjaSel = ''; zonaSel = 'todas';
+  // Uno que ya pasó abre con todas (lo abierto ya se cerró con el reporte de la noche).
+  filtro = terminado() ? 'todas' : 'abiertas';
   pantalla('pShow');
   // El plano del anillo como lo dejó el panel (puertas, gastronomía, baños…) y el armado
   // del campo del show: se piden antes de dibujar, así el 3D los espera y se arma una vez.
@@ -3826,7 +3834,8 @@ async function cargarIncidencias() {
   if (error || data === null) { vivo.textContent = 'Sin conexión'; vivo.className = 'inc-vivo mal'; return; }
   // Sin cuentas-zona.sql la función no está: no hay nadie a cargo que mostrar.
   const rs = await pedidoSup; supervisores = rs && !rs.error && Array.isArray(rs.data) ? rs.data : [];
-  vivo.textContent = 'En vivo'; vivo.title = 'Actualizado a las ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo';
+  const fin = terminado();
+  vivo.textContent = fin ? 'Terminado' : 'En vivo'; vivo.title = 'Actualizado a las ' + incHora(new Date().toISOString()); vivo.className = 'inc-vivo' + (fin ? ' fin' : '');
   // Las fotos de cada incidencia, con su link (incidencias-fotos.sql; sin él no hay).
   lista = await ntFirmar(data || [], 'incidencias');
   const rn = await pedidoNotas;
@@ -3914,7 +3923,10 @@ function render() {
   document.getElementById('paseF').textContent = [partes.slice(1).filter(p => !esElArena(p)).join(' — '), dia ? resumenFechas({ fecha: dia }) : resumenFechas(showAct)].filter(Boolean).join(' · ');
   ajustarNombre();
   document.getElementById('paseSup').innerHTML = supervisoresHTML();
-  const est = incEstadoSalaHTML(abiertas), estEl = document.getElementById('estado');
+  // Un show que ya pasó: "Terminado", con lo que hubo (sin "desde hace" de días atrás).
+  const est = !terminado() ? incEstadoSalaHTML(abiertas) : { clase: '', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>Show terminado</span><small>'
+      + (!delD.length ? 'Sin incidencias' : delD.length + (delD.length === 1 ? ' incidencia' : ' incidencias') + (abiertas.length ? ' · ' + abiertas.length + (abiertas.length === 1 ? ' quedó abierta' : ' quedaron abiertas') : delD.length === 1 ? ', resuelta' : ', todas resueltas')) + '</small>' },
+    estEl = document.getElementById('estado');
   estEl.className = 'estado' + (est.clase ? ' ' + est.clase : ''); estEl.innerHTML = est.html;
   // La botonera: 3D o plano (el armado del campo lo pone el panel: acá no se cambia).
   const vista = incVistaPreferida();
