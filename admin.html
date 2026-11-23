@@ -2939,6 +2939,35 @@ function setLoad(on, msg = '', pct = 0) {
   if (on) { document.getElementById('loadMsg').textContent = msg; document.getElementById('loadFill').style.width = pct + '%'; }
 }
 
+// 23-nov: un tope de pedidos a la vez para todo el panel. Con 12 tandas a la vez por lista (40 a 60 pedidos juntos),
+// el día de un show la base se quedaba sin conexiones: algunas tandas fallaban y la lista quedaba cortada en 1.000
+// sin aviso (Postulantes "1.000 en total", 0 rechazadas) o el panel se quedaba en "Cargando convocatorias…".
+const PEDIDOS_A_LA_VEZ = 6;
+let pedidosActivos = 0;
+const colaPedidos = [];
+function conTurno(fn) {
+  return new Promise((resolve, reject) => {
+    const correr = () => {
+      pedidosActivos++;
+      Promise.resolve().then(fn).then(resolve, reject).finally(() => { pedidosActivos--; const sig = colaPedidos.shift(); if (sig) sig(); });
+    };
+    if (pedidosActivos < PEDIDOS_A_LA_VEZ) correr(); else colaPedidos.push(correr);
+  });
+}
+// Una tanda, con hasta 3 intentos: si falló porque la base estaba ocupada, la vez siguiente suele andar.
+async function pedirTanda(pedir, a, b) {
+  let ultimo = null;
+  for (let intento = 0; intento < 3; intento++) {
+    if (intento) await new Promise(r => setTimeout(r, 700 * intento));
+    let x;
+    try { x = await conTurno(() => pedir(a, b)); } catch (err) { x = { error: err }; }
+    if (x && !x.error && Array.isArray(x.data)) return x;
+    ultimo = x;
+  }
+  return ultimo || { error: new Error('sin datos') };
+}
+// Las listas que no terminaron de cargar en esta vuelta (para avisarlo, en vez de mostrarlas cortadas).
+let cargaIncompleta = [];
 // Trae todas las filas de una consulta de a tandas de 1.000 (Supabase corta cada respuesta en 1.000), varias a la vez:
 // tantas como hacían falta la última vez, y después de a dos hasta que una venga incompleta (21-nov: de a una por
 // vez, con la nómina grande, el panel tardaba). pedir(desde, hasta) → promesa de { data, error }.
@@ -2950,7 +2979,7 @@ async function traerEnTandas(pedir, clave) {
   let error = null, desde = 0, lote = Math.min(12, Math.max(1, Math.ceil((previas + 300) / TANDA))), seguir = true;
   while (seguir) {
     const pedidos = [];
-    for (let i = 0; i < lote; i++) pedidos.push(pedir(desde + i * TANDA, desde + (i + 1) * TANDA - 1));
+    for (let i = 0; i < lote; i++) pedidos.push(pedirTanda(pedir, desde + i * TANDA, desde + (i + 1) * TANDA - 1));
     const res = await Promise.all(pedidos);
     for (const x of res) {
       if (!x || x.error || !Array.isArray(x.data)) { error = (x && x.error) || new Error('sin datos'); seguir = false; break; }
@@ -2960,12 +2989,13 @@ async function traerEnTandas(pedir, clave) {
     desde += lote * TANDA; lote = 2;
   }
   try { if (!error) localStorage.setItem('tandas_' + clave, String(filas.length)); } catch (_) {}
+  if (error && filas.length) cargaIncompleta.push(clave);
   return { data: filas, error };
 }
 
 async function loadAll() {
   setLoad(true, 'Cargando nómina...', 15);
-  people = [];
+  people = []; cargaIncompleta = [];
   // 21-nov: todo lo demás se pide ya, a la vez que la nómina (antes, primero la nómina entera y recién después lo demás).
   const pResto = Promise.all([
     sb.from('convocatorias').select('*').order('created_at'),
@@ -3109,6 +3139,9 @@ async function loadAll() {
   if (ausCfg && ausCfg.value) ausenciaConfig = { dias: Number.isFinite(+ausCfg.value.dias) ? +ausCfg.value.dias : 30, modo: ausCfg.value.modo || 'advertencia' };
   await loadUserRole();
   setLoad(false);
+  // 23-nov: si alguna lista quedó cortada (la base no contestó todas las tandas ni con los reintentos), se avisa.
+  const NOMBRE_LISTA = { solicitudes: 'los postulantes', postulaciones: 'las postulaciones', feedbacks: 'los feedbacks', contratos: 'los contratos', historial: 'el historial', personas: 'la nómina' };
+  if (cargaIncompleta.length) setTimeout(() => toast('No terminaron de cargar ' + [...new Set(cargaIncompleta)].map(k => NOMBRE_LISTA[k] || k).join(', ') + ': la base está lenta. Tocá ↺ en un rato.'), 600);
   if (currentUserRole === 'supervisor') {
     renderSupView();
     document.querySelectorAll('.sec').forEach(d => d.classList.remove('active'));
