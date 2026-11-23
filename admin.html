@@ -2943,27 +2943,46 @@ function setLoad(on, msg = '', pct = 0) {
 // el día de un show la base se quedaba sin conexiones: algunas tandas fallaban y la lista quedaba cortada en 1.000
 // sin aviso (Postulantes "1.000 en total", 0 rechazadas) o el panel se quedaba en "Cargando convocatorias…".
 const PEDIDOS_A_LA_VEZ = 6;
+// Un pedido que no contesta en este tiempo se corta y se reintenta (si no, ocupa su lugar para siempre y la carga
+// se queda quieta en "Cargando convocatorias…").
+const TIEMPO_MAX_PEDIDO = 45000;
 let pedidosActivos = 0;
 const colaPedidos = [];
 function conTurno(fn) {
   return new Promise((resolve, reject) => {
     const correr = () => {
       pedidosActivos++;
-      Promise.resolve().then(fn).then(resolve, reject).finally(() => { pedidosActivos--; const sig = colaPedidos.shift(); if (sig) sig(); });
+      let reloj = null;
+      Promise.resolve().then(() => {
+        const b = fn();
+        if (b && typeof b.abortSignal === 'function' && typeof AbortController === 'function') {
+          const corte = new AbortController(); reloj = setTimeout(() => corte.abort(), TIEMPO_MAX_PEDIDO); b.abortSignal(corte.signal);
+        }
+        return b;
+      }).then(resolve, reject).finally(() => { clearTimeout(reloj); pedidosActivos--; const sig = colaPedidos.shift(); if (sig) sig(); });
     };
     if (pedidosActivos < PEDIDOS_A_LA_VEZ) correr(); else colaPedidos.push(correr);
   });
 }
+// Cuántas partes llegaron de las que se pidieron, para que el cartel de carga muestre que avanza.
+let cargaEtapa = null, cargaPartes = { pedidas: 0, listas: 0 };
+function avanceCarga() {
+  if (!cargaEtapa) return;
+  const { pedidas, listas } = cargaPartes;
+  setLoad(true, cargaEtapa.msg + (pedidas ? ' (' + listas + ' de ' + pedidas + ' partes)' : ''), cargaEtapa.pct + (pedidas ? Math.round((cargaEtapa.hasta - cargaEtapa.pct) * listas / pedidas) : 0));
+}
 // Una tanda, con hasta 3 intentos: si falló porque la base estaba ocupada, la vez siguiente suele andar.
 async function pedirTanda(pedir, a, b) {
   let ultimo = null;
+  cargaPartes.pedidas++; avanceCarga();
   for (let intento = 0; intento < 3; intento++) {
     if (intento) await new Promise(r => setTimeout(r, 700 * intento));
     let x;
     try { x = await conTurno(() => pedir(a, b)); } catch (err) { x = { error: err }; }
-    if (x && !x.error && Array.isArray(x.data)) return x;
+    if (x && !x.error && Array.isArray(x.data)) { cargaPartes.listas++; avanceCarga(); return x; }
     ultimo = x;
   }
+  cargaPartes.listas++; avanceCarga();
   return ultimo || { error: new Error('sin datos') };
 }
 // Las listas que no terminaron de cargar en esta vuelta (para avisarlo, en vez de mostrarlas cortadas).
@@ -2996,6 +3015,7 @@ async function traerEnTandas(pedir, clave) {
 async function loadAll() {
   setLoad(true, 'Cargando nómina...', 15);
   people = []; cargaIncompleta = [];
+  cargaPartes = { pedidas: 0, listas: 0 }; cargaEtapa = { msg: 'Cargando nómina...', pct: 15, hasta: 92 };
   // 21-nov: todo lo demás se pide ya, a la vez que la nómina (antes, primero la nómina entera y recién después lo demás).
   const pResto = Promise.all([
     sb.from('convocatorias').select('*').order('created_at'),
@@ -3083,8 +3103,7 @@ async function loadAll() {
       }
     }
   }
-  setLoad(true, `Cargando nómina... (${people.length})`, 60);
-  setLoad(true, 'Cargando convocatorias...', 70);
+  cargaEtapa.msg = 'Cargando convocatorias...'; avanceCarga();
   const [{ data: cData }, { data: pData }, { data: postData }, { data: fbData }, { data: upData }, { data: scData }, { data: solData }, { data: cfgData }, { data: notifData }, { data: respData }, { data: ctData }] = await pResto;
   convs = (cData || []).map(c => ({
     ...c,
@@ -3138,6 +3157,7 @@ async function loadAll() {
   const ausCfg = (cfgData || []).find(c => c.key === 'ausencia');
   if (ausCfg && ausCfg.value) ausenciaConfig = { dias: Number.isFinite(+ausCfg.value.dias) ? +ausCfg.value.dias : 30, modo: ausCfg.value.modo || 'advertencia' };
   await loadUserRole();
+  cargaEtapa = null;
   setLoad(false);
   // 23-nov: si alguna lista quedó cortada (la base no contestó todas las tandas ni con los reintentos), se avisa.
   const NOMBRE_LISTA = { solicitudes: 'los postulantes', postulaciones: 'las postulaciones', feedbacks: 'los feedbacks', contratos: 'los contratos', historial: 'el historial', personas: 'la nómina' };
