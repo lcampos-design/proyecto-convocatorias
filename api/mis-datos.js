@@ -48,9 +48,15 @@ export function enmascarar(email) {
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // El mail: corto, con el botón y la aclaración de que vence.
-export function armarMail({ nombre, link, invitado, inscripciones }) {
+// motivo (sólo desde el panel, "Revisar los CBU"): 'cbu' si el que tenemos no es válido; 'cbu_falta' si no hay.
+export function armarMail({ nombre, link, invitado, inscripciones, motivo }) {
   const hola = nombre ? `Hola, ${String(nombre).trim().split(/\s+/)[0]}` : 'Hola';
-  const intro = invitado
+  const cbu = invitado && (motivo === 'cbu' || motivo === 'cbu_falta') ? motivo : '';
+  const intro = cbu === 'cbu'
+    ? 'Revisamos tu CBU y no es válido: los números no dan o es de una billetera virtual, y así no te podemos pagar. Entrá desde este link y cargá el CBU de una cuenta bancaria a tu nombre (son 22 números). Te lleva un minuto.'
+    : cbu === 'cbu_falta'
+    ? 'No tenemos el CBU de tu cuenta bancaria y sin él no te podemos pagar. Entrá desde este link y cargalo (son 22 números, de una cuenta a tu nombre). Te lleva un minuto.'
+    : invitado
     ? 'Necesitamos que revises y completes tus datos (la fecha de nacimiento, los estudios, la cuenta para pagarte…). Te lleva un par de minutos.'
     : inscripciones
       ? 'Pediste ver tus inscripciones. Desde este link ves dónde estás anotado/a, podés darte de baja y actualizar tus datos.'
@@ -63,7 +69,7 @@ export function armarMail({ nombre, link, invitado, inscripciones }) {
   <p style="font-size:13px;color:#6b7280;line-height:1.5">El link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.</p>
   <p style="font-size:13px;color:#6b7280">Show Business Solutions</p>
 </div>`;
-  return { subject: invitado ? 'Actualizá tus datos — Show Business Solutions' : inscripciones ? 'Tu link para ver tus inscripciones' : 'Tu link para actualizar tus datos', text, html };
+  return { subject: cbu === 'cbu' ? 'Revisá tu CBU — Show Business Solutions' : cbu === 'cbu_falta' ? 'Cargá tu CBU — Show Business Solutions' : invitado ? 'Actualizá tus datos — Show Business Solutions' : inscripciones ? 'Tu link para ver tus inscripciones' : 'Tu link para actualizar tus datos', text, html };
 }
 
 // Si Resend contestó 429 por velocidad ("rate_limit_exceeded"): no por el tope diario o mensual.
@@ -121,7 +127,7 @@ export default async function handler(req, res) {
 
   // El mail, desde la casilla del área.
   const link = `${SITIO}/mis-datos?t=${encodeURIComponent(r.token)}`;
-  const mail = armarMail({ nombre: r.nombre, link, invitado, inscripciones: !invitado && cuerpo.para === 'inscripciones' });
+  const mail = armarMail({ nombre: r.nombre, link, invitado, inscripciones: !invitado && cuerpo.para === 'inscripciones', motivo: cuerpo.motivo });
   const from = r.area === 'movistar_arena' ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
   try {
     let envio;

@@ -315,7 +315,7 @@ function cbuMotivo(cbu) {
   if (cbu.length !== 22) return 'El CBU tiene que tener 22 números (tiene ' + cbu.length + ').';
   const b = BILLETERAS.find(([pre]) => cbu.startsWith(pre));
   if (b) return 'Es de ' + b[1] + ', una billetera virtual: poné el CBU de una cuenta bancaria.';
-  if (!cbuVerifica(cbu)) return 'El CBU no es válido: revisá los números.';
+  if (!cbuVerifica(cbu)) return 'CBU INVÁLIDO: los números no dan. Revisá que esté bien copiado.';
   return '';
 }
 function avisoCbu() {

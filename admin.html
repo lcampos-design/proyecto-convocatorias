@@ -1346,6 +1346,7 @@ tr:hover td{background:#f9f9fb}
         <button class="btn btn-sec btn-sm" onclick="openEtiquetas()" title="Renombrar, unir o borrar etiquetas"><i class="ic ic-etiqueta"></i> Etiquetas</button>
         <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
         <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
+        <button class="btn btn-sec btn-sm" onclick="openCbuRev()" title="El CBU de toda la nómina y de los inscriptos: los 22 números y los dígitos verificadores; a los que lo tienen mal, se les pide que lo corrijan">✓ Revisar los CBU</button>
         <button class="btn btn-sec btn-sm" id="btnExportBbva" onclick="exportBbva()" title="Los de esta lista que no tienen cuenta y todavía no tienen CBU, con los datos que pide el banco">↓ Cuentas a abrir (BBVA)</button>
         <button class="btn btn-sec btn-sm" onclick="openFbVarios()" title="La planilla de feedbacks pendientes de carga (varios eventos, por nombre): se busca a cada persona y cada evento, se revisa y se carga"><i class="ic ic-planilla"></i> Importar feedbacks de varios eventos</button>
         <button class="btn btn-sec btn-sm" onclick="openRoles26()" title="La planilla de RR. HH. de convocados 2026 con roles: posiciones, semáforo, comentarios y eventos, por nombre"><i class="ic ic-planilla"></i> Importar roles y feedback 2026</button>
@@ -2586,6 +2587,23 @@ tr:hover td{background:#f9f9fb}
   </div>
 </div>
 
+<!-- REVISAR LOS CBU (24-nov, Mercedes): el CBU de toda la nómina y de los inscriptos. -->
+<div class="modal-bg" id="mCbuRev" style="display:none" onclick="bgClose('mCbuRev',event)">
+  <div class="modal" style="max-width:1080px">
+    <div class="modal-title"><span>Revisar los CBU</span><button class="mclose" onclick="closeM('mCbuRev')">✕</button></div>
+    <div style="font-size:12.5px;color:var(--r-muted);margin:-6px 0 12px;line-height:1.5">El CBU de cada persona de la nómina y de cada inscripto: que tenga los 22 números y que den los dos dígitos verificadores (si no dan, hay un número mal copiado y la transferencia rebota). Que la cuenta sea a su nombre no se ve con el número: eso lo confirma el banco.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <input type="text" class="fi" id="cbuRevBus" placeholder="Buscar por nombre o CUIL" oninput="cbuRevPagina=1;renderCbuRev()" style="flex:1;min-width:220px">
+      <select class="filt" id="cbuRevArea" onchange="cbuRevPagina=1;renderCbuRev()"><option value="">Arena y Externos</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option></select>
+    </div>
+    <div id="cbuRevCuerpo"></div>
+    <div id="cbuRevProg" style="font-size:12.5px;color:var(--r-ink2);margin-top:10px"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="cbuRevExcel()" style="margin-right:auto"><i class="ic ic-planilla"></i> Excel de la lista</button>
+      <button class="btn btn-primary" id="cbuRevAvisar" onclick="cbuRevAvisarTodos()" title="A cada una le llega el link de Mis datos para cargar el CBU bien">Pedirles que lo corrijan</button>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="mHiVer" style="display:none" onclick="bgClose('mHiVer',event)">
   <div class="modal" style="max-width:940px">
     <div class="modal-title"><span id="hiVerTit">Show</span><button class="mclose" onclick="closeM('mHiVer')">✕</button></div>
@@ -4931,7 +4949,8 @@ function leerBancoPersona() {
     if (d.iban && !ibanValido(d.iban)) { toast('El IBAN no es válido: revisalo'); return false; }
     if (d.iban && !d.titular_cuenta) { toast('Falta el titular de la cuenta'); return false; }
   } else if (cambios.includes('cbu')) {
-    if (d.cbu && d.cbu.length !== 22) { toast(cbuMotivo(d.cbu)); return false; }
+    // 24-nov: un CBU que no da (22 números y los dígitos verificadores) no se guarda: la base tampoco lo acepta.
+    if (d.cbu && (d.cbu.length !== 22 || !cbuVerifica(d.cbu))) { toast('CBU INVÁLIDO: ' + cbuMotivo(d.cbu)); return false; }
     // El CBU es con lo que se paga: se confirma mostrando el de antes y el nuevo.
     const m = d.cbu ? cbuMotivo(d.cbu) : '';
     if (!confirm((m ? '⚠ ' + m + '\n\n' : '') + '¿Cambiar el CBU?\n\nAntes: ' + (b.antes.cbu || '(sin CBU)') + '\nAhora: ' + (d.cbu || '(vacío)'))) return false;
@@ -4950,8 +4969,131 @@ async function guardarBancoPersona({ b, d }) {
   if (!b.esEs && d.cbu) d.tiene_cuenta = true;
   try { await sbUpdateIn('solicitudes', ids, d); } catch (_) { return; }
   solicitudes.forEach(s => { if (ids.includes(s.id)) Object.assign(s, d); });
-  if (datosBancarios && datosBancarios.has(b.doc)) Object.assign(datosBancarios.get(b.doc), d);
+  if (datosBancarios) { if (datosBancarios.has(b.doc)) Object.assign(datosBancarios.get(b.doc), d); else datosBancarios.set(b.doc, Object.assign({}, d)); }
   toast('cbu' in d && d.cbu !== (b.antes.cbu || null) ? 'CBU actualizado' : 'Datos bancarios actualizados');
+}
+
+// ── REVISAR LOS CBU (24-nov) ──────────────────────────────────
+// Mercedes: "que la plataforma haga dos check: primero que todas las personas ya recurrentes e inscriptas verifique que
+// el CBU declarado es correcto […] y después que cada vez que una persona se anote y declare el CBU verificar que esté
+// ok; si no está ok, que no los deje inscribirse por CBU INVÁLIDO". Esto es el primero: el CBU de cada uno (el mismo que
+// sale en la liquidación), con los 22 números y los dos dígitos verificadores. El segundo está en el formulario y en la
+// base (cbu-valido.sql). Que la cuenta sea de la persona no se ve con el número: eso lo dice el banco.
+const CBU_ESTADOS = { invalido: 'CBU inválido', incompleto: 'Incompleto', billetera: 'Billetera virtual', sin: 'Sin CBU', bbva: 'Pidió cuenta BBVA', ok: 'Bien' };
+const CBU_PROBLEMA = ['invalido', 'incompleto', 'billetera'];
+const CBU_POR_PAGINA = 200;
+let cbuRevFilas = [], cbuRevVer = 'problema', cbuRevPagina = 1, cbuRevEnvio = null;
+function cbuEstado(d) {
+  const cbu = String((d && d.cbu) || '').replace(/\D/g, '');
+  if (!cbu) return d && d.tiene_cuenta === false ? 'bbva' : 'sin';
+  if (cbu.length !== 22) return 'incompleto';
+  if (!cbuVerifica(cbu)) return 'invalido';
+  if (CBU_BILLETERAS.some(([pre]) => cbu.startsWith(pre))) return 'billetera';
+  return 'ok';
+}
+// A quién se le puede pedir que lo corrija: con el CBU mal o sin CBU, y con el CUIL completo (el link sale por CUIL).
+function cbuRevAvisable(x) { return (CBU_PROBLEMA.includes(x.estado) || x.estado === 'sin') && String(x.cuit || '').replace(/\D/g, '').length === 11; }
+async function openCbuRev() {
+  cbuRevVer = 'problema'; cbuRevPagina = 1; cbuRevEnvio = null;
+  document.getElementById('cbuRevBus').value = '';
+  document.getElementById('cbuRevProg').innerHTML = '';
+  document.getElementById('cbuRevCuerpo').innerHTML = '<div class="empty">Trayendo los datos bancarios…</div>';
+  showM('mCbuRev');
+  const banco = await cargarDatosBancarios(), enNomina = new Set(), filas = [];
+  // La nómina (sin España, que va con IBAN, y sin los OUT) y los inscriptos que todavía no pasaron a la nómina.
+  people.forEach(p => {
+    if (p.out_flag || p.area === 'espana') return;
+    const doc = docNucleo(p.cuit); if (doc) enNomina.add(doc);
+    const d = doc ? banco.get(doc) : null;
+    filas.push({ tipo: 'nomina', id: p.id, nombre: p.nombre, area: p.area, cuit: p.cuit, d, estado: cbuEstado(d) });
+  });
+  const vistos = new Set();
+  solicitudes.forEach(s => {
+    if (s.estado !== 'pendiente' || s.area === 'espana') return;
+    const doc = docNucleo(s.cuit); if (!doc || enNomina.has(doc) || vistos.has(doc)) return;
+    vistos.add(doc); const d = banco.get(doc);
+    filas.push({ tipo: 'postulante', id: s.id, nombre: s.nombre, area: s.area, cuit: s.cuit, d, estado: cbuEstado(d) });
+  });
+  cbuRevFilas = filas.sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es'));
+  renderCbuRev();
+}
+function cbuRevBase() { const area = document.getElementById('cbuRevArea').value; return cbuRevFilas.filter(x => !area || x.area === area); }
+function cbuRevLista() {
+  const q = hiNorm(document.getElementById('cbuRevBus').value), qd = String(document.getElementById('cbuRevBus').value || '').replace(/\D/g, '');
+  return cbuRevBase().filter(x => (cbuRevVer === 'todos' || (cbuRevVer === 'problema' ? CBU_PROBLEMA.includes(x.estado) : x.estado === cbuRevVer))
+    && (!q || hiNorm(x.nombre).includes(q) || (qd.length >= 6 && String(x.cuit || '').replace(/\D/g, '').includes(qd))));
+}
+function cbuRevMotivo(x) {
+  if (x.estado === 'sin') return 'No tiene CBU cargado';
+  if (x.estado === 'bbva') return 'No tenía cuenta: pidió que le abran una en el BBVA';
+  if (x.estado === 'ok') return '';
+  return cbuMotivo(String(x.d.cbu).replace(/\D/g, ''));
+}
+function renderCbuRev() {
+  const cont = document.getElementById('cbuRevCuerpo'); if (!cont) return;
+  const base = cbuRevBase(), cuenta = k => k === 'todos' ? base.length : base.filter(x => k === 'problema' ? CBU_PROBLEMA.includes(x.estado) : x.estado === k).length;
+  const chip = (k, txt, cl, t) => `<button class="nchip${cl ? ' ' + cl : ''}${cbuRevVer === k ? ' on' : ''}" onclick="cbuRevVer='${k}';cbuRevPagina=1;renderCbuRev()" title="${t || ''}">${txt} <b>${cuenta(k).toLocaleString('es-AR')}</b></button>`;
+  const chips = `<div class="nchips nchips-suelto">${chip('problema', 'Con el CBU mal', cuenta('problema') ? 'alerta' : '', 'Inválido, incompleto o de una billetera virtual')}<span class="sep"></span>`
+    + chip('invalido', 'Inválido', '', 'Los dígitos verificadores no dan: hay un número mal copiado') + chip('incompleto', 'Incompleto', '', 'No tiene 22 números') + chip('billetera', 'Billetera virtual', '', 'Mercado Pago, Ualá, etc.') + '<span class="sep"></span>'
+    + chip('sin', 'Sin CBU', '', 'No hay CBU cargado (y no pidió cuenta en el BBVA)') + chip('bbva', 'Pidieron cuenta BBVA', '', 'No tenían cuenta: salen en "Cuentas a abrir (BBVA)"') + chip('ok', 'Bien', '', 'Los 22 números y los dígitos verificadores dan') + '<span class="sep"></span>'
+    + chip('todos', 'Todos', '') + '</div>';
+  const l = cbuRevLista(), vista = l.slice(0, cbuRevPagina * CBU_POR_PAGINA), avisables = l.filter(cbuRevAvisable).length;
+  document.getElementById('cbuRevAvisar').textContent = avisables ? 'Pedirles que lo corrijan (' + avisables.toLocaleString('es-AR') + ')' : 'Pedirles que lo corrijan';
+  document.getElementById('cbuRevAvisar').disabled = !avisables || !!(cbuRevEnvio && cbuRevEnvio.andando);
+  if (!l.length) { cont.innerHTML = chips + '<div class="empty">' + (cbuRevVer === 'problema' ? '✓ Nadie tiene el CBU mal.' : 'Nadie en esta lista.') + '</div>'; return; }
+  cont.innerHTML = chips + '<div class="fbv-tabla hi-tabla" style="max-height:52vh"><table><thead><tr><th>Persona</th><th style="width:96px">Área</th><th style="width:200px">CBU</th><th>Qué pasa</th><th style="width:190px"></th></tr></thead><tbody>'
+    + vista.map((x, i) => {
+      const cbu = x.d && x.d.cbu ? String(x.d.cbu) : '';
+      const aviso = x.avisado ? '<span class="ok-chip">✓ Avisado</span>' : x.errorAviso ? `<span class="falta-chip" title="${e(x.errorAviso)}">No salió</span>` : '';
+      return `<tr><td style="white-space:nowrap"><span class="fbv-nom">${eN(x.nombre || 'Sin nombre')}</span>${x.tipo === 'postulante' ? '<span class="hi-de">Postulante</span>' : ''}</td>
+        <td><span class="a-badge ${areaClase(x.area)}">${areaCorto(x.area)}</span></td>
+        <td style="font-family:ui-monospace,Consolas,monospace;font-size:12px;white-space:nowrap">${e(cbu) || '<span class="fbv-sub">—</span>'}</td>
+        <td>${x.estado === 'ok' ? '<span class="ok-chip">✓ Bien</span>' : `<span class="${CBU_PROBLEMA.includes(x.estado) ? 'falta-chip' : 'fbv-sub'}">${e(CBU_ESTADOS[x.estado])}</span> <span class="fbv-sub" style="display:inline">${e(cbuRevMotivo(x))}</span>`}</td>
+        <td style="text-align:right;white-space:nowrap">${aviso} ${x.tipo === 'nomina' ? `<button class="btn btn-sec btn-xs" onclick="closeM('mCbuRev');openEditPerson('${x.id}')" title="Abrir su ficha para cargar el CBU correcto">Corregir</button>` : ''}
+          ${cbuRevAvisable(x) && !x.avisado ? `<button class="btn btn-sec btn-xs" onclick="cbuRevAvisarUno(${cbuRevFilas.indexOf(x)})" title="Le llega el link de Mis datos para que cargue el CBU bien">Avisar</button>` : ''}</td></tr>`;
+    }).join('') + '</tbody></table></div>'
+    + (l.length > vista.length ? `<div style="text-align:center;margin-top:10px"><button class="btn btn-sec btn-sm" onclick="cbuRevPagina++;renderCbuRev()">Mostrar ${Math.min(CBU_POR_PAGINA, l.length - vista.length)} más (quedan ${l.length - vista.length})</button></div>` : '');
+}
+// El link de Mis datos, con el texto del CBU (el mail dice que no es válido o que falta).
+async function cbuRevMandar(x) {
+  const cuit = String(x.cuit || '').replace(/\D/g, '');
+  try {
+    const res = await fetch('/api/mis-datos', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ cuit, invitar: true, motivo: x.estado === 'sin' ? 'cbu_falta' : 'cbu' }) });
+    const r = await res.json().catch(() => ({}));
+    if (res.ok && r.ok) { x.avisado = true; x.errorAviso = ''; return true; }
+    x.errorAviso = r.error || 'No se pudo mandar'; return false;
+  } catch (_) { x.errorAviso = 'Sin conexión'; return false; }
+}
+async function cbuRevAvisarUno(i) {
+  const x = cbuRevFilas[i]; if (!x) return;
+  if (!confirm('¿Mandarle a ' + (x.nombre || 'esta persona') + ' un mail para que ' + (x.estado === 'sin' ? 'cargue' : 'corrija') + ' el CBU?\n\nLe llega el link de "Mis datos" (vence en 24 horas) al mail de su inscripción.')) return;
+  const ok = await cbuRevMandar(x);
+  toast(ok ? '✓ Le mandamos el mail' : (x.errorAviso || 'No se pudo mandar'));
+  renderCbuRev();
+}
+// A todos los de la lista que se ve, de a uno (Resend admite 2 por segundo); se puede frenar.
+async function cbuRevAvisarTodos() {
+  const l = cbuRevLista().filter(x => cbuRevAvisable(x) && !x.avisado);
+  if (!l.length) { toast('No hay a quién avisar en esta lista'); return; }
+  if (!confirm('¿Mandarles a las ' + l.length + ' personas de esta lista un mail para que corrijan (o carguen) el CBU?\n\nA cada una le llega el link de "Mis datos" (vence en 24 horas) al mail de su inscripción.')) return;
+  const env = cbuRevEnvio = { andando: true, frenar: false, ok: 0, mal: 0, total: l.length };
+  const prog = document.getElementById('cbuRevProg');
+  const pintar = () => { prog.innerHTML = `<span>${env.andando ? 'Mandando' : 'Listo'}: <b>${env.ok}</b> enviado${env.ok === 1 ? '' : 's'}${env.mal ? ' · <b>' + env.mal + '</b> no salieron (sin mail o con error)' : ''} · de ${env.total}</span>${env.andando ? ' <button class="btn btn-sec btn-xs" onclick="cbuRevEnvio.frenar=true">Frenar</button>' : ''}`; };
+  renderCbuRev(); pintar();
+  for (const x of l) {
+    if (env.frenar) break;
+    if (await cbuRevMandar(x)) env.ok++; else env.mal++;
+    pintar();
+    await new Promise(r => setTimeout(r, 600));
+  }
+  env.andando = false; pintar(); renderCbuRev();
+  toast('✓ Enviados: ' + env.ok + (env.mal ? ' · no salieron: ' + env.mal : ''));
+}
+function cbuRevExcel() {
+  const l = cbuRevLista();
+  const filas = [['Persona', 'CUIL', 'Área', 'Dónde', 'CBU', 'Banco (lo que puso)', 'Estado', 'Qué pasa', 'Aviso']]
+    .concat(l.map(x => [x.nombre || '', x.cuit || '', areaLargo(x.area), x.tipo === 'nomina' ? 'Nómina' : 'Postulante', (x.d && x.d.cbu) || '', (x.d && x.d.banco) || '', CBU_ESTADOS[x.estado], cbuRevMotivo(x), x.avisado ? 'Avisado' : x.errorAviso || '']));
+  descargarLibro('cbu-' + hoyLocalISO() + '.xlsx', [{ nombre: 'CBU', titulo: 'Revisión de CBU', subtitulo: l.length + ' persona' + (l.length === 1 ? '' : 's') + ' · ' + (cbuRevVer === 'todos' ? 'todas' : cbuRevVer === 'problema' ? 'con el CBU mal' : CBU_ESTADOS[cbuRevVer]), filas }]);
 }
 
 async function delPerson(id) {
@@ -5205,7 +5347,7 @@ async function cargarDatosBancarios() {
   let desde = 0;
   while (true) {
     const { data, error } = await sb.from('solicitudes')
-      .select('cuit,cbu,banco,numero_cuenta,iban,titular_cuenta')
+      .select('cuit,cbu,banco,numero_cuenta,iban,titular_cuenta,tiene_cuenta')
       .order('created_at').range(desde, desde + 999);
     if (error || !data || !data.length) break;
     data.forEach(x => { const d = docNucleo(x.cuit); if (d && !mapa.has(d)) mapa.set(d, x); });

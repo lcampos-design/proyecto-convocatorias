@@ -688,6 +688,15 @@ const WALLETS = [
   { prefix: '0000004', nombre: 'Brubank (billetera)' },
 ];
 
+// Los dos dígitos verificadores del CBU (el 8.º y el 22.º): si no dan, hay un número mal copiado y no se puede pagar.
+// 24-nov (Mercedes): si el CBU no es válido, no se inscribe ("CBU INVÁLIDO"). La base lo frena igual (cbu-valido.sql).
+function cbuVerifica(cbu) {
+  if (!/^\d{22}$/.test(cbu)) return false;
+  const dv = (desde, pesos) => (10 - pesos.reduce((s, w, i) => s + w * Number(cbu[desde + i]), 0) % 10) % 10;
+  return dv(0, [7, 1, 3, 9, 7, 1, 3]) === Number(cbu[7]) && dv(8, [3, 9, 7, 1, 3, 9, 7, 1, 3, 9, 7, 1, 3]) === Number(cbu[21]);
+}
+const CBU_INVALIDO = 'CBU INVÁLIDO: los números no dan. Revisá que esté bien copiado (son los 22 números de tu cuenta bancaria, sin espacios).';
+
 function validarCbu(input) {
   // Solo números
   input.value = input.value.replace(/\D/g, '');
@@ -714,6 +723,12 @@ function validarCbu(input) {
     return;
   }
 
+  if (val.length === 22 && !cbuVerifica(val)) {
+    warn.innerHTML = '⚠ <strong>CBU INVÁLIDO</strong>: los números no dan. Revisá que esté bien copiado (son los 22 números de tu cuenta bancaria).';
+    warn.style.display = 'block';
+    input.style.borderColor = '#dc2626';
+    return;
+  }
   if (val.length === 22) {
     ok.style.display = 'block';
     input.style.borderColor = '#10b981';
@@ -877,6 +892,7 @@ async function submitForm() {
     if (cbu.length !== 22) { showErr('El CBU debe tener exactamente 22 dígitos.'); return; }
     const wallet = WALLETS.find(w => cbu.startsWith(w.prefix));
     if (wallet)       { showErr(`No se aceptan billeteras virtuales (${wallet.nombre}). Ingresá el CBU de tu cuenta bancaria.`); return; }
+    if (!cbuVerifica(cbu)) { showErr(CBU_INVALIDO); return; }
     if (!nroCuenta)   { showErr('El número de cuenta es obligatorio.'); return; }
     if (!banco)       { showErr('El banco es obligatorio.'); return; }
   } else {
@@ -982,7 +998,7 @@ async function submitForm() {
     btn.disabled = false; btn.textContent = 'Enviar solicitud →';
     document.getElementById('progressBar').style.display = 'none';
     // La base frena una segunda inscripción con el mismo documento (seguridad-cbu.sql).
-    showErr(error.code === '23505' ? 'Ya hay una inscripción con ese CUIL/CUIT. Si querés cambiar tus datos, entrá a convocatorias.show-bs.com/mis-datos.' : 'Hubo un error al enviar. Intentá de nuevo en unos minutos.');
+    showErr(/CBU INVALIDO/i.test(error.message || '') ? CBU_INVALIDO : error.code === '23505' ? 'Ya hay una inscripción con ese CUIL/CUIT. Si querés cambiar tus datos, entrá a convocatorias.show-bs.com/mis-datos.' : 'Hubo un error al enviar. Intentá de nuevo en unos minutos.');
     return;
   }
 
