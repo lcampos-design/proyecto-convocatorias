@@ -13847,13 +13847,21 @@ function dmGrupos() {
     rec: base.filter(p => p.recomendado),
     sup: base.filter(p => posicionesDe(p).includes('Supervisor')),
     ops: base.filter(p => posicionesDe(p).includes('Equipo operaciones')),
+    rex: base.filter(esRecurrenteExternos),
     tag: tag ? base.filter(p => (p.etiquetas || []).some(t => String(t).toLowerCase() === tag.toLowerCase())) : [],
   };
+}
+// 24-nov (Mercedes: "que la plataforma de externos incluya hacer la dispo por ahí de los eventuales recurrentes"): los
+// que ya trabajaron en 2 o más días de eventos de Externos (contratos, convocatorias que pasaron e historial).
+const RECURRENTE_EXT_MIN = 2;
+function esRecurrenteExternos(p) {
+  const hoy = hoyLocalISO();
+  return new Set(fechasTrabajadas(p).filter(x => x.area === 'externos' && x.fecha < hoy).map(x => x.fecha)).size >= RECURRENTE_EXT_MIN;
 }
 function dmDestinatarios() {
   const g = dmGrupos(), vistos = new Set(), out = [];
   const sumar = p => { const m = String(p.email).trim().toLowerCase(); if (!vistos.has(m)) { vistos.add(m); out.push(p); } };
-  ['rec', 'sup', 'ops', 'tag'].forEach(k => { const cb = document.getElementById('dmG_' + k); if (cb && cb.checked) g[k].forEach(sumar); });
+  ['rec', 'sup', 'ops', 'rex', 'tag'].forEach(k => { const cb = document.getElementById('dmG_' + k); if (cb && cb.checked) g[k].forEach(sumar); });
   gruposEnvio.forEach(gr => { const cb = document.getElementById('dmGG_' + gr.id); if (cb && cb.checked) grupoGente(gr).forEach(sumar); });
   return out;
 }
@@ -13884,7 +13892,7 @@ function grBase() {
 function grSumar(tipo) {
   const base = grBase(), tag = (document.getElementById('grTag') || {}).value || '';
   const de = tipo === 'rec' ? base.filter(p => p.recomendado) : tipo === 'sup' ? base.filter(p => posicionesDe(p).includes('Supervisor'))
-    : tipo === 'ops' ? base.filter(p => posicionesDe(p).includes('Equipo operaciones')) : tag ? base.filter(p => (p.etiquetas || []).some(t => String(t).toLowerCase() === tag.toLowerCase())) : [];
+    : tipo === 'ops' ? base.filter(p => posicionesDe(p).includes('Equipo operaciones')) : tipo === 'rex' ? base.filter(esRecurrenteExternos) : tag ? base.filter(p => (p.etiquetas || []).some(t => String(t).toLowerCase() === tag.toLowerCase())) : [];
   if (!de.length) { toast(tipo === 'tag' && !tag ? 'Elegí una etiqueta' : 'No hay nadie así en la nómina de esa área'); return; }
   const antes = grEdit.personas.size; de.forEach(p => grEdit.personas.add(p.id));
   toast('Se sumaron ' + (grEdit.personas.size - antes) + ' al grupo'); renderGrupo();
@@ -13911,7 +13919,7 @@ function renderGrupo(soloLista) {
   if (soloLista && document.getElementById('grLista')) { document.getElementById('grLista').innerHTML = lista; document.getElementById('grCuenta').innerHTML = cuenta; return; }
   cont.innerHTML = '<div style="font-size:12px;color:#6b7280;margin:0 0 6px">Sumar de una vez (de la nómina del área):</div>'
     + '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px">'
-    + '<button class="btn btn-sec btn-xs" onclick="grSumar(\'rec\')">Recomendados</button><button class="btn btn-sec btn-xs" onclick="grSumar(\'sup\')">Supervisores</button><button class="btn btn-sec btn-xs" onclick="grSumar(\'ops\')">Equipo de operaciones</button>'
+    + '<button class="btn btn-sec btn-xs" onclick="grSumar(\'rec\')">Recomendados</button><button class="btn btn-sec btn-xs" onclick="grSumar(\'sup\')">Supervisores</button><button class="btn btn-sec btn-xs" onclick="grSumar(\'ops\')">Equipo de operaciones</button><button class="btn btn-sec btn-xs" onclick="grSumar(\'rex\')" title="Los que ya trabajaron en 2 o más eventos de Externos">Recurrentes de Externos</button>'
     + '<select class="filt" id="grTag" style="font-size:12px;padding:4px 8px"><option value="">Etiqueta…</option>' + etiquetas.map(t => '<option>' + e(t) + '</option>').join('') + '</select><button class="btn btn-sec btn-xs" onclick="grSumar(\'tag\')">Sumar la etiqueta</button></div>'
     + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><input class="fi" id="grBuscar" style="flex:1;min-width:200px" placeholder="Buscar por nombre, CUIL, etiqueta o localidad" value="' + e(grEdit.busca) + '" oninput="grBuscar(this.value)">'
     + '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" class="cb"' + (grEdit.soloGrupo ? ' checked' : '') + ' onchange="grEdit.soloGrupo=this.checked;renderGrupo(true)"> Ver sólo los del grupo</label></div>'
@@ -14081,7 +14089,7 @@ function renderDispMes() {
     <button class="btn btn-sec btn-sm" style="margin-top:6px" onclick="copiarDispLink(document.getElementById('dmTexto').value)">Copiar mensaje</button>
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:18px 0 8px">3 · Mandarlo por mail</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px 18px">
-      ${grupo('rec', 'Recomendados', g.rec.length)}${grupo('sup', 'Supervisores', g.sup.length)}${grupo('ops', 'Equipo de operaciones', g.ops.length)}
+      ${grupo('rec', 'Recomendados', g.rec.length)}${grupo('sup', 'Supervisores', g.sup.length)}${grupo('ops', 'Equipo de operaciones', g.ops.length)}${(document.getElementById('dmArea') || {}).value !== 'movistar_arena' ? grupo('rex', 'Recurrentes de Externos (2 o más eventos)', g.rex.length) : ''}
       <span style="display:flex;align-items:center;gap:8px;font-size:13px">${grupo('tag', 'Etiqueta', g.tag.length)}<select class="filt" id="dmTag" onchange="renderDispMes()" style="font-size:12px;padding:4px 8px"><option value="">elegir…</option>${etiquetas.map(t => `<option ${t === tagSel ? 'selected' : ''}>${e(t)}</option>`).join('')}</select></span>
     </div>
     <div style="font-size:12px;color:#6b7280;margin:14px 0 6px">Grupos guardados</div>
