@@ -962,73 +962,86 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 /* En pantallas angostas la columna Notas (casi siempre "Interés: …", que ya está en las etiquetas) se esconde:
    la nota se ve en la ficha. */
 @media (max-width:1500px){#nomTabla th:nth-child(8),#nomTabla td:nth-child(8){display:none}#nomTabla td.cn{min-width:300px}}
-/* ── Turnos de acreditaciones (24-nov): la grilla día × turno ── */
-.tg-modal{max-width:min(1360px,97vw);width:97vw;max-height:94vh;display:flex;flex-direction:column;overflow:hidden}
-.tg-barra{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-4px 0 10px}
-.tg-leyenda{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.tg-leyenda .tg-chip{cursor:default}
-.tg-fs{font-size:11px;color:var(--r-muted);font-weight:400}
-.tg-cuerpo{display:flex;gap:12px;min-height:0;flex:1}
-.tg-grilla{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
-.tg-scroll{overflow:auto;min-height:0}
-.tg-grilla .tg-scroll{flex:1;border:1px solid var(--r-line);border-radius:10px}
-.tg-tabla{border-collapse:separate;border-spacing:0;font-size:12px}
-.tg-tabla th,.tg-tabla td{border-bottom:1px solid var(--r-line2);border-right:1px solid var(--r-line2);vertical-align:top;padding:6px;background:#fff}
-.tg-tabla tr:first-child th{position:sticky;top:0;z-index:2;background:#fafafa;font-size:11px;font-weight:600;color:var(--r-ink2);text-transform:capitalize;white-space:nowrap;text-align:left}
-.tg-tabla th.tg-fila-t{position:sticky;left:0;z-index:1;background:#fafafa;min-width:150px;text-align:left;text-transform:none;letter-spacing:0}
-.tg-tabla tr:first-child th.tg-fila-t{z-index:3}
-.tg-tabla th.hoy,.tg-tabla td.hoy{background:#fffdf5}
-.tg-fn{font-weight:650;color:var(--r-ink);font-size:12.5px}
-.tg-cel{display:flex;flex-direction:column;gap:4px;min-width:132px;border-radius:8px;padding:2px}
-.tg-cel.on{outline:2px solid var(--r-ink);outline-offset:1px}
-.tg-h{border:none;background:none;padding:0;font-size:10.5px;color:var(--r-muted);text-align:left;cursor:pointer;font-family:inherit}
-.tg-h:hover{color:var(--r-ink);text-decoration:underline}
-.tg-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;border-radius:7px;padding:3px 7px;border:1px solid transparent;cursor:pointer;text-align:left;font-family:inherit;white-space:nowrap}
-.tg-chip.confirmado{background:#1a1a1a;color:#fff}
-.tg-chip.avisado{background:#fff;color:#1a1a1a;border:1px dashed #6b7280}
-.tg-chip.propuesto{background:#f4f4f5;color:#52525b;border-color:#e4e4e7}
-.tg-chip.rechazado{background:#fff;color:#b91c1c;border-color:#fecaca;text-decoration:line-through}
-.tg-chip .tg-p,.tg-chip .tg-a{font-size:10px;border-radius:4px;padding:0 4px;line-height:15px}
-.tg-p{background:#16a34a;color:#fff}.tg-a{background:#dc2626;color:#fff}
-.tg-chip.pr-ausente{opacity:.75}
-.tg-libre{font-size:11px;font-weight:600;border:1px dashed #a1a1aa;background:#fff;color:#52525b;border-radius:7px;padding:3px 7px;cursor:pointer;text-align:left;font-family:inherit}
-.tg-libre:hover{border-color:var(--r-ink);color:var(--r-ink)}
-.tg-mas{font-size:11px;border:1px dashed #d4d4d8;background:#fff;color:#a1a1aa;border-radius:7px;padding:1px 7px;cursor:pointer;align-self:flex-start}
-.tg-no{color:#d4d4d8}
-.tg-resumen{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--r-muted);margin-bottom:8px}
-.tg-resumen b{color:var(--r-ink)}
-.tg-aviso{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:8px;padding:8px 11px;font-size:12px;margin-bottom:8px}
-.tg-lado{width:380px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;min-height:0;border:1px solid var(--r-line);border-radius:10px;padding:10px}
-.tg-lado-t{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:13px}
-#tgBusca{flex:none;width:100%;min-width:0}
-.tg-cands{overflow:auto;min-height:0;flex:1;display:flex;flex-direction:column;gap:6px}
-.tg-cand{display:flex;gap:8px;align-items:center;border:1px solid var(--r-line2);border-radius:9px;padding:7px 9px}
-.tg-cand-d{flex:1;min-width:0}
-.tg-cand-n{font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.tg-ok{font-size:10.5px;font-weight:600;color:#166534;background:#dcfce7;border-radius:999px;padding:1px 8px}
-.tg-ok.gris{color:#3f3f46;background:#f4f4f5}
-.tg-av{font-size:10.5px;font-weight:600;color:#92400e;background:#fef3c7;border-radius:999px;padding:1px 8px}
-.tg-n{font-size:10.5px;color:var(--r-muted)}
-.tg-armado{border:1px solid var(--r-line);border-radius:10px;padding:12px;margin-bottom:10px;background:#fafafa}
-.tg-arm-t{font-weight:650;font-size:13.5px}
-.tg-arm-s{font-size:12px;color:var(--r-muted);margin:2px 0 10px}
-.tg-arm{border-collapse:collapse;font-size:12px}
-.tg-arm th{font-size:10.5px;color:var(--r-muted);font-weight:600;text-align:left;padding:0 6px 4px}
-.tg-arm td{padding:3px 6px 3px 0}
-.tg-arm .fi{padding:6px 8px;font-size:12.5px}
-.tg-arm-acc{display:flex;gap:8px;align-items:center;margin-top:10px}
-.tg-pop{position:fixed;z-index:400;background:#fff;border:1px solid var(--r-line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:10px;width:270px;display:flex;flex-direction:column;gap:6px}
-.tg-pop-t{font-weight:650;font-size:13px}
-.tg-pop-s{font-size:11.5px;color:var(--r-muted)}
-.tg-est{font-weight:600;color:var(--r-ink)}
-.tg-pop-g{display:flex;gap:5px}
-.tg-pop-g button{flex:1;border:1px solid var(--r-line);background:#fff;border-radius:8px;padding:7px 4px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
-.tg-pop-g button.on.p{background:#16a34a;border-color:#16a34a;color:#fff}
-.tg-pop-g button.on.a{background:#dc2626;border-color:#dc2626;color:#fff}
-.tg-pop-b{border:none;background:none;text-align:left;font-size:12.5px;padding:6px 4px;border-radius:6px;cursor:pointer;font-family:inherit;color:var(--r-ink2)}
+/* ── Turnos de acreditaciones (24-nov), como en el video de RR. HH.: tarjetas por persona, tres estados ── */
+.tg-modal{max-width:min(1240px,96vw);width:96vw;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;padding:0}
+.tg-cab{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--r-line)}
+.tg-titulo{font-size:16px;font-weight:650;color:var(--r-ink);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tg-tabs{display:flex;gap:2px;background:#f1f1f4;border-radius:999px;padding:3px}
+.tg-tabs button{border:none;background:none;border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:600;color:var(--r-ink2);cursor:pointer;font-family:inherit}
+.tg-tabs button.on{background:#fff;color:var(--r-ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tg-cuerpo{padding:18px 22px 20px;overflow:auto;min-height:0;flex:1}
+.tg-scroll{overflow:auto}
+.tg-grid{display:grid;gap:8px;align-items:stretch;min-width:min-content}
+.tg-dh{font-size:13px;font-weight:600;color:var(--r-muted);padding:0 2px 4px}
+.tg-rh{display:flex;flex-direction:column;justify-content:center;gap:2px;padding-right:8px}
+.tg-rh b{font-size:14px;font-weight:650;color:var(--r-ink)}
+.tg-rh span{font-size:12.5px;color:var(--r-muted)}
+.tg-celda{display:flex;flex-direction:column;gap:6px}
+.tg-c{display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:center;text-align:left;width:100%;min-height:68px;border-radius:9px;padding:10px 13px;cursor:pointer;font-family:inherit;border:1.5px solid transparent;background:#fff}
+.tg-c b{font-size:14.5px;font-weight:650;line-height:1.25}
+.tg-c span{font-size:12.5px;line-height:1.3}
+.tg-c.conf{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.tg-c.falta{background:#fce7c8;border-color:#e2ae6a;color:#7a4a12}
+.tg-c.libre{border:1.5px dashed #6b7280;color:var(--r-ink)}
+.tg-c.libre span{color:var(--r-muted)}
+.tg-c.libre:hover{border-color:var(--r-ink)}
+.tg-c.libre.on{border:2px solid #c2410c;box-shadow:0 0 0 2px rgba(194,65,12,.15)}
+.tg-c.vacio{border:1.5px dashed #e4e4e7;background:transparent;flex:1}
+.tg-c.vacio:hover{border-color:#a1a1aa}
+.tg-pie{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:16px}
+.tg-ley{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--r-ink2)}
+.tg-ley i{width:20px;height:14px;border-radius:4px;display:inline-block}
+.tg-ley i.conf{background:#1a1a1a}.tg-ley i.falta{background:#fce7c8;border:1px solid #e2ae6a}.tg-ley i.libre{border:1.5px dashed #6b7280}
+.tg-pill{display:inline-flex;align-items:center;background:#ececf1;color:var(--r-ink);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600}
+.tg-pill.os{background:#1a1a1a;color:#fff}
+.tg-pill.warn{background:#fff4e5;color:#9a3412}
+.tg-aviso{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:8px;padding:8px 11px;font-size:12.5px;margin-bottom:12px}
+.tg-gris{color:var(--r-muted);font-size:12px;font-weight:400}
+.tg-vacio{color:var(--r-muted);font-size:13px;padding:18px 4px;text-align:center}
+.tg-nota{font-size:13px;color:var(--r-muted);margin-top:14px}
+.tg-link{border:none;background:none;padding:0;color:var(--r-ink2);text-decoration:underline;cursor:pointer;font-family:inherit;font-size:inherit}
+/* Elegir y asignar: la tarjeta al costado, con el filo naranja arriba. */
+.tg-pop{position:fixed;z-index:400;background:#fff;border:1px solid var(--r-line);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.16);padding:14px;width:330px;max-height:74vh;display:flex;flex-direction:column;gap:8px}
+.tg-pop.elegir{border-top:4px solid #c2410c}
+.tg-pop-t{font-weight:650;font-size:15px;color:var(--r-ink)}
+.tg-pop-s{font-size:12.5px;color:var(--r-muted)}
+.tg-pop-s b{color:var(--r-ink)}
+.tg-pop-lista{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:4px;margin:2px -6px}
+.tg-pc{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:9px}
+.tg-pc:hover{background:#f4f4f6}
+.tg-pc-d{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tg-pc-d b{font-size:14px;font-weight:650;color:var(--r-ink)}
+.tg-pc-d span{font-size:12.5px;color:var(--r-muted);line-height:1.35}
+.tg-pc-d span.warn{color:#c2410c}
+.tg-pc-d span.no{color:#a1a1aa}
+.tg-asig{border:1.5px solid #3f3f46;background:#fff;border-radius:8px;padding:7px 13px;font-size:13px;font-weight:650;cursor:pointer;font-family:inherit;color:var(--r-ink)}
+.tg-asig:hover{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.tg-busca{font-size:12.5px;padding:8px 10px}
+.tg-pop-pie{display:flex;justify-content:space-between;font-size:12px;color:var(--r-muted)}
+.tg-pop-b{border:none;background:none;text-align:left;font-size:13px;padding:7px 6px;border-radius:7px;cursor:pointer;font-family:inherit;color:var(--r-ink2)}
 .tg-pop-b:hover{background:#f4f4f5}
 .tg-pop-b.peligro{color:#b91c1c}
-@media (max-width:1100px){.tg-cuerpo{flex-direction:column}.tg-lado{width:auto;max-height:45vh}}
+/* Presentismo y liquidación: tablas limpias, como en el video. */
+.tg-info{display:flex;gap:26px;flex-wrap:wrap;align-items:center;background:#eef0f4;border-radius:10px;padding:11px 16px;font-size:13.5px;color:var(--r-ink2);margin-bottom:12px}
+.tg-info b{color:var(--r-ink);font-weight:600}
+.tg-sel{border:1px solid var(--r-line);border-radius:7px;padding:4px 8px;font-family:inherit;font-size:13px;font-weight:600;background:#fff}
+.tg-tabla{width:100%;border-collapse:collapse;font-size:14px}
+.tg-tabla th{text-align:left;font-size:13px;font-weight:600;color:var(--r-muted);padding:8px 12px;text-transform:none;letter-spacing:0;background:none;border-bottom:none}
+.tg-tabla td{padding:13px 12px;border-bottom:1px solid var(--r-line);color:var(--r-ink)}
+.tg-tabla b{font-weight:650}
+.tg-tabla.liq tr.tot td{font-weight:700;border-bottom:none}
+.tg-p{width:40px;height:36px;border-radius:8px;border:1.5px solid #52525b;background:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;color:#3f3f46}
+.tg-p.on{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.tg-liq-acc{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+/* Editar los turnos */
+.tg-armado{border:1px solid var(--r-line);border-radius:10px;padding:14px;background:#fafafa}
+.tg-arm-t{font-weight:650;font-size:14px}
+.tg-arm-s{font-size:12.5px;color:var(--r-muted);margin:2px 0 10px}
+.tg-arm{border-collapse:collapse;font-size:12px}
+.tg-arm th{font-size:11px;color:var(--r-muted);font-weight:600;text-align:left;padding:0 6px 4px;text-transform:none;letter-spacing:0;background:none}
+.tg-arm td{padding:3px 6px 3px 0}
+.tg-arm .fi{padding:6px 8px;font-size:12.5px}
+.tg-arm-acc{display:flex;gap:8px;align-items:center;margin-top:12px}
 /* Barra de filtros de la nómina: los desplegables no se estiran con su opción más larga (al abrirlos se lee
    entera) y las acciones van juntas a la derecha; si no entran, bajan las cuatro juntas. */
 #sec-nomina > .ctrlbar:not(.nom-filtros) .srch{flex:1 1 220px;max-width:360px}
@@ -2360,19 +2373,11 @@ tr:hover td{background:#f9f9fb}
   </div>
 </div>
 
-<!-- Modal: Turnos de acreditaciones (24-nov): la grilla día × turno, para asignar, confirmar, el presente y liquidar. -->
+<!-- Modal: Turnos de acreditaciones (24-nov), como en el video de RR. HH.: Turnos, Presentismo y Liquidación. -->
 <div class="modal-bg" id="mTurnosAcr" style="display:none" onclick="bgClose('mTurnosAcr',event)">
   <div class="modal tg-modal">
-    <div class="modal-title"><span id="tgTitulo">Turnos</span><button class="mclose" onclick="closeM('mTurnosAcr')">✕</button></div>
-    <div class="tg-barra">
-      <div class="tg-leyenda"><span class="tg-chip confirmado">Confirmado</span><span class="tg-chip avisado">Falta confirmar</span><span class="tg-chip propuesto">Sin avisar</span><span class="tg-chip rechazado">No puede</span><span class="tg-libre" style="cursor:default">+ Libre</span><span class="tg-fs">Tocá a alguien para el presente (P / A): con la P le sale el contrato de esa jornada.</span></div>
-      <span style="flex:1"></span>
-      <button class="btn btn-sec btn-sm" onclick="tgArmar()" title="Los turnos de cada día: nombre, franja, horario, cupo, monto y puesto">Armar turnos</button>
-      <button class="btn btn-sec btn-sm" id="tgBtnAvisar" onclick="tgAvisar()" title="Un mail a cada persona con sus turnos y un botón para confirmarlos">✉ Avisar</button>
-      <button class="btn btn-sec btn-sm" onclick="exportLiquidacion()" title="El total de cada persona (jornadas presentes por el monto de cada turno), con el CBU">↓ Liquidación</button>
-    </div>
-    <div id="tgArmado" class="tg-armado" style="display:none"></div>
-    <div class="tg-cuerpo"><div id="tgGrilla" class="tg-grilla"></div><div id="tgLado" class="tg-lado" style="display:none"></div></div>
+    <div class="tg-cab"><div class="tg-titulo" id="tgTitulo">Turnos</div><div class="tg-tabs" id="tgTabs"></div><button class="mclose" onclick="tgCerrarPop();closeM('mTurnosAcr')">✕</button></div>
+    <div id="tgCuerpo" class="tg-cuerpo"></div>
   </div>
 </div>
 <div id="tgPop" class="tg-pop" style="display:none"></div>
@@ -3345,6 +3350,7 @@ async function loadAll() {
   const archCfg = (cfgData || []).find(c => c.key === 'archivadas');
   const archSet = new Set(Array.isArray(archCfg && archCfg.value) ? archCfg.value : []);
   convs.forEach(c => { c.archivada = archSet.has(c.id); });
+  tgLiqPara = String(((((cfgData || []).find(c => c.key === 'liquidaciones_para') || {}).value) || {}).mail || '');
   const plCfg = (cfgData || []).find(c => c.key === 'contrato_plantilla');
   if (plCfg && plCfg.value && typeof plCfg.value === 'object') contratoPlantillas = plCfg.value;
   const docsCfg = (cfgData || []).find(c => c.key === 'documentos_firma');
@@ -4950,6 +4956,24 @@ function armarHoja(libro, h, nombre, idLogo) {
     hoja.autoFilter = { from: { row: filaCab, column: 1 }, to: { row: filaCab + texto.length - 1, column: ancho } };
   }
   return hoja;
+}
+// El libro armado, en memoria (para bajarlo o mandarlo adjunto). null si no hay nada o falló.
+async function armarLibroBuffer(hojas) {
+  const conDatos = (hojas || []).filter(h => h && h.filas && h.filas.length);
+  if (!conDatos.length) { toast('No hay nada para exportar'); return null; }
+  try {
+    const libro = new ExcelJS.Workbook();
+    libro.creator = 'Show Business Solutions';
+    const logo = await logoParaExcel();
+    const idLogo = logo ? libro.addImage({ base64: logo, extension: 'png' }) : null;
+    const usados = {};
+    conDatos.forEach(h => armarHoja(libro, h, nombreDeHoja(h.nombre, usados), idLogo));
+    return await libro.xlsx.writeBuffer();
+  } catch (err) {
+    console.error('excel', err);
+    toast('No se pudo armar el Excel: ' + (err && err.message || err));
+    return null;
+  }
 }
 async function descargarLibro(nombreArchivo, hojas) {
   const conDatos = (hojas || []).filter(h => h && h.filas && h.filas.length);
@@ -10062,22 +10086,25 @@ function bajarTurnosWa() {
 }
 
 // ── TURNOS DE ACREDITACIONES (24-nov) ──
-// La propuesta de RR. HH. (video "Turnos de acreditaciones, paso a paso", aprobada el 24-nov): "una sola grilla para
-// convocar, confirmar y liquidar". Una grilla por evento, día × turno (Operador TM, TT, TN…):
-//  1. los operadores mandan su disponibilidad por franja (la página de disponibilidad de siempre, un botón por turno);
-//  2. acá se arman los turnos de cada día (nombre, franja, horario, cupo, monto y puesto) y se cambia el horario de un día;
-//  3. al tocar un turno libre, los que pueden ese turno (con avisos: otro turno ese día, la noche anterior, días
-//     seguidos, otro evento); asignar y avisar por mail, y la persona confirma desde el celular (confirmar-turno.html);
-//  4. con la P de un turno sale el contrato de esa jornada (lo arma y lo manda el servidor: api/contrato-al-confirmar,
-//     accion 'turno'); con la A, el que no firmó se anula;
-//  5. la liquidación sale sola (Liquidación con CBU: jornadas, presentes y el total con el monto de cada turno).
+// Hecho sobre el video de RR. HH. "Turnos de acreditaciones, paso a paso" (aprobado el 24-nov; Thomas: "quiero basar
+// la funcionalidad, visual, etc. en los videos de Mercedes"): "una sola grilla para convocar, confirmar y liquidar".
+// Tres vistas del evento, como en el video:
+//  · Turnos: día × turno (Operador TM, TT, TN…), una tarjeta por persona con su apellido y el horario: Confirmado
+//    (negro), Falta confirmar (durazno) o Libre (punteada, con cuántos tienen dispo). Tocando una celda vacía se carga
+//    el turno ese día y tocando el horario se cambia. Al tocar Libre: "Con dispo ese día y franja", cada uno con una
+//    línea (los días de descanso, o el aviso en naranja: ya tiene la noche del sábado…) y Asignar: le llega el aviso
+//    por mail al instante y confirma desde el celular (confirmar-turno.html); la grilla lo ve sola.
+//  · Presentismo: por jornada, la P de cada uno; con la P sale el contrato de esa jornada (lo arma el servidor:
+//    api/contrato-al-confirmar, accion 'turno'); sacándola, el que no firmó se anula.
+//  · Liquidación: jornadas, presentes y el total con el monto de cada turno; Descargar Excel o Enviar a SBS
+//    Liquidaciones (el mail queda guardado en config.liquidaciones_para).
 // Los turnos son los de siempre (convocatorias.turnos, varios por día, cada uno con su id); la asignación de cada
 // persona va en su postulación: asignaciones { turno: propuesto | avisado | confirmado | rechazado }. Ver
 // turnos-acreditaciones.sql.
 const TG_FRANJAS = ['Mañana', 'Tarde', 'Noche'];
-const TG_ESTADOS = { propuesto: 'Sin avisar', avisado: 'Falta confirmar', confirmado: 'Confirmado', rechazado: 'No puede' };
-const TG_ORDEN_EST = { confirmado: 0, avisado: 1, propuesto: 2, rechazado: 3 };
+const TG_ESTADOS = { propuesto: 'Falta confirmar', avisado: 'Falta confirmar', confirmado: 'Confirmado', rechazado: 'No puede' };
 let asignacionesEnBase = true, tgConvId = null, tgDispo = [], tgDispoGen = [], tgPorDoc = new Map(), tgSlotElegido = null, tgBusca = '', tgArmadoFilas = null;
+let tgVista = 'turnos', tgJornada = '', tgAviso = '', tgReloj = null, tgErrores = {}, tgLiqPara = '', tgEnviada = '';
 
 function asignacionesDe(post) { return post && post.asignaciones && typeof post.asignaciones === 'object' ? post.asignaciones : {}; }
 function tgTurnos(c) { return (Array.isArray(c && c.turnos) ? c.turnos : []).filter(t => t && t.id && t.fecha); }
@@ -10092,22 +10119,37 @@ function tgGrilla(c) {
   return { dias, filas, celda: (dia, clave) => ts.find(t => t.fecha === dia && tgClave(t) === clave) || null };
 }
 function tgEnTurno(convId, slotId) { return posts.filter(x => x.convId === convId && asignacionesDe(x)[slotId]); }
+function tgActivos(convId, slotId) { return tgEnTurno(convId, slotId).filter(x => asignacionesDe(x)[slotId] !== 'rechazado'); }
 const tgMonto = v => { const t = String(v == null ? '' : v).trim(); const n = Number(/,\d{1,2}$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t.replace(/[.,](?=\d{3}(\D|$))/g, '').replace(/[^\d.]/g, '')); return n > 0 ? n : 0; };
 const tgPlata = n => '$ ' + Math.round(n).toLocaleString('es-AR');
 const tgIsoMas = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return isoDe(d); };
-function tgDia(f) { const d = new Date(f + 'T12:00:00'); return isNaN(d) ? f : d.toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', '') + ' ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'); }
+const tgDiasEntre = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5);
+// "Jue 3/12", como en el video.
+function tgDia(f) { const d = new Date(f + 'T12:00:00'); if (isNaN(d)) return f; const s = d.toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', ''); return s.charAt(0).toUpperCase() + s.slice(1) + ' ' + d.getDate() + '/' + (d.getMonth() + 1); }
 function tgDiaLargo(f) { const d = new Date(f + 'T12:00:00'); if (isNaN(d)) return f; const t = d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); }
+const tgSemana = f => { const d = new Date(f + 'T12:00:00'); return isNaN(d) ? f : d.toLocaleDateString('es-AR', { weekday: 'long' }); };
 function tgNombreDe(x) { const p = personaPorId(x.personaId); return nombrePropio((p && p.nombre) || x.nombre || ''); }
-function tgNombreCorto(x) { const n = tgNombreDe(x).split(/\s+/).filter(Boolean); return n.length > 1 ? n[0] + ' ' + n[n.length - 1] : (n[0] || '—'); }
+function tgApellido(x) { const a = apellidoYNombre(tgNombreDe(x)); return a.apellido || a.nombre || '—'; }
+function tgApNom(nombre) { const a = apellidoYNombre(nombrePropio(nombre || '')); return a.apellido ? a.apellido + ', ' + a.nombre : a.nombre; }
+function tgNombreCorto(x) { return tgApNom(tgNombreDe(x)); }
 function tgSlot(c, id) { return tgTurnos(c).find(t => t.id === id) || null; }
+// "9 hs día" / "9 hs noche", del horario.
+function tgDuracion(f) {
+  const m = String(f.horario || '').match(/(\d{1,2})[:.](\d{2})\D+(\d{1,2})[:.](\d{2})/);
+  const mom = /noche/i.test(f.franja || '') ? 'noche' : 'día';
+  if (!m) return f.franja || '';
+  let min = (+m[3] * 60 + +m[4]) - (+m[1] * 60 + +m[2]); if (min <= 0) min += 1440;
+  const h = Math.round(min / 6) / 10;
+  return String(h).replace('.', ',') + ' hs ' + mom;
+}
+const tgFranjaTxt = t => (t.franja || t.nombre || 'turno').toLowerCase();
+const tgCodigo = t => { const m = String(t.nombre || '').match(/\bT[MTN]\b/i); return m ? m[0].toUpperCase() : (t.franja || t.nombre || ''); };
 
 async function openTurnosAcr() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
-  tgConvId = c.id; tgSlotElegido = null; tgBusca = ''; tgArmadoFilas = null;
-  document.getElementById('tgTitulo').textContent = 'Turnos — ' + c.nombre;
-  document.getElementById('tgArmado').style.display = 'none';
-  document.getElementById('tgLado').style.display = 'none';
-  document.getElementById('tgGrilla').innerHTML = '<div class="empty">Cargando…</div>';
+  tgConvId = c.id; tgSlotElegido = null; tgBusca = ''; tgArmadoFilas = null; tgVista = 'turnos'; tgAviso = ''; tgJornada = ''; tgEnviada = '';
+  tgCerrarPop();
+  document.getElementById('tgCuerpo').innerHTML = '<div class="empty">Cargando…</div>';
   showM('mTurnosAcr');
   tgPorDoc = new Map(); people.forEach(p => { const d = docNucleo(p.cuit); if (d && !tgPorDoc.has(d)) tgPorDoc.set(d, p); });
   // La disponibilidad: la de este evento (por turno) y la de las generales de sus días (por día).
@@ -10117,69 +10159,114 @@ async function openTurnosAcr() {
   for (const g of dispGeneralesPara(c)) {
     try { const fechaDe = new Map(slotsDe(g).map(s => [s.id, s.fecha])); (await traer(g.id)).forEach(r => tgDispoGen.push({ cuit: r.cuit, dias: new Set((r.fechas || []).map(id => fechaDe.get(id)).filter(Boolean)) })); } catch (_) {}
   }
-  if (tgTurnos(c).length && !tgEsGrilla(c)) tgArmar();
+  if (!tgEsGrilla(c)) tgArmar();
   renderTurnosAcr();
+  // Lo que confirman desde el celular aparece solo (cada 20 segundos, mientras la ventana está abierta).
+  clearInterval(tgReloj); tgReloj = setInterval(tgRefrescar, 20000);
+}
+async function tgRefrescar() {
+  const m = document.getElementById('mTurnosAcr');
+  if (!m || m.style.display === 'none') { clearInterval(tgReloj); tgReloj = null; return; }
+  const c = convs.find(x => x.id === tgConvId); if (!c || !asignacionesEnBase) return;
+  try {
+    const { data, error } = await sb.from('postulaciones').select('id,asignaciones,presentes').eq('conv_id', c.id);
+    if (error || !data) return;
+    let cambio = false;
+    data.forEach(r => {
+      const x = posts.find(p => p.id === r.id); if (!x) return;
+      const antes = asignacionesDe(x), ahora = r.asignaciones || {};
+      Object.keys(ahora).forEach(k => {
+        if (ahora[k] === antes[k]) return;
+        const t = tgSlot(c, k), nom = tgNombreDe(x).split(/\s+/)[0] || tgApellido(x);
+        if (ahora[k] === 'confirmado') tgAviso = nom + ' confirmó desde el celular';
+        if (ahora[k] === 'rechazado') tgAviso = nom + ' avisó que no puede' + (t ? ' el ' + tgDia(t.fecha) : '');
+      });
+      if (JSON.stringify(antes) !== JSON.stringify(ahora)) { x.asignaciones = ahora; cambio = true; }
+    });
+    if (cambio && !tgArmadoFilas) renderTurnosAcr();
+  } catch (_) {}
 }
 
+function tgIrA(v) { tgVista = v; tgCerrarPop(); renderTurnosAcr(); }
 function renderTurnosAcr() {
   const c = convs.find(x => x.id === tgConvId); if (!c) return;
-  const el = document.getElementById('tgGrilla'), g = tgGrilla(c), hoy = hoyLocalISO();
-  const btn = document.getElementById('tgBtnAvisar');
-  const sinAvisar = posts.filter(x => x.convId === c.id && Object.values(asignacionesDe(x)).includes('propuesto')).length;
-  if (btn) { btn.textContent = sinAvisar ? '✉ Avisar a ' + sinAvisar : '✉ Avisar'; btn.disabled = !sinAvisar; }
-  if (!g.dias.length) { el.innerHTML = '<div class="empty">Este evento todavía no tiene días. Cargalos en "Editar" (el calendario) y después armá los turnos acá.</div>'; return; }
-  let cub = 0, falta = 0, sinAv = 0, libres = 0;
-  const celdas = g.filas.map(f => g.dias.map(d => {
-    const t = g.celda(d, f.clave); if (!t) return '<td><span class="tg-no">—</span></td>';
-    const en = tgEnTurno(c.id, t.id).sort((a, b) => (TG_ORDEN_EST[asignacionesDe(a)[t.id]] ?? 9) - (TG_ORDEN_EST[asignacionesDe(b)[t.id]] ?? 9) || tgNombreDe(a).localeCompare(tgNombreDe(b), 'es'));
-    const ocupan = en.filter(x => asignacionesDe(x)[t.id] !== 'rechazado'), cupo = Number(t.cupo) || 0, lib = cupo ? Math.max(0, cupo - ocupan.length) : (ocupan.length ? 0 : 1);
-    ocupan.forEach(x => { const s = asignacionesDe(x)[t.id]; if (s === 'confirmado') cub++; else if (s === 'avisado') falta++; else sinAv++; }); libres += lib;
-    const chips = en.map(x => {
-      const s = asignacionesDe(x)[t.id], pr = presentesDe(x)[t.id];
-      const k = contratos.find(z => z.postulacion_id === x.id && z.turno_id === t.id && z.estado !== 'anulado');
-      return `<button type="button" class="tg-chip ${e(s)}${pr ? ' pr-' + pr : ''}" onclick="tgMenu(event,'${x.id}','${e(t.id)}')" title="${e(tgNombreDe(x) + ' · ' + (TG_ESTADOS[s] || s) + (pr === 'presente' ? ' · Presente' : pr === 'ausente' ? ' · Faltó' : '') + (k ? ' · Contrato ' + (k.estado === 'firmado' ? 'firmado' : 'sin firmar') : ''))}">${pr === 'presente' ? '<b class="tg-p">P</b>' : pr === 'ausente' ? '<b class="tg-a">A</b>' : ''}${e(tgNombreCorto(x))}${k && k.estado === 'firmado' ? ' <i class="ic ic-firma"></i>' : ''}</button>`;
-    }).join('');
-    const mas = lib ? `<button type="button" class="tg-libre" onclick="tgElegir('${e(t.id)}')">+ Libre${lib > 1 ? ' (' + lib + ')' : ''}</button>` : `<button type="button" class="tg-mas" onclick="tgElegir('${e(t.id)}')" title="Sumar a alguien más (pasa del cupo)">+</button>`;
-    return `<td class="${d === hoy ? 'hoy' : ''}"><div class="tg-cel${tgSlotElegido === t.id ? ' on' : ''}"><button type="button" class="tg-h" onclick="tgHorario('${e(t.id)}')" title="Cambiar el horario de este día">${e(t.horario || 'sin horario')}</button>${chips}${mas}</div></td>`;
-  }).join(''));
-  const cab = '<tr><th class="tg-fila-t"></th>' + g.dias.map(d => `<th class="${d === hoy ? 'hoy' : ''}">${e(tgDia(d))}</th>`).join('') + '</tr>';
-  const cuerpo = g.filas.map((f, i) => '<tr><th class="tg-fila-t"><div class="tg-fn">' + e(f.nombre || f.horario || 'Turno') + '</div><div class="tg-fs">'
-    + [f.franja, f.cupo ? 'cupo ' + f.cupo : '', tgMonto(f.monto) ? tgPlata(tgMonto(f.monto)) : 'sin monto'].filter(Boolean).map(e).join(' · ') + '</div></th>' + celdas[i] + '</tr>').join('');
+  const titulo = { turnos: 'Turnos de acreditaciones', presentismo: 'Presentismo', liquidacion: 'Liquidación' }[tgVista];
+  document.getElementById('tgTitulo').innerHTML = e(String(c.nombre || '').split(' — ')[0]) + ' · ' + titulo;
+  document.getElementById('tgTabs').innerHTML = [['turnos', 'Turnos'], ['presentismo', 'Presentismo'], ['liquidacion', 'Liquidación']]
+    .map(([k, t]) => `<button type="button" class="${tgVista === k ? 'on' : ''}" onclick="tgIrA('${k}')">${t}</button>`).join('');
+  const el = document.getElementById('tgCuerpo');
   const faltaSql = asignacionesEnBase ? '' : '<div class="tg-aviso">Para asignar turnos falta correr <b>turnos-acreditaciones.sql</b> en Supabase.</div>';
-  const sinFilas = !tgEsGrilla(c) ? '<div class="tg-aviso">Todavía no están armados los turnos de cada día: tocá <b>Armar turnos</b>.</div>' : '';
-  el.innerHTML = faltaSql + sinFilas + `<div class="tg-resumen"><span><b>${cub}</b> confirmado${cub === 1 ? '' : 's'}</span><span><b>${falta}</b> falta confirmar</span><span><b>${sinAv}</b> sin avisar</span><span><b>${libres}</b> libre${libres === 1 ? '' : 's'}</span></div>`
-    + `<div class="tg-scroll"><table class="tg-tabla">${cab}${cuerpo}</table></div>`;
+  if (!tgTurnos(c).length) { el.innerHTML = '<div class="empty">Este evento todavía no tiene días. Cargalos en "Editar" (el calendario) y después armá los turnos acá.</div>'; return; }
+  if (tgVista === 'presentismo') { el.innerHTML = faltaSql + tgPresentismoHTML(c); return; }
+  if (tgVista === 'liquidacion') { el.innerHTML = tgLiquidacionHTML(c); return; }
+  if (tgArmadoFilas) { el.innerHTML = tgArmadoHTML(c); return; }
+  el.innerHTML = faltaSql + tgGrillaHTML(c);
+}
+function tgGrillaHTML(c) {
+  const g = tgGrilla(c);
+  const cab = '<div></div>' + g.dias.map(d => `<div class="tg-dh">${e(tgDia(d))}</div>`).join('');
+  const filas = g.filas.map(f => `<div class="tg-rh"><b>${e(f.nombre || f.horario || 'Turno')}</b><span>${e(tgDuracion(f))}</span></div>` + g.dias.map(d => {
+    const t = g.celda(d, f.clave);
+    if (!t) return `<div class="tg-celda"><button type="button" class="tg-c vacio" onclick="tgCrearCelda('${d}','${e(f.clave)}')" title="Cargar este turno el ${e(tgDia(d))}"></button></div>`;
+    const en = tgActivos(c.id, t.id).sort((a, b) => (asignacionesDe(a)[t.id] === 'confirmado' ? 0 : 1) - (asignacionesDe(b)[t.id] === 'confirmado' ? 0 : 1));
+    const cupo = Math.max(1, Number(t.cupo) || 1), libres = Math.max(0, cupo - en.length);
+    const cards = en.map(x => { const conf = asignacionesDe(x)[t.id] === 'confirmado';
+      return `<button type="button" class="tg-c ${conf ? 'conf' : 'falta'}" onclick="tgMenu(event,'${x.id}','${e(t.id)}')" title="${e(tgNombreDe(x) + ' · ' + (conf ? 'Confirmado' : 'Falta confirmar'))}"><b>${e(tgApellido(x))}</b><span>${e(t.horario || '')}</span></button>`; }).join('');
+    const nDispo = libres ? tgCandidatos(c, t).filter(z => z.fuente !== 'nomina').length : 0;
+    const lib = Array.from({ length: libres }, () => `<button type="button" class="tg-c libre${tgSlotElegido === t.id ? ' on' : ''}" onclick="tgElegir('${e(t.id)}',this)"><b>Libre</b><span>${nDispo ? nDispo + ' con dispo' : e(t.horario || 'sin horario')}</span></button>`).join('');
+    return `<div class="tg-celda">${cards}${lib}</div>`;
+  }).join('')).join('');
+  return `<div class="tg-scroll"><div class="tg-grid" style="grid-template-columns:150px repeat(${g.dias.length},minmax(150px,1fr))">${cab}${filas}</div></div>
+    <div class="tg-pie"><span class="tg-ley"><i class="conf"></i>Confirmado</span><span class="tg-ley"><i class="falta"></i>Falta confirmar</span><span class="tg-ley"><i class="libre"></i>Libre</span>
+      ${tgAviso ? `<span class="tg-pill">${e(tgAviso)}</span>` : ''}<span style="flex:1"></span>
+      <button type="button" class="btn btn-sec btn-sm" onclick="tgArmar()" title="Los turnos de cada día: nombre, franja, horario, cupo, monto y puesto">Editar turnos</button></div>`;
+}
+// Tocar una celda vacía carga ese turno ese día (con lo de la fila: horario, cupo, monto y puesto).
+async function tgCrearCelda(dia, clave) {
+  const c = convs.find(x => x.id === tgConvId); if (!c) return;
+  const modelo = tgTurnos(c).find(t => tgClave(t) === clave); if (!modelo) return;
+  const nuevo = { id: uid(), fecha: dia, horario: modelo.horario || '', nombre: modelo.nombre || '', franja: modelo.franja || '', cupo: modelo.cupo || 1, monto: modelo.monto == null ? '' : modelo.monto, puestoId: modelo.puestoId || '' };
+  const nuevos = tgTurnos(c).concat([nuevo]);
+  try { await sbUpdate('convocatorias', c.id, { turnos: nuevos }); c.turnos = nuevos; } catch (_) { return; }
+  renderTurnosAcr();
+}
+async function tgQuitarCelda(slotId) {
+  const c = convs.find(x => x.id === tgConvId), t = tgSlot(c, slotId); if (!t) return;
+  if (posts.some(x => x.convId === c.id && (asignacionesDe(x)[slotId] || presentesDe(x)[slotId]))) { toast('Ese turno tiene gente asignada: sacala primero'); return; }
+  if (!confirm('¿Sacar ' + (t.nombre || 'este turno') + ' del ' + tgDia(t.fecha) + '?')) return;
+  const nuevos = tgTurnos(c).filter(x => x.id !== slotId);
+  try { await sbUpdate('convocatorias', c.id, { turnos: nuevos }); c.turnos = nuevos; } catch (_) { return; }
+  tgCerrarPop(); renderTurnosAcr();
 }
 
-// ── Armar los turnos de cada día ──
+// ── Editar los turnos de cada día ──
 function tgArmar() {
   const c = convs.find(x => x.id === tgConvId); if (!c) return;
   const g = tgGrilla(c), pid = ((c.puestos || [])[0] || {}).id || '';
+  tgCerrarPop();
   tgArmadoFilas = g.filas.some(f => f.nombre)
     ? g.filas.filter(f => f.nombre).map(f => Object.assign({}, f, { claveOriginal: f.clave, horarioOriginal: f.horario }))
     : [{ nombre: 'Operador TM', franja: 'Mañana', horario: '09:00 a 18:00', cupo: 1, monto: '', puestoId: pid },
        { nombre: 'Operador TT', franja: 'Tarde', horario: '14:00 a 23:00', cupo: 1, monto: '', puestoId: pid },
        { nombre: 'Operador TN', franja: 'Noche', horario: '22:00 a 07:00', cupo: 1, monto: '', puestoId: pid }];
-  renderTgArmado();
+  renderTurnosAcr();
 }
-function renderTgArmado() {
-  const c = convs.find(x => x.id === tgConvId), el = document.getElementById('tgArmado'); if (!c || !el) return;
-  if (!tgArmadoFilas) { el.style.display = 'none'; return; }
-  const dias = [...new Set(tgTurnos(c).map(t => t.fecha))], pues = c.puestos || [];
+function renderTgArmado() { renderTurnosAcr(); }
+function tgArmadoHTML(c) {
+  const dias = [...new Set(tgTurnos(c).map(t => t.fecha))], pues = c.puestos || [], yaHay = tgEsGrilla(c);
   const inp = (i, k, ph, extra) => `<input class="fi" value="${e(tgArmadoFilas[i][k] == null ? '' : tgArmadoFilas[i][k])}" oninput="tgArmadoFilas[${i}].${k}=this.value" placeholder="${ph}"${extra || ''}>`;
-  el.innerHTML = `<div class="tg-arm-t">Los turnos de cada día</div>
-    <div class="tg-arm-s">Cada fila es un turno que se repite los ${dias.length} días del evento. El monto es el de una jornada (va en el contrato y en la liquidación). Después, el horario de un día puntual se cambia tocándolo en la grilla.</div>
+  return `<div class="tg-armado"><div class="tg-arm-t">${yaHay ? 'Editar los turnos' : 'Los turnos de cada día'}</div>
+    <div class="tg-arm-s">Cada fila es un turno que se repite los ${dias.length} días del evento. El monto es el de una jornada: va en el contrato y en la liquidación.</div>
     ${pues.length ? '' : '<div class="tg-aviso">El evento no tiene puestos: creá uno (por ejemplo, "Operador de acreditaciones") para que el contrato diga el puesto.</div>'}
-    <div class="tg-scroll"><table class="tg-arm"><tr><th>Nombre</th><th>Franja</th><th>Horario</th><th>Cupo por día</th><th>Monto por jornada</th><th>Puesto (contrato)</th><th></th></tr>
+    <div class="tg-scroll"><table class="tg-arm"><tr><th>Turno</th><th>Franja</th><th>Horario</th><th>Cupo por día</th><th>Monto por jornada</th><th>Puesto (contrato)</th><th></th></tr>
     ${tgArmadoFilas.map((f, i) => `<tr><td>${inp(i, 'nombre', 'Operador TM')}</td>
       <td><select class="fi" onchange="tgArmadoFilas[${i}].franja=this.value">${[''].concat(TG_FRANJAS).map(x => `<option value="${x}"${x === (f.franja || '') ? ' selected' : ''}>${x || '—'}</option>`).join('')}</select></td>
-      <td>${inp(i, 'horario', '09:00 a 18:00')}</td><td>${inp(i, 'cupo', '1', ' type="number" min="0" style="width:76px"')}</td><td>${inp(i, 'monto', '45000', ' inputmode="decimal" style="width:110px"')}</td>
+      <td>${inp(i, 'horario', '09:00 a 18:00')}</td><td>${inp(i, 'cupo', '1', ' type="number" min="1" style="width:76px"')}</td><td>${inp(i, 'monto', '45000', ' inputmode="decimal" style="width:110px"')}</td>
       <td><select class="fi" onchange="tgArmadoFilas[${i}].puestoId=this.value">${pues.length ? pues.map(p => `<option value="${p.id}"${p.id === f.puestoId ? ' selected' : ''}>${e(p.nombre)}</option>`).join('') : '<option value="">—</option>'}</select></td>
-      <td><button type="button" class="btn btn-sec btn-xs" onclick="tgArmadoFilas.splice(${i},1);renderTgArmado()" title="Sacar este turno">✕</button></td></tr>`).join('')}</table></div>
-    <div class="tg-arm-acc"><button type="button" class="btn btn-sec btn-sm" onclick="tgArmadoFilas.push({nombre:'',franja:'',horario:'',cupo:1,monto:'',puestoId:'${e(((pues[0] || {}).id) || '')}'});renderTgArmado()">+ Turno</button>
-      <span style="flex:1"></span><button type="button" class="btn btn-sec btn-sm" onclick="tgArmadoFilas=null;renderTgArmado()">Cancelar</button>
-      <button type="button" class="btn btn-primary btn-sm" onclick="tgArmadoAplicar()">Aplicar a todos los días</button></div>`;
-  el.style.display = 'block';
+      <td><button type="button" class="btn btn-sec btn-xs" onclick="tgArmadoFilas.splice(${i},1);renderTurnosAcr()" title="Sacar este turno">✕</button></td></tr>`).join('')}</table></div>
+    <div class="tg-arm-acc"><button type="button" class="btn btn-sec btn-sm" onclick="tgArmadoFilas.push({nombre:'',franja:'',horario:'',cupo:1,monto:'',puestoId:'${e(((pues[0] || {}).id) || '')}'});renderTurnosAcr()">+ Turno</button>
+      <span style="flex:1"></span>${yaHay ? '<button type="button" class="btn btn-sec btn-sm" onclick="tgArmadoFilas=null;renderTurnosAcr()">Cancelar</button>' : ''}
+      <button type="button" class="btn btn-primary btn-sm" onclick="tgArmadoAplicar()">Aplicar a todos los días</button></div></div>`;
 }
 async function tgArmadoAplicar() {
   const c = convs.find(x => x.id === tgConvId); if (!c || !tgArmadoFilas) return;
@@ -10193,75 +10280,100 @@ async function tgArmadoAplicar() {
     filas.forEach(f => {
       // El mismo turno de ese día (o uno viejo sin nombre, para no perder su disponibilidad ni sus presentes).
       const t = (f.claveOriginal && delDia.find(x => !usados.has(x.id) && tgClave(x) === f.claveOriginal)) || delDia.find(x => !usados.has(x.id) && !x.nombre) || null;
+      // Un turno que ya existía y no estaba ese día (se había sacado de la grilla): sigue sin estar.
+      if (!t && f.claveOriginal && ts.some(x => tgClave(x) === f.claveOriginal)) return;
       if (t) usados.add(t.id);
       const horario = t && t.nombre && f.horario === f.horarioOriginal ? (t.horario || f.horario) : f.horario;
-      nuevos.push(Object.assign({}, t || { id: uid(), fecha: d }, { nombre: f.nombre, franja: f.franja || '', horario, cupo: Number(f.cupo) || 0, monto: String(f.monto == null ? '' : f.monto).trim(), puestoId: f.puestoId || '' }));
+      nuevos.push(Object.assign({}, t || { id: uid(), fecha: d }, { nombre: f.nombre, franja: f.franja || '', horario, cupo: Math.max(1, Number(f.cupo) || 1), monto: String(f.monto == null ? '' : f.monto).trim(), puestoId: f.puestoId || '' }));
     });
   });
   const sacados = ts.filter(t => !usados.has(t.id));
   const conGente = sacados.filter(t => posts.some(x => x.convId === c.id && (asignacionesDe(x)[t.id] || presentesDe(x)[t.id])));
   if (conGente.length) { toast('No se puede sacar ' + (conGente[0].nombre || conGente[0].horario || 'ese turno') + ' del ' + tgDia(conGente[0].fecha) + ': tiene gente asignada o con presente. Sacala primero del turno.'); return; }
-  if (sacados.length && !confirm('Se sacan ' + sacados.length + ' turno(s) que ya no están en la lista (lo que marcaron en la disponibilidad para esos turnos se pierde). ¿Seguir?')) return;
+  if (sacados.filter(t => t.nombre).length && !confirm('Se sacan ' + sacados.filter(t => t.nombre).length + ' turno(s) que ya no están en la lista. ¿Seguir?')) return;
   try { await sbUpdate('convocatorias', c.id, { turnos: nuevos }); c.turnos = nuevos; } catch (_) { return; }
-  tgArmadoFilas = null; renderTgArmado(); renderTurnosAcr();
-  toast(nuevos.length + ' turnos: ' + dias.length + ' día' + (dias.length === 1 ? '' : 's') + ' × ' + filas.length);
+  tgArmadoFilas = null; renderTurnosAcr();
+  toast('Turnos listos: ' + dias.length + ' día' + (dias.length === 1 ? '' : 's') + ' × ' + filas.length);
 }
-// El horario de un día puntual (p. ej. el sábado la noche arranca más tarde).
+// El horario de un día puntual (p. ej. el sábado la mañana arranca más temprano).
 async function tgHorario(slotId) {
   const c = convs.find(x => x.id === tgConvId), t = tgSlot(c, slotId); if (!t) return;
   const v = prompt('Horario de ' + (t.nombre || 'este turno') + ' el ' + tgDiaLargo(t.fecha) + ':', t.horario || '');
   if (v === null || v.trim() === (t.horario || '')) return;
   const nuevos = tgTurnos(c).map(x => x.id === slotId ? Object.assign({}, x, { horario: v.trim() }) : x);
   try { await sbUpdate('convocatorias', c.id, { turnos: nuevos }); c.turnos = nuevos; } catch (_) { return; }
-  renderTurnosAcr();
+  tgCerrarPop(); renderTurnosAcr();
 }
 
-// ── Asignar: los que pueden ese turno ──
-function tgElegir(slotId) { tgSlotElegido = slotId; tgBusca = ''; tgCerrarPop(); renderTurnosAcr(); renderTgLado(); }
-function tgCerrarLado() { tgSlotElegido = null; document.getElementById('tgLado').style.display = 'none'; renderTurnosAcr(); }
-// Lo que conviene saber antes de asignar a alguien a ese turno.
+// ── Elegir entre los que pueden y asignar ──
+// Lo que conviene saber antes de asignar a alguien a ese turno (en una línea, como en el video).
 function tgAvisos(c, t, per) {
   const mios = new Set();
   posts.filter(x => x.convId === c.id && x.personaId === per.id).forEach(x => Object.entries(asignacionesDe(x)).forEach(([k, v]) => { if (v !== 'rechazado') mios.add(k); }));
   const mt = tgTurnos(c).filter(x => mios.has(x.id) && x.id !== t.id), av = [];
-  mt.filter(x => x.fecha === t.fecha).forEach(x => av.push('Ya tiene ' + (x.nombre || x.horario || 'otro turno') + ' ese día'));
-  if (t.franja !== 'Noche' && mt.some(x => x.fecha === tgIsoMas(t.fecha, -1) && x.franja === 'Noche')) av.push('Viene de la noche anterior');
+  mt.filter(x => x.fecha === t.fecha).forEach(x => av.push('Ya tiene la ' + tgFranjaTxt(x) + ' de ese día'));
+  if (t.franja === 'Noche') mt.filter(x => x.franja === 'Noche' && Math.abs(tgDiasEntre(t.fecha, x.fecha)) === 1).forEach(x => av.push('Ya tiene la noche del ' + tgSemana(x.fecha)));
+  if (t.franja !== 'Noche') { const ant = mt.find(x => x.franja === 'Noche' && x.fecha === tgIsoMas(t.fecha, -1)); if (ant) av.push('Viene de la noche del ' + tgSemana(ant.fecha)); }
   if (t.franja === 'Noche' && mt.some(x => x.fecha === tgIsoMas(t.fecha, 1) && x.franja === 'Mañana')) av.push('Al otro día tiene la mañana');
   const dias = new Set(mt.map(x => x.fecha).concat([t.fecha]));
   let n = 1; for (let d = tgIsoMas(t.fecha, -1); dias.has(d); d = tgIsoMas(d, -1)) n++; for (let d = tgIsoMas(t.fecha, 1); dias.has(d); d = tgIsoMas(d, 1)) n++;
   if (n >= 4) av.push(n + ' días seguidos');
-  if (per.out_flag) av.push('OUT');
+  if (per.out_flag) av.push('Está en OUT');
   if ((per.semaforo || 1) === 3) av.push('Semáforo rojo');
   if (dondeEsta(per).some(x => x.convId !== c.id && x.fechas.includes(t.fecha))) av.push('Está en otro evento ese día');
-  return { avisos: av, turnos: mt.length };
+  // Si no hay nada que avisar: cuántos días de descanso tiene (desde o hasta su turno más cercano en el evento).
+  const otros = mt.filter(x => x.fecha !== t.fecha).map(x => Math.abs(tgDiasEntre(t.fecha, x.fecha)));
+  const descanso = otros.length ? Math.min(...otros) - 1 : null;
+  return { avisos: av, turnos: mt.length, descanso };
 }
 function tgCandidatos(c, t) {
   const res = new Map(), add = (per, fuente) => { if (per && !res.has(per.id)) res.set(per.id, { per, fuente }); };
   tgDispo.forEach(r => { if (Array.isArray(r.fechas) && r.fechas.includes(t.id)) add(tgPorDoc.get(docNucleo(r.cuit)), 'turno'); });
   tgDispoGen.forEach(r => { if (r.dias.has(t.fecha)) add(tgPorDoc.get(docNucleo(r.cuit)), 'dia'); });
   const q = nomPelar(tgBusca).trim(), qd = String(tgBusca || '').replace(/\D/g, '');
-  if (q.length >= 3 || qd.length >= 6) people.filter(p => (q.length >= 3 && nomPelar(p.nombre).includes(q)) || (qd.length >= 6 && String(p.cuit || '').replace(/\D/g, '').includes(qd))).slice(0, 40).forEach(p => add(p, 'nomina'));
-  const yaEn = new Set(tgEnTurno(c.id, t.id).map(x => x.personaId));
-  const esAcr = p => posicionesDe(p).concat(ocupadosVista(p).map(x => x.nombre), aProbarDe(p)).some(x => /acredit/.test(nomPelar(x)));
-  return [...res.values()].filter(x => !yaEn.has(x.per.id)).map(x => Object.assign(x, tgAvisos(c, t, x.per), { acr: esAcr(x.per), prom: promedioDe(x.per.id) }))
+  if (q.length >= 3 || qd.length >= 6) people.filter(p => (q.length >= 3 && nomPelar(p.nombre).includes(q)) || (qd.length >= 6 && String(p.cuit || '').replace(/\D/g, '').includes(qd))).slice(0, 30).forEach(p => add(p, 'nomina'));
+  const yaEn = new Set(tgActivos(c.id, t.id).map(x => x.personaId)), dijoNo = new Set(tgEnTurno(c.id, t.id).filter(x => asignacionesDe(x)[t.id] === 'rechazado').map(x => x.personaId));
+  return [...res.values()].filter(x => !yaEn.has(x.per.id)).map(x => Object.assign(x, tgAvisos(c, t, x.per), { dijoNo: dijoNo.has(x.per.id) }))
     .filter(x => !q || x.fuente === 'nomina' || nomPelar(x.per.nombre).includes(q) || (qd && String(x.per.cuit || '').includes(qd)))
-    .sort((a, b) => ({ turno: 0, dia: 1, nomina: 2 }[a.fuente] - { turno: 0, dia: 1, nomina: 2 }[b.fuente]) || a.avisos.length - b.avisos.length || (b.acr - a.acr) || ((b.prom || 0) - (a.prom || 0)) || nombrePropio(a.per.nombre).localeCompare(nombrePropio(b.per.nombre), 'es'));
+    .sort((a, b) => (a.dijoNo - b.dijoNo) || ({ turno: 0, dia: 1, nomina: 2 }[a.fuente] - { turno: 0, dia: 1, nomina: 2 }[b.fuente]) || a.avisos.length - b.avisos.length || ((b.descanso == null ? 99 : b.descanso) - (a.descanso == null ? 99 : a.descanso)) || tgApNom(a.per.nombre).localeCompare(tgApNom(b.per.nombre), 'es'));
 }
-function renderTgLado() {
-  const c = convs.find(x => x.id === tgConvId), t = tgSlot(c, tgSlotElegido), el = document.getElementById('tgLado'); if (!t || !el) return;
-  const ocupan = tgEnTurno(c.id, t.id).filter(x => asignacionesDe(x)[t.id] !== 'rechazado').length, cupo = Number(t.cupo) || 0;
-  const cands = tgCandidatos(c, t), sinNomina = tgDispo.filter(r => Array.isArray(r.fechas) && r.fechas.includes(t.id) && !tgPorDoc.get(docNucleo(r.cuit))).length;
-  const fuenteTxt = { turno: '<span class="tg-ok">Puede este turno</span>', dia: '<span class="tg-ok gris">Puede ese día (disponibilidad general)</span>', nomina: '<span class="tg-av">Sin disponibilidad para este turno</span>' };
-  el.innerHTML = `<div class="tg-lado-t"><div><b>${e(t.nombre || 'Turno')}</b> · ${e(tgDiaLargo(t.fecha))}<div class="tg-fs">${e(t.horario || '')}${cupo ? ' · ' + ocupan + ' de ' + cupo : ''}</div></div><button type="button" class="mclose" onclick="tgCerrarLado()">✕</button></div>
-    <input type="text" class="srch" id="tgBusca" placeholder="Buscar, o sumar de la nómina (nombre o CUIL)…" value="${e(tgBusca)}" oninput="tgBusca=this.value;renderTgLado();const b=document.getElementById('tgBusca');b.focus();b.setSelectionRange(b.value.length,b.value.length)">
-    <div class="tg-cands">${cands.length ? cands.slice(0, 120).map(x => `<div class="tg-cand">
-      <div class="tg-cand-d"><div class="tg-cand-n">${eN(x.per.nombre)} <span class="sem sem-${x.per.semaforo || 1}">${x.per.semaforo || 1}</span>${x.prom != null ? ` <span class="pos-prom">Prom. ${x.prom.toFixed(2)}</span>` : ''}</div>
-        <div class="pos-chips">${fuenteTxt[x.fuente]}${x.avisos.map(a => '<span class="tg-av">' + e(a) + '</span>').join('')}${x.turnos ? '<span class="tg-n">' + x.turnos + ' turno' + (x.turnos === 1 ? '' : 's') + ' en el evento</span>' : ''}</div>
-        <div class="pos-chips">${chipsPuestosHTML(x.per, 2)}</div></div>
-      <button type="button" class="btn btn-primary btn-xs" onclick="tgAsignar('${x.per.id}')">Asignar</button></div>`).join('')
-      : `<div class="empty">${tgBusca ? 'Nadie con ese nombre o CUIL.' : 'Nadie marcó este turno en la disponibilidad. Buscá arriba para sumar a alguien de la nómina.'}</div>`}</div>
-    ${sinNomina ? `<div class="tg-fs" style="margin-top:8px">${sinNomina} anotado${sinNomina === 1 ? '' : 's'} para este turno no está${sinNomina === 1 ? '' : 'n'} en la nómina (se suman desde Disponibilidad).</div>` : ''}`;
-  el.style.display = 'block';
+function tgElegir(slotId, el) {
+  tgSlotElegido = slotId; tgBusca = '';
+  renderTurnosAcr();
+  const c = convs.find(x => x.id === tgConvId), t = tgSlot(c, slotId); if (!t) return;
+  const pop = document.getElementById('tgPop');
+  pop.className = 'tg-pop elegir';
+  pop.innerHTML = `<div class="tg-pop-t">${e(t.nombre || 'Turno')} · ${e(tgDia(t.fecha))}</div>
+    <div class="tg-pop-s">Con dispo ese día y franja · <button type="button" class="tg-link" onclick="tgHorario('${e(t.id)}')" title="Cambiar el horario de este día">${e(t.horario || 'sin horario')}</button></div>
+    <div class="tg-pop-lista" id="tgPopLista"></div>
+    <input type="text" class="fi tg-busca" id="tgBusca" placeholder="Buscar a otra persona de la nómina…" oninput="tgBusca=this.value;tgPintarLista()">
+    <div class="tg-pop-pie"><button type="button" class="tg-link" onclick="tgQuitarCelda('${e(t.id)}')">Sacar este turno de ese día</button><button type="button" class="tg-link" onclick="tgCerrarPop()">Cerrar</button></div>`;
+  tgPintarLista();
+  tgUbicarPop(document.querySelector('.tg-c.libre.on') || el);
+}
+function tgPintarLista() {
+  const c = convs.find(x => x.id === tgConvId), t = tgSlot(c, tgSlotElegido), el = document.getElementById('tgPopLista'); if (!t || !el) return;
+  const cands = tgCandidatos(c, t);
+  const nota = x => {
+    if (x.dijoNo) return '<span class="no">Avisó que no puede este turno</span>';
+    if (x.avisos.length) return '<span class="warn">' + e(x.avisos.join(' · ')) + '</span>';
+    if (x.fuente === 'nomina') return '<span class="no">Sin dispo para este turno</span>';
+    const d = x.descanso == null ? 'Libre' : x.descanso > 0 ? 'Libre, con ' + x.descanso + ' día' + (x.descanso === 1 ? '' : 's') + ' de descanso' : 'Libre';
+    return '<span>' + d + (x.fuente === 'dia' ? ' · dispo general del día' : '') + '</span>';
+  };
+  el.innerHTML = cands.length ? cands.slice(0, 80).map(x => `<div class="tg-pc"><div class="tg-pc-d"><b>${e(tgApNom(x.per.nombre))}</b>${nota(x)}</div><button type="button" class="tg-asig" onclick="tgAsignar('${x.per.id}')">Asignar</button></div>`).join('')
+    : `<div class="tg-vacio">${tgBusca ? 'Nadie con ese nombre o CUIL.' : 'Nadie marcó este turno en la disponibilidad. Buscá abajo para sumar a alguien de la nómina.'}</div>`;
+}
+function tgUbicarPop(ancla) {
+  const pop = document.getElementById('tgPop'); pop.style.display = 'flex';
+  const r = ancla ? ancla.getBoundingClientRect() : { left: innerWidth / 2, right: innerWidth / 2, top: 120, bottom: 120 };
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  // Al costado de la tarjeta y, si se puede, dentro de la ventana de turnos (como en el video).
+  const m = (document.querySelector('#mTurnosAcr .modal') || document.body).getBoundingClientRect();
+  const izq = r.right + 10 + w < Math.min(innerWidth, m.right) - 8 ? r.right + 10 : r.left - w - 10 > Math.max(8, m.left) ? r.left - w - 10 : Math.max(8, Math.min(innerWidth, m.right) - w - 12);
+  const arriba = Math.max(8, m.top + 56), abajo = Math.min(innerHeight, m.bottom) - h - 12;
+  pop.style.left = izq + 'px';
+  pop.style.top = Math.max(arriba > abajo ? 8 : arriba, Math.min(abajo, r.top - 10)) + 'px';
 }
 async function tgAsignar(personaId) {
   const c = convs.find(x => x.id === tgConvId), t = tgSlot(c, tgSlotElegido), per = personaPorId(personaId); if (!t || !per) return;
@@ -10269,7 +10381,7 @@ async function tgAsignar(personaId) {
   const puestoId = t.puestoId || ((c.puestos || [])[0] || {}).id || null;
   const suyas = posts.filter(x => x.convId === c.id && x.personaId === personaId && x.estado !== 'rechazado');
   let post = suyas.find(x => !puestoId || x.puestoId === puestoId) || suyas[0];
-  if (!post && !puestoId) { toast('El evento no tiene puestos: creá uno (por ejemplo, "Operador de acreditaciones") y elegilo en Armar turnos'); return; }
+  if (!post && !puestoId) { toast('El evento no tiene puestos: creá uno (por ejemplo, "Operador de acreditaciones") y elegilo en Editar turnos'); return; }
   try {
     if (!post) {
       post = { id: uid(), convId: c.id, puestoId, personaId, nombre: per.nombre, estado: 'aprobado', notas: '', asistencia: null, presentes: {}, asignaciones: { [t.id]: 'propuesto' }, cuit: per.cuit || null, confirmacion: null };
@@ -10281,36 +10393,35 @@ async function tgAsignar(personaId) {
       await sbUpdate('postulaciones', post.id, cambios); Object.assign(post, cambios);
     }
   } catch (_) { return; }
-  const cupo = Number(t.cupo) || 0, ocupan = tgEnTurno(c.id, t.id).filter(x => asignacionesDe(x)[t.id] !== 'rechazado').length;
-  if (cupo && ocupan >= cupo) { tgSlotElegido = null; document.getElementById('tgLado').style.display = 'none'; } else renderTgLado();
-  renderTurnosAcr();
+  tgSlotElegido = null; tgCerrarPop();
+  const quien = tgNombreDe(post).split(/\s+/)[0] || tgApellido(post);
+  tgAviso = 'Le avisamos a ' + quien + '…'; renderTurnosAcr();
   try { renderPuestos(); renderDetStats(); } catch (_) {}
+  // Le llega el aviso al instante, con el botón para confirmar (como en el video: "RR. HH. elige y te avisa").
+  const r = await tgMandarAviso(post, c);
+  tgAviso = r === 'ok' ? 'Le avisamos a ' + quien + ' por mail para que confirme' : r === 'sin_mail' ? quien + ' no tiene mail en la nómina: avisale por WhatsApp' : r === 'firma' ? 'Falta correr turnos-acreditaciones.sql en Supabase' : 'No salió el aviso a ' + quien + ': tocalo y "Reenviar aviso"';
+  renderTurnosAcr();
 }
 
-// ── Lo de cada persona en un turno: presente, confirmación, aviso, sacarla ──
-function tgCerrarPop() { const p = document.getElementById('tgPop'); if (p) p.style.display = 'none'; }
-document.addEventListener('click', ev => { const p = document.getElementById('tgPop'); if (p && p.style.display !== 'none' && !p.contains(ev.target) && !ev.target.closest('.tg-chip')) p.style.display = 'none'; });
+// ── Lo de cada persona en un turno ──
+function tgCerrarPop() { const p = document.getElementById('tgPop'); if (p) p.style.display = 'none'; if (tgSlotElegido) { tgSlotElegido = null; const m = document.getElementById('mTurnosAcr'); if (m && m.style.display !== 'none' && !tgArmadoFilas && tgVista === 'turnos') renderTurnosAcr(); } }
+document.addEventListener('click', ev => { const p = document.getElementById('tgPop'); if (p && p.style.display !== 'none' && !p.contains(ev.target) && !ev.target.closest('.tg-c')) tgCerrarPop(); });
 function tgMenu(ev, postId, slotId) {
   ev.stopPropagation();
   const c = convs.find(z => z.id === tgConvId), x = posts.find(p => p.id === postId), t = tgSlot(c, slotId); if (!x || !t) return;
-  const s = asignacionesDe(x)[slotId], pr = presentesDe(x)[slotId] || '';
-  const k = contratos.find(z => z.postulacion_id === postId && z.turno_id === slotId && z.estado !== 'anulado');
-  const ctTxt = k ? { firmado: 'firmado', visto: 'lo abrió, sin firmar', enviado: 'enviado, sin abrir', pendiente: 'armado, sin enviar' }[k.estado] || k.estado : '';
+  tgSlotElegido = null;
+  const s = asignacionesDe(x)[slotId], per = personaPorId(x.personaId), conMail = String((per && per.email) || '').includes('@');
   const pop = document.getElementById('tgPop');
-  pop.innerHTML = `<div class="tg-pop-t">${e(tgNombreDe(x))}</div>
+  pop.className = 'tg-pop';
+  pop.innerHTML = `<div class="tg-pop-t">${e(tgNombreCorto(x))}</div>
     <div class="tg-pop-s">${e(t.nombre || 'Turno')} · ${e(tgDia(t.fecha))}${t.horario ? ' · ' + e(t.horario) : ''}</div>
-    <div class="tg-pop-s"><span class="tg-est ${e(s)}">${e(TG_ESTADOS[s] || s)}</span>${ctTxt ? ' · Contrato: ' + e(ctTxt) : ''}</div>
-    <div class="tg-pop-g"><button type="button" class="${pr === 'presente' ? 'on p' : ''}" onclick="tgPresente('${postId}','${e(slotId)}','presente')">P · Vino</button><button type="button" class="${pr === 'ausente' ? 'on a' : ''}" onclick="tgPresente('${postId}','${e(slotId)}','ausente')">A · Faltó</button>${pr ? `<button type="button" onclick="tgPresente('${postId}','${e(slotId)}','')">Sin marca</button>` : ''}</div>
-    ${s !== 'confirmado' ? `<button type="button" class="tg-pop-b" onclick="tgEstado('${postId}','${e(slotId)}','confirmado')">✓ Confirmó (por WhatsApp o en persona)</button>` : ''}
-    ${s === 'confirmado' || s === 'rechazado' ? `<button type="button" class="tg-pop-b" onclick="tgEstado('${postId}','${e(slotId)}','avisado')">Volver a "falta confirmar"</button>` : ''}
-    ${s !== 'rechazado' ? `<button type="button" class="tg-pop-b" onclick="tgEstado('${postId}','${e(slotId)}','rechazado')">✕ No puede</button>` : ''}
-    <button type="button" class="tg-pop-b" onclick="tgAvisarUno('${postId}')">✉ ${s === 'propuesto' ? 'Mandarle el aviso' : 'Reenviarle el aviso'}</button>
+    <div class="tg-pop-s"><b>${s === 'confirmado' ? 'Confirmado' : 'Falta confirmar'}</b>${s === 'confirmado' ? '' : conMail ? (s === 'avisado' ? ' · ya le llegó el aviso por mail' : ' · todavía no le llegó el aviso') : ' · no tiene mail: avisale por WhatsApp'}</div>
+    ${s !== 'confirmado' ? `<button type="button" class="tg-pop-b" onclick="tgEstado('${postId}','${e(slotId)}','confirmado')">✓ Confirmó por WhatsApp o en persona</button>` : `<button type="button" class="tg-pop-b" onclick="tgEstado('${postId}','${e(slotId)}','avisado')">Volver a «Falta confirmar»</button>`}
+    ${conMail ? `<button type="button" class="tg-pop-b" onclick="tgAvisarUno('${postId}')">✉ ${s === 'propuesto' ? 'Mandarle el aviso' : 'Reenviarle el aviso'}</button>` : ''}
+    <button type="button" class="tg-pop-b" onclick="tgCambiar('${postId}','${e(slotId)}')">Cambiar por otra persona</button>
+    <button type="button" class="tg-pop-b" onclick="tgHorario('${e(slotId)}')">Cambiar el horario de ese día</button>
     <button type="button" class="tg-pop-b peligro" onclick="tgSacar('${postId}','${e(slotId)}')">Sacar del turno</button>`;
-  const r = ev.currentTarget.getBoundingClientRect();
-  pop.style.display = 'block';
-  const w = pop.offsetWidth, h = pop.offsetHeight;
-  pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + 'px';
-  pop.style.top = (r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 6) : r.bottom + 6) + 'px';
+  tgUbicarPop(ev.currentTarget);
 }
 async function tgGuardarAsig(x, a) { try { await sbUpdate('postulaciones', x.id, { asignaciones: a }); x.asignaciones = a; return true; } catch (_) { return false; } }
 async function tgEstado(postId, slotId, est) {
@@ -10318,29 +10429,64 @@ async function tgEstado(postId, slotId, est) {
   tgCerrarPop();
   if (await tgGuardarAsig(x, Object.assign({}, asignacionesDe(x), { [slotId]: est }))) renderTurnosAcr();
 }
+async function tgQuitar(x, slotId) {
+  const a = Object.assign({}, asignacionesDe(x)); delete a[slotId];
+  const pr = Object.assign({}, presentesDe(x)), teniaP = pr[slotId] === 'presente'; delete pr[slotId];
+  try { await sbUpdate('postulaciones', x.id, { asignaciones: a, presentes: pr, asistencia: resumenAsistencia(pr) }); x.asignaciones = a; x.presentes = pr; x.asistencia = resumenAsistencia(pr); } catch (_) { return false; }
+  if (teniaP || contratos.some(z => z.postulacion_id === x.id && z.turno_id === slotId && z.estado !== 'anulado')) await tgContrato(x, slotId);
+  return true;
+}
 async function tgSacar(postId, slotId) {
   const x = posts.find(p => p.id === postId), c = convs.find(z => z.id === tgConvId), t = tgSlot(c, slotId); if (!x || !t) return;
   tgCerrarPop();
   if (!confirm('¿Sacar a ' + tgNombreDe(x) + ' de ' + (t.nombre || 'este turno') + ' del ' + tgDia(t.fecha) + '?' + (presentesDe(x)[slotId] === 'presente' ? ' Tenía el presente: el contrato de esa jornada, si no lo firmó, se anula.' : ''))) return;
-  const a = Object.assign({}, asignacionesDe(x)); delete a[slotId];
-  const pr = Object.assign({}, presentesDe(x)), teniaP = pr[slotId] === 'presente'; delete pr[slotId];
-  try { await sbUpdate('postulaciones', x.id, { asignaciones: a, presentes: pr, asistencia: resumenAsistencia(pr) }); x.asignaciones = a; x.presentes = pr; x.asistencia = resumenAsistencia(pr); } catch (_) { return; }
-  renderTurnosAcr();
-  if (teniaP || contratos.some(z => z.postulacion_id === x.id && z.turno_id === slotId && z.estado !== 'anulado')) await tgContrato(x, slotId);
+  if (await tgQuitar(x, slotId)) renderTurnosAcr();
 }
-// El presente del turno (el mismo de "Corregir presentes") y, con él, el contrato de esa jornada.
+async function tgCambiar(postId, slotId) {
+  const x = posts.find(p => p.id === postId); if (!x) return;
+  tgCerrarPop();
+  if (presentesDe(x)[slotId] === 'presente' && !confirm(tgNombreDe(x) + ' tiene el presente en ese turno. ¿Cambiarla igual? (el contrato que no firmó se anula)')) return;
+  if (!(await tgQuitar(x, slotId))) return;
+  renderTurnosAcr();
+  const libre = [...document.querySelectorAll('.tg-c.libre')].find(b => (b.getAttribute('onclick') || '').includes("'" + slotId + "'"));
+  tgElegir(slotId, libre);
+}
+
+// ── Presentismo: la P de cada uno, por jornada; con la P sale el contrato ──
+function tgPresentismoHTML(c) {
+  const ts = tgTurnos(c), dias = [...new Set(ts.map(t => t.fecha))].sort(), hoy = hoyLocalISO();
+  if (!dias.includes(tgJornada)) tgJornada = dias.includes(hoy) ? hoy : (dias.find(d => d >= hoy) || dias[dias.length - 1]);
+  const delDia = ts.filter(t => t.fecha === tgJornada).sort((a, b) => tgOrdenFranja(a.franja) - tgOrdenFranja(b.franja));
+  const filas = [];
+  delDia.forEach(t => tgActivos(c.id, t.id).sort((a, b) => tgApNom(tgNombreDe(a)).localeCompare(tgApNom(tgNombreDe(b)), 'es')).forEach(x => filas.push({ x, t })));
+  const pill = (x, t) => {
+    const k = contratos.find(z => z.postulacion_id === x.id && z.turno_id === t.id && z.estado !== 'anulado'), err = tgErrores[x.id + '|' + t.id];
+    if (k) return { firmado: '<span class="tg-pill os">Contrato firmado</span>', visto: '<span class="tg-pill">Contrato abierto, sin firmar</span>', enviado: '<span class="tg-pill">Contrato de la jornada enviado</span>' }[k.estado] || '<span class="tg-pill">Contrato saliendo (Hotmail, por Google)</span>';
+    if (err) return '<span class="tg-pill warn">' + e(err) + '</span>';
+    return presentesDe(x)[t.id] === 'presente' ? '<span class="tg-pill">Saliendo…</span>' : '';
+  };
+  const lugar = c.venue || '—', evento = String(c.nombre || '').split(/ — | @ /)[0];
+  return `<div class="tg-info"><span>Evento: <b>${e(evento)}</b></span><span>Lugar: <b>${e(lugar)}</b></span><span>Empresa: <b>SBS</b></span>
+      <span>Jornada: <select class="tg-sel" onchange="tgJornada=this.value;renderTurnosAcr()">${dias.map(d => `<option value="${d}"${d === tgJornada ? ' selected' : ''}>${e(tgDia(d))}</option>`).join('')}</select></span></div>
+    ${filas.length ? `<table class="tg-tabla"><tr><th>Persona</th><th>Turno</th><th>Presente</th><th>Contrato</th></tr>
+      ${filas.map(({ x, t }) => { const p = presentesDe(x)[t.id] === 'presente', conf = asignacionesDe(x)[t.id] === 'confirmado';
+        return `<tr><td><b>${e(tgNombreCorto(x))}</b>${conf ? '' : ' <span class="tg-gris">sin confirmar</span>'}</td><td>${e(tgCodigo(t))}${t.horario ? ' · ' + e(t.horario) : ''}</td>
+          <td><button type="button" class="tg-p${p ? ' on' : ''}" onclick="tgPresente('${x.id}','${e(t.id)}','${p ? '' : 'presente'}')" title="${p ? 'Sacarle el presente' : 'Marcar el presente'}">P</button></td><td>${pill(x, t)}</td></tr>`; }).join('')}</table>`
+      : '<div class="tg-vacio">Nadie asignado a los turnos de esa jornada.</div>'}
+    <div class="tg-nota">El contrato toma los datos del evento y de la persona ya cargados, con el monto del turno.</div>`;
+}
 async function tgPresente(postId, slotId, valor) {
   const x = posts.find(p => p.id === postId); if (!x) return;
   tgCerrarPop();
   const pr = Object.assign({}, presentesDe(x)), antes = pr[slotId] || '';
   if (valor) pr[slotId] = valor; else delete pr[slotId];
   if ((pr[slotId] || '') === antes) return;
-  x.presentes = pr; x.asistencia = resumenAsistencia(pr);
+  x.presentes = pr; x.asistencia = resumenAsistencia(pr); delete tgErrores[postId + '|' + slotId];
   renderTurnosAcr();
   try { await sbUpdate('postulaciones', postId, { presentes: pr, asistencia: x.asistencia }); } catch (_) { return; }
-  if (valor === 'presente' || antes === 'presente') await tgContrato(x, slotId);
+  if (valor === 'presente' || antes === 'presente') { await tgContrato(x, slotId, true); renderTurnosAcr(); }
 }
-// Le pide al servidor que arme y mande (o anule) el contrato de ese turno. callado: devuelve qué pasó sin avisar.
+// Le pide al servidor que arme y mande (o anule) el contrato de ese turno. callado: lo que pasó queda en la vista.
 async function tgContrato(x, slotId, callado) {
   const c = convs.find(z => z.id === x.convId), t = c && tgSlot(c, slotId);
   if (!t || !t.nombre) return null;   // sólo los turnos de la grilla
@@ -10349,18 +10495,15 @@ async function tgContrato(x, slotId, callado) {
     const r = await fetch('/api/contrato-al-confirmar', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ accion: 'turno', post: x.id, turno: slotId }) });
     d = await r.json().catch(() => ({})); if (!r.ok && !d.error) d.error = 'El servidor contestó ' + r.status;
   } catch (err) { d = { error: err.message }; }
-  tgRefrescarContratos(x.id);
+  const k = x.id + '|' + slotId, quien = tgNombreCorto(x);
+  const msj = d.error === 'sin_monto' ? 'Sin monto: cargalo en Editar turnos' : d.error === 'sin_mail' ? 'No tiene mail: no salió' : d.error === 'sin_plantilla' ? 'Falta el modelo de contrato' : d.ya === 'periodo' ? 'Tiene el contrato de todo el período' : d.firmado ? 'Ya lo había firmado' : d.error ? 'No salió: ' + (d.detalle || d.error) : '';
+  if (msj) tgErrores[k] = msj; else delete tgErrores[k];
+  await tgRefrescarContratos(x.id);
   if (callado) return d;
-  const quien = tgNombreCorto(x);
   if (d.enviado) toast('Contrato de la jornada enviado a ' + quien);
   else if (d.porGoogle) toast('Contrato de ' + quien + ': sale por Google (Hotmail/Outlook) en unos minutos');
-  else if (d.ya === 'periodo') toast(quien + ' tiene el contrato de todo el período: no lleva uno por jornada');
   else if (d.anulados) toast('Se anuló el contrato sin firmar de ' + quien);
-  else if (d.firmado) toast(quien + ' ya había firmado el contrato de ese turno: revisalo en Contratos');
-  else if (d.error === 'sin_monto') toast('El turno no tiene monto: cargalo en Armar turnos y volvé a marcar la P');
-  else if (d.error === 'sin_mail') toast(quien + ' no tiene mail en la nómina: el contrato no salió');
-  else if (d.error === 'sin_plantilla') toast('Falta el modelo de contrato en el panel');
-  else if (d.error && !d.ya) toast('El contrato de ' + quien + ' no salió: ' + (d.detalle || d.error));
+  else if (msj) toast(quien + ': ' + msj);
   return d;
 }
 // Desde "Corregir presentes", de a muchos: el contrato de cada uno que está asignado a ese turno de la grilla.
@@ -10372,18 +10515,82 @@ async function tgContratosDe(lista, slotId) {
     const d = (await tgContrato(x, slotId, true)) || {};
     if (d.enviado) { cuenta.enviados++; await new Promise(ok => setTimeout(ok, 600)); } else if (d.porGoogle) cuenta.google++; else if (d.anulados) cuenta.anulados++; else if (d.error) cuenta.problemas++;
   }
-  const partes = [cuenta.enviados && cuenta.enviados + ' enviados', cuenta.google && cuenta.google + ' salen por Google', cuenta.anulados && cuenta.anulados + ' anulados', cuenta.problemas && cuenta.problemas + ' no salieron (mirá la grilla de turnos)'].filter(Boolean);
+  const partes = [cuenta.enviados && cuenta.enviados + ' enviados', cuenta.google && cuenta.google + ' salen por Google', cuenta.anulados && cuenta.anulados + ' anulados', cuenta.problemas && cuenta.problemas + ' no salieron (mirá Turnos › Presentismo)'].filter(Boolean);
   if (partes.length) toast('Contratos del turno: ' + partes.join(' · '));
 }
-// Los contratos de esa postulación, de nuevo (para ver en la grilla si salió o si lo firmó).
+// Los contratos de esa postulación, de nuevo (para ver si salió o si lo firmó).
 async function tgRefrescarContratos(postId) {
   try {
     const { data, error } = await sb.from('contratos').select('id,conv_id,persona_id,postulacion_id,puesto_id,nombre,cuil,email,puesto,estado,fecha_creacion,fecha_envio,fecha_visto,fecha_firma,token,fecha_show,sector,origen,turno_id').eq('postulacion_id', postId);
     if (error || !data) return;
     const ids = new Set(data.map(k => k.id));
     contratos = data.concat(contratos.filter(k => !ids.has(k.id)));
-    if (document.getElementById('mTurnosAcr').style.display !== 'none') renderTurnosAcr();
   } catch (_) {}
+}
+
+// ── Liquidación: jornadas, presentes y total, por persona ──
+function tgLiqFilas(c) {
+  const ts = tgTurnos(c).slice().sort((a, b) => a.fecha.localeCompare(b.fecha) || tgOrdenFranja(a.franja) - tgOrdenFranja(b.franja)), porPersona = new Map();
+  posts.filter(x => x.convId === c.id).forEach(x => ts.forEach(t => {
+    const est = asignacionesDe(x)[t.id], pr = presentesDe(x)[t.id]; if ((!est || est === 'rechazado') && pr !== 'presente') return;
+    const pers = personaPorId(x.personaId), k = docNucleo((pers && pers.cuit) || x.cuit) || x.personaId || x.id;
+    const r = porPersona.get(k) || { cuil: (pers && pers.cuit) || x.cuit || '', nombre: tgNombreDe(x), apNom: tgNombreCorto(x), jornadas: 0, presentes: 0, total: 0, sinMonto: false, detalle: [] };
+    r.jornadas++;
+    if (pr === 'presente') { r.presentes++; const m = tgMonto(t.monto); r.total += m; if (!m) r.sinMonto = true; }
+    r.detalle.push({ x, t, est, pr });
+    porPersona.set(k, r);
+  }));
+  return [...porPersona.values()].sort((a, b) => a.apNom.localeCompare(b.apNom, 'es'));
+}
+const tgCuil = v => { const d = String(v || '').replace(/\D/g, ''); return d.length === 11 ? d.slice(0, 2) + '-' + d.slice(2, 10) + '-' + d.slice(10) : String(v || ''); };
+function tgLiquidacionHTML(c) {
+  const filas = tgLiqFilas(c), sinTarifa = !tgTurnos(c).some(t => tgMonto(t.monto));
+  const total = filas.reduce((s, r) => s + r.total, 0);
+  const tot = r => sinTarifa ? '<span class="tg-gris">Según tarifario</span>' : tgPlata(r.total) + (r.sinMonto ? ' <span class="tg-gris" title="Algún turno presente no tiene monto">*</span>' : '');
+  return `${filas.length ? `<table class="tg-tabla liq"><tr><th>Apellido y nombre</th><th>CUIL</th><th>Jornadas</th><th>Presentes</th><th>Total</th></tr>
+      ${filas.map(r => `<tr><td><b>${e(r.apNom)}</b></td><td>${e(tgCuil(r.cuil))}</td><td><b>${r.jornadas}</b></td><td><b>${r.presentes}</b></td><td>${tot(r)}</td></tr>`).join('')}
+      ${sinTarifa ? '' : `<tr class="tot"><td>Total</td><td></td><td>${filas.reduce((s, r) => s + r.jornadas, 0)}</td><td>${filas.reduce((s, r) => s + r.presentes, 0)}</td><td>${tgPlata(total)}</td></tr>`}</table>`
+      : '<div class="tg-vacio">Todavía no hay nadie asignado a los turnos.</div>'}
+    <div class="tg-liq-acc"><button type="button" class="btn btn-sec" onclick="exportLiquidacion()">Descargar Excel</button>
+      <button type="button" class="btn btn-primary" onclick="tgEnviarLiq()">Enviar a SBS Liquidaciones</button>
+      ${tgEnviada === c.id ? '<span class="tg-pill">Planilla enviada a SBS Liquidaciones</span>' : ''}
+      <span style="flex:1"></span>${tgLiqPara ? `<span class="tg-gris">Se manda a ${e(tgLiqPara)} · <button type="button" class="tg-link" onclick="tgCambiarLiqPara()">cambiar</button></span>` : ''}</div>`;
+}
+// Las dos hojas del Excel (con el CBU): Resumen por persona y Detalle por turno.
+async function tgHojasLiq(c) {
+  const banco = await cargarDatosBancarios(), filas = tgLiqFilas(c), cbuDe = r => { const s = banco.get(docNucleo(r.cuil)); return s ? s.cbu || '' : ''; };
+  const rotulo = { presente: 'Presente', ausente: 'Faltó' };
+  const resumen = [['cuil', 'apellido y nombre', 'cbu', 'jornadas', 'presentes', 'total']].concat(filas.map(r => [tgCuil(r.cuil), r.apNom, cbuDe(r), r.jornadas, r.presentes, r.total]));
+  resumen.push(['', 'Total', '', filas.reduce((s, r) => s + r.jornadas, 0), filas.reduce((s, r) => s + r.presentes, 0), filas.reduce((s, r) => s + r.total, 0)]);
+  const detalle = [['cuil', 'apellido y nombre', 'cbu', 'lugar', 'fecha', 'turno', 'horario', 'puesto', 'turno asignado', 'asistencia', 'monto']];
+  filas.forEach(r => r.detalle.forEach(({ x, t, est, pr }) => detalle.push([tgCuil(r.cuil), r.apNom, cbuDe(r), c.venue || '', t.fecha, t.nombre || '', t.horario || '',
+    ((c.puestos || []).find(p => p.id === (t.puestoId || x.puestoId)) || {}).nombre || '', TG_ESTADOS[est] || '—', rotulo[pr] || 'Sin marcar', pr === 'presente' ? (tgMonto(t.monto) || '') : ''])));
+  return { archivo: 'liquidacion-' + String(c.nombre || 'evento').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.xlsx', hojas: [{ nombre: 'Resumen', filas: resumen }, { nombre: 'Detalle por turno', filas: detalle }], filas };
+}
+async function tgCambiarLiqPara() {
+  const v = prompt('¿A qué mail se manda la planilla de liquidación? (queda guardado para la próxima)', tgLiqPara || '');
+  if (v === null) return null;
+  const m = v.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m)) { toast('Ese mail no parece válido'); return null; }
+  try { const { error } = await sb.from('config').upsert({ key: 'liquidaciones_para', value: { mail: m }, updated_at: new Date().toISOString() }); if (error) throw error; } catch (err) { toast('No se pudo guardar el mail: ' + (err.message || err)); return null; }
+  tgLiqPara = m; renderTurnosAcr(); return m;
+}
+async function tgEnviarLiq() {
+  const c = convs.find(x => x.id === tgConvId); if (!c) return;
+  if (!tgLiqFilas(c).length) { toast('Todavía no hay nadie asignado a los turnos'); return; }
+  const para = tgLiqPara || await tgCambiarLiqPara(); if (!para) return;
+  if (!confirm('¿Mandar la planilla de liquidación de ' + c.nombre + ' a ' + para + '?')) return;
+  try {
+    const { archivo, hojas, filas } = await tgHojasLiq(c);
+    const buf = await armarLibroBuffer(hojas); if (!buf) return;
+    let bin = ''; const u8 = new Uint8Array(buf); for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    const from = 'convocatorias.externos@show-bs.com', total = filas.reduce((s, r) => s + r.total, 0);
+    const texto = `Hola:\n\nTe mandamos la planilla de liquidación de ${c.nombre}${c.venue ? ' (' + c.venue + ')' : ''}: ${filas.length} persona${filas.length === 1 ? '' : 's'}, ${filas.reduce((s, r) => s + r.presentes, 0)} jornadas presentes${total ? ', total ' + tgPlata(total) : ''}.\n\nVa adjunta en Excel: el resumen por persona (con el CBU) y el detalle por turno.\n\nSaludos,\nGerencia de RR. HH.`;
+    const res = await fetch('/api/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ from, to: [para], subject: 'Liquidación · ' + c.nombre, text: texto, html: renderEmailHtml(texto, from, 'externos', null), attachments: [{ filename: archivo, content: btoa(bin) }] }) });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.message || d.error || 'Error al enviar');
+    tgEnviada = c.id; renderTurnosAcr(); toast('Planilla enviada a ' + para);
+  } catch (err) { toast('No se pudo mandar: ' + (err.message || err)); }
 }
 
 // ── El aviso por mail: sus turnos, con un link para confirmar cada uno ──
@@ -10403,9 +10610,13 @@ async function tgMandarAviso(x, c) {
   const link = location.origin + '/confirmar-turno?p=' + x.id + '&t=' + encodeURIComponent(partes.join('~'));
   const pila = (tgNombreDe(x).split(/\s+/)[0] || '').trim();
   const lineas = ts.map(t => '• ' + tgDiaLargo(t.fecha) + ' — ' + (t.nombre || 'Turno') + (t.horario ? ' (' + t.horario + ')' : '') + (asignacionesDe(x)[t.id] === 'confirmado' ? ' · ya confirmado' : ''));
-  const texto = `Hola${pila ? ', ' + pila : ''}:\n\nTe asignamos ${ts.length === 1 ? 'este turno' : 'estos turnos'} en ${c.nombre}${c.venue ? ' (' + c.venue + ')' : ''}:\n\n${lineas.join('\n')}\n\nPor favor, confirmá cada uno (o avisanos si no podés) desde este link:\n${link}\n\nCon el presente de cada jornada te llega el contrato para firmar.\n\nSaludos,\nShow Business Solutions`;
+  const cuerpo = pedido => `Hola${pila ? ', ' + pila : ''}:\n\nTe asignamos ${ts.length === 1 ? 'este turno' : 'estos turnos'} en ${c.nombre}${c.venue ? ' (' + c.venue + ')' : ''}:\n\n${lineas.join('\n')}\n\n${pedido}\n\nCon el presente de cada jornada te llega el contrato para firmar.\n\nSaludos,\nShow Business Solutions`;
+  // En el mail, el botón va justo después del pedido; el link entero, sólo en la versión de texto.
+  const texto = cuerpo('Por favor, confirmá ' + (ts.length === 1 ? 'el turno' : 'cada uno') + ' (o avisanos si no podés) desde este link:\n' + link);
   const arena = c.area === 'movistar_arena', from = arena ? 'convocatorias.arena@show-bs.com' : 'convocatorias.externos@show-bs.com';
-  const html = tgConBoton(renderEmailHtml(texto, from, arena ? 'movistar' : 'externos', null), link);
+  const boton = `<div style="margin:6px 0 22px;text-align:center"><a href="${link.replace(/&/g, '&amp;')}" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:10px">Ver y confirmar mis turnos</a></div>`;
+  const base = renderEmailHtml(cuerpo('Por favor, confirmá ' + (ts.length === 1 ? 'el turno' : 'cada uno') + ' (o avisanos si no podés) con este botón:\n\n[[boton]]'), from, arena ? 'movistar' : 'externos', null);
+  const html = /<p[^>]*>\[\[boton\]\]<\/p>/.test(base) ? base.replace(/<p[^>]*>\[\[boton\]\]<\/p>/, boton) : tgConBoton(renderEmailHtml(texto, from, arena ? 'movistar' : 'externos', null), link);
   try {
     const res = await fetch('/api/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(await authHeader()) }, body: JSON.stringify({ from, to: [para], subject: 'Turnos · ' + c.nombre, html, text: texto }) });
     if (!res.ok) return 'error';
@@ -10417,25 +10628,8 @@ async function tgMandarAviso(x, c) {
 async function tgAvisarUno(postId) {
   const x = posts.find(p => p.id === postId), c = convs.find(z => z.id === tgConvId); if (!x || !c) return;
   tgCerrarPop();
-  const r = await tgMandarAviso(x, c);
-  toast(r === 'ok' ? 'Aviso enviado a ' + tgNombreCorto(x) : r === 'sin_mail' ? tgNombreCorto(x) + ' no tiene mail en la nómina' : r === 'firma' ? 'Falta correr turnos-acreditaciones.sql en Supabase' : 'No salió el aviso: probá de nuevo');
-  renderTurnosAcr();
-}
-async function tgAvisar() {
-  const c = convs.find(z => z.id === tgConvId); if (!c) return;
-  const pend = posts.filter(x => x.convId === c.id && Object.values(asignacionesDe(x)).includes('propuesto'));
-  if (!pend.length) { toast('No hay nadie asignado sin avisar'); return; }
-  if (!confirm('¿Mandar el aviso a ' + pend.length + ' persona' + (pend.length === 1 ? '' : 's') + '? Cada una recibe sus turnos con un botón para confirmarlos.')) return;
-  const btn = document.getElementById('tgBtnAvisar'); if (btn) btn.disabled = true;
-  const cuenta = { ok: 0, sin_mail: 0, otro: 0 };
-  for (let i = 0; i < pend.length; i++) {
-    if (btn) btn.textContent = 'Enviando ' + (i + 1) + ' de ' + pend.length + '…';
-    const r = await tgMandarAviso(pend[i], c);
-    cuenta[r in cuenta ? r : 'otro']++;
-    if (r === 'firma') { toast('Falta correr turnos-acreditaciones.sql en Supabase'); break; }
-    await new Promise(ok => setTimeout(ok, 600));   // Resend: 2 por segundo
-  }
-  toast(cuenta.ok + ' aviso' + (cuenta.ok === 1 ? '' : 's') + ' enviado' + (cuenta.ok === 1 ? '' : 's') + (cuenta.sin_mail ? ' · ' + cuenta.sin_mail + ' sin mail' : '') + (cuenta.otro ? ' · ' + cuenta.otro + ' no salieron' : ''));
+  const r = await tgMandarAviso(x, c), quien = tgNombreDe(x).split(/\s+/)[0] || tgApellido(x);
+  tgAviso = r === 'ok' ? 'Le avisamos a ' + quien + ' por mail para que confirme' : r === 'sin_mail' ? quien + ' no tiene mail en la nómina' : r === 'firma' ? 'Falta correr turnos-acreditaciones.sql en Supabase' : 'No salió el aviso: probá de nuevo';
   renderTurnosAcr();
 }
 async function exportPresentes() {
@@ -10516,28 +10710,13 @@ async function exportLiquidacion() {
   const banco = await cargarDatosBancarios();
   const rotuloMarca = { presente: 'Presente', ausente: 'Faltó' };
   const archivo = `liquidacion-${(c.nombre || 'convocatoria').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase()}.xlsx`;
-  // Con la grilla de turnos (24-nov): sólo los turnos asignados a cada uno, con el monto de cada jornada presente, y
-  // una hoja con el total por persona (lo que liquida RR. HH.).
+  // Con la grilla de turnos (24-nov): Resumen por persona (jornadas, presentes y el total con el monto de cada turno)
+  // y Detalle por turno; es lo mismo que se ve en Turnos › Liquidación y lo que se manda a SBS Liquidaciones.
   if (tgEsGrilla(c)) {
-    const ts = tgTurnos(c).slice().sort((a, b) => a.fecha.localeCompare(b.fecha) || tgOrdenFranja(a.franja) - tgOrdenFranja(b.franja));
-    const detalle = [['cuil', 'nombre', 'cbu', 'lugar', 'fecha', 'turno', 'horario', 'puesto', 'turno asignado', 'asistencia', 'monto']], porPersona = new Map();
-    posts.filter(x => x.convId === c.id).forEach(x => ts.forEach(t => {
-      const est = asignacionesDe(x)[t.id], pr = presentesDe(x)[t.id]; if (!est && !pr) return;
-      const pers = personaDe(x), cuil = docNucleo((pers && pers.cuit) || x.cuit), sol = cuil ? banco.get(cuil) : null;
-      const monto = pr === 'presente' ? tgMonto(t.monto) : 0, k = cuil || x.personaId || x.id;
-      const nom = nombrePropio(x.nombre || (pers && pers.nombre) || ''), puesto = ((c.puestos || []).find(p => p.id === (t.puestoId || x.puestoId)) || {}).nombre || puestoDe(x.puestoId);
-      detalle.push([(pers && pers.cuit) || x.cuit || '', nom, sol ? sol.cbu : '', c.venue || '', t.fecha, t.nombre || '', t.horario || '', puesto, TG_ESTADOS[est] || 'No asignado', rotuloMarca[pr] || 'Sin marcar', monto || '']);
-      const r = porPersona.get(k) || { cuil: (pers && pers.cuit) || x.cuit || '', nombre: nom, cbu: sol ? sol.cbu : '', asignados: 0, presentes: 0, faltas: 0, total: 0 };
-      if (est && est !== 'rechazado') r.asignados++; if (pr === 'presente') r.presentes++; if (pr === 'ausente') r.faltas++; r.total += monto;
-      porPersona.set(k, r);
-    }));
-    if (detalle.length === 1) { toast('Nadie asignado a los turnos todavía'); return; }
-    const filas = [...porPersona.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-    const resumen = [['cuil', 'nombre', 'cbu', 'turnos asignados', 'jornadas presentes', 'faltas', 'total']].concat(filas.map(r => [r.cuil, r.nombre, r.cbu, r.asignados, r.presentes, r.faltas, r.total]));
-    resumen.push(['', 'Total', '', filas.reduce((s, r) => s + r.asignados, 0), filas.reduce((s, r) => s + r.presentes, 0), filas.reduce((s, r) => s + r.faltas, 0), filas.reduce((s, r) => s + r.total, 0)]);
-    const sinMonto = ts.filter(t => !tgMonto(t.monto)).length;
-    descargarLibro(archivo, [{ nombre: 'Resumen', filas: resumen }, { nombre: 'Detalle por turno', filas: detalle }]);
-    if (sinMonto) toast(sinMonto + ' turno' + (sinMonto === 1 ? '' : 's') + ' sin monto: en la liquidación van en $ 0 (cargalo en Armar turnos)');
+    const { archivo: arch, hojas, filas } = await tgHojasLiq(c);
+    if (!filas.length) { toast('Nadie asignado a los turnos todavía'); return; }
+    await descargarLibro(arch, hojas);
+    if (filas.some(r => r.sinMonto)) toast('Hay jornadas presentes de turnos sin monto: van en $ 0 (cargalo en Editar turnos)');
     return;
   }
   const liquidacion = [['cuil', 'nombre', 'cbu', 'lugar', 'fecha', 'horario', 'puesto', 'asistencia']];

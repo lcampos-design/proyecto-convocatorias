@@ -27,12 +27,19 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .dcol{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
 .drow .d1{font-weight:600;color:#111827;text-transform:capitalize}
 .dh{font-size:12px;color:#6b7280;font-weight:500;line-height:1.45;word-break:break-word}
-/* Un día con varios turnos (24-nov): el día arriba y un botón por turno. */
-.ddia{border:1.5px solid #e5e7eb;border-radius:10px;padding:12px 14px 6px;margin-bottom:8px}
-.ddia>.d1{font-weight:600;color:#111827;text-transform:capitalize;margin-bottom:8px}
-.dchips{display:flex;flex-wrap:wrap;gap:8px}
-.drow.dchip{flex:1 1 140px;margin-bottom:6px;padding:10px 12px}
-.drow.dchip .dt{font-weight:600;color:#111827}
+/* Un día con varios turnos (24-nov), como en el video: el día y sus tres botones en un renglón. */
+.dley{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:#6b7280;margin:-2px 0 12px}
+.dley b{color:#111827;font-weight:600;margin-right:3px}
+.ddia{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ddia>.d1{font-weight:600;color:#111827;width:82px;flex-shrink:0;font-size:15px}
+.dchips{display:flex;gap:6px;flex:1;min-width:0}
+.drow.dchip{flex:1;min-width:0;margin:0;padding:9px 2px;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center;border-radius:9px;min-height:46px;border-color:#a1a1aa}
+.drow.dchip input{display:none}
+.drow.dchip .dt{font-weight:600;color:#3f3f46;font-size:14px}
+.drow.dchip .dh{font-size:10.5px;line-height:1.2}
+.drow.dchip.on{background:#1a1a1a;border-color:#1a1a1a}
+.drow.dchip.on .dt,.drow.dchip.on .dh{color:#fff}
+.dnota{font-size:13px;color:#6b7280;margin-top:12px;text-align:center}
 .btn{width:100%;padding:14px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px;font-family:inherit}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .msg{border-radius:10px;padding:12px 14px;font-size:13px;margin-top:12px;display:none}
@@ -85,18 +92,28 @@ function slotsDe(c){
   const hpf = (c.horarios_por_fecha && typeof c.horarios_por_fecha==='object') ? c.horarios_por_fecha : {};
   return fs.map(f => ({ id: f, fecha: f, horario: hpf[f] || c.horario || '' }));
 }
-// Turnos de acreditaciones (24-nov): un día con varios turnos con nombre (Mañana, Tarde, Noche) va en un solo bloque,
-// con un botón por turno; lo demás, una fila por fecha como siempre. Cada botón es una fila .drow (con su casilla), así que
-// marcar, precargar y enviar funcionan igual.
+// Turnos de acreditaciones (24-nov), como en el video de RR. HH.: cada día en un renglón ("Jue 3/12") con un botón por
+// turno (Mañana, Tarde, Noche) que se pinta al elegirlo; el horario de cada franja va una vez arriba (y en el botón,
+// sólo si ese día es otro). Lo demás, una fila por fecha como siempre. Cada botón es una fila .drow (con su casilla
+// escondida), así que marcar, precargar y enviar funcionan igual.
 const ORDEN_FRANJA = ['Mañana', 'Tarde', 'Noche'];
+function diaCorto(f){ const d = new Date(f + 'T12:00:00'); if (isNaN(d)) return f; const s = d.toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', ''); return s.charAt(0).toUpperCase() + s.slice(1) + ' ' + d.getDate() + '/' + (d.getMonth() + 1); }
+// "07:00 a 16:00" → "7 a 16 h" (para que entre en el botón).
+function horaCorta(h){ const t = String(h || '').replace(/\b0(\d)(?=[:.]\d\d)/g, '$1').replace(/[:.]00\b/g, ''); return /^\d{1,2}(:\d\d)? a \d{1,2}(:\d\d)?$/.test(t) ? t + ' h' : t; }
 function filasSlots(lista, convId){
   const dc = convId ? ' data-c="' + esc(convId) + '"' : '', dias = [], idx = {};
   lista.forEach(s => { if (!(s.fecha in idx)) { idx[s.fecha] = dias.length; dias.push({ fecha: s.fecha, slots: [] }); } dias[idx[s.fecha]].slots.push(s); });
-  return dias.map(d => {
-    const conNombre = d.slots.some(s => s.nombre || s.franja);
-    if (!conNombre) return d.slots.map(s => `<label class="drow"${dc} data-f="${esc(s.id)}" onclick="toggleRow(this)"><input type="checkbox"><span class="dcol"><span class="d1">${fmtFecha(s.fecha)}</span>${s.horario ? `<span class="dh">🕒 ${esc(s.horario)}</span>` : ''}</span></label>`).join('');
-    const orden = d.slots.slice().sort((a, b) => { const i = x => { const k = ORDEN_FRANJA.indexOf(x.franja); return k < 0 ? 9 : k; }; return i(a) - i(b); });
-    return `<div class="ddia"><div class="d1">${fmtFecha(d.fecha)}</div><div class="dchips">${orden.map(s => `<label class="drow dchip"${dc} data-f="${esc(s.id)}" onclick="toggleRow(this)"><input type="checkbox"><span class="dcol"><span class="dt">${esc(s.franja || s.nombre)}</span>${s.horario ? `<span class="dh">${esc(s.horario)}</span>` : ''}</span></label>`).join('')}</div></div>`;
+  const rot = s => s.franja || s.nombre, ord = x => { const k = ORDEN_FRANJA.indexOf(x.franja); return k < 0 ? 9 : k; };
+  // El horario de cada franja (el que más se repite).
+  const cuenta = {};
+  lista.filter(rot).forEach(s => { const k = rot(s); cuenta[k] = cuenta[k] || {}; cuenta[k][s.horario || ''] = (cuenta[k][s.horario || ''] || 0) + 1; });
+  const usual = {}; Object.keys(cuenta).forEach(k => { usual[k] = Object.entries(cuenta[k]).sort((a, b) => b[1] - a[1])[0][0]; });
+  const claves = [...new Set(lista.filter(rot).slice().sort((a, b) => ord(a) - ord(b)).map(rot))];
+  const leyenda = claves.length ? '<div class="dley">' + claves.map(k => '<span><b>' + esc(k) + '</b>' + (usual[k] ? ' ' + esc(usual[k]) : '') + '</span>').join('') + '</div>' : '';
+  return leyenda + dias.map(d => {
+    if (!d.slots.some(rot)) return d.slots.map(s => `<label class="drow"${dc} data-f="${esc(s.id)}" onclick="toggleRow(this)"><input type="checkbox"><span class="dcol"><span class="d1">${fmtFecha(s.fecha)}</span>${s.horario ? `<span class="dh">🕒 ${esc(s.horario)}</span>` : ''}</span></label>`).join('');
+    const orden = d.slots.slice().sort((a, b) => ord(a) - ord(b));
+    return `<div class="ddia"><span class="d1">${diaCorto(d.fecha)}</span><div class="dchips">${orden.map(s => `<label class="drow dchip"${dc} data-f="${esc(s.id)}" onclick="toggleRow(this)"><input type="checkbox"><span class="dt">${esc(rot(s) || 'Turno')}</span>${s.horario && s.horario !== usual[rot(s)] ? `<span class="dh">${esc(horaCorta(s.horario))}</span>` : ''}</label>`).join('')}</div></div>`;
   }).join('');
 }
 
@@ -124,6 +141,7 @@ function renderForm(){
     <label class="lbl">${slots.some(s => s.nombre || s.franja) ? '¿Qué días y turnos podés? (marcá los que sí)' : '¿Qué días podés? (marcá los que sí)'}</label>
     ${filas}
     <button class="btn" id="enviarBtn" onclick="enviar()">Enviar disponibilidad</button>
+    ${slots.some(s => s.nombre || s.franja) ? '<div class="dnota">RR. HH. elige y te avisa el turno para confirmar.</div>' : ''}
     <div class="msg err" id="err"></div>
     <div class="msg ok" id="ok"></div>
   </div>`);
@@ -228,6 +246,7 @@ function renderMes(){
     <label class="lbl">¿Qué días podés? (marcá los que sí, de todos los eventos que quieras)</label>
     ${bloques}
     <button class="btn" id="enviarBtn" onclick="enviarMes()">Enviar disponibilidad</button>
+    ${eventosMes.some(ev => ev.slots.some(s => s.nombre || s.franja)) ? '<div class="dnota">RR. HH. elige y te avisa el turno para confirmar.</div>' : ''}
     <div class="msg err" id="err"></div>
     <div class="msg ok" id="ok"></div>
   </div>`);
