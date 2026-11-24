@@ -1042,6 +1042,11 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .tg-arm td{padding:3px 6px 3px 0}
 .tg-arm .fi{padding:6px 8px;font-size:12.5px}
 .tg-arm-acc{display:flex;gap:8px;align-items:center;margin-top:12px}
+/* Feedback de Operaciones (24-nov) */
+.fb-ops{display:inline-flex;align-items:center;font-size:11px;font-weight:650;background:#eef0f4;color:#1e293b;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.fbops-notas{display:flex;gap:6px}
+.fbops-n{width:44px;height:40px;border-radius:9px;border:1.5px solid var(--r-line);background:#fff;font-size:15px;font-weight:650;cursor:pointer;font-family:inherit;color:var(--r-ink2)}
+.fbops-n.on{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
 /* Barra de filtros de la nómina: los desplegables no se estiran con su opción más larga (al abrirlos se lee
    entera) y las acciones van juntas a la derecha; si no entran, bajan las cuatro juntas. */
 #sec-nomina > .ctrlbar:not(.nom-filtros) .srch{flex:1 1 220px;max-width:360px}
@@ -1313,8 +1318,12 @@ tr:hover td{background:#f9f9fb}
     <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por la posición que le asignó el equipo">
       <option value="">Posición: todas</option>
       <option value="Supervisor">Supervisores</option>
+      <option value="Coordinador de servicios">Coordinadores de servicios</option>
+      <option value="Coordinador / asistente de acreditaciones">Coordinadores / asistentes de acreditaciones</option>
       <option value="Equipo operaciones">Equipo operaciones</option>
       <option value="Operador acreditaciones">Operadores de acreditaciones</option>
+      <option value="Operador lee documentación">Operadores que leen documentación</option>
+      <option value="ECSA">ECSA</option>
       <option value="Orientador">Orientadores</option>
       <option value="Acomodador">Acomodadores</option>
       <option value="Hidratación">Hidratación</option>
@@ -1348,6 +1357,7 @@ tr:hover td{background:#f9f9fb}
         <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
         <button class="btn btn-sec btn-sm" id="btnExportBbva" onclick="exportBbva()" title="Los de esta lista que no tienen cuenta y todavía no tienen CBU, con los datos que pide el banco">↓ Cuentas a abrir (BBVA)</button>
         <button class="btn btn-sec btn-sm" onclick="openFbVarios()" title="La planilla de feedbacks pendientes de carga (varios eventos, por nombre): se busca a cada persona y cada evento, se revisa y se carga"><i class="ic ic-planilla"></i> Importar feedbacks de varios eventos</button>
+        <button class="btn btn-sec btn-sm" onclick="openRoles26()" title="La planilla de RR. HH. de convocados 2026 con roles: posiciones, semáforo, comentarios y eventos, por nombre"><i class="ic ic-planilla"></i> Importar roles y feedback 2026</button>
         <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
       </div>
     </div>
@@ -1784,7 +1794,7 @@ tr:hover td{background:#f9f9fb}
     <select class="filt" id="fbsArea" onchange="fbsPagina=1;renderFeedbacksSec()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select>
     <select class="filt" id="fbsMes" onchange="fbsPagina=1;renderFeedbacksSec()"><option value="">Todos los meses</option></select>
     <select class="filt" id="fbsTipo" onchange="fbsPagina=1;renderFeedbacksSec()">
-      <option value="">Evaluaciones y comentarios</option><option value="eval">Sólo evaluaciones</option><option value="obs">Sólo comentarios (sin puntaje)</option>
+      <option value="">Evaluaciones y comentarios</option><option value="eval">Sólo evaluaciones</option><option value="obs">Sólo comentarios (sin puntaje)</option><option value="ops">Sólo de Operaciones</option>
       <option value="1">En verde</option><option value="2">En amarillo</option><option value="3">En rojo</option><option value="nuevo">Nuevos o primera vez</option>
     </select>
     <button class="btn btn-sec btn-sm" onclick="fbsExcel()"><i class="ic ic-planilla"></i> Excel</button>
@@ -2481,6 +2491,38 @@ tr:hover td{background:#f9f9fb}
 </div>
 
 <!-- Historial: un show (quiénes fueron) -->
+<!-- Modal: Importar roles y feedback 2026 (24-nov) -->
+<div class="modal-bg" id="mRoles26" style="display:none" onclick="bgClose('mRoles26',event)">
+  <div class="modal" style="max-width:1180px">
+    <div class="modal-title"><span><i class="ic ic-planilla"></i> Importar roles y feedback 2026</span><button class="mclose" onclick="closeM('mRoles26')">✕</button></div>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;font-size:12px;color:#0369a1;margin-bottom:14px">
+      Para la planilla de RR. HH. «Convocados 2026» (una fila por persona, sin CUIL): los roles tildados pasan a la <strong>posición</strong> de la ficha, el semáforo de la planilla <strong>pisa</strong> el de la nómina (OUT → OUT), aptitudes y cosas a mejorar van a <strong>Feedbacks</strong> y los eventos al <strong>historial</strong>. Cada nombre se busca en la nómina: revisá los que quedan sin elegir. Se puede volver a subir: lo que ya entró no se repite.
+    </div>
+    <div class="fg"><input type="file" id="r26File" accept=".xlsx,.csv,.txt" style="font-size:12px" onchange="leerRoles26()"></div>
+    <div id="r26Prev"></div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mRoles26')">Cancelar</button>
+      <button class="btn btn-primary" id="r26Btn" onclick="doRoles26()" disabled>Cargar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Feedback de Operaciones (24-nov) -->
+<div class="modal-bg" id="mFbOps" style="display:none" onclick="bgClose('mFbOps',event)">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title"><span id="fbOpsTitulo">Feedback de Operaciones</span><button class="mclose" onclick="closeM('mFbOps')">✕</button></div>
+    <div class="fg"><label>Evento</label><select class="fi" id="fbOpsConv"></select></div>
+    <div class="fg"><label>Puntaje de Operaciones (1 a 5)</label><div class="fbops-notas" id="fbOpsNotas"></div></div>
+    <div class="fg"><label>Feedback</label><textarea class="fi" id="fbOpsTexto" style="height:80px" placeholder="Cómo trabajó, qué se destacó…"></textarea></div>
+    <div class="fg"><label>Comentarios a tener en cuenta</label><textarea class="fi" id="fbOpsTener" style="height:60px" placeholder="Para la próxima convocatoria (opcional)"></textarea></div>
+    <div style="font-size:12px;color:var(--r-muted);margin:-4px 0 12px">No cambia el semáforo: tiene su propio promedio y se ve en sus feedbacks y en la sección Feedbacks.</div>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="closeM('mFbOps')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarFbOps()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="mHiVer" style="display:none" onclick="bgClose('mHiVer',event)">
   <div class="modal" style="max-width:760px">
     <div class="modal-title"><span id="hiVerTit">Show</span><button class="mclose" onclick="closeM('mHiVer')">✕</button></div>
@@ -3324,6 +3366,7 @@ async function loadAll() {
   feedbacks = fbData || [];
   // Si la base ya tiene la fecha del show en cada feedback (historial-feedback.sql): se ve en lo que llegó.
   fbConFecha = feedbacks.length ? Object.prototype.hasOwnProperty.call(feedbacks[0], 'fecha') : false;
+  fbOpsEnBase = feedbacks.length ? Object.prototype.hasOwnProperty.call(feedbacks[0], 'tipo') : true;
   userProfiles = upData || [];
   supConvLinks = scData || [];
   solicitudes = solData || [];
@@ -3789,7 +3832,7 @@ function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado ==
 // misma nómina, y una persona puede tener más de una. Por eso es una lista.
 // 24-nov (Mercedes): + Boletero (para los servicios fijos) y las que la gente ya podía marcar al inscribirse pero el
 // equipo no podía asignar (Stagehand / cargas, Producción, Gastronomía).
-const POSICIONES = ['Supervisor', 'Equipo operaciones', 'Operador acreditaciones', 'Orientador', 'Acomodador', 'Hidratación', 'Stagehand / cargas', 'Producción', 'Gastronomía', 'Boletero'];
+const POSICIONES = ['Supervisor', 'Coordinador de servicios', 'Coordinador / asistente de acreditaciones', 'Equipo operaciones', 'Operador acreditaciones', 'Operador lee documentación', 'ECSA', 'Orientador', 'Acomodador', 'Hidratación', 'Stagehand / cargas', 'Producción', 'Gastronomía', 'Boletero'];
 // La localidad la cargó la persona al inscribirse, así que vive en la
 // solicitud. Se la busca por documento, igual que el resto de la planilla.
 // A quien se dio de alta a mano no le queda solicitud, así que la localidad
@@ -10949,6 +10992,202 @@ async function recalcularSemaforos(ids) {
   try { for (const k of [1, 2, 3]) await sbUpdateIn('personas', porColor[k], { semaforo: k }); } catch (_) {}
 }
 
+// ── ROLES Y FEEDBACK 2026 (24-nov) ──
+// La planilla de RR. HH. "RRHH eventos 2026 - roles y feedback" (Mercedes: "convocados 2026 con roles, para feedback de
+// operaciones y cargar, para poder mandar la dispo según categoría / feedback"): una fila por persona (sin CUIL), con
+// los roles marcados con 1 (supervisor, coordinador de servicios, acreditaciones, operador, operador que lee
+// documentación, ECSA), el semáforo, los eventos de 2026, aptitudes, cosas a mejorar y las columnas de Operaciones.
+// Thomas (24-nov): los roles van como posiciones de la ficha; el semáforo de la planilla pisa el de la nómina (OUT →
+// OUT); aptitudes y cosas a mejorar, a Feedbacks (observaciones); los eventos, al historial (con la fecha de su
+// convocatoria, o la que se elija); Operaciones carga lo suyo desde la plataforma (Feedback de Operaciones).
+// Cada nombre se busca en la nómina como en "Importar feedbacks de varios eventos"; lo dudoso se elige a mano.
+const R26_ROLES = [['supervisor', /^supervisor/, 'Supervisor'], ['coordserv', /coordi.*servic/, 'Coordinador de servicios'],
+  ['acred', /^acreditacion/, 'Coordinador / asistente de acreditaciones'], ['oplee', /^op\b.*\blee\b/, 'Operador lee documentación'],
+  ['op', /^op$|^operador$/, 'Operador acreditaciones'], ['ecsa', /^ecsa/, 'ECSA']];
+const R26_COLS = { nombre: /^nombre/, puntaje: /^puntaje$/, semaforo: /^semaforo/, eventos: /^eventos/, aptitudes: /^aptitud/, mejorar: /mejorar/,
+  fbops: /^feedback operac/, puntops: /^puntaje operac/, comentarios: /^comentarios/ };
+const R26_FIRMA = 'RR. HH. · planilla eventos 2026';
+let r26 = null;
+function openRoles26() {
+  r26 = null;
+  document.getElementById('r26File').value = ''; document.getElementById('r26Prev').innerHTML = '';
+  r26Boton(); showM('mRoles26');
+}
+async function leerRoles26() {
+  const f = document.getElementById('r26File').files[0], prev = document.getElementById('r26Prev');
+  r26 = null; r26Boton(); if (!f) { prev.innerHTML = ''; return; }
+  prev.innerHTML = '<div class="fbi-msg">Leyendo la planilla…</div>';
+  const sirve = fs => fs.some(r => r.some(x => R26_COLS.nombre.test(nomPelar(x).trim())) && r.some(x => /^supervisor/.test(nomPelar(x).trim())));
+  let filas; try { filas = await filasDeArchivo(f, sirve); } catch (err) { prev.innerHTML = '<div class="fbi-msg fbi-mal">No pude leer el archivo: ' + e(err && err.message || err) + '</div>'; return; }
+  const r = analizarRoles26(filas);
+  if (r.error) { prev.innerHTML = '<div class="fbi-msg fbi-mal">' + e(r.error) + '</div>'; return; }
+  r26 = r; renderRoles26();
+}
+// Quién es: como en la importación de feedbacks; si empatan dos y una sola es de Externos, ésa.
+function r26Persona(cands) {
+  const claro = fbvClaro(cands, 4, x => x.p.id); if (claro) return claro;
+  const top = cands.length ? cands[0].pts : 0, empatan = cands.filter(x => x.pts === top && top >= 4), ext = empatan.filter(x => x.p.area === 'externos');
+  return empatan.length > 1 && ext.length === 1 ? ext[0].p.id : '';
+}
+function analizarRoles26(filas) {
+  const iCab = filas.findIndex(r => r.some(x => R26_COLS.nombre.test(nomPelar(x).trim())) && r.some(x => /^supervisor/.test(nomPelar(x).trim())));
+  if (iCab < 0) return { error: 'No encontré las columnas: tiene que estar «Nombre y apellido» y las de los roles (Supervisor, OP…).' };
+  const cab = filas[iCab].map(x => nomPelar(x).replace(/\s+/g, ' ').trim()), col = {}, colR = {};
+  Object.entries(R26_COLS).forEach(([k, re]) => { const i = cab.findIndex(x => re.test(x)); if (i >= 0) col[k] = i; });
+  R26_ROLES.forEach(([k, re]) => { const i = cab.findIndex(x => re.test(x)); if (i >= 0) colR[k] = i; });
+  const txt = (r, k) => col[k] == null ? '' : String(r[col[k]] == null ? '' : r[col[k]]).trim();
+  const salida = [], eventos = new Map();
+  filas.slice(iCab + 1).forEach((r, j) => {
+    const nombre = txt(r, 'nombre'); if (!nombre) return;
+    // Las casillas de la planilla llegan como TRUE / FALSE (o 1 / 0, o "sí" / "x").
+    const roles = R26_ROLES.filter(([k]) => colR[k] != null && /^(1|true|verdadero|si|x)$/.test(hiNorm(r[colR[k]]))).map(x => x[2]);
+    const semTxt = hiNorm(txt(r, 'semaforo')), sem = /^ok/.test(semTxt) ? 'ok' : /^revis/.test(semTxt) ? 'revisar' : /^out/.test(semTxt) ? 'out' : '';
+    const evs = [...new Set(txt(r, 'eventos').split(/[,;\n]+/).map(s => s.trim()).filter(Boolean))];
+    evs.forEach(ev => { const k = hiNorm(ev); if (!eventos.has(k)) eventos.set(k, { nombre: ev, n: 0 }); eventos.get(k).n++; });
+    const pops = parseInt(txt(r, 'puntops'), 10);
+    const cands = fbvCandidatos(nombre, null);
+    salida.push({ nro: iCab + j + 2, nombre, roles, sem, puntaje: txt(r, 'puntaje'), eventos: evs, aptitudes: txt(r, 'aptitudes'), mejorar: txt(r, 'mejorar'),
+      fbops: txt(r, 'fbops'), puntops: pops >= 1 && pops <= 5 ? pops : null, comentarios: txt(r, 'comentarios'), cands, personaId: r26Persona(cands) });
+  });
+  salida.forEach(f => { f.marcada = !!f.personaId; });
+  // Los eventos: su convocatoria del panel (de 2026) si es clara; si no, se elige o se pone la fecha a mano.
+  eventos.forEach(ev => {
+    ev.cands = fbvConvocatorias(ev.nombre, '').filter(x => !esGeneral(x.c) && slotsDe(x.c).some(s => String(s.fecha || '').startsWith('2026')));
+    ev.convId = fbvClaro(ev.cands, 3, x => x.c.id); ev.fecha = '';
+  });
+  return { filas: salida, eventos, opc: { roles: true, sem: true, fb: true, hist: true } };
+}
+function r26FechaConv(c) { const fs = slotsDe(c).map(s => s.fecha).filter(f => String(f).startsWith('2026')).sort(); return fs[0] || ''; }
+function renderRoles26() {
+  const r = r26; if (!r) return;
+  const n = r.filas.length, marcadas = r.filas.filter(f => f.marcada).length, sinQuien = r.filas.filter(f => !f.personaId).length;
+  const SEM = { ok: '<span class="sem sem-1">1</span> OK', revisar: '<span class="sem sem-2">2</span> Revisar', out: '<span class="out-badge">OUT</span>' };
+  const filas = r.filas.map((f, i) => `<tr class="${f.marcada ? '' : 'fbv-sin'}">
+      <td><input type="checkbox" ${f.marcada ? 'checked' : ''}${f.personaId ? '' : ' disabled'} onchange="r26.filas[${i}].marcada=this.checked;r26Boton()" aria-label="Cargar la fila ${f.nro}"></td>
+      <td><div class="fbv-nom">${e(f.nombre)}</div><div class="fbv-sub">fila ${f.nro}</div>
+        <select class="filt fbv-sel" onchange="r26Elegir(${i},this.value)">${fbvOpcionesPersona(f)}</select><input class="fbv-bus" placeholder="Buscar otra persona…" oninput="r26Buscar(${i},this.value)"></td>
+      <td>${f.roles.length ? f.roles.map(x => '<span class="pos-chip asig">' + e(x) + '</span>').join(' ') : '<span class="fbv-sub">—</span>'}</td>
+      <td style="white-space:nowrap">${SEM[f.sem] || '<span class="fbv-sub">—</span>'}${f.puntaje ? `<div class="fbv-sub">puntaje ${e(f.puntaje)}</div>` : ''}</td>
+      <td>${f.eventos.length ? '<span class="fbv-sub">' + f.eventos.length + ' evento' + (f.eventos.length === 1 ? '' : 's') + '</span>' : '<span class="fbv-sub">—</span>'}</td>
+      <td>${f.aptitudes ? `<div class="fbv-com"><b>Aptitudes:</b> ${e(f.aptitudes)}</div>` : ''}${f.mejorar ? `<div class="fbv-com"><b>A mejorar:</b> ${e(f.mejorar)}</div>` : ''}${f.fbops || f.puntops ? `<div class="fbv-com"><b>Operaciones${f.puntops ? ' ' + f.puntops + '/5' : ''}:</b> ${e(f.fbops)}</div>` : ''}</td>
+    </tr>`).join('');
+  const evs = [...r.eventos.entries()].sort((a, b) => b[1].n - a[1].n);
+  const conConv = evs.filter(([, v]) => v.convId || v.fecha).length;
+  const evFilas = evs.map(([k, v]) => `<tr><td style="min-width:220px"><div class="fbv-nom">${e(v.nombre)}</div><div class="fbv-sub">${v.n} persona${v.n === 1 ? '' : 's'}</div></td>
+      <td><select class="filt fbv-sel" onchange="r26Evento('${e(k)}',this.value)"><option value=""${!v.convId && !v.fecha ? ' selected' : ''}>No cargar al historial</option>${v.cands.map(x => `<option value="${x.c.id}"${x.c.id === v.convId ? ' selected' : ''}>${e(x.c.nombre)} · ${e(fechaDMA(r26FechaConv(x.c)))}</option>`).join('')}<option value="_fecha"${v.fecha && !v.convId ? ' selected' : ''}>Otra: poner la fecha…</option></select>
+        ${!v.convId && (v.fechaVisible || v.fecha) ? `<input type="date" class="fi" style="max-width:170px;margin-top:4px" value="${e(v.fecha)}" onchange="r26.eventos.get('${e(k)}').fecha=this.value;renderRoles26()">` : ''}</td></tr>`).join('');
+  const opc = (k, t) => `<label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;margin-right:16px"><input type="checkbox" class="cb" ${r.opc[k] ? 'checked' : ''} onchange="r26.opc['${k}']=this.checked;r26Boton()"> ${t}</label>`;
+  document.getElementById('r26Prev').innerHTML = `<div class="fbi-res"><strong>${marcadas}</strong> de ${n} personas para cargar${sinQuien ? `<div class="fbi-sub">${sinQuien} sin la persona elegida: elegila de la lista o buscala (si no está en la nómina, queda afuera).</div>` : ''}</div>
+    <div style="margin:10px 0">${opc('roles', 'Roles como posición de la ficha (se suman a las que tenga)')}${opc('sem', 'Semáforo de la planilla (OUT → OUT)')}${opc('fb', 'Aptitudes y cosas a mejorar a Feedbacks')}${opc('hist', 'Eventos al historial (' + conConv + ' de ' + evs.length + ' con fecha)')}</div>
+    <div class="fbv-tabla"><table><thead><tr><th></th><th>Persona</th><th>Roles</th><th>Semáforo</th><th>Eventos</th><th>Comentarios</th></tr></thead><tbody>${filas}</tbody></table></div>
+    <div style="font-size:12px;font-weight:600;color:var(--r-ink2);margin:16px 0 6px">Los eventos de la planilla: su convocatoria en el panel (de ahí sale la fecha), otra fecha, o no cargarlo</div>
+    <div class="fbv-tabla" style="max-height:260px"><table><tbody>${evFilas}</tbody></table></div>`;
+  r26Boton();
+}
+function r26Elegir(i, id) { const f = r26.filas[i]; f.personaId = id; f.marcada = !!id; renderRoles26(); }
+function r26Buscar(i, q) {
+  const f = r26.filas[i], t = fbvPalabras(q);
+  f.cands = String(q).trim().length < 3 ? fbvCandidatos(f.nombre, null) : people.filter(p => { const n = nomPelar(p.nombre); return t.every(w => n.includes(w)); }).slice(0, 15).map(p => ({ p, pts: 0, trabajo: false }));
+  if (f.personaId && !f.cands.some(x => x.p.id === f.personaId)) { const p = personaPorId(f.personaId); if (p) f.cands.unshift({ p, pts: 0, trabajo: false }); }
+  const sel = document.querySelectorAll('#r26Prev .fbv-sel')[i]; if (sel) sel.innerHTML = fbvOpcionesPersona(f);
+}
+function r26Evento(k, v) { const ev = r26.eventos.get(k); if (!ev) return; if (v === '_fecha') { ev.convId = ''; ev.fechaVisible = true; } else { ev.convId = v; ev.fecha = ''; ev.fechaVisible = false; } renderRoles26(); }
+function r26Boton() {
+  const b = document.getElementById('r26Btn'), n = r26 ? r26.filas.filter(f => f.marcada && f.personaId).length : 0, algo = r26 && Object.values(r26.opc).some(Boolean);
+  b.disabled = !n || !algo; b.textContent = n ? 'Cargar ' + n + ' persona' + (n === 1 ? '' : 's') : 'Cargar';
+  const fuerte = document.querySelector('#r26Prev .fbi-res strong'); if (fuerte) fuerte.textContent = n;
+}
+async function doRoles26() {
+  const r = r26; if (!r) return;
+  const elegidas = r.filas.filter(f => f.marcada && f.personaId); if (!elegidas.length) return;
+  const b = document.getElementById('r26Btn'); b.disabled = true; b.textContent = 'Cargando…';
+  const cuenta = { fichas: 0, out: 0, obs: 0, hist: 0, yaHist: 0, error: 0 };
+  // 1) La ficha de cada uno: posiciones, semáforo y OUT (de a seis a la vez).
+  const cambios = elegidas.map(f => {
+    const p = personaPorId(f.personaId); if (!p) return null;
+    const c = {};
+    if (r.opc.roles && f.roles.length) { const pos = [...new Set(posicionesDe(p).concat(f.roles))]; if (pos.length !== posicionesDe(p).length) c.posiciones = pos; }
+    if (r.opc.sem && f.sem === 'ok') c.semaforo = 1;
+    if (r.opc.sem && f.sem === 'revisar') c.semaforo = 2;
+    if (r.opc.sem && f.sem === 'out') { c.semaforo = 3; if (!p.out_flag) Object.assign(c, { out_flag: true, out_categoria: 'comportamiento', out_nota: 'Semáforo OUT en la planilla de RR. HH. (eventos 2026)' }); }
+    return Object.keys(c).length ? { p, c } : null;
+  }).filter(Boolean);
+  for (let i = 0; i < cambios.length; i += 6) {
+    b.textContent = 'Fichas… ' + Math.round(i * 100 / Math.max(1, cambios.length)) + '%';
+    await Promise.all(cambios.slice(i, i + 6).map(async ({ p, c }) => {
+      try { const { error } = await sb.from('personas').update(c).eq('id', p.id); if (error) throw error; Object.assign(p, c); cuenta.fichas++; if (c.out_flag) cuenta.out++; } catch (_) { cuenta.error++; }
+    }));
+  }
+  // 2) Aptitudes, cosas a mejorar (y lo de Operaciones, si ya lo completaron): observaciones, sin repetir lo cargado.
+  if (r.opc.fb) {
+    const ya = new Set(feedbacks.map(f => f.persona_id + '|' + (f.comentario || ''))), lista = [];
+    const sumar = (f, comentario, extra) => { const k = f.personaId + '|' + comentario; if (ya.has(k)) return; ya.add(k);
+      lista.push(Object.assign({ id: uid(), persona_id: f.personaId, conv_id: null, supervisor_id: currentUserId || null, supervisor_nombre: R26_FIRMA, puntaje: null, comentario }, extra || {})); };
+    elegidas.forEach(f => {
+      if (f.aptitudes) sumar(f, 'Aptitudes: ' + f.aptitudes);
+      if (f.mejorar) sumar(f, 'A mejorar: ' + f.mejorar);
+      if ((f.fbops || f.puntops) && fbOpsEnBase) sumar(f, f.fbops || 'Puntaje de Operaciones', { tipo: 'operaciones', puntaje_ops: f.puntops, tener_en_cuenta: f.comentarios || null, supervisor_nombre: 'Operaciones · planilla eventos 2026' });
+    });
+    for (let i = 0; i < lista.length; i += 200) {
+      try { await sbInsert('feedbacks', lista.slice(i, i + 200)); const ahora = new Date().toISOString(); lista.slice(i, i + 200).forEach(x => feedbacks.push(Object.assign({ created_at: ahora }, x))); cuenta.obs += Math.min(200, lista.length - i); } catch (_) { cuenta.error++; break; }
+    }
+  }
+  // 3) Los eventos al historial: con la fecha de su convocatoria o la elegida.
+  if (r.opc.hist) {
+    const filasH = [];
+    elegidas.forEach(f => {
+      const p = personaPorId(f.personaId); if (!p) return;
+      f.eventos.forEach(nom => {
+        const ev = r.eventos.get(hiNorm(nom)); if (!ev) return;
+        const conv = ev.convId ? convs.find(c => c.id === ev.convId) : null, fecha = conv ? r26FechaConv(conv) : ev.fecha;
+        if (!fecha) return;
+        filasH.push({ area: (conv && conv.area) || p.area || 'externos', evento: conv ? conv.nombre : ev.nombre, fecha, persona_id: p.id, cuil: p.cuit || null, nombre: p.nombre, puesto: f.roles[0] || null, origen: 'planilla roles 2026' });
+      });
+    });
+    if (filasH.length) { const res = await hiGuardarFilas(filasH, (i, n) => { b.textContent = 'Historial… ' + Math.round(i * 100 / n) + '%'; }); if (res) { cuenta.hist = res.cargadas; cuenta.yaHist = res.ya; } else cuenta.error++; }
+  }
+  nomRefresh();
+  try { if (document.getElementById('sec-feedbacks').classList.contains('active')) renderFeedbacksSec(); } catch (_) {}
+  closeM('mRoles26');
+  toast(['Listo', cuenta.fichas && cuenta.fichas + ' fichas actualizadas', cuenta.out && cuenta.out + ' a OUT', cuenta.obs && cuenta.obs + ' comentarios a Feedbacks',
+    cuenta.hist && cuenta.hist + ' presencias al historial', cuenta.yaHist && cuenta.yaHist + ' ya estaban', cuenta.error && 'hubo ' + cuenta.error + ' error(es): volvé a subirla, lo que entró no se repite'].filter(Boolean).join(' · '));
+}
+
+// ── FEEDBACK DE OPERACIONES (24-nov) ── Desde la plataforma: un puntaje del 1 al 5, el feedback y lo que hay que tener
+// en cuenta, de un evento (o en general). Va en feedbacks con tipo 'operaciones' (feedback-operaciones.sql); no cuenta
+// para el semáforo y tiene su propio promedio.
+let fbOpsEnBase = true, fbOpsPersona = null, fbOpsNota = 0;
+function esFbOps(f) { return f && f.tipo === 'operaciones'; }
+function promedioOps(personaId) { const l = feedbacks.filter(f => f.persona_id === personaId && esFbOps(f) && f.puntaje_ops); return l.length ? { prom: l.reduce((s, f) => s + f.puntaje_ops, 0) / l.length, n: l.length } : null; }
+function openFbOps(personaId) {
+  const p = personaPorId(personaId); if (!p) return;
+  fbOpsPersona = personaId; fbOpsNota = 0;
+  document.getElementById('fbOpsTitulo').textContent = 'Feedback de Operaciones — ' + nombrePropio(p.nombre);
+  const hoy = hoyLocalISO(), lista = convs.filter(c => !esGeneral(c) && slotsDe(c).length && (c.area === 'externos' || c.area === p.area))
+    .map(c => ({ c, f: slotsDe(c)[0].fecha })).filter(x => x.f <= hoy).sort((a, b) => b.f.localeCompare(a.f)).slice(0, 80);
+  const suyas = new Set(posts.filter(x => x.personaId === personaId).map(x => x.convId));
+  document.getElementById('fbOpsConv').innerHTML = '<option value="">En general (sin un evento)</option>' + lista.sort((a, b) => (suyas.has(b.c.id) - suyas.has(a.c.id)) || b.f.localeCompare(a.f))
+    .map(x => `<option value="${x.c.id}">${e(x.c.nombre)} · ${e(fechaDMA(x.f))}${suyas.has(x.c.id) ? ' · estuvo' : ''}</option>`).join('');
+  document.getElementById('fbOpsTexto').value = ''; document.getElementById('fbOpsTener').value = '';
+  renderFbOpsNota(); showM('mFbOps');
+}
+function renderFbOpsNota() { document.getElementById('fbOpsNotas').innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" class="fbops-n${n === fbOpsNota ? ' on' : ''}" onclick="fbOpsNota=${n};renderFbOpsNota()">${n}</button>`).join(''); }
+async function guardarFbOps() {
+  const p = personaPorId(fbOpsPersona); if (!p) return;
+  const texto = document.getElementById('fbOpsTexto').value.trim(), tener = document.getElementById('fbOpsTener').value.trim(), convId = document.getElementById('fbOpsConv').value || null;
+  if (!fbOpsNota && !texto) { toast('Poné el puntaje o el feedback'); return; }
+  const conv = convId ? convs.find(c => c.id === convId) : null, quien = ((document.getElementById('userEmail') || {}).textContent || '').trim();
+  const fb = { id: uid(), persona_id: p.id, conv_id: convId, supervisor_id: currentUserId || null, supervisor_nombre: 'Operaciones' + (quien ? ' · ' + quien.split('@')[0] : ''), puntaje: null,
+    comentario: texto || null, tipo: 'operaciones', puntaje_ops: fbOpsNota || null, tener_en_cuenta: tener || null };
+  if (fbConFecha && conv) fb.fecha = (slotsDe(conv)[0] || {}).fecha || null;
+  try { const { error } = await sb.from('feedbacks').insert(fb); if (error) throw error; }
+  catch (err) { const m = String(err && (err.message || err.details) || err); toast(/tipo|puntaje_ops|tener_en_cuenta/.test(m) ? 'Falta correr feedback-operaciones.sql en Supabase' : 'No se pudo guardar: ' + m); return; }
+  feedbacks.push(Object.assign({ created_at: new Date().toISOString() }, fb));
+  closeM('mFbOps'); toast('✓ Feedback de Operaciones guardado');
+  if (document.getElementById('mFbHistory').style.display !== 'none') openFbHistory(p.id);
+  try { if (document.getElementById('sec-feedbacks').classList.contains('active')) renderFeedbacksSec(); } catch (_) {}
+}
+
 // ── FEEDBACKS DE VARIOS EVENTOS, DESDE LA PLANILLA SIN CUIL ──
 // La de "feedbacks hechos pendientes de carga": una fila por persona y evento, con el
 // nombre (sin CUIL), el rol, la evaluación con los cuatro criterios o una observación
@@ -14576,6 +14815,8 @@ function dmGrupos() {
     sup: base.filter(p => posicionesDe(p).includes('Supervisor')),
     ops: base.filter(p => posicionesDe(p).includes('Equipo operaciones')),
     rex: base.filter(esRecurrenteExternos),
+    pos: (() => { const v = (document.getElementById('dmPos') || {}).value || ''; return v ? base.filter(p => posicionesDe(p).includes(v)) : []; })(),
+    sem: (() => { const v = Number((document.getElementById('dmSem') || {}).value || 0); return v ? base.filter(p => (p.semaforo || 1) === v) : []; })(),
     tag: tag ? base.filter(p => (p.etiquetas || []).some(t => String(t).toLowerCase() === tag.toLowerCase())) : [],
   };
 }
@@ -14589,7 +14830,7 @@ function esRecurrenteExternos(p) {
 function dmDestinatarios() {
   const g = dmGrupos(), vistos = new Set(), out = [];
   const sumar = p => { const m = String(p.email).trim().toLowerCase(); if (!vistos.has(m)) { vistos.add(m); out.push(p); } };
-  ['rec', 'sup', 'ops', 'rex', 'tag'].forEach(k => { const cb = document.getElementById('dmG_' + k); if (cb && cb.checked) g[k].forEach(sumar); });
+  ['rec', 'sup', 'ops', 'rex', 'pos', 'sem', 'tag'].forEach(k => { const cb = document.getElementById('dmG_' + k); if (cb && cb.checked) g[k].forEach(sumar); });
   gruposEnvio.forEach(gr => { const cb = document.getElementById('dmGG_' + gr.id); if (cb && cb.checked) grupoGente(gr).forEach(sumar); });
   return out;
 }
@@ -14818,6 +15059,8 @@ function renderDispMes() {
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:18px 0 8px">3 · Mandarlo por mail</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px 18px">
       ${grupo('rec', 'Recomendados', g.rec.length)}${grupo('sup', 'Supervisores', g.sup.length)}${grupo('ops', 'Equipo de operaciones', g.ops.length)}${(document.getElementById('dmArea') || {}).value !== 'movistar_arena' ? grupo('rex', 'Recurrentes de Externos (2 o más eventos)', g.rex.length) : ''}
+      <span style="display:flex;align-items:center;gap:8px;font-size:13px">${grupo('pos', 'Posición', g.pos.length)}<select class="filt" id="dmPos" onchange="renderDispMes()" style="font-size:12px;padding:4px 8px"><option value="">elegir…</option>${POSICIONES.map(x => `<option ${x === ((document.getElementById('dmPos') || {}).value || '') ? 'selected' : ''}>${e(x)}</option>`).join('')}</select></span>
+      <span style="display:flex;align-items:center;gap:8px;font-size:13px">${grupo('sem', 'Semáforo', g.sem.length)}<select class="filt" id="dmSem" onchange="renderDispMes()" style="font-size:12px;padding:4px 8px"><option value="">elegir…</option>${[['1', 'Verde'], ['2', 'Amarillo']].map(([v, t]) => `<option value="${v}" ${v === ((document.getElementById('dmSem') || {}).value || '') ? 'selected' : ''}>${t}</option>`).join('')}</select></span>
       <span style="display:flex;align-items:center;gap:8px;font-size:13px">${grupo('tag', 'Etiqueta', g.tag.length)}<select class="filt" id="dmTag" onchange="renderDispMes()" style="font-size:12px;padding:4px 8px"><option value="">elegir…</option>${etiquetas.map(t => `<option ${t === tagSel ? 'selected' : ''}>${e(t)}</option>`).join('')}</select></span>
     </div>
     <div style="font-size:12px;color:#6b7280;margin:14px 0 6px">Grupos guardados</div>
@@ -15555,7 +15798,7 @@ function fbsFiltradas(todas) {
   const area = document.getElementById('fbsArea').value, mes = document.getElementById('fbsMes').value, tipo = document.getElementById('fbsTipo').value;
   const q = hiNorm(document.getElementById('fbsSrch').value);
   return todas.filter(x => (!area || x.area === area) && (!mes || x.fecha.startsWith(mes))
-    && (!tipo || (tipo === 'eval' ? x.prom != null : tipo === 'obs' ? x.f.puntaje == null : tipo === 'nuevo' ? !!fbsNuevo(x) : String(x.color) === tipo && x.f.puntaje != null))
+    && (!tipo || (tipo === 'eval' ? x.prom != null : tipo === 'ops' ? esFbOps(x.f) : tipo === 'obs' ? x.f.puntaje == null && !esFbOps(x.f) : tipo === 'nuevo' ? !!fbsNuevo(x) : String(x.color) === tipo && x.f.puntaje != null))
     && (!q || [x.p && x.p.nombre, x.sup, x.conv && x.conv.nombre, x.f.comentario].some(t => hiNorm(t).includes(q))));
 }
 function renderFeedbacksSec() {
@@ -15581,7 +15824,7 @@ function renderFeedbacksSec() {
         <td><div class="fbv-nom">${x.p ? eN(x.p.nombre) : 'Persona borrada'}</div>${nv ? `<span class="sv-nuevo-panel">${nv}</span>` : ''}</td>
         <td>${x.conv ? e(x.conv.nombre) : '<span class="fbv-sub">—</span>'}</td><td>${e(x.sup)}</td>
         <td title="${FB_CRITERIOS.map(c => c.titulo).join(' · ')}">${crit}</td>
-        <td>${x.prom != null ? `<span class="sem sem-${colorDePromedio(x.prom)}" style="vertical-align:middle">${colorDePromedio(x.prom)}</span> ${x.prom.toFixed(2)}` : x.f.puntaje ? `<span class="sem sem-${x.f.puntaje}">${x.f.puntaje}</span>` : '<span class="fb-obs">Comentario</span>'}</td>
+        <td>${x.prom != null ? `<span class="sem sem-${colorDePromedio(x.prom)}" style="vertical-align:middle">${colorDePromedio(x.prom)}</span> ${x.prom.toFixed(2)}` : esFbOps(x.f) ? `<span class="fb-ops">Operaciones${x.f.puntaje_ops ? ' ' + x.f.puntaje_ops + '/5' : ''}</span>` : x.f.puntaje ? `<span class="sem sem-${x.f.puntaje}">${x.f.puntaje}</span>` : '<span class="fb-obs">Comentario</span>'}</td>
         <td>${e(x.f.comentario || '')}</td></tr>`;
     }).join('') + '</tbody></table></div>'
     + (l.length > vista.length ? `<div style="text-align:center;margin-top:12px"><button class="btn btn-sec btn-sm" onclick="fbsPagina++;renderFeedbacksSec()">Mostrar ${Math.min(FBS_POR_PAGINA, l.length - vista.length)} más (quedan ${l.length - vista.length})</button></div>` : '');
@@ -15590,7 +15833,7 @@ function fbsExcel() {
   const l = fbsFiltradas(fbsFilas());
   const filas = [['Fecha', 'Persona', 'CUIL', 'Área', 'Show', 'Quién lo hizo', 'Nuevo'].concat(FB_CRITERIOS.map(c => c.titulo), ['Promedio', 'Color', 'Comentario'])]
     .concat(l.map(x => [fechaDMA(x.fecha), x.p ? x.p.nombre : '', x.p ? x.p.cuit || '' : '', areaLargo(x.area), x.conv ? x.conv.nombre : '', x.sup, fbsNuevo(x)]
-      .concat(FB_CRITERIOS.map(c => x.prom != null ? x.f[c.id] : ''), [x.prom != null ? Number(x.prom.toFixed(2)) : '', x.prom != null ? NOMBRE_COLOR[colorDePromedio(x.prom)] : x.f.puntaje ? NOMBRE_COLOR[x.f.puntaje] : 'Comentario', x.f.comentario || ''])));
+      .concat(FB_CRITERIOS.map(c => x.prom != null ? x.f[c.id] : ''), [x.prom != null ? Number(x.prom.toFixed(2)) : '', x.prom != null ? NOMBRE_COLOR[colorDePromedio(x.prom)] : esFbOps(x.f) ? 'Operaciones' + (x.f.puntaje_ops ? ' ' + x.f.puntaje_ops + '/5' : '') : x.f.puntaje ? NOMBRE_COLOR[x.f.puntaje] : 'Comentario', [x.f.comentario, x.f.tener_en_cuenta && 'A tener en cuenta: ' + x.f.tener_en_cuenta].filter(Boolean).join(' · ')])));
   descargarLibro('feedbacks-' + hoyLocalISO() + '.xlsx', [{ nombre: 'Feedbacks', titulo: 'Feedbacks', subtitulo: l.length + ' feedback' + (l.length === 1 ? '' : 's') + ' · lo más nuevo arriba', filas }]);
 }
 function hiSupDetalle(fbs) {
@@ -15878,11 +16121,13 @@ function openFbHistory(personaId) {
   document.getElementById('mFbHistTitle').textContent = `Feedbacks — ${p?.nombre || ''}`;
   const myFbs = feedbacks.filter(f => f.persona_id === personaId).sort((a, b) => b.created_at.localeCompare(a.created_at));
   const sem = calcSemaforo(personaId);
-  let html = `<div style="display:flex;align-items:center;gap:10px;padding:10px 0 14px;border-bottom:1px solid #f3f4f6;margin-bottom:10px">
-    <span style="font-size:13px;color:#6b7280">Semáforo actual:</span>
+  let html = `<div style="display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;padding:10px 0 14px;border-bottom:1px solid #f3f4f6;margin-bottom:10px">
+    <span style="font-size:13px;color:#6b7280;white-space:nowrap">Semáforo actual:</span>
     <span class="sem sem-${sem}">${sem}</span>
-    <span style="font-size:12px;color:#9ca3af">(promedio de ${myFbs.length} feedback${myFbs.length!==1?'s':''})</span>
-    <button class="btn btn-primary btn-xs" onclick="closeM('mFbHistory');openFeedback('${personaId}',null)" style="margin-left:auto">+ Nuevo feedback</button>
+    <span style="font-size:12px;color:#9ca3af;white-space:nowrap">(promedio de ${myFbs.length} feedback${myFbs.length!==1?'s':''})</span>
+    ${(() => { const o = promedioOps(personaId); return o ? `<span style="font-size:12px;color:#6b7280;white-space:nowrap">· Operaciones <b>${o.prom.toFixed(1).replace('.', ',')}</b>/5 (${o.n})</span>` : ''; })()}
+    <button class="btn btn-sec btn-xs" onclick="openFbOps('${personaId}')" style="margin-left:auto">+ Feedback de Operaciones</button>
+    <button class="btn btn-primary btn-xs" onclick="closeM('mFbHistory');openFeedback('${personaId}',null)">+ Nuevo feedback</button>
   </div>`;
   if (!myFbs.length) { html += '<div class="empty">Sin feedbacks todavía</div>'; }
   else html += myFbs.map(fbItemHTML).join('');
@@ -15901,12 +16146,13 @@ function fbItemHTML(f) {
     `<span><b>${f[c.id]}</b> ${c.titulo.toLowerCase()}</span>`).join('')}<span class="fb-prom">promedio ${prom.toFixed(2)}</span></div>`;
   return `<div class="fb-item">
     <div style="display:flex;align-items:center;gap:8px">
-      ${f.puntaje == null ? '<span class="fb-obs">Observación</span>' : `<span class="sem sem-${f.puntaje}">${f.puntaje}</span>`}
+      ${esFbOps(f) ? `<span class="fb-ops">Operaciones${f.puntaje_ops ? ' · ' + f.puntaje_ops + '/5' : ''}</span>` : f.puntaje == null ? '<span class="fb-obs">Observación</span>' : `<span class="sem sem-${f.puntaje}">${f.puntaje}</span>`}
       <span style="font-weight:500">${e(f.supervisor_nombre || 'Admin')}</span>
       <span style="font-size:11px;background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:3px">${convNom}</span>
     </div>
     ${desglose}
     ${f.comentario ? `<div style="margin-top:4px;color:#374151;font-size:12px">${e(f.comentario)}</div>` : ''}
+    ${f.tener_en_cuenta ? `<div style="margin-top:4px;color:#92400e;font-size:12px"><b>A tener en cuenta:</b> ${e(f.tener_en_cuenta)}</div>` : ''}
     <div class="fb-meta">${f.fecha ? 'Show del ' + fmtFecha(String(f.fecha).slice(0, 10)) + ' · cargado ' : ''}${f.created_at ? new Date(f.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}</div>
   </div>`;
 }
