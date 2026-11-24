@@ -1347,6 +1347,7 @@ tr:hover td{background:#f9f9fb}
       <div style="margin-left:auto;display:flex;gap:8px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end">
         <button class="btn btn-primary btn-sm" onclick="openDispAdmin()" title="Quiénes dijeron que pueden cada día: ver su ficha, su feedback y su CV, y confirmar de a uno o de a muchos"><i class="ic ic-calendario"></i> Disponibilidad</button>
         <button class="btn btn-sec btn-sm" onclick="exportPresentes()" title="Para mandar a los supervisores: una hoja por fecha, una tabla por sector, con quién confirmó y lo ya marcado (sin mail ni CBU)">↓ Excel para supervisores</button>
+        <button class="btn btn-sec btn-sm" onclick="openTurnosWa()" title="Un texto por fecha, con el horario y la gente de cada puesto, para pegar en el grupo de WhatsApp interno">Turnos para WhatsApp</button>
         <div class="nom-mas">
           <button class="btn btn-sec btn-sm" onclick="toggleDetMas(event)" title="Publicar, corregir presentes, importar asistencia, feedback, reporte, contratos">⋯ Más</button>
           <div class="nom-mas-menu" id="detMasMenu">
@@ -2239,6 +2240,23 @@ tr:hover td{background:#f9f9fb}
     <div class="ma">
       <button class="btn btn-sec" onclick="closeM('mPlantilla')">Cancelar</button>
       <button class="btn btn-primary" id="plGuardarBtn" onclick="guardarPlantilla()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Turnos para WhatsApp (24-nov) -->
+<div class="modal-bg" id="mTurnosWa" style="display:none" onclick="bgClose('mTurnosWa',event)">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title"><span>Turnos para WhatsApp</span><button class="mclose" onclick="closeM('mTurnosWa')">✕</button></div>
+    <div style="font-size:12px;color:var(--r-muted);margin:-6px 0 12px">Un texto por fecha, con el horario y la gente de cada puesto (los aprobados y confirmados), para pegar en el grupo interno. Sin CUIL, teléfono ni mail.</div>
+    <div class="frow">
+      <div class="fg"><label>Fecha</label><select class="fi" id="twaSlot" onchange="renderTurnosWa()"></select></div>
+      <div class="fg"><label>Qué va</label><select class="fi" id="twaModo" onchange="renderTurnosWa()"><option value="todos">Todos los puestos</option><option value="resumen">Sólo cuántos por puesto</option></select></div>
+    </div>
+    <textarea class="fi" id="twaTexto" style="height:300px;font-family:inherit;font-size:13px" spellcheck="false"></textarea>
+    <div class="ma">
+      <button class="btn btn-sec" onclick="bajarTurnosWa()">↓ Bajar .txt</button>
+      <button class="btn btn-primary" onclick="copiarTurnosWa()">Copiar</button>
     </div>
   </div>
 </div>
@@ -9856,6 +9874,46 @@ async function listaTodosPresentes() {
 }
 
 // El Excel para los supervisores: los que van (aprobados y confirmados), con si confirmaron.
+// ── TURNOS PARA WHATSAPP (24-nov, Mercedes: "que se puedan descargar los turnos, horario y puesto, para mandar por
+// el grupo de WhatsApp interno") ── Un texto por fecha, con *negritas* de WhatsApp, la gente de cada puesto (los
+// aprobados y confirmados, como el Excel para supervisores) y nada de datos personales.
+function openTurnosWa() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return;
+  const slots = slotsDe(c); if (!slots.length) { toast('La convocatoria no tiene fechas cargadas'); return; }
+  const hoy = hoyLocalISO(), elegido = slots.find(x => x.fecha === hoy) || slots.find(x => x.fecha >= hoy) || slots[slots.length - 1];
+  document.getElementById('twaSlot').innerHTML = slots.map(sl => `<option value="${e(sl.id)}"${sl.id === elegido.id ? ' selected' : ''}>${e(fmtFecha(sl.fecha))}${sl.horario ? ' · ' + e(sl.horario) : ''}</option>`).join('');
+  renderTurnosWa(); showM('mTurnosWa');
+}
+function textoTurnosWa() {
+  const c = convs.find(x => x.id === currentConvId); if (!c) return '';
+  const sl = slotsDe(c).find(x => x.id === document.getElementById('twaSlot').value) || slotsDe(c)[0]; if (!sl) return '';
+  const resumen = document.getElementById('twaModo').value === 'resumen';
+  const todos = listaConvocados().filter(esAprobado), nombreDe = x => { const p = personaPorId(x.personaId); return nombrePropio((p && p.nombre) || x.nombre || ''); };
+  const d = new Date(sl.fecha + 'T12:00:00'), dia = isNaN(d) ? sl.fecha : d.toLocaleDateString('es-AR', { weekday: 'long' }) + ' ' + d.getDate() + '/' + (d.getMonth() + 1);
+  const lineas = ['*' + String(c.nombre || '').toUpperCase() + '*', dia.charAt(0).toUpperCase() + dia.slice(1) + (c.venue ? ' · ' + c.venue : ''), 'Horario: ' + (sl.horario || c.horario || 'a confirmar'), ''];
+  const sectores = (c.puestos || []).map(p => ({ id: p.id, nombre: p.nombre }));
+  if (todos.some(x => !sectores.some(p => p.id === x.puestoId))) sectores.push({ id: null, nombre: 'Sin puesto' });
+  sectores.forEach(sec => {
+    const gente = todos.filter(x => sec.id ? x.puestoId === sec.id : !sectores.some(p => p.id && p.id === x.puestoId)).map(nombreDe).filter(Boolean).sort((a, b) => a.localeCompare(b, 'es'));
+    if (!gente.length) return;
+    if (resumen) { lineas.push('• ' + sec.nombre + ': ' + gente.length); return; }
+    lineas.push('*' + sec.nombre + ' (' + gente.length + ')*'); gente.forEach((n, i) => lineas.push((i + 1) + '. ' + n)); lineas.push('');
+  });
+  if (resumen) lineas.push('');
+  lineas.push('Total: ' + todos.length);
+  return lineas.join('\n');
+}
+function renderTurnosWa() { document.getElementById('twaTexto').value = textoTurnosWa(); }
+async function copiarTurnosWa() {
+  const t = document.getElementById('twaTexto');
+  try { await navigator.clipboard.writeText(t.value); toast('✓ Copiado: pegalo en el grupo'); }
+  catch (_) { t.select(); try { document.execCommand('copy'); toast('✓ Copiado: pegalo en el grupo'); } catch (__) { toast('No se pudo copiar: seleccioná el texto y copialo a mano'); } }
+}
+function bajarTurnosWa() {
+  const c = convs.find(x => x.id === currentConvId) || {}, sl = document.getElementById('twaSlot');
+  const fecha = (slotsDe(c).find(x => x.id === sl.value) || {}).fecha || '';
+  bajarArchivo('turnos-' + String(c.nombre || 'show').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').toLowerCase() + (fecha ? '-' + fecha : '') + '.txt', new Blob([document.getElementById('twaTexto').value], { type: 'text/plain;charset=utf-8' }));
+}
 async function exportPresentes() {
   const c = convs.find(x => x.id === currentConvId); if (!c) return;
   const todos = listaConvocados().filter(esAprobado);
