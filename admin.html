@@ -1093,6 +1093,43 @@ th{text-transform:none!important;letter-spacing:0!important;font-size:12px!impor
 .fbs-num{flex:1;min-width:120px;border:1px solid var(--r-line);border-radius:10px;padding:10px 14px;background:#fff}
 .fbs-num b{display:block;font-size:20px;font-weight:700;color:var(--r-ink)}.fbs-num span{font-size:11.5px;color:var(--r-muted)}
 .sv-nuevo-panel{display:inline-block;margin-top:3px;padding:1px 8px;border-radius:999px;font-size:10.5px;font-weight:600;background:#1a1a1a;color:#fff}
+/* 24-nov (Thomas): "¿podemos compactar mejor las cosas? que sea todo interactivo". Los números de arriba son chips:
+   al tocarlos filtran la lista (y quedan marcados); las filas, más bajas. */
+.nchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.sec-cab-t .nchips{margin-top:6px}
+.nchip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;border:1px solid var(--r-line);background:#fff;font-family:inherit;font-size:12px;color:var(--r-muted);cursor:pointer;white-space:nowrap;line-height:1.35}
+.nchip b{font-size:13px;font-weight:700;color:var(--r-ink)}
+.nchip:hover{border-color:#9ca3af;color:var(--r-ink)}
+.nchip.on{background:#1a1a1a;border-color:#1a1a1a;color:#d4d4d4}.nchip.on b{color:#fff}
+.nchip.fijo{cursor:default;background:transparent;border-color:transparent;padding-left:3px;padding-right:3px}.nchip.fijo:hover{color:var(--r-muted)}
+.nchip .pto{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
+.nchip.alerta{border-color:#fdba74;background:#fff7ed;color:#9a3412}.nchip.alerta b{color:#9a3412}
+.nchip.alerta.on{background:#9a3412;border-color:#9a3412;color:#ffedd5}.nchip.alerta.on b{color:#fff}
+.nchips .sep{width:1px;height:16px;background:var(--r-line);margin:0 3px}
+.nchips-suelto{margin-bottom:12px}
+#nomTabla td{padding-top:7px;padding-bottom:7px}
+#solContent td,.fbv-tabla td{padding-top:7px;padding-bottom:7px}
+.cn-linea .conv-chip{margin-left:2px}
+button.cn-nom{background:none;border:0;padding:0;font:inherit;font-weight:600;color:inherit;cursor:pointer;text-align:left}
+button.cn-nom:hover{text-decoration:underline;text-underline-offset:3px}
+/* Feedback por show: los nuevos, quién tiene y a quién falta evaluar. */
+.hi-de{font-size:11px;color:var(--r-muted);margin-left:8px;white-space:nowrap}
+.hi-num{white-space:nowrap;font-size:12.5px;color:var(--r-ink2)}.hi-num b{color:var(--r-ink)}
+.hi-fbbar{display:inline-block;vertical-align:middle;width:54px;height:6px;border-radius:999px;background:#ececec;overflow:hidden;margin-right:8px}.hi-fbbar i{display:block;height:100%;background:#1a1a1a}
+.falta-chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;white-space:nowrap}
+.ok-chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;white-space:nowrap}
+.fbs-falta{border:1px solid var(--r-line);border-radius:10px;background:#fff;margin-bottom:10px;overflow:hidden}
+.fbs-falta-cab{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:9px 14px;border-bottom:1px solid var(--r-line2);font-size:12.5px;color:var(--r-muted)}
+.fbs-falta-cab b{color:var(--r-ink);font-size:13px}
+.fbs-falta-cab .falta-chip{margin-left:auto}
+.fbs-falta-gente{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px}
+.fbs-falta-p{display:inline-flex;align-items:center;gap:7px;padding:3px 4px 3px 11px;border-radius:999px;border:1px solid var(--r-line);background:#fafafa;font-size:12px;color:var(--r-ink)}
+.fbs-falta-p a{color:var(--r-ink);font-weight:600;text-decoration:none}.fbs-falta-p a:hover{text-decoration:underline}
+.fbs-falta-p small{font-size:10.5px;color:var(--r-muted)}
+.fbs-falta-p .btn{padding:2px 10px;font-size:11px;border-radius:999px}
+.fbs-tab-n{display:inline-block;min-width:18px;padding:0 5px;margin-left:6px;border-radius:999px;background:#9a3412;color:#fff;font-size:10.5px;font-weight:700;line-height:16px;text-align:center}
+/* A 1280 los cinco filtros de la Nómina y "Más filtros" entran en una sola fila. */
+@media (max-width:1400px){#sec-nomina > .ctrlbar:not(.nom-filtros) select.filt{max-width:158px}#sec-nomina > .ctrlbar:not(.nom-filtros) .srch{min-width:200px}}
 .pos-prom{font-size:10.5px;font-weight:700;color:var(--r-ink2);font-variant-numeric:tabular-nums}
 .pos-elegir{font-size:12px;font-weight:500;background:#fff;border:1.5px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit;transition:all .12s}
 .pos-elegir:hover{border-color:#a1a1aa}
@@ -1300,7 +1337,7 @@ tr:hover td{background:#f9f9fb}
 </div>
 
 <div id="sec-nomina" class="sec active">
-  <div class="sec-cab"><div class="sec-cab-t"><b>Nómina</b><span>La gente de todas las áreas, con su ficha, su posición y su feedback</span></div><div class="sec-cab-acc"><div class="ctrl-acc">
+  <div class="sec-cab"><div class="sec-cab-t"><b>Nómina</b><div class="nchips" id="nomChips"></div></div><div class="sec-cab-acc"><div class="ctrl-acc">
     <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">↓ Exportar</button>
     <div class="nom-mas">
       <button class="btn btn-sec" onclick="toggleMasNom(event)" title="Deduplicar, etiquetas, rotación, conflictos, importar">⋯ Herramientas</button>
@@ -1318,13 +1355,6 @@ tr:hover td{background:#f9f9fb}
     <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
     <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
     </div></div></div>
-  <div class="stats-bar">
-    <div class="stat s-total"><div class="stat-num" id="sTotal">0</div><div class="stat-label">Total</div></div>
-    <div class="stat s-conf"><div class="stat-num" id="sConf">0</div><div class="stat-label">Confirmados</div></div>
-    <div class="stat s-cont"><div class="stat-num" id="sCont">0</div><div class="stat-label">Contactados</div></div>
-    <div class="stat s-pend"><div class="stat-num" id="sPend">0</div><div class="stat-label">Pendientes</div></div>
-    <div class="stat s-no"><div class="stat-num" id="sNo">0</div><div class="stat-label">No asiste</div></div>
-  </div>
   <div class="atabs">
     <div class="atab active" data-area="all" onclick="setNomTab('all')">Todos <span class="tc" id="tcAll">0</span></div>
     <div class="atab" data-area="movistar_arena" onclick="setNomTab('movistar_arena')">Movistar Arena <span class="tc" id="tcMv">0</span></div>
@@ -1570,13 +1600,7 @@ tr:hover td{background:#f9f9fb}
 
 <!-- SOLICITUDES PÚBLICAS -->
 <div id="sec-solicitudes" class="sec">
-  <div class="sec-cab"><div class="sec-cab-t"><b>Postulantes</b><span>Las inscripciones del formulario: se revisan y, al aprobarlas, pasan a la Nómina</span></div></div>
-  <div class="stats-bar">
-    <div class="stat s-pend"><div class="stat-num" id="solPend">0</div><div class="stat-label">Pendientes</div></div>
-    <div class="stat s-conf"><div class="stat-num" id="solAprov">0</div><div class="stat-label">Aprobadas</div></div>
-    <div class="stat s-no"><div class="stat-num" id="solRech">0</div><div class="stat-label">Rechazadas</div></div>
-    <div class="stat s-total"><div class="stat-num" id="solTotal">0</div><div class="stat-label">Total</div></div>
-  </div>
+  <div class="sec-cab"><div class="sec-cab-t"><b>Postulantes</b><div class="nchips" id="solChips"></div></div></div>
   <div class="ctrlbar">
     <input type="text" class="srch" id="solSrch" placeholder="Buscar por nombre, CUIL, email, puesto o localidad..." oninput="solFilter()">
     <select class="filt" id="solAreaF" onchange="solFilter()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select>
@@ -1824,6 +1848,7 @@ tr:hover td{background:#f9f9fb}
     <div class="sec-cab-t"><b>Feedbacks</b><span>Todos los feedbacks: evaluaciones y comentarios, de qué show, quién lo hizo y si era nuevo</span></div>
     <div class="cc-seg cc-tabs" role="tablist" aria-label="Feedbacks">
       <button class="on" id="fbsTabTodos" role="tab" onclick="fbsTab('todos')">Todos</button>
+      <button id="fbsTabFalta" role="tab" onclick="fbsTab('falta')" title="Los nuevos de cada show que todavía no tienen feedback">Falta feedback<b class="fbs-tab-n" id="fbsFaltaN" style="display:none"></b></button>
       <button id="fbsTabSup" role="tab" onclick="fbsTab('sup')">Por supervisor</button>
     </div>
   </div>
@@ -1835,7 +1860,7 @@ tr:hover td{background:#f9f9fb}
       <option value="">Evaluaciones y comentarios</option><option value="eval">Sólo evaluaciones</option><option value="obs">Sólo comentarios (sin puntaje)</option><option value="ops">Sólo de Operaciones</option>
       <option value="1">En verde</option><option value="2">En amarillo</option><option value="3">En rojo</option><option value="nuevo">Nuevos o primera vez</option>
     </select>
-    <button class="btn btn-sec btn-sm" onclick="fbsExcel()"><i class="ic ic-planilla"></i> Excel</button>
+    <button class="btn btn-sec btn-sm" id="fbsExcelBtn" onclick="fbsExcel()"><i class="ic ic-planilla"></i> Excel</button>
   </div>
   <div style="padding:20px 24px" id="fbsContent"><div class="empty">Cargando...</div></div>
 </div>
@@ -2562,7 +2587,7 @@ tr:hover td{background:#f9f9fb}
 </div>
 
 <div class="modal-bg" id="mHiVer" style="display:none" onclick="bgClose('mHiVer',event)">
-  <div class="modal" style="max-width:760px">
+  <div class="modal" style="max-width:940px">
     <div class="modal-title"><span id="hiVerTit">Show</span><button class="mclose" onclick="closeM('mHiVer')">✕</button></div>
     <div id="hiVerSub" style="font-size:12.5px;color:var(--r-muted);margin:-6px 0 12px"></div>
     <div class="fg" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -3017,7 +3042,7 @@ let pickerSel = new Set(), candSelIds = new Set();
 let cvFilterOn = false, candViewMode = 'cards';
 let cvFileData = null;
 let currentUserRole = 'admin', currentUserId = null, currentUserName = '';
-let outTargetId = null, fbTargetId = null, fbTargetConvId = null;
+let outTargetId = null, fbTargetId = null, fbTargetConvId = null, fbTargetFecha = null;
 let rotacionConfig = { max_eventos: 3, dias_periodo: 30, modo: 'advertencia' };
 // El modelo de contrato, uno por país. Vive en la configuración y no en el
 // código, para que se pueda editar desde el panel.
@@ -3776,7 +3801,7 @@ function verSolicitudesDe(area) {
 
 function setNomTab(a) { nomAreaTab = a; document.querySelectorAll('#sec-nomina .atab').forEach(t => t.classList.toggle('active', t.dataset.area === a)); nomPage = 1; nomRefresh(); }
 function nomSearch() { nomPage = 1; nomApply(); contarFiltrosNom(); }
-function nomFilter() { nomPage = 1; nomApply(); contarFiltrosNom(); }
+function nomFilter() { nomPage = 1; nomApply(); contarFiltrosNom(); nomStats(); }
 function nomRefresh() { nomApply(); nomStats(); nomTabCounts(); refreshCandBadge(); refreshTagUI(); }
 // Buscar en la nómina: por nombre (sin tildes y en cualquier orden: "maria
 // gonzalez" encuentra a "González, María"), mail, documento o teléfono. Los
@@ -3898,12 +3923,47 @@ function toggleDocFilter() {
 }
 function toggleCvFilter() { cvFilterOn = !cvFilterOn; const btn = document.getElementById('cvFilterBtn'); btn.style.background = cvFilterOn ? '#0369a1' : ''; btn.style.color = cvFilterOn ? '#fff' : ''; nomPage = 1; nomApply(); }
 function nomStats() {
-  const base = nomAreaTab === 'out' ? people.filter(p => p.out_flag) : people.filter(p => !p.out_flag);
-  const src = (nomAreaTab === 'all' || nomAreaTab === 'out') ? base : base.filter(p => p.area === nomAreaTab);
-  n('sTotal', src.length); n('sConf', src.filter(p => p.estado === 'confirmado').length);
-  n('sCont', src.filter(p => p.estado === 'contactado').length); n('sPend', src.filter(p => p.estado === 'pendiente').length);
-  n('sNo', src.filter(p => p.estado === 'no_asiste').length);
+  // 24-nov (Thomas): los números de arriba son chips que filtran por el feedback (lo que más se mira al convocar).
+  const caja = document.getElementById('nomChips'); if (!caja) return;
+  const src = people.filter(nomEnPestana), fb = new Map();
+  feedbacks.forEach(x => { const r = fb.get(x.persona_id) || { s: 0, k: 0 }; const pr = promedioFb(x); if (pr != null) { r.s += pr; r.k++; } fb.set(x.persona_id, r); });
+  let con = 0, p4 = 0, am = 0, ro = 0;
+  src.forEach(p => { const r = fb.get(p.id); if (r) { con++; if (r.k && r.s / r.k >= 4) p4++; } const s = +(p.semaforo || 1); if (s === 2) am++; else if (s === 3) ro++; });
+  const sel = document.getElementById('nomSemFilter'), act = sel ? sel.value : '', num = x => x.toLocaleString('es-AR');
+  const chip = (v, html, t) => `<button class="nchip${act === v ? ' on' : ''}" onclick="nomChip('${v}')" title="${t}">${html}</button>`;
+  caja.innerHTML = chip('', `<b>${num(src.length)}</b> persona${src.length === 1 ? '' : 's'}`, 'Todas las de esta pestaña')
+    + '<span class="sep"></span>'
+    + chip('con', `Con feedback <b>${num(con)}</b>`, 'Las que tienen al menos un feedback')
+    + chip('sin', `Sin feedback <b>${num(src.length - con)}</b>`, 'Las que todavía no tienen ningún feedback')
+    + chip('p4', `Promedio 4 o más <b>${num(p4)}</b>`, 'Las que tienen un promedio de 4 o más')
+    + chip('2', `<i class="pto" style="background:#eab308"></i>Amarillo <b>${num(am)}</b>`, 'Semáforo amarillo')
+    + chip('3', `<i class="pto" style="background:#dc2626"></i>Rojo <b>${num(ro)}</b>`, 'Semáforo rojo');
 }
+// Tocar un número filtra; tocarlo otra vez lo saca.
+function nomChip(v) { const sel = document.getElementById('nomSemFilter'); if (!sel) return; sel.value = sel.value === v ? '' : v; nomFilter(); }
+// El nombre abre la ficha (la del CV si tiene algo que mostrar; si no, la de editar).
+function nomAbrirFicha(id) { const p = personaPorId(id); if (!p) return; if (p.cv || solicitudDe(p) || cuantosFb(p.id)) viewCv(id); else openEditPerson(id); }
+function nomSemTitulo(p, sem) {
+  const k = cuantosFb(p.id), pr = k ? promedioDe(p.id) : null;
+  return 'Semáforo ' + sem + (k ? ' · ' + k + ' feedback' + (k === 1 ? '' : 's') + (pr != null ? ' · promedio ' + pr.toFixed(2) : '') : ' · sin feedback') + '. Clic para cambiarlo.';
+}
+// Dónde está convocada (lo que viene), en la misma línea del nombre: la fila queda de una sola línea.
+function nomDondeChips(p) {
+  const d = dondeEsta(p); if (!d.length) return '';
+  const dm = f => String(f).slice(8, 10) + '/' + String(f).slice(5, 7);
+  return d.slice(0, 2).map(x => `<span class="conv-chip" title="${e(x.fechas.map(fechaDMA).join(', '))}${x.puesto ? ' · ' + e(x.puesto) : ''}" onclick="event.stopPropagation();goSec('convs');openDetail('${x.convId}')"><i class="ic ic-calendario"></i> ${e(x.conv)} · ${dm(x.fecha)}</span>`).join('')
+    + (d.length > 2 ? `<span class="conv-chip" style="opacity:.7" title="${e(d.slice(2).map(x => x.conv).join(', '))}">+${d.length - 2}</span>` : '');
+}
+// Postulantes: los mismos chips (pendientes, aprobadas, rechazadas), del área elegida.
+function solChips(af) {
+  const caja = document.getElementById('solChips'); if (!caja) return;
+  const base = solicitudes.filter(s => !af || s.area === af), sel = document.getElementById('solStF'), act = sel ? sel.value : '';
+  const cuenta = st => base.filter(s => s.estado === st).length, pend = cuenta('pendiente');
+  const chip = (v, txt, nro, cl) => `<button class="nchip${cl ? ' ' + cl : ''}${act === v ? ' on' : ''}" onclick="solChip('${v}')">${txt} <b>${nro.toLocaleString('es-AR')}</b></button>`;
+  caja.innerHTML = chip('pendiente', 'Pendientes', pend, pend ? 'alerta' : '') + chip('aprobado', 'Aprobadas', cuenta('aprobado')) + chip('rechazado', 'Rechazadas', cuenta('rechazado'))
+    + '<span class="sep"></span>' + chip('', 'Todas', base.length);
+}
+function solChip(v) { const sel = document.getElementById('solStF'); if (!sel) return; sel.value = sel.value === v ? '' : v; solFilter(); }
 function nomTabCounts() { const act = people.filter(p => !p.out_flag); n('tcAll', act.length); n('tcMv', act.filter(p => p.area === 'movistar_arena').length); n('tcEx', act.filter(p => p.area === 'externos').length); n('tcEs', act.filter(p => p.area === 'espana').length); n('tcOut', people.filter(p => p.out_flag).length); n('tcRec', act.filter(p => p.recomendado).length); }
 function n(id, v) { const el = document.getElementById(id); if (el) el.textContent = v.toLocaleString('es-AR'); }
 function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado === 'pendiente').length; const b = document.getElementById('candNavBadge'); if (b) { b.style.display = cnt > 0 ? 'inline' : 'none'; b.textContent = cnt; } }
@@ -4055,15 +4115,14 @@ function renderNomTable() {
     return `<tr style="${rowBg}"${typeof cvRapidaId !== 'undefined' && cvRapidaId === p.id ? ' class="cv-rapida-fila"' : ''}>
 <td><input type="checkbox" class="cb rcb" data-id="${p.id}" onchange="checkNomBulk()"></td>
 <td class="cn">
-  <div class="cn-linea"><span class="cn-nom">${eN(p.nombre)}</span>
-  <button class="sem sem-${sem}" onclick="openSemModal('${p.id}')" title="Semáforo ${sem}">${sem}</button>
+  <div class="cn-linea"><button class="cn-nom" onclick="nomAbrirFicha('${p.id}')" title="Abrir la ficha">${eN(p.nombre)}</button>
+  <button class="sem sem-${sem}" onclick="openSemModal('${p.id}')" title="${e(nomSemTitulo(p, sem))}">${sem}</button>
   <button class="rec-star${p.recomendado ? ' on' : ''}" onclick="toggleRecomendado('${p.id}',event)" title="${p.recomendado ? 'Está en Recomendados. Clic para sacarla.' : 'Ponerla en Recomendados, para tenerla a mano al convocar.'}">★</button>
   ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_nota||p.out_categoria||'')}"><i class="ic ic-prohibido"></i> ${nomAreaTab === 'out' && p.out_categoria ? e(frase(p.out_categoria)) : 'OUT'}</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
-  ${(p.cv || solicitudDe(p) || cuantosFb(p.id)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv || solConCv(p) ? 'Ver CV' : 'Ver datos'}</button>` : ''}${tieneCv(p) ? `<button class="cv-ojo" onclick="cvRapidaOrigen='nom';cvRapida('${p.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : ''}</div>
+  ${(p.cv || solicitudDe(p) || cuantosFb(p.id)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv || solConCv(p) ? 'Ver CV' : 'Ver datos'}</button>` : ''}${tieneCv(p) ? `<button class="cv-ojo" onclick="cvRapidaOrigen='nom';cvRapida('${p.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : ''}${nomDondeChips(p)}</div>
   ${''/* 24-nov: las etiquetas (promedio, posición, ocupó, le interesa, a probar, zona) ya no van en la lista: se filtran arriba y se ven en la ficha. */}
-  ${(() => { const d = dondeEsta(p); return d.length ? `<div class="pos-chips">${d.slice(0, 3).map(x => `<span class="conv-chip" title="${e(x.fechas.map(f => fechaDMA ? fechaDMA(f) : f).join(', '))}${x.puesto ? ' · ' + e(x.puesto) : ''}" onclick="event.stopPropagation();goSec('convs');openDetail('${x.convId}')"><i class="ic ic-calendario"></i> ${e(x.conv)} · ${e(fechaDMA ? fechaDMA(x.fecha) : x.fecha)}</span>`).join('')}${d.length > 3 ? `<span class="conv-chip" style="opacity:.7">+${d.length - 3}</span>` : ''}</div>` : ''; })()}
   ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
 <td><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td>
@@ -14336,10 +14395,7 @@ function renderSolicitudes() {
     cuitCount[s.cuit].push(s.area);
   });
   const dupCuits = new Set(Object.entries(cuitCount).filter(([,areas]) => areas.length > 1).map(([cuit]) => cuit));
-  n('solPend', solicitudes.filter(s => s.estado === 'pendiente').length);
-  n('solAprov', solicitudes.filter(s => s.estado === 'aprobado').length);
-  n('solRech', solicitudes.filter(s => s.estado === 'rechazado').length);
-  n('solTotal', solicitudes.length);
+  solChips(af);
   const cont = document.getElementById('solContent');
   if (!filtered.length) { cont.innerHTML = `<div class="empty">${solicitudes.length === 0 ? 'Sin solicitudes todavía. Compartí el formulario candidato.html para que lleguen postulaciones.' : 'Sin resultados.'}</div>`; return; }
   const PS_SOL = 80;
@@ -15453,6 +15509,88 @@ function trayectoriaDe(p, area, dia, convExcluir) {
   return { antes, antesArea, primeraArea, primeraVez: !antes, nuevo: !antesArea || primeraArea >= String(dia).slice(0, 7) + '-01' };
 }
 function rotuloNuevo(t) { return t.primeraVez ? 'PRIMERA VEZ' : t.nuevo ? 'NUEVO' : ''; }
+// 24-nov: lo mismo que trayectoriaDe, pero con un índice que se arma una sola vez desde el historial (los shows con
+// quiénes fueron). Es para las listas largas: la sección Feedbacks, el historial por show y a quién falta evaluar.
+let hiTrayCache = null;
+function hiTrayectorias() {
+  const l = hiShowsTodos();
+  if (hiTrayCache && hiTrayCache.l === l) return hiTrayCache;
+  const todas = new Map(), porArea = new Map();
+  const poner = (m, k, f) => { let a = m.get(k); if (!a) m.set(k, a = []); a.push(f); };
+  l.forEach(s => { const fs = s.fechas && s.fechas.length ? s.fechas : [s.fecha]; s.gente.forEach(g => { if (!g.personaId) return; fs.forEach(f => { poner(todas, g.personaId, f); poner(porArea, g.personaId + '|' + s.area, f); }); }); });
+  hiTrayCache = { l, todas, porArea };
+  return hiTrayCache;
+}
+// fuera: las fechas del mismo show (en un show de varias fechas, la segunda no lo hace "viejo").
+function trayRapida(pid, area, dia, fuera) {
+  const t = hiTrayectorias(), d = String(dia || '').slice(0, 10), no = new Set(fuera || []);
+  const antes = (t.todas.get(pid) || []).filter(f => f < d && !no.has(f));
+  const enArea = (t.porArea.get(pid + '|' + area) || []).concat(t.porArea.get(pid + '|ambas') || []).filter(f => f < d && !no.has(f));
+  const primera = enArea.reduce((m, f) => (!m || f < m ? f : m), '');
+  return { primeraVez: !antes.length, nuevo: !enArea.length || primera >= d.slice(0, 7) + '-01' };
+}
+// Los feedbacks de cada persona: de qué convocatoria y de qué fecha.
+let fbIdxCache = null;
+function fbIndice() {
+  if (fbIdxCache && fbIdxCache.f === feedbacks && fbIdxCache.n === feedbacks.length && fbIdxCache.c === convs) return fbIdxCache.m;
+  const m = new Map(), convPorId = new Map(convs.map(c => [c.id, c]));
+  feedbacks.forEach(f => {
+    let a = m.get(f.persona_id); if (!a) m.set(f.persona_id, a = []);
+    const real = /^\d{4}-\d{2}-\d{2}/.test(String(f.fecha || '')), conv = f.conv_id ? convPorId.get(f.conv_id) : null;
+    a.push({ conv: f.conv_id || '', fechasConv: conv ? convFechasArr(conv) : [], fecha: real ? String(f.fecha).slice(0, 10) : String(f.created_at || '').slice(0, 10), real, f });
+  });
+  fbIdxCache = { f: feedbacks, n: feedbacks.length, c: convs, m };
+  return m;
+}
+function diaSiguiente(f) { const d = new Date(f + 'T12:00:00'); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); }
+// ¿Tiene feedback de ese show? Por la fecha del feedback; si no la tiene, por la convocatoria; y si tampoco, por el día
+// en que se cargó (o el siguiente: los shows terminan tarde).
+function fbDelShow(pid, s) {
+  const a = fbIndice().get(pid); if (!a) return null;
+  const fs = s.fechas && s.fechas.length ? s.fechas : [s.fecha];
+  return a.find(x => {
+    if (x.conv && s.convId && x.conv !== s.convId) return false;
+    if (x.real) return fs.includes(x.fecha);
+    if (x.conv && s.convId) return true;
+    if (x.conv) return x.fechasConv.some(f => fs.includes(f));
+    return fs.includes(x.fecha) || fs.some(f => diaSiguiente(f) === x.fecha);
+  }) || null;
+}
+// Por show: cuántos nuevos (o primera vez), cuántos con feedback y los nuevos sin feedback (los que faltan: a los
+// nuevos el feedback es obligatorio). Se guarda hasta que cambie el historial o los feedbacks.
+let hiResCache = { l: null, m: new Map() };
+function hiResumen(s) {
+  const l = hiTrayectorias().l;
+  if (hiResCache.l !== l || hiResCache.f !== feedbacks || hiResCache.n !== feedbacks.length) hiResCache = { l, f: feedbacks, n: feedbacks.length, m: new Map() };
+  let r = hiResCache.m.get(s.k); if (r) return r;
+  const conv = s.convId ? convs.find(c => c.id === s.convId) : null, fuera = conv ? convFechasArr(conv) : null;
+  r = { total: s.gente.size, conFb: 0, nuevos: 0, faltan: [], porClave: new Map() };
+  s.gente.forEach((g, clave) => {
+    const t = g.personaId ? trayRapida(g.personaId, s.area, s.fecha, fuera) : null, fb = g.personaId ? fbDelShow(g.personaId, s) : null;
+    const nv = !!(t && (t.nuevo || t.primeraVez));
+    if (fb) r.conFb++;
+    if (nv) r.nuevos++;
+    if (nv && !fb) r.faltan.push({ g, t });
+    r.porClave.set(clave, { t, fb, nv });
+  });
+  hiResCache.m.set(s.k, r);
+  return r;
+}
+// Cargar el feedback de un show (desde lo que falta o desde el detalle del show): queda con la convocatoria y la fecha.
+function fbCargarDeShow(pid, kEnc) {
+  const k = decodeURIComponent(kEnc), s = hiShowsTodos().find(x => x.k === k); if (!s) return;
+  openFeedback(pid, s.convId || null, s.fecha);
+  const tit = document.getElementById('mFbTitle'); if (tit) tit.textContent += ' · ' + s.evento + ' ' + s.fecha.slice(8, 10) + '/' + s.fecha.slice(5, 7);
+}
+// Después de guardar un feedback: lo que esté a la vista se pone al día (Feedbacks, Historial, el show abierto).
+function fbsRefrescarVistas() {
+  const activa = id => { const el = document.getElementById(id); return !!(el && el.classList.contains('active')); };
+  try {
+    if (activa('sec-feedbacks')) renderFeedbacksSec();
+    if (activa('sec-historial')) renderHistorialSec();
+    const m = document.getElementById('mHiVer'); if (m && m.style.display !== 'none') renderHiVer();
+  } catch (_) {}
+}
 
 const HI_FUENTES = { contratos: 'Contratos', convocatoria: 'Convocatoria', planilla: 'Planilla', cargado: 'Cargado a mano' };
 const HI_MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -15515,6 +15653,17 @@ function hiShowsTodos() {
   hiCache = { h: historialShows, hl: historialShows.length, c: contratos, cl: contratos.length, p: posts, pl: posts.length, v: convs, vl: convs.length, pe: people, l };
   return l;
 }
+// 24-nov: cada show con sus nuevos y su feedback (cuántos tienen, a cuántos nuevos les falta); "Falta feedback" filtra.
+let hiSoloFalta = false;
+function hiFalta(v) { hiSoloFalta = v; renderHistorialSec(); }
+// A "Falta feedback" de la sección Feedbacks, con la misma área y el mismo mes.
+function hiIrAFaltan() {
+  fbsMesPedido = document.getElementById('hiMes').value || '';
+  document.getElementById('fbsArea').value = document.getElementById('hiArea').value || '';
+  document.getElementById('fbsSrch').value = '';
+  fbsTabActual = 'falta';   // así la sección abre directo en "Falta feedback" (y el mes se elige entre los de esos shows)
+  goSec('feedbacks'); fbsTab('falta');
+}
 function renderHistorialSec() {
   const cont = document.getElementById('hiContent'); if (!cont) return;
   if (hiTabActual === 'sup') { renderHiSupervisores(cont); return; }
@@ -15524,37 +15673,63 @@ function renderHistorialSec() {
   selMes.innerHTML = '<option value="">Todos los meses</option>' + meses.map(m => `<option value="${m}"${m === mesAct ? ' selected' : ''}>${hiMesNombre(m)}</option>`).join('');
   const area = document.getElementById('hiArea').value, crudo = document.getElementById('hiSrch').value, q = hiNorm(crudo);
   const doc = /\d{6,}/.test(crudo) ? docNucleo(crudo.replace(/\D/g, '')) : '';
-  const l = todos.filter(s => (!area || s.area === area) && (!mesAct || s.fecha.startsWith(mesAct))
+  const l0 = todos.filter(s => (!area || s.area === area) && (!mesAct || s.fecha.startsWith(mesAct))
     && (!q || (doc ? [...s.gente.values()].some(g => g.doc === doc) : hiNorm(s.evento).includes(q) || [...s.gente.values()].some(g => hiNorm(g.nombre).includes(q)))));
-  if (!l.length) { cont.innerHTML = aviso + '<div class="empty">' + (todos.length ? 'Nada con ese filtro.' : 'Todavía no hay shows en el historial. Cargá uno a mano o subí las planillas del año.') + '</div>'; return; }
+  if (!l0.length) { cont.innerHTML = aviso + '<div class="empty">' + (todos.length ? 'Nada con ese filtro.' : 'Todavía no hay shows en el historial. Cargá uno a mano o subí las planillas del año.') + '</div>'; return; }
+  const res = new Map(l0.map(s => [s.k, hiResumen(s)]));
+  const conFalta = l0.filter(s => res.get(s.k).faltan.length), faltan = conFalta.reduce((t, s) => t + res.get(s.k).faltan.length, 0);
+  if (!conFalta.length) hiSoloFalta = false;
+  const l = hiSoloFalta ? conFalta : l0;
+  const suma = k => l0.reduce((t, s) => t + res.get(s.k)[k], 0), tot = l0.reduce((t, s) => t + s.gente.size, 0);
+  const pl = (n, uno, varios) => '<b>' + n.toLocaleString('es-AR') + '</b> ' + (n === 1 ? uno : varios);
+  const chips = `<div class="nchips nchips-suelto">
+      <button class="nchip${hiSoloFalta ? '' : ' on'}" onclick="hiFalta(false)" title="Todos los shows del filtro">${pl(l0.length, 'show', 'shows')}</button>
+      <span class="nchip fijo">${pl(tot, 'presencia', 'presencias')}</span><span class="nchip fijo">${pl(suma('nuevos'), 'nuevo', 'nuevos')}</span><span class="nchip fijo">${pl(suma('conFb'), 'con feedback', 'con feedback')}</span><span class="sep"></span>
+      ${faltan ? `<button class="nchip alerta${hiSoloFalta ? ' on' : ''}" onclick="hiFalta(${!hiSoloFalta})" title="Los shows con nuevos que todavía no tienen feedback de ese show (a los nuevos es obligatorio)">Falta feedback: ${pl(faltan, 'nuevo', 'nuevos')} en ${conFalta.length} show${conFalta.length === 1 ? '' : 's'}</button>
+        <button class="btn btn-sec btn-xs" onclick="hiIrAFaltan()" title="La lista de los que faltan (con esta área y este mes), para cargarles el feedback">Cargar los que faltan</button>` : '<span class="ok-chip">✓ Todos los nuevos tienen feedback</span>'}</div>`;
   const porMes = new Map(); l.forEach(s => { const m = s.fecha.slice(0, 7); if (!porMes.has(m)) porMes.set(m, []); porMes.get(m).push(s); });
-  const tot = l.reduce((t, s) => t + s.gente.size, 0);
-  cont.innerHTML = aviso + `<div style="font-size:12.5px;color:var(--r-muted);margin-bottom:12px"><b style="color:var(--r-ink)">${l.length}</b> show${l.length === 1 ? '' : 's'} · <b style="color:var(--r-ink)">${tot}</b> presencia${tot === 1 ? '' : 's'}</div>`
-    + [...porMes.entries()].map(([m, ss]) => `<div class="hi-mes">${hiMesNombre(m)} <small>${ss.length} show${ss.length === 1 ? '' : 's'}</small></div>
-      <div class="fbv-tabla hi-tabla"><table><tbody>${ss.map(s => `<tr onclick="hiVer('${hiAttr(s.k)}')">
-        <td style="width:96px;white-space:nowrap">${fechaDMA(s.fecha)}${s.fechas && s.fechas.length > 1 ? '<div class="fbv-sub">' + s.fechas.length + ' fechas</div>' : ''}</td>
-        <td><div class="fbv-nom">${e(s.evento)}</div></td>
+  const cab = '<thead><tr><th style="width:96px">Fecha</th><th>Show</th><th style="width:100px">Área</th><th style="width:84px">Personas</th><th style="width:84px">Nuevos</th><th style="width:170px">Con feedback</th><th style="width:150px"></th></tr></thead>';
+  cont.innerHTML = aviso + chips
+    + [...porMes.entries()].map(([m, ss], i) => `<div class="hi-mes">${hiMesNombre(m)} <small>${ss.length} show${ss.length === 1 ? '' : 's'}</small></div>
+      <div class="fbv-tabla hi-tabla"><table>${i ? '' : cab}<tbody>${ss.map(s => { const r = res.get(s.k), pc = r.total ? Math.round(r.conFb * 100 / r.total) : 0; return `<tr onclick="hiVer('${hiAttr(s.k)}')">
+        <td style="width:96px;white-space:nowrap">${fechaDMA(s.fecha)}</td>
+        <td><span class="fbv-nom">${e(s.evento)}</span><span class="hi-de">${[...s.fuentes].map(f => HI_FUENTES[f]).concat(s.fechas && s.fechas.length > 1 ? [s.fechas.length + ' fechas'] : []).join(' · ')}</span></td>
         <td style="width:100px"><span class="a-badge ${areaClase(s.area)}">${areaCorto(s.area)}</span></td>
-        <td style="width:110px;white-space:nowrap"><b>${s.gente.size}</b> persona${s.gente.size === 1 ? '' : 's'}</td>
-        <td style="width:240px">${[...s.fuentes].map(f => '<span class="hi-fuente">' + HI_FUENTES[f] + '</span>').join(' ')}</td></tr>`).join('')}</tbody></table></div>`).join('');
+        <td class="hi-num" style="width:84px"><b>${s.gente.size}</b></td>
+        <td class="hi-num" style="width:84px">${r.nuevos ? '<b>' + r.nuevos + '</b>' : '<span class="fbv-sub">—</span>'}</td>
+        <td class="hi-num" style="width:170px" title="${pc}% del equipo de ese show tiene feedback"><span class="hi-fbbar"><i style="width:${pc}%"></i></span><b>${r.conFb}</b> de ${r.total}</td>
+        <td style="width:150px;text-align:right">${r.faltan.length ? `<span class="falta-chip">Faltan ${r.faltan.length} nuevo${r.faltan.length === 1 ? '' : 's'}</span>` : r.nuevos ? '<span class="ok-chip">✓ Nuevos evaluados</span>' : ''}</td></tr>`; }).join('')}</tbody></table></div>`).join('');
 }
 
 // ── Un show: quiénes fueron, sumar o quitar ──
 let hiVerK = '';
 function hiVer(kEnc) { hiVerK = decodeURIComponent(kEnc); document.getElementById('hiVerBus').value = ''; document.getElementById('hiVerRes').innerHTML = ''; renderHiVer(); showM('mHiVer'); }
 function hiShowActual() { return hiShowsTodos().find(s => s.k === hiVerK) || null; }
+// 24-nov: con la trayectoria (nuevo, primera vez) y el feedback de ese show; arriba, a los nuevos que les falta.
 function renderHiVer() {
   const s = hiShowActual(), lista = document.getElementById('hiVerLista');
   if (!s) { lista.innerHTML = '<div class="empty">Ya no queda nadie en este show.</div>'; document.getElementById('hiVerBorrar').style.display = 'none'; return; }
+  const r = hiResumen(s), k = hiAttr(s.k);
   document.getElementById('hiVerTit').textContent = s.evento;
-  document.getElementById('hiVerSub').textContent = (s.fechas && s.fechas.length > 1 ? s.fechas.map(fechaDMA).join(', ') : fechaDMA(s.fecha)) + ' · ' + areaLargo(s.area) + ' · ' + s.gente.size + ' persona' + (s.gente.size === 1 ? '' : 's');
-  const gente = [...s.gente.values()].sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'));
-  lista.innerHTML = '<table><thead><tr><th>Persona</th><th>Puesto</th><th>De dónde sale</th><th></th></tr></thead><tbody>' + gente.map(g => `<tr>
-    <td>${g.personaId ? `<a href="#" onclick="event.preventDefault();closeM('mHiVer');openHistorial('${g.personaId}')">${eN(g.nombre || 'Sin nombre')}</a>` : eN(g.nombre || 'Sin nombre') + '<div class="fbv-sub">No está en la nómina' + (g.doc ? ' · DNI ' + e(g.doc) : '') + '</div>'}</td>
+  document.getElementById('hiVerSub').textContent = (s.fechas && s.fechas.length > 1 ? s.fechas.map(fechaDMA).join(', ') : fechaDMA(s.fecha)) + ' · ' + areaLargo(s.area) + ' · ' + s.gente.size + ' persona' + (s.gente.size === 1 ? '' : 's')
+    + (r.nuevos ? ' · ' + r.nuevos + ' nuevo' + (r.nuevos === 1 ? '' : 's') : '') + ' · ' + r.conFb + ' con feedback' + (r.faltan.length ? ' · a ' + r.faltan.length + (r.faltan.length === 1 ? ' nuevo le falta' : ' nuevos les falta') : '');
+  const filas = [...s.gente.entries()].map(([c, g]) => Object.assign({ g }, r.porClave.get(c) || {}));
+  const falta = x => (x.nv && !x.fb) ? 1 : 0;
+  filas.sort((a, b) => (falta(b) - falta(a)) || String(a.g.nombre).localeCompare(String(b.g.nombre), 'es'));
+  lista.innerHTML = '<table><thead><tr><th>Persona</th><th>Puesto</th><th>Trayectoria</th><th>Feedback del show</th><th>De dónde sale</th><th></th></tr></thead><tbody>' + filas.map(({ g, t, fb, nv }) => {
+    const pr = fb ? promedioFb(fb.f) : null;
+    const fbCel = fb ? `<a href="#" onclick="event.preventDefault();openFbHistory('${g.personaId}')" title="Ver sus feedbacks">${pr != null ? `<span class="sem sem-${colorDePromedio(pr)}" style="vertical-align:middle">${colorDePromedio(pr)}</span> ${pr.toFixed(2)}` : esFbOps(fb.f) ? 'Operaciones' : 'Comentario'}</a>`
+      : g.personaId ? `${nv ? '<span class="falta-chip" style="margin-right:6px">Falta</span>' : ''}<button class="btn ${nv ? 'btn-primary' : 'btn-sec'} btn-xs" onclick="fbCargarDeShow('${g.personaId}','${k}')">+ Feedback</button>` : '<span class="fbv-sub">—</span>';
+    const tray = t ? (t.primeraVez ? '<span class="sv-nuevo-panel" style="margin:0">Primera vez</span>' : t.nuevo ? '<span class="sv-nuevo-panel" style="margin:0">Nuevo</span>' : '<span class="fbv-sub">Ya venía</span>') : '<span class="fbv-sub">—</span>';
+    return `<tr>
+    <td style="white-space:nowrap">${g.personaId ? `<a href="#" onclick="event.preventDefault();closeM('mHiVer');openHistorial('${g.personaId}')">${eN(g.nombre || 'Sin nombre')}</a>` : eN(g.nombre || 'Sin nombre') + '<div class="fbv-sub">No está en la nómina' + (g.doc ? ' · DNI ' + e(g.doc) : '') + '</div>'}</td>
     <td>${e(g.puesto || '—')}</td>
+    <td>${tray}</td>
+    <td style="white-space:nowrap">${fbCel}</td>
     <td>${e(g.fuente)}${g.archivo ? '<div class="fbv-sub">' + e(g.archivo) + '</div>' : ''}</td>
-    <td style="text-align:right">${g.hids.length ? `<button class="btn btn-sec btn-xs" onclick="hiQuitar(['${g.hids.join("','")}'])" title="Quitar lo cargado (a mano o con planilla) de esta persona en este show">Quitar</button>` : ''}</td></tr>`).join('') + '</tbody></table>';
-  document.getElementById('hiVerBorrar').style.display = gente.some(g => g.hids.length) ? '' : 'none';
+    <td style="text-align:right">${g.hids.length ? `<button class="btn btn-sec btn-xs" onclick="hiQuitar(['${g.hids.join("','")}'])" title="Quitar lo cargado (a mano o con planilla) de esta persona en este show">Quitar</button>` : ''}</td></tr>`;
+  }).join('') + '</tbody></table>';
+  document.getElementById('hiVerBorrar').style.display = filas.some(x => x.g.hids.length) ? '' : 'none';
 }
 // En la nómina: por documento (desde 6 números) o por nombre (todas las palabras).
 function hiBuscarNomina(q) {
@@ -15856,11 +16031,14 @@ let fbsTabActual = 'todos', fbsPagina = 1;
 const FBS_POR_PAGINA = 150;
 function fbsTab(t) {
   fbsTabActual = t;
-  document.getElementById('fbsTabTodos').classList.toggle('on', t === 'todos');
-  document.getElementById('fbsTabSup').classList.toggle('on', t === 'sup');
-  document.getElementById('fbsBarra').style.display = t === 'todos' ? '' : 'none';
-  renderFeedbacksSec();
+  [['todos', 'fbsTabTodos'], ['falta', 'fbsTabFalta'], ['sup', 'fbsTabSup']].forEach(([k, id]) => { const b = document.getElementById(id); if (b) b.classList.toggle('on', t === k); });
+  document.getElementById('fbsBarra').style.display = t === 'sup' ? 'none' : '';
+  document.getElementById('fbsTipo').style.display = t === 'todos' ? '' : 'none';
+  const xl = document.getElementById('fbsExcelBtn'); if (xl) xl.style.display = t === 'todos' ? '' : 'none';
+  fbsPagina = 1; renderFeedbacksSec();
 }
+// 24-nov: los números de arriba son chips; tocarlos filtra (es lo mismo que el filtro de tipo).
+function fbsChip(v) { const sel = document.getElementById('fbsTipo'); if (!sel) return; sel.value = sel.value === v ? '' : v; fbsPagina = 1; renderFeedbacksSec(); }
 function fbsFecha(f) { return /^\d{4}-\d{2}-\d{2}/.test(String(f.fecha || '')) ? String(f.fecha).slice(0, 10) : String(f.created_at || '').slice(0, 10); }
 // Cada feedback con lo que hace falta para mostrarlo y filtrarlo.
 function fbsFilas() {
@@ -15870,46 +16048,85 @@ function fbsFilas() {
     return { f, p, conv, fecha: fbsFecha(f), area: areaDeShow((conv && conv.area) || (p && p.area)), prom: pr, color: pr != null ? colorDePromedio(pr) : (f.puntaje || 0), sup: supDeFeedback(f) || 'Sin dato de quién evaluó' };
   }).sort((a, b) => b.fecha.localeCompare(a.fecha) || String(b.f.created_at || '').localeCompare(String(a.f.created_at || '')));
 }
-// Nuevo o primera vez en ese show (sólo para lo que se muestra: la cuenta mira todo su historial).
+// Nuevo o primera vez en ese show (con el índice del historial: rápido aun con miles de feedbacks).
 function fbsNuevo(x) {
   if (!x.p || !x.fecha) return '';
-  const t = trayectoriaDe(x.p, x.area, x.fecha, x.conv ? x.conv.id : null);
-  return t.primeraVez ? 'Primera vez' : t.nuevo ? 'Nuevo' : '';
+  if (x.nv === undefined) { const t = trayRapida(x.p.id, x.area, x.fecha, x.conv ? convFechasArr(x.conv) : null); x.nv = t.primeraVez ? 'Primera vez' : t.nuevo ? 'Nuevo' : ''; }
+  return x.nv;
 }
-function fbsFiltradas(todas) {
-  const area = document.getElementById('fbsArea').value, mes = document.getElementById('fbsMes').value, tipo = document.getElementById('fbsTipo').value;
+// sinTipo: sin el filtro de tipo (para contar cuántos hay de cada uno).
+function fbsFiltradas(todas, sinTipo) {
+  const area = document.getElementById('fbsArea').value, mes = document.getElementById('fbsMes').value, tipo = sinTipo ? '' : document.getElementById('fbsTipo').value;
   const q = hiNorm(document.getElementById('fbsSrch').value);
   return todas.filter(x => (!area || x.area === area) && (!mes || x.fecha.startsWith(mes))
     && (!tipo || (tipo === 'eval' ? x.prom != null : tipo === 'ops' ? esFbOps(x.f) : tipo === 'obs' ? x.f.puntaje == null && !esFbOps(x.f) : tipo === 'nuevo' ? !!fbsNuevo(x) : String(x.color) === tipo && x.f.puntaje != null))
     && (!q || [x.p && x.p.nombre, x.sup, x.conv && x.conv.nombre, x.f.comentario].some(t => hiNorm(t).includes(q))));
 }
+let fbsMesPedido = null;   // el mes con el que se llega desde el Historial
+function fbsMesesSelect(meses) {
+  const sel = document.getElementById('fbsMes'), act = fbsMesPedido != null ? fbsMesPedido : sel.value; fbsMesPedido = null;
+  sel.innerHTML = '<option value="">Todos los meses</option>' + meses.map(m => `<option value="${m}"${m === act ? ' selected' : ''}>${hiMesNombre(m)}</option>`).join('');
+}
 function renderFeedbacksSec() {
   const cont = document.getElementById('fbsContent'); if (!cont) return;
+  fbsFaltaBadge();
   if (fbsTabActual === 'sup') { renderHiSupervisores(cont); return; }
+  if (fbsTabActual === 'falta') { renderFbsFalta(cont); return; }
   const todas = fbsFilas();
-  const selMes = document.getElementById('fbsMes'), mesAct = selMes.value;
-  const meses = [...new Set(todas.map(x => x.fecha.slice(0, 7)).filter(Boolean))].sort().reverse();
-  selMes.innerHTML = '<option value="">Todos los meses</option>' + meses.map(m => `<option value="${m}"${m === mesAct ? ' selected' : ''}>${hiMesNombre(m)}</option>`).join('');
-  const l = fbsFiltradas(todas);
-  if (!l.length) { cont.innerHTML = '<div class="empty">' + (todas.length ? 'Nada con ese filtro.' : 'Todavía no hay feedbacks.') + '</div>'; return; }
-  const evals = l.filter(x => x.prom != null), obs = l.length - evals.length, prom = evals.length ? evals.reduce((t, x) => t + x.prom, 0) / evals.length : null;
-  const col = k => evals.filter(x => colorDePromedio(x.prom) === k).length, v = col(1), a = col(2), r = col(3), tot = v + a + r;
-  const w = n => tot ? (n * 100 / tot).toFixed(1) + '%' : '0';
-  const tarjeta = (n, t) => `<div class="fbs-num"><b>${n}</b><span>${t}</span></div>`;
+  fbsMesesSelect([...new Set(todas.map(x => x.fecha.slice(0, 7)).filter(Boolean))].sort().reverse());
+  const base = fbsFiltradas(todas, true), tipo = document.getElementById('fbsTipo').value, l = tipo ? fbsFiltradas(base) : base;
+  const num = x => x.toLocaleString('es-AR'), cuenta = f => base.filter(f).length;
+  const col = k => cuenta(x => String(x.color) === k && x.f.puntaje != null);
+  const evL = l.filter(x => x.prom != null), prom = evL.length ? evL.reduce((t, x) => t + x.prom, 0) / evL.length : null;
+  const chip = (v, html, t) => `<button class="nchip${tipo === v ? ' on' : ''}" onclick="fbsChip('${v}')" title="${t}">${html}</button>`;
+  const chips = `<div class="nchips nchips-suelto">${chip('', `<b>${num(base.length)}</b> feedback${base.length === 1 ? '' : 's'}`, 'Todos: evaluaciones, comentarios y Operaciones')}<span class="sep"></span>`
+    + chip('eval', `Evaluaciones <b>${num(cuenta(x => x.prom != null))}</b>`, 'Con los criterios y el promedio')
+    + chip('obs', `Comentarios <b>${num(cuenta(x => x.f.puntaje == null && !esFbOps(x.f)))}</b>`, 'Sin puntaje: algo que pasó')
+    + chip('ops', `Operaciones <b>${num(cuenta(x => esFbOps(x.f)))}</b>`, 'Los de Operaciones') + '<span class="sep"></span>'
+    + chip('1', `<i class="pto" style="background:#16a34a"></i>Verde <b>${num(col('1'))}</b>`, 'Promedio en verde')
+    + chip('2', `<i class="pto" style="background:#eab308"></i>Amarillo <b>${num(col('2'))}</b>`, 'Promedio en amarillo')
+    + chip('3', `<i class="pto" style="background:#dc2626"></i>Rojo <b>${num(col('3'))}</b>`, 'Promedio en rojo') + '<span class="sep"></span>'
+    + chip('nuevo', `Nuevos o primera vez <b>${num(cuenta(x => !!fbsNuevo(x)))}</b>`, 'Era nuevo en el área ese mes, o era su primer show')
+    + `<span class="nchip fijo" title="El promedio de las evaluaciones de la lista">Promedio <b>${prom != null ? prom.toFixed(2).replace('.', ',') : '—'}</b></span></div>`;
+  if (!l.length) { cont.innerHTML = chips + '<div class="empty">' + (todas.length ? 'Nada con ese filtro.' : 'Todavía no hay feedbacks.') + '</div>'; return; }
   const vista = l.slice(0, fbsPagina * FBS_POR_PAGINA);
-  cont.innerHTML = `<div class="fbs-nums">${tarjeta(l.length, 'feedbacks')}${tarjeta(evals.length, 'evaluaciones')}${tarjeta(obs, 'comentarios sin puntaje')}${tarjeta(prom != null ? prom.toFixed(2) : '—', 'promedio (de 5)')}
-      <div class="fbs-num" style="flex:2;min-width:220px"><div class="hi-barra" style="height:10px;margin:6px 0 8px"><i style="width:${w(v)};background:#16a34a"></i><i style="width:${w(a)};background:#eab308"></i><i style="width:${w(r)};background:#dc2626"></i></div><span>${v} en verde · ${a} en amarillo · ${r} en rojo</span></div></div>
-    <div class="fbv-tabla hi-tabla"><table><thead><tr><th style="width:92px">Fecha</th><th>Persona</th><th>Show</th><th>Quién lo hizo</th><th style="width:150px">Criterios</th><th style="width:90px">Promedio</th><th>Comentario</th></tr></thead><tbody>`
+  cont.innerHTML = chips + `<div class="fbv-tabla hi-tabla"><table><thead><tr><th style="width:92px">Fecha</th><th>Persona</th><th>Show</th><th>Quién lo hizo</th><th style="width:150px">Criterios</th><th style="width:90px">Promedio</th><th>Comentario</th></tr></thead><tbody>`
     + vista.map(x => {
       const nv = fbsNuevo(x), crit = x.prom != null ? FB_CRITERIOS.map(c => x.f[c.id]).join(' · ') : '—';
       return `<tr onclick="${x.p ? `openFbHistory('${x.p.id}')` : ''}"><td>${fechaDMA(x.fecha)}</td>
-        <td><div class="fbv-nom">${x.p ? eN(x.p.nombre) : 'Persona borrada'}</div>${nv ? `<span class="sv-nuevo-panel">${nv}</span>` : ''}</td>
+        <td><div class="fbv-nom">${x.p ? eN(x.p.nombre) : 'Persona borrada'}${nv ? ` <span class="sv-nuevo-panel" style="margin:0 0 0 4px">${nv}</span>` : ''}</div></td>
         <td>${x.conv ? e(x.conv.nombre) : '<span class="fbv-sub">—</span>'}</td><td>${e(x.sup)}</td>
         <td title="${FB_CRITERIOS.map(c => c.titulo).join(' · ')}">${crit}</td>
         <td>${x.prom != null ? `<span class="sem sem-${colorDePromedio(x.prom)}" style="vertical-align:middle">${colorDePromedio(x.prom)}</span> ${x.prom.toFixed(2)}` : esFbOps(x.f) ? `<span class="fb-ops">Operaciones${x.f.puntaje_ops ? ' ' + x.f.puntaje_ops + '/5' : ''}</span>` : x.f.puntaje ? `<span class="sem sem-${x.f.puntaje}">${x.f.puntaje}</span>` : '<span class="fb-obs">Comentario</span>'}</td>
         <td>${e(x.f.comentario || '')}</td></tr>`;
     }).join('') + '</tbody></table></div>'
     + (l.length > vista.length ? `<div style="text-align:center;margin-top:12px"><button class="btn btn-sec btn-sm" onclick="fbsPagina++;renderFeedbacksSec()">Mostrar ${Math.min(FBS_POR_PAGINA, l.length - vista.length)} más (quedan ${l.length - vista.length})</button></div>` : '');
+}
+// 24-nov: "Falta feedback". Los nuevos (o primera vez) de cada show que todavía no tienen el feedback de ese show: a los
+// nuevos es obligatorio (Mercedes). Por defecto, los últimos 60 días; con un mes elegido, ese mes.
+const FBS_FALTA_DIAS = 60;
+function fbsFaltaShows() {
+  const hoy = hoyLocalISO(), d = new Date(hoy + 'T12:00:00'); d.setDate(d.getDate() - FBS_FALTA_DIAS);
+  const desde = d.toISOString().slice(0, 10);
+  return hiShowsTodos().filter(s => s.fecha < hoy).map(s => ({ s, r: hiResumen(s) })).filter(x => x.r.faltan.length).map(x => Object.assign(x, { reciente: x.s.fecha >= desde }));
+}
+function fbsFaltaBadge() {
+  const b = document.getElementById('fbsFaltaN'); if (!b) return;
+  const n = fbsFaltaShows().filter(x => x.reciente).reduce((t, x) => t + x.r.faltan.length, 0);
+  b.textContent = n ? n.toLocaleString('es-AR') : ''; b.style.display = n ? '' : 'none';
+}
+function renderFbsFalta(cont) {
+  const todos = fbsFaltaShows();
+  fbsMesesSelect([...new Set(todos.map(x => x.s.fecha.slice(0, 7)))].sort().reverse());
+  const area = document.getElementById('fbsArea').value, mes = document.getElementById('fbsMes').value, q = hiNorm(document.getElementById('fbsSrch').value);
+  const l = todos.filter(x => (mes ? x.s.fecha.startsWith(mes) : x.reciente) && (!area || x.s.area === area)
+    && (!q || hiNorm(x.s.evento).includes(q) || x.r.faltan.some(({ g }) => hiNorm(g.nombre).includes(q))));
+  const tot = l.reduce((t, x) => t + x.r.faltan.length, 0);
+  const cab = `<div class="nchips nchips-suelto"><span class="nchip fijo"><b>${tot.toLocaleString('es-AR')}</b> nuevo${tot === 1 ? '' : 's'} sin feedback en ${l.length} show${l.length === 1 ? '' : 's'}</span><span class="sep"></span><span class="nchip fijo">${mes ? hiMesNombre(mes) : 'Los últimos ' + FBS_FALTA_DIAS + ' días · para ver otro, elegí el mes'}</span></div>`;
+  if (!l.length) { cont.innerHTML = cab + '<div class="empty">' + (q || area || mes ? 'Nada con ese filtro.' : '✓ No falta el feedback de ningún nuevo.') + '</div>'; return; }
+  cont.innerHTML = cab + l.map(({ s, r }) => `<div class="fbs-falta"><div class="fbs-falta-cab"><b>${e(s.evento)}</b><span>${fechaDMA(s.fecha)}</span><span class="a-badge ${areaClase(s.area)}">${areaCorto(s.area)}</span>
+      <span>${r.nuevos} nuevo${r.nuevos === 1 ? '' : 's'} · ${r.conFb} de ${r.total} con feedback</span><button class="btn btn-sec btn-xs" onclick="hiVer('${hiAttr(s.k)}')">Ver el show</button><span class="falta-chip">Faltan ${r.faltan.length}</span></div>
+    <div class="fbs-falta-gente">${r.faltan.slice().sort((a, b) => String(a.g.nombre).localeCompare(String(b.g.nombre), 'es')).map(({ g, t }) => `<span class="fbs-falta-p"><a href="#" onclick="event.preventDefault();openFbHistory('${g.personaId}')" title="Ver sus feedbacks">${eN(g.nombre || 'Sin nombre')}</a><small>${t.primeraVez ? 'Primera vez' : 'Nuevo'}${g.puesto ? ' · ' + e(g.puesto) : ''}</small><button class="btn btn-primary btn-xs" onclick="fbCargarDeShow('${g.personaId}','${hiAttr(s.k)}')">+ Feedback</button></span>`).join('')}</div></div>`).join('');
 }
 function fbsExcel() {
   const l = fbsFiltradas(fbsFilas());
@@ -16168,8 +16385,8 @@ function pintarFbElegidos() {
   res.innerHTML = `Promedio <strong>${prom.toFixed(2)}</strong> de 5 → <strong>${NOMBRE_COLOR[col]}</strong>`;
 }
 
-function openFeedback(personaId, convId) {
-  fbTargetId = personaId; fbTargetConvId = convId;
+function openFeedback(personaId, convId, fecha) {
+  fbTargetId = personaId; fbTargetConvId = convId; fbTargetFecha = fecha || null;
   const p = people.find(x => x.id === personaId);
   document.getElementById('mFbTitle').textContent = `Feedback — ${p?.nombre || ''}`;
   fbValores = {};
@@ -16186,14 +16403,14 @@ async function saveFeedback() {
   const puntaje = colorDePromedio(prom);
   const comentario = document.getElementById('fbComentario').value.trim();
   const p = people.find(x => x.id === fbTargetId); if (!p) return;
-  const fb = { id: uid(), persona_id: fbTargetId, conv_id: fbTargetConvId || null, supervisor_id: currentUserId, supervisor_nombre: currentUserName || '', puntaje, comentario: comentario || null, created_at: new Date().toISOString(),
+  const fb = { id: uid(), persona_id: fbTargetId, conv_id: fbTargetConvId || null, ...(fbTargetFecha ? { fecha: fbTargetFecha } : {}), supervisor_id: currentUserId, supervisor_nombre: currentUserName || '', puntaje, comentario: comentario || null, created_at: new Date().toISOString(),
     actitud: fbValores.actitud, consignas: fbValores.consignas, presencia: fbValores.presencia, iniciativa: fbValores.iniciativa };
   feedbacks.push(fb);
   const newSem = calcSemaforo(fbTargetId);
   p.semaforo = newSem;
-  nomRefresh(); closeM('mFeedback');
+  nomRefresh(); closeM('mFeedback'); fbsRefrescarVistas();
   try {
-    await sbInsert('feedbacks', [{ id: fb.id, persona_id: fb.persona_id, conv_id: fb.conv_id, supervisor_id: fb.supervisor_id, supervisor_nombre: fb.supervisor_nombre, puntaje: fb.puntaje, comentario: fb.comentario, actitud: fb.actitud, consignas: fb.consignas, presencia: fb.presencia, iniciativa: fb.iniciativa }]);
+    await sbInsert('feedbacks', [{ id: fb.id, persona_id: fb.persona_id, conv_id: fb.conv_id, ...(fb.fecha ? { fecha: fb.fecha } : {}), supervisor_id: fb.supervisor_id, supervisor_nombre: fb.supervisor_nombre, puntaje: fb.puntaje, comentario: fb.comentario, actitud: fb.actitud, consignas: fb.consignas, presencia: fb.presencia, iniciativa: fb.iniciativa }]);
     await sbUpdate('personas', fbTargetId, { semaforo: newSem });
     toast('Feedback guardado');
   } catch (_) {}
