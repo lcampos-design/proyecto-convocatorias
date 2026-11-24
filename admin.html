@@ -1194,6 +1194,10 @@ tr:hover td{background:#f9f9fb}
       <option value="Orientador">Orientadores</option>
       <option value="Acomodador">Acomodadores</option>
       <option value="Hidratación">Hidratación</option>
+      <option value="Stagehand / cargas">Stagehand / cargas</option>
+      <option value="Producción">Producción</option>
+      <option value="Gastronomía">Gastronomía</option>
+      <option value="Boletero">Boleteros</option>
       <option value="_sin">Sin posición cargada</option>
     </select>
     <button class="btn btn-sec" id="nomFiltrosBtn" onclick="toggleFiltrosNom()" title="Edad, estudios, idiomas, experiencia, disponibilidad, orden, declaración jurada, etiquetas, rotación, documento y CV"><i class="ic ic-ajustes"></i> Más filtros <span class="tc" id="nomFiltrosBadge" style="display:none"></span></button>
@@ -3579,7 +3583,9 @@ function refreshCandBadge() { const cnt = people.filter(p => p.cv && p.estado ==
 // ── POSICIONES ────────────────────────────────────────────────
 // Supervisor, Operador y Acomodador no son áreas: son posiciones dentro de la
 // misma nómina, y una persona puede tener más de una. Por eso es una lista.
-const POSICIONES = ['Supervisor', 'Equipo operaciones', 'Operador acreditaciones', 'Orientador', 'Acomodador', 'Hidratación'];
+// 24-nov (Mercedes): + Boletero (para los servicios fijos) y las que la gente ya podía marcar al inscribirse pero el
+// equipo no podía asignar (Stagehand / cargas, Producción, Gastronomía).
+const POSICIONES = ['Supervisor', 'Equipo operaciones', 'Operador acreditaciones', 'Orientador', 'Acomodador', 'Hidratación', 'Stagehand / cargas', 'Producción', 'Gastronomía', 'Boletero'];
 // La localidad la cargó la persona al inscribirse, así que vive en la
 // solicitud. Se la busca por documento, igual que el resto de la planilla.
 // A quien se dio de alta a mano no le queda solicitud, así que la localidad
