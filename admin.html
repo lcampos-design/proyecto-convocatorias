@@ -1046,6 +1046,27 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .ficha-show{flex-basis:100%;font-size:12px;color:var(--r-ink2);background:#f4f4f6;border-radius:8px;padding:6px 10px;margin-top:4px;line-height:1.5}
 .ficha-show a{color:var(--r-ink);font-weight:600}
 .ficha-show .ficha-nota{color:#9a3412}
+/* ── Orden de todas las secciones (24-nov): como en los videos de RR. HH. ── */
+.sec-cab{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--r-line);padding:14px 22px}
+.sec-cab-t{flex:1;min-width:240px;display:flex;flex-direction:column;gap:2px}
+.sec-cab-t b{font-size:16px;font-weight:700;color:var(--r-ink);letter-spacing:-.2px}
+.sec-cab-t span{font-size:12.5px;color:var(--r-muted)}
+.sec-cab-acc{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-cab .ctrl-acc{margin-left:0}
+/* Los números: una franja chica, a la izquierda (no tarjetas enormes de punta a punta). */
+.stats-bar{padding:10px 22px;gap:8px;flex-wrap:wrap}
+.stats-bar .stat{flex:0 0 auto;min-width:0;display:flex;flex-direction:row;align-items:baseline;gap:7px;padding:7px 14px;border-radius:999px;box-shadow:none;background:var(--r-bg)}
+.stats-bar .stat-num{font-size:16px;font-weight:700}
+.stats-bar .stat-label{margin-top:0;font-size:12px;letter-spacing:0;text-transform:none;color:var(--r-muted)}
+/* Los títulos de las columnas, en letra normal (sin mayúsculas chiquitas). */
+th{text-transform:none!important;letter-spacing:0!important;font-size:12px!important;font-weight:600!important}
+/* Las tablas, todas en tarjeta. */
+#solContent{padding:14px 22px 4px}
+#solContent > table{border-collapse:separate!important;border-spacing:0;border:1px solid var(--mac-linea);border-radius:12px;overflow:hidden;box-shadow:var(--mac-sombra)}
+#solContent > table td,#solContent > table th{border-bottom:1px solid var(--r-line2)}
+#solContent > table tr:last-child td{border-bottom:none}
+/* En la nómina, la columna Notas (casi siempre "Interés: …") sólo en pantallas muy anchas. */
+@media (max-width:1700px){#nomTabla th:nth-child(8),#nomTabla td:nth-child(8){display:none}}
 /* Feedback de Operaciones (24-nov) */
 .fb-ops{display:inline-flex;align-items:center;font-size:11px;font-weight:650;background:#eef0f4;color:#1e293b;border-radius:999px;padding:2px 9px;white-space:nowrap}
 .fbops-notas{display:flex;gap:6px}
@@ -1274,10 +1295,29 @@ tr:hover td{background:#f9f9fb}
 
 <!-- NÓMINA -->
 <div id="sec-dashboard" class="sec">
+  <div class="sec-cab"><div class="sec-cab-t"><b>Dashboard</b><span>Lo que está esperando que alguien lo mire, los próximos shows y las inscripciones</span></div></div>
   <div id="dashContent"></div>
 </div>
 
 <div id="sec-nomina" class="sec active">
+  <div class="sec-cab"><div class="sec-cab-t"><b>Nómina</b><span>La gente de todas las áreas, con su ficha, su posición y su feedback</span></div><div class="sec-cab-acc"><div class="ctrl-acc">
+    <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">↓ Exportar</button>
+    <div class="nom-mas">
+      <button class="btn btn-sec" onclick="toggleMasNom(event)" title="Deduplicar, etiquetas, rotación, conflictos, importar">⋯ Herramientas</button>
+      <div class="nom-mas-menu" id="nomMasMenu">
+        <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT"><i class="ic ic-lupa"></i> Deduplicar</button>
+        <button class="btn btn-sec btn-sm" onclick="openEtiquetas()" title="Renombrar, unir o borrar etiquetas"><i class="ic ic-etiqueta"></i> Etiquetas</button>
+        <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
+        <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
+        <button class="btn btn-sec btn-sm" id="btnExportBbva" onclick="exportBbva()" title="Los de esta lista que no tienen cuenta y todavía no tienen CBU, con los datos que pide el banco">↓ Cuentas a abrir (BBVA)</button>
+        <button class="btn btn-sec btn-sm" onclick="openFbVarios()" title="La planilla de feedbacks pendientes de carga (varios eventos, por nombre): se busca a cada persona y cada evento, se revisa y se carga"><i class="ic ic-planilla"></i> Importar feedbacks de varios eventos</button>
+        <button class="btn btn-sec btn-sm" onclick="openRoles26()" title="La planilla de RR. HH. de convocados 2026 con roles: posiciones, semáforo, comentarios y eventos, por nombre"><i class="ic ic-planilla"></i> Importar roles y feedback 2026</button>
+        <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
+    <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
+    </div></div></div>
   <div class="stats-bar">
     <div class="stat s-total"><div class="stat-num" id="sTotal">0</div><div class="stat-label">Total</div></div>
     <div class="stat s-conf"><div class="stat-num" id="sConf">0</div><div class="stat-label">Confirmados</div></div>
@@ -1295,11 +1335,6 @@ tr:hover td{background:#f9f9fb}
   </div>
   <div class="ctrlbar">
     <input type="text" class="srch" id="nomSrch" placeholder="Buscar por nombre, CUIL, email o teléfono..." oninput="nomSearch()">
-    <select class="filt" id="nomStFilter" onchange="nomFilter()">
-      <option value="">Todos los estados</option>
-      <option value="pendiente">Pendiente</option><option value="contactado">Contactado</option>
-      <option value="confirmado">Confirmado</option><option value="no_asiste">No asiste</option>
-    </select>
     <select class="filt" id="nomSemFilter" onchange="nomFilter()" title="Filtrar por semáforo">
       <option value="">Todos los semáforos</option>
       <option value="1">🟢 1 — OK</option>
@@ -1350,28 +1385,15 @@ tr:hover td{background:#f9f9fb}
       </optgroup>
     </select>
     <button class="btn btn-sec" id="nomFiltrosBtn" onclick="toggleFiltrosNom()" title="Edad, estudios, idiomas, experiencia, disponibilidad, orden, declaración jurada, etiquetas, rotación, documento y CV"><i class="ic ic-ajustes"></i> Más filtros <span class="tc" id="nomFiltrosBadge" style="display:none"></span></button>
-    <div class="ctrl-acc">
-    <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">↓ Exportar</button>
-    <div class="nom-mas">
-      <button class="btn btn-sec" onclick="toggleMasNom(event)" title="Deduplicar, etiquetas, rotación, conflictos, importar">⋯ Herramientas</button>
-      <div class="nom-mas-menu" id="nomMasMenu">
-        <button class="btn btn-sec btn-sm" onclick="openDedup()" title="Buscar duplicados por CUIT"><i class="ic ic-lupa"></i> Deduplicar</button>
-        <button class="btn btn-sec btn-sm" onclick="openEtiquetas()" title="Renombrar, unir o borrar etiquetas"><i class="ic ic-etiqueta"></i> Etiquetas</button>
-        <button class="btn btn-sec btn-sm" onclick="openRotConfig()" title="Configurar reglas de rotación"><i class="ic ic-ajustes"></i> Rotación</button>
-        <button class="btn btn-sec btn-sm" onclick="openConflictos()" title="Ver por CUIT si alguien ya está en otro servicio el mismo día">⚠ Conflictos</button>
-        <button class="btn btn-sec btn-sm" id="btnExportBbva" onclick="exportBbva()" title="Los de esta lista que no tienen cuenta y todavía no tienen CBU, con los datos que pide el banco">↓ Cuentas a abrir (BBVA)</button>
-        <button class="btn btn-sec btn-sm" onclick="openFbVarios()" title="La planilla de feedbacks pendientes de carga (varios eventos, por nombre): se busca a cada persona y cada evento, se revisa y se carga"><i class="ic ic-planilla"></i> Importar feedbacks de varios eventos</button>
-        <button class="btn btn-sec btn-sm" onclick="openRoles26()" title="La planilla de RR. HH. de convocados 2026 con roles: posiciones, semáforo, comentarios y eventos, por nombre"><i class="ic ic-planilla"></i> Importar roles y feedback 2026</button>
-        <button class="btn btn-sec" onclick="openImport()">↑ Importar CSV</button>
-      </div>
-    </div>
-    <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
-    <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
-    </div>
   </div>
   <!-- Lo que se usa cada tanto: plegado, con contador de cuántos están puestos. -->
   <div class="ctrlbar nom-filtros" id="nomFiltros">
     <span class="nom-filtros-lbl">Más filtros</span>
+    <select class="filt" id="nomStFilter" onchange="nomFilter()">
+      <option value="">Todos los estados</option>
+      <option value="pendiente">Pendiente</option><option value="contactado">Contactado</option>
+      <option value="confirmado">Confirmado</option><option value="no_asiste">No asiste</option>
+    </select>
     <select class="filt" id="nomOrden" onchange="nomFilter()" title="Cómo se ordena la lista">
       <option value="">Orden por defecto</option>
       <option value="semaforo">Mejor evaluados primero</option>
@@ -1450,15 +1472,15 @@ tr:hover td{background:#f9f9fb}
 <!-- CONVOCATORIAS -->
 <div id="sec-convs" class="sec">
   <div id="cv-list">
+    <div class="sec-cab"><div class="sec-cab-t"><b>Convocatorias</b><span>Los shows y eventos, con sus puestos, la disponibilidad, los turnos y los contratos</span></div><div class="sec-cab-acc"><button class="btn btn-sec" onclick="openDisps()" title="Todas las rondas de disponibilidad (generales y de cada convocatoria), abiertas o cerradas, con quiénes se anotaron; y el link del mes"><i class="ic ic-calendario"></i> Disponibilidades</button>
+      <button class="btn btn-sec" id="btnFichasArena" onclick="fichasArena(true)" title="Lee ahora las fichas técnicas del Arena: el armado del campo, los horarios y lo que pide cada show (lo hace solo una vez por día y al abrir el panel)"><i class="ic ic-calendario"></i> ↻ Fichas del Arena</button>
+      <button class="btn btn-primary" onclick="openAddConv()">+ Nueva convocatoria</button></div></div>
     <div class="ctrlbar">
       <div class="cv-areas" id="cvAreas" role="tablist" aria-label="Área"></div>
       <input type="text" class="srch" id="cvSrch" placeholder="Buscar convocatoria..." oninput="renderCvList()">
       <select class="filt" id="cvArchF" onchange="renderCvList()">
         <option value="activas">Activas</option><option value="archivadas">Archivadas</option><option value="todas">Todas</option>
       </select>
-      <button class="btn btn-sec" onclick="openDisps()" title="Todas las rondas de disponibilidad (generales y de cada convocatoria), abiertas o cerradas, con quiénes se anotaron; y el link del mes"><i class="ic ic-calendario"></i> Disponibilidades</button>
-      <button class="btn btn-sec" id="btnFichasArena" onclick="fichasArena(true)" title="Lee ahora las fichas técnicas del Arena: el armado del campo, los horarios y lo que pide cada show (lo hace solo una vez por día y al abrir el panel)"><i class="ic ic-calendario"></i> ↻ Fichas del Arena</button>
-      <button class="btn btn-primary" onclick="openAddConv()">+ Nueva convocatoria</button>
     </div>
     <div id="cvCards"></div>
   </div>
@@ -1530,6 +1552,7 @@ tr:hover td{background:#f9f9fb}
 
 <!-- SOLICITUDES PÚBLICAS -->
 <div id="sec-solicitudes" class="sec">
+  <div class="sec-cab"><div class="sec-cab-t"><b>Postulantes</b><span>Las inscripciones del formulario: se revisan y, al aprobarlas, pasan a la Nómina</span></div></div>
   <div class="stats-bar">
     <div class="stat s-pend"><div class="stat-num" id="solPend">0</div><div class="stat-label">Pendientes</div></div>
     <div class="stat s-conf"><div class="stat-num" id="solAprov">0</div><div class="stat-label">Aprobadas</div></div>
@@ -1553,10 +1576,7 @@ tr:hover td{background:#f9f9fb}
 
 <!-- SUPERVISORES -->
 <div id="sec-supervisores" class="sec">
-  <div class="ctrlbar">
-    <span style="font-size:13px;color:#6b7280;flex:1">Las cuentas de cada zona (para el Centro de Control) y las de cada supervisor, con sus convocatorias</span>
-    <button class="btn btn-primary" onclick="openAddSup()">+ Agregar supervisor</button>
-  </div>
+  <div class="sec-cab"><div class="sec-cab-t"><b>Supervisores</b><span>Las cuentas de cada zona (para el Centro de Control) y las de cada supervisor, con sus convocatorias</span></div><div class="sec-cab-acc"><button class="btn btn-primary" onclick="openAddSup()">+ Agregar supervisor</button></div></div>
   <div style="padding:20px 24px 0" id="zonasCuentas"></div>
   <div style="padding:0 24px 20px" id="supList"><div class="empty">Cargando...</div></div>
 </div>
@@ -1740,6 +1760,7 @@ tr:hover td{background:#f9f9fb}
 
 <!-- CONTRATOS -->
 <div id="sec-contratos" class="sec">
+  <div class="sec-cab"><div class="sec-cab-t"><b>Contratos</b><span>Los contratos de cada área, mes por mes: los que salieron, los firmados y los que faltan firmar</span></div></div>
   <!-- Arriba: el área (Movistar Arena, Externos, España), sus meses y sus pestañas (los arma renderCtNav). -->
   <div id="ctNav"></div>
   <div class="ctrlbar" id="ctBarra" style="display:none">
@@ -1761,11 +1782,8 @@ tr:hover td{background:#f9f9fb}
 
 <!-- HISTORIAL (22-nov): quién fue a cada show (lo del panel y lo cargado a mano o con las planillas del año) y el feedback por supervisor. -->
 <div id="sec-historial" class="sec">
-  <div class="ctrlbar">
-    <div style="flex:1;min-width:220px">
-      <div style="font-size:15px;font-weight:700;color:var(--r-ink)">Historial y feedback</div>
-      <div style="font-size:12px;color:var(--r-muted)">Quién fue a cada show, y el feedback de cada supervisor</div>
-    </div>
+  <div class="sec-cab">
+    <div class="sec-cab-t"><b>Historial y feedback</b><span>Quién fue a cada show, y el feedback de cada supervisor</span></div>
     <div class="cc-seg cc-tabs" role="tablist" aria-label="Historial">
       <button class="on" id="hiTabShows" role="tab" onclick="hiTab('shows')">Shows</button>
       <button id="hiTabSup" role="tab" onclick="hiTab('sup')">Feedback por supervisor</button>
@@ -1784,11 +1802,8 @@ tr:hover td{background:#f9f9fb}
 <!-- FEEDBACKS (24-nov, Mercedes: "una sección feedbacks arriba, para ver todo el histórico"): todos los feedbacks, con
      quién lo hizo, en qué show y si era su primera vez; por supervisor, como en Historial. -->
 <div id="sec-feedbacks" class="sec">
-  <div class="ctrlbar">
-    <div style="flex:1;min-width:220px">
-      <div style="font-size:15px;font-weight:700;color:var(--r-ink)">Feedbacks</div>
-      <div style="font-size:12px;color:var(--r-muted)">Todos los feedbacks: evaluaciones y comentarios, de qué show, quién lo hizo y si era nuevo</div>
-    </div>
+  <div class="sec-cab">
+    <div class="sec-cab-t"><b>Feedbacks</b><span>Todos los feedbacks: evaluaciones y comentarios, de qué show, quién lo hizo y si era nuevo</span></div>
     <div class="cc-seg cc-tabs" role="tablist" aria-label="Feedbacks">
       <button class="on" id="fbsTabTodos" role="tab" onclick="fbsTab('todos')">Todos</button>
       <button id="fbsTabSup" role="tab" onclick="fbsTab('sup')">Por supervisor</button>
