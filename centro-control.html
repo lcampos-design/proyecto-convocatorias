@@ -130,6 +130,14 @@ button:focus-visible,.show:focus-visible{outline:2px solid var(--tinta);outline-
 .titulo-s{font:400 12px var(--inc-fuente);color:var(--gris)}
 .grupo{font:600 13.5px var(--inc-fuente);letter-spacing:0;color:var(--gris);margin:28px 0 8px}
 .shows-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:10px}
+/* Los shows por mes (24-nov): el mes se toca para abrirlo o cerrarlo (sin animación). */
+.mes{margin:0 0 4px}
+.mes>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;font:600 14px var(--inc-fuente);color:var(--tinta);padding:11px 4px;border-bottom:1px solid var(--linea,rgba(0,0,0,.1))}
+.mes>summary::-webkit-details-marker{display:none}
+.mes>summary::after{content:'';width:8px;height:8px;border-right:2px solid var(--gris);border-bottom:2px solid var(--gris);transform:rotate(-45deg);margin:0 4px 0 2px}
+.mes[open]>summary::after{transform:rotate(45deg)}
+.mes[open]>summary{margin-bottom:10px}
+.mes-n{margin-left:auto;font-weight:500;font-size:12.5px;color:var(--gris)}
 .show{padding:14px 16px;min-height:78px;cursor:pointer;display:flex;align-items:center;gap:12px;background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);border-radius:16px;transition:background .15s}
 .show:hover{background:var(--vidrio-2)}
 .show.hoy{outline:2px solid var(--tinta);outline-offset:-2px}
@@ -3775,6 +3783,9 @@ if (typeof window !== 'undefined' && window.addEventListener) {
 }
 // Los shows que ya pasaron, desde que arrancó el piloto (como en la app de supervisores).
 const GER_ANTERIORES_DESDE = '2026-11-13';
+const GER_MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const gerMesAbierto = new Map();
+function gerMesDe(f) { return /^\d{4}-\d{2}/.test(f || '') ? GER_MESES[+f.slice(5, 7) - 1] + ' ' + f.slice(0, 4) : 'Sin fecha'; }
 // La fecha abierta ya pasó (se entró desde "Anteriores"): se ve todo lo de ese día y el informe.
 function terminado() { return !!dia && dia < incHoyFuncion(); }
 function renderShows() {
@@ -3797,7 +3808,20 @@ function renderShows() {
   const body = document.getElementById('showsBody');
   if (!shows.length) { body.innerHTML = '<div class="vacio">Todavía no hay shows en el Centro de Control. Cuando el equipo de SBS sume uno, aparece acá.</div>'; return; }
   const bloque = (t, l) => l.length ? '<div class="grupo">' + t + '</div><div class="shows-grid">' + l.map(s => tarjeta(s, !!s.f && s.f === hoy)).join('') + '</div>' : '';
-  body.innerHTML = (bloque('Hoy', grupos.hoy) + bloque('Próximos', grupos.proximos) + bloque('Anteriores', grupos.anteriores) + bloque('Prueba', grupos.prueba))
+  // Próximos y Anteriores, separados por mes (24-nov, Thomas: "separemos los shows por meses"): abierto el mes más
+  // cercano (en Anteriores, el más reciente); los demás, cerrados con cuántos shows tienen. Lo que se abre o se cierra
+  // queda así aunque la lista se vuelva a dibujar.
+  const porMes = (t, k, l) => {
+    if (!l.length) return '';
+    const meses = [];
+    l.forEach(e => { const m = gerMesDe(e.f); let g = meses.find(x => x.m === m); if (!g) { g = { m, l: [] }; meses.push(g); } g.l.push(e); });
+    return '<div class="grupo">' + t + '</div>' + meses.map((g, i) => {
+      const clave = k + '|' + g.m, abierto = gerMesAbierto.has(clave) ? gerMesAbierto.get(clave) : i === 0;
+      return '<details class="mes"' + (abierto ? ' open' : '') + ' data-k="' + incEsc(clave) + '" ontoggle="gerMesAbierto.set(this.dataset.k, this.open)"><summary><span>' + incEsc(g.m) + '</span><span class="mes-n">' + g.l.length + ' show' + (g.l.length === 1 ? '' : 's') + '</span></summary>'
+        + '<div class="shows-grid">' + g.l.map(s => tarjeta(s, !!s.f && s.f === hoy)).join('') + '</div></details>';
+    }).join('');
+  };
+  body.innerHTML = (bloque('Hoy', grupos.hoy) + porMes('Próximos', 'proximos', grupos.proximos) + porMes('Anteriores', 'anteriores', grupos.anteriores) + bloque('Prueba', grupos.prueba))
     || '<div class="vacio">No hay shows de hoy en adelante. Cuando el equipo de SBS sume uno, aparece acá.</div>';
 }
 async function abrirShow(id, fecha) {

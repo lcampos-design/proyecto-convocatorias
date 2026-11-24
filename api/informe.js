@@ -72,6 +72,16 @@ export function informesDe(convs, ahora) {
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const escH = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// Los informes separados por mes (24-nov, Thomas: "separemos los shows por meses, lo mismo que los informes del Arena"):
+// el mes más reciente abierto; los anteriores, cerrados con cuántos informes tienen (se tocan para abrirlos).
+export function porMesTodos(filas, fila) {
+  const meses = [];
+  filas.forEach(x => { const m = String(x.fecha).slice(0, 7); let g = meses.find(y => y.m === m); if (!g) { g = { m, l: [] }; meses.push(g); } g.l.push(x); });
+  return meses.map((g, i) => {
+    const nombre = MESES[+g.m.slice(5, 7) - 1], titulo = nombre.charAt(0).toUpperCase() + nombre.slice(1) + ' ' + g.m.slice(0, 4);
+    return '<details class="mes"' + (i === 0 ? ' open' : '') + '><summary><span>' + escH(titulo) + '</span><span class="mes-n">' + g.l.length + (g.l.length === 1 ? ' informe' : ' informes') + '</span></summary>' + g.l.map(fila).join('') + '</details>';
+  }).join('');
+}
 // La página: una fila por show y fecha, con lo principal y el botón a su informe.
 export function paginaTodos(tipo, filas) {
   const socios = tipo === 'socios';
@@ -103,6 +113,9 @@ export function paginaTodos(tipo, filas) {
     + '.que{flex:1;min-width:0}.n{font-size:16px;font-weight:600}.s{font-size:13px;color:#5c5c5c;margin-top:2px}.m{font-size:13px;margin-top:6px}'
     + '.ir{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;background:#1a1a1a;color:#fff;padding:10px 14px;border-radius:10px}.ir svg{width:16px;height:16px}'
     + '.vacio{padding:28px;border:1px dashed #dadada;border-radius:14px;text-align:center;color:#5c5c5c;font-size:14px}'
+    + '.mes{margin:0 0 6px}.mes>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px;font-weight:600;padding:12px 4px;border-bottom:1px solid #dadada}'
+    + '.mes>summary::-webkit-details-marker{display:none}.mes>summary::after{content:"";width:8px;height:8px;border-right:2px solid #5c5c5c;border-bottom:2px solid #5c5c5c;transform:rotate(-45deg);margin:0 4px 0 2px}'
+    + '.mes[open]>summary::after{transform:rotate(45deg)}.mes[open]>summary{margin-bottom:12px}.mes-n{margin-left:auto;font-size:13px;font-weight:500;color:#5c5c5c}'
     + '@media (max-width:560px){.fila{flex-wrap:wrap}.ir{width:100%;justify-content:center}}'
     + '.pie{margin-top:28px;text-align:center;font-size:11px;color:#8a8a8a}'
     + '</style></head><body><div class="hoja">'
@@ -110,7 +123,7 @@ export function paginaTodos(tipo, filas) {
     + (socios ? 'Informes para socios' : 'Informes de incidencias') + '</h1></div></div>'
     + '<p class="intro">' + (socios ? 'Cada show del Movistar Arena, con los contratos, el personal y las incidencias. ' : 'Cada show del Movistar Arena, con su informe de incidencias. ')
     + 'Están siempre actualizados y, si lo necesitan en PDF, se descarga desde cada informe.</p>'
-    + (filas.length ? filas.map(fila).join('') : '<div class="vacio">Todavía no hay informes.</div>')
+    + (filas.length ? porMesTodos(filas, fila) : '<div class="vacio">Todavía no hay informes.</div>')
     + '<p class="pie">Proyecto llevado a cabo por la Gerencia de RR. HH.</p>'
     + '</div></body></html>';
 }
