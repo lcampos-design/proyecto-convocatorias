@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis turnos — Show Business Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1a1a1a;font-size:15px;min-height:100vh;position:relative}
+/* Como la confirmación de siempre: sobre blanco, la marca en gris suave, la barra negra finita con el logo. */
+.sbs-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:url('fondo-sbs.jpg') center/cover no-repeat;opacity:.07;filter:grayscale(1)}
+.page-header{background:#0f1117;padding:10px 20px;display:flex;align-items:center;justify-content:center;gap:10px;position:relative;z-index:1}
+.page-logo{width:30px;height:30px;display:block}
+.page-title{font-size:15px;font-weight:600;color:#fff;letter-spacing:-.2px}
+.wrap{max-width:520px;margin:28px auto 60px;padding:0 16px;position:relative;z-index:1}
+.card{background:rgba(255,255,255,.97);border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);padding:26px 20px}
+.t{font-size:19px;font-weight:700;color:#111827}
+.sub{font-size:13px;color:#6b7280;margin-top:3px}
+.center{color:#4b5563;line-height:1.6;text-align:center}
+.turno{border:1.5px solid #e5e7eb;border-radius:12px;padding:14px;margin-top:12px}
+.turno.si{border-color:#1a1a1a;background:#f4f4f5}
+.turno.no{border-color:#fecaca;background:#fff7f7}
+.dia{font-weight:600;color:#111827}
+.que{font-size:13px;color:#4b5563;margin-top:2px}
+.est{font-size:12px;font-weight:600;margin-top:8px;color:#6b7280}
+.turno.si .est{color:#111827}.turno.no .est{color:#b91c1c}
+.btns{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;padding:12px 10px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid #1a1a1a;background:#1a1a1a;color:#fff}
+.btn.no{background:#fff;color:#1a1a1a}
+.btn:disabled{opacity:.5;cursor:default}
+.todos{width:100%;margin-top:16px}
+.note{font-size:12px;color:#9ca3af;margin-top:16px;text-align:center;line-height:1.5}
+button,input,select,textarea,optgroup,option{font-family:inherit}
+.pie-rrhh{position:relative;z-index:1;text-align:center;font-size:11px;color:#9ca3af;margin-top:-28px;padding:0 16px 28px}@media print{.pie-rrhh{display:none}}
+</style>
+</head>
+<body>
+<div class="sbs-bg"></div>
+<div class="page-header">
+  <img class="page-logo" src="logo-sbs-blanco.png" alt="SBS">
+  <div class="page-title">Mis turnos</div>
+</div>
+<div class="wrap"><div id="content"><div class="card"><div class="center">Cargando tus turnos…</div></div></div></div>
+<!-- La leyenda de la Gerencia de RR. HH., abajo de todo (16-nov). -->
+<footer class="pie-rrhh">Proyecto llevado a cabo por la Gerencia de RR. HH.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// Turnos de acreditaciones (24-nov). El link del mail trae la postulación y, por cada turno asignado, su id y su firma
+// (p=<postulación>&t=<turno>.<firma>~<turno>.<firma>). La base sólo registra con la firma justa y si la persona sigue
+// asignada a ese turno (confirmar_turno, turnos-acreditaciones.sql). Acá no se ve ni se guarda ningún otro dato.
+const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const q = new URLSearchParams(location.search);
+const POST = q.get('p') || '';
+const PARES = String(q.get('t') || '').split('~').map(x => { const i = x.lastIndexOf('.'); return i > 0 ? { slot: x.slice(0, i), firma: x.slice(i + 1) } : null; }).filter(Boolean).slice(0, 60);
+let turnos = [], evento = '', nombre = '';
+
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function show(html){ document.getElementById('content').innerHTML = '<div class="card">' + html + '</div>'; }
+function diaLargo(f){ const d = new Date(f + 'T12:00:00'); if (isNaN(d)) return f || ''; const t = d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); }
+const TXT = { confirmado: 'Confirmaste este turno', rechazado: 'Avisaste que no podés', avisado: 'Falta que confirmes', propuesto: 'Falta que confirmes' };
+
+async function llamar(par, resp) {
+  const { data, error } = await sb.rpc('confirmar_turno', { p_post: POST, p_slot: par.slot, p_resp: resp, p_firma: par.firma });
+  if (error) throw error;
+  return data || {};
+}
+async function go() {
+  if (!/^[0-9a-f-]{36}$/i.test(POST) || !PARES.length) { show('<div class="center">Link inválido. Pedile el link a la coordinación.</div>'); return; }
+  try {
+    const res = await Promise.all(PARES.map(p => llamar(p, 'ver').then(d => Object.assign({ par: p }, d))));
+    turnos = res.filter(d => d.ok);
+    if (!turnos.length) {
+      const firma = res.some(d => d.motivo === 'firma');
+      show('<div class="center">' + (firma ? 'Este link no es válido.' : 'Ya no tenés turnos asignados en este link (pueden haberte cambiado de turno).') + ' Escribile a la coordinación y te reenvían el mail.</div>');
+      return;
+    }
+    turnos.sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+    evento = turnos[0].evento || ''; nombre = turnos[0].nombre || '';
+    pintar();
+  } catch (e) {
+    show('<div class="center">No pudimos traer tus turnos. Probá de nuevo en un rato.</div>');
+  }
+}
+function pintar(msg) {
+  const pila = String(nombre || '').trim().split(/\s+/)[0] || '';
+  const falta = turnos.filter(t => t.estado !== 'confirmado' && t.estado !== 'rechazado').length;
+  show(`<div class="t">Hola${pila ? ', ' + esc(pila.charAt(0).toUpperCase() + pila.slice(1).toLowerCase()) : ''}</div>
+    <div class="sub">Tus turnos en <strong>${esc(evento)}</strong>. Confirmá cada uno, o avisá si no podés.</div>
+    ${turnos.map((t, i) => `<div class="turno ${t.estado === 'confirmado' ? 'si' : t.estado === 'rechazado' ? 'no' : ''}">
+      <div class="dia">${esc(diaLargo(t.fecha))}</div>
+      <div class="que">${esc(t.turno || 'Turno')}${t.horario ? ' · ' + esc(t.horario) : ''}</div>
+      <div class="est">${esc(TXT[t.estado] || 'Falta que confirmes')}</div>
+      <div class="btns"><button class="btn" onclick="responder(${i},'si')"${t.estado === 'confirmado' ? ' disabled' : ''}>Confirmo</button><button class="btn no" onclick="responder(${i},'no')"${t.estado === 'rechazado' ? ' disabled' : ''}>No puedo</button></div>
+    </div>`).join('')}
+    ${falta > 1 ? `<button class="btn todos" onclick="confirmarTodos()">Confirmo todos (${falta})</button>` : ''}
+    ${msg ? `<div class="note" style="color:#111827">${esc(msg)}</div>` : ''}
+    <div class="note">Con el presente de cada jornada te llega por mail el contrato para firmar. Si cambiás de idea, volvé a este link.</div>`);
+}
+async function responder(i, resp) {
+  const t = turnos[i]; if (!t) return;
+  document.querySelectorAll('.btn').forEach(b => b.disabled = true);
+  try {
+    const d = await llamar(t.par, resp);
+    if (d.ok) { t.estado = d.estado; pintar(resp === 'si' ? '¡Listo! Confirmaste el ' + diaLargo(t.fecha).toLowerCase() + '.' : 'Listo, avisamos que no podés el ' + diaLargo(t.fecha).toLowerCase() + '.'); }
+    else pintar('No se pudo registrar (puede que ya no estés en ese turno). Escribile a la coordinación.');
+  } catch (_) { pintar('Hubo un error. Probá de nuevo.'); }
+}
+async function confirmarTodos() {
+  document.querySelectorAll('.btn').forEach(b => b.disabled = true);
+  let ok = 0;
+  for (const t of turnos) {
+    if (t.estado === 'confirmado' || t.estado === 'rechazado') continue;
+    try { const d = await llamar(t.par, 'si'); if (d.ok) { t.estado = d.estado; ok++; } } catch (_) {}
+  }
+  pintar(ok ? '¡Listo! Confirmaste ' + ok + ' turno' + (ok === 1 ? '' : 's') + '.' : 'No se pudo registrar. Probá de nuevo.');
+}
+go();
+</script>
+</body>
+</html>

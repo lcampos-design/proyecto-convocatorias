@@ -13,8 +13,14 @@
 //
 // Variables de entorno en Vercel: SUPABASE_SERVICE_ROLE_KEY y RESEND_API_KEY (las de siempre).
 
+//
+// Turnos de acreditaciones (24-nov): la grilla de turnos del panel llama acá con { accion: 'turno', post, turno } y la
+// sesión de admin. Si la persona tiene la P en ese turno, sale el contrato de esa jornada (origen 'turno', uno por
+// persona y turno, con el monto del turno y el puesto de la fila); si no la tiene (A, o le sacaron la P, o la sacaron
+// del turno), el que no firmó se anula. Ver turnos-acreditaciones.sql.
+
 import { TIPO_GOOGLE, esMicrosoft } from './_lib/correo-google.js';
-import { armarMailPeriodo } from './presentes-planilla.js';
+import { armarMailPeriodo, armarMail, armarTexto, numeroALetras, montoFormateado, montoANumero, fechaLarga } from './presentes-planilla.js';
 
 export const config = { maxDuration: 30 };
 
@@ -68,12 +74,131 @@ export function planDe(respuesta, contratos) {
   return { mandar, reactivar: !!mandar && mandar.estado === 'anulado', repetidos: pendientes.filter(c => c !== mandar) };
 }
 
+// ── Turnos de acreditaciones ──
+export const ORIGEN_TURNO = 'turno';
+const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+const ROLES_PANEL = ['admin', 'admin_movistar', 'admin_externos'];
+// Quien llama tiene que estar logueado y tener ficha de admin (como en send-email).
+async function verificarAdmin(req) {
+  const token = String(req.headers['authorization'] || '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) return false;
+  try {
+    const ru = await fetch(`${SB_URL}/auth/v1/user`, { headers: { 'Authorization': `Bearer ${token}`, 'apikey': SB_ANON_KEY } });
+    if (!ru.ok) return false;
+    const user = await ru.json();
+    const rp = await fetch(`${SB_URL}/rest/v1/user_profiles?id=eq.${encodeURIComponent(user.id)}&select=rol`, { headers: { 'Authorization': `Bearer ${token}`, 'apikey': SB_ANON_KEY } });
+    const perfil = rp.ok ? await rp.json() : [];
+    return ROLES_PANEL.includes(Array.isArray(perfil) && perfil[0] ? perfil[0].rol : null);
+  } catch (_) { return false; }
+}
+// Qué hacer con el contrato de un turno. Sin efectos: devuelve el plan.
+//  con la P: si ya salió (o lo firmó), nada; si está armado sin salir, se manda; si no hay, se arma y se manda.
+//  sin la P: se anulan los que no firmó (el firmado queda, y se avisa).
+export function planTurno(presente, contratos) {
+  const activos = (contratos || []).filter(c => c.estado !== 'anulado');
+  if (!presente) return { anular: activos.filter(c => c.estado !== 'firmado'), firmado: activos.some(c => c.estado === 'firmado') };
+  if (activos.some(c => ['enviado', 'visto', 'firmado'].includes(c.estado))) return { ya: true };
+  const pendiente = activos.find(c => c.estado === 'pendiente');
+  return pendiente ? { mandar: pendiente } : { crear: true };
+}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const hoyLarga = () => new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'long', timeZone: 'America/Argentina/Buenos_Aires' }).toUpperCase();
+
+async function contratoTurno(req, res, cuerpo, servicio, resend) {
+  if (!(await verificarAdmin(req))) return res.status(401).json({ error: 'Hace falta la sesión del panel' });
+  const postId = String(cuerpo.post || ''), turnoId = String(cuerpo.turno || '').slice(0, 80);
+  if (!UUID.test(postId) || !turnoId) return res.status(400).json({ error: 'Datos inválidos' });
+  const rp = await sbJson(servicio, `postulaciones?select=id,conv_id,persona_id,puesto_id,nombre,cuit,presentes,asignaciones&id=eq.${postId}`);
+  const post = rp.ok && Array.isArray(rp.data) ? rp.data[0] : null;
+  if (!post) return res.status(404).json({ error: 'No está esa postulación' });
+  // Lo que manda es lo que dice la base (el panel la guarda antes de llamar): presente y asignada a ese turno.
+  const presente = ((post.presentes || {})[turnoId] === 'presente') && Object.prototype.hasOwnProperty.call(post.asignaciones || {}, turnoId);
+  const [rconv, rc] = await Promise.all([
+    sbJson(servicio, `convocatorias?select=id,nombre,area,venue,turnos&id=eq.${post.conv_id}`),
+    sbJson(servicio, `contratos?select=id,estado,token,email,nombre&postulacion_id=eq.${postId}&turno_id=eq.${encodeURIComponent(turnoId)}&origen=eq.${ORIGEN_TURNO}&estado=neq.anulado`)
+  ]);
+  if (!rc.ok) return res.status(500).json({ error: 'Falta correr turnos-acreditaciones.sql en Supabase', detalle: (rc.data && rc.data.message) || '' });
+  const conv = rconv.ok && Array.isArray(rconv.data) ? rconv.data[0] : null;
+  const turno = conv && (Array.isArray(conv.turnos) ? conv.turnos : []).find(t => t && String(t.id) === turnoId);
+  if (!turno) return res.status(200).json({ ok: false, error: 'sin_turno' });
+  const plan = planTurno(presente, rc.data || []), ahora = new Date().toISOString();
+  const evento = (id, tipo, meta) => sbFetch(servicio, 'contrato_eventos', { method: 'POST', body: { contrato_id: id, tipo, meta: Object.assign({ origen: ORIGEN_TURNO, turno: turno.nombre || null }, meta || {}) } });
+
+  if (!presente) {
+    const motivo = (post.presentes || {})[turnoId] === 'ausente' ? 'Ausente en el turno' : 'Le sacaron el presente del turno';
+    for (const c of plan.anular) {
+      const ra = await sbFetch(servicio, `contratos?id=eq.${c.id}&estado=neq.firmado`, { method: 'PATCH', body: { estado: 'anulado', vence_el: ahora, anulado_at: ahora, anulado_motivo: motivo } });
+      if (ra.ok) await evento(c.id, 'anulado', { motivo });
+    }
+    return res.status(200).json({ ok: true, anulados: plan.anular.length, firmado: plan.firmado });
+  }
+  if (plan.ya) return res.status(200).json({ ok: true, ya: true });
+
+  // Si tiene el contrato de todo el período (puesto "contrato al confirmar"), no lleva uno por jornada.
+  if (post.persona_id) {
+    const rpe = await sbJson(servicio, `contratos?select=id&conv_id=eq.${post.conv_id}&persona_id=eq.${post.persona_id}&origen=eq.${ORIGEN}&estado=neq.anulado&limit=1`);
+    if (rpe.ok && Array.isArray(rpe.data) && rpe.data.length) return res.status(200).json({ ok: true, ya: 'periodo' });
+  }
+
+  let c = plan.mandar || null;
+  const area = areaDe(conv), show = String(conv.nombre || '').split(' — ')[0].trim(), lugar = area === 'externos' ? String(conv.venue || '') : 'Movistar Arena';
+  if (!c) {
+    const monto = montoANumero(turno.monto);
+    if (!(monto > 0)) return res.status(200).json({ ok: false, error: 'sin_monto' });
+    const [rper, rpu, rcfg] = await Promise.all([
+      post.persona_id ? sbJson(servicio, `personas?select=id,nombre,cuit,email&id=eq.${post.persona_id}`) : Promise.resolve({ ok: true, data: [] }),
+      sbJson(servicio, `puestos?select=nombre&id=eq.${UUID.test(String(turno.puestoId || '')) ? turno.puestoId : post.puesto_id}`),
+      sbJson(servicio, 'config?select=value&key=eq.contrato_plantilla')
+    ]);
+    const persona = (rper.ok && Array.isArray(rper.data) && rper.data[0]) || {};
+    const plantilla = String(((rcfg.ok && rcfg.data && rcfg.data[0] && rcfg.data[0].value) || {}).ar || '').trim();
+    if (!plantilla) return res.status(200).json({ ok: false, error: 'sin_plantilla' });
+    const email = String(persona.email || '').trim();
+    if (!email.includes('@')) return res.status(200).json({ ok: false, error: 'sin_mail' });
+    const cuil = String(persona.cuit || post.cuit || '').replace(/\D/g, ''), dia = fechaLarga(turno.fecha);
+    const puesto = String((rpu.ok && Array.isArray(rpu.data) && rpu.data[0] && rpu.data[0].nombre) || turno.nombre || '').trim();
+    const datos = {
+      nombre: String(persona.nombre || post.nombre || '').trim(), cuil, puesto, venue: lugar,
+      fecha_inicio: dia, fecha_fin: dia, anio: String(turno.fecha).slice(0, 4),
+      monto_letras: numeroALetras(monto), monto_numero: montoFormateado(monto), fecha_firma_doc: hoyLarga()
+    };
+    const ri = await sbJson(servicio, 'contratos', {
+      method: 'POST', headers: { 'Prefer': 'return=representation' },
+      body: Object.assign({}, datos, { conv_id: conv.id, persona_id: post.persona_id || null, postulacion_id: post.id, puesto_id: UUID.test(String(turno.puestoId || '')) ? turno.puestoId : (post.puesto_id || null),
+        doc_nucleo: nucleo(cuil) || null, email, texto_contrato: armarTexto(plantilla, datos), estado: 'pendiente', firma_empleador_img: 'firmas/firma-richard.png',
+        fecha_show: turno.fecha, origen: ORIGEN_TURNO, turno_id: turnoId })
+    });
+    if (!ri.ok || !Array.isArray(ri.data) || !ri.data[0]) {
+      // Otro pedido lo armó al mismo tiempo (uno por persona y turno).
+      if (ri.status === 409) return res.status(200).json({ ok: true, ya: true });
+      return res.status(500).json({ error: 'No se pudo crear el contrato', detalle: (ri.data && ri.data.message) || ri.status });
+    }
+    c = ri.data[0];
+    await evento(c.id, 'creado');
+  }
+  const para = String(c.email || '').trim();
+  if (!para.includes('@')) return res.status(200).json({ ok: false, error: 'sin_mail', contrato: c.id });
+  // Hotmail, Outlook, Live: por Google (la fila del script), como los demás contratos.
+  if (esMicrosoft(para)) {
+    const ya = await sbJson(servicio, `contrato_eventos?select=id&contrato_id=eq.${c.id}&tipo=eq.${TIPO_GOOGLE}&limit=1`);
+    if (!(ya.ok && Array.isArray(ya.data) && ya.data.length)) await evento(c.id, TIPO_GOOGLE, { motivo: 'contrato', show, lugar });
+    return res.status(200).json({ ok: true, porGoogle: true, contrato: c.id });
+  }
+  const mail = armarMail({ nombre: c.nombre, fecha: turno.fecha, show, link: `${SITIO}/contrato.html?t=${c.token}`, lugar: area === 'externos' ? lugar : undefined });
+  const envio = await mandarMail(resend, para, mail, CASILLA[area]);
+  if (!envio.ok) return res.status(200).json({ ok: false, error: envio.error, contrato: c.id });
+  await sbFetch(servicio, `contratos?id=eq.${c.id}`, { method: 'PATCH', body: { estado: 'enviado', fecha_envio: new Date().toISOString() } });
+  await evento(c.id, 'enviado');
+  return res.status(200).json({ ok: true, enviado: true, contrato: c.id });
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return res.status(405).json({ error: 'Método no permitido' }); }
   const servicio = process.env.SUPABASE_SERVICE_ROLE_KEY || '', resend = process.env.RESEND_API_KEY || '';
   if (!servicio || !resend) return res.status(500).json({ error: 'Falta configurar en Vercel la clave de Supabase o la de Resend' });
   let cuerpo;
   try { cuerpo = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {}); } catch (_) { return res.status(400).json({ error: 'El pedido no es JSON' }); }
+  if (cuerpo.accion === 'turno') return contratoTurno(req, res, cuerpo, servicio, resend);
   const doc = nucleo(cuerpo.c), conv = String(cuerpo.v || ''), resp = String(cuerpo.r || '').toLowerCase();
   if (!doc || doc.length < 6 || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(conv) || !['si', 'no'].includes(resp)) return res.status(400).json({ error: 'Datos inválidos' });
 

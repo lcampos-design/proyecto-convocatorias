@@ -449,7 +449,7 @@ export function decidir(fila, ctx) {
     if (persona.distinta) return { resultado: 'sin_persona', detalle: 'Con ese DNI hay alguien en la nómina con otro apellido: revisá el CUIL en la planilla' };
     // Externos (22-nov): su puesto es de "contrato al confirmar" y ya tiene el de todo el período: no lleva uno por día.
     const periodo = !contrato && periodoDe(fila, persona, ctx);
-    if (periodo) return { resultado: 'ya_tenia', contrato: periodo, detalle: 'Tiene el contrato por todo el período (sale al confirmar)' };
+    if (periodo) return { resultado: 'ya_tenia', contrato: periodo, detalle: periodo.origen === 'turno' ? 'Tiene el contrato de su turno (grilla de turnos del panel)' : 'Tiene el contrato por todo el período (sale al confirmar)' };
     if (contrato && contrato.estado === 'firmado') return { resultado: 'firmado', contrato };
     if (contrato && contrato.estado !== 'pendiente') return { resultado: 'ya_tenia', contrato };
     // Armado en una vuelta anterior, pero el mail no salió: se vuelve a mandar (el contrato ya está hecho).
@@ -589,8 +589,11 @@ export default async function handler(req, res) {
   // Externos (22-nov): los que tienen el contrato de todo el período (puesto "contrato al confirmar") en este evento.
   const periodo = new Map();
   if (ext && conv) {
-    const rpe = await sbJson(servicio, `contratos?select=id,persona_id,doc_nucleo,cuil,estado&conv_id=eq.${conv.id}&origen=eq.al_confirmar&estado=neq.anulado`);
+    const rpe = await sbJson(servicio, `contratos?select=id,persona_id,doc_nucleo,cuil,estado,origen&conv_id=eq.${conv.id}&origen=eq.al_confirmar&estado=neq.anulado`);
     if (rpe.ok && Array.isArray(rpe.data)) rpe.data.forEach(c => claveMapaPeriodo(c).forEach(k => { if (!periodo.has(k)) periodo.set(k, c); }));
+    // Turnos de acreditaciones (24-nov): quien tiene el contrato de su turno de esta fecha (lo manda la grilla del panel con la P).
+    const rtu = await sbJson(servicio, `contratos?select=id,persona_id,doc_nucleo,cuil,estado,origen&conv_id=eq.${conv.id}&origen=eq.turno&fecha_show=eq.${fecha}&estado=neq.anulado`);
+    if (rtu.ok && Array.isArray(rtu.data)) rtu.data.forEach(c => claveMapaPeriodo(c).forEach(k => { if (!periodo.has(k)) periodo.set(k, c); }));
   }
   const ctx = { personas, contratos, porId, porPersona, antes, cfg, plantilla, conv, fecha, disponibilidad: Number(cuerpo.disponibilidad) > 0, ext, tarifas, periodo };
 
