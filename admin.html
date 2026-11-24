@@ -1042,6 +1042,10 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .tg-arm td{padding:3px 6px 3px 0}
 .tg-arm .fi{padding:6px 8px;font-size:12.5px}
 .tg-arm-acc{display:flex;gap:8px;align-items:center;margin-top:12px}
+/* La ficha del Arena en el show (24-nov) */
+.ficha-show{flex-basis:100%;font-size:12px;color:var(--r-ink2);background:#f4f4f6;border-radius:8px;padding:6px 10px;margin-top:4px;line-height:1.5}
+.ficha-show a{color:var(--r-ink);font-weight:600}
+.ficha-show .ficha-nota{color:#9a3412}
 /* Feedback de Operaciones (24-nov) */
 .fb-ops{display:inline-flex;align-items:center;font-size:11px;font-weight:650;background:#eef0f4;color:#1e293b;border-radius:999px;padding:2px 9px;white-space:nowrap}
 .fbops-notas{display:flex;gap:6px}
@@ -1453,6 +1457,7 @@ tr:hover td{background:#f9f9fb}
         <option value="activas">Activas</option><option value="archivadas">Archivadas</option><option value="todas">Todas</option>
       </select>
       <button class="btn btn-sec" onclick="openDisps()" title="Todas las rondas de disponibilidad (generales y de cada convocatoria), abiertas o cerradas, con quiénes se anotaron; y el link del mes"><i class="ic ic-calendario"></i> Disponibilidades</button>
+      <button class="btn btn-sec" id="btnFichasArena" onclick="fichasArena(true)" title="Lee ahora las fichas técnicas del Arena: el armado del campo, los horarios y lo que pide cada show (lo hace solo una vez por día y al abrir el panel)"><i class="ic ic-calendario"></i> ↻ Fichas del Arena</button>
       <button class="btn btn-primary" onclick="openAddConv()">+ Nueva convocatoria</button>
     </div>
     <div id="cvCards"></div>
@@ -3422,7 +3427,45 @@ async function loadAll() {
     refreshSolBadge();
     refreshNotifBadge();
     refreshRespBadge();
+    // 24-nov: las fichas técnicas del Arena ponen al día los shows (armado, horarios, la ficha). Sin esperar.
+    fichasArena(false);
   }
+}
+// ── LAS FICHAS TÉCNICAS DEL ARENA (24-nov) ── El servidor (api/calendario?fichas=1, api/_lib/fichas.js) lee las fichas
+// del Arena y pone al día sus shows: el armado del campo (si nadie lo cambió a mano), los horarios que falten y el
+// resumen de la ficha en convocatorias.ficha; si de una fecha no hay show, lo crea. Corre una vez por día sola (cron
+// de Vercel) y al abrirse el panel (como mucho cada 10 minutos); "↻ Fichas del Arena" la corre en el momento.
+async function fichasArena(forzar) {
+  const b = document.getElementById('btnFichasArena');
+  if (forzar && b) { b.disabled = true; b.textContent = 'Leyendo las fichas…'; }
+  try {
+    const r = await fetch('/api/calendario?fichas=1' + (forzar ? '&forzar=1' : ''), { headers: await authHeader() });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { if (forzar) toast(d.error || 'No se pudieron leer las fichas'); return; }
+    const ids = [...new Set((d.cambiados || []).map(x => x.id).concat((d.creados || []).map(x => x.id)))];
+    if (ids.length && !d.reciente) {
+      const { data } = await sb.from('convocatorias').select('*').in('id', ids);
+      (data || []).forEach(nc => { const i = convs.findIndex(c => c.id === nc.id); if (i >= 0) convs[i] = Object.assign({}, convs[i], nc, { puestos: convs[i].puestos }); else convs.push(Object.assign({}, nc, { puestos: [] })); });
+      try { renderCvList(); if (currentConvId && ids.includes(currentConvId)) openDetail(currentConvId); } catch (_) {}
+    }
+    if (forzar) {
+      const rs = d.resumen || {}, partes = [rs.armados && rs.armados + ' armado' + (rs.armados === 1 ? '' : 's') + ' del campo', rs.horarios && rs.horarios + ' horario' + (rs.horarios === 1 ? '' : 's'), (d.creados || []).length && (d.creados.length + ' show' + (d.creados.length === 1 ? '' : 's') + ' nuevo' + (d.creados.length === 1 ? '' : 's'))].filter(Boolean);
+      toast(d.reciente ? 'Las fichas se leyeron hace un momento' : (rs.fichas || 0) + ' fichas leídas' + (partes.length ? ': ' + partes.join(', ') : ', todo al día'));
+    }
+  } catch (_) { if (forzar) toast('No se pudieron leer las fichas'); }
+  finally { if (b) { b.disabled = false; b.innerHTML = '<i class="ic ic-calendario"></i> ↻ Fichas del Arena'; } }
+}
+// Lo que dice la ficha del Arena, en el show (horarios, orientadores, cargas, acta, armado y el link a la ficha).
+const ARMADO_TXT = { unico: 'Campo único', campos: 'Campo delantero y trasero', asientos: 'Campo con asientos' };
+function fichaDelShowHTML(c) {
+  const f = c && c.ficha; if (!f || !f.id) return '';
+  const hoy = hoyLocalISO(), tandas = Array.isArray(f.tandas) && f.tandas.length ? f.tandas : [f];
+  const t = tandas.find(x => (x.fechas || []).some(d => d >= hoy)) || tandas[tandas.length - 1];
+  const hs = (t.horarios || []).map(h => h.texto).filter(Boolean)[0] || '';
+  const datos = [t.configuracion && (t.configuracion + (t.armado ? ' (' + ARMADO_TXT[t.armado] + ')' : '')), hs,
+    t.orientadores && 'Orientadores: ' + t.orientadores + (t.orientadores_premium ? ' + ' + t.orientadores_premium + ' premium' : ''), t.cargas && 'Cargas: ' + t.cargas, t.acta_apertura && 'Acta: ' + t.acta_apertura].filter(Boolean);
+  const notas = [t.notas && t.notas.accesos, t.notas && t.notas.staff].filter(Boolean);
+  return `<div class="ficha-show"><b>Ficha del Arena</b>${tandas.length > 1 ? ' <span class="fbv-sub">(' + tandas.length + ' fichas: ' + tandas.map(x => (x.fechas || []).map(d => fechaDMA(d).slice(0, 5)).join(', ')).join(' / ') + ')</span>' : ''} · ${datos.map(e).join(' · ')}${notas.length ? ' · <span class="ficha-nota">' + notas.map(e).join(' · ') + '</span>' : ''} · <a href="${e(t.url || f.url)}" target="_blank" rel="noopener">Ver ficha ↗</a></div>`;
 }
 
 // ── HELPERS SUPABASE ──
@@ -5713,6 +5756,7 @@ function openDetail(id) {
   document.getElementById('cv-detail').style.display = 'block';
   document.getElementById('detTitle').textContent = c.nombre;
   document.getElementById('detMeta').innerHTML = `<span class="a-badge ${areaClase(c.area)}">${areaLargo(c.area)}</span>${resumenFechas(c.fecha)}${c.venue ? `<span>📍 ${e(c.venue)}</span>` : ''}${c.descripcion ? `<span title="${e(c.descripcion)}">${e(c.descripcion.slice(0, 60))}${c.descripcion.length > 60 ? '…' : ''}</span>` : ''}`;
+  document.getElementById('detMeta').insertAdjacentHTML('beforeend', fichaDelShowHTML(c));
   syncPublicadaBtn(c);
   const ab = document.getElementById('btnArchivar'); if (ab) ab.innerHTML = c.archivada ? '<i class="ic ic-caja-abrir"></i> Desarchivar' : '<i class="ic ic-caja"></i> Archivar';
   // La grilla de turnos es de Externos (acreditaciones y eventos de varios turnos); en un show del Arena no va.

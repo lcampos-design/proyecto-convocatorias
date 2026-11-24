@@ -9,6 +9,9 @@
 // código: GCAL_ICS_ARENA y GCAL_ICS_EXTERNOS. Sólo la usa el servidor, y
 // sólo le contesta a un admin logueado.
 
+import crypto from 'crypto';
+import { FICHAS_URL, planFichas } from './_lib/fichas.js';
+
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
 const ROLES_ADMIN = ['admin', 'admin_movistar', 'admin_externos'];
@@ -92,8 +95,54 @@ export function delMes(eventos, mes) {
     .sort((a, b) => a.fechas[0].localeCompare(b.fechas[0]) || a.titulo.localeCompare(b.titulo));
 }
 
+// ── Las fichas técnicas del Arena (24-nov): ?fichas=1 pone al día los shows del Arena con sus fichas (ver
+// api/_lib/fichas.js). La llama el cron de Vercel una vez por día y el panel al abrirse; como mucho una vez cada 10
+// minutos (con &forzar=1, un admin la corre igual).
+const ESPERA_FICHAS_MIN = 10;
+async function sbJson(servicio, ruta, op = {}) {
+  const r = await fetch(`${SB_URL}/rest/v1/${ruta}`, { method: op.method || 'GET', headers: Object.assign({ 'apikey': servicio, 'Authorization': `Bearer ${servicio}`, 'Content-Type': 'application/json' }, op.headers || {}), body: op.body === undefined ? undefined : JSON.stringify(op.body) });
+  const t = await r.text(); let j = null; try { j = t ? JSON.parse(t) : null; } catch (_) {}
+  return { ok: r.ok, status: r.status, data: j };
+}
+const esCron = req => {
+  const secreto = process.env.CRON_SECRET || '';
+  if (secreto) return String(req.headers['authorization'] || '') === 'Bearer ' + secreto;
+  return /^vercel-cron/i.test(String(req.headers['user-agent'] || ''));
+};
+async function fichasDelArena(req, res) {
+  const cron = esCron(req);
+  if (!cron) { const auth = await verificarAdmin(req); if (!auth.ok) return res.status(auth.status).json({ error: auth.error }); }
+  const servicio = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!servicio) return res.status(500).json({ error: 'Falta configurar en Vercel la clave de Supabase' });
+  // Hace poco que se corrió: lo de esa vez (salvo que un admin la fuerce).
+  const rcfg = await sbJson(servicio, 'config?select=value&key=eq.fichas_sync');
+  const ultima = rcfg.ok && rcfg.data && rcfg.data[0] ? rcfg.data[0].value || {} : {};
+  const forzar = !cron && String((req.query && req.query.forzar) || '') === '1';
+  if (!forzar && ultima.at && Date.now() - new Date(ultima.at).getTime() < ESPERA_FICHAS_MIN * 60000) return res.status(200).json(Object.assign({ ok: true, reciente: true }, ultima));
+  let fichas;
+  try { const r = await fetch(FICHAS_URL); if (!r.ok) throw new Error('la app de fichas contestó ' + r.status); fichas = await r.json(); if (!Array.isArray(fichas)) throw new Error('respuesta inesperada'); }
+  catch (err) { return res.status(502).json({ error: 'No se pudieron leer las fichas del Arena: ' + err.message }); }
+  const rc = await sbJson(servicio, 'convocatorias?select=id,nombre,fecha,turnos,horario,armado_campo,centro_control,ficha&area=eq.movistar_arena&limit=3000');
+  if (!rc.ok) return res.status(500).json({ error: /ficha/.test(JSON.stringify(rc.data || '')) ? 'Falta correr fichas-arena.sql en Supabase' : 'No se pudieron leer los shows', detalle: (rc.data && rc.data.message) || '' });
+  const hoy = new Date(Date.now() + AR * 3600000).toISOString().slice(0, 10);
+  const plan = planFichas(fichas, rc.data || [], hoy), hechos = [], creados = [], errores = [];
+  for (const x of plan.cambios) {
+    const r = await sbJson(servicio, `convocatorias?id=eq.${x.id}`, { method: 'PATCH', body: x.cambios });
+    if (r.ok) hechos.push({ id: x.id, motivo: x.motivo }); else errores.push(x.id);
+  }
+  for (const nuevo of plan.crear) {
+    const fila = Object.assign({}, nuevo, { id: crypto.randomUUID(), turnos: nuevo.turnos.map(t => Object.assign({ id: crypto.randomUUID() }, t)) });
+    const r = await sbJson(servicio, 'convocatorias', { method: 'POST', body: fila });
+    if (r.ok) creados.push({ id: fila.id, nombre: fila.nombre, fecha: fila.fecha }); else errores.push(fila.nombre);
+  }
+  const salida = { at: new Date().toISOString(), por: cron ? 'cron' : 'panel', resumen: plan.resumen, cambiados: hechos, creados, errores };
+  await sbJson(servicio, 'config?on_conflict=key', { method: 'POST', headers: { 'Prefer': 'resolution=merge-duplicates' }, body: { key: 'fichas_sync', value: salida, updated_at: salida.at } });
+  return res.status(200).json(Object.assign({ ok: true }, salida));
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') { res.setHeader('Allow', 'GET'); return res.status(405).json({ error: 'Método no permitido' }); }
+  if (String((req.query && req.query.fichas) || '') === '1' || esCron(req)) return fichasDelArena(req, res);
   const auth = await verificarAdmin(req);
   if (!auth.ok) return res.status(auth.status).json({ error: auth.error });
   const mes = String((req.query && req.query.mes) || '');

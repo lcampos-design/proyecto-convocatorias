@@ -57,5 +57,11 @@
       "maxDuration": 60,
       "includeFiles": "node_modules/@sparticuz/chromium/bin/**"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/calendario?fichas=1",
+      "schedule": "0 13 * * *"
+    }
+  ]
 }
