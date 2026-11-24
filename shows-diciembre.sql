@@ -52,7 +52,7 @@ where not exists (
 
 -- ── Para ver cómo quedó ──
 --  Los shows del Centro de Control con alguna fecha en diciembre, y cuántas
---  cuentas de zona tiene cada uno (tienen que ser las 7).
+--  cuentas de zona tiene cada uno (tienen que ser 9: las 7 zonas, Coordinador y Corporativo).
 select c.nombre,
        replace(c.fecha, ',', ' · ') as fechas,
        c.publicada,
