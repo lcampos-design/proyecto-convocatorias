@@ -941,6 +941,12 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 /* Posiciones de cada persona */
 .pos-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
 .pos-chip{font-size:10.5px;font-weight:600;background:var(--r-bg);border:1px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:1px 8px;white-space:nowrap}
+/* 24-nov: posición (la del equipo), ocupó (donde trabajó) y le interesa (lo que marcó al inscribirse), cada uno distinto. */
+.chip-t{font-size:9.5px;font-weight:700;color:var(--r-muted);text-transform:uppercase;letter-spacing:.4px;margin-left:4px}
+.chip-t:first-child{margin-left:0}
+.pos-chip.asig{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.pos-chip.ocupo{background:#fff;border-color:#6b7280;color:#1a1a1a}
+.pos-chip.interes{background:transparent;border-style:dashed;color:var(--r-muted);font-weight:500}
 .pos-prom{font-size:10.5px;font-weight:700;color:var(--r-ink2);font-variant-numeric:tabular-nums}
 .pos-elegir{font-size:12px;font-weight:500;background:#fff;border:1.5px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit;transition:all .12s}
 .pos-elegir:hover{border-color:#a1a1aa}
@@ -1185,9 +1191,9 @@ tr:hover td{background:#f9f9fb}
       <option value="Otra">Otra (sin reconocer)</option>
       <option value="_sin">Sin localidad cargada</option>
     </select>
-    <select class="filt" id="nomPuestoFilter" onchange="nomFilter()" title="Filtrar por el puesto que eligió al inscribirse"><option value="">Todos los puestos</option></select>
+    <select class="filt" id="nomPuestoFilter" onchange="nomFilter()" title="Filtrar por lo que marcó al inscribirse (le interesa)"><option value="">Le interesa: todos</option></select>
     <select class="filt" id="nomPosFilter" onchange="nomFilter()" title="Filtrar por la posición que le asignó el equipo">
-      <option value="">Todas las posiciones</option>
+      <option value="">Posición: todas</option>
       <option value="Supervisor">Supervisores</option>
       <option value="Equipo operaciones">Equipo operaciones</option>
       <option value="Operador acreditaciones">Operadores de acreditaciones</option>
@@ -1661,8 +1667,9 @@ tr:hover td{background:#f9f9fb}
       <div id="pBancoNota" style="font-size:11px;color:#9ca3af;margin:-4px 0 12px"></div>
       <button type="button" class="btn btn-sec btn-sm" id="pInvitarDatos" onclick="invitarMisDatos()" title="Le llega al mail que dejó al inscribirse: con ese link revisa y cambia sus datos (vence en 24 horas)" style="margin-bottom:12px">✉ Mandarle el link para que actualice sus datos</button>
     </div>
-    <div class="fg"><label>Posiciones</label>
+    <div class="fg"><label>Posiciones <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#9ca3af">— las asigna el equipo</span></label>
       <div id="pPosChips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      <div id="pPosInfo" class="pos-chips" style="margin-top:8px"></div>
     </div>
     <div class="fg"><label>Localidad</label><input type="text" class="fi" id="pLocalidad" placeholder="Dónde vive — de ahí sale la zona"></div>
     <div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="cb" id="pRecom"> Está en Recomendados (a llamar primero)</label></div>
@@ -3495,7 +3502,7 @@ function nomApply() {
   const orden = document.getElementById('nomOrden') ? document.getElementById('nomOrden').value : '';
   // El puesto que eligió al inscribirse (lo de "Posiciones" es lo que le asignó el equipo).
   // Las opciones cuentan los de la pestaña y el estado elegidos.
-  if (typeof llenarOpcionesPuesto === 'function') llenarOpcionesPuesto('nomPuestoFilter', people.filter(p => nomEnPestana(p) && (!st || p.estado === st)).map(puestoDePersona));
+  if (typeof llenarOpcionesPuesto === 'function') llenarOpcionesPuesto('nomPuestoFilter', people.filter(p => nomEnPestana(p) && (!st || p.estado === st)).map(puestoDePersona), 'Le interesa: todos');
   const puF = document.getElementById('nomPuestoFilter') ? document.getElementById('nomPuestoFilter').value : '';
   // Lo que contó al inscribirse y las rondas de disponibilidad (en "Más filtros").
   const valorDe = id => { const x = document.getElementById(id); return x && x.value ? String(x.value) : ''; };
@@ -3595,6 +3602,49 @@ function zonaDe(p) {
   return zonaDeLocalidad((sol && sol.localidad) || (p && p.localidad) || '');
 }
 function posicionesDe(p) { return Array.isArray(p && p.posiciones) ? p.posiciones.filter(Boolean) : []; }
+// 24-nov (Mercedes: "las etiquetas se mezclan, las que ellos ponen de interés con los puestos que efectivamente
+// ocuparon"): tres cosas distintas, cada una con su nombre.
+//   Posición: la que le asigna el equipo (la ficha).
+//   Ocupó: los puestos en que trabajó (contratos sin anular, convocatorias que ya pasaron en que quedó y el
+//          historial cargado), con cuántas veces.
+//   Le interesa: lo que marcó al inscribirse.
+function puestosOcupadosDe(p) {
+  if (!p) return [];
+  const hoy = hoyLocalISO(), m = new Map(), sumar = (n, dia) => {
+    const t = String(n || '').trim(); if (!t) return;
+    const k = hiNorm(t), x = m.get(k) || { nombre: t, dias: new Set() }; x.dias.add(dia || ('?' + x.dias.size)); m.set(k, x);
+  };
+  contratosDePersona(p).forEach(c => { if (c.estado !== 'anulado') sumar(c.puesto, fechaDeContrato(c)); });
+  postsDePersona(p.id).forEach(x => {
+    if (!['aprobado', 'confirmado'].includes(x.estado) || x.asistencia === 'ausente') return;
+    const conv = convs.find(c => c.id === x.convId); if (!conv) return;
+    const fs = convFechasArr(conv).sort(); if (!fs.length || fs[fs.length - 1] >= hoy) return;
+    // Si de esa convocatoria tiene contratos, ya contaron (con su puesto y su fecha).
+    if (contratosDePersona(p).some(c => c.conv_id === conv.id && c.estado !== 'anulado')) return;
+    sumar(((conv.puestos || []).find(q => q.id === x.puestoId) || {}).nombre, fs[0]);
+  });
+  historialDePersona(p).forEach(h => sumar(h.puesto, String(h.fecha || '').slice(0, 10)));
+  return [...m.values()].map(x => ({ nombre: x.nombre, veces: x.dias.size })).sort((a, b) => b.veces - a.veces || a.nombre.localeCompare(b.nombre, 'es'));
+}
+// En la ficha ("Ver CV" / "Ver datos"): los tres por separado, y las etiquetas aparte.
+function puestosFichaHTML(p) {
+  const fila = (t, chips, vacio) => `<div class="cv-viewer-field"><div class="cv-viewer-label">${t}</div><div class="cv-viewer-value" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">${chips || '<span style="color:#9ca3af">' + vacio + '</span>'}</div></div>`;
+  const oc = puestosOcupadosDe(p), pos = posicionesDe(p), it = interesesDe(p), etq = Array.isArray(p.etiquetas) ? p.etiquetas : [], txt = puestoDePersona(p);
+  return fila('Puestos que ocupó', oc.map(x => `<span class="pos-chip ocupo">${e(x.nombre)}${x.veces > 1 ? ' ×' + x.veces : ''}</span>`).join(''), 'Todavía no figura en ningún show')
+    + fila('Posición (la asigna el equipo)', pos.map(x => `<span class="pos-chip asig">${e(x)}</span>`).join(''), 'Sin posición asignada')
+    + fila('Le interesa (lo marcó al inscribirse)', it.map(x => `<span class="pos-chip interes">${e(x)}</span>`).join('') + (/otro\s*:/i.test(txt) ? `<span style="font-size:11px;color:#6b7280">${e((txt.match(/otro\s*:\s*([^,;]*)/i) || [])[1] || '')}</span>` : ''), 'No marcó nada')
+    + (etq.length ? fila('Etiquetas', etq.map(nm => etqChip(nm)).join(''), '') : '');
+}
+function interesesDe(p) { return p ? puestosDeSol(puestoDePersona(p)).filter(x => x !== 'Otro').concat(/otro/i.test(puestoDePersona(p)) ? ['Otro'] : []) : []; }
+// Los tres grupos en chips, cada uno con su rótulo (máx cuántos de cada uno, en la lista).
+function chipsPuestosHTML(p, max) {
+  const corta = l => max && l.length > max ? l.slice(0, max).concat(['+' + (l.length - max)]) : l;
+  const pos = posicionesDe(p), oc = puestosOcupadosDe(p), it = interesesDe(p), out = [];
+  if (pos.length) out.push('<span class="chip-t" title="La que le asigna el equipo, en su ficha">Posición</span>' + corta(pos).map(x => '<span class="pos-chip asig">' + e(x) + '</span>').join(''));
+  if (oc.length) out.push('<span class="chip-t" title="Donde trabajó: contratos, convocatorias que ya pasaron e historial">Ocupó</span>' + corta(oc.map(x => x.nombre + (x.veces > 1 ? ' ×' + x.veces : ''))).map(x => '<span class="pos-chip ocupo">' + e(x) + '</span>').join(''));
+  if (it.length) out.push('<span class="chip-t" title="Lo que marcó al inscribirse">Le interesa</span>' + corta(it).map(x => '<span class="pos-chip interes">' + e(x) + '</span>').join(''));
+  return out.join('');
+}
 // Dónde está convocada hoy o más adelante: para verlo en la nómina sin tener
 // que entrar a cada convocatoria. La misma persona por id o por documento,
 // igual que el chequeo de choques. Lo pasado no se muestra.
@@ -3663,7 +3713,7 @@ function renderNomTable() {
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
   ${(p.cv || solicitudDe(p) || cuantosFb(p.id)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv || solConCv(p) ? 'Ver CV' : 'Ver datos'}</button>` : ''}${tieneCv(p) ? `<button class="cv-ojo" onclick="cvRapidaOrigen='nom';cvRapida('${p.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : ''}
-  ${(posicionesDe(p).length || zonaDe(p)) ? `<div class="pos-chips">${zonaDe(p) ? `<span class="zona-chip" title="Sale de la localidad que cargó al inscribirse">${e(zonaDe(p))}</span>` : ''}${posicionesDe(p).map(x => `<span class="pos-chip">${e(x)}</span>`).join('')}${(() => { const pr = promedioDe(p.id); return pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">${pr.toFixed(2)}</span>` : ''; })()}</div>` : ''}
+  ${(() => { const chips = chipsPuestosHTML(p, 3), pr = promedioDe(p.id); return (chips || zonaDe(p) || pr != null) ? `<div class="pos-chips">${zonaDe(p) ? `<span class="zona-chip" title="Sale de la localidad que cargó al inscribirse">${e(zonaDe(p))}</span>` : ''}${pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">${pr.toFixed(2)}</span>` : ''}${chips}</div>` : ''; })()}
   ${(() => { const d = dondeEsta(p); return d.length ? `<div class="pos-chips">${d.slice(0, 3).map(x => `<span class="conv-chip" title="${e(x.fechas.map(f => fechaDMA ? fechaDMA(f) : f).join(', '))}${x.puesto ? ' · ' + e(x.puesto) : ''}" onclick="event.stopPropagation();goSec('convs');openDetail('${x.convId}')"><i class="ic ic-calendario"></i> ${e(x.conv)} · ${e(fechaDMA ? fechaDMA(x.fecha) : x.fecha)}</span>`).join('')}${d.length > 3 ? `<span class="conv-chip" style="opacity:.7">+${d.length - 3}</span>` : ''}</div>` : ''; })()}
   ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
@@ -4347,13 +4397,21 @@ function renderFormPos() {
   const c = document.getElementById('pPosChips'); if (!c) return;
   c.innerHTML = POSICIONES.map(x => `<button type="button" class="pos-elegir${formPosiciones.includes(x) ? ' on' : ''}" onclick="togglePos('${x}')">${e(x)}</button>`).join('');
 }
+// Debajo de las posiciones, sólo para mirar: dónde trabajó y qué marcó al inscribirse.
+function pintarPosInfo(p) {
+  const el = document.getElementById('pPosInfo'); if (!el) return;
+  if (!p) { el.innerHTML = ''; return; }
+  const oc = puestosOcupadosDe(p), it = interesesDe(p);
+  el.innerHTML = (oc.length ? '<span class="chip-t">Ocupó</span>' + oc.map(x => '<span class="pos-chip ocupo">' + e(x.nombre) + (x.veces > 1 ? ' ×' + x.veces : '') + '</span>').join('') : '')
+    + (it.length ? '<span class="chip-t">Le interesa</span>' + it.map(x => '<span class="pos-chip interes">' + e(x) + '</span>').join('') : '');
+}
 function togglePos(x) {
   formPosiciones = formPosiciones.includes(x) ? formPosiciones.filter(y => y !== x) : formPosiciones.concat(x);
   renderFormPos();
 }
 
-function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); formPosiciones = []; renderFormPos(); document.getElementById('pLocalidad').value = ''; document.getElementById('pRecom').checked = false; document.getElementById('pContratosBlock').style.display = 'none'; prepararBancoPersona(null); showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
-function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); formPosiciones = posicionesDe(p).slice(); renderFormPos(); document.getElementById('pLocalidad').value = p.localidad || ''; document.getElementById('pRecom').checked = !!p.recomendado; renderPersonContratos(p); prepararBancoPersona(p); showM('mPerson'); }
+function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); formPosiciones = []; renderFormPos(); pintarPosInfo(null); document.getElementById('pLocalidad').value = ''; document.getElementById('pRecom').checked = false; document.getElementById('pContratosBlock').style.display = 'none'; prepararBancoPersona(null); showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
+function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); formPosiciones = posicionesDe(p).slice(); renderFormPos(); pintarPosInfo(p); document.getElementById('pLocalidad').value = p.localidad || ''; document.getElementById('pRecom').checked = !!p.recomendado; renderPersonContratos(p); prepararBancoPersona(p); showM('mPerson'); }
 
 async function savePerson() {
   const nom = document.getElementById('pNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
@@ -5160,7 +5218,7 @@ async function cvRapida(id) {
   document.getElementById('cvRapidaPos').textContent = i >= 0 ? (i + 1) + ' de ' + lista.length + ' con CV en esta lista' : '';
   document.getElementById('cvRapidaFicha').onclick = () => viewCv(id);
   document.getElementById('cvRapidaMeta').innerHTML = '<span class="a-badge ' + areaClase(p.area) + '">' + areaCorto(p.area) + '</span>'
-    + (zonaDe(p) ? '<span class="zona-chip">' + e(zonaDe(p)) + '</span>' : '') + posicionesDe(p).map(x => '<span class="pos-chip">' + e(x) + '</span>').join('');
+    + (zonaDe(p) ? '<span class="zona-chip">' + e(zonaDe(p)) + '</span>' : '') + chipsPuestosHTML(p, 3);
   document.getElementById('cvRapida').classList.add('on'); document.body.classList.add('cv-rapida-on');
   // Desde la disponibilidad, el panel va encima de esa ventana y la ventana se corre a la izquierda.
   document.getElementById('cvRapida').classList.toggle('sobre-modal', cvRapidaOrigen === 'disp'); document.body.classList.toggle('cv-rapida-disp', cvRapidaOrigen === 'disp');
@@ -5214,7 +5272,7 @@ function viewCv(id) {
   const fld = (label, val) => val ? `<div class="cv-viewer-field"><div class="cv-viewer-label">${label}</div><div class="cv-viewer-value">${e(val)}</div></div>` : '';
   let html = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px"><span class="a-badge ${areaClase(p.area)}">${areaLargo(p.area)}</span>${p.email ? `<span style="font-size:12px;color:#6b7280"><i class="ic ic-sobre"></i> ${e(p.email)}</span>` : ''}${p.tel ? `<span style="font-size:12px;color:#6b7280"><i class="ic ic-telefono"></i> ${e(p.tel)}</span>` : ''}<span style="font-size:12px;color:#9ca3af">Enviado: ${cv.fechaEnvio || '—'}</span></div>`;
   html += fichaFeedbackHTML(id) + '<div class="cv-section-divider"></div>';
-  html += fld('Puesto de interés', cv.puestoInteres); html += fld('Disponibilidad', cv.disponibilidad);
+  html += puestosFichaHTML(p); html += fld('Disponibilidad', cv.disponibilidad);
   html += '<div class="cv-section-divider"></div>';
   html += fld('Experiencia laboral', cv.experiencia); html += fld('Formación', cv.formacion); html += fld('Habilidades', cv.habilidades);
   if (p.area === 'espana') {
@@ -13058,12 +13116,12 @@ function puestosDeSol(texto) {
 // Las opciones, con cuántas hay de cada una en el área y el estado elegidos
 // (España tiene sus propios puestos). Sólo las que tienen alguna.
 function fillSolPuestoOptions(base) { llenarOpcionesPuesto('solPuestoF', base.map(s => s.puesto_interes)); }
-function llenarOpcionesPuesto(idSel, textos) {
+function llenarOpcionesPuesto(idSel, textos, primera) {
   const sel = document.getElementById(idSel); if (!sel) return;
   const cur = sel.value, cuantas = {};
   textos.forEach(t => puestosDeSol(t).forEach(p => { cuantas[p] = (cuantas[p] || 0) + 1; }));
   const ops = SOL_PUESTOS.map(([n]) => n).concat('Otro').filter(n => cuantas[n] || n === cur);
-  sel.innerHTML = '<option value="">Todos los puestos</option>' +
+  sel.innerHTML = '<option value="">' + e(primera || 'Todos los puestos') + '</option>' +
     ops.map(n => `<option value="${e(n)}">${e(n)} · ${cuantas[n] || 0}</option>`).join('');
   sel.value = cur;
 }
