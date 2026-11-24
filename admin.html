@@ -948,6 +948,11 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .pos-chip.ocupo{background:#fff;border-color:#6b7280;color:#1a1a1a}
 .pos-chip.interes{background:transparent;border-style:dashed;color:var(--r-muted);font-weight:500}
 .pos-chip.probar{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+/* Feedbacks (24-nov): los números de arriba y la marca de nuevo en cada fila. */
+.fbs-nums{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.fbs-num{flex:1;min-width:120px;border:1px solid var(--r-line);border-radius:10px;padding:10px 14px;background:#fff}
+.fbs-num b{display:block;font-size:20px;font-weight:700;color:var(--r-ink)}.fbs-num span{font-size:11.5px;color:var(--r-muted)}
+.sv-nuevo-panel{display:inline-block;margin-top:3px;padding:1px 8px;border-radius:999px;font-size:10.5px;font-weight:600;background:#1a1a1a;color:#fff}
 .pos-prom{font-size:10.5px;font-weight:700;color:var(--r-ink2);font-variant-numeric:tabular-nums}
 .pos-elegir{font-size:12px;font-weight:500;background:#fff;border:1.5px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit;transition:all .12s}
 .pos-elegir:hover{border-color:#a1a1aa}
@@ -1130,6 +1135,7 @@ tr:hover td{background:#f9f9fb}
     <button class="mnav-btn" data-s="convs" onclick="goSec('convs')">Convocatorias</button>
     <button class="mnav-btn" data-s="contratos" onclick="goSec('contratos')">Contratos</button>
     <button class="mnav-btn" data-s="historial" onclick="goSec('historial')">Historial</button>
+    <button class="mnav-btn" data-s="feedbacks" onclick="goSec('feedbacks')">Feedbacks</button>
     <button class="mnav-btn" data-s="control" id="navControl" onclick="goSec('control')">Centro de Control</button>
     <button class="mnav-btn" data-s="supervisores" id="navSupervisores" onclick="goSec('supervisores')" style="display:none">Supervisores</button>
     <button class="mnav-btn" style="display:none" data-s="candidatos" onclick="goSec('candidatos')">Candidatos <span id="candNavBadge" style="background:#1d4ed8;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;display:none"></span></button>
@@ -1645,6 +1651,32 @@ tr:hover td{background:#f9f9fb}
     <button class="btn btn-primary btn-sm" onclick="openHiCargar()">+ Cargar un show</button>
   </div>
   <div style="padding:20px 24px" id="hiContent"><div class="empty">Cargando...</div></div>
+</div>
+
+<!-- FEEDBACKS (24-nov, Mercedes: "una sección feedbacks arriba, para ver todo el histórico"): todos los feedbacks, con
+     quién lo hizo, en qué show y si era su primera vez; por supervisor, como en Historial. -->
+<div id="sec-feedbacks" class="sec">
+  <div class="ctrlbar">
+    <div style="flex:1;min-width:220px">
+      <div style="font-size:15px;font-weight:700;color:var(--r-ink)">Feedbacks</div>
+      <div style="font-size:12px;color:var(--r-muted)">Todos los feedbacks: evaluaciones y comentarios, de qué show, quién lo hizo y si era nuevo</div>
+    </div>
+    <div class="cc-seg cc-tabs" role="tablist" aria-label="Feedbacks">
+      <button class="on" id="fbsTabTodos" role="tab" onclick="fbsTab('todos')">Todos</button>
+      <button id="fbsTabSup" role="tab" onclick="fbsTab('sup')">Por supervisor</button>
+    </div>
+  </div>
+  <div class="ctrlbar" id="fbsBarra">
+    <input type="text" class="srch" id="fbsSrch" placeholder="Buscar persona, supervisor, show o comentario..." oninput="fbsPagina=1;renderFeedbacksSec()">
+    <select class="filt" id="fbsArea" onchange="fbsPagina=1;renderFeedbacksSec()"><option value="">Todas las áreas</option><option value="movistar_arena">Movistar Arena</option><option value="externos">Externos</option><option value="espana">España</option></select>
+    <select class="filt" id="fbsMes" onchange="fbsPagina=1;renderFeedbacksSec()"><option value="">Todos los meses</option></select>
+    <select class="filt" id="fbsTipo" onchange="fbsPagina=1;renderFeedbacksSec()">
+      <option value="">Evaluaciones y comentarios</option><option value="eval">Sólo evaluaciones</option><option value="obs">Sólo comentarios (sin puntaje)</option>
+      <option value="1">En verde</option><option value="2">En amarillo</option><option value="3">En rojo</option><option value="nuevo">Nuevos o primera vez</option>
+    </select>
+    <button class="btn btn-sec btn-sm" onclick="fbsExcel()"><i class="ic ic-planilla"></i> Excel</button>
+  </div>
+  <div style="padding:20px 24px" id="fbsContent"><div class="empty">Cargando...</div></div>
 </div>
 
 <!-- La leyenda de la Gerencia de RR. HH., abajo de todo (16-nov). -->
@@ -3323,6 +3355,7 @@ function goSec(s) {
   if (s === 'contratos') { ctArea = ''; renderContratos(); }   // siempre entra por la portada (Arena, Externos, España)
   if (s === 'control') renderCentroControl();
   if (s === 'historial') renderHistorialSec();
+  if (s === 'feedbacks') renderFeedbacksSec();
 }
 
 function renderDashboard() {
@@ -14694,7 +14727,78 @@ function renderHiSupervisores(cont) {
         <td>${barra(x)}<div class="fbv-sub">${x.v} · ${x.a} · ${x.r}</div></td><td>${x.obs || '—'}</td><td>${x.ult ? fechaDMA(x.ult) : '—'}</td></tr>`
         + (hiSupAbierto === x.g.k ? `<tr><td colspan="6" style="background:#fafafa">${hiSupDetalle(x.g.fbs)}</td></tr>` : '')).join('') + '</tbody></table></div>';
 }
-function hiSupAbrir(kEnc) { const k = decodeURIComponent(kEnc); hiSupAbierto = hiSupAbierto === k ? '' : k; renderHistorialSec(); }
+function hiSupAbrir(kEnc) { const k = decodeURIComponent(kEnc); hiSupAbierto = hiSupAbierto === k ? '' : k; if (document.getElementById('sec-feedbacks').classList.contains('active')) renderFeedbacksSec(); else renderHistorialSec(); }
+
+// ── FEEDBACKS (24-nov) ──
+// Todos los feedbacks en una lista (lo más nuevo arriba), con el show, quién lo hizo, los cuatro criterios o el
+// comentario, y si en ese show era su primera vez o era nuevo (la misma regla que la app). Por supervisor: la tabla
+// de Historial. Se baja a Excel lo filtrado.
+let fbsTabActual = 'todos', fbsPagina = 1;
+const FBS_POR_PAGINA = 150;
+function fbsTab(t) {
+  fbsTabActual = t;
+  document.getElementById('fbsTabTodos').classList.toggle('on', t === 'todos');
+  document.getElementById('fbsTabSup').classList.toggle('on', t === 'sup');
+  document.getElementById('fbsBarra').style.display = t === 'todos' ? '' : 'none';
+  renderFeedbacksSec();
+}
+function fbsFecha(f) { return /^\d{4}-\d{2}-\d{2}/.test(String(f.fecha || '')) ? String(f.fecha).slice(0, 10) : String(f.created_at || '').slice(0, 10); }
+// Cada feedback con lo que hace falta para mostrarlo y filtrarlo.
+function fbsFilas() {
+  const convPorId = new Map(convs.map(c => [c.id, c]));
+  return feedbacks.map(f => {
+    const p = personaPorId(f.persona_id), conv = f.conv_id ? convPorId.get(f.conv_id) : null, pr = promedioFb(f);
+    return { f, p, conv, fecha: fbsFecha(f), area: areaDeShow((conv && conv.area) || (p && p.area)), prom: pr, color: pr != null ? colorDePromedio(pr) : (f.puntaje || 0), sup: supDeFeedback(f) || 'Sin dato de quién evaluó' };
+  }).sort((a, b) => b.fecha.localeCompare(a.fecha) || String(b.f.created_at || '').localeCompare(String(a.f.created_at || '')));
+}
+// Nuevo o primera vez en ese show (sólo para lo que se muestra: la cuenta mira todo su historial).
+function fbsNuevo(x) {
+  if (!x.p || !x.fecha) return '';
+  const t = trayectoriaDe(x.p, x.area, x.fecha, x.conv ? x.conv.id : null);
+  return t.primeraVez ? 'Primera vez' : t.nuevo ? 'Nuevo' : '';
+}
+function fbsFiltradas(todas) {
+  const area = document.getElementById('fbsArea').value, mes = document.getElementById('fbsMes').value, tipo = document.getElementById('fbsTipo').value;
+  const q = hiNorm(document.getElementById('fbsSrch').value);
+  return todas.filter(x => (!area || x.area === area) && (!mes || x.fecha.startsWith(mes))
+    && (!tipo || (tipo === 'eval' ? x.prom != null : tipo === 'obs' ? x.f.puntaje == null : tipo === 'nuevo' ? !!fbsNuevo(x) : String(x.color) === tipo && x.f.puntaje != null))
+    && (!q || [x.p && x.p.nombre, x.sup, x.conv && x.conv.nombre, x.f.comentario].some(t => hiNorm(t).includes(q))));
+}
+function renderFeedbacksSec() {
+  const cont = document.getElementById('fbsContent'); if (!cont) return;
+  if (fbsTabActual === 'sup') { renderHiSupervisores(cont); return; }
+  const todas = fbsFilas();
+  const selMes = document.getElementById('fbsMes'), mesAct = selMes.value;
+  const meses = [...new Set(todas.map(x => x.fecha.slice(0, 7)).filter(Boolean))].sort().reverse();
+  selMes.innerHTML = '<option value="">Todos los meses</option>' + meses.map(m => `<option value="${m}"${m === mesAct ? ' selected' : ''}>${hiMesNombre(m)}</option>`).join('');
+  const l = fbsFiltradas(todas);
+  if (!l.length) { cont.innerHTML = '<div class="empty">' + (todas.length ? 'Nada con ese filtro.' : 'Todavía no hay feedbacks.') + '</div>'; return; }
+  const evals = l.filter(x => x.prom != null), obs = l.length - evals.length, prom = evals.length ? evals.reduce((t, x) => t + x.prom, 0) / evals.length : null;
+  const col = k => evals.filter(x => colorDePromedio(x.prom) === k).length, v = col(1), a = col(2), r = col(3), tot = v + a + r;
+  const w = n => tot ? (n * 100 / tot).toFixed(1) + '%' : '0';
+  const tarjeta = (n, t) => `<div class="fbs-num"><b>${n}</b><span>${t}</span></div>`;
+  const vista = l.slice(0, fbsPagina * FBS_POR_PAGINA);
+  cont.innerHTML = `<div class="fbs-nums">${tarjeta(l.length, 'feedbacks')}${tarjeta(evals.length, 'evaluaciones')}${tarjeta(obs, 'comentarios sin puntaje')}${tarjeta(prom != null ? prom.toFixed(2) : '—', 'promedio (de 5)')}
+      <div class="fbs-num" style="flex:2;min-width:220px"><div class="hi-barra" style="height:10px;margin:6px 0 8px"><i style="width:${w(v)};background:#16a34a"></i><i style="width:${w(a)};background:#eab308"></i><i style="width:${w(r)};background:#dc2626"></i></div><span>${v} en verde · ${a} en amarillo · ${r} en rojo</span></div></div>
+    <div class="fbv-tabla hi-tabla"><table><thead><tr><th style="width:92px">Fecha</th><th>Persona</th><th>Show</th><th>Quién lo hizo</th><th style="width:150px">Criterios</th><th style="width:90px">Promedio</th><th>Comentario</th></tr></thead><tbody>`
+    + vista.map(x => {
+      const nv = fbsNuevo(x), crit = x.prom != null ? FB_CRITERIOS.map(c => x.f[c.id]).join(' · ') : '—';
+      return `<tr onclick="${x.p ? `openFbHistory('${x.p.id}')` : ''}"><td>${fechaDMA(x.fecha)}</td>
+        <td><div class="fbv-nom">${x.p ? eN(x.p.nombre) : 'Persona borrada'}</div>${nv ? `<span class="sv-nuevo-panel">${nv}</span>` : ''}</td>
+        <td>${x.conv ? e(x.conv.nombre) : '<span class="fbv-sub">—</span>'}</td><td>${e(x.sup)}</td>
+        <td title="${FB_CRITERIOS.map(c => c.titulo).join(' · ')}">${crit}</td>
+        <td>${x.prom != null ? `<span class="sem sem-${colorDePromedio(x.prom)}" style="vertical-align:middle">${colorDePromedio(x.prom)}</span> ${x.prom.toFixed(2)}` : x.f.puntaje ? `<span class="sem sem-${x.f.puntaje}">${x.f.puntaje}</span>` : '<span class="fb-obs">Comentario</span>'}</td>
+        <td>${e(x.f.comentario || '')}</td></tr>`;
+    }).join('') + '</tbody></table></div>'
+    + (l.length > vista.length ? `<div style="text-align:center;margin-top:12px"><button class="btn btn-sec btn-sm" onclick="fbsPagina++;renderFeedbacksSec()">Mostrar ${Math.min(FBS_POR_PAGINA, l.length - vista.length)} más (quedan ${l.length - vista.length})</button></div>` : '');
+}
+function fbsExcel() {
+  const l = fbsFiltradas(fbsFilas());
+  const filas = [['Fecha', 'Persona', 'CUIL', 'Área', 'Show', 'Quién lo hizo', 'Nuevo'].concat(FB_CRITERIOS.map(c => c.titulo), ['Promedio', 'Color', 'Comentario'])]
+    .concat(l.map(x => [fechaDMA(x.fecha), x.p ? x.p.nombre : '', x.p ? x.p.cuit || '' : '', areaLargo(x.area), x.conv ? x.conv.nombre : '', x.sup, fbsNuevo(x)]
+      .concat(FB_CRITERIOS.map(c => x.prom != null ? x.f[c.id] : ''), [x.prom != null ? Number(x.prom.toFixed(2)) : '', x.prom != null ? NOMBRE_COLOR[colorDePromedio(x.prom)] : x.f.puntaje ? NOMBRE_COLOR[x.f.puntaje] : 'Comentario', x.f.comentario || ''])));
+  descargarLibro('feedbacks-' + hoyLocalISO() + '.xlsx', [{ nombre: 'Feedbacks', titulo: 'Feedbacks', subtitulo: l.length + ' feedback' + (l.length === 1 ? '' : 's') + ' · lo más nuevo arriba', filas }]);
+}
 function hiSupDetalle(fbs) {
   const l = fbs.slice().sort((a, b) => String(b.fecha || b.created_at || '').localeCompare(String(a.fecha || a.created_at || ''))).slice(0, 300);
   return '<table style="width:100%"><tbody>' + l.map(f => {
