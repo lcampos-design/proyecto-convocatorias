@@ -947,10 +947,12 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .pos-chip.asig{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
 .pos-chip.ocupo{background:#fff;border-color:#6b7280;color:#1a1a1a}
 .pos-chip.interes{background:transparent;border-style:dashed;color:var(--r-muted);font-weight:500}
+.pos-chip.probar{background:#fef3c7;border-color:#f59e0b;color:#92400e}
 .pos-prom{font-size:10.5px;font-weight:700;color:var(--r-ink2);font-variant-numeric:tabular-nums}
 .pos-elegir{font-size:12px;font-weight:500;background:#fff;border:1.5px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit;transition:all .12s}
 .pos-elegir:hover{border-color:#a1a1aa}
 .pos-elegir.on{background:var(--r-ink);border-color:var(--r-ink);color:#fff}
+.pos-elegir.on.probar{background:#fef3c7;border-color:#f59e0b;color:#92400e}
 
 
 /* Zona, calculada desde la localidad */
@@ -1205,6 +1207,18 @@ tr:hover td{background:#f9f9fb}
       <option value="Gastronomía">Gastronomía</option>
       <option value="Boletero">Boleteros</option>
       <option value="_sin">Sin posición cargada</option>
+      <optgroup label="A probar en…">
+        <option value="probar:Supervisor">A probar: Supervisor</option>
+        <option value="probar:Equipo operaciones">A probar: Equipo operaciones</option>
+        <option value="probar:Operador acreditaciones">A probar: Operador acreditaciones</option>
+        <option value="probar:Orientador">A probar: Orientador</option>
+        <option value="probar:Acomodador">A probar: Acomodador</option>
+        <option value="probar:Hidratación">A probar: Hidratación</option>
+        <option value="probar:Stagehand / cargas">A probar: Stagehand / cargas</option>
+        <option value="probar:Producción">A probar: Producción</option>
+        <option value="probar:Gastronomía">A probar: Gastronomía</option>
+        <option value="probar:Boletero">A probar: Boletero</option>
+      </optgroup>
     </select>
     <button class="btn btn-sec" id="nomFiltrosBtn" onclick="toggleFiltrosNom()" title="Edad, estudios, idiomas, experiencia, disponibilidad, orden, declaración jurada, etiquetas, rotación, documento y CV"><i class="ic ic-ajustes"></i> Más filtros <span class="tc" id="nomFiltrosBadge" style="display:none"></span></button>
     <span style="flex:1"></span>
@@ -1670,6 +1684,9 @@ tr:hover td{background:#f9f9fb}
     <div class="fg"><label>Posiciones <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#9ca3af">— las asigna el equipo</span></label>
       <div id="pPosChips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
       <div id="pPosInfo" class="pos-chips" style="margin-top:8px"></div>
+    </div>
+    <div class="fg"><label>A probar en <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#9ca3af">— para tenerla en cuenta al armar el equipo de ese rol</span></label>
+      <div id="pProbarChips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
     <div class="fg"><label>Localidad</label><input type="text" class="fi" id="pLocalidad" placeholder="Dónde vive — de ahí sale la zona"></div>
     <div class="fg"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" class="cb" id="pRecom"> Está en Recomendados (a llamar primero)</label></div>
@@ -3533,7 +3550,8 @@ function nomApply() {
     if (zonaF === '_sin' && zonaDe(p)) return false;
     if (zonaF && zonaF !== '_sin' && zonaDe(p) !== zonaF) return false;
     if (posF === '_sin' && posicionesDe(p).length) return false;
-    if (posF && posF !== '_sin' && !posicionesDe(p).includes(posF)) return false;
+    if (posF && posF.startsWith('probar:')) { if (!aProbarDe(p).includes(posF.slice(7))) return false; }
+    else if (posF && posF !== '_sin' && !posicionesDe(p).includes(posF)) return false;
     if (semF && String(p.semaforo || 1) !== semF) return false;
     if (rotF) { const r = checkRotacion(p.id); if (rotF === 'rot' && !r.excede) return false; if (rotF === 'libre' && r.excede) return false; }
     if (tagF && !(p.etiquetas || []).some(t => String(t).toLowerCase() === tagF.toLowerCase())) return false;
@@ -3629,12 +3647,25 @@ function puestosOcupadosDe(p) {
 // En la ficha ("Ver CV" / "Ver datos"): los tres por separado, y las etiquetas aparte.
 function puestosFichaHTML(p) {
   const fila = (t, chips, vacio) => `<div class="cv-viewer-field"><div class="cv-viewer-label">${t}</div><div class="cv-viewer-value" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">${chips || '<span style="color:#9ca3af">' + vacio + '</span>'}</div></div>`;
-  const oc = puestosOcupadosDe(p), pos = posicionesDe(p), it = interesesDe(p), etq = Array.isArray(p.etiquetas) ? p.etiquetas : [], txt = puestoDePersona(p);
+  const oc = puestosOcupadosDe(p), pos = posicionesDe(p), it = interesesDe(p), etq = etiquetasSinProbar(p), ap = aProbarDe(p), txt = puestoDePersona(p);
   return fila('Puestos que ocupó', oc.map(x => `<span class="pos-chip ocupo">${e(x.nombre)}${x.veces > 1 ? ' ×' + x.veces : ''}</span>`).join(''), 'Todavía no figura en ningún show')
     + fila('Posición (la asigna el equipo)', pos.map(x => `<span class="pos-chip asig">${e(x)}</span>`).join(''), 'Sin posición asignada')
     + fila('Le interesa (lo marcó al inscribirse)', it.map(x => `<span class="pos-chip interes">${e(x)}</span>`).join('') + (/otro\s*:/i.test(txt) ? `<span style="font-size:11px;color:#6b7280">${e((txt.match(/otro\s*:\s*([^,;]*)/i) || [])[1] || '')}</span>` : ''), 'No marcó nada')
+    + (ap.length ? fila('A probar en', ap.map(x => `<span class="pos-chip probar">${e(x)}</span>`).join(''), '') : '')
     + (etq.length ? fila('Etiquetas', etq.map(nm => etqChip(nm)).join(''), '') : '');
 }
+// "A probar" (24-nov, Mercedes: "una etiqueta o sección que diga A probar, y poder etiquetar en qué servicio / rol
+// probar; y cuando hacés la convocatoria, que esté vinculado"). Se guarda como etiqueta "A probar: <rol>" (sin
+// cambiar la base), con su propio control en la ficha, su grupo en la nómina y su marca al sumar gente a un puesto.
+const PROBAR_PREF = 'A probar: ';
+function esProbar(t) { return /^a probar:/i.test(String(t || '')); }
+function aProbarDe(p) { return (Array.isArray(p && p.etiquetas) ? p.etiquetas : []).filter(esProbar).map(t => String(t).replace(/^a probar:\s*/i, '').trim()).filter(Boolean); }
+function etiquetasSinProbar(p) { return (Array.isArray(p && p.etiquetas) ? p.etiquetas : []).filter(t => !esProbar(t)); }
+// Qué rol es un puesto de una convocatoria (los nombres son libres: "Orientadores Platea", "Supervisor/a"…).
+const ROL_DE_PUESTO = [['Supervisor', /supervis|coordin|encargad/], ['Equipo operaciones', /operacion/], ['Operador acreditaciones', /acredit/], ['Orientador', /orient/],
+  ['Acomodador', /acomod/], ['Hidratacion', /hidrat/], ['Stagehand / cargas', /stage|carga|montaj/], ['Produccion', /produc/], ['Gastronomia', /gastro|barra|bartend/], ['Boletero', /bolet|taquill/]];
+function rolesDePuesto(nombre) { const t = nomPelar(nombre); return ROL_DE_PUESTO.filter(([, re]) => re.test(t)).map(([r]) => hiNorm(r)); }
+function aProbarEnPuesto(p, puestoNombre) { const roles = rolesDePuesto(puestoNombre), pn = hiNorm(puestoNombre); return aProbarDe(p).filter(r => roles.includes(hiNorm(r)) || hiNorm(r) === pn); }
 function interesesDe(p) { return p ? puestosDeSol(puestoDePersona(p)).filter(x => x !== 'Otro').concat(/otro/i.test(puestoDePersona(p)) ? ['Otro'] : []) : []; }
 // Los tres grupos en chips, cada uno con su rótulo (máx cuántos de cada uno, en la lista).
 function chipsPuestosHTML(p, max) {
@@ -3643,6 +3674,8 @@ function chipsPuestosHTML(p, max) {
   if (pos.length) out.push('<span class="chip-t" title="La que le asigna el equipo, en su ficha">Posición</span>' + corta(pos).map(x => '<span class="pos-chip asig">' + e(x) + '</span>').join(''));
   if (oc.length) out.push('<span class="chip-t" title="Donde trabajó: contratos, convocatorias que ya pasaron e historial">Ocupó</span>' + corta(oc.map(x => x.nombre + (x.veces > 1 ? ' ×' + x.veces : ''))).map(x => '<span class="pos-chip ocupo">' + e(x) + '</span>').join(''));
   if (it.length) out.push('<span class="chip-t" title="Lo que marcó al inscribirse">Le interesa</span>' + corta(it).map(x => '<span class="pos-chip interes">' + e(x) + '</span>').join(''));
+  const ap = aProbarDe(p);
+  if (ap.length) out.push('<span class="chip-t" title="Para probarla en ese rol (se marca en su ficha)">A probar</span>' + ap.map(x => '<span class="pos-chip probar">' + e(x) + '</span>').join(''));
   return out.join('');
 }
 // Dónde está convocada hoy o más adelante: para verlo en la nómina sin tener
@@ -4405,13 +4438,19 @@ function pintarPosInfo(p) {
   el.innerHTML = (oc.length ? '<span class="chip-t">Ocupó</span>' + oc.map(x => '<span class="pos-chip ocupo">' + e(x.nombre) + (x.veces > 1 ? ' ×' + x.veces : '') + '</span>').join('') : '')
     + (it.length ? '<span class="chip-t">Le interesa</span>' + it.map(x => '<span class="pos-chip interes">' + e(x) + '</span>').join('') : '');
 }
+let formAProbar = [];
+function renderFormProbar() {
+  const c = document.getElementById('pProbarChips'); if (!c) return;
+  c.innerHTML = POSICIONES.map((x, i) => `<button type="button" class="pos-elegir${formAProbar.includes(x) ? ' on probar' : ''}" onclick="toggleProbar(${i})">${e(x)}</button>`).join('');
+}
+function toggleProbar(i) { const x = POSICIONES[i]; if (!x) return; formAProbar = formAProbar.includes(x) ? formAProbar.filter(y => y !== x) : formAProbar.concat(x); renderFormProbar(); }
 function togglePos(x) {
   formPosiciones = formPosiciones.includes(x) ? formPosiciones.filter(y => y !== x) : formPosiciones.concat(x);
   renderFormPos();
 }
 
-function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); formPosiciones = []; renderFormPos(); pintarPosInfo(null); document.getElementById('pLocalidad').value = ''; document.getElementById('pRecom').checked = false; document.getElementById('pContratosBlock').style.display = 'none'; prepararBancoPersona(null); showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
-function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = Array.isArray(p.etiquetas) ? p.etiquetas.slice() : []; renderFormEtq(); formPosiciones = posicionesDe(p).slice(); renderFormPos(); pintarPosInfo(p); document.getElementById('pLocalidad').value = p.localidad || ''; document.getElementById('pRecom').checked = !!p.recomendado; renderPersonContratos(p); prepararBancoPersona(p); showM('mPerson'); }
+function openAddPerson() { editPersonId = null; document.getElementById('mPersonTitle').textContent = 'Agregar persona'; ['pNombre','pEmail','pTel','pCuit','pNotas'].forEach(i => document.getElementById(i).value = ''); document.getElementById('pArea').value = nomAreaTab !== 'all' ? nomAreaTab : 'movistar_arena'; document.getElementById('pEstado').value = 'pendiente'; formEtiquetas = []; renderFormEtq(); formAProbar = []; renderFormProbar(); formPosiciones = []; renderFormPos(); pintarPosInfo(null); document.getElementById('pLocalidad').value = ''; document.getElementById('pRecom').checked = false; document.getElementById('pContratosBlock').style.display = 'none'; prepararBancoPersona(null); showM('mPerson'); setTimeout(() => document.getElementById('pNombre').focus(), 50); }
+function openEditPerson(id) { const p = people.find(x => x.id === id); if (!p) return; editPersonId = id; document.getElementById('mPersonTitle').textContent = 'Editar persona'; document.getElementById('pNombre').value = p.nombre; document.getElementById('pArea').value = p.area; document.getElementById('pEstado').value = p.estado; document.getElementById('pEmail').value = p.email || ''; document.getElementById('pTel').value = p.tel || ''; document.getElementById('pCuit').value = p.cuit || ''; document.getElementById('pNotas').value = p.notas || ''; formEtiquetas = etiquetasSinProbar(p); renderFormEtq(); formAProbar = aProbarDe(p); renderFormProbar(); formPosiciones = posicionesDe(p).slice(); renderFormPos(); pintarPosInfo(p); document.getElementById('pLocalidad').value = p.localidad || ''; document.getElementById('pRecom').checked = !!p.recomendado; renderPersonContratos(p); prepararBancoPersona(p); showM('mPerson'); }
 
 async function savePerson() {
   const nom = document.getElementById('pNombre').value.trim(); if (!nom) { toast('El nombre es obligatorio'); return; }
@@ -4428,7 +4467,7 @@ async function savePerson() {
   }
   const cambioBanco = editPersonId ? leerBancoPersona() : null;
   if (cambioBanco === false) return;
-  const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null, etiquetas: formEtiquetas.slice(), posiciones: formPosiciones.slice(), localidad: document.getElementById('pLocalidad').value.trim() || null, recomendado: document.getElementById('pRecom').checked };
+  const d = { id: editPersonId || uid(), nombre: nom, area: document.getElementById('pArea').value, estado: document.getElementById('pEstado').value, email: document.getElementById('pEmail').value.trim() || null, tel: document.getElementById('pTel').value.trim() || null, cuit, notas: document.getElementById('pNotas').value.trim() || null, etiquetas: formEtiquetas.filter(t => !esProbar(t)).concat(formAProbar.map(x => PROBAR_PREF + x)), posiciones: formPosiciones.slice(), localidad: document.getElementById('pLocalidad').value.trim() || null, recomendado: document.getElementById('pRecom').checked };
   if (editPersonId) { const i = people.findIndex(x => x.id === editPersonId); if (i >= 0) people[i] = { ...people[i], ...d }; pIdxLista = null; }
   else people.push(d);
   nomRefresh(); closeM('mPerson');
@@ -10292,11 +10331,15 @@ async function applyGestBulk() { const st = document.getElementById('gBulkSt').v
 async function delGestBulk() { const ids = gSelIds(); if (!ids.length) return; if (!confirm(`¿Quitar ${ids.length} personas del puesto?`)) return; posts = posts.filter(x => !ids.includes(x.id)); renderGestList(); renderPuestos(); renderDetStats(); try { await sbDeleteIn('postulaciones', ids); toast(`${ids.length} quitados`); } catch (_) {} }
 
 // ── PICKER ──
-function openPickerModal() { pickerSel = new Set(); document.getElementById('pickerSrch').value = ''; document.getElementById('pickerAreaF').value = (convs.find(x => x.id === currentConvId) || {}).area === 'espana' ? 'espana' : ''; document.getElementById('pickerStF').value = ''; const tf = document.getElementById('pickerTagF'); if (tf) { tf.innerHTML = '<option value="">Todas las etiquetas</option>' + etiquetasPaleta.map(t => `<option value="${e(t.nombre)}">${e(t.nombre)}</option>`).join(''); tf.value = ''; } renderPicker(); showM('mPicker'); }
+function openPickerModal() { pickerSel = new Set(); document.getElementById('pickerSrch').value = ''; document.getElementById('pickerAreaF').value = (convs.find(x => x.id === currentConvId) || {}).area === 'espana' ? 'espana' : ''; document.getElementById('pickerStF').value = ''; const tf = document.getElementById('pickerTagF'); if (tf) { tf.innerHTML = '<option value="">Todas las etiquetas</option><option value="_probar">A probar en este puesto</option>' + etiquetasPaleta.filter(t => !esProbar(t.nombre)).map(t => `<option value="${e(t.nombre)}">${e(t.nombre)}</option>`).join(''); tf.value = ''; } renderPicker(); showM('mPicker'); }
 function renderPicker() {
   const q = document.getElementById('pickerSrch').value.toLowerCase().trim(); const af = document.getElementById('pickerAreaF').value; const sf = document.getElementById('pickerStF').value; const tgf = document.getElementById('pickerTagF') ? document.getElementById('pickerTagF').value : '';
   const alreadyIn = new Set(posts.filter(x => x.convId === currentConvId && x.puestoId === currentPuestoId).map(x => x.personaId).filter(Boolean));
-  const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (tgf && !(p.etiquetas || []).includes(tgf)) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; }).slice(0, 100);
+  // 24-nov: los que están "a probar" en el rol de este puesto, primero y marcados (y con el filtro, sólo ellos).
+  const puestoNom = (((convs.find(x => x.id === currentConvId) || {}).puestos || []).find(x => x.id === currentPuestoId) || {}).nombre || '';
+  const probarAca = p => aProbarEnPuesto(p, puestoNom).length > 0;
+  const avail = people.filter(p => { if (alreadyIn.has(p.id)) return false; if (af && p.area !== af) return false; if (sf && p.estado !== sf) return false; if (tgf === '_probar' ? !probarAca(p) : tgf && !(p.etiquetas || []).includes(tgf)) return false; if (q && !p.nombre.toLowerCase().includes(q)) return false; return true; })
+    .sort((a, b) => (probarAca(b) ? 1 : 0) - (probarAca(a) ? 1 : 0)).slice(0, 100);
   // Las inscripciones sin aprobar se identifican con "sol:" adelante, para no
   // confundirlas con los id de la nómina.
   const sols = pickerConSol ? solicitudesSinAprobar(af, q) : [];
@@ -10307,11 +10350,11 @@ function renderPicker() {
   const cDest = convs.find(x => x.id === currentConvId);
   const ocupado = ocupadosEnFechas(convFechasArr(cDest), x => x.convId === currentConvId && x.puestoId === currentPuestoId);
   const ocup = new Map(avail.map(p => [p.id, ocupado(p)]));
-  avail.sort((a, b) => (ocup.get(a.id).length ? 1 : 0) - (ocup.get(b.id).length ? 1 : 0));
+  avail.sort((a, b) => (ocup.get(a.id).length ? 1 : 0) - (ocup.get(b.id).length ? 1 : 0) || (probarAca(b) ? 1 : 0) - (probarAca(a) ? 1 : 0));
   const nOcup = avail.filter(p => ocup.get(p.id).length).length;
   el.innerHTML = (nOcup ? `<div style="font-size:11.5px;color:#9a3412;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:7px 10px;margin-bottom:6px">${nOcup} ${nOcup === 1 ? 'ya está' : 'ya están'} en otro evento esas fechas: ${nOcup === 1 ? 'aparece' : 'aparecen'} al final, marcad${nOcup === 1 ? 'a' : 'as'}.</div>` : '') + avail.map(p => ocup.get(p.id).length
     ? `<div class="picker-item" style="opacity:.62;cursor:not-allowed" title="Ya está: ${e(textoOcupado(ocup.get(p.id)))}" onclick="toast('Ya está en otro evento ese día: ' + this.dataset.txt)" data-txt="${e(textoOcupado(ocup.get(p.id)))}"><input type="checkbox" class="cb" disabled><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(p.nombre)}</div><div style="font-size:11px;color:#9a3412">Ocupado · ${e(textoOcupado(ocup.get(p.id)))}</div></div><span class="a-badge" style="font-size:10px;background:#ffedd5;color:#9a3412">Ocupado</span></div>`
-    : `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${(p.etiquetas && p.etiquetas.length) ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}</div><span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${rotulo(p.estado)}</span></div>`).join('');
+    : `<div class="picker-item ${pickerSel.has(p.id) ? 'sel' : ''}" onclick="togglePickerSel('${p.id}')"><input type="checkbox" class="cb" ${pickerSel.has(p.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${p.id}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(p.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(p.area)}</div>${etiquetasSinProbar(p).length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${etiquetasSinProbar(p).map(nm => etqChip(nm)).join('')}</div>` : ''}</div>${probarAca(p) ? `<span class="pos-chip probar" style="margin-right:6px" title="Marcada en su ficha para probarla en este rol">A probar: ${e(aProbarEnPuesto(p, puestoNom).join(', '))}</span>` : ''}<span class="a-badge ${p.estado === 'confirmado' ? 'a-mv' : ''}" style="font-size:10px">${rotulo(p.estado)}</span></div>`).join('');
   el.innerHTML += sols.map(so => { const k = 'sol:' + so.id; return `<div class="picker-item ${pickerSel.has(k) ? 'sel' : ''}" onclick="togglePickerSel('${k}')"><input type="checkbox" class="cb" ${pickerSel.has(k) ? 'checked' : ''} onclick="event.stopPropagation();togglePickerSel('${k}')"><div style="flex:1"><div style="font-weight:500;font-size:13px">${eN(so.nombre)}</div><div style="font-size:11px;color:#9ca3af">${areaCorto(so.area)}${so.cuit ? ' · ' + e(so.cuit) : ''}</div></div><span class="a-badge" style="font-size:10px;background:#fef3c7;color:#92400e">Sin aprobar</span></div>`; }).join('');
   document.getElementById('pickerSelCount').textContent = pickerSel.size + ' seleccionados';
 }
@@ -13584,6 +13627,8 @@ function renderDispBody() {
       ? (s ? `<button class="sem sem-${s}" onclick="openFbHistory('${per.id}')" title="Ver el feedback">${s}</button>${prom != null ? `<span>${prom.toFixed(1)} de 5</span>` : ''}<span>${nfb} feedback${nfb === 1 ? '' : 's'}</span>`
         : nfb ? `<button class="fb-obs" onclick="openFbHistory('${per.id}')" title="Ver el feedback">${nfb} observaci${nfb === 1 ? 'ón' : 'ones'}</button>` : '<span>sin feedback</span>')
         + (tieneCv(per) ? `<button class="cv-ojo" onclick="cvRapidaOrigen='disp';cvRapida('${per.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : '')
+        // 24-nov: si está "a probar" en algún rol, que se vea al elegir el equipo.
+        + (aProbarDe(per).length ? `<span class="pos-chip probar" title="Marcada en su ficha para probarla en ese rol">A probar: ${e(aProbarDe(per).join(', '))}</span>` : '')
       : `<span class="disp-fuera">${sol ? 'se inscribió, no está en la nómina' : 'no está en la nómina'}</span>`;
     // Si ya está en la convocatoria (en qué puesto y cómo va); si no, el cuadradito para elegirla.
     const cn = docNucleo(r.cuit), enConv = dispEnConvocatoria(per);
