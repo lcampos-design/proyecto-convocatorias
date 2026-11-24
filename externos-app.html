@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#262626">
+<script>
+// El tema (Claro u Oscuro), antes de pintar; sin elegir, el del aparato. Es el mismo ajuste que la app del Arena.
+try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro') document.documentElement.setAttribute('data-tema', t); } catch (_) {}
+</script>
+<title>Externos — Show Business Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
+<style>
+/* La app de Externos (24-nov, Thomas): un "supervisor-mobile" para los eventos de Externos. Cada evento con su predio
+   (River, Vélez…), los sectores de interés que van sumando ellos, las incidencias por sector, el organigrama de las
+   latas (los puestos de acreditaciones), el equipo, el presentismo y los contratos. Entran por un link personal (sin
+   usuario ni clave). El diseño es el de la app del Arena: los colores de SBS, claro u oscuro, cajas de vidrio gris
+   redondeadas; el único color fuerte es la gravedad, siempre con su nombre. Todo lo que se toca, de 44 px. */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --fuente:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fondo:#141414;--bloque:#262626;--tarjeta:#303030;--tarjeta-2:#3A3A3A;
+  --vidrio:rgba(46,46,46,.72);--vidrio-borde:rgba(255,255,255,.08);--vidrio-brillo:rgba(255,255,255,.07);--sombra:0 14px 34px rgba(0,0,0,.38);
+  --tinta:#F2F2F2;--gris:#A8A8A8;--linea:rgba(242,242,242,.16);--campo:#0E0E0E;--logo-filtro:none;
+  --grave:#D62839;--grave-f:rgba(214,40,57,.18);--media:#E0B400;--media-f:rgba(255,215,0,.14);--leve:#9AA3AF;--leve-f:rgba(154,163,175,.16);
+  --ok:#4ADE80;--ok-f:rgba(74,222,128,.14);
+  color-scheme:dark;
+}
+@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#FFFFFF;--bloque:#EDEDED;--tarjeta:#FFFFFF;--tarjeta-2:#F4F4F4;--vidrio:rgba(232,232,232,.78);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--gris:#5C5C5C;--linea:rgba(26,26,26,.12);--campo:#FFFFFF;--logo-filtro:brightness(0);--grave:#C4262E;--grave-f:#FDE7EA;--media:#8A6900;--media-f:#FFF6CC;--leve:#5C6370;--leve-f:#ECEEF1;--ok:#166534;--ok-f:#DCFCE7;color-scheme:light}}
+:root[data-tema="claro"]{--fondo:#FFFFFF;--bloque:#EDEDED;--tarjeta:#FFFFFF;--tarjeta-2:#F4F4F4;--vidrio:rgba(232,232,232,.78);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--gris:#5C5C5C;--linea:rgba(26,26,26,.12);--campo:#FFFFFF;--logo-filtro:brightness(0);--grave:#C4262E;--grave-f:#FDE7EA;--media:#8A6900;--media-f:#FFF6CC;--leve:#5C6370;--leve-f:#ECEEF1;--ok:#166534;--ok-f:#DCFCE7;color-scheme:light}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+body{font-family:var(--fuente);background:var(--fondo);color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url(grano-sbs.png) 0 0/160px 160px repeat;opacity:.9}
+.app{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:0 14px calc(28px + env(safe-area-inset-bottom,0px))}
+/* La barra de arriba */
+.barra{position:sticky;top:0;z-index:30;margin:0 -14px;padding:env(safe-area-inset-top,0px) 14px 0;background:var(--vidrio);-webkit-backdrop-filter:saturate(150%) blur(18px);backdrop-filter:saturate(150%) blur(18px);border-bottom:1px solid var(--vidrio-borde)}
+.barra-in{display:flex;align-items:center;gap:10px;min-height:60px}
+.barra img{width:34px;height:34px;filter:var(--logo-filtro);flex-shrink:0}
+.barra-t{flex:1;min-width:0}
+.barra-t b{display:block;font:800 14.5px/1.15 var(--fuente);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barra-t span{display:block;font-size:12px;color:var(--gris);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ico{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;border:0;border-radius:12px;background:var(--fondo);color:var(--tinta);cursor:pointer;font-size:18px}
+.ico svg{width:19px;height:19px}
+/* La franja de la demostración */
+.demo{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin:12px 0 0;padding:10px 12px;border-radius:14px;border:1px dashed var(--linea);font-size:12px;color:var(--gris)}
+.demo b{color:var(--tinta)}
+.demo .seg{margin-left:auto}
+.demo .lnk{background:none;border:0;color:var(--gris);text-decoration:underline;text-underline-offset:2px;cursor:pointer;font-size:12px;min-height:32px}
+/* Cajas, títulos, segmentos */
+.caja{background:var(--vidrio);-webkit-backdrop-filter:saturate(150%) blur(18px);backdrop-filter:saturate(150%) blur(18px);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--sombra);border-radius:18px;padding:14px;margin-top:12px}
+.hola{margin:18px 2px 4px;font:700 22px/1.2 var(--fuente)}
+.hola-sub{margin:0 2px;color:var(--gris);font-size:13px}
+.titulo{display:flex;align-items:center;gap:8px;margin:2px 2px 10px;font:700 12px var(--fuente);text-transform:uppercase;letter-spacing:.06em;color:var(--gris)}
+.titulo .n{margin-left:auto;font-weight:600;text-transform:none;letter-spacing:0}
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:var(--fondo);gap:2px}
+.seg button{border:0;background:none;border-radius:999px;padding:0 14px;min-height:36px;font-weight:600;font-size:13px;color:var(--gris);cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--tinta);color:var(--fondo)}
+.seg.chico button{min-height:30px;padding:0 11px;font-size:12px}
+.pestanas{position:sticky;top:calc(60px + env(safe-area-inset-top,0px));z-index:20;display:flex;gap:4px;margin:12px -14px 0;padding:8px 14px;background:var(--vidrio);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-bottom:1px solid var(--vidrio-borde);overflow-x:auto;scrollbar-width:none}
+.pestanas button{flex:1 1 auto;border:0;background:none;border-radius:12px;min-height:42px;padding:0 9px;font-weight:600;font-size:12.5px;color:var(--gris);cursor:pointer;white-space:nowrap}
+.pestanas button.on{background:var(--tinta);color:var(--fondo)}
+.pestanas button small{font-weight:700;margin-left:5px;opacity:.75}
+/* Tarjetas de eventos */
+.ev{display:flex;gap:12px;align-items:center;width:100%;text-align:left;border:0;border-radius:16px;background:var(--tarjeta);padding:12px;margin-top:8px;cursor:pointer;color:var(--tinta)}
+.ev-f{flex:0 0 54px;height:58px;border-radius:12px;background:var(--fondo);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ev-f b{font-size:21px;font-weight:800}.ev-f small{font-size:11px;color:var(--gris);text-transform:uppercase;margin-top:4px;font-weight:600}
+.ev-t{flex:1;min-width:0}
+.ev-t b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-t span{display:block;font-size:12.5px;color:var(--gris);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.ev-flecha{color:var(--gris);font-size:20px}
+.mes{margin-top:10px}.mes summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:40px;font-weight:700;padding:0 2px}
+.mes summary::-webkit-details-marker{display:none}.mes summary small{color:var(--gris);font-weight:500}.mes summary::after{content:"›";margin-left:auto;color:var(--gris);transition:none}.mes[open] summary::after{content:"⌄"}
+/* Pastillas */
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--fondo);color:var(--tinta);white-space:nowrap}
+.pill.g{background:var(--grave-f);color:var(--grave)}.pill.m{background:var(--media-f);color:var(--media)}.pill.l{background:var(--leve-f);color:var(--leve)}
+.pill.ok{background:var(--ok-f);color:var(--ok)}.pill.sutil{background:transparent;color:var(--gris);padding-left:0}
+.punto{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+/* Chips que filtran */
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-bottom:10px}
+.chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--linea);background:var(--tarjeta);font-size:12.5px;color:var(--gris);cursor:pointer;white-space:nowrap}
+.chip b{color:var(--tinta);font-weight:700}
+.chip.on{background:var(--tinta);border-color:var(--tinta);color:var(--fondo)}.chip.on b{color:var(--fondo)}
+/* Botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--linea);background:var(--tarjeta);color:var(--tinta);font-weight:600;font-size:13.5px;cursor:pointer}
+.btn.prim{background:var(--tinta);border-color:var(--tinta);color:var(--fondo)}
+.btn.ancho{width:100%}.btn.grande{min-height:54px;font-size:15px;border-radius:14px}
+.btn.chico{min-height:36px;padding:0 12px;font-size:12.5px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:default}
+/* Incidencias */
+.inc{display:flex;gap:10px;width:100%;text-align:left;border:0;border-radius:14px;background:var(--tarjeta);padding:12px 12px 12px 0;margin-top:8px;cursor:pointer;color:var(--tinta);overflow:hidden}
+.inc::before{content:"";flex:0 0 5px;border-radius:0 4px 4px 0;background:var(--leve)}
+.inc.n3::before{background:var(--grave)}.inc.n2::before{background:var(--media)}
+.inc-t{flex:1;min-width:0}.inc-t b{display:block;font-size:14px;font-weight:600}
+.inc-t span{display:block;font-size:12px;color:var(--gris);margin-top:3px}
+.inc-d{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.inc.resuelta{opacity:.62}
+.vacio{text-align:center;color:var(--gris);font-size:13px;padding:22px 10px}
+/* Organigrama */
+.org-cab{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:520px){.org-cab{grid-template-columns:1fr 1fr}}
+.persona{display:flex;align-items:center;gap:10px;border-radius:14px;background:var(--tarjeta);padding:10px;min-height:56px}
+.ini{flex:0 0 36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--fondo);font-weight:700;font-size:12.5px}
+.persona b{display:block;font-size:13.5px;font-weight:600;line-height:1.25}.persona small{display:block;font-size:11.5px;color:var(--gris)}
+.lata{border-radius:16px;background:var(--tarjeta);padding:12px;margin-top:8px}
+.lata-c{display:flex;align-items:center;gap:8px}
+.lata-c>div{flex:1;min-width:0}.lata-c b{display:block;font-size:15px;font-weight:700}.lata-c .pill{margin-top:4px}.lata-c .btn{flex-shrink:0}
+.lata-r{margin-top:10px;font-size:12px;color:var(--gris)}
+.lata-r .persona{background:var(--fondo);margin-top:6px}
+.ops{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.op{display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:999px;background:var(--fondo);font-size:12.5px}
+.op .ini{flex-basis:26px;height:26px;font-size:10.5px;background:var(--tarjeta-2)}
+.falta{border:1px dashed var(--media);color:var(--media);background:var(--media-f)}
+/* Equipo */
+.fila{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--linea)}
+.fila:last-child{border-bottom:0}
+.fila .t{flex:1;min-width:0}.fila .t b{display:block;font-size:13.5px;font-weight:600}.fila .t small{display:block;font-size:11.5px;color:var(--gris)}
+.pres{display:inline-flex;gap:4px}
+.pres button{width:40px;height:36px;border-radius:10px;border:1px solid var(--linea);background:var(--tarjeta);font-weight:700;cursor:pointer;color:var(--gris)}
+.pres button.on-p{background:var(--ok-f);border-color:var(--ok);color:var(--ok)}
+.pres button.on-a{background:var(--grave-f);border-color:var(--grave);color:var(--grave)}
+.buscar{width:100%;min-height:44px;border-radius:12px;border:1px solid var(--linea);background:var(--campo);padding:0 14px;margin-bottom:10px;color:var(--tinta)}
+/* Sectores */
+.sec{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--linea)}
+.sec:last-child{border-bottom:0}
+.sec .t{flex:1;min-width:0}.sec .t b{display:block;font-size:13.5px;font-weight:600}.sec .t small{display:block;font-size:11.5px;color:var(--gris);margin-top:1px}
+.nota{font-size:12px;color:var(--gris);line-height:1.5;margin:4px 2px 10px}
+/* Hoja de abajo (cargar, ver, editar) */
+.hoja{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,.45)}
+.hoja[hidden]{display:none}
+.hoja-in{max-height:92vh;overflow:auto;width:100%;max-width:620px;margin:0 auto;background:var(--bloque);border-radius:22px 22px 0 0;padding:6px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+.hoja-tir{width:44px;height:5px;border-radius:3px;background:var(--linea);margin:6px auto 10px}
+.hoja-cab{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.hoja-cab b{flex:1;font:700 17px/1.25 var(--fuente)}
+.paso{font:700 11.5px var(--fuente);text-transform:uppercase;letter-spacing:.06em;color:var(--gris);margin:16px 2px 8px}
+.opciones{display:flex;flex-wrap:wrap;gap:6px}
+.opc{min-height:40px;padding:0 13px;border-radius:12px;border:1px solid var(--linea);background:var(--tarjeta);font-size:13px;font-weight:500;cursor:pointer;color:var(--tinta);text-align:left}
+.opc.on{background:var(--tinta);border-color:var(--tinta);color:var(--fondo)}
+.opc small{opacity:.7;margin-left:4px}
+.lista-tipos .opc{display:flex;align-items:center;width:100%;margin-top:6px}
+.lista-tipos .opc .pill{margin-left:auto}
+.check{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 4px;border-bottom:1px solid var(--linea);cursor:pointer;font-size:13.5px}
+.check input{width:20px;height:20px;accent-color:var(--tinta)}
+.check small{margin-left:auto;color:var(--gris);font-size:11.5px}
+.campo{width:100%;min-height:44px;border-radius:12px;border:1px solid var(--linea);background:var(--campo);padding:10px 14px;color:var(--tinta)}
+textarea.campo{min-height:84px;resize:vertical}
+.nivel{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;margin-top:4px}
+.nivel.n1{background:var(--leve-f);color:var(--leve)}.nivel.n2{background:var(--media-f);color:var(--media)}.nivel.n3{background:var(--grave-f);color:var(--grave)}
+.nivel b{font-size:15px}.nivel span{font-size:12px;opacity:.9}
+.dato{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--linea);font-size:13.5px}
+.dato small{flex:0 0 96px;color:var(--gris);font-size:12px;padding-top:1px}
+.aviso-dup{font-size:12px;color:var(--media);margin-top:6px}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:90;background:var(--tinta);color:var(--fondo);padding:11px 18px;border-radius:12px;font-weight:600;font-size:13px;display:none;max-width:90vw}
+.toast.on{display:block}
+.pie{position:relative;z-index:1;text-align:center;font-size:11px;color:var(--gris);padding:4px 16px 22px}
+.oculto{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="barra"><div class="barra-in">
+    <button class="ico oculto" id="btnVolver" onclick="irInicio()" aria-label="Volver">‹</button>
+    <img src="logo-sbs-calado.png" alt="SBS" id="logo">
+    <div class="barra-t"><b id="barTit">Externos</b><span id="barSub"></span></div>
+    <button class="ico" onclick="cambiarTema()" aria-label="Claro u oscuro" title="Claro u oscuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
+  </div></header>
+  <div id="demo"></div>
+  <main id="vista"></main>
+</div>
+<footer class="pie">Proyecto llevado a cabo por la Gerencia de RR. HH.</footer>
+<div class="hoja" id="hoja" hidden onclick="if(event.target===this)cerrarHoja()"><div class="hoja-in" id="hojaIn"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── LO QUE SE PUEDE CARGAR ──────────────────────────────────────
+// Las gravedades y el catálogo son los del Arena, con Acreditaciones en lugar de Recepción (las latas) y el aviso grave a
+// coordinación y a producción (no al Arena).
+const NIVELES = {
+  1: { nombre: 'Leve', ayuda: 'Se resuelve en el lugar y queda registrado', cl: 'l' },
+  2: { nombre: 'Medio', ayuda: 'Se deriva a quien corresponde y se avisa a su equipo', cl: 'm' },
+  3: { nombre: 'Grave', ayuda: 'Aviso inmediato a coordinación y a producción', cl: 'g' }
+};
+const CATALOGO = [
+  { cat: 'Médica', tipos: [['Desmayo / descompensación', 2], ['Lesión o caída', 2], ['Persona alcoholizada o intoxicada', 2], ['Emergencia médica grave', 3]],
+    acciones: ['Se llamó a sanidad', 'Se asistió en el lugar', 'Se trasladó a sanidad', 'Se derivó en ambulancia'] },
+  { cat: 'Seguridad', tipos: [['Pelea o agresión', 3], ['Persona agresiva o molesta', 2], ['Ingreso indebido / sin entrada', 2], ['Objeto prohibido', 1], ['Robo o hurto', 2]],
+    acciones: ['Se avisó a seguridad', 'Se retiró a la persona del sector', 'Se retuvo el objeto', 'Se dio aviso a la policía'] },
+  { cat: 'Ingreso', tipos: [['Fila larga en el ingreso', 1], ['Fila de ingreso desbordada', 2], ['Molinete o lector de entradas que no anda', 2], ['Demora en la apertura de puertas', 2], ['Amontonamiento o empujones en el ingreso', 3]],
+    acciones: ['Se abrió otra fila o puerta', 'Se sumó personal en el ingreso', 'Se ordenó la fila con vallas', 'Se avisó a seguridad', 'Se avisó a coordinación'] },
+  { cat: 'Acreditaciones', tipos: [['Falla del lector o del sistema', 2], ['Falla de la impresora de credenciales', 2], ['Persona que no figura en la lista', 1], ['Credencial con datos mal', 1], ['Fila larga en la lata', 1]],
+    acciones: ['Se avisó a sistemas', 'Se siguió en forma manual', 'Se reimprimió la credencial', 'Se consultó a producción', 'Se avisó a coordinación'] },
+  { cat: 'Infraestructura', tipos: [['Derrame / piso resbaladizo', 1], ['Valla o baranda rota', 1], ['Baño fuera de servicio', 1], ['Falla eléctrica o de iluminación', 2], ['Salida obstruida', 3]],
+    acciones: ['Se avisó a mantenimiento', 'Se señalizó o se cerró el paso', 'Se limpió', 'Se liberó el paso'] },
+  { cat: 'Personal', tipos: [['Falta personal en el sector', 2], ['Personal descompuesto', 2], ['Problema de conducta o uniforme', 1]],
+    acciones: ['Se cubrió con otra persona', 'Se avisó a coordinación', 'Se relevó a la persona'] },
+  { cat: 'Asistencia', tipos: [['Acompañamiento a ubicación accesible', 1], ['Salida diferenciada', 1], ['Asistencia a persona con discapacidad', 1]],
+    acciones: ['Se acompañó a la ubicación accesible', 'Se coordinó la salida diferenciada', 'Se avisó a producción'] },
+  { cat: 'Otro', tipos: [['Otra incidencia', 1]], acciones: ['Se avisó a coordinación', 'Se resolvió en el lugar'] }
+];
+const SUBEN_A_GRAVE = ['Se derivó en ambulancia', 'Se dio aviso a la policía'];
+// Los sectores de cada predio, por tipo. Los suman ellos; quedan para los próximos eventos en ese predio.
+const TIPOS_SECTOR = { acceso: 'Accesos', lata: 'Latas (acreditaciones)', sector: 'Sectores', servicio: 'Servicios (sanidad, baños…)' };
+const TIPO_UNO = { acceso: 'Acceso', lata: 'Lata (acreditación)', sector: 'Sector', servicio: 'Servicio' };
+const ROLES = { coordinacion: 'Coordinación', supervisor: 'Supervisor/a' };
+
+// ── LOS DATOS ───────────────────────────────────────────────────
+// Por ahora, la demostración: un evento de mentira (hoy, en River), otro que viene (en Vélez) y uno anterior en River
+// con su organigrama. Se guarda en el aparato y se puede volver a empezar. Con el link de cada persona, esto mismo
+// sale de la base (las mismas funciones, contra el servidor).
+const DEMO = true;   // hasta que esté la base: siempre la demostración
+const hoyISO = () => { const d = new Date(Date.now() - 6 * 3600e3); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const masDias = (f, n) => { const d = new Date(f + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const uid = () => Math.random().toString(36).slice(2, 10);
+const horaHace = min => new Date(Date.now() - min * 60000).toISOString();
+function demoInicial() {
+  const hoy = hoyISO();
+  const nombres = ['Lucía Fernández', 'Julián Paz', 'Martín Ríos', 'Carla Vega', 'Nicolás Sosa', 'Abril Medina', 'Bruno Castro', 'Camila Ortiz', 'Diego Luna', 'Elena Rey', 'Franco Gil', 'Gala Navarro', 'Hernán Rojas', 'Inés Molina', 'Joaquín Vera', 'Kiara Ponce', 'Lautaro Díaz', 'Malena Cruz', 'Nahuel Funes', 'Olivia Sáenz', 'Pedro Aguirre', 'Rocío Benítez', 'Santiago Ledesma', 'Valentina Quiroga'];
+  const puestos = ['Coordinador/a', 'Asistente de coordinación', 'Supervisor/a', 'Supervisor/a', 'Supervisor/a', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Orientador/a', 'Orientador/a', 'Orientador/a', 'Orientador/a', 'Orientador/a', 'Orientador/a', 'Acomodador/a', 'Acomodador/a', 'Acomodador/a', 'Orientador/a', 'Orientador/a'];
+  const gente = nombres.map((n, i) => ({ id: 'p' + i, nombre: n, puesto: puestos[i] }));
+  const sec = (id, nombre, tipo, quien, ev) => ({ id, nombre, tipo, quien: quien || 'RR. HH.', evento: ev || '' });
+  const predios = {
+    river: { id: 'river', nombre: 'Estadio Monumental (River)', sectores: [
+      sec('s1', 'Acceso Figueroa Alcorta', 'acceso'), sec('s2', 'Acceso Udaondo', 'acceso'), sec('s3', 'Acceso Libertador', 'acceso', 'Julián Paz', 'Evento de prueba (anterior)'),
+      sec('s4', 'Lata 1 · Figueroa Alcorta', 'lata'), sec('s5', 'Lata 2 · Udaondo', 'lata'), sec('s6', 'Lata 3 · Libertador', 'lata', 'Julián Paz', 'Evento de prueba (anterior)'), sec('s7', 'Lata 4 · Prensa', 'lata', 'Lucía Fernández', 'Evento de prueba (anterior)'),
+      sec('s8', 'Campo', 'sector'), sec('s9', 'Platea San Martín', 'sector'), sec('s10', 'Platea Belgrano', 'sector'), sec('s11', 'Popular Sívori', 'sector', 'Carla Vega', 'Evento de prueba (anterior)'),
+      sec('s12', 'Sanidad', 'servicio'), sec('s13', 'Baños Sívori', 'servicio', 'Martín Ríos', 'Evento de prueba (anterior)')] },
+    velez: { id: 'velez', nombre: 'Estadio José Amalfitani (Vélez)', sectores: [sec('v1', 'Acceso Juan B. Justo', 'acceso'), sec('v2', 'Lata 1 · Juan B. Justo', 'lata'), sec('v3', 'Campo', 'sector')] }
+  };
+  const latasHoy = { s4: { responsable: 'p5', operadores: ['p6', 'p7'] }, s5: { responsable: 'p8', operadores: ['p9'] }, s6: { responsable: 'p10', operadores: [] }, s7: { responsable: '', operadores: [] } };
+  const latasAnt = { s4: { responsable: 'p6', operadores: ['p5', 'p11'] }, s5: { responsable: 'p8', operadores: ['p9', 'p12'] }, s6: { responsable: 'p10', operadores: ['p7'] } };
+  const inc = (sector, cat, tipo, nivel, min, quien, resuelta, acciones, nota) => ({ id: uid(), sector, cat, tipo, nivel, acciones: acciones || [], nota: nota || '', quien, creada: horaHace(min), estado: resuelta ? 'resuelta' : 'abierta', resolucion: resuelta || '' });
+  return {
+    yo: { coordinacion: 'p0', supervisor: 'p2' }, rol: 'coordinacion',
+    predios,
+    eventos: [
+      { id: 'e1', nombre: 'Evento de prueba', predio: 'river', fechas: [hoy], gente: gente.map(g => g.id), latas: latasHoy,
+        presentes: Object.fromEntries(gente.slice(0, 18).map(g => [g.id, 'P'])), contratos: Object.fromEntries(gente.map((g, i) => [g.id, i % 7 === 4 ? 'pendiente' : 'firmado'])),
+        incidencias: [
+          inc('s2', 'Ingreso', 'Fila de ingreso desbordada', 2, 24, 'Martín Ríos', '', ['Se sumó personal en el ingreso'], 'La fila llega a la esquina.'),
+          inc('s5', 'Acreditaciones', 'Falla del lector o del sistema', 2, 41, 'Abril Medina', '', ['Se avisó a sistemas', 'Se siguió en forma manual']),
+          inc('s9', 'Médica', 'Desmayo / descompensación', 2, 70, 'Carla Vega', 'Lo atendió sanidad y siguió viendo el show.', ['Se llamó a sanidad', 'Se asistió en el lugar']),
+          inc('s4', 'Acreditaciones', 'Persona que no figura en la lista', 1, 95, 'Bruno Castro', 'Producción la agregó a la lista.', ['Se consultó a producción'])] },
+      { id: 'e2', nombre: 'Festival de prueba', predio: 'velez', fechas: [masDias(hoy, 9), masDias(hoy, 10)], gente: gente.map(g => g.id), latas: {}, presentes: {}, contratos: {}, incidencias: [] },
+      { id: 'e0', nombre: 'Evento de prueba (anterior)', predio: 'river', fechas: [masDias(hoy, -20)], gente: gente.map(g => g.id), latas: latasAnt,
+        presentes: Object.fromEntries(gente.map(g => [g.id, 'P'])), contratos: Object.fromEntries(gente.map(g => [g.id, 'firmado'])),
+        incidencias: [inc('s3', 'Ingreso', 'Fila larga en el ingreso', 1, 20 * 1440, 'Martín Ríos', 'Se abrió otra fila.', ['Se abrió otra fila o puerta']),
+          inc('s11', 'Seguridad', 'Objeto prohibido', 1, 20 * 1440 + 30, 'Carla Vega', 'Se retuvo en el acceso.', ['Se retuvo el objeto']),
+          inc('s6', 'Acreditaciones', 'Falla de la impresora de credenciales', 2, 20 * 1440 + 60, 'Hernán Rojas', 'Se cambió la impresora.', ['Se avisó a sistemas'])] }
+    ],
+    gente: Object.fromEntries(gente.map(g => [g.id, g]))
+  };
+}
+let D;
+function cargarDemo() { try { D = JSON.parse(localStorage.getItem('extDemo:v1') || 'null'); } catch (_) { D = null; } if (!D || !D.eventos) D = demoInicial(); }
+function guardarDemo() { try { localStorage.setItem('extDemo:v1', JSON.stringify(D)); } catch (_) {} }
+function reiniciarDemo() { if (!confirm('¿Volver a empezar la demostración? Se borra lo que cargaste.')) return; try { localStorage.removeItem('extDemo:v1'); } catch (_) {} D = demoInicial(); guardarDemo(); irInicio(); toast('Demostración reiniciada'); }
+
+// ── AYUDAS ──────────────────────────────────────────────────────
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const $ = id => document.getElementById(id);
+const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const MES3 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function diaCorto(f) { const d = new Date(f + 'T12:00:00'); return DIAS[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1); }
+function hora(iso) { const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function iniciales(n) { return String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase(); }
+function nombreDe(pid) { return (D.gente[pid] || {}).nombre || 'Sin asignar'; }
+function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
+function cambiarTema() {
+  const r = document.documentElement, oscuroAhora = r.getAttribute('data-tema') === 'oscuro' || (!r.getAttribute('data-tema') && matchMedia('(prefers-color-scheme: dark)').matches);
+  const nuevo = oscuroAhora ? 'claro' : 'oscuro'; r.setAttribute('data-tema', nuevo); try { localStorage.setItem('tema', nuevo); } catch (_) {}
+}
+const yo = () => D.gente[D.yo[D.rol]];
+const esCoord = () => D.rol === 'coordinacion';
+const predioDe = ev => D.predios[ev.predio];
+const sectorDe = (ev, sid) => predioDe(ev).sectores.find(s => s.id === sid) || { nombre: 'Sector borrado', tipo: 'sector' };
+function cuando(ev) { const h = hoyISO(), fs = ev.fechas; return fs.includes(h) ? 'hoy' : fs[fs.length - 1] < h ? 'anterior' : 'proximo'; }
+const soloVer = ev => cuando(ev) === 'anterior';
+function nivelPill(n) { const v = NIVELES[n]; return `<span class="pill ${v.cl}"><i class="punto"></i>${v.nombre}</span>`; }
+
+// ── INICIO: MIS EVENTOS ────────────────────────────────────────
+let lista = 'hoy', evId = null, pestana = 'inc', filtroInc = 'abiertas', filtroSector = '', buscaEq = '';
+function pintarDemo() {
+  $('demo').innerHTML = DEMO ? `<div class="demo"><span><b>Demostración</b> · datos de ejemplo</span>
+    <div class="seg chico" role="tablist" aria-label="Ver como">${Object.entries(ROLES).map(([k, v]) => `<button class="${D.rol === k ? 'on' : ''}" onclick="verComo('${k}')">${v}</button>`).join('')}</div>
+    <button class="lnk" onclick="reiniciarDemo()">Volver a empezar</button></div>` : '';
+}
+function verComo(r) { D.rol = r; guardarDemo(); pintarDemo(); if (evId) pintarEvento(); else pintarInicio(); }
+function irInicio() { evId = null; $('btnVolver').classList.add('oculto'); $('logo').classList.remove('oculto'); pintarInicio(); scrollTo(0, 0); }
+function pintarInicio() {
+  $('barTit').textContent = 'Externos'; $('barSub').textContent = yo().nombre + ' · ' + ROLES[D.rol];
+  pintarDemo();
+  const grupos = { hoy: [], proximo: [], anterior: [] };
+  D.eventos.forEach(ev => grupos[cuando(ev)].push(ev));
+  grupos.proximo.sort((a, b) => a.fechas[0].localeCompare(b.fechas[0])); grupos.anterior.sort((a, b) => b.fechas[0].localeCompare(a.fechas[0]));
+  if (!grupos[lista].length && lista === 'hoy') lista = grupos.proximo.length ? 'proximo' : 'anterior';
+  const tarjeta = ev => {
+    const f = cuando(ev) === 'hoy' ? hoyISO() : ev.fechas[0], d = new Date(f + 'T12:00:00'), ab = ev.incidencias.filter(i => i.estado === 'abierta'), latas = Object.keys(ev.latas || {}).length;
+    return `<button class="ev" onclick="abrirEvento('${ev.id}')"><div class="ev-f"><b>${d.getDate()}</b><small>${MES3[d.getMonth()]}</small></div>
+      <div class="ev-t"><b>${esc(ev.nombre)}</b><span>${esc(predioDe(ev).nombre)} · ${ev.fechas.map(diaCorto).join(', ')}</span>
+      <div class="ev-chips"><span class="pill">${ROLES[D.rol]}</span>${ab.length ? `<span class="pill ${ab.some(i => i.nivel === 3) ? 'g' : 'm'}">${ab.length} abierta${ab.length === 1 ? '' : 's'}</span>` : ''}${latas ? `<span class="pill sutil">${latas} latas</span>` : ''}${cuando(ev) === 'anterior' ? `<span class="pill sutil">${ev.incidencias.length} incidencias</span>` : ''}</div></div><span class="ev-flecha">›</span></button>`;
+  };
+  const porMes = l => { const m = new Map(); l.forEach(ev => { const k = ev.fechas[0].slice(0, 7); if (!m.has(k)) m.set(k, []); m.get(k).push(ev); });
+    return [...m.entries()].map(([k, evs], i) => `<details class="mes"${i === 0 ? ' open' : ''}><summary>${MESES[+k.slice(5) - 1]} ${k.slice(0, 4)} <small>${evs.length} evento${evs.length === 1 ? '' : 's'}</small></summary>${evs.map(tarjeta).join('')}</details>`).join(''); };
+  const cuerpo = !grupos[lista].length ? `<div class="vacio">${lista === 'hoy' ? 'Hoy no tenés eventos.' : lista === 'proximo' ? 'No tenés eventos próximos.' : 'Todavía no hay eventos anteriores.'}</div>`
+    : lista === 'hoy' ? grupos.hoy.map(tarjeta).join('') : porMes(grupos[lista]);
+  $('vista').innerHTML = `<div class="hola">Hola, ${esc(yo().nombre.split(' ')[0])}</div>
+    <div class="hola-sub">Tus eventos de Externos como ${ROLES[D.rol].toLowerCase()}. Tocá uno para cargar incidencias${esCoord() ? ', armar el organigrama de las latas' : ''} y ver el equipo.</div>
+    <div class="caja"><div class="seg" role="tablist">${[['hoy', 'Hoy'], ['proximo', 'Próximos'], ['anterior', 'Anteriores']].map(([k, v]) => `<button class="${lista === k ? 'on' : ''}" onclick="lista='${k}';pintarInicio()">${v}${grupos[k].length ? ' · ' + grupos[k].length : ''}</button>`).join('')}</div>
+    ${cuerpo}</div>`;
+}
+
+// ── UN EVENTO ───────────────────────────────────────────────────
+function abrirEvento(id) { evId = id; pestana = 'inc'; filtroInc = 'abiertas'; filtroSector = ''; buscaEq = ''; $('btnVolver').classList.remove('oculto'); $('logo').classList.add('oculto'); pintarEvento(); scrollTo(0, 0); }
+const evActual = () => D.eventos.find(e => e.id === evId);
+function pintarEvento() {
+  const ev = evActual(); if (!ev) return irInicio();
+  pintarDemo();
+  $('barTit').textContent = ev.nombre; $('barSub').textContent = predioDe(ev).nombre + ' · ' + ev.fechas.map(diaCorto).join(', ');
+  const ab = ev.incidencias.filter(i => i.estado === 'abierta').length;
+  const P = [['inc', 'Incidencias', ab || ''], ['org', 'Organigrama', ''], ['eq', 'Equipo', ''], ['sec', 'Sectores', '']];
+  $('vista').innerHTML = `<nav class="pestanas" role="tablist">${P.map(([k, v, n]) => `<button class="${pestana === k ? 'on' : ''}" onclick="pestana='${k}';pintarEvento()">${v}${n !== '' ? `<small>${n}</small>` : ''}</button>`).join('')}</nav>`
+    + (soloVer(ev) ? '<div class="demo" style="border-style:solid"><span>Evento terminado: se ve como quedó, sin cambios.</span></div>' : '')
+    + ({ inc: pintarIncidencias, org: pintarOrganigrama, eq: pintarEquipo, sec: pintarSectores }[pestana])(ev);
+}
+
+// Incidencias: los números de arriba filtran (abiertas, resueltas, por gravedad) y se puede elegir un sector.
+function pintarIncidencias(ev) {
+  const todas = ev.incidencias.slice().sort((a, b) => (a.estado === 'abierta' ? 0 : 1) - (b.estado === 'abierta' ? 0 : 1) || b.nivel - a.nivel || b.creada.localeCompare(a.creada));
+  const cuenta = f => todas.filter(f).length;
+  const filtros = [['abiertas', 'Abiertas', i => i.estado === 'abierta'], ['resueltas', 'Resueltas', i => i.estado === 'resuelta'], ['todas', 'Todas', () => true], ['g', 'Graves', i => i.nivel === 3], ['m', 'Medias', i => i.nivel === 2], ['l', 'Leves', i => i.nivel === 1]];
+  const f = (filtros.find(x => x[0] === filtroInc) || filtros[2])[2];
+  const sectores = [...new Set(todas.map(i => i.sector))];
+  const l = todas.filter(f).filter(i => !filtroSector || i.sector === filtroSector);
+  return (soloVer(ev) ? '' : `<button class="btn prim ancho grande" style="margin-top:14px" onclick="cargarIncidencia()">+ Cargar incidencia</button>`)
+    + `<div class="caja"><div class="chips">${filtros.map(([k, v, fn]) => `<button class="chip${filtroInc === k ? ' on' : ''}" onclick="filtroInc='${k}';pintarEvento()">${v} <b>${cuenta(fn)}</b></button>`).join('')}</div>`
+    + (sectores.length > 1 ? `<div class="chips"><button class="chip${!filtroSector ? ' on' : ''}" onclick="filtroSector='';pintarEvento()">Todos los sectores</button>${sectores.map(s => `<button class="chip${filtroSector === s ? ' on' : ''}" onclick="filtroSector='${s}';pintarEvento()">${esc(sectorDe(ev, s).nombre)} <b>${todas.filter(i => i.sector === s).length}</b></button>`).join('')}</div>` : '')
+    + (l.length ? l.map(i => `<button class="inc n${i.nivel}${i.estado === 'resuelta' ? ' resuelta' : ''}" onclick="verIncidencia('${i.id}')"><div class="inc-t"><b>${esc(i.tipo)}</b><span>${esc(sectorDe(ev, i.sector).nombre)} · ${hora(i.creada)} · ${esc(i.quien)}</span></div>
+        <div class="inc-d">${nivelPill(i.nivel)}${i.estado === 'resuelta' ? '<span class="pill ok">Resuelta</span>' : ''}</div></button>`).join('')
+      : `<div class="vacio">${ev.incidencias.length ? 'Nada con ese filtro.' : 'Todavía no hay incidencias en este evento.'}</div>`) + '</div>';
+}
+
+// Organigrama: coordinación, supervisores y cada lata con su responsable y sus operadores.
+function pintarOrganigrama(ev) {
+  const gente = ev.gente.map(id => D.gente[id]);
+  const de = re => gente.filter(g => re.test(g.puesto));
+  const persona = (g, rol) => `<div class="persona"><div class="ini">${iniciales(g.nombre)}</div><div><b>${esc(g.nombre)}</b><small>${esc(rol || g.puesto)}</small></div></div>`;
+  const latas = predioDe(ev).sectores.filter(s => s.tipo === 'lata'), asignados = new Set();
+  latas.forEach(s => { const a = (ev.latas || {})[s.id]; if (a) { if (a.responsable) asignados.add(a.responsable); a.operadores.forEach(o => asignados.add(o)); } });
+  const sinLata = de(/acreditaci/i).filter(g => !asignados.has(g.id));
+  const anteriores = D.eventos.filter(e => e.id !== ev.id && e.predio === ev.predio && cuando(e) === 'anterior');
+  const editable = esCoord() && !soloVer(ev);
+  return `<div class="caja"><div class="titulo">Coordinación</div><div class="org-cab">${de(/coordin/i).map(g => persona(g)).join('')}</div>
+      <div class="titulo" style="margin-top:14px">Supervisores <span class="n">${de(/supervis/i).length}</span></div><div class="org-cab">${de(/supervis/i).map(g => persona(g, 'Supervisor/a')).join('')}</div></div>
+    <div class="caja"><div class="titulo">Latas de acreditación <span class="n">${latas.length}</span></div>
+      ${latas.map(s => { const a = (ev.latas || {})[s.id] || { responsable: '', operadores: [] }, n = a.operadores.length + (a.responsable ? 1 : 0);
+        return `<div class="lata"><div class="lata-c"><div><b>${esc(s.nombre)}</b><span class="pill ${n ? 'sutil' : 'm'}">${n ? n + ' persona' + (n === 1 ? '' : 's') : 'Sin gente'}</span></div>${editable ? `<button class="btn chico" onclick="editarLata('${s.id}')">Editar</button>` : ''}</div>
+          <div class="lata-r">Responsable${a.responsable ? persona(D.gente[a.responsable], 'Responsable de la lata') : '<div class="persona falta" style="margin-top:6px">Falta asignar</div>'}</div>
+          <div class="lata-r">Operadores <div class="ops">${a.operadores.length ? a.operadores.map(o => `<span class="op"><span class="ini">${iniciales(nombreDe(o))}</span>${esc(nombreDe(o))}</span>`).join('') : '<span class="pill sutil">Ninguno</span>'}</div></div></div>`; }).join('') || '<div class="vacio">Este predio todavía no tiene latas. Se suman en Sectores (tipo "Lata").</div>'}
+      ${editable ? '<button class="btn ancho" style="margin-top:10px" onclick="nuevoSector(\'lata\')">+ Nueva lata</button>' : ''}
+      ${sinLata.length && !soloVer(ev) ? `<div class="titulo" style="margin-top:16px">Operadores sin lata <span class="n">${sinLata.length}</span></div><div class="ops">${sinLata.map(g => `<span class="op"><span class="ini">${iniciales(g.nombre)}</span>${esc(g.nombre)}</span>`).join('')}</div>` : ''}</div>`
+    + (anteriores.length ? `<div class="caja"><div class="titulo">Organigramas anteriores en este predio</div><div class="nota">Cómo se armaron las latas en otros eventos en ${esc(predioDe(ev).nombre)}.</div>
+      ${anteriores.map(e => `<button class="ev" onclick="verOrganigramaDe('${e.id}')"><div class="ev-f"><b>${new Date(e.fechas[0] + 'T12:00:00').getDate()}</b><small>${MES3[new Date(e.fechas[0] + 'T12:00:00').getMonth()]}</small></div><div class="ev-t"><b>${esc(e.nombre)}</b><span>${Object.keys(e.latas || {}).length} latas · ${Object.values(e.latas || {}).reduce((t, a) => t + a.operadores.length + (a.responsable ? 1 : 0), 0)} personas</span></div><span class="ev-flecha">›</span></button>`).join('')}</div>` : '');
+}
+function verOrganigramaDe(id) {
+  const ev = D.eventos.find(e => e.id === id); if (!ev) return;
+  const latas = predioDe(ev).sectores.filter(s => ev.latas && ev.latas[s.id]);
+  abrirHoja(`<div class="hoja-cab"><b>${esc(ev.nombre)}<br><small style="font-weight:500;font-size:12.5px;color:var(--gris)">${ev.fechas.map(diaCorto).join(', ')} · organigrama de las latas</small></b><button class="ico" onclick="cerrarHoja()" aria-label="Cerrar">✕</button></div>`
+    + latas.map(s => { const a = ev.latas[s.id]; return `<div class="lata"><div class="lata-c"><b>${esc(s.nombre)}</b></div><div class="lata-r">Responsable: <b style="color:var(--tinta)">${esc(nombreDe(a.responsable))}</b></div><div class="ops">${a.operadores.map(o => `<span class="op"><span class="ini">${iniciales(nombreDe(o))}</span>${esc(nombreDe(o))}</span>`).join('')}</div></div>`; }).join('')
+    + `<button class="btn ancho" style="margin-top:14px" onclick="cerrarHoja();abrirEvento('${ev.id}');pestana='org';pintarEvento()">Abrir ese evento</button>`);
+}
+function editarLata(sid) {
+  const ev = evActual(), s = sectorDe(ev, sid), a = JSON.parse(JSON.stringify((ev.latas || {})[sid] || { responsable: '', operadores: [] }));
+  const ops = ev.gente.map(id => D.gente[id]).filter(g => /acreditaci/i.test(g.puesto));
+  const enOtra = pid => { const k = Object.keys(ev.latas || {}).find(k => k !== sid && (ev.latas[k].responsable === pid || ev.latas[k].operadores.includes(pid))); return k ? sectorDe(ev, k).nombre : ''; };
+  editarLata.a = a; editarLata.sid = sid;
+  const pintar = () => abrirHoja(`<div class="hoja-cab"><b>${esc(s.nombre)}</b><button class="ico" onclick="cerrarHoja()" aria-label="Cerrar">✕</button></div>
+    <div class="paso">Responsable</div><div class="opciones">${ops.map(g => `<button class="opc${a.responsable === g.id ? ' on' : ''}" onclick="editarLata.a.responsable=editarLata.a.responsable==='${g.id}'?'':'${g.id}';editarLata.a.operadores=editarLata.a.operadores.filter(x=>x!=='${g.id}');editarLata.pintar()">${esc(g.nombre)}</button>`).join('')}</div>
+    <div class="paso">Operadores</div>${ops.filter(g => g.id !== a.responsable).map(g => `<label class="check"><input type="checkbox" ${a.operadores.includes(g.id) ? 'checked' : ''} onchange="const o=editarLata.a.operadores;this.checked?o.push('${g.id}'):o.splice(o.indexOf('${g.id}'),1)">${esc(g.nombre)}${enOtra(g.id) ? `<small>Está en ${esc(enOtra(g.id))}</small>` : ''}</label>`).join('')}
+    <button class="btn prim ancho grande" style="margin-top:16px" onclick="guardarLata()">Guardar</button>`);
+  editarLata.pintar = pintar; pintar();
+}
+function guardarLata() {
+  const ev = evActual(), sid = editarLata.sid, a = editarLata.a;
+  // Una persona, en una sola lata: si estaba en otra, sale de ahí.
+  const aca = new Set([a.responsable, ...a.operadores].filter(Boolean));
+  Object.keys(ev.latas || {}).forEach(k => { if (k === sid) return; const o = ev.latas[k]; if (aca.has(o.responsable)) o.responsable = ''; o.operadores = o.operadores.filter(x => !aca.has(x)); });
+  ev.latas = ev.latas || {}; ev.latas[sid] = a; guardarDemo(); cerrarHoja(); pintarEvento(); toast('✓ Organigrama guardado');
+}
+
+// Equipo: por puesto, con su lata, el presente (lo marca coordinación) y el contrato.
+function pintarEquipo(ev) {
+  const q = norm(buscaEq), latasDe = {};
+  Object.entries(ev.latas || {}).forEach(([k, a]) => { [a.responsable, ...a.operadores].filter(Boolean).forEach(p => { latasDe[p] = sectorDe(ev, k).nombre; }); });
+  const gente = ev.gente.map(id => D.gente[id]).filter(g => !q || norm(g.nombre).includes(q));
+  const grupos = new Map(); gente.forEach(g => { if (!grupos.has(g.puesto)) grupos.set(g.puesto, []); grupos.get(g.puesto).push(g); });
+  const p = ev.presentes || {}, presentes = ev.gente.filter(id => p[id] === 'P').length;
+  const marcar = esCoord() && cuando(ev) === 'hoy';
+  return `<div class="caja"><div class="chips"><span class="chip"><b>${ev.gente.length}</b> convocados</span>${cuando(ev) !== 'proximo' ? `<span class="chip">Presentes <b>${presentes}</b></span><span class="chip">Faltan marcar <b>${ev.gente.length - presentes - ev.gente.filter(id => p[id] === 'A').length}</b></span>` : ''}<span class="chip">Contratos firmados <b>${ev.gente.filter(id => (ev.contratos || {})[id] === 'firmado').length}</b></span></div>
+    <input class="buscar" placeholder="Buscar a alguien del equipo" value="${esc(buscaEq)}" oninput="buscaEq=this.value;clearTimeout(window._bq);window._bq=setTimeout(()=>{pintarEvento();const b=document.querySelector('.buscar');b.focus();b.setSelectionRange(b.value.length,b.value.length)},250)">
+    ${[...grupos.entries()].map(([puesto, l]) => `<div class="titulo" style="margin-top:12px">${esc(puesto.replace('/a', 'es').replace('Coordinadores', 'Coordinación'))} <span class="n">${l.length}</span></div>
+      ${l.map(g => `<div class="fila"><div class="ini">${iniciales(g.nombre)}</div><div class="t"><b>${esc(g.nombre)}</b><small>${latasDe[g.id] ? esc(latasDe[g.id]) + ' · ' : ''}${(ev.contratos || {})[g.id] === 'firmado' ? 'Contrato firmado' : (ev.contratos || {})[g.id] ? 'Contrato sin firmar' : 'Sin contrato todavía'}</small></div>
+        ${marcar ? `<div class="pres"><button class="${p[g.id] === 'P' ? 'on-p' : ''}" onclick="presente('${g.id}','P')" aria-label="Presente">P</button><button class="${p[g.id] === 'A' ? 'on-a' : ''}" onclick="presente('${g.id}','A')" aria-label="Ausente">A</button></div>`
+          : cuando(ev) !== 'proximo' ? (p[g.id] === 'P' ? '<span class="pill ok">Presente</span>' : p[g.id] === 'A' ? '<span class="pill g">Ausente</span>' : '<span class="pill sutil">—</span>') : ''}</div>`).join('')}`).join('') || '<div class="vacio">Nadie con ese nombre.</div>'}</div>`;
+}
+function presente(pid, v) { const ev = evActual(); ev.presentes = ev.presentes || {}; ev.presentes[pid] = ev.presentes[pid] === v ? '' : v; guardarDemo(); pintarEvento(); }
+
+// Sectores: son del predio (quedan para los próximos eventos ahí); los suma cualquiera del evento.
+function pintarSectores(ev) {
+  const pr = predioDe(ev);
+  return `<div class="caja"><div class="nota">Los sectores son de <b style="color:var(--tinta)">${esc(pr.nombre)}</b>: los que sumen quedan para los próximos eventos en este predio.</div>
+    ${soloVer(ev) ? '' : '<button class="btn prim ancho" onclick="nuevoSector()">+ Agregar un sector</button>'}
+    ${Object.entries(TIPOS_SECTOR).map(([t, nom]) => { const l = pr.sectores.filter(s => s.tipo === t); return l.length ? `<div class="titulo" style="margin-top:16px">${nom} <span class="n">${l.length}</span></div>` + l.map(s => { const n = ev.incidencias.filter(i => i.sector === s.id).length;
+      return `<div class="sec"><div class="t"><b>${esc(s.nombre)}</b><small>${s.quien === 'RR. HH.' ? 'Cargado por RR. HH.' : 'Lo sumó ' + esc(s.quien) + (s.evento ? ' · ' + esc(s.evento) : '')}</small></div>${n ? `<span class="pill">${n} incidencia${n === 1 ? '' : 's'}</span>` : ''}</div>`; }).join('') : ''; }).join('')}</div>`;
+}
+function nuevoSector(tipo, alVolver) {
+  nuevoSector.tipo = tipo || 'sector'; nuevoSector.volver = alVolver || null;
+  abrirHoja(`<div class="hoja-cab"><b>Nuevo sector</b><button class="ico" onclick="${alVolver ? alVolver : 'cerrarHoja()'}" aria-label="Volver">✕</button></div>
+    <div class="nota">Queda en ${esc(predioDe(evActual()).nombre)} para este y los próximos eventos.</div>
+    <div class="paso">Qué es</div><div class="opciones" id="nsTipos">${Object.entries(TIPOS_SECTOR).map(([k, v]) => `<button class="opc${nuevoSector.tipo === k ? ' on' : ''}" onclick="nuevoSector.tipo='${k}';document.querySelectorAll('#nsTipos .opc').forEach(b=>b.classList.toggle('on',b.dataset.k==='${k}'))" data-k="${k}">${TIPO_UNO[k]}</button>`).join('')}</div>
+    <div class="paso">Nombre</div><input class="campo" id="nsNombre" placeholder="Ej.: Acceso Puerta 7, Lata 5 · Prensa, Platea Alta" oninput="avisoDuplicado()" maxlength="60">
+    <div class="aviso-dup" id="nsDup"></div>
+    <button class="btn prim ancho grande" style="margin-top:16px" onclick="guardarSector()">Agregar</button>`);
+  setTimeout(() => { const i = $('nsNombre'); if (i) i.focus(); }, 50);
+}
+// Para que no queden "Puerta 3" y "puerta tres": avisa si ya hay uno parecido.
+function parecidos(nombre) {
+  const n = norm(nombre); if (n.length < 3) return [];
+  const pal = n.split(' ').filter(w => w.length > 2);
+  return predioDe(evActual()).sectores.filter(s => { const m = norm(s.nombre); return m === n || m.includes(n) || n.includes(m) || (pal.length && pal.every(w => m.includes(w))); });
+}
+function avisoDuplicado() { const p = parecidos($('nsNombre').value); $('nsDup').textContent = p.length ? 'Ya hay: ' + p.map(s => s.nombre).join(', ') + '. ¿Es el mismo?' : ''; }
+function guardarSector() {
+  const nombre = $('nsNombre').value.trim().replace(/\s+/g, ' '); if (nombre.length < 2) { toast('Poné el nombre del sector'); return; }
+  const ev = evActual(), pr = predioDe(ev);
+  if (pr.sectores.some(s => norm(s.nombre) === norm(nombre))) { toast('Ese sector ya está'); return; }
+  const s = { id: 's' + uid(), nombre, tipo: nuevoSector.tipo, quien: yo().nombre, evento: ev.nombre };
+  pr.sectores.push(s); guardarDemo();
+  toast('✓ Sector agregado');
+  if (nuevoSector.volver) { cargarIncidencia.sector = s.id; cargarIncidencia.pintar(); return; }
+  cerrarHoja(); pintarEvento();
+}
+
+// ── CARGAR Y VER UNA INCIDENCIA ─────────────────────────────────
+function cargarIncidencia() {
+  const st = cargarIncidencia; st.sector = ''; st.cat = ''; st.tipo = ''; st.acc = []; st.nota = ''; st.busca = '';
+  st.pintar = () => {
+    const ev = evActual(), pr = predioDe(ev), c = st.cat ? CATALOGO.find(x => x.cat === st.cat) : null;
+    const q = norm(st.busca), secs = pr.sectores.filter(s => !q || norm(s.nombre).includes(q));
+    const base = c && st.tipo ? (c.tipos.find(t => t[0] === st.tipo) || [0, 1])[1] : 0, nivel = base && st.acc.some(a => SUBEN_A_GRAVE.includes(a)) ? 3 : base;
+    abrirHoja(`<div class="hoja-cab"><b>Cargar incidencia</b><button class="ico" onclick="cerrarHoja()" aria-label="Cerrar">✕</button></div>
+      <div class="paso">1 · Dónde</div>
+      ${st.sector ? `<div class="opciones"><button class="opc on" onclick="cargarIncidencia.sector='';cargarIncidencia.pintar()">${esc(sectorDe(ev, st.sector).nombre)} <small>cambiar</small></button></div>`
+        : `<input class="campo" placeholder="Buscar el sector" value="${esc(st.busca)}" oninput="cargarIncidencia.busca=this.value;clearTimeout(window._bs);window._bs=setTimeout(()=>{cargarIncidencia.pintar();const b=document.querySelector('.hoja .campo');b.focus();b.setSelectionRange(b.value.length,b.value.length)},250)" style="margin-bottom:8px">
+          ${Object.entries(TIPOS_SECTOR).map(([t, nom]) => { const l = secs.filter(s => s.tipo === t); return l.length ? `<div class="paso" style="margin:10px 2px 6px;font-size:10.5px">${nom}</div><div class="opciones">${l.map(s => `<button class="opc" onclick="cargarIncidencia.sector='${s.id}';cargarIncidencia.pintar()">${esc(s.nombre)}</button>`).join('')}</div>` : ''; }).join('')}
+          <button class="btn ancho" style="margin-top:10px" onclick="nuevoSector('sector','cargarIncidencia.pintar()')">+ Otro sector (lo agregás al predio)</button>`}
+      ${st.sector ? `<div class="paso">2 · Qué pasó</div><div class="opciones">${CATALOGO.map(x => `<button class="opc${st.cat === x.cat ? ' on' : ''}" onclick="cargarIncidencia.cat='${x.cat}';cargarIncidencia.tipo='';cargarIncidencia.acc=[];cargarIncidencia.pintar()">${x.cat}</button>`).join('')}</div>
+        ${c ? `<div class="lista-tipos">${c.tipos.map(([t, n]) => `<button class="opc${st.tipo === t ? ' on' : ''}" onclick="cargarIncidencia.tipo=this.dataset.t;cargarIncidencia.pintar()" data-t="${esc(t)}">${esc(t)}${nivelPill(n)}</button>`).join('')}</div>` : ''}` : ''}
+      ${st.tipo ? `<div class="paso">3 · Lo que se hizo</div>${c.acciones.map(a => `<label class="check"><input type="checkbox" ${st.acc.includes(a) ? 'checked' : ''} onchange="const l=cargarIncidencia.acc;this.checked?l.push(this.dataset.a):l.splice(l.indexOf(this.dataset.a),1);cargarIncidencia.pintar()" data-a="${esc(a)}">${esc(a)}</label>`).join('')}
+        <div class="nivel n${nivel}"><div><b>${NIVELES[nivel].nombre}</b><br><span>${NIVELES[nivel].ayuda}${nivel === 3 && base < 3 ? ' (subió a grave por lo que se hizo)' : ''}</span></div></div>
+        <div class="paso">4 · Nota (opcional)</div><textarea class="campo" placeholder="Algo más para el informe" oninput="cargarIncidencia.nota=this.value">${esc(st.nota)}</textarea>
+        <button class="btn prim ancho grande" style="margin-top:16px" onclick="guardarIncidencia()">Guardar</button>` : ''}`);
+  };
+  st.pintar();
+}
+function guardarIncidencia() {
+  const st = cargarIncidencia, ev = evActual(), c = CATALOGO.find(x => x.cat === st.cat), base = (c.tipos.find(t => t[0] === st.tipo) || [0, 1])[1];
+  ev.incidencias.push({ id: uid(), sector: st.sector, cat: st.cat, tipo: st.tipo, nivel: st.acc.some(a => SUBEN_A_GRAVE.includes(a)) ? 3 : base, acciones: st.acc.slice(), nota: st.nota.trim(), quien: yo().nombre, creada: new Date().toISOString(), estado: 'abierta', resolucion: '' });
+  guardarDemo(); cerrarHoja(); filtroInc = 'abiertas'; filtroSector = ''; pintarEvento(); toast('✓ Incidencia cargada');
+}
+function verIncidencia(id) {
+  const ev = evActual(), i = ev.incidencias.find(x => x.id === id); if (!i) return;
+  const puede = !soloVer(ev) && i.estado === 'abierta' && (esCoord() || i.quien === yo().nombre);
+  abrirHoja(`<div class="hoja-cab"><b>${esc(i.tipo)}</b><button class="ico" onclick="cerrarHoja()" aria-label="Cerrar">✕</button></div>
+    <div class="nivel n${i.nivel}"><div><b>${NIVELES[i.nivel].nombre}</b><br><span>${NIVELES[i.nivel].ayuda}</span></div></div>
+    <div style="margin-top:8px">${[['Sector', sectorDe(ev, i.sector).nombre], ['Qué', i.cat + ' · ' + i.tipo], ['Cuándo', diaCorto(i.creada.slice(0, 10)) + ' · ' + hora(i.creada)], ['Cargó', i.quien], ['Lo que se hizo', i.acciones.join(' · ') || '—'], ['Nota', i.nota || '—'], ['Estado', i.estado === 'resuelta' ? 'Resuelta' + (i.resolucion ? ': ' + i.resolucion : '') : 'Abierta']].map(([k, v]) => `<div class="dato"><small>${k}</small><span>${esc(v)}</span></div>`).join('')}</div>
+    ${puede ? `<div class="paso">Cerrarla</div><textarea class="campo" id="resNota" placeholder="Cómo se resolvió (opcional)"></textarea><button class="btn prim ancho grande" style="margin-top:12px" onclick="resolver('${i.id}')">Marcar resuelta</button>` : ''}`);
+}
+function resolver(id) {
+  const ev = evActual(), i = ev.incidencias.find(x => x.id === id); if (!i) return;
+  i.estado = 'resuelta'; i.resolucion = ($('resNota').value || '').trim(); guardarDemo(); cerrarHoja(); pintarEvento(); toast('✓ Resuelta');
+}
+
+// ── LA HOJA DE ABAJO ────────────────────────────────────────────
+function abrirHoja(html) { const h = $('hoja'), s = h.hidden ? 0 : $('hojaIn').scrollTop; $('hojaIn').innerHTML = '<div class="hoja-tir"></div>' + html; h.hidden = false; $('hojaIn').scrollTop = s; document.body.style.overflow = 'hidden'; }
+function cerrarHoja() { $('hoja').hidden = true; document.body.style.overflow = ''; }
+
+// ── ARRANCAR ────────────────────────────────────────────────────
+cargarDemo(); irInicio();
+</script>
+</body>
+</html>
