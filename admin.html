@@ -5078,7 +5078,7 @@ async function cbuRevAvisarTodos() {
   if (!confirm('¿Mandarles a las ' + l.length + ' personas de esta lista un mail para que corrijan (o carguen) el CBU?\n\nA cada una le llega el link de "Mis datos" (vence en 24 horas) al mail de su inscripción.')) return;
   const env = cbuRevEnvio = { andando: true, frenar: false, ok: 0, mal: 0, total: l.length };
   const prog = document.getElementById('cbuRevProg');
-  const pintar = () => { prog.innerHTML = `<span>${env.andando ? 'Mandando' : 'Listo'}: <b>${env.ok}</b> enviado${env.ok === 1 ? '' : 's'}${env.mal ? ' · <b>' + env.mal + '</b> no salieron (sin mail o con error)' : ''} · de ${env.total}</span>${env.andando ? ' <button class="btn btn-sec btn-xs" onclick="cbuRevEnvio.frenar=true">Frenar</button>' : ''}`; };
+  const pintar = () => { prog.innerHTML = `<span>${env.andando ? 'Mandando' : 'Listo'}: <b>${env.ok}</b> de ${env.total} enviado${env.total === 1 ? '' : 's'}${env.mal ? ' · <b>' + env.mal + '</b> no ' + (env.mal === 1 ? 'salió' : 'salieron') + ' (sin mail o con error)' : ''}</span>${env.andando ? ' <button class="btn btn-sec btn-xs" onclick="cbuRevEnvio.frenar=true">Frenar</button>' : ''}`; };
   renderCbuRev(); pintar();
   for (const x of l) {
     if (env.frenar) break;
