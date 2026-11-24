@@ -948,6 +948,36 @@ tr.cv-rapida-fila td{background:#eef4ff!important}
 .pos-chip.ocupo{background:#fff;border-color:#6b7280;color:#1a1a1a}
 .pos-chip.interes{background:transparent;border-style:dashed;color:var(--r-muted);font-weight:500}
 .pos-chip.probar{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+/* 24-nov, orden: en la lista cada grupo (rótulo + sus chips) es una sola pieza que no se parte; los rótulos van
+   en minúscula y apagados, para que lo que se lea sean los chips. */
+.pos-chips:has(.chip-g){gap:5px 12px}
+.chip-g{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;white-space:nowrap}
+.chip-g .chip-t{font-size:10.5px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--r-faint);margin:0 1px 0 0}
+.pos-prom{background:var(--r-bg);border:1px solid var(--r-line);border-radius:999px;padding:1px 7px;font-weight:600}
+/* La línea del nombre: nombre, semáforo, estrella y CV, alineados y sin márgenes sueltos. */
+.cn-linea{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px}
+.cn-linea .cn-nom{white-space:nowrap}
+.cn-linea .sem,.cn-linea .rec-star,.cn-linea .cv-tag,.cn-linea .cv-ojo,.cn-linea .out-badge,.cn-linea .rot-badge{margin-left:0}
+#nomTabla td.cn{min-width:330px}
+/* En pantallas angostas la columna Notas (casi siempre "Interés: …", que ya está en las etiquetas) se esconde:
+   la nota se ve en la ficha. */
+@media (max-width:1500px){#nomTabla th:nth-child(8),#nomTabla td:nth-child(8){display:none}#nomTabla td.cn{min-width:300px}}
+/* Barra de filtros de la nómina: los desplegables no se estiran con su opción más larga (al abrirlos se lee
+   entera) y las acciones van juntas a la derecha; si no entran, bajan las cuatro juntas. */
+#sec-nomina > .ctrlbar:not(.nom-filtros) .srch{flex:1 1 220px;max-width:360px}
+#sec-nomina > .ctrlbar:not(.nom-filtros) select.filt{max-width:200px;text-overflow:ellipsis}
+.ctrl-acc{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+/* Menú de arriba: cada sección en un renglón; si la pantalla es angosta se achica el espacio, después se
+   esconde el mail (queda al pasar por "Salir") y, en el último caso, el menú se corre de costado. */
+.app-hdr{padding:0 18px}
+.brand{flex-shrink:0;white-space:nowrap;padding-right:16px}
+.main-nav{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}
+.main-nav::-webkit-scrollbar{display:none}
+.mnav-btn{white-space:nowrap;flex-shrink:0;padding:0 14px}
+.hdr-actions{flex-shrink:0;padding-left:12px;gap:6px}
+#userEmail{white-space:nowrap;max-width:210px;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:1650px){#userEmail{display:none}.mnav-btn{padding:0 11px}}
+@media (max-width:1400px){.brand-sub{display:none}.mnav-btn{padding:0 8px;font-size:12.5px}}
 /* Feedbacks (24-nov): los números de arriba y la marca de nuevo en cada fila. */
 .fbs-nums{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
 .fbs-num{flex:1;min-width:120px;border:1px solid var(--r-line);border-radius:10px;padding:10px 14px;background:#fff}
@@ -1148,7 +1178,7 @@ tr:hover td{background:#f9f9fb}
     <button class="btn btn-sec btn-sm" onclick="openNotifs()" style="position:relative;padding:7px 10px" title="Notificaciones">
       <i class="ic ic-campana"></i> <span id="notifBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:999px;font-size:9px;padding:1px 5px;font-weight:700;line-height:1.4"></span>
     </button>
-    <button class="btn btn-sec btn-sm" onclick="openClave()" title="Cambiar mi contraseña"><i class="ic ic-llave"></i></button>
+    <button class="btn btn-sec btn-sm" onclick="openClave()" title="Cambiar mi contraseña" id="btnClave"><i class="ic ic-llave"></i></button>
     <button class="btn btn-sec btn-sm" onclick="doLogout()">Salir</button>
   </div>
 </header>
@@ -1227,7 +1257,7 @@ tr:hover td{background:#f9f9fb}
       </optgroup>
     </select>
     <button class="btn btn-sec" id="nomFiltrosBtn" onclick="toggleFiltrosNom()" title="Edad, estudios, idiomas, experiencia, disponibilidad, orden, declaración jurada, etiquetas, rotación, documento y CV"><i class="ic ic-ajustes"></i> Más filtros <span class="tc" id="nomFiltrosBadge" style="display:none"></span></button>
-    <span style="flex:1"></span>
+    <div class="ctrl-acc">
     <button class="btn btn-sec" id="btnExportNom" onclick="exportNom()" title="Baja la lista en Excel (.xlsx), con los datos bancarios">↓ Exportar</button>
     <div class="nom-mas">
       <button class="btn btn-sec" onclick="toggleMasNom(event)" title="Deduplicar, etiquetas, rotación, conflictos, importar">⋯ Herramientas</button>
@@ -1243,6 +1273,7 @@ tr:hover td{background:#f9f9fb}
     </div>
     <button class="btn btn-primary" onclick="openCvForm()"><i class="ic ic-doc"></i> Subir CV</button>
     <button class="btn btn-primary" onclick="openAddPerson()">+ Agregar</button>
+    </div>
   </div>
   <!-- Lo que se usa cada tanto: plegado, con contador de cuántos están puestos. -->
   <div class="ctrlbar nom-filtros" id="nomFiltros">
@@ -2916,6 +2947,7 @@ async function showApp(user) {
   document.getElementById('loginWrap').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('userEmail').textContent = user?.email || '';
+  { const sal = document.querySelector('.hdr-actions [onclick="doLogout()"]'); if (sal) sal.title = user?.email ? 'Salir (' + user.email + ')' : 'Salir'; }
   await loadAll();
 }
 
@@ -3681,7 +3713,7 @@ function puestosOcupadosDe(p) {
   if (!p) return [];
   const hoy = hoyLocalISO(), m = new Map(), sumar = (n, dia) => {
     const t = String(n || '').trim(); if (!t) return;
-    const k = hiNorm(t), x = m.get(k) || { nombre: t, dias: new Set() }; x.dias.add(dia || ('?' + x.dias.size)); m.set(k, x);
+    const k = hiNorm(t), x = m.get(k) || { nombre: t, dias: new Set() }; x.dias.add(dia || ('?' + k + x.dias.size)); m.set(k, x);
   };
   contratosDePersona(p).forEach(c => { if (c.estado !== 'anulado') sumar(c.puesto, fechaDeContrato(c)); });
   postsDePersona(p.id).forEach(x => {
@@ -3693,7 +3725,7 @@ function puestosOcupadosDe(p) {
     sumar(((conv.puestos || []).find(q => q.id === x.puestoId) || {}).nombre, fs[0]);
   });
   historialDePersona(p).forEach(h => sumar(h.puesto, String(h.fecha || '').slice(0, 10)));
-  return [...m.values()].map(x => ({ nombre: x.nombre, veces: x.dias.size })).sort((a, b) => b.veces - a.veces || a.nombre.localeCompare(b.nombre, 'es'));
+  return [...m.values()].map(x => ({ nombre: x.nombre, veces: x.dias.size, dias: [...x.dias] })).sort((a, b) => b.veces - a.veces || a.nombre.localeCompare(b.nombre, 'es'));
 }
 // En la ficha ("Ver CV" / "Ver datos"): los tres por separado, y las etiquetas aparte.
 function puestosFichaHTML(p) {
@@ -3718,15 +3750,28 @@ const ROL_DE_PUESTO = [['Supervisor', /supervis|coordin|encargad/], ['Equipo ope
 function rolesDePuesto(nombre) { const t = nomPelar(nombre); return ROL_DE_PUESTO.filter(([, re]) => re.test(t)).map(([r]) => hiNorm(r)); }
 function aProbarEnPuesto(p, puestoNombre) { const roles = rolesDePuesto(puestoNombre), pn = hiNorm(puestoNombre); return aProbarDe(p).filter(r => roles.includes(hiNorm(r)) || hiNorm(r) === pn); }
 function interesesDe(p) { return p ? puestosDeSol(puestoDePersona(p)).filter(x => x !== 'Otro').concat(/otro/i.test(puestoDePersona(p)) ? ['Otro'] : []) : []; }
-// Los tres grupos en chips, cada uno con su rótulo (máx cuántos de cada uno, en la lista).
+// En la lista, los puestos se leen por rol: "ACOMODADORES", "Acomodadores Platea" y "Acomodador" son lo mismo.
+// (La ficha sigue mostrando cada nombre tal cual.)
+const ROL_VISTA = [['Coordinador', /coordin/], ['Supervisor', /supervis|encargad/], ['Equipo operaciones', /operacion/], ['Operador acreditaciones', /acredit/],
+  ['Orientador', /orient/], ['Acomodador', /acomod/], ['Hidratación', /hidrat/], ['Stagehand / cargas', /stage|carga|montaj/], ['Producción', /produc/],
+  ['Gastronomía', /gastro|barra|bartend/], ['Boletero', /bolet|taquill/]];
+function rolVista(nombre) { const t = nomPelar(nombre), r = ROL_VISTA.find(([, re]) => re.test(t)); return r ? r[0] : nombrePropio(String(nombre || '').trim()); }
+function ocupadosVista(p) {
+  const m = new Map();
+  puestosOcupadosDe(p).forEach(x => { const r = rolVista(x.nombre), k = hiNorm(r), y = m.get(k) || { nombre: r, dias: new Set() }; (x.dias || []).forEach(d => y.dias.add(d)); m.set(k, y); });
+  return [...m.values()].map(x => ({ nombre: x.nombre, veces: x.dias.size })).sort((a, b) => b.veces - a.veces || a.nombre.localeCompare(b.nombre, 'es'));
+}
+// Los grupos en chips, cada uno con su rótulo pegado (máx cuántos de cada uno, en la lista). "Le interesa" no
+// repite lo que ya está como posición u ocupó.
 function chipsPuestosHTML(p, max) {
   const corta = l => max && l.length > max ? l.slice(0, max).concat(['+' + (l.length - max)]) : l;
-  const pos = posicionesDe(p), oc = puestosOcupadosDe(p), it = interesesDe(p), out = [];
-  if (pos.length) out.push('<span class="chip-t" title="La que le asigna el equipo, en su ficha">Posición</span>' + corta(pos).map(x => '<span class="pos-chip asig">' + e(x) + '</span>').join(''));
-  if (oc.length) out.push('<span class="chip-t" title="Donde trabajó: contratos, convocatorias que ya pasaron e historial">Ocupó</span>' + corta(oc.map(x => x.nombre + (x.veces > 1 ? ' ×' + x.veces : ''))).map(x => '<span class="pos-chip ocupo">' + e(x) + '</span>').join(''));
-  if (it.length) out.push('<span class="chip-t" title="Lo que marcó al inscribirse">Le interesa</span>' + corta(it).map(x => '<span class="pos-chip interes">' + e(x) + '</span>').join(''));
-  const ap = aProbarDe(p);
-  if (ap.length) out.push('<span class="chip-t" title="Para probarla en ese rol (se marca en su ficha)">A probar</span>' + ap.map(x => '<span class="pos-chip probar">' + e(x) + '</span>').join(''));
+  const pos = posicionesDe(p), oc = ocupadosVista(p), ya = new Set(pos.concat(oc.map(x => x.nombre)).map(x => hiNorm(rolVista(x))));
+  const it = interesesDe(p).filter(x => !ya.has(hiNorm(rolVista(x)))), ap = aProbarDe(p), out = [];
+  const grupo = (t, tit, chips) => out.push('<span class="chip-g" title="' + tit + '"><span class="chip-t">' + t + '</span>' + chips + '</span>');
+  if (pos.length) grupo('Posición', 'La que le asigna el equipo, en su ficha', corta(pos).map(x => '<span class="pos-chip asig">' + e(x) + '</span>').join(''));
+  if (oc.length) grupo('Ocupó', 'Donde trabajó: contratos, convocatorias que ya pasaron e historial', corta(oc.map(x => x.nombre + (x.veces > 1 ? ' ×' + x.veces : ''))).map(x => '<span class="pos-chip ocupo">' + e(x) + '</span>').join(''));
+  if (it.length) grupo('Le interesa', 'Lo que marcó al inscribirse (lo que ya figura como posición u ocupó no se repite)', corta(it).map(x => '<span class="pos-chip interes">' + e(x) + '</span>').join(''));
+  if (ap.length) grupo('A probar', 'Para probarla en ese rol (se marca en su ficha)', ap.map(x => '<span class="pos-chip probar">' + e(x) + '</span>').join(''));
   return out.join('');
 }
 // Dónde está convocada hoy o más adelante: para verlo en la nómina sin tener
@@ -3790,14 +3835,14 @@ function renderNomTable() {
     return `<tr style="${rowBg}"${typeof cvRapidaId !== 'undefined' && cvRapidaId === p.id ? ' class="cv-rapida-fila"' : ''}>
 <td><input type="checkbox" class="cb rcb" data-id="${p.id}" onchange="checkNomBulk()"></td>
 <td class="cn">
-  ${eN(p.nombre)}
+  <div class="cn-linea"><span class="cn-nom">${eN(p.nombre)}</span>
   <button class="sem sem-${sem}" onclick="openSemModal('${p.id}')" title="Semáforo ${sem}">${sem}</button>
   <button class="rec-star${p.recomendado ? ' on' : ''}" onclick="toggleRecomendado('${p.id}',event)" title="${p.recomendado ? 'Está en Recomendados. Clic para sacarla.' : 'Ponerla en Recomendados, para tenerla a mano al convocar.'}">★</button>
   ${p.out_flag ? `<button class="out-badge" onclick="openOutModal('${p.id}')" title="${e(p.out_nota||p.out_categoria||'')}"><i class="ic ic-prohibido"></i> ${nomAreaTab === 'out' && p.out_categoria ? e(frase(p.out_categoria)) : 'OUT'}</button>` : ''}
   ${rot.excede ? `<span class="rot-badge" title="${rot.count} eventos en ${rotacionConfig.dias_periodo} días">⚠ Rot.</span>` : ''}
   ${aus.penalizado ? `<span class="rot-badge" style="background:#fee2e2;color:#991b1b" title="Faltó — no reconvocar hasta ${aus.hasta ? aus.hasta.toLocaleDateString('es-AR') : ''} · ${aus.ausencias} ausencia(s)"><i class="ic ic-prohibido"></i> Faltó</span>` : ''}
-  ${(p.cv || solicitudDe(p) || cuantosFb(p.id)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv || solConCv(p) ? 'Ver CV' : 'Ver datos'}</button>` : ''}${tieneCv(p) ? `<button class="cv-ojo" onclick="cvRapidaOrigen='nom';cvRapida('${p.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : ''}
-  ${(() => { const chips = chipsPuestosHTML(p, 3), pr = promedioDe(p.id); return (chips || zonaDe(p) || pr != null) ? `<div class="pos-chips">${zonaDe(p) ? `<span class="zona-chip" title="Sale de la localidad que cargó al inscribirse">${e(zonaDe(p))}</span>` : ''}${pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">${pr.toFixed(2)}</span>` : ''}${chips}</div>` : ''; })()}
+  ${(p.cv || solicitudDe(p) || cuantosFb(p.id)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv || solConCv(p) ? 'Ver CV' : 'Ver datos'}</button>` : ''}${tieneCv(p) ? `<button class="cv-ojo" onclick="cvRapidaOrigen='nom';cvRapida('${p.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : ''}</div>
+  ${(() => { const chips = chipsPuestosHTML(p, 3), pr = promedioDe(p.id); return (chips || zonaDe(p) || pr != null) ? `<div class="pos-chips">${zonaDe(p) ? `<span class="zona-chip" title="Sale de la localidad que cargó al inscribirse">${e(zonaDe(p))}</span>` : ''}${pr != null ? `<span class="pos-prom" title="Promedio de ${cuantosFb(p.id)} feedback(s)">Prom. ${pr.toFixed(2)}</span>` : ''}${chips}</div>` : ''; })()}
   ${(() => { const d = dondeEsta(p); return d.length ? `<div class="pos-chips">${d.slice(0, 3).map(x => `<span class="conv-chip" title="${e(x.fechas.map(f => fechaDMA ? fechaDMA(f) : f).join(', '))}${x.puesto ? ' · ' + e(x.puesto) : ''}" onclick="event.stopPropagation();goSec('convs');openDetail('${x.convId}')"><i class="ic ic-calendario"></i> ${e(x.conv)} · ${e(fechaDMA ? fechaDMA(x.fecha) : x.fecha)}</span>`).join('')}${d.length > 3 ? `<span class="conv-chip" style="opacity:.7">+${d.length - 3}</span>` : ''}</div>` : ''; })()}
   ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
 </td>
