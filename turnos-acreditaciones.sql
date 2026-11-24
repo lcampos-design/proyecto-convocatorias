@@ -10,7 +10,7 @@
 --  Los turnos (cada día y franja, con su horario, cupo y monto) se guardan en convocatorias.turnos,
 --  como hasta ahora; la disponibilidad por franja, en la de siempre. Lo nuevo:
 --    · postulaciones.asignaciones: a qué turnos está asignada cada persona y cómo va
---      ({ "<id del turno>": "propuesto" | "confirmado" | "rechazado" });
+--      ({ "<id del turno>": "propuesto" | "avisado" | "confirmado" | "rechazado" });
 --    · la firma del link para confirmar un turno (como la de la confirmación de siempre) y la
 --      función que lo registra desde el celular, sin usuario;
 --    · contratos.turno_id: con la P de un turno sale el contrato de esa jornada (origen 'turno'), uno solo por
