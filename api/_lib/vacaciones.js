@@ -26,7 +26,7 @@ export function filasTramos(datos) {
   return t.map((x, i) => ['Tramo ' + (i + 1), 'Del ' + fechaCorta(x.desde) + ' al ' + fechaCorta(x.hasta) + ' · ' + x.dias + ' días'])
     .concat([['Total', ((datos && datos.total) || 0) + ' días corridos']],
       // Lo que pasa de 14 es sin goce de sueldo (25-nov): lo pidió y lo firmó la persona.
-      ((datos && datos.total) || 0) > 14 ? [['Sin goce de sueldo', (datos.total - 14) + ' días (los que pasan de 14)']] : []);
+      ((datos && datos.total) || 0) > 14 ? [['Sin goce de sueldo', (datos.total - 14) + ' días (los que pasan de 14), sujetos a aprobación']] : []);
 }
 const primerNombre = n => String(n || '').trim().split(/\s+/)[0] || '';
 
@@ -70,7 +70,7 @@ export const MAILS = {
     parrafos: [(reemplaza(a) ? 'La anterior quedó cancelada. ' : '') + (a.paso === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
       : a.paso === 'rrhh' ? 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.' : 'RR. HH. se la manda a tu jefe directo para que la apruebe.')],
     datos: filasTramos(a.datos), boton: 'Ver mi solicitud', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.ver)}`,
-    pie: 'Hasta que la firmen, la podés modificar o cancelar desde la página. Al final te llega el PDF con todas las firmas.' }),
+    pie: 'Las fechas quedan sujetas a la confirmación de RR. HH. según tu saldo. Hasta que la firmen, la podés modificar o cancelar desde la página; al final te llega el PDF con todas las firmas.' }),
   // A quien la tenía para firmar: la canceló, o la cambió y la nueva va a otro lado.
   cancelada: a => armarMail({ kicker: KICKER, titulo: a.nombre, hola: 'Hola',
     parrafos: a.reemplazada
@@ -83,7 +83,7 @@ export const MAILS = {
       + (reemplaza(a) ? ` Es un cambio de la que mandó el ${diaMes(reemplaza(a).fecha)}: el link anterior ya no sirve.` : ''),
       'Firmá vos para aprobarla (o no).' + (a.paso === 'jefe' ? ' Después le llega a RR. HH.' : ' Al firmar, le llega el PDF con todas las firmas.')],
     datos: [['Área', a.area]].concat(filasTramos(a.datos), avisos(a)), boton: 'Ver y firmar', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.token)}`,
-    pie: 'El link es personal y vence en 30 días.' }),
+    pie: (a.paso === 'rrhh' ? 'Revisá el saldo: si se tomó días a cuenta, aprobala con un comentario con los días que le quedan, o no la apruebes para que mande otra. ' : '') + 'El link es personal y vence en 30 días.' }),
   // Al final, a la persona (con copia a quien firmó antes y a las casillas de RR. HH., legales y socios).
   // A la persona, cuando su jefe la aprueba (25-nov, Thomas: que le vaya llegando cómo va): ahora le toca a RR. HH.
   avance: a => armarMail({ kicker: KICKER, titulo: 'Tu jefe la aprobó', hola: 'Hola, ' + primerNombre(a.nombre),

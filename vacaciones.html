@@ -56,6 +56,7 @@ main{padding:6px 0 26px;flex:1 0 auto;width:100%}
 .tramo .av{grid-column:2 / -1;font-size:12.5px;margin-top:-2px}
 .tramo .fer{grid-column:2 / -1;display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer}
 .tramo .fer input,.fer.sg input{width:17px;height:17px;accent-color:#1a1a1a}
+.resumen .sujeto{flex-basis:100%;font-size:12.5px;color:#6b6b6b}
 .fer.sg{display:flex;align-items:center;gap:8px;flex-basis:100%;font-size:13px;cursor:pointer;margin-top:4px}
 .ok{color:#4a4a4a}.mal{color:#b42318;font-weight:600}.ojo{color:#8a6100}
 .resumen{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:12px;padding-top:12px;border-top:1px solid #efefef;font-size:13px}
@@ -163,8 +164,8 @@ const fechaHora = iso => { const d = new Date(iso); return isNaN(d) ? '' : dos(d
 const ESTADOS = { nueva: 'Esperando que RR. HH. la derive', jefe: 'Esperando al jefe directo', rrhh: 'Esperando a RR. HH.', aprobada: 'Aprobada', rechazada: 'No aprobada', cancelada: 'Cancelada' };
 // Los días de vacaciones (nadie supera los 5 años de antigüedad); lo que pasa de ahí es sin goce de sueldo.
 const DIAS_VAC = 14, sinGoce = total => Math.max(0, (Number(total) || 0) - DIAS_VAC);
-const CONDICIONES = ['Te corresponden 14 días corridos. Si entraste este año o ya usaste días a cuenta, RR. HH. te confirma el saldo.',
-  'Si pedís más de 14 días, los que pasan son sin goce de sueldo: los aprueban tu jefe directo y RR. HH.',
+const CONDICIONES = ['Te corresponden 14 días corridos. Todo queda sujeto a la confirmación de RR. HH. según tu saldo: si entraste este año o ya te tomaste días a cuenta, los días se pueden acortar.',
+  'Si pedís más de 14 días, los que pasan son sin goce de sueldo y quedan sujetos a la aprobación de tu jefe directo y RR. HH.',
   'Cada tramo dura 7 días corridos o más y empieza un lunes o el primer día hábil de la semana.',
   'Pedilas con al menos 30 días de anticipación.',
   'Las aprueba tu jefe directo y/o RR. HH. No se aprueban fechas con eventos de tu área.',
@@ -285,7 +286,7 @@ async function nuevaSolicitud() {
   prepararFirma(); revisar();
 }
 // Lo que firma la persona (con los días sin goce, si pide más de 14).
-const fraseSolicito = total => sinGoce(total) ? `Solicito las fechas indicadas; los ${sinGoce(total)} días que pasan de 14, sin goce de sueldo.` : 'Solicito las fechas indicadas.';
+const fraseSolicito = total => 'Solicito las fechas indicadas, sujetas a la confirmación de RR. HH. según mi saldo' + (sinGoce(total) ? `; los ${sinGoce(total)} días que pasan de 14, sin goce de sueldo.` : '.');
 // A quién le llegó (va sola al jefe del área; si su jefe directo es RR. HH., a RR. HH.; con un área que no está en la lista, RR. HH. la deriva).
 const aQuien = estado => estado === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
   : estado === 'rrhh' ? 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.' : 'RR. HH. se la manda a tu jefe directo para que la apruebe.';
@@ -330,7 +331,8 @@ function revisar() {
   const sg = sinGoce(total), marcado = !!($('vSinGoce') && $('vSinGoce').checked);
   if (sg && !marcado) errores.push(`Marcá que los ${sg} días que pasan de 14 son sin goce de sueldo.`);
   $('vTotal').innerHTML = `<span class="tot">Total: <b>${total || 0}</b> días corridos${sg ? ` · ${DIAS_VAC} de vacaciones y ${sg} sin goce de sueldo` : ''}</span>` + avisos.map(x => `<span class="ojo">⚠ ${x}</span>`).join('')
-    + (sg ? `<label class="fer sg"><input type="checkbox" id="vSinGoce"${marcado ? ' checked' : ''}> Los ${sg} días que pasan de 14 los pido sin goce de sueldo</label>` : '');
+    + (sg ? `<label class="fer sg"><input type="checkbox" id="vSinGoce"${marcado ? ' checked' : ''}> Los ${sg} días que pasan de 14 los pido sin goce de sueldo, sujetos a aprobación</label>` : '')
+    + (total ? '<span class="sujeto">Sujeto a la confirmación de RR. HH. según tu saldo: si ya te tomaste días a cuenta, se pueden acortar.</span>' : '');
   const fr = $('vFrase'); if (fr) fr.textContent = fraseSolicito(total);
   revisar.errores = errores; revisar.avisos = avisos;
   return errores.length === 0;
@@ -361,7 +363,7 @@ async function enviar() {
   const v = await sb.rpc('vacaciones_ver', { p_token: data.ver });
   pasos((v.data && v.data.estado) || 'nueva', !(v.data && v.data.estado === 'rrhh' && !v.data.con_jefe));
   vista(`<div class="card centro"><div class="ic">✓</div><b>${rem ? 'Listo, la cambiaste' : 'Listo, la mandaste'}</b>
-    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}${aQuien(v.data && v.data.estado)} Te mandamos una copia a ${esc(ses.email)} y, al final, te llega el PDF con todas las firmas.</div>
+    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}${aQuien(v.data && v.data.estado)} Te mandamos una copia a ${esc(ses.email)} y, al final, te llega el PDF con todas las firmas. Las fechas quedan sujetas a la confirmación de RR. HH. según tu saldo.</div>
     <div class="btns" style="margin-top:4px"><button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button><button class="btn" onclick="misSolicitudes()">Mis solicitudes</button></div></div>`);
   bajarPdf.ficha = v.data;
 }
@@ -435,6 +437,7 @@ function pantallaVer(d, propia) {
     <div class="card"><div class="card-t">Firmas</div><div class="firmas${sinJefe ? ' dos' : ''}">${firmaCaja('Empleado/a', f.empleado)}${sinJefe ? firmaCaja('Jefe directo y RR. HH.', f.rrhh) : firmaCaja('Jefe directo', f.jefe, cancelada ? 'Cancelada' : '') + firmaCaja('RR. HH.', f.rrhh, cancelada ? 'Cancelada' : '')}</div></div>
     ${cambiarHTML(d, yo)}
     ${firma ? `<div class="card"><div class="card-t"><span class="num">✓</span>Tu aprobación · ${d.rol === 'jefe' ? 'jefe directo' : 'RR. HH.'}</div>
+      ${d.rol === 'rrhh' ? '<div class="meta" style="margin:-4px 0 12px">Revisá el saldo. Si se tomó días a cuenta, aprobala con un comentario con los días que le quedan, o no la apruebes para que mande otra.' + (sinGoce(d.datos.total) ? ' Pide ' + sinGoce(d.datos.total) + ' días sin goce de sueldo.' : '') + '</div>' : (sinGoce(d.datos.total) ? '<div class="meta" style="margin:-4px 0 12px">Pide ' + sinGoce(d.datos.total) + ' días sin goce de sueldo (los que pasan de 14).</div>' : '')}
       <div class="decision"><button id="dSi" onclick="decidir('aprobado')">Aprobado</button><button id="dNo" class="no" onclick="decidir('no_aprobado')">No aprobado</button></div>
       <div class="grid2" style="margin-top:12px"><div class="campo"><label for="aAcl">Aclaración (tu nombre y apellido)</label><input class="in" id="aAcl" autocomplete="name"></div>
         <div class="campo"><label for="aNota">Comentario (opcional)</label><input class="in" id="aNota" maxlength="500" placeholder="Por qué no se aprueba, por ejemplo"></div></div>
@@ -502,6 +505,7 @@ async function armarPdf(d) {
   (d.datos.tramos || []).forEach((t, i) => { y -= 16; txt('Tramo ' + (i + 1), M, y, N, 10); txt(fechaLarga(t.desde), M + 150, y, R, 10); txt(fechaLarga(t.hasta), M + 300, y, R, 10); txt(String(t.dias), M + 415, y, N, 10); });
   y -= 16; txt('Total', M, y, N, 10); txt(String(d.datos.total), M + 415, y, N, 10);
   if (sinGoce(d.datos.total)) { y -= 14; txt(`De esos, ${sinGoce(d.datos.total)} días sin goce de sueldo (los que pasan de ${DIAS_VAC}), como lo pide y firma la persona.`, M, y, R, 8.8); }
+  y -= 14; txt('Sujeto a la confirmación de RR. HH. según el saldo de la persona (si ya se tomó días a cuenta, se pueden acortar).', M, y, R, 8.8, gris);
   (d.datos.avisos || []).forEach(a => { y -= 14; txt('Aviso: ' + a, M, y, R, 8.5, rgb(.54, .38, 0)); });
   titulo('3. CONDICIONES');
   CONDICIONES.forEach(c => partir('· ' + c, R, 8.8, W).forEach(l => { y -= 12; txt(l, M, y, R, 8.8, gris); }));
