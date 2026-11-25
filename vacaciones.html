@@ -45,6 +45,7 @@ main{padding:6px 0 26px;flex:1 0 auto;width:100%}
 .campo label{display:block;font-size:12px;font-weight:600;color:#4a4a4a;margin-bottom:4px}
 .in{width:100%;min-height:44px;padding:9px 12px;border:1.5px solid #d4d4d4;border-radius:9px;background:#fff;font-size:14.5px}
 .in:focus{outline:none;border-color:#1a1a1a}
+textarea.in{resize:vertical;min-height:72px;font-family:inherit;line-height:1.45}
 /* Los tramos */
 .tramo{display:grid;grid-template-columns:86px 1fr 1fr 64px;gap:8px 10px;align-items:end;padding:10px 0;border-top:1px solid #efefef}
 .tramo:first-of-type{border-top:0;padding-top:0}
@@ -115,6 +116,7 @@ main{padding:6px 0 26px;flex:1 0 auto;width:100%}
 .ev:first-of-type{margin-top:10px}
 .ev time{color:#6b6b6b;font-variant-numeric:tabular-nums}
 .ev b{font-weight:600}.ev small{grid-column:2;color:#8a8a8a;font-size:11.5px;overflow-wrap:anywhere}
+.nota-p{margin-top:12px;padding:10px 12px;border-radius:10px;background:#f2f2f2;font-size:13.5px;white-space:pre-wrap}.nota-p small{display:block;font-size:11.5px;color:#6b6b6b;margin-bottom:2px}
 .huella{margin-top:10px;font-size:11.5px;color:#6b6b6b;overflow-wrap:anywhere}
 .centro{text-align:center;padding:10px 0 4px}
 .centro .ic{width:46px;height:46px;border-radius:50%;background:#1a1a1a;color:#fff;display:grid;place-items:center;margin:0 auto 10px;font-size:22px}
@@ -166,8 +168,8 @@ const ESTADOS = { nueva: 'Esperando que RR. HH. la derive', jefe: 'Esperando al 
 const DIAS_VAC = 14, sinGoce = total => Math.max(0, (Number(total) || 0) - DIAS_VAC);
 const CONDICIONES = ['Te corresponden 14 días corridos. Todo queda sujeto a la confirmación de RR. HH. según tu saldo: si entraste este año o ya te tomaste días a cuenta, los días se pueden acortar.',
   'Si pedís más de 14 días, los que pasan son sin goce de sueldo y quedan sujetos a la aprobación de tu jefe directo y RR. HH.',
-  'Cada tramo dura 7 días corridos o más y empieza un lunes o el primer día hábil de la semana.',
-  'Pedilas con al menos 30 días de anticipación.',
+  'Cada tramo dura 7 días corridos o más y empieza un lunes o el primer día hábil de la semana. Si necesitás uno más corto (por un acuerdo con tu jefe, por ejemplo), lo podés pedir igual y queda sujeto a aprobación.',
+  'Pedilas con al menos 30 días de anticipación. Si falta menos, la podés mandar igual y queda sujeta a aprobación.',
   'Las aprueba tu jefe directo y/o RR. HH. No se aprueban fechas con eventos de tu área.',
   'Plus vacacional + adelanto de vacaciones: las vacaciones se cobran antes de salir.'];
 const PASOS_TIPO = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió el link', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado', cancelada: 'Cancelada', reemplazada: 'Modificada' };
@@ -274,7 +276,8 @@ async function nuevaSolicitud() {
       <div id="tramos">${tramoHTML(1, g.tramos && g.tramos[0])}${conTramo2 ? tramoHTML(2, g.tramos[1]) : ''}</div>
       <button class="lnk${conTramo2 ? ' oculto' : ''}" id="btnTramo2" style="margin-top:8px" onclick="sumarTramo2()">+ Sumar un segundo tramo</button>
       <div class="resumen" id="vTotal"></div>
-      <details class="cond"><summary>14 días · tramos de 7 o más que empiezan un lunes · 30 días de anticipación</summary><ul>${CONDICIONES.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details></div>
+      <details class="cond"><summary>14 días · tramos de 7 o más que empiezan un lunes · 30 días de anticipación</summary><ul>${CONDICIONES.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>
+      <div class="campo" style="margin-top:14px"><label for="vNota">Notas (opcional)</label><textarea class="in" id="vNota" rows="3" maxlength="500" placeholder="Por ejemplo, un acuerdo con tu jefe o algo que RR. HH. tenga que saber">${esc(g.nota || '')}</textarea></div></div>
     <div class="card"><div class="card-t"><span class="num">3</span>Tu firma</div>
       <div class="txt" style="margin-bottom:8px" id="vFrase">Solicito las fechas indicadas.</div>
       <div class="firma-caja"><canvas id="firmaCv"></canvas><div class="firma-ph" id="firmaPh">Firmá acá con el dedo o el mouse</div></div>
@@ -293,7 +296,7 @@ const aQuien = estado => estado === 'jefe' ? 'Le llegó a tu jefe directo para q
 // Modificar: el formulario con lo que tenía; al enviarla, la nueva (firmada de nuevo) reemplaza a la anterior.
 function modificar(d) {
   nuevaSolicitud.reemplaza = { id: d.id, creada: d.creada, estado: d.estado };
-  nuevaSolicitud.borrador = { nombre: d.nombre, area: d.area, tramos: (d.datos.tramos || []).map(t => ({ desde: t.desde, hasta: t.hasta, feriado: !!t.feriado })) };
+  nuevaSolicitud.borrador = { nombre: d.nombre, area: d.area, tramos: (d.datos.tramos || []).map(t => ({ desde: t.desde, hasta: t.hasta, feriado: !!t.feriado })), nota: d.datos.nota || '' };
   nuevaSolicitud();
 }
 function dejarDeModificar() { nuevaSolicitud.reemplaza = null; nuevaSolicitud.borrador = null; misSolicitudes(); }
@@ -321,12 +324,12 @@ function revisar() {
     if (!t.desde || !t.hasta) { if (t.desde || t.hasta || t.n === 2) mal('Completá el desde y el hasta.'); else errores.push('Completá las fechas del tramo 1.'); return; }
     if (t.hasta < t.desde) { mal('El "hasta" va después del "desde".'); return; }
     const dias = diasEntre(t.desde, t.hasta); $('n' + t.n).textContent = dias; total += dias;
-    if (dias < 7) { mal('Cada tramo dura 7 días corridos o más.'); return; }
-    if (diaSemana(t.desde) !== 1 && !(diaSemana(t.desde) === 2 && t.feriado)) { mal('Empieza un ' + DIAS[diaSemana(t.desde)] + ': tiene que empezar un lunes (o el martes, si el lunes es feriado).'); return; }
+    if (dias < 7) avisos.push(`Tramo ${t.n}: ${dias} ${dias === 1 ? 'día' : 'días'}, menos de 7. Queda sujeto a aprobación.`);
+    else if (diaSemana(t.desde) !== 1 && !(diaSemana(t.desde) === 2 && t.feriado)) { mal('Empieza un ' + DIAS[diaSemana(t.desde)] + ': tiene que empezar un lunes (o el martes, si el lunes es feriado).'); return; }
     if (i === 1 && tr[0].hasta && t.desde <= tr[0].hasta) { mal('Va después del tramo 1.'); return; }
     a.innerHTML = `<span class="ok">Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)}</span>`;
   });
-  if (tr.length && tr[0].desde && diasEntre(hoyISO(), tr[0].desde) - 1 < 30) avisos.push('Faltan menos de 30 días: se piden con al menos 30 de anticipación.');
+  if (tr.length && tr[0].desde && diasEntre(hoyISO(), tr[0].desde) - 1 < 30) avisos.push('Faltan menos de 30 días: se puede mandar igual, queda sujeto a aprobación.');
   // Lo que pasa de 14: sin goce de sueldo, y lo tiene que marcar para mandarla.
   const sg = sinGoce(total), marcado = !!($('vSinGoce') && $('vSinGoce').checked);
   if (sg && !marcado) errores.push(`Marcá que los ${sg} días que pasan de 14 son sin goce de sueldo.`);
@@ -341,14 +344,15 @@ async function enviar() {
   msg('mEnviar', '');
   const nombre = $('vNombre').value.trim().replace(/\s+/g, ' '), area = $('vArea').value === '_otra' ? $('vAreaOtra').value.trim() : $('vArea').value;
   const tramos = leerTramos().map(t => ({ desde: t.desde, hasta: t.hasta, feriado: t.feriado }));
-  nuevaSolicitud.borrador = { nombre, area, tramos };
+  const nota = ($('vNota') ? $('vNota').value : '').trim().slice(0, 500);
+  nuevaSolicitud.borrador = { nombre, area, tramos, nota };
   if (nombre.length < 3) { msg('mEnviar', 'Completá tu nombre y apellido.'); return; }
   if (!area) { msg('mEnviar', 'Elegí tu área.'); return; }
   if (!revisar()) { msg('mEnviar', revisar.errores[0]); return; }
   if (!firmaPad || firmaPad.isEmpty()) { msg('mEnviar', 'Falta tu firma.'); return; }
   const btn = $('btnEnviar'), texto = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando…';
   const rem = nuevaSolicitud.reemplaza;
-  const params = { p_sesion: ses.sesion, p_datos: { nombre, area, tramos, avisos: revisar.avisos }, p_firma: firmaPad.toDataURL('image/png') };
+  const params = { p_sesion: ses.sesion, p_datos: { nombre, area, tramos, avisos: revisar.avisos, nota }, p_firma: firmaPad.toDataURL('image/png') };
   if (rem) params.p_reemplaza = rem.id;
   const { data, error } = await sb.rpc('vacaciones_crear', params);
   if (error || !data || !data.ok) {
@@ -433,7 +437,8 @@ function pantallaVer(d, propia) {
       ${rem ? `<div class="meta">Modifica la solicitud del ${fechaDM(rem.fecha)}, que quedó cancelada.</div>` : ''}</div>
     <div class="card"><div class="card-t">Las fechas<small>${d.datos.total} días corridos${sinGoce(d.datos.total) ? ' · ' + sinGoce(d.datos.total) + ' sin goce de sueldo' : ''}</small></div>
       ${(d.datos.tramos || []).map((t, i) => `<div class="fila-t"><span>Tramo ${i + 1}</span><div>Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)}</div><em>${t.dias} días</em></div>`).join('')}
-      ${(d.datos.avisos || []).length ? `<div class="meta ojo">${d.datos.avisos.map(x => '⚠ ' + esc(x)).join('<br>')}</div>` : ''}</div>
+      ${(d.datos.avisos || []).length ? `<div class="meta ojo">${d.datos.avisos.map(x => '⚠ ' + esc(x)).join('<br>')}</div>` : ''}
+      ${d.datos.nota ? `<div class="nota-p"><small>Nota de ${esc(String(d.nombre || '').split(' ')[0] || 'la persona')}</small>${esc(d.datos.nota)}</div>` : ''}</div>
     <div class="card"><div class="card-t">Firmas</div><div class="firmas${sinJefe ? ' dos' : ''}">${firmaCaja('Empleado/a', f.empleado)}${sinJefe ? firmaCaja('Jefe directo y RR. HH.', f.rrhh) : firmaCaja('Jefe directo', f.jefe, cancelada ? 'Cancelada' : '') + firmaCaja('RR. HH.', f.rrhh, cancelada ? 'Cancelada' : '')}</div></div>
     ${cambiarHTML(d, yo)}
     ${firma ? `<div class="card"><div class="card-t"><span class="num">✓</span>Tu aprobación · ${d.rol === 'jefe' ? 'jefe directo' : 'RR. HH.'}</div>
@@ -507,6 +512,7 @@ async function armarPdf(d) {
   if (sinGoce(d.datos.total)) { y -= 14; txt(`De esos, ${sinGoce(d.datos.total)} días sin goce de sueldo (los que pasan de ${DIAS_VAC}), como lo pide y firma la persona.`, M, y, R, 8.8); }
   y -= 14; txt('Sujeto a la confirmación de RR. HH. según el saldo de la persona (si ya se tomó días a cuenta, se pueden acortar).', M, y, R, 8.8, gris);
   (d.datos.avisos || []).forEach(a => { y -= 14; txt('Aviso: ' + a, M, y, R, 8.5, rgb(.54, .38, 0)); });
+  if (d.datos.nota) partir('Nota de la persona: ' + String(d.datos.nota).replace(/\s+/g, ' '), R, 8.8, W).forEach(l => { y -= 13; txt(l, M, y, R, 8.8); });
   titulo('3. CONDICIONES');
   CONDICIONES.forEach(c => partir('· ' + c, R, 8.8, W).forEach(l => { y -= 12; txt(l, M, y, R, 8.8, gris); }));
   titulo('4. FIRMAS');

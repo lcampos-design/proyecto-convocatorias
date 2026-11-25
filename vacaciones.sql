@@ -264,8 +264,9 @@ begin
   for t in select * from jsonb_array_elements(p_datos -> 'tramos') loop
     begin v_desde := (t ->> 'desde')::date; v_hasta := (t ->> 'hasta')::date; exception when others then return jsonb_build_object('ok', false, 'error', 'Revisá las fechas.'); end;
     if v_desde is null or v_hasta is null or v_hasta < v_desde then return jsonb_build_object('ok', false, 'error', 'Revisá las fechas: el "hasta" va después del "desde".'); end if;
-    if v_hasta - v_desde + 1 < 7 then return jsonb_build_object('ok', false, 'error', 'Cada tramo dura 7 días corridos o más.'); end if;
-    if extract(isodow from v_desde) <> 1 and not (extract(isodow from v_desde) = 2 and coalesce((t ->> 'feriado')::boolean, false)) then
+    -- Los tramos de menos de 7 días se pueden pedir (25-nov: acuerdos internos), sujetos a aprobación; el lunes se exige
+    -- sólo en los de 7 días o más.
+    if v_hasta - v_desde + 1 >= 7 and extract(isodow from v_desde) <> 1 and not (extract(isodow from v_desde) = 2 and coalesce((t ->> 'feriado')::boolean, false)) then
       return jsonb_build_object('ok', false, 'error', 'Cada tramo empieza un lunes (o el martes, si el lunes es feriado).'); end if;
     if v_ant is not null and v_desde <= v_ant then return jsonb_build_object('ok', false, 'error', 'Los tramos no se pueden superponer: el segundo va después del primero.'); end if;
     v_ant := v_hasta; v_total := v_total + (v_hasta - v_desde + 1);
@@ -273,6 +274,8 @@ begin
   end loop;
   v_ver := public.vac_token(); v_id := gen_random_uuid();
   v_datos := jsonb_build_object('tramos', v_tramos, 'total', v_total, 'avisos', coalesce(p_datos -> 'avisos', '[]'::jsonb), 'fecha', current_date);
+  -- Una nota de la persona (25-nov: acuerdos internos), si escribió algo. Es parte de lo que firma.
+  if nullif(btrim(coalesce(p_datos ->> 'nota', '')), '') is not null then v_datos := v_datos || jsonb_build_object('nota', left(btrim(p_datos ->> 'nota'), 500)); end if;
   if p_reemplaza is not null then
     v_datos := v_datos || jsonb_build_object('reemplaza', jsonb_build_object('id', v_vieja.id, 'transaccion_id', v_vieja.transaccion_id, 'fecha', v_vieja.created_at));
     v_extra := '. Modifica la solicitud ' || coalesce(v_vieja.transaccion_id, v_vieja.id::text);

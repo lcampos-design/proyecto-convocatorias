@@ -53,7 +53,7 @@ const KICKER = 'Vacaciones 2026/2027';
 // La fecha en que mandó la que modifica ("24/11"), en hora de Argentina.
 const diaMes = f => { const d = new Date(f); return isNaN(d) ? '' : d.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', day: 'numeric', month: 'numeric' }); };
 const reemplaza = a => a.datos && a.datos.reemplaza;
-const avisos = a => ((a.datos && a.datos.avisos) || []).map(x => ['Aviso', x]);
+const avisos = a => ((a.datos && a.datos.avisos) || []).map(x => ['Aviso', x]).concat(a.datos && a.datos.nota ? [['Nota', a.datos.nota]] : []);
 // Los mails de cada paso (separados para poder verlos sin mandarlos). Un mail por persona (25-nov, Thomas): a quien
 // firma le llega uno, con el nombre de la persona de título; el texto no repite el título ni lo de arriba.
 export const MAILS = {
