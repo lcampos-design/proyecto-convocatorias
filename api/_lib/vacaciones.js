@@ -14,6 +14,9 @@ export { armarMail };
 
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const DE = 'Recursos Humanos · SBS <rrhh@show-bs.com>';
+// La casilla de RR. HH. (25-nov, Thomas: es la misma de la jefa de RR. HH., con otro nombre): las respuestas al mail del
+// código van ahí. El remitente sigue siendo rrhh@, para que en su Gmail los mails no aparezcan como enviados por ella.
+const RESPONDER_RRHH = 'recursoshumanos@show-bs.com';
 
 const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 export function fechaCorta(f) { const d = new Date(String(f).slice(0, 10) + 'T12:00:00'); return isNaN(d) ? String(f || '') : DIAS[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(); }
@@ -93,7 +96,7 @@ export async function manejarVacaciones(cuerpo, res, { servicio, resend }) {
       const r = await rpc(servicio, 'vacaciones_codigo', { p_email: String(cuerpo.email || '') });
       if (!r || !r.ok) return res.status(400).json({ error: (r && r.error) || 'Revisá tu mail.' });
       const m = MAILS.codigo(r.codigo);
-      const ok = await enviar(resend, { to: [r.email], subject: 'Tu código de vacaciones: ' + r.codigo, text: m.text, html: m.html });
+      const ok = await enviar(resend, { to: [r.email], reply_to: RESPONDER_RRHH, subject: 'Tu código de vacaciones: ' + r.codigo, text: m.text, html: m.html });
       return ok ? res.status(200).json({ ok: true }) : res.status(502).json({ error: 'No se pudo mandar el código. Probá de nuevo en un rato.' });
     }
     if (cuerpo.vacaciones === 'aviso') {
