@@ -353,7 +353,7 @@ begin
     update public.vacaciones set aviso_hecho = 'nueva', ver_hashes = ver_hashes || public.vac_huella(v_ver) where id = r.id;
     perform public.vac_evento(r.id, 'aviso', r.aprueba_rrhh, 'Mail a RR. HH. para derivarla', true);
     perform public.vac_evento(r.id, 'aviso', r.email, 'Mail a la persona: la recibimos, con su link para verla', true);
-    return jsonb_build_object('ok', true, 'paso', 'nueva', 'ver', v_ver, 'para', r.aprueba_rrhh, 'rrhh', r.aprueba_rrhh,
+    return jsonb_build_object('ok', true, 'paso', 'nueva', 'ver', v_ver, 'para', r.aprueba_rrhh, 'rrhh', r.aprueba_rrhh, 'fuera_de_lista', true,
       'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos);
   end if;
   if r.estado = 'cancelada' then

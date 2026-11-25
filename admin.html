@@ -12464,7 +12464,7 @@ function renderEmailHtml(text, fromAddr, area, confirm) {
     const mLabel = line.match(/^([^:\n]{1,28}?):[ \t]+(\S.*)$/);
     if (mLabel) return `<strong style="${STRONG}">${esc(mLabel[1])}:</strong> ${linkify(esc(mLabel[2]))}`;
     if (!/^(estimad|hola)/i.test(t) && /^[^:\n]{1,30}:$/.test(t)) return `<strong style="${STRONG}">${esc(t)}</strong>`;
-    if (t.length > 3 && /[A-ZÁÉÍÓÚÑ]/.test(t) && t === t.toUpperCase() && !/^[\d\W]+$/.test(t)) return `<strong style="${STRONG}">${esc(t)}</strong>`;
+    // Las líneas en mayúsculas ya no van además en negrita (25-nov: sin negritas innecesarias).
     return linkify(esc(line));
   };
 
@@ -12520,7 +12520,7 @@ function renderEmailHtml(text, fromAddr, area, confirm) {
     </tr></table>
   </td></tr>
   <tr><td style="border-top:1px solid #9a9a9a;padding:26px 0 0">
-    <div style="font-size:13px;font-weight:600;color:#6b6b6b;margin-bottom:16px;font-family:${F}">${kicker}</div>
+    <div style="font-size:13px;color:#6b6b6b;margin-bottom:16px;font-family:${F}">${kicker}</div>
     ${out}
     ${btns}
     ${sigBlock}

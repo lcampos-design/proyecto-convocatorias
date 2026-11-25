@@ -43,7 +43,7 @@ export function marcoMail({ kicker, titulo, cuerpo, firma, instagram }) {
     </tr></table>
   </td></tr>
   <tr><td style="border-top:1px solid #9a9a9a;padding:28px 0 0">
-    ${kicker ? `<div style="font-size:13px;font-weight:600;color:#6b6b6b;font-family:${F}">${esc(kicker)}</div>` : ''}
+    ${kicker ? `<div style="font-size:13px;color:#6b6b6b;font-family:${F}">${esc(kicker)}</div>` : ''}
     ${titulo ? `<div style="font-size:26px;line-height:1.2;font-weight:700;color:#1a1a1a;margin:4px 0 20px;font-family:${F}">${esc(titulo)}</div>` : ''}
     ${cuerpo}
     ${firma ? `<div style="margin-top:26px;padding-top:20px;border-top:1px solid #e6e6e6"><img src="${esc(firma)}" alt="Show Business Solutions · Gerencia de RR. HH." width="260" style="max-width:260px;width:100%;height:auto;display:block;border:0"></div>` : ''}

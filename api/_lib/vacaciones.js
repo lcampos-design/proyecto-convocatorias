@@ -57,7 +57,7 @@ export const MAILS = {
   // Sólo si eligió un área que no está en la lista: RR. HH. la deriva desde el panel.
   nuevaRrhh: a => armarMail({ kicker: KICKER, titulo: a.nombre, hola: 'Hola',
     parrafos: [reemplaza(a) ? `Cambió la solicitud que mandó el ${diaMes(reemplaza(a).fecha)} y la volvió a firmar (la anterior quedó cancelada).`
-      : `Mandó su solicitud, firmada, con un área que no está en la lista: ${a.area}.`,
+      : a.fuera_de_lista ? `Mandó su solicitud, firmada, con un área que no está en la lista: ${a.area}.` : `Mandó su solicitud, firmada (${a.area}).`,
       'Derivala desde el panel al jefe que corresponde, o elegí "La firma sólo RR. HH.".'],
     datos: filasTramos(a.datos).concat(avisos(a)), boton: 'Derivarla en el panel', link: `${SITIO}/admin#vacaciones` }),
   // A la persona, la primera vez: a quién le llegó y que la puede cambiar hasta que la firmen.
@@ -74,7 +74,7 @@ export const MAILS = {
     datos: [['Área', a.area]].concat(a.reemplazada ? filasTramos(a.datos).map(([k, v]) => [k + ' (la anterior)', v]) : filasTramos(a.datos), a.motivo ? [['Motivo', a.motivo]] : []) }),
   // A quien firma: el jefe ("es de tu equipo") o RR. HH. ("su jefe ya la aprobó"; o "es de tu equipo", si no tiene otro jefe).
   firmar: a => armarMail({ kicker: KICKER, titulo: a.nombre, hola: 'Hola',
-    parrafos: [(a.equipo ? 'Es de tu equipo y ya firmó su solicitud.' : `Ya firmó su solicitud y su jefe directo${a.jefe_nombre ? ', ' + a.jefe_nombre + ',' : ''} la aprobó.`)
+    parrafos: [((a.equipo != null ? a.equipo : (a.paso === 'jefe' || !a.con_jefe)) ? 'Es de tu equipo y ya firmó su solicitud.' : `Ya firmó su solicitud y su jefe directo${a.jefe_nombre ? ', ' + a.jefe_nombre + ',' : ''} la aprobó.`)
       + (reemplaza(a) ? ` Es un cambio de la que mandó el ${diaMes(reemplaza(a).fecha)}: el link anterior ya no sirve.` : ''),
       'Firmá vos para aprobarla (o no).' + (a.paso === 'jefe' ? ' Después le llega a RR. HH.' : ' Al firmar, le llega el PDF con todas las firmas.')],
     datos: [['Área', a.area]].concat(filasTramos(a.datos), avisos(a)), boton: 'Ver y firmar', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.token)}`,

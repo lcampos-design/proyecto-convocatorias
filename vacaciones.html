@@ -39,7 +39,7 @@ main{padding:6px 0 26px;flex:1 0 auto;width:100%}
 .card-t .num{flex:0 0 22px;height:22px;border-radius:50%;background:#1a1a1a;color:#fff;display:grid;place-items:center;font-size:11px;letter-spacing:0}
 .card-t small{margin-left:auto;font-size:12px;font-weight:500;letter-spacing:0;text-transform:none;color:#6b6b6b}
 .meta{font-size:12.5px;color:#6b6b6b;margin-top:10px}
-.meta b{color:#1a1a1a;font-weight:600}
+.meta b{color:#1a1a1a;font-weight:inherit}
 .txt{font-size:14px;color:#2b2b2b}
 .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:10px 12px}
 .campo label{display:block;font-size:12px;font-weight:600;color:#4a4a4a;margin-bottom:4px}
@@ -95,7 +95,7 @@ main{padding:6px 0 26px;flex:1 0 auto;width:100%}
 .datos div small{display:block;font-size:11.5px;color:#6b6b6b}.datos div b{font-weight:500;font-size:14px;overflow-wrap:anywhere}
 .fila-t{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #efefef;font-size:14px}
 .fila-t:first-of-type{border-top:0;padding-top:0}
-.fila-t span{color:#6b6b6b;font-size:12.5px;flex:0 0 70px}.fila-t div{flex:1}.fila-t em{font-style:normal;font-weight:700;white-space:nowrap}
+.fila-t span{color:#6b6b6b;font-size:12.5px;flex:0 0 70px}.fila-t div{flex:1}.fila-t em{font-style:normal;font-weight:500;white-space:nowrap}
 .firmas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .firma{border:1px solid #e6e6e6;border-radius:10px;padding:10px 11px;font-size:12px;color:#4a4a4a}
 .firma b{display:block;font-size:13px;color:#1a1a1a;margin-bottom:3px}
@@ -204,7 +204,7 @@ async function pedirCodigo() {
   const r = await api({ vacaciones: 'codigo', email: mail });
   if (!r.ok) { $('btnCod').disabled = false; $('btnCod').textContent = 'Mandame el código'; msg('mEntrar', r.error || 'No se pudo mandar el código.'); return; }
   vista(`<div class="card"><div class="card-t">Tu código</div>
-    <div class="txt">Te lo mandamos a <b>${esc(mail)}</b> (si no lo ves, buscalo en el correo no deseado). Vence en 30 minutos.</div>
+    <div class="txt">Te lo mandamos a ${esc(mail)} (si no lo ves, buscalo en el correo no deseado). Vence en 30 minutos.</div>
     <div class="campo" style="margin-top:14px"><input class="in codigo" id="cod" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="······" onkeydown="if(event.key==='Enter')entrar()"></div>
     <button class="btn" id="btnEntrar" onclick="entrar()">Entrar</button>
     <div class="msg" id="mEntrar"></div>
@@ -263,7 +263,7 @@ async function nuevaSolicitud() {
       <div class="grid2"><div class="campo"><label for="vNombre">Nombre y apellido</label><input class="in" id="vNombre" autocomplete="name" value="${esc(g.nombre || '')}" oninput="$('vAcl').textContent=this.value||'—'"></div>
         <div class="campo"><label for="vArea">Área</label><select class="in" id="vArea" onchange="$('vAreaOtra').classList.toggle('oculto',this.value!=='_otra')"><option value="">Elegí tu área</option>${areas.map(a => `<option${g.area === a ? ' selected' : ''}>${esc(a)}</option>`).join('')}<option value="_otra"${otra ? ' selected' : ''}>Otra</option></select>
           <input class="in${otra ? '' : ' oculto'}" id="vAreaOtra" style="margin-top:8px" placeholder="¿Cuál?" value="${esc(otra ? g.area : '')}"></div></div>
-      <div class="meta">Entraste como <b>${esc(ses.email)}</b> · Fecha de solicitud: <b>${fechaDMA(hoyISO())}</b></div></div>
+      <div class="meta">Entraste como ${esc(ses.email)} · Fecha de solicitud: ${fechaDMA(hoyISO())}</div></div>
     <div class="card"><div class="card-t"><span class="num">2</span>Las fechas</div>
       <div id="tramos">${tramoHTML(1, g.tramos && g.tramos[0])}${conTramo2 ? tramoHTML(2, g.tramos[1]) : ''}</div>
       <button class="lnk${conTramo2 ? ' oculto' : ''}" id="btnTramo2" style="margin-top:8px" onclick="sumarTramo2()">+ Sumar un segundo tramo</button>
@@ -272,7 +272,7 @@ async function nuevaSolicitud() {
     <div class="card"><div class="card-t"><span class="num">3</span>Tu firma</div>
       <div class="txt" style="margin-bottom:8px">Solicito las fechas indicadas.</div>
       <div class="firma-caja"><canvas id="firmaCv"></canvas><div class="firma-ph" id="firmaPh">Firmá acá con el dedo o el mouse</div></div>
-      <div class="firma-pie"><span>Aclaración: <b id="vAcl">${esc(g.nombre || '—')}</b> · ${fechaDMA(hoyISO())}</span><button class="lnk" onclick="firmaPad.clear();$('firmaPh').classList.remove('oculto')">Borrar</button></div>
+      <div class="firma-pie"><span>Aclaración: <span id="vAcl">${esc(g.nombre || '—')}</span> · ${fechaDMA(hoyISO())}</span><button class="lnk" onclick="firmaPad.clear();$('firmaPh').classList.remove('oculto')">Borrar</button></div>
       <button class="btn" id="btnEnviar" onclick="enviar()">${rem ? 'Firmar y enviar el cambio' : 'Firmar y enviar'}</button>
       <div class="msg" id="mEnviar"></div>
       <div class="meta" style="text-align:center">Le llega a tu jefe directo y después a RR. HH.; cuando firmen, te llega el PDF.</div></div>
@@ -350,7 +350,7 @@ async function enviar() {
   const v = await sb.rpc('vacaciones_ver', { p_token: data.ver });
   pasos((v.data && v.data.estado) || 'nueva', !(v.data && v.data.estado === 'rrhh' && !v.data.con_jefe));
   vista(`<div class="card centro"><div class="ic">✓</div><b>${rem ? 'Listo, la cambiaste' : 'Listo, la mandaste'}</b>
-    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}${aQuien(v.data && v.data.estado)} Te mandamos una copia a <b>${esc(ses.email)}</b> y, al final, te llega el PDF con todas las firmas.</div>
+    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}${aQuien(v.data && v.data.estado)} Te mandamos una copia a ${esc(ses.email)} y, al final, te llega el PDF con todas las firmas.</div>
     <div class="btns" style="margin-top:4px"><button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button><button class="btn" onclick="misSolicitudes()">Mis solicitudes</button></div></div>`);
   bajarPdf.ficha = v.data;
 }
@@ -416,7 +416,7 @@ function pantallaVer(d, propia) {
   vista(`${cancelada ? canceladaHTML(d, yo) : ''}<div class="card"><div class="card-t">Datos<small><span class="estado ${d.estado}">${ESTADOS[d.estado]}</span></small></div>
       <div class="datos"><div><small>Nombre y apellido</small><b>${esc(d.nombre)}</b></div><div><small>Área</small><b>${esc(d.area)}</b></div>
         <div><small>Mail</small><b>${esc(d.email)}</b></div><div><small>Pedida el</small><b>${fechaDMA(d.datos.fecha || d.creada)}</b></div></div>
-      ${rem ? `<div class="meta">Modifica la solicitud del <b>${fechaDM(rem.fecha)}</b>, que quedó cancelada.</div>` : ''}</div>
+      ${rem ? `<div class="meta">Modifica la solicitud del ${fechaDM(rem.fecha)}, que quedó cancelada.</div>` : ''}</div>
     <div class="card"><div class="card-t">Las fechas<small>${d.datos.total} días corridos</small></div>
       ${(d.datos.tramos || []).map((t, i) => `<div class="fila-t"><span>Tramo ${i + 1}</span><div>Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)}</div><em>${t.dias} días</em></div>`).join('')}
       ${(d.datos.avisos || []).length ? `<div class="meta ojo">${d.datos.avisos.map(x => '⚠ ' + esc(x)).join('<br>')}</div>` : ''}</div>
