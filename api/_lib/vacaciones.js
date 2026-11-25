@@ -69,7 +69,7 @@ export const MAILS = {
   // A la persona, la primera vez: a quién le llegó y que la puede cambiar hasta que la firmen.
   recibida: a => armarMail({ kicker: KICKER, titulo: reemplaza(a) ? 'Recibimos el cambio' : 'Recibimos tu solicitud', hola: 'Hola, ' + primerNombre(a.nombre),
     parrafos: [(reemplaza(a) ? 'La anterior quedó cancelada. ' : '') + (a.paso === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
-      : a.paso === 'rrhh' ? (a.socios ? 'Como estás a cargo de RR. HH., le llegó a los socios para que la aprueben y la firmen.' : a.es_jefe ? 'Como sos jefe de área, dependés de RR. HH.: le llegó directo para que la apruebe y la firme.' : 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.') : 'RR. HH. se la manda a tu jefe directo para que la apruebe.')],
+      : a.paso === 'rrhh' ? (a.socios ? 'Como estás a cargo de RR. HH., le llegó a los socios para que la aprueben y la firmen.' : a.servicio ? 'Le llegó a RR. HH. para que la apruebe y la firme.' : a.es_jefe ? 'Como sos jefe de área, dependés de RR. HH.: le llegó directo para que la apruebe y la firme.' : 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.') : 'RR. HH. se la manda a tu jefe directo para que la apruebe.')],
     datos: filasTramos(a.datos), boton: 'Ver mi solicitud', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.ver)}`,
     pie: 'Las fechas quedan sujetas a la confirmación de RR. HH. según tu saldo. Hasta que la firmen, la podés modificar o cancelar desde la página; al final te llega el PDF con todas las firmas.' }),
   // A quien la tenía para firmar: la canceló, o la cambió y la nueva va a otro lado.
@@ -87,7 +87,7 @@ export const MAILS = {
     datos: [['Área', a.area]].concat(filasTramos(a.datos), avisos(a)), boton: 'Ver y firmar', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.token)}`,
     pie: 'Les llegó a todos los socios. El link vence en 30 días.' }),
   firmar: a => armarMail({ kicker: KICKER, titulo: a.nombre, hola: 'Hola',
-    parrafos: [(a.es_jefe && a.paso === 'rrhh' ?'Es jefe de área, depende de vos, y ya firmó su solicitud.' : (a.equipo != null ? a.equipo : (a.paso === 'jefe' || !a.con_jefe)) ? 'Es de tu equipo y ya firmó su solicitud.' : `Ya firmó su solicitud y su jefe directo${a.jefe_nombre ? ', ' + a.jefe_nombre + ',' : ''} la aprobó.`)
+    parrafos: [(a.servicio && a.paso === 'rrhh' ? `Es de ${a.area} y ya firmó su solicitud.` : a.es_jefe && a.paso === 'rrhh' ? 'Es jefe de área, depende de vos, y ya firmó su solicitud.' : (a.equipo != null ? a.equipo : (a.paso === 'jefe' || !a.con_jefe)) ? 'Es de tu equipo y ya firmó su solicitud.' : `Ya firmó su solicitud y su jefe directo${a.jefe_nombre ? ', ' + a.jefe_nombre + ',' : ''} la aprobó.`)
       + (reemplaza(a) ? ` Es un cambio de la que mandó el ${diaMes(reemplaza(a).fecha)}: el link anterior ya no sirve.` : ''),
       'Firmá vos para aprobarla (o no).' + (a.paso === 'jefe' ? ' Después le llega a RR. HH.' : ' Al firmar, le llega el PDF con todas las firmas.')],
     datos: [['Área', a.area]].concat(filasTramos(a.datos), avisos(a)), boton: 'Ver y firmar', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.token)}`,

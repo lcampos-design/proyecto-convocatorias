@@ -13945,6 +13945,7 @@ async function vacCargar() {
   vacCfg = Object.assign({ rrhh: '', copias: [], socios: [], areas: [] }, (c.data && c.data.value) || {});
   if (!Array.isArray(vacCfg.copias)) vacCfg.copias = [];
   if (!Array.isArray(vacCfg.socios)) vacCfg.socios = [];
+  if (!Array.isArray(vacCfg.servicios)) vacCfg.servicios = [];
   vacCfg.areas = (vacCfg.areas || []).map(a => ({ nombre: a.nombre || '', jefe: a.jefe || '' }));
 }
 // Para el recuadro de Contratos: cuántas hay para derivar (sin esperar a abrir).
@@ -14076,7 +14077,7 @@ async function vacDetalle(id) {
   const firma = (t, x, vacia) => `<div class="vac-firma"><b>${t}</b>${x ? `${x.decision ? (x.decision === 'aprobado' ? '☑ Aprobado' : '☒ No aprobado') : 'Solicito las fechas indicadas.'}<img src="${x.png}" alt="Firma"><div>${e(x.aclaracion)}</div><div class="fbv-sub">${fechaHoraAR(x.fecha)}</div>${x.nota ? `<div class="fbv-sub">${e(x.nota)}</div>` : ''}` : `<div class="fbv-sub" style="padding:18px 0">${vacia || 'Falta su firma'}</div>`}</div>`;
   cont.innerHTML = `<button class="btn btn-sec btn-xs" onclick="renderVac()">← Volver a la lista</button>
     <div class="vac-det-cab"><div><div class="fbv-nom" style="font-size:15px">${eN(v.nombre)}</div><div class="fbv-sub">${e(v.area)} · ${e(v.email)} · ${e(vacTramos(v))} · ${(v.datos || {}).total} días${((v.datos || {}).total || 0) > 14 ? ' (' + (v.datos.total - 14) + ' sin goce de sueldo)' : ''}</div></div><span class="vac-est ${v.estado}">${vacEstadoTxt(v)}</span></div>
-    <div class="vac-firmas"${sinJefe ? ' style="grid-template-columns:repeat(2,minmax(0,1fr))"' : ''}>${firma('Empleado/a', f.empleado)}${sinJefe ? firma(v.aprueban_socios ? 'Socios' : 'Jefe directo y RR. HH.', f.rrhh) : firma('Jefe directo', f.jefe, v.estado === 'cancelada' ? 'Cancelada' : v.aprueba_jefe ? 'Falta su firma · ' + e(v.aprueba_jefe) : 'Sin derivar') + firma('RR. HH.', f.rrhh, v.estado === 'cancelada' ? 'Cancelada' : '')}</div>
+    <div class="vac-firmas"${sinJefe ? ' style="grid-template-columns:repeat(2,minmax(0,1fr))"' : ''}>${firma('Empleado/a', f.empleado)}${sinJefe ? firma(v.aprueban_socios ? 'Socios' : (vacCfg.servicios || []).some(s => s.toLowerCase() === String(v.area || '').toLowerCase()) ? 'RR. HH.' : 'Jefe directo y RR. HH.', f.rrhh) : firma('Jefe directo', f.jefe, v.estado === 'cancelada' ? 'Cancelada' : v.aprueba_jefe ? 'Falta su firma · ' + e(v.aprueba_jefe) : 'Sin derivar') + firma('RR. HH.', f.rrhh, v.estado === 'cancelada' ? 'Cancelada' : '')}</div>
     <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#6b7280;margin:16px 0 6px">Trazabilidad</div>
     <div class="fbv-tabla hi-tabla" style="max-height:40vh"><table><thead><tr><th style="width:120px">Fecha y hora</th><th style="width:130px">Paso</th><th>Detalle</th><th style="width:190px">IP · dispositivo</th></tr></thead><tbody>
       ${((ev.data) || []).map(x => `<tr><td>${fechaHoraAR(x.fecha)}</td><td><b>${VAC_PASOS[x.tipo] || e(x.tipo)}</b></td><td>${x.quien ? e(x.quien) + '<div class="fbv-sub">' : '<div>'}${e(x.detalle || '')}</div></td><td class="fbv-sub">${[x.ip ? 'IP ' + e(x.ip) : '', e(vacUa(x.user_agent))].filter(Boolean).join(' · ')}</td></tr>`).join('') || '<tr><td colspan="4" class="fbv-sub">Sin pasos registrados (falta correr la parte de trazabilidad de vacaciones.sql).</td></tr>'}
@@ -14098,6 +14099,8 @@ function renderVacCfg(cont) {
     <div class="fg" style="margin-top:10px"><label>Copia del PDF final, aprobadas y no aprobadas (mails separados por coma)</label><input class="fi" id="vacCopias" value="${e((vacCfg.copias || []).join(', '))}" placeholder="Legales…"></div>
     <div class="fg" style="margin-top:10px"><label>Socios: el PDF final, sólo de las aprobadas; y aprueban las vacaciones de quien firma por RR. HH. (mails separados por coma)</label><input class="fi" id="vacSocios" value="${e((vacCfg.socios || []).join(', '))}" placeholder="El mail de cada socio"></div>
     <div class="fbv-sub" style="margin-top:4px">A estas casillas les llega sólo el PDF final de cada persona, cuando se cierra: nada antes.</div>
+    <div class="fg" style="margin-top:14px"><label>Servicios fijos, por fuera de Corporativo (separados por coma): tienen su propio link, los aprueba RR. HH. directo y el PDF final no va a los socios</label><input class="fi" id="vacServicios" value="${e((vacCfg.servicios || []).join(', '))}" placeholder="Fábrica Colón, Campo de Polo"></div>
+    <div class="vac-link" style="margin-top:6px"><span>Link para los servicios</span><b>${VAC_LINK}?servicios=1</b><button class="btn btn-sec btn-xs" onclick="navigator.clipboard.writeText('${VAC_LINK}?servicios=1').then(()=>toast('✓ Link copiado'))">Copiar</button></div>
     <div style="margin-top:14px;font-size:12.5px;font-weight:600;color:#374151">Áreas y su jefe directo <span style="font-weight:400;color:#6b7280">· son las que elige cada empleado en el formulario. La solicitud le llega sola al jefe de su área; vacío (o si la pide el jefe): su jefe directo es RR. HH., que firma una sola vez</span></div>
     <div id="vacAreas">${vacCfg.areas.map((a, i) => `<div class="vac-area"><input class="fi" value="${e(a.nombre)}" placeholder="Área" oninput="vacCfg.areas[${i}].nombre=this.value"><input class="fi" value="${e(a.jefe)}" placeholder="Mail del jefe (vacío: su jefe directo es RR. HH.)" oninput="vacCfg.areas[${i}].jefe=this.value"><button class="btn btn-sec btn-xs" onclick="vacCfg.areas.splice(${i},1);renderVac()">Quitar</button></div>`).join('')}</div>
     <button class="btn btn-sec btn-sm" style="margin-top:8px" onclick="vacCfg.areas.push({nombre:'',jefe:''});renderVac()">+ Agregar un área</button>
@@ -14113,9 +14116,13 @@ async function vacGuardarCfg() {
   const malC = copias.concat(socios).find(m => !okMail(m)); if (malC) { toast('Revisá este mail: ' + malC); return; }
   // "Socios" no es un área (25-nov): las áreas son las que elige cada empleado en el formulario.
   if (areas.some(a => /^socio/i.test(a.nombre)) && !confirm('"Socios" no es un área: le aparecería a cada empleado en el formulario. Los mails de los socios van en "Socios". ¿Guardar igual?')) return;
-  const { error } = await sb.from('config').upsert({ key: 'vacaciones', value: { rrhh, copias, socios, areas }, updated_at: new Date().toISOString() });
+  // Los servicios fijos (25-nov): nombres, no mails. Si también están como área de Corporativo, aparecerían en los dos links.
+  const servicios = [...new Set(document.getElementById('vacServicios').value.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean))];
+  const doble = servicios.find(s => areas.some(a => a.nombre.toLowerCase() === s.toLowerCase()));
+  if (doble) { toast(doble + ' está como área y como servicio: dejalo en uno solo'); return; }
+  const { error } = await sb.from('config').upsert({ key: 'vacaciones', value: { rrhh, copias, socios, areas, servicios }, updated_at: new Date().toISOString() });
   if (error) { toast('No se pudo guardar: ' + (error.message || error)); return; }
-  vacCfg = { rrhh, copias, socios, areas }; toast('✓ Guardado'); vacTab = 'lista'; renderVac();
+  vacCfg = { rrhh, copias, socios, areas, servicios }; toast('✓ Guardado'); vacTab = 'lista'; renderVac();
 }
 
 async function renderContratosBorrados() {

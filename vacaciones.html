@@ -153,6 +153,8 @@ const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const TOKEN = new URLSearchParams(location.search).get('t') || '';
+// El link de los servicios fijos (25-nov: Fábrica Colón y Campo de Polo): muestra sólo esas áreas y lo aprueba RR. HH. directo.
+const SERVICIOS = new URLSearchParams(location.search).has('servicios');
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -186,10 +188,12 @@ async function api(cuerpo) {
 }
 // Los pasos del circuito, arriba: hecho, ahora o no aprobada. Si su jefe directo es RR. HH. (el equipo de RR. HH. y
 // los jefes de área), es un solo paso: la jefa de RR. HH. firma una vez, como jefe directo y RR. HH.
-// Las de quien firma por RR. HH. las aprueban los socios: también un solo paso.
-function pasos(estado, conJefe, socios) {
-  const una = conJefe === false || !!socios;
-  const N = una ? ['Solicitud', socios ? 'Socios' : 'Jefe directo y RR. HH.', 'PDF firmado'] : ['Solicitud', 'Jefe directo', 'RR. HH.', 'PDF firmado'];
+// Las de quien firma por RR. HH. las aprueban los socios, y las de los servicios fijos, RR. HH. directo: también un solo
+// paso (unico: cómo se llama ese paso).
+const quienUnico = d => d && d.socios ? 'Socios' : d && d.servicio ? 'RR. HH.' : '';
+function pasos(estado, conJefe, unico) {
+  const una = conJefe === false || !!unico;
+  const N = una ? ['Solicitud', unico || 'Jefe directo y RR. HH.', 'PDF firmado'] : ['Solicitud', 'Jefe directo', 'RR. HH.', 'PDF firmado'];
   const i = (una ? { form: 0, nueva: 1, jefe: 1, rrhh: 1, aprobada: 3, rechazada: 3 } : { form: 0, nueva: 1, jefe: 1, rrhh: 2, aprobada: 4, rechazada: 4 })[estado];
   $('pasos').innerHTML = estado && i !== undefined ? N.map((n, k) => {
     let cl = k < i ? 'hecho' : k === i ? 'ahora' : '';
@@ -207,7 +211,7 @@ function pantallaEntrar(mail) {
   pasos('');
   vista(`<div class="card"><div class="card-t">Entrá con tu mail</div>
     <div class="txt">Te mandamos un código para entrar. Con eso ves tus solicitudes y podés hacer una nueva.</div>
-    <div class="campo" style="margin-top:14px"><label for="mail">Tu mail</label><input class="in" id="mail" type="email" autocomplete="email" placeholder="nombre@show-bs.com" value="${esc(mail || '')}" onkeydown="if(event.key==='Enter')pedirCodigo()"></div>
+    <div class="campo" style="margin-top:14px"><label for="mail">Tu mail</label><input class="in" id="mail" type="email" autocomplete="email" placeholder="${SERVICIOS ? 'tu@mail.com' : 'nombre@show-bs.com'}" value="${esc(mail || '')}" onkeydown="if(event.key==='Enter')pedirCodigo()"></div>
     <button class="btn" id="btnCod" onclick="pedirCodigo()">Mandame el código</button>
     <div class="msg" id="mEntrar"></div></div>`);
 }
@@ -217,7 +221,7 @@ async function pedirCodigo() {
   const r = await api({ vacaciones: 'codigo', email: mail });
   if (!r.ok) { $('btnCod').disabled = false; $('btnCod').textContent = 'Mandame el código'; msg('mEntrar', r.error || 'No se pudo mandar el código.'); return; }
   vista(`<div class="card"><div class="card-t">Tu código</div>
-    <div class="txt">Te lo mandamos a ${esc(mail)} (si no lo ves, buscalo en el correo no deseado). Vence en 30 minutos.</div>
+    <div class="txt">Te lo mandamos a ${esc(mail)} (si no lo ves, buscalo en el correo no deseado). Vence en 30 minutos.${/@(hotmail|outlook|live|msn)\./i.test(mail) ? ' A Hotmail y Outlook a veces tarda unos minutos.' : ''}</div>
     <div class="campo" style="margin-top:14px"><input class="in codigo" id="cod" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="······" onkeydown="if(event.key==='Enter')entrar()"></div>
     <button class="btn" id="btnEntrar" onclick="entrar()">Entrar</button>
     <div class="msg" id="mEntrar"></div>
@@ -266,15 +270,15 @@ function tramoHTML(n, t) {
     <div class="av" id="a${n}"></div></div>`;
 }
 async function nuevaSolicitud() {
-  if (!areas.length) { const { data } = await sb.rpc('vacaciones_areas'); areas = Array.isArray(data) ? data : []; }
+  if (!areas.length) { const { data } = await sb.rpc(SERVICIOS ? 'vacaciones_servicios' : 'vacaciones_areas'); areas = Array.isArray(data) ? data : []; }
   const g = nuevaSolicitud.borrador || {}; conTramo2 = !!(g.tramos && g.tramos[1]);
-  pasos('form', true);
+  pasos('form', !SERVICIOS, SERVICIOS ? 'RR. HH.' : '');
   const otra = g.area && !areas.includes(g.area), rem = nuevaSolicitud.reemplaza;
   vista(`${rem ? `<div class="aviso"><b>Estás modificando tu solicitud del ${fechaDM(rem.creada)}.</b> Cambiá lo que haga falta y volvé a firmar: al enviarla, la anterior queda cancelada${rem.estado === 'jefe' ? ' y el link de tu jefe deja de servir' : ''}.
       <div style="margin-top:6px"><button class="lnk" onclick="dejarDeModificar()">No modificarla</button></div></div>` : ''}
     <div class="card"><div class="card-t"><span class="num">1</span>Tus datos</div>
       <div class="grid2"><div class="campo"><label for="vNombre">Nombre y apellido</label><input class="in" id="vNombre" autocomplete="name" value="${esc(g.nombre || '')}" oninput="$('vAcl').textContent=this.value||'—'"></div>
-        <div class="campo"><label for="vArea">Área</label><select class="in" id="vArea" onchange="$('vAreaOtra').classList.toggle('oculto',this.value!=='_otra')"><option value="">Elegí tu área</option>${areas.map(a => `<option${g.area === a ? ' selected' : ''}>${esc(a)}</option>`).join('')}<option value="_otra"${otra ? ' selected' : ''}>Otra</option></select>
+        <div class="campo"><label for="vArea">Área</label><select class="in" id="vArea" onchange="$('vAreaOtra').classList.toggle('oculto',this.value!=='_otra')"><option value="">Elegí tu área</option>${areas.map(a => `<option${g.area === a ? ' selected' : ''}>${esc(a)}</option>`).join('')}${SERVICIOS && !otra ? '' : `<option value="_otra"${otra ? ' selected' : ''}>Otra</option>`}</select>
           <input class="in${otra ? '' : ' oculto'}" id="vAreaOtra" style="margin-top:8px" placeholder="¿Cuál?" value="${esc(otra ? g.area : '')}"></div></div>
       <div class="meta">Entraste como ${esc(ses.email)} · Fecha de solicitud: ${fechaDMA(hoyISO())}</div></div>
     <div class="card"><div class="card-t"><span class="num">2</span>Las fechas</div>
@@ -289,15 +293,15 @@ async function nuevaSolicitud() {
       <div class="firma-pie"><span>Aclaración: <span id="vAcl">${esc(g.nombre || '—')}</span> · ${fechaDMA(hoyISO())}</span><button class="lnk" onclick="firmaPad.clear();$('firmaPh').classList.remove('oculto')">Borrar</button></div>
       <button class="btn" id="btnEnviar" onclick="enviar()">${rem ? 'Firmar y enviar el cambio' : 'Firmar y enviar'}</button>
       <div class="msg" id="mEnviar"></div>
-      <div class="meta" style="text-align:center">Le llega a tu jefe directo y después a RR. HH.; cuando firmen, te llega el PDF.</div></div>
+      <div class="meta" style="text-align:center">${SERVICIOS ? 'Le llega a RR. HH.; cuando la firme, te llega el PDF.' : 'Le llega a tu jefe directo y después a RR. HH.; cuando firmen, te llega el PDF.'}</div></div>
     <div style="text-align:center;margin-top:12px"><button class="lnk" onclick="dejarDeModificar()">← Mis solicitudes</button></div>`);
   prepararFirma(); revisar();
 }
 // Lo que firma la persona (con los días sin goce, si pide más de 14).
 const fraseSolicito = total => 'Solicito las fechas indicadas, sujetas a la confirmación de RR. HH. según mi saldo' + (sinGoce(total) ? `; ${losQuePasan(sinGoce(total))}, sin goce de sueldo.` : '.');
 // A quién le llegó (va sola al jefe del área; si su jefe directo es RR. HH., a RR. HH.; con un área que no está en la lista, RR. HH. la deriva).
-const aQuien = (estado, esJefe, socios) => estado === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
-  : estado === 'rrhh' ? (socios ? 'Como estás a cargo de RR. HH., le llegó a los socios para que la aprueben y la firmen.' : esJefe ? 'Como sos jefe de área, dependés de RR. HH.: le llegó directo para que la apruebe y la firme.' : 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.') : 'RR. HH. se la manda a tu jefe directo para que la apruebe.';
+const aQuien = (estado, esJefe, socios, servicio) => estado === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
+  : estado === 'rrhh' ? (socios ? 'Como estás a cargo de RR. HH., le llegó a los socios para que la aprueben y la firmen.' : servicio ? 'Le llegó a RR. HH. para que la apruebe y la firme.' : esJefe ? 'Como sos jefe de área, dependés de RR. HH.: le llegó directo para que la apruebe y la firme.' : 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.') : 'RR. HH. se la manda a tu jefe directo para que la apruebe.';
 // Modificar: el formulario con lo que tenía; al enviarla, la nueva (firmada de nuevo) reemplaza a la anterior.
 function modificar(d) {
   nuevaSolicitud.reemplaza = { id: d.id, creada: d.creada, estado: d.estado };
@@ -371,9 +375,9 @@ async function enviar() {
   // A RR. HH. y la confirmación a la persona; si la modificó, después el aviso a su jefe (si ya la tenía).
   api({ vacaciones: 'aviso', id: data.id }).then(() => rem ? api({ vacaciones: 'aviso', id: rem.id }) : null);
   const v = await sb.rpc('vacaciones_ver', { p_token: data.ver });
-  pasos((v.data && v.data.estado) || 'nueva', !(v.data && v.data.estado === 'rrhh' && !v.data.con_jefe), v.data && v.data.socios);
+  pasos((v.data && v.data.estado) || 'nueva', !(v.data && v.data.estado === 'rrhh' && !v.data.con_jefe), quienUnico(v.data));
   vista(`<div class="card centro"><div class="ic">✓</div><b>${rem ? 'Listo, la cambiaste' : 'Listo, la mandaste'}</b>
-    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}${aQuien(v.data && v.data.estado, v.data && v.data.es_jefe, v.data && v.data.socios)} Te mandamos una copia a ${esc(ses.email)} y, al final, te llega el PDF con todas las firmas. Las fechas quedan sujetas a la confirmación de RR. HH. según tu saldo.</div>
+    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}${aQuien(v.data && v.data.estado, v.data && v.data.es_jefe, v.data && v.data.socios, v.data && v.data.servicio)} Te mandamos una copia a ${esc(ses.email)} y, al final, te llega el PDF con todas las firmas. Las fechas quedan sujetas a la confirmación de RR. HH. según tu saldo.</div>
     <div class="btns" style="margin-top:4px"><button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button><button class="btn" onclick="misSolicitudes()">Mis solicitudes</button></div></div>`);
   bajarPdf.ficha = v.data;
 }
@@ -436,7 +440,7 @@ function pantallaVer(d, propia) {
   const yo = !!(propia || (ses && ses.email && ses.email === d.email)), rem = d.datos.reemplaza;
   const sinJefe = !d.con_jefe && (d.estado === 'rrhh' || d.estado === 'aprobada' || d.estado === 'rechazada');
   pantallaVer.propia = propia;
-  pasos(d.estado, d.estado === 'nueva' ? true : d.con_jefe, d.socios);
+  pasos(d.estado, d.estado === 'nueva' ? true : d.con_jefe, quienUnico(d));
   vista(`${cancelada ? canceladaHTML(d, yo) : ''}<div class="card"><div class="card-t">Datos<small><span class="estado ${d.estado}">${estadoTxt(d.estado, d.socios)}</span></small></div>
       <div class="datos"><div><small>Nombre y apellido</small><b>${esc(d.nombre)}</b></div><div><small>Área</small><b>${esc(d.area)}</b></div>
         <div><small>Mail</small><b>${esc(d.email)}</b></div><div><small>Pedida el</small><b>${fechaDMA(d.datos.fecha || d.creada)}</b></div></div>
@@ -445,7 +449,7 @@ function pantallaVer(d, propia) {
       ${(d.datos.tramos || []).map((t, i) => `<div class="fila-t"><span>Tramo ${i + 1}</span><div>Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)}</div><em>${nDias(t.dias)}</em></div>`).join('')}
       ${(d.datos.avisos || []).length ? `<div class="meta ojo">${d.datos.avisos.map(x => '⚠ ' + esc(x)).join('<br>')}</div>` : ''}
       ${d.datos.nota ? `<div class="nota-p"><small>Nota de ${esc(String(d.nombre || '').split(' ')[0] || 'la persona')}</small>${esc(d.datos.nota)}</div>` : ''}</div>
-    <div class="card"><div class="card-t">Firmas</div><div class="firmas${sinJefe ? ' dos' : ''}">${firmaCaja('Empleado/a', f.empleado)}${sinJefe ? firmaCaja(d.socios ? 'Socios' : 'Jefe directo y RR. HH.', f.rrhh) : firmaCaja('Jefe directo', f.jefe, cancelada ? 'Cancelada' : '') + firmaCaja('RR. HH.', f.rrhh, cancelada ? 'Cancelada' : '')}</div></div>
+    <div class="card"><div class="card-t">Firmas</div><div class="firmas${sinJefe ? ' dos' : ''}">${firmaCaja('Empleado/a', f.empleado)}${sinJefe ? firmaCaja(quienUnico(d) || 'Jefe directo y RR. HH.', f.rrhh) : firmaCaja('Jefe directo', f.jefe, cancelada ? 'Cancelada' : '') + firmaCaja('RR. HH.', f.rrhh, cancelada ? 'Cancelada' : '')}</div></div>
     ${cambiarHTML(d, yo)}
     ${firma ? `<div class="card"><div class="card-t"><span class="num">✓</span>Tu aprobación · ${d.rol === 'jefe' ? 'jefe directo' : d.socios ? 'socios' : 'RR. HH.'}</div>
       ${d.rol === 'rrhh' && d.socios ? '<div class="meta" style="margin:-4px 0 12px">Le llegó a todos los socios: con que firme uno alcanza.' + (sinGoce(d.datos.total) ? ' Pide sin goce de sueldo ' + losQuePasan(sinGoce(d.datos.total)) + '.' : '') + '</div>'
@@ -475,7 +479,7 @@ async function firmar() {
   const fin = data.estado === 'aprobada' || data.estado === 'rechazada';
   if (fin) { try { const pdf = await armarPdf(v); await sb.rpc('vacaciones_guardar_pdf', { p_token: TOKEN, p_pdf: pdf.base64 }); } catch (_) {} }
   await api({ vacaciones: 'aviso', id: data.id });
-  pasos(data.estado, v ? v.con_jefe : true, v && v.socios);
+  pasos(data.estado, v ? v.con_jefe : true, quienUnico(v));
   vista(`<div class="card centro"><div class="ic">✓</div><b>Firmada</b>
     <div class="txt">${data.estado === 'rrhh' ? 'Ahora le llega a RR. HH. para la firma final.' : fin ? 'Le llega el PDF con todas las firmas a ' + esc(v.nombre) + (v.con_jefe && d0rol === 'rrhh' ? ', con copia a su jefe directo.' : '.') : ''}</div>
     <button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button></div>`);
@@ -540,6 +544,7 @@ async function armarPdf(d) {
   await caja(0, 'EMPLEADO/A', f.empleado, false);
   // Las de quien firma por RR. HH.: las aprueban los socios (dos firmas: la persona y uno de los socios).
   if (d.socios) await caja(1, 'SOCIOS', f.rrhh, true);
+  else if (d.servicio) await caja(1, 'RR. HH.', f.rrhh, true);   // los servicios fijos: RR. HH. directo
   else {
     await caja(1, 'JEFE DIRECTO', f.jefe || (sinJefe && f.rrhh ? Object.assign({}, f.rrhh, { nota: '' }) : null), true, sinJefe ? 'Firma RR. HH.' : 'Pendiente');
     await caja(2, 'RR. HH.', f.rrhh, true);

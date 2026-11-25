@@ -211,6 +211,25 @@ language sql stable set search_path = public as $$
 $$;
 revoke execute on function public.vac_socios() from public, anon, authenticated;
 
+-- Los servicios fijos, por fuera de Corporativo (25-nov, Thomas: Fábrica Colón y Campo de Polo; config 'servicios').
+-- Misma página y mismas reglas, con su propio link (/vacaciones?servicios=1, que muestra sólo estas áreas). Los aprueba
+-- RR. HH. directo, sin intermediarios, y el PDF final no va a los socios ("no, sólo Corporativo").
+create or replace function public.vac_servicio(p_area text) returns boolean
+language sql stable set search_path = public as $$
+  select exists (select 1 from public.config c, jsonb_array_elements_text(coalesce(c.value -> 'servicios', '[]'::jsonb)) x
+                  where c.key = 'vacaciones' and btrim(x) <> '' and lower(btrim(x)) = lower(btrim(coalesce(p_area, ''))))
+$$;
+revoke execute on function public.vac_servicio(text) from public, anon, authenticated;
+-- Las áreas del link de los servicios (las del link de Corporativo son las de vacaciones_areas).
+create or replace function public.vacaciones_servicios() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce((select jsonb_agg(btrim(s.x) order by s.n) from public.config c
+                     cross join lateral jsonb_array_elements_text(coalesce(c.value -> 'servicios', '[]'::jsonb)) with ordinality as s(x, n)
+                    where c.key = 'vacaciones' and btrim(s.x) <> ''), '[]'::jsonb)
+$$;
+revoke execute on function public.vacaciones_servicios() from public;
+grant execute on function public.vacaciones_servicios() to anon, authenticated;
+
 -- Se puede modificar o cancelar: todavía no firmó ni el jefe ni RR. HH.
 create or replace function public.vac_modificable(p_estado text, p_firmas jsonb) returns boolean
 language sql immutable set search_path = public as $$ select p_estado in ('nueva', 'jefe', 'rrhh') and not (p_firmas ? 'jefe') and not (p_firmas ? 'rrhh') $$;
@@ -308,6 +327,8 @@ begin
   v_estado := case when not found then 'nueva' when v_jefe = '' or v_jefe = lower(btrim(v_cfg ->> 'rrhh')) or v_jefe = v_mail then 'rrhh' else 'jefe' end;
   -- Un jefe de área va siempre a RR. HH., aunque elija otra área.
   if public.vac_es_jefe(v_mail) then v_estado := 'rrhh'; end if;
+  -- Un servicio fijo (Fábrica Colón, Campo de Polo): lo aprueba RR. HH. directo, sin intermediarios.
+  if public.vac_servicio(v_area) then v_estado := 'rrhh'; end if;
   -- La pide quien firma por RR. HH.: la aprueban los socios (si están cargados; si no, como hasta ahora).
   v_socios := v_mail = lower(btrim(v_cfg ->> 'rrhh')) and cardinality(public.vac_socios()) > 0;
   if v_socios then v_estado := 'rrhh'; end if;
@@ -320,6 +341,7 @@ begin
   if v_estado <> 'nueva' then
     perform public.vac_evento(v_id, 'derivada', 'automático', case when v_estado = 'jefe' then 'Va sola al jefe directo del área (' || v_area || '): ' || v_jefe
       when v_socios then 'Es de RR. HH. (quien firma por RR. HH.): va directo a los socios, que la aprueban (firma uno de ellos)'
+      when public.vac_servicio(v_area) then 'Es de ' || v_area || ' (servicio fijo): va directo a RR. HH., que la aprueba (firma una sola vez)'
       else 'Va directo a RR. HH., que es su jefe directo (firma una sola vez)' end, true);
   end if;
   -- La anterior queda cancelada (reemplazada): el link del jefe, si estaba derivada, deja de servir (queda para verla).
@@ -428,7 +450,7 @@ begin
     -- equipo: quien firma es su jefe directo (el del área o RR. HH.): "Es de tu equipo y ya firmó".
     return jsonb_build_object('ok', true, 'paso', r.estado, 'token', v_tok, 'con_jefe', r.aprueba_jefe is not null, 'ver', v_ver, 'avance', v_avance,
       'equipo', r.estado = 'jefe' or r.aprueba_jefe is null, 'jefe_nombre', r.firmas -> 'jefe' ->> 'aclaracion', 'es_jefe', public.vac_es_jefe(r.email),
-      'socios', v_para = 'socios', 'para', v_para, 'para_lista', case when v_para = 'socios' then to_jsonb(public.vac_socios()) end, 'rrhh', r.aprueba_rrhh,
+      'socios', v_para = 'socios', 'servicio', public.vac_servicio(r.area), 'para', v_para, 'para_lista', case when v_para = 'socios' then to_jsonb(public.vac_socios()) end, 'rrhh', r.aprueba_rrhh,
       'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos);
   end if;
   v_ver := public.vac_token();
@@ -440,13 +462,13 @@ begin
   -- aprobadas (25-nov, Thomas: "a los socios, cuando está todo aprobado, no los rechazados").
   v_copia := array(select distinct m from unnest(v_copia || array(select lower(btrim(x))
                                                                     from jsonb_array_elements_text(coalesce(v_cfg -> 'copias', '[]'::jsonb)
-                                                                           || case when r.estado = 'aprobada' or r.aprueban_socios then coalesce(v_cfg -> 'socios', '[]'::jsonb) else '[]'::jsonb end) x
+                                                                           || case when (r.estado = 'aprobada' and not public.vac_servicio(r.area)) or r.aprueban_socios then coalesce(v_cfg -> 'socios', '[]'::jsonb) else '[]'::jsonb end) x
                                                               where btrim(x) ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$')) m
                     where m <> r.email and m is distinct from (case when r.firmas ? 'rrhh' then r.aprueba_rrhh end) order by m);
   perform public.vac_evento(r.id, 'aviso', r.email, 'Mail final (' || case when r.estado = 'aprobada' then 'aprobada' else 'no aprobada' end || ')' || case when r.pdf is not null then ', con el PDF firmado' else '' end
     || coalesce(', con copia a ' || nullif(array_to_string(v_copia, ', '), ''), ''), true);
   return jsonb_build_object('ok', true, 'paso', 'fin', 'estado', r.estado, 'ver', v_ver, 'para', r.email,
-    'copia', to_jsonb(v_copia), 'rrhh', r.aprueba_rrhh, 'con_jefe', r.aprueba_jefe is not null, 'socios', r.aprueban_socios,
+    'copia', to_jsonb(v_copia), 'rrhh', r.aprueba_rrhh, 'con_jefe', r.aprueba_jefe is not null, 'socios', r.aprueban_socios, 'servicio', public.vac_servicio(r.area),
     'nombre', r.nombre, 'area', r.area, 'datos', r.datos, 'pdf', r.pdf,
     'decision', coalesce(r.firmas -> 'rrhh' ->> 'decision', r.firmas -> 'jefe' ->> 'decision'),
     'nota', coalesce(nullif(r.firmas -> 'rrhh' ->> 'nota', ''), r.firmas -> 'jefe' ->> 'nota'));
@@ -458,7 +480,7 @@ create or replace function public.vac_ficha(r public.vacaciones, v_rol text) ret
 language sql stable set search_path = public as $$
   select jsonb_build_object('ok', true, 'id', r.id, 'rol', v_rol, 'estado', r.estado, 'nombre', r.nombre, 'email', r.email, 'area', r.area,
     'datos', r.datos, 'firmas', r.firmas, 'con_jefe', r.aprueba_jefe is not null, 'creada', r.created_at, 'tiene_pdf', r.pdf is not null, 'modificable', public.vac_modificable(r.estado, r.firmas),
-    'transaccion_id', r.transaccion_id, 'hash', r.hash_contenido, 'es_jefe', public.vac_es_jefe(r.email), 'socios', r.aprueban_socios,
+    'transaccion_id', r.transaccion_id, 'hash', r.hash_contenido, 'es_jefe', public.vac_es_jefe(r.email), 'socios', r.aprueban_socios, 'servicio', public.vac_servicio(r.area),
     'eventos', coalesce((select jsonb_agg(jsonb_build_object('tipo', e.tipo, 'quien', e.quien, 'detalle', e.detalle, 'ip', e.ip, 'user_agent', e.user_agent, 'fecha', e.fecha) order by e.fecha, e.id)
                            from public.vacaciones_eventos e where e.vacacion_id = r.id), '[]'::jsonb))
 $$;
