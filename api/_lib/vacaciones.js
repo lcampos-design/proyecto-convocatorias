@@ -23,10 +23,11 @@ export function fechaCorta(f) { const d = new Date(String(f).slice(0, 10) + 'T12
 // Los tramos como filas de datos: [['Tramo 1', 'del lun 4/1/2027 al dom 17/1/2027 · 14 días'], …, ['Total', '21 días corridos']].
 export function filasTramos(datos) {
   const t = (datos && datos.tramos) || [];
-  return t.map((x, i) => ['Tramo ' + (i + 1), 'Del ' + fechaCorta(x.desde) + ' al ' + fechaCorta(x.hasta) + ' · ' + x.dias + ' días'])
-    .concat([['Total', ((datos && datos.total) || 0) + ' días corridos']],
+  const total = (datos && datos.total) || 0, sg = total - 14, n = x => x + (Number(x) === 1 ? ' día' : ' días');
+  return t.map((x, i) => ['Tramo ' + (i + 1), 'Del ' + fechaCorta(x.desde) + ' al ' + fechaCorta(x.hasta) + ' · ' + n(x.dias)])
+    .concat([['Total', n(total) + ' corrido' + (total === 1 ? '' : 's')]],
       // Lo que pasa de 14 es sin goce de sueldo (25-nov): lo pidió y lo firmó la persona.
-      ((datos && datos.total) || 0) > 14 ? [['Sin goce de sueldo', (datos.total - 14) + ' días (los que pasan de 14), sujetos a aprobación']] : []);
+      sg > 0 ? [['Sin goce de sueldo', n(sg) + (sg === 1 ? ', sujeto' : ', sujetos') + ' a aprobación']] : []);
 }
 const primerNombre = n => String(n || '').trim().split(/\s+/)[0] || '';
 

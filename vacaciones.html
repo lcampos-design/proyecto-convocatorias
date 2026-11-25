@@ -57,16 +57,16 @@ textarea.in{resize:vertical;min-height:72px;font-family:inherit;line-height:1.45
 .tramo .av{grid-column:2 / -1;font-size:12.5px;margin-top:-2px}
 .tramo .fer{grid-column:2 / -1;display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer}
 .tramo .fer input,.fer.sg input{width:17px;height:17px;accent-color:#1a1a1a}
-.resumen .sujeto{flex-basis:100%;font-size:12.5px;color:#6b6b6b}
-.fer.sg{display:flex;align-items:center;gap:8px;flex-basis:100%;font-size:13px;cursor:pointer;margin-top:4px}
+.fer.sg{display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer}
 .ok{color:#4a4a4a}.mal{color:#b42318;font-weight:600}.ojo{color:#8a6100}
-.resumen{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:12px;padding-top:12px;border-top:1px solid #efefef;font-size:13px}
+/* El total: una línea por cosa (25-nov, Thomas: "es un quilombo") */
+.resumen{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #efefef;font-size:13px}
 .resumen .tot{font-size:14px}.resumen .tot b{font-size:17px}
 .lnk{background:none;border:0;padding:4px 0;font-weight:600;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:#1a1a1a}
 .cond{margin-top:12px;border-radius:10px;background:#f7f7f7;padding:10px 12px;font-size:12.5px;color:#4a4a4a}
-.cond summary{cursor:pointer;font-weight:500;color:#1a1a1a;list-style:none}
+.cond summary{cursor:pointer;color:#4a4a4a;list-style:none}
 .cond summary::-webkit-details-marker{display:none}
-.cond summary::after{content:" · ver todas";font-weight:500;color:#6b6b6b;text-decoration:underline;text-underline-offset:2px}
+.cond summary::after{content:"Ver condiciones";margin-left:8px;font-weight:500;color:#1a1a1a;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
 .cond[open] summary::after{content:" · ocultar"}
 .cond ul{margin:8px 0 2px;padding-left:18px}.cond li+li{margin-top:3px}
 /* La firma */
@@ -166,6 +166,9 @@ const fechaHora = iso => { const d = new Date(iso); return isNaN(d) ? '' : dos(d
 const ESTADOS = { nueva: 'Esperando que RR. HH. la derive', jefe: 'Esperando al jefe directo', rrhh: 'Esperando a RR. HH.', aprobada: 'Aprobada', rechazada: 'No aprobada', cancelada: 'Cancelada' };
 // Los días de vacaciones (nadie supera los 5 años de antigüedad); lo que pasa de ahí es sin goce de sueldo.
 const DIAS_VAC = 14, sinGoce = total => Math.max(0, (Number(total) || 0) - DIAS_VAC);
+// "1 día" / "7 días"; "el día que pasa de 14" / "los 7 días que pasan de 14".
+const nDias = n => n + (Number(n) === 1 ? ' día' : ' días');
+const losQuePasan = sg => sg === 1 ? 'el día que pasa de 14' : `los ${sg} días que pasan de 14`;
 const CONDICIONES = ['Te corresponden 14 días corridos. Todo queda sujeto a la confirmación de RR. HH. según tu saldo: si entraste este año o ya te tomaste días a cuenta, los días se pueden acortar.',
   'Si pedís más de 14 días, los que pasan son sin goce de sueldo y quedan sujetos a la aprobación de tu jefe directo y RR. HH.',
   'Cada tramo dura 7 días corridos o más y empieza un lunes o el primer día hábil de la semana. Si necesitás uno más corto (por un acuerdo con tu jefe, por ejemplo), lo podés pedir igual y queda sujeto a aprobación.',
@@ -256,7 +259,7 @@ function tramoHTML(n, t) {
   return `<div class="tramo" id="tr${n}"><div class="n">Tramo ${n}${n === 2 ? '<small>opcional · <button class="lnk" style="font-size:11.5px;padding:0" onclick="quitarTramo2()">quitar</button></small>' : ''}</div>
     <div class="campo"><label for="d${n}">Desde</label><input class="in" type="date" id="d${n}" value="${esc((t && t.desde) || '')}" oninput="revisar()"></div>
     <div class="campo"><label for="h${n}">Hasta</label><input class="in" type="date" id="h${n}" value="${esc((t && t.hasta) || '')}" oninput="revisar()"></div>
-    <div class="d"><b id="n${n}">—</b><span>días</span></div>
+    <div class="d"><b id="n${n}">—</b><span id="nd${n}">días</span></div>
     <label class="fer oculto" id="fw${n}"><input type="checkbox" id="f${n}" onchange="revisar()"${t && t.feriado ? ' checked' : ''}> El lunes de esa semana es feriado</label>
     <div class="av" id="a${n}"></div></div>`;
 }
@@ -276,7 +279,7 @@ async function nuevaSolicitud() {
       <div id="tramos">${tramoHTML(1, g.tramos && g.tramos[0])}${conTramo2 ? tramoHTML(2, g.tramos[1]) : ''}</div>
       <button class="lnk${conTramo2 ? ' oculto' : ''}" id="btnTramo2" style="margin-top:8px" onclick="sumarTramo2()">+ Sumar un segundo tramo</button>
       <div class="resumen" id="vTotal"></div>
-      <details class="cond"><summary>14 días · tramos de 7 o más que empiezan un lunes · 30 días de anticipación</summary><ul>${CONDICIONES.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>
+      <details class="cond"><summary>Sujeto a la confirmación de RR. HH. según tu saldo</summary><ul>${CONDICIONES.map(c => `<li>${esc(c)}</li>`).join('')}</ul></details>
       <div class="campo" style="margin-top:14px"><label for="vNota">Notas (opcional)</label><textarea class="in" id="vNota" rows="3" maxlength="500" placeholder="Por ejemplo, un acuerdo con tu jefe o algo que RR. HH. tenga que saber">${esc(g.nota || '')}</textarea></div></div>
     <div class="card"><div class="card-t"><span class="num">3</span>Tu firma</div>
       <div class="txt" style="margin-bottom:8px" id="vFrase">Solicito las fechas indicadas.</div>
@@ -289,7 +292,7 @@ async function nuevaSolicitud() {
   prepararFirma(); revisar();
 }
 // Lo que firma la persona (con los días sin goce, si pide más de 14).
-const fraseSolicito = total => 'Solicito las fechas indicadas, sujetas a la confirmación de RR. HH. según mi saldo' + (sinGoce(total) ? `; los ${sinGoce(total)} días que pasan de 14, sin goce de sueldo.` : '.');
+const fraseSolicito = total => 'Solicito las fechas indicadas, sujetas a la confirmación de RR. HH. según mi saldo' + (sinGoce(total) ? `; ${losQuePasan(sinGoce(total))}, sin goce de sueldo.` : '.');
 // A quién le llegó (va sola al jefe del área; si su jefe directo es RR. HH., a RR. HH.; con un área que no está en la lista, RR. HH. la deriva).
 const aQuien = (estado, esJefe) => estado === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
   : estado === 'rrhh' ? (esJefe ? 'Como sos jefe de área, dependés de RR. HH.: le llegó directo para que la apruebe y la firme.' : 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.') : 'RR. HH. se la manda a tu jefe directo para que la apruebe.';
@@ -317,25 +320,26 @@ function leerTramos() {
 }
 function revisar() {
   const tr = leerTramos(), errores = [], avisos = []; let total = 0;
-  [1, 2].forEach(n => { if (!$('n' + n)) return; $('n' + n).textContent = '—'; $('a' + n).innerHTML = ''; $('fw' + n).classList.add('oculto'); });
+  [1, 2].forEach(n => { if (!$('n' + n)) return; $('n' + n).textContent = '—'; $('nd' + n).textContent = 'días'; $('a' + n).innerHTML = ''; $('fw' + n).classList.add('oculto'); });
   tr.forEach((t, i) => {
     const a = $('a' + t.n), mal = x => { a.innerHTML = `<span class="mal">${x}</span>`; errores.push('Tramo ' + t.n + ': ' + x); };
     if (t.desde && diaSemana(t.desde) === 2) $('fw' + t.n).classList.remove('oculto');
     if (!t.desde || !t.hasta) { if (t.desde || t.hasta || t.n === 2) mal('Completá el desde y el hasta.'); else errores.push('Completá las fechas del tramo 1.'); return; }
     if (t.hasta < t.desde) { mal('El "hasta" va después del "desde".'); return; }
-    const dias = diasEntre(t.desde, t.hasta); $('n' + t.n).textContent = dias; total += dias;
-    if (dias < 7) avisos.push(`Tramo ${t.n}: ${dias} ${dias === 1 ? 'día' : 'días'}, menos de 7. Queda sujeto a aprobación.`);
+    const dias = diasEntre(t.desde, t.hasta); $('n' + t.n).textContent = dias; $('nd' + t.n).textContent = dias === 1 ? 'día' : 'días'; total += dias;
+    if (dias < 7) avisos.push(`Tramo ${t.n}: ${nDias(dias)} (menos de 7), sujeto a aprobación.`);
     else if (diaSemana(t.desde) !== 1 && !(diaSemana(t.desde) === 2 && t.feriado)) { mal('Empieza un ' + DIAS[diaSemana(t.desde)] + ': tiene que empezar un lunes (o el martes, si el lunes es feriado).'); return; }
     if (i === 1 && tr[0].hasta && t.desde <= tr[0].hasta) { mal('Va después del tramo 1.'); return; }
     a.innerHTML = `<span class="ok">Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)}</span>`;
   });
-  if (tr.length && tr[0].desde && diasEntre(hoyISO(), tr[0].desde) - 1 < 30) avisos.push('Faltan menos de 30 días: se puede mandar igual, queda sujeto a aprobación.');
+  if (tr.length && tr[0].desde && diasEntre(hoyISO(), tr[0].desde) - 1 < 30) avisos.push('Faltan menos de 30 días, sujeto a aprobación.');
   // Lo que pasa de 14: sin goce de sueldo, y lo tiene que marcar para mandarla.
   const sg = sinGoce(total), marcado = !!($('vSinGoce') && $('vSinGoce').checked);
-  if (sg && !marcado) errores.push(`Marcá que los ${sg} días que pasan de 14 son sin goce de sueldo.`);
-  $('vTotal').innerHTML = `<span class="tot">Total: <b>${total || 0}</b> días corridos${sg ? ` · ${DIAS_VAC} de vacaciones y ${sg} sin goce de sueldo` : ''}</span>` + avisos.map(x => `<span class="ojo">⚠ ${x}</span>`).join('')
-    + (sg ? `<label class="fer sg"><input type="checkbox" id="vSinGoce"${marcado ? ' checked' : ''}> Los ${sg} días que pasan de 14 los pido sin goce de sueldo, sujetos a aprobación</label>` : '')
-    + (total ? '<span class="sujeto">Sujeto a la confirmación de RR. HH. según tu saldo: si ya te tomaste días a cuenta, se pueden acortar.</span>' : '');
+  if (sg && !marcado) errores.push(`Marcá que pedís ${losQuePasan(sg)} sin goce de sueldo.`);
+  // Una línea por cosa: el total, la casilla de los días sin goce (si pide más de 14) y los avisos.
+  $('vTotal').innerHTML = `<span class="tot">Total: <b>${total || 0}</b> ${(total || 0) === 1 ? 'día corrido' : 'días corridos'}</span>`
+    + (sg ? `<label class="fer sg"><input type="checkbox" id="vSinGoce"${marcado ? ' checked' : ''}> Pido sin goce de sueldo ${losQuePasan(sg)}</label>` : '')
+    + avisos.map(x => `<span class="ojo">⚠ ${x}</span>`).join('');
   const fr = $('vFrase'); if (fr) fr.textContent = fraseSolicito(total);
   revisar.errores = errores; revisar.avisos = avisos;
   return errores.length === 0;
@@ -436,13 +440,13 @@ function pantallaVer(d, propia) {
         <div><small>Mail</small><b>${esc(d.email)}</b></div><div><small>Pedida el</small><b>${fechaDMA(d.datos.fecha || d.creada)}</b></div></div>
       ${rem ? `<div class="meta">Modifica la solicitud del ${fechaDM(rem.fecha)}, que quedó cancelada.</div>` : ''}</div>
     <div class="card"><div class="card-t">Las fechas<small>${d.datos.total} días corridos${sinGoce(d.datos.total) ? ' · ' + sinGoce(d.datos.total) + ' sin goce de sueldo' : ''}</small></div>
-      ${(d.datos.tramos || []).map((t, i) => `<div class="fila-t"><span>Tramo ${i + 1}</span><div>Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)}</div><em>${t.dias} días</em></div>`).join('')}
+      ${(d.datos.tramos || []).map((t, i) => `<div class="fila-t"><span>Tramo ${i + 1}</span><div>Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)}</div><em>${nDias(t.dias)}</em></div>`).join('')}
       ${(d.datos.avisos || []).length ? `<div class="meta ojo">${d.datos.avisos.map(x => '⚠ ' + esc(x)).join('<br>')}</div>` : ''}
       ${d.datos.nota ? `<div class="nota-p"><small>Nota de ${esc(String(d.nombre || '').split(' ')[0] || 'la persona')}</small>${esc(d.datos.nota)}</div>` : ''}</div>
     <div class="card"><div class="card-t">Firmas</div><div class="firmas${sinJefe ? ' dos' : ''}">${firmaCaja('Empleado/a', f.empleado)}${sinJefe ? firmaCaja('Jefe directo y RR. HH.', f.rrhh) : firmaCaja('Jefe directo', f.jefe, cancelada ? 'Cancelada' : '') + firmaCaja('RR. HH.', f.rrhh, cancelada ? 'Cancelada' : '')}</div></div>
     ${cambiarHTML(d, yo)}
     ${firma ? `<div class="card"><div class="card-t"><span class="num">✓</span>Tu aprobación · ${d.rol === 'jefe' ? 'jefe directo' : 'RR. HH.'}</div>
-      ${d.rol === 'rrhh' ? '<div class="meta" style="margin:-4px 0 12px">Revisá el saldo. Si se tomó días a cuenta, aprobala con un comentario con los días que le quedan, o no la apruebes para que mande otra.' + (sinGoce(d.datos.total) ? ' Pide ' + sinGoce(d.datos.total) + ' días sin goce de sueldo.' : '') + '</div>' : (sinGoce(d.datos.total) ? '<div class="meta" style="margin:-4px 0 12px">Pide ' + sinGoce(d.datos.total) + ' días sin goce de sueldo (los que pasan de 14).</div>' : '')}
+      ${d.rol === 'rrhh' ? '<div class="meta" style="margin:-4px 0 12px">Revisá el saldo. Si se tomó días a cuenta, aprobala con un comentario con los días que le quedan, o no la apruebes para que mande otra.' + (sinGoce(d.datos.total) ? ' Pide ' + nDias(sinGoce(d.datos.total)) + ' sin goce de sueldo.' : '') + '</div>' : (sinGoce(d.datos.total) ? '<div class="meta" style="margin:-4px 0 12px">Pide sin goce de sueldo ' + losQuePasan(sinGoce(d.datos.total)) + '.</div>' : '')}
       <div class="decision"><button id="dSi" onclick="decidir('aprobado')">Aprobado</button><button id="dNo" class="no" onclick="decidir('no_aprobado')">No aprobado</button></div>
       <div class="grid2" style="margin-top:12px"><div class="campo"><label for="aAcl">Aclaración (tu nombre y apellido)</label><input class="in" id="aAcl" autocomplete="name"></div>
         <div class="campo"><label for="aNota">Comentario (opcional)</label><input class="in" id="aNota" maxlength="500" placeholder="Por qué no se aprueba, por ejemplo"></div></div>
@@ -509,7 +513,7 @@ async function armarPdf(d) {
   y -= 16; [['Desde', 150], ['Hasta', 300], ['Días corridos', 415]].forEach(([s, x]) => txt(s, M + x, y, N, 9.5, gris));
   (d.datos.tramos || []).forEach((t, i) => { y -= 16; txt('Tramo ' + (i + 1), M, y, N, 10); txt(fechaLarga(t.desde), M + 150, y, R, 10); txt(fechaLarga(t.hasta), M + 300, y, R, 10); txt(String(t.dias), M + 415, y, N, 10); });
   y -= 16; txt('Total', M, y, N, 10); txt(String(d.datos.total), M + 415, y, N, 10);
-  if (sinGoce(d.datos.total)) { y -= 14; txt(`De esos, ${sinGoce(d.datos.total)} días sin goce de sueldo (los que pasan de ${DIAS_VAC}), como lo pide y firma la persona.`, M, y, R, 8.8); }
+  if (sinGoce(d.datos.total)) { y -= 14; txt(`De esos, ${nDias(sinGoce(d.datos.total))} sin goce de sueldo (por encima de los ${DIAS_VAC}), como lo pide y firma la persona.`, M, y, R, 8.8); }
   y -= 14; txt('Sujeto a la confirmación de RR. HH. según el saldo de la persona (si ya se tomó días a cuenta, se pueden acortar).', M, y, R, 8.8, gris);
   (d.datos.avisos || []).forEach(a => { y -= 14; txt('Aviso: ' + a, M, y, R, 8.5, rgb(.54, .38, 0)); });
   if (d.datos.nota) partir('Nota de la persona: ' + String(d.datos.nota).replace(/\s+/g, ' '), R, 8.8, W).forEach(l => { y -= 13; txt(l, M, y, R, 8.8); });
