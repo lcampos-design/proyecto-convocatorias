@@ -1127,6 +1127,13 @@ button.cn-nom:hover{text-decoration:underline;text-underline-offset:3px}
 .fbs-falta-p a{color:var(--r-ink);font-weight:600;text-decoration:none}.fbs-falta-p a:hover{text-decoration:underline}
 .fbs-falta-p small{font-size:10.5px;color:var(--r-muted)}
 .fbs-falta-p .btn{padding:2px 10px;font-size:11px;border-radius:999px}
+.vac-tile{border-style:dashed}
+.vac-est{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151;white-space:nowrap}
+.vac-est.nueva{background:#fff7ed;color:#9a3412;border:1px solid #fdba74}.vac-est.aprobada{background:#1a1a1a;color:#fff}.vac-est.rechazada{background:#fef2f2;color:#991b1b}
+.vac-der{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}.vac-der select{max-width:220px;font-size:12px;padding:5px 8px}
+.vac-aviso{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#9a3412;margin-bottom:12px}
+.vac-link{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fafafa;border:1px solid var(--r-line);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12.5px}.vac-link span{color:var(--r-muted)}
+.vac-area{display:flex;gap:8px;align-items:center;margin-top:8px}.vac-area .fi:first-child{flex:0 0 200px}.vac-area .fi:nth-child(2){flex:1}
 .fbs-tab-n{display:inline-block;min-width:18px;padding:0 5px;margin-left:6px;border-radius:999px;background:#9a3412;color:#fff;font-size:10.5px;font-weight:700;line-height:16px;text-align:center}
 /* A 1280 los cinco filtros de la Nómina y "Más filtros" entran en una sola fila. */
 @media (max-width:1400px){#sec-nomina > .ctrlbar:not(.nom-filtros) select.filt{max-width:158px}#sec-nomina > .ctrlbar:not(.nom-filtros) .srch{min-width:200px}}
@@ -2604,6 +2611,17 @@ tr:hover td{background:#f9f9fb}
     </div>
   </div>
 </div>
+<!-- VACACIONES DEL PERSONAL CORPORATIVO (24-nov) -->
+<div class="modal-bg" id="mVac" style="display:none" onclick="bgClose('mVac',event)">
+  <div class="modal" style="max-width:1080px">
+    <div class="modal-title"><span>Vacaciones · personal corporativo</span><button class="mclose" onclick="closeM('mVac')">✕</button></div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-6px 0 12px">
+      <div style="font-size:12.5px;color:var(--r-muted);flex:1;min-width:260px;line-height:1.5">La persona la completa y la firma en /vacaciones; acá se deriva al jefe que corresponde (o la firma sólo RR. HH.). El jefe y RR. HH. firman con el link del mail; al final, el PDF les llega a todos.</div>
+      <div class="cc-seg cc-tabs" role="tablist"><button data-t="lista" class="on" onclick="vacTabs('lista')">Solicitudes</button><button data-t="cfg" onclick="vacTabs('cfg')">Áreas y jefes</button></div>
+    </div>
+    <div id="vacCuerpo"></div>
+  </div>
+</div>
 <div class="modal-bg" id="mHiVer" style="display:none" onclick="bgClose('mHiVer',event)">
   <div class="modal" style="max-width:940px">
     <div class="modal-title"><span id="hiVerTit">Show</span><button class="mclose" onclick="closeM('mHiVer')">✕</button></div>
@@ -3505,6 +3523,8 @@ async function loadAll() {
     refreshRespBadge();
     // 24-nov: las fichas técnicas del Arena ponen al día los shows (armado, horarios, la ficha). Sin esperar.
     fichasArena(false);
+    vacContar();
+    if (location.hash === '#vacaciones') { goSec('contratos'); openVacaciones(); }
   }
 }
 // ── LAS FICHAS TÉCNICAS DEL ARENA (24-nov) ── El servidor (api/calendario?fichas=1, api/_lib/fichas.js) lee las fichas
@@ -13880,8 +13900,100 @@ function renderCtHome() {
       + `<div class="d-tile-n">${mes.length.toLocaleString('es-AR')}</div>`
       + `<div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500">${e(ctNombreArea(a))}</div>`
       + `<div style="font-size:11px;color:#9ca3af;margin-top:2px">${firm} firmado${firm === 1 ? '' : 's'} · ${sinFirmar} sin firmar · ${l.length.toLocaleString('es-AR')} en total</div></div>`;
-  }).join('')}</div>
+  }).join('')}<div class="d-tile vac-tile" onclick="openVacaciones()" style="cursor:pointer" title="Las solicitudes de vacaciones del personal corporativo, con firma electrónica"><div class="d-tile-n">${(vacContar.n || 0).toLocaleString('es-AR')}</div><div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500">Vacaciones · corporativo</div><div style="font-size:11px;color:#9ca3af;margin-top:2px">${vacContar.n ? 'para derivar a los jefes' : 'ninguna para derivar'} · ${(vacContar.total || 0).toLocaleString('es-AR')} en total</div></div></div>
   <div class="ct-otros"><button class="btn btn-sec btn-sm" onclick="openPlantilla()" title="El texto legal del contrato">Modelo de contrato</button><button class="btn btn-sec btn-sm" onclick="openDocsFirma()" title="Constancias, planillas: lo que algunas personas firman además del contrato">Documentos para firmar</button></div>`;
+}
+
+// ── VACACIONES DEL PERSONAL CORPORATIVO (24-nov) ──────────────
+// Thomas: la solicitud de vacaciones (el Word de RR. HH.) online, con firma electrónica; interno, nada que ver con las
+// convocatorias. La persona entra a /vacaciones con su mail (código), completa, firma y la manda; acá RR. HH. la deriva al
+// jefe que corresponde (o la firma directamente, si depende de RR. HH.); el jefe y RR. HH. firman con el link del mail y al
+// final les llega el PDF a todos. Quién aprueba (los mails) se carga acá, en "Áreas y jefes" (config 'vacaciones').
+const VAC_ESTADOS = { nueva: 'Para derivar', jefe: 'Con el jefe', rrhh: 'Con RR. HH.', aprobada: 'Aprobada', rechazada: 'No aprobada' };
+const VAC_LINK = 'https://convocatorias.show-bs.com/vacaciones';
+let vacLista = null, vacCfg = null, vacVer = 'nueva', vacTab = 'lista', vacFalta = false;
+async function vacCargar() {
+  const [l, c] = await Promise.all([
+    sb.from('vacaciones').select('id,created_at,email,nombre,area,datos,estado,aprueba_jefe,aprueba_rrhh,firmas,derivada_por').order('created_at', { ascending: false }),
+    sb.from('config').select('value').eq('key', 'vacaciones').maybeSingle()]);
+  vacFalta = !!l.error; vacLista = l.error ? [] : (l.data || []);
+  vacCfg = Object.assign({ rrhh: '', areas: [] }, (c.data && c.data.value) || {});
+  vacCfg.areas = (vacCfg.areas || []).map(a => ({ nombre: a.nombre || '', jefe: a.jefe || '' }));
+}
+// Para el recuadro de Contratos: cuántas hay para derivar (sin esperar a abrir).
+async function vacContar() { try { const { data, error } = await sb.from('vacaciones').select('id,estado'); if (!error) { vacContar.n = (data || []).filter(x => x.estado === 'nueva').length; vacContar.total = (data || []).length; if (!ctArea) renderCtHome(); } } catch (_) {} }
+async function openVacaciones() {
+  showM('mVac'); document.getElementById('vacCuerpo').innerHTML = '<div class="empty">Cargando...</div>';
+  await vacCargar(); vacVer = vacLista.some(v => v.estado === 'nueva') ? 'nueva' : 'todas'; renderVac();
+}
+function vacTabs(t) { vacTab = t; renderVac(); }
+function vacTramos(v) { return ((v.datos || {}).tramos || []).map(t => fechaDMA(t.desde) + ' al ' + fechaDMA(t.hasta)).join(' · '); }
+// El jefe sugerido: el del área que eligió la persona (si es él/ella mismo/a, o no hay, la firma RR. HH.).
+function vacSugerido(v) { const a = vacCfg.areas.find(x => x.nombre.toLowerCase() === String(v.area || '').toLowerCase()); const j = a ? a.jefe.trim().toLowerCase() : ''; return j && j !== v.email && j !== String(vacCfg.rrhh).toLowerCase() ? j : ''; }
+function vacOpciones(sel) {
+  const jefes = [...new Map(vacCfg.areas.filter(a => a.jefe.trim()).map(a => [a.jefe.trim().toLowerCase(), a.nombre])).entries()];
+  return '<option value="">La firma sólo RR. HH. (depende de RR. HH.)</option>' + jefes.map(([m, area]) => `<option value="${e(m)}"${m === sel ? ' selected' : ''}>Jefe de ${e(area)} · ${e(m)}</option>`).join('');
+}
+function renderVac() {
+  const cont = document.getElementById('vacCuerpo'); if (!cont) return;
+  document.querySelectorAll('#mVac .cc-tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === vacTab));
+  if (vacFalta) { cont.innerHTML = '<div class="empty">Falta correr <b>vacaciones.sql</b> en Supabase.</div>'; return; }
+  if (vacTab === 'cfg') { renderVacCfg(cont); return; }
+  const cuenta = k => k === 'todas' ? vacLista.length : vacLista.filter(v => v.estado === k).length;
+  const chip = (k, cl) => `<button class="nchip${cl && cuenta(k) ? ' ' + cl : ''}${vacVer === k ? ' on' : ''}" onclick="vacVer='${k}';renderVac()">${k === 'todas' ? 'Todas' : VAC_ESTADOS[k]} <b>${cuenta(k)}</b></button>`;
+  const l = vacLista.filter(v => vacVer === 'todas' || v.estado === vacVer);
+  const aviso = !vacCfg.rrhh ? '<div class="vac-aviso">Antes de mandar el link, cargá el mail de RR. HH. y los jefes en <b>Áreas y jefes</b>.</div>' : '';
+  cont.innerHTML = aviso + `<div class="nchips nchips-suelto">${chip('nueva', 'alerta')}${chip('jefe')}${chip('rrhh')}${chip('aprobada')}${chip('rechazada')}<span class="sep"></span>${chip('todas')}</div>`
+    + (l.length ? `<div class="fbv-tabla hi-tabla" style="max-height:58vh"><table><thead><tr><th style="width:86px">Pedida</th><th>Persona</th><th>Fechas</th><th style="width:60px">Días</th><th style="width:330px">Estado</th></tr></thead><tbody>`
+      + l.map(v => {
+        const acc = v.estado === 'nueva' || v.estado === 'jefe'
+          ? `<div class="vac-der"><select class="filt" id="vacJ_${v.id}">${vacOpciones(v.estado === 'jefe' ? v.aprueba_jefe : vacSugerido(v))}</select><button class="btn btn-primary btn-xs" onclick="vacDerivar('${v.id}')">${v.estado === 'nueva' ? 'Derivar' : 'Cambiar'}</button>${v.estado === 'jefe' ? `<button class="btn btn-sec btn-xs" onclick="vacReenviar('${v.id}')" title="Volver a mandarle el mail con el link">Reenviar</button>` : ''}</div>`
+          : v.estado === 'rrhh' ? `<button class="btn btn-sec btn-xs" onclick="vacReenviar('${v.id}')" title="Volver a mandar el mail con el link para firmar">Reenviar el link a RR. HH.</button>`
+          : `<button class="btn btn-sec btn-xs" onclick="vacPdf('${v.id}')">↓ PDF</button>`;
+        return `<tr><td>${fechaDMA(String(v.created_at).slice(0, 10))}</td><td><div class="fbv-nom">${eN(v.nombre)}</div><div class="fbv-sub">${e(v.area)} · ${e(v.email)}</div></td>
+          <td>${e(vacTramos(v))}${((v.datos || {}).avisos || []).length ? `<div class="fbv-sub" style="color:#9a3412">⚠ ${e(v.datos.avisos.join(' · '))}</div>` : ''}</td><td><b>${(v.datos || {}).total || ''}</b></td>
+          <td><span class="vac-est ${v.estado}">${VAC_ESTADOS[v.estado]}</span>${v.estado === 'jefe' ? `<span class="fbv-sub" style="display:inline;margin-left:6px">${e(v.aprueba_jefe)}</span>` : ''}${acc}</td></tr>`;
+      }).join('') + '</tbody></table></div>'
+      : '<div class="empty">' + (vacLista.length ? 'Nada en este estado.' : 'Todavía no llegó ninguna solicitud. El link para el newsletter está en Áreas y jefes.') + '</div>');
+}
+async function vacDerivar(id) {
+  const sel = document.getElementById('vacJ_' + id), jefe = sel ? sel.value : '';
+  const v = vacLista.find(x => x.id === id); if (!v) return;
+  if (!confirm(jefe ? '¿Mandarle la solicitud de ' + v.nombre + ' a ' + jefe + ' para que la apruebe y la firme?' : '¿La firma sólo RR. HH.? Le llega el link a ' + vacCfg.rrhh + '.')) return;
+  const { data, error } = await sb.rpc('vacaciones_derivar', { p_id: id, p_jefe: jefe || null });
+  if (error || !data || !data.ok) { toast((data && data.error) || 'No se pudo derivar'); return; }
+  const r = await fetch('/api/mis-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vacaciones: 'aviso', id }) }).then(x => x.json()).catch(() => ({}));
+  toast(r.ok ? '✓ Derivada: le llegó el mail con el link' : 'Derivada, pero el mail no salió: probá "Reenviar"');
+  await vacCargar(); renderVac(); vacContar();
+}
+async function vacReenviar(id) {
+  const { data, error } = await sb.rpc('vacaciones_reenviar', { p_id: id });
+  if (error || !data || !data.ok) { toast('No se pudo'); return; }
+  const r = await fetch('/api/mis-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vacaciones: 'aviso', id }) }).then(x => x.json()).catch(() => ({}));
+  toast(r.ok ? '✓ Le volvió a llegar el mail con un link nuevo' : 'El mail no salió. Probá de nuevo en un rato.');
+}
+async function vacPdf(id) {
+  const { data } = await sb.from('vacaciones').select('nombre,pdf').eq('id', id).maybeSingle();
+  if (!data || !data.pdf) { toast('Todavía no está el PDF'); return; }
+  const a = document.createElement('a'); a.href = 'data:application/pdf;base64,' + data.pdf; a.download = 'Solicitud de vacaciones - ' + data.nombre + '.pdf'; document.body.appendChild(a); a.click(); a.remove();
+}
+// Áreas y jefes: el mail de RR. HH. (firma siempre, al final) y el jefe de cada área (vacío: la firma sólo RR. HH.).
+function renderVacCfg(cont) {
+  cont.innerHTML = `<div class="vac-link"><span>Link para el newsletter</span><b>${VAC_LINK}</b><button class="btn btn-sec btn-xs" onclick="navigator.clipboard.writeText('${VAC_LINK}').then(()=>toast('✓ Link copiado'))">Copiar</button></div>
+    <div class="fg"><label>Mail de RR. HH. (aprueba y firma todas, al final)</label><input class="fi" id="vacRrhh" value="${e(vacCfg.rrhh)}" placeholder="nombre@show-bs.com"></div>
+    <div style="margin-top:14px;font-size:12.5px;font-weight:600;color:#374151">Áreas y su jefe directo <span style="font-weight:400;color:#6b7280">· el área aparece en el formulario; sin jefe, la firma sólo RR. HH.</span></div>
+    <div id="vacAreas">${vacCfg.areas.map((a, i) => `<div class="vac-area"><input class="fi" value="${e(a.nombre)}" placeholder="Área" oninput="vacCfg.areas[${i}].nombre=this.value"><input class="fi" value="${e(a.jefe)}" placeholder="Mail del jefe (vacío: la firma RR. HH.)" oninput="vacCfg.areas[${i}].jefe=this.value"><button class="btn btn-sec btn-xs" onclick="vacCfg.areas.splice(${i},1);renderVac()">Quitar</button></div>`).join('')}</div>
+    <button class="btn btn-sec btn-sm" style="margin-top:8px" onclick="vacCfg.areas.push({nombre:'',jefe:''});renderVac()">+ Agregar un área</button>
+    <div style="text-align:right;margin-top:16px"><button class="btn btn-primary" onclick="vacGuardarCfg()">Guardar</button></div>`;
+}
+async function vacGuardarCfg() {
+  const rrhh = document.getElementById('vacRrhh').value.trim().toLowerCase(), okMail = m => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m);
+  if (!okMail(rrhh)) { toast('Revisá el mail de RR. HH.'); return; }
+  const areas = vacCfg.areas.map(a => ({ nombre: a.nombre.trim(), jefe: a.jefe.trim().toLowerCase() })).filter(a => a.nombre);
+  const mal = areas.find(a => a.jefe && !okMail(a.jefe)); if (mal) { toast('Revisá el mail del jefe de ' + mal.nombre); return; }
+  const { error } = await sb.from('config').upsert({ key: 'vacaciones', value: { rrhh, areas }, updated_at: new Date().toISOString() });
+  if (error) { toast('No se pudo guardar: ' + (error.message || error)); return; }
+  vacCfg = { rrhh, areas }; toast('✓ Guardado'); vacTab = 'lista'; renderVac();
 }
 
 async function renderContratosBorrados() {

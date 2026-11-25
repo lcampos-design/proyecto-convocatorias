@@ -13,6 +13,8 @@
 // crea no la puede llamar nadie más) y la de Resend, para mandar el mail. Las
 // dos van como variables de entorno en Vercel, nunca en el código.
 
+import { manejarVacaciones } from './_lib/vacaciones.js';
+
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
 const SITIO = 'https://convocatorias.show-bs.com';
@@ -93,6 +95,9 @@ export default async function handler(req, res) {
     const faltan = [!servicio && 'SUPABASE_SERVICE_ROLE_KEY', !resend && 'RESEND_API_KEY'].filter(Boolean);
     return res.status(500).json({ error: cuerpo.invitar ? 'Falta configurar en Vercel: ' + faltan.join(' y ') + '.' : 'Ahora no podemos mandarte el link. Probá de nuevo más tarde.' });
   }
+  // La solicitud de vacaciones del personal corporativo (24-nov): el código para entrar y los avisos de cada paso.
+  // Va acá porque Vercel está en el tope de funciones; la lógica está en _lib/vacaciones.js.
+  if (cuerpo.vacaciones) return manejarVacaciones(cuerpo, res, { servicio, resend });
 
   const cuit = String(cuerpo.cuit || '').replace(/\D/g, '');
   if (cuit.length !== 11) return res.status(400).json({ error: 'El CUIL tiene que tener 11 números.' });

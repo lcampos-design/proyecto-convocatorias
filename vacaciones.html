@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitud de vacaciones — Show Business Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+/* La solicitud de vacaciones del personal corporativo (24-nov), con el template de SBS (el Word de la marca):
+   arriba el logo "SBS Show Business Solutions" y "show-bs.com", una línea gris; el título en mayúsculas, en
+   negrita, y un subtítulo corto; el texto en Poppins, negro sobre blanco. */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#1a1a1a;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.hoja{max-width:760px;margin:0 auto;padding:0 22px 40px}
+.cab{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:26px 0 14px;border-bottom:1.5px solid #9a9a9a}
+.cab img{height:30px;width:auto;display:block}
+.cab span{font-weight:600;font-size:14px;color:#2b2b2b}
+h1{font-size:34px;line-height:1.08;font-weight:700;text-transform:uppercase;letter-spacing:-.3px;margin:44px 0 4px}
+.sub{font-size:16px;color:#2b2b2b}
+.sec{margin-top:34px}
+.sec-t{font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid #d4d4d4;margin-bottom:14px}
+.txt{font-size:14.5px;color:#2b2b2b}
+.txt+.txt{margin-top:8px}
+.campos{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.campo label{display:block;font-size:12.5px;font-weight:600;color:#4a4a4a;margin-bottom:5px}
+.in{width:100%;min-height:46px;padding:10px 12px;border:1.5px solid #cfcfcf;border-radius:8px;background:#fff;font-size:15px}
+.in:focus{outline:none;border-color:#1a1a1a}
+.in[readonly]{background:#f5f5f5;color:#4a4a4a}
+.ancho{grid-column:1 / -1}
+.tramos{width:100%;border-collapse:collapse;font-size:14px}
+.tramos th{text-align:left;font-size:12.5px;font-weight:600;color:#4a4a4a;padding:0 8px 6px 0}
+.tramos td{padding:4px 8px 4px 0;vertical-align:top}
+.tramos td:first-child{font-weight:600;white-space:nowrap;padding-top:14px;width:120px}
+.tramos td.dias{font-weight:700;font-size:16px;padding-top:12px;width:70px;text-align:center}
+.tramos .aviso{font-size:12.5px;padding-top:0}
+.feriado{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:6px;cursor:pointer}
+.feriado input{width:18px;height:18px;accent-color:#1a1a1a}
+.ok{color:#1a1a1a}.mal{color:#b42318;font-weight:600}.ojo{color:#8a6100}
+.total{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:14px}
+.total b{font-size:16px}
+.condiciones{margin:0;padding-left:18px;font-size:14px;color:#2b2b2b}
+.condiciones li+li{margin-top:5px}
+.firma-caja{border:1.5px dashed #bdbdbd;border-radius:10px;position:relative;background:#fff;margin-top:8px}
+.firma-caja canvas{width:100%;height:170px;display:block;touch-action:none;border-radius:10px}
+.firma-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#b5b5b5;font-size:13px;pointer-events:none}
+.firma-acc{display:flex;justify-content:flex-end;margin-top:6px}
+.lnk{background:none;border:0;padding:6px 0;font-weight:600;font-size:13.5px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:#1a1a1a}
+.btn{display:block;width:100%;min-height:52px;margin-top:22px;border:0;border-radius:10px;background:#1a1a1a;color:#fff;font-weight:600;font-size:15.5px;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.sec{background:#f0f0f0;color:#1a1a1a}
+.btns{display:flex;gap:10px}.btns .btn{flex:1}
+.msg{display:none;margin-top:14px;padding:12px 14px;border-radius:8px;font-size:14px}
+.msg.on{display:block}.msg.err{background:#fdecea;color:#8e1b12}.msg.ok{background:#f2f2f2}
+.codigo{font-size:26px;letter-spacing:10px;text-align:center;font-weight:600}
+.solic{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #e6e6e6}
+.solic:last-child{border-bottom:0}
+.solic .t{flex:1;min-width:0}.solic .t b{display:block;font-size:14.5px}.solic .t small{display:block;font-size:12.5px;color:#5c5c5c}
+.estado{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:#f0f0f0;color:#2b2b2b;white-space:nowrap}
+.estado.aprobada{background:#1a1a1a;color:#fff}.estado.rechazada{background:#fdecea;color:#8e1b12}
+.dato{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid #ececec;font-size:14.5px}
+.dato:last-child{border-bottom:0}
+.dato span{flex:0 0 160px;color:#5c5c5c;font-size:13.5px}
+.firmas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.firma{border:1px solid #e0e0e0;border-radius:10px;padding:12px;font-size:13px;min-height:170px}
+.firma b{display:block;font-size:13px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.firma img{display:block;max-width:100%;height:64px;object-fit:contain;margin:6px 0}
+.firma small{display:block;color:#5c5c5c;font-size:12px}
+.firma .pend{color:#8a8a8a;font-style:italic;margin-top:20px}
+.decision{display:flex;gap:10px}
+.decision button{flex:1;min-height:52px;border:1.5px solid #cfcfcf;border-radius:10px;background:#fff;font-weight:600;cursor:pointer}
+.decision button.on{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.decision button.no.on{background:#8e1b12;border-color:#8e1b12}
+.centro{text-align:center;padding:30px 0 10px}
+.centro .ic{font-size:40px;line-height:1}
+.pie{text-align:center;font-size:11.5px;color:#8a8a8a;padding:10px 16px 28px}
+.oculto{display:none!important}
+@media(max-width:620px){h1{font-size:28px;margin-top:32px}.campos{grid-template-columns:1fr}.firmas{grid-template-columns:1fr}.dato span{flex-basis:120px}.tramos td:first-child{width:auto}}
+</style>
+</head>
+<body>
+<div class="hoja">
+  <header class="cab"><img src="logo-sbs-horizontal.png" alt="SBS Show Business Solutions"><span>show-bs.com</span></header>
+  <h1>Solicitud<br>de vacaciones</h1>
+  <div class="sub" id="sub">Temporada 2026/2027 · Recursos Humanos</div>
+  <main id="vista"><div class="sec"><div class="txt">Cargando…</div></div></main>
+</div>
+<footer class="pie">Proyecto llevado a cabo por la Gerencia de RR. HH.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script>
+// ── LA SOLICITUD DE VACACIONES (24-nov) ─────────────────────────
+// Para el personal corporativo (interno, nada que ver con las convocatorias). El link va en un newsletter.
+//  · Sin link: entrar con el mail (llega un código) → mis solicitudes → una nueva: datos, fechas, firma → enviar.
+//    RR. HH. la deriva desde el panel al jefe que corresponde.
+//  · Con link (?t=): el jefe o RR. HH. la aprueban (o no) y firman; la persona y quien ya firmó, la ven.
+// Al terminar, el PDF con las firmas (con el template de SBS) les llega a todos. Ver vacaciones.sql.
+const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const TOKEN = new URLSearchParams(location.search).get('t') || '';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const hoyISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const fechaDMA = f => { const [a, m, d] = String(f).slice(0, 10).split('-'); return d && m && a ? d + '/' + m + '/' + a : ''; };
+const fechaLarga = f => { const d = new Date(String(f).slice(0, 10) + 'T12:00:00'); return isNaN(d) ? '' : DIAS[d.getDay()] + ' ' + fechaDMA(f); };
+const diasEntre = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5) + 1;
+const diaSemana = f => new Date(f + 'T12:00:00').getDay();
+const dos = n => String(n).padStart(2, '0');
+const fechaHora = iso => { const d = new Date(iso); return isNaN(d) ? '' : dos(d.getDate()) + '/' + dos(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + dos(d.getHours()) + ':' + dos(d.getMinutes()); };
+const ESTADOS = { nueva: 'Esperando que RR. HH. la derive', jefe: 'Esperando a tu jefe directo', rrhh: 'Esperando a RR. HH.', aprobada: 'Aprobada', rechazada: 'No aprobada' };
+const CONDICIONES = ['Te corresponden 14 días corridos. Si ya usaste días a cuenta, RR. HH. te confirma el saldo.',
+  'Cada tramo dura 7 días corridos o más y empieza un lunes o el primer día hábil de la semana.',
+  'Pedilas con al menos 30 días de anticipación.',
+  'Las aprueba tu jefe directo y/o RR. HH. No se aprueban fechas con eventos de tu área.',
+  'Plus vacacional + adelanto de vacaciones: las vacaciones se cobran antes de salir.'];
+function vista(html) { $('vista').innerHTML = html; scrollTo(0, 0); }
+function msg(id, texto, tipo) { const m = $(id); if (!m) return; m.textContent = texto || ''; m.className = 'msg' + (texto ? ' on ' + (tipo || 'err') : ''); }
+async function api(cuerpo) {
+  const r = await fetch('/api/mis-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+  const d = await r.json().catch(() => ({})); return r.ok ? d : Object.assign({ ok: false }, d);
+}
+// La sesión de quien entró con su mail (3 horas), en este aparato.
+let ses = null;
+try { ses = JSON.parse(sessionStorage.getItem('vacSesion') || 'null'); } catch (_) { ses = null; }
+const guardarSes = s => { ses = s; try { sessionStorage.setItem('vacSesion', JSON.stringify(s)); } catch (_) {} };
+
+// ── ENTRAR CON EL MAIL ──────────────────────────────────────────
+function pantallaEntrar(mail) {
+  vista(`<div class="sec"><div class="sec-t">Para empezar</div>
+    <div class="txt">Poné tu mail: te mandamos un código para entrar. Con eso ves tus solicitudes y podés hacer una nueva.</div>
+    <div class="campo" style="margin-top:16px"><label for="mail">Tu mail</label><input class="in" id="mail" type="email" autocomplete="email" placeholder="nombre@show-bs.com" value="${esc(mail || '')}" onkeydown="if(event.key==='Enter')pedirCodigo()"></div>
+    <button class="btn" id="btnCod" onclick="pedirCodigo()">Mandame el código</button>
+    <div class="msg" id="mEntrar"></div></div>`);
+}
+async function pedirCodigo() {
+  const mail = $('mail').value.trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) { msg('mEntrar', 'Revisá tu mail.'); return; }
+  $('btnCod').disabled = true; $('btnCod').textContent = 'Mandando…';
+  const r = await api({ vacaciones: 'codigo', email: mail });
+  if (!r.ok) { $('btnCod').disabled = false; $('btnCod').textContent = 'Mandame el código'; msg('mEntrar', r.error || 'No se pudo mandar el código.'); return; }
+  vista(`<div class="sec"><div class="sec-t">Tu código</div>
+    <div class="txt">Te mandamos un código de 6 números a <b>${esc(mail)}</b> (si no lo ves, buscalo en el correo no deseado). Vence en 30 minutos.</div>
+    <div class="campo" style="margin-top:16px"><input class="in codigo" id="cod" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="······" onkeydown="if(event.key==='Enter')entrar()"></div>
+    <button class="btn" id="btnEntrar" onclick="entrar()">Entrar</button>
+    <div class="msg" id="mEntrar"></div>
+    <div style="text-align:center;margin-top:12px"><button class="lnk" onclick="pantallaEntrar('${esc(mail)}')">Usar otro mail o pedir otro código</button></div></div>`);
+  pantallaEntrar.mail = mail; setTimeout(() => { const c = $('cod'); if (c) c.focus(); }, 50);
+}
+async function entrar() {
+  const cod = $('cod').value.replace(/\D/g, ''); if (cod.length !== 6) { msg('mEntrar', 'Son 6 números.'); return; }
+  $('btnEntrar').disabled = true;
+  const { data, error } = await sb.rpc('vacaciones_entrar', { p_email: pantallaEntrar.mail, p_codigo: cod });
+  $('btnEntrar').disabled = false;
+  if (error || !data || !data.ok) { msg('mEntrar', (data && data.error) || 'No pudimos verificar el código. Probá de nuevo.'); return; }
+  guardarSes({ sesion: data.sesion, email: data.email }); misSolicitudes(data.mias);
+}
+
+// ── MIS SOLICITUDES ─────────────────────────────────────────────
+async function misSolicitudes(mias) {
+  if (!mias) {
+    const { data } = await sb.rpc('vacaciones_mias', { p_sesion: ses.sesion });
+    if (!data || !data.ok) { guardarSes(null); pantallaEntrar(); return; }
+    mias = data.mias;
+  }
+  if (!mias.length) { nuevaSolicitud(); return; }
+  vista(`<div class="sec"><div class="sec-t">Tus solicitudes</div>
+    <div class="txt">Entraste como <b>${esc(ses.email)}</b>.</div>
+    <div style="margin-top:8px">${mias.map(s => `<div class="solic"><div class="t"><b>${(s.datos.tramos || []).map(t => fechaDMA(t.desde) + ' al ' + fechaDMA(t.hasta)).join(' · ')}</b><small>${s.datos.total} días corridos · pedida el ${fechaDMA(s.creada)}</small></div>
+      <span class="estado ${s.estado}">${ESTADOS[s.estado]}</span><button class="lnk" onclick="verMia('${s.id}')">Ver</button></div>`).join('')}</div>
+    <button class="btn" onclick="nuevaSolicitud()">Nueva solicitud</button>
+    <div style="text-align:center;margin-top:12px"><button class="lnk" onclick="salir()">Salir</button></div></div>`);
+}
+function salir() { guardarSes(null); pantallaEntrar(); }
+async function verMia(id) {
+  const { data } = await sb.rpc('vacaciones_ver', { p_token: ses.sesion, p_id: id });
+  if (!data || !data.ok) { guardarSes(null); pantallaEntrar(); return; }
+  pantallaVer(data, true);
+}
+
+// ── UNA NUEVA ───────────────────────────────────────────────────
+let firmaPad = null, areas = [];
+async function nuevaSolicitud() {
+  if (!areas.length) { const { data } = await sb.rpc('vacaciones_areas'); areas = Array.isArray(data) ? data : []; }
+  const g = nuevaSolicitud.borrador || {};
+  vista(`<div class="sec"><div class="sec-t">1. Tus datos</div><div class="campos">
+      <div class="campo ancho"><label for="vNombre">Nombre y apellido</label><input class="in" id="vNombre" autocomplete="name" value="${esc(g.nombre || '')}" oninput="$('vAcl').value=this.value"></div>
+      <div class="campo"><label for="vArea">Área</label><select class="in" id="vArea" onchange="$('vAreaOtra').classList.toggle('oculto',this.value!=='_otra')"><option value="">Elegí tu área</option>${areas.map(a => `<option${g.area === a ? ' selected' : ''}>${esc(a)}</option>`).join('')}<option value="_otra"${g.area && !areas.includes(g.area) ? ' selected' : ''}>Otra</option></select>
+        <input class="in${g.area && !areas.includes(g.area) ? '' : ' oculto'}" id="vAreaOtra" style="margin-top:8px" placeholder="¿Cuál?" value="${esc(g.area && !areas.includes(g.area) ? g.area : '')}"></div>
+      <div class="campo"><label>Fecha de solicitud</label><input class="in" readonly value="${fechaDMA(hoyISO())}"></div>
+      <div class="campo ancho"><label>Tu mail</label><input class="in" readonly value="${esc(ses.email)}"></div></div></div>
+    <div class="sec"><div class="sec-t">2. Fechas que pedís</div>
+      <table class="tramos"><thead><tr><th></th><th>Desde</th><th>Hasta</th><th style="text-align:center">Días</th></tr></thead><tbody>
+      ${[1, 2].map(n => `<tr><td>Tramo ${n}${n === 2 ? '<br><small style="font-weight:400;color:#5c5c5c">(opcional)</small>' : ''}</td>
+        <td><input class="in" type="date" id="d${n}" value="${esc((g.tramos && g.tramos[n - 1] && g.tramos[n - 1].desde) || '')}" oninput="revisar()"></td>
+        <td><input class="in" type="date" id="h${n}" value="${esc((g.tramos && g.tramos[n - 1] && g.tramos[n - 1].hasta) || '')}" oninput="revisar()"></td>
+        <td class="dias" id="n${n}">—</td></tr>
+        <tr><td></td><td colspan="3" class="aviso"><label class="feriado oculto" id="fw${n}"><input type="checkbox" id="f${n}" onchange="revisar()"> El lunes de esa semana es feriado</label><div id="a${n}"></div></td></tr>`).join('')}
+      </tbody></table>
+      <div class="total" id="vTotal"></div></div>
+    <div class="sec"><div class="sec-t">3. Condiciones</div><ul class="condiciones">${CONDICIONES.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>
+    <div class="sec"><div class="sec-t">4. Tu firma</div>
+      <div class="txt">Solicito las fechas indicadas.</div>
+      <div class="firma-caja"><canvas id="firmaCv"></canvas><div class="firma-ph" id="firmaPh">Firmá acá con el dedo o el mouse</div></div>
+      <div class="firma-acc"><button class="lnk" onclick="firmaPad.clear();$('firmaPh').classList.remove('oculto')">Borrar la firma</button></div>
+      <div class="campos" style="margin-top:6px"><div class="campo"><label>Aclaración</label><input class="in" id="vAcl" readonly value="${esc(g.nombre || '')}"></div><div class="campo"><label>Fecha</label><input class="in" readonly value="${fechaDMA(hoyISO())}"></div></div>
+      <button class="btn" id="btnEnviar" onclick="enviar()">Firmar y enviar</button>
+      <div class="msg" id="mEnviar"></div></div>
+    <div class="sec"><div class="sec-t">5. Cómo sigue</div>
+      <div class="txt">RR. HH. se la manda a tu jefe directo, que la aprueba y la firma; después la firma RR. HH. Te llega una copia a tu mail y, al final, el PDF con todas las firmas. RR. HH. te confirma la fecha de pago.</div>
+      <div style="margin-top:10px"><button class="lnk" onclick="misSolicitudes()">← Mis solicitudes</button></div></div>`);
+  if (g.tramos) g.tramos.forEach((t, i) => { if (t.feriado) $('f' + (i + 1)).checked = true; });
+  prepararFirma(); revisar();
+}
+function prepararFirma() {
+  const cv = $('firmaCv'); const r = Math.max(window.devicePixelRatio || 1, 1);
+  cv.width = cv.offsetWidth * r; cv.height = cv.offsetHeight * r; cv.getContext('2d').scale(r, r);
+  firmaPad = new SignaturePad(cv, { backgroundColor: 'rgba(255,255,255,0)', penColor: '#111' });
+  firmaPad.addEventListener('beginStroke', () => $('firmaPh').classList.add('oculto'));
+}
+// Las reglas del Word: cada tramo de 7 días o más, que empiece un lunes (o el martes, si el lunes es feriado);
+// 14 días en total y 30 días de anticipación (estas dos, avisos: el saldo y las excepciones las ve RR. HH.).
+function leerTramos() {
+  const out = [];
+  for (const n of [1, 2]) { const d = $('d' + n).value, h = $('h' + n).value; if (d || h) out.push({ n, desde: d, hasta: h, feriado: $('f' + n).checked }); }
+  return out;
+}
+function revisar() {
+  const tr = leerTramos(), errores = [], avisos = []; let total = 0;
+  [1, 2].forEach(n => { $('n' + n).textContent = '—'; $('a' + n).innerHTML = ''; $('fw' + n).classList.add('oculto'); });
+  tr.forEach((t, i) => {
+    const a = $('a' + t.n), mal = x => { a.innerHTML = `<span class="mal">${x}</span>`; errores.push('Tramo ' + t.n + ': ' + x); };
+    if (t.desde && diaSemana(t.desde) === 2) $('fw' + t.n).classList.remove('oculto');
+    if (!t.desde || !t.hasta) { mal('Completá el desde y el hasta.'); return; }
+    if (t.hasta < t.desde) { mal('El "hasta" va después del "desde".'); return; }
+    const dias = diasEntre(t.desde, t.hasta); $('n' + t.n).textContent = dias; total += dias;
+    if (dias < 7) { mal('Cada tramo dura 7 días corridos o más.'); return; }
+    if (diaSemana(t.desde) !== 1 && !(diaSemana(t.desde) === 2 && t.feriado)) { mal('Empieza un ' + DIAS[diaSemana(t.desde)] + ': tiene que empezar un lunes (o el martes, si el lunes es feriado).'); return; }
+    if (i === 1 && tr[0].hasta && t.desde <= tr[0].hasta) { mal('Va después del tramo 1.'); return; }
+    a.innerHTML = `<span class="ok">Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)}</span>`;
+  });
+  if (tr.length && tr[0].desde && diasEntre(hoyISO(), tr[0].desde) - 1 < 30) avisos.push('Faltan menos de 30 días: se piden con al menos 30 de anticipación.');
+  if (total > 14) avisos.push('Son más de 14 días: RR. HH. te confirma si tenés saldo.');
+  $('vTotal').innerHTML = (total ? `<span>Total: <b>${total}</b> días corridos</span>` : '') + avisos.map(x => `<span class="ojo">⚠ ${x}</span>`).join('');
+  revisar.errores = tr.length ? errores : ['Completá al menos el tramo 1.']; revisar.avisos = avisos;
+  return revisar.errores.length === 0;
+}
+async function enviar() {
+  msg('mEnviar', '');
+  const nombre = $('vNombre').value.trim().replace(/\s+/g, ' '), area = $('vArea').value === '_otra' ? $('vAreaOtra').value.trim() : $('vArea').value;
+  const tramos = leerTramos().map(t => ({ desde: t.desde, hasta: t.hasta, feriado: t.feriado }));
+  nuevaSolicitud.borrador = { nombre, area, tramos };
+  if (nombre.length < 3) { msg('mEnviar', 'Completá tu nombre y apellido.'); return; }
+  if (!area) { msg('mEnviar', 'Elegí tu área.'); return; }
+  if (!revisar()) { msg('mEnviar', revisar.errores[0]); return; }
+  if (!firmaPad || firmaPad.isEmpty()) { msg('mEnviar', 'Falta tu firma.'); return; }
+  const btn = $('btnEnviar'); btn.disabled = true; btn.textContent = 'Enviando…';
+  const { data, error } = await sb.rpc('vacaciones_crear', { p_sesion: ses.sesion, p_datos: { nombre, area, tramos, avisos: revisar.avisos }, p_firma: firmaPad.toDataURL('image/png') });
+  if (error || !data || !data.ok) {
+    btn.disabled = false; btn.textContent = 'Firmar y enviar';
+    msg('mEnviar', (data && data.error) || 'No se pudo enviar. Probá de nuevo en un rato.');
+    if (data && /sesión/.test(data.error || '')) { guardarSes(null); setTimeout(() => pantallaEntrar(), 1800); }
+    return;
+  }
+  nuevaSolicitud.borrador = null;
+  api({ vacaciones: 'aviso', id: data.id });   // a RR. HH. y la confirmación a la persona
+  const v = await sb.rpc('vacaciones_ver', { p_token: data.ver });
+  vista(`<div class="sec centro"><div class="ic">✓</div><div class="sec-t" style="border:0;margin:10px 0 4px">Listo, la mandaste</div>
+    <div class="txt">RR. HH. se la manda a tu jefe directo para que la apruebe y la firme. Te llegó una copia a <b>${esc(ses.email)}</b> y, al final, te llega el PDF con todas las firmas.</div></div>
+    <div class="btns"><button class="btn sec" onclick="bajarPdf()">Bajar el PDF (con tu firma)</button><button class="btn" onclick="misSolicitudes()">Mis solicitudes</button></div>`);
+  bajarPdf.ficha = v.data;
+}
+
+// ── VER Y FIRMAR (con el link del mail) ─────────────────────────
+let decision = '';
+function datoFila(k, v) { return `<div class="dato"><span>${k}</span><div>${v}</div></div>`; }
+function firmaCaja(titulo, f, extra) {
+  if (!f) return `<div class="firma"><b>${titulo}</b><div class="pend">${extra || 'Falta su firma'}</div></div>`;
+  const dec = f.decision ? `<div>${f.decision === 'aprobado' ? '☑ Aprobado · ☐ No aprobado' : '☐ Aprobado · ☒ No aprobado'}</div>` : '<div>Solicito las fechas indicadas.</div>';
+  return `<div class="firma"><b>${titulo}</b>${dec}<img src="${f.png}" alt="Firma"><small>Aclaración: ${esc(f.aclaracion)}</small><small>Fecha: ${fechaHora(f.fecha)}</small>${f.nota ? `<small>Comentario: ${esc(f.nota)}</small>` : ''}</div>`;
+}
+function pantallaVer(d, propia) {
+  const f = d.firmas || {}, firma = d.rol === 'jefe' || d.rol === 'rrhh';
+  const sinJefe = !d.con_jefe && (d.estado === 'rrhh' || d.estado === 'aprobada' || d.estado === 'rechazada');
+  vista(`<div class="sec"><div class="sec-t">Estado</div><span class="estado ${d.estado}">${ESTADOS[d.estado]}</span></div>
+    <div class="sec"><div class="sec-t">1. Datos</div>${datoFila('Nombre y apellido', esc(d.nombre))}${datoFila('Área', esc(d.area))}${datoFila('Mail', esc(d.email))}${datoFila('Fecha de solicitud', fechaDMA(d.datos.fecha || d.creada))}</div>
+    <div class="sec"><div class="sec-t">2. Fechas que pide</div>${(d.datos.tramos || []).map((t, i) => datoFila('Tramo ' + (i + 1), `Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)} · <b>${t.dias} días corridos</b>`)).join('')}${datoFila('Total', `<b>${d.datos.total} días corridos</b>`)}
+      ${(d.datos.avisos || []).length ? `<div class="txt ojo" style="margin-top:8px">${d.datos.avisos.map(x => '⚠ ' + esc(x)).join('<br>')}</div>` : ''}</div>
+    <div class="sec"><div class="sec-t">3. Firmas</div><div class="firmas">${firmaCaja('Empleado/a', f.empleado)}${firmaCaja('Jefe directo', f.jefe || (sinJefe && f.rrhh ? Object.assign({}, f.rrhh, { nota: '' }) : null), sinJefe ? 'Depende de RR. HH.: firma RR. HH.' : '')}${firmaCaja('RR. HH.', f.rrhh)}</div></div>
+    ${firma ? `<div class="sec"><div class="sec-t">Tu aprobación (${d.rol === 'jefe' ? 'jefe directo' : 'RR. HH.'})</div>
+      <div class="decision"><button id="dSi" onclick="decidir('aprobado')">Aprobado</button><button id="dNo" class="no" onclick="decidir('no_aprobado')">No aprobado</button></div>
+      <div class="campos" style="margin-top:14px"><div class="campo"><label for="aAcl">Aclaración (tu nombre y apellido)</label><input class="in" id="aAcl" autocomplete="name"></div><div class="campo"><label>Fecha</label><input class="in" readonly value="${fechaDMA(hoyISO())}"></div>
+      <div class="campo ancho"><label for="aNota">Comentario (opcional)</label><input class="in" id="aNota" maxlength="500" placeholder="Por ejemplo, por qué no se aprueba"></div></div>
+      <div class="firma-caja" style="margin-top:12px"><canvas id="firmaCv"></canvas><div class="firma-ph" id="firmaPh">Firmá acá con el dedo o el mouse</div></div>
+      <div class="firma-acc"><button class="lnk" onclick="firmaPad.clear();$('firmaPh').classList.remove('oculto')">Borrar la firma</button></div>
+      <button class="btn" id="btnFirmar" onclick="firmar()">Firmar</button><div class="msg" id="mFirmar"></div></div>` : ''}
+    <div class="sec"><button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button>${propia ? '<div style="margin-top:10px"><button class="lnk" onclick="misSolicitudes()">← Mis solicitudes</button></div>' : ''}</div>`);
+  bajarPdf.ficha = d;
+  if (firma) prepararFirma();
+}
+function decidir(v) { decision = v; $('dSi').classList.toggle('on', v === 'aprobado'); $('dNo').classList.toggle('on', v === 'no_aprobado'); }
+async function firmar() {
+  msg('mFirmar', '');
+  if (!decision) { msg('mFirmar', 'Marcá si la aprobás o no.'); return; }
+  const acl = $('aAcl').value.trim(); if (acl.length < 3) { msg('mFirmar', 'Completá tu aclaración (nombre y apellido).'); return; }
+  if (!firmaPad || firmaPad.isEmpty()) { msg('mFirmar', 'Falta tu firma.'); return; }
+  const btn = $('btnFirmar'); btn.disabled = true; btn.textContent = 'Firmando…';
+  const { data, error } = await sb.rpc('vacaciones_firmar', { p_token: TOKEN, p_decision: decision, p_aclaracion: acl, p_firma: firmaPad.toDataURL('image/png'), p_nota: $('aNota').value.trim() });
+  if (error || !data || !data.ok) { btn.disabled = false; btn.textContent = 'Firmar'; msg('mFirmar', (data && data.error) || 'No se pudo firmar. Probá de nuevo.'); return; }
+  const v = (await sb.rpc('vacaciones_ver', { p_token: TOKEN })).data;
+  // Si terminó, el PDF con todas las firmas se guarda (va adjunto en el mail a todos).
+  if (data.estado === 'aprobada' || data.estado === 'rechazada') {
+    try { const pdf = await armarPdf(v); await sb.rpc('vacaciones_guardar_pdf', { p_token: TOKEN, p_pdf: pdf.base64 }); } catch (_) {}
+  }
+  await api({ vacaciones: 'aviso', id: data.id });
+  const fin = data.estado === 'aprobada' || data.estado === 'rechazada';
+  vista(`<div class="sec centro"><div class="ic">✓</div><div class="sec-t" style="border:0;margin:10px 0 4px">Firmada</div>
+    <div class="txt">${data.estado === 'rrhh' ? 'Ahora le llega a RR. HH. para la firma final.' : fin ? 'Le llega el PDF con todas las firmas a ' + esc(v.nombre) + ', con copia a quienes firmaron.' : ''}</div></div>
+    <button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button>`);
+  bajarPdf.ficha = v;
+}
+
+// ── EL PDF, CON EL TEMPLATE DE SBS ──────────────────────────────
+async function bytesDe(url) { const r = await fetch(url); if (!r.ok) throw new Error(url); return new Uint8Array(await r.arrayBuffer()); }
+async function armarPdf(d) {
+  const { PDFDocument, rgb } = PDFLib;
+  const pdf = await PDFDocument.create(); pdf.registerFontkit(fontkit);
+  const [reg, neg, logo] = await Promise.all([bytesDe('/fuentes/Poppins-Regular.ttf'), bytesDe('/fuentes/Poppins-SemiBold.ttf'), bytesDe('/logo-sbs-horizontal.png')]);
+  const R = await pdf.embedFont(reg, { subset: true }), N = await pdf.embedFont(neg, { subset: true }), L = await pdf.embedPng(logo);
+  const pag = pdf.addPage([595.28, 841.89]), M = 50, W = 595.28 - 2 * M, negro = rgb(.1, .1, .1), gris = rgb(.36, .36, .36), linea = rgb(.6, .6, .6);
+  let y = 841.89 - 42;
+  const txt = (s, x, yy, f, t, c) => pag.drawText(String(s), { x, y: yy, font: f, size: t, color: c || negro });
+  const ancho = (s, f, t) => f.widthOfTextAtSize(String(s), t);
+  const partir = (s, f, t, w) => { const out = []; let l = ''; String(s).split(/\s+/).forEach(p => { const n = l ? l + ' ' + p : p; if (ancho(n, f, t) > w && l) { out.push(l); l = p; } else l = n; }); if (l) out.push(l); return out; };
+  // Arriba: el logo, show-bs.com y la línea gris (el template).
+  const lh = 26, lw = lh * L.width / L.height; pag.drawImage(L, { x: M, y: y - lh, width: lw, height: lh });
+  txt('show-bs.com', M + W - ancho('show-bs.com', N, 10), y - lh + 6, N, 10, rgb(.17, .17, .17));
+  y -= lh + 14; pag.drawLine({ start: { x: M, y }, end: { x: M + W, y }, thickness: .8, color: linea });
+  y -= 44; txt('SOLICITUD', M, y, N, 22); y -= 26; txt('DE VACACIONES', M, y, N, 22);
+  y -= 18; txt('Temporada 2026/2027 · Recursos Humanos', M, y, R, 11, rgb(.17, .17, .17));
+  const titulo = s => { y -= 30; txt(s, M, y, N, 10.5); y -= 7; pag.drawLine({ start: { x: M, y }, end: { x: M + W, y }, thickness: .5, color: rgb(.83, .83, .83) }); y -= 4; };
+  const fila = (k, v) => { y -= 16; txt(k, M, y, R, 9.5, gris); txt(v, M + 150, y, R, 10); };
+  titulo('1. DATOS');
+  fila('Nombre y apellido', d.nombre); fila('Área', d.area); fila('Mail', d.email); fila('Fecha de solicitud', fechaDMA(d.datos.fecha || d.creada));
+  titulo('2. FECHAS QUE PIDE');
+  y -= 16; [['', 0], ['Desde', 150], ['Hasta', 300], ['Días corridos', 440]].forEach(([s, x]) => s && txt(s, M + x, y, N, 9.5, gris));
+  (d.datos.tramos || []).forEach((t, i) => { y -= 16; txt('Tramo ' + (i + 1), M, y, N, 10); txt(fechaLarga(t.desde), M + 150, y, R, 10); txt(fechaLarga(t.hasta), M + 300, y, R, 10); txt(String(t.dias), M + 440, y, N, 10); });
+  y -= 16; txt('Total', M, y, N, 10); txt(String(d.datos.total), M + 440, y, N, 10);
+  (d.datos.avisos || []).forEach(a => { y -= 14; txt('Aviso: ' + a, M, y, R, 8.5, rgb(.54, .38, 0)); });
+  titulo('3. CONDICIONES');
+  CONDICIONES.forEach(c => partir('· ' + c, R, 8.8, W).forEach(l => { y -= 12; txt(l, M, y, R, 8.8, gris); }));
+  titulo('4. FIRMAS');
+  const f = d.firmas || {}, sinJefe = !d.con_jefe, col = (W - 24) / 3, top = y - 8;
+  const caja = async (i, tit, fi, dec, vacia) => {
+    const x = M + i * (col + 12); let yy = top - 14;
+    txt(tit, x, yy, N, 9.5);
+    if (dec) { yy -= 14; const box = (bx, on, s) => { pag.drawRectangle({ x: bx, y: yy - 1, width: 8, height: 8, borderColor: negro, borderWidth: .7 }); if (on) { pag.drawLine({ start: { x: bx + 1.5, y: yy + 3 }, end: { x: bx + 3.5, y: yy + .8 }, thickness: 1.2, color: negro }); pag.drawLine({ start: { x: bx + 3.5, y: yy + .8 }, end: { x: bx + 7, y: yy + 6.5 }, thickness: 1.2, color: negro }); } txt(s, bx + 11, yy, R, 8.5); };
+      box(x, fi && fi.decision === 'aprobado', 'Aprobado'); box(x + 70, fi && fi.decision === 'no_aprobado', 'No aprobado'); }
+    else { yy -= 14; txt('Solicito las fechas indicadas.', x, yy, R, 8.5); }
+    if (fi && fi.png) { const img = await pdf.embedPng(fi.png); const h = 46, w = Math.min(col, h * img.width / img.height); pag.drawImage(img, { x, y: yy - 8 - h, width: w, height: h }); }
+    else txt(vacia || 'Pendiente', x, yy - 34, R, 8.5, gris);
+    yy -= 62; pag.drawLine({ start: { x, y: yy + 4 }, end: { x: x + col, y: yy + 4 }, thickness: .5, color: linea });
+    yy -= 8; partir('Aclaración: ' + (fi ? fi.aclaracion : ''), R, 8.5, col).forEach(l => { txt(l, x, yy, R, 8.5); yy -= 11; });
+    txt('Fecha: ' + (fi ? fechaHora(fi.fecha) : ''), x, yy, R, 8.5);
+    if (fi && fi.nota) { yy -= 11; partir('Comentario: ' + fi.nota, R, 8, col).slice(0, 3).forEach(l => { txt(l, x, yy, R, 8, gris); yy -= 10; }); }
+  };
+  await caja(0, 'EMPLEADO/A', f.empleado, false);
+  await caja(1, 'JEFE DIRECTO', f.jefe || (sinJefe && f.rrhh ? Object.assign({}, f.rrhh, { nota: '' }) : null), true, sinJefe ? 'Depende de RR. HH.' : 'Pendiente');
+  await caja(2, 'RR. HH.', f.rrhh, true);
+  // Abajo: cómo se firmó y la línea de la marca.
+  const pie = ['Firmada electrónicamente en convocatorias.show-bs.com. La persona entró con un código enviado a ' + d.email + '; el jefe directo y RR. HH. firmaron con links personales enviados a su mail.', 'Solicitud ' + d.id + ' · ' + ESTADOS[d.estado] + '.'];
+  let yp = 70; pie.forEach(p => partir(p, R, 7.5, W).forEach(l => { txt(l, M, yp, R, 7.5, gris); yp -= 9.5; }));
+  pag.drawLine({ start: { x: M, y: 44 }, end: { x: M + W, y: 44 }, thickness: .5, color: linea });
+  const marca = 'SHOW BUSINESS SOLUTIONS  ·  show-bs.com  ·  HANDS ON EVERYTHING';
+  txt(marca, M + (W - ancho(marca, N, 7.5)) / 2, 32, N, 7.5, gris);
+  const b64 = await pdf.saveAsBase64();
+  return { base64: b64, nombre: 'Solicitud de vacaciones - ' + d.nombre + '.pdf' };
+}
+async function bajarPdf() {
+  const d = bajarPdf.ficha; if (!d) return;
+  try {
+    const p = await armarPdf(d), a = document.createElement('a');
+    a.href = 'data:application/pdf;base64,' + p.base64; a.download = p.nombre; document.body.appendChild(a); a.click(); a.remove();
+  } catch (_) { alert('No se pudo armar el PDF. Probá de nuevo.'); }
+}
+
+// ── ARRANCAR ────────────────────────────────────────────────────
+(async () => {
+  if (TOKEN) {
+    const { data, error } = await sb.rpc('vacaciones_ver', { p_token: TOKEN });
+    if (error || !data || !data.ok) { vista(`<div class="sec"><div class="txt">${esc((data && data.error) || 'No pudimos abrir la solicitud. Probá de nuevo en un rato.')}</div></div>`); return; }
+    $('sub').textContent = 'Temporada 2026/2027 · ' + data.nombre;
+    pantallaVer(data, false); return;
+  }
+  if (ses && ses.sesion) misSolicitudes(); else pantallaEntrar();
+})();
+</script>
+</body>
+</html>
