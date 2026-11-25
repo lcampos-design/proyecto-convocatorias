@@ -64,7 +64,7 @@ export function armarMail({ nombre, link, invitado, inscripciones, motivo }) {
       ? 'Pediste ver tus inscripciones. Desde este link ves dónde estás anotado/a, podés darte de baja y actualizar tus datos.'
       : 'Pediste ver tus datos. Desde este link los actualizás o, si todavía no te inscribiste, completás tu inscripción.';
   const text = `${hola}:\n\n${intro}\n\n${link}\n\nEl link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.\n\nShow Business Solutions`;
-  const html = armarMailSBS({ kicker: 'Recursos Humanos · Tus datos',
+  const html = armarMailSBS({
     titulo: cbu === 'cbu' ? 'Revisá tu CBU' : cbu === 'cbu_falta' ? 'Cargá tu CBU' : invitado ? 'Actualizá tus datos' : inscripciones ? 'Tus inscripciones' : 'Tus datos',
     hola, parrafos: [intro], boton: inscripciones ? 'Ver mis inscripciones' : 'Actualizar mis datos', link,
     pie: 'El link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.', instagram: true }).html;

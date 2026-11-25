@@ -59,7 +59,7 @@ export function armarMailCodigo({ nombre, codigo, link, minutos, documento }) {
     ? [parrafo(D('Para terminar de firmar tu contrato, tocá el botón: vuelve al contrato con el código ya puesto.')), botonHtml(D('Volver al contrato y firmar'), link), parrafo(D('O escribí este código en la página del contrato:'))]
     : [parrafo(D('Tu código para firmar el contrato es:'))],
     [codigoHtml(separado), parrafo(`Vence en ${dura}.`), pieHtml(D('Si no estás firmando tu contrato, ignorá este mail: sin el código no se puede firmar.'))]).join('\n    ');
-  const html = marcoMail({ kicker: D('Recursos Humanos · Contratos'), titulo: 'Tu código para firmar', cuerpo, instagram: false });
+  const html = marcoMail({ kicker: D('Contratos'), titulo: 'Tu código', cuerpo, instagram: false });
   const textoD = link ? D(text.replace(link, '\u0000')).replace('\u0000', link) : D(text);
   return { subject: D(`Tu código para firmar el contrato: ${separado}`), text: textoD, html };
 }

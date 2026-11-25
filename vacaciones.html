@@ -20,7 +20,7 @@ body{font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .cab{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 0 12px;border-bottom:1.5px solid #9a9a9a}
 .cab img{height:26px;width:auto;display:block}
 .cab span{font-weight:600;font-size:13px;color:#2b2b2b}
-h1{font-size:27px;line-height:1.08;font-weight:700;text-transform:uppercase;letter-spacing:-.2px;margin:24px 0 2px}
+h1{font-size:28px;line-height:1.12;font-weight:700;letter-spacing:-.3px;margin:24px 0 2px}
 .sub{font-size:14px;color:#4a4a4a}
 /* Los pasos del circuito */
 .pasos{display:flex;margin:20px 0 18px;padding:0;list-style:none}
@@ -35,7 +35,7 @@ h1{font-size:27px;line-height:1.08;font-weight:700;text-transform:uppercase;lett
 /* Las tarjetas */
 main{padding:6px 0 26px;flex:1 0 auto;width:100%}
 .card{background:#fff;border:1px solid #e3e3e3;border-radius:14px;padding:18px;margin-top:12px}
-.card-t{display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+.card-t{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;margin-bottom:12px}
 .card-t .num{flex:0 0 22px;height:22px;border-radius:50%;background:#1a1a1a;color:#fff;display:grid;place-items:center;font-size:11px;letter-spacing:0}
 .card-t small{margin-left:auto;font-size:12px;font-weight:500;letter-spacing:0;text-transform:none;color:#6b6b6b}
 .meta{font-size:12.5px;color:#6b6b6b;margin-top:10px}
@@ -98,16 +98,16 @@ main{padding:6px 0 26px;flex:1 0 auto;width:100%}
 .fila-t span{color:#6b6b6b;font-size:12.5px;flex:0 0 70px}.fila-t div{flex:1}.fila-t em{font-style:normal;font-weight:700;white-space:nowrap}
 .firmas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .firma{border:1px solid #e6e6e6;border-radius:10px;padding:10px 11px;font-size:12px;color:#4a4a4a}
-.firma b{display:block;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:#1a1a1a;margin-bottom:3px}
+.firma b{display:block;font-size:13px;color:#1a1a1a;margin-bottom:3px}
 .firma img{display:block;max-width:100%;height:50px;object-fit:contain;margin:4px 0}
 .firma .pend{color:#9a9a9a;font-style:italic;padding:16px 0}
 .decision{display:flex;gap:10px}
 .decision button{flex:1;min-height:48px;border:1.5px solid #d4d4d4;border-radius:10px;background:#fff;font-weight:600;cursor:pointer}
 .decision button.on{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
 .decision button.no.on{background:#8e1b12;border-color:#8e1b12}
-.traza summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.traza summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700}
 .traza summary::-webkit-details-marker{display:none}
-.traza summary::after{content:"Ver";margin-left:auto;font-size:12.5px;font-weight:600;letter-spacing:0;text-transform:none;text-decoration:underline;text-underline-offset:3px}
+.traza summary::after{content:"Ver";margin-left:auto;font-size:12.5px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .traza[open] summary::after{content:"Ocultar"}
 .ev{display:grid;grid-template-columns:118px 1fr;gap:2px 12px;padding:9px 0;border-top:1px solid #efefef;font-size:12.5px}
 .ev:first-of-type{margin-top:10px}
@@ -128,7 +128,7 @@ main{padding:6px 0 26px;flex:1 0 auto;width:100%}
 <div class="top"><div class="ancho">
   <header class="cab"><img src="logo-sbs-horizontal.png" alt="SBS Show Business Solutions"><span>show-bs.com</span></header>
   <h1>Solicitud de vacaciones</h1>
-  <div class="sub" id="sub">Temporada 2026/2027 · Recursos Humanos</div>
+  <div class="sub" id="sub">Temporada 2026/2027</div>
   <ol class="pasos" id="pasos"></ol>
 </div></div>
 <main class="ancho" id="vista"><div class="card"><div class="txt">Cargando…</div></div></main>
@@ -175,13 +175,13 @@ async function api(cuerpo) {
 }
 // Los pasos del circuito, arriba: hecho, ahora, salteado (sin jefe) o no aprobada.
 function pasos(estado, conJefe) {
-  const N = ['Solicitud', 'Derivación', 'Jefe directo', 'RR. HH.', 'PDF firmado'];
-  const i = { form: 0, nueva: 1, jefe: 2, rrhh: 3, aprobada: 5, rechazada: 5 }[estado];
+  const N = ['Solicitud', 'Jefe directo', 'RR. HH.', 'PDF firmado'];
+  const i = { form: 0, nueva: 1, jefe: 1, rrhh: 2, aprobada: 4, rechazada: 4 }[estado];
   $('pasos').innerHTML = estado && i !== undefined ? N.map((n, k) => {
     let cl = k < i ? 'hecho' : k === i ? 'ahora' : '';
-    if (k === 2 && conJefe === false && i > 2) cl = 'salteado';
-    if (estado === 'rechazada' && k === 4) { cl = 'no'; n = 'No aprobada'; }
-    return `<li class="${cl}"><i>${cl === 'hecho' ? '✓' : cl === 'no' ? '✕' : cl === 'salteado' ? '–' : k + 1}</i>${k === 2 && cl === 'salteado' ? 'Sin jefe' : n}</li>`;
+    if (k === 1 && conJefe === false && i > 1) cl = 'salteado';
+    if (estado === 'rechazada' && k === 3) { cl = 'no'; n = 'No aprobada'; }
+    return `<li class="${cl}"><i>${cl === 'hecho' ? '✓' : cl === 'no' ? '✕' : cl === 'salteado' ? '–' : k + 1}</i>${k === 1 && cl === 'salteado' ? 'Sin jefe' : n}</li>`;
   }).join('') : '';
 }
 // La sesión de quien entró con su mail (3 horas), en este aparato.
@@ -275,10 +275,13 @@ async function nuevaSolicitud() {
       <div class="firma-pie"><span>Aclaración: <b id="vAcl">${esc(g.nombre || '—')}</b> · ${fechaDMA(hoyISO())}</span><button class="lnk" onclick="firmaPad.clear();$('firmaPh').classList.remove('oculto')">Borrar</button></div>
       <button class="btn" id="btnEnviar" onclick="enviar()">${rem ? 'Firmar y enviar el cambio' : 'Firmar y enviar'}</button>
       <div class="msg" id="mEnviar"></div>
-      <div class="meta" style="text-align:center">Después, RR. HH. se la manda a tu jefe directo; firman tu jefe y RR. HH., y te llega el PDF firmado.</div></div>
+      <div class="meta" style="text-align:center">Le llega a tu jefe directo y después a RR. HH.; cuando firmen, te llega el PDF.</div></div>
     <div style="text-align:center;margin-top:12px"><button class="lnk" onclick="dejarDeModificar()">← Mis solicitudes</button></div>`);
   prepararFirma(); revisar();
 }
+// A quién le llegó (va sola al jefe del área; sin jefe, a RR. HH.; con un área que no está en la lista, RR. HH. la deriva).
+const aQuien = estado => estado === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
+  : estado === 'rrhh' ? 'Le llegó a RR. HH. para que la apruebe y la firme.' : 'RR. HH. se la manda a tu jefe directo para que la apruebe.';
 // Modificar: el formulario con lo que tenía; al enviarla, la nueva (firmada de nuevo) reemplaza a la anterior.
 function modificar(d) {
   nuevaSolicitud.reemplaza = { id: d.id, creada: d.creada, estado: d.estado };
@@ -345,9 +348,9 @@ async function enviar() {
   // A RR. HH. y la confirmación a la persona; si la modificó, después el aviso a su jefe (si ya la tenía).
   api({ vacaciones: 'aviso', id: data.id }).then(() => rem ? api({ vacaciones: 'aviso', id: rem.id }) : null);
   const v = await sb.rpc('vacaciones_ver', { p_token: data.ver });
-  pasos('nueva', true);
+  pasos((v.data && v.data.estado) || 'nueva', !(v.data && v.data.estado === 'rrhh' && !v.data.con_jefe));
   vista(`<div class="card centro"><div class="ic">✓</div><b>${rem ? 'Listo, la cambiaste' : 'Listo, la mandaste'}</b>
-    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}RR. HH. se la manda a tu jefe directo para que la apruebe y la firme. Te llegó una copia a <b>${esc(ses.email)}</b> y, al final, te llega el PDF con todas las firmas.</div>
+    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}${aQuien(v.data && v.data.estado)} Te mandamos una copia a <b>${esc(ses.email)}</b> y, al final, te llega el PDF con todas las firmas.</div>
     <div class="btns" style="margin-top:4px"><button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button><button class="btn" onclick="misSolicitudes()">Mis solicitudes</button></div></div>`);
   bajarPdf.ficha = v.data;
 }
@@ -385,7 +388,7 @@ function cambiarHTML(d, yo) {
     <div class="btns"><button class="btn sec" onclick="modificar(bajarPdf.ficha)">Modificar</button><button class="btn peligro" onclick="preguntarCancelar()">Cancelarla</button></div></div>`;
 }
 function preguntarCancelar() {
-  $('cCambiar').innerHTML = `<div class="card-t">Cancelar la solicitud</div><div class="txt">Le avisamos a RR. HH.${bajarPdf.ficha.estado === 'jefe' ? ' y a tu jefe' : ''}. Queda registrada como cancelada.</div>
+  $('cCambiar').innerHTML = `<div class="card-t">Cancelar la solicitud</div><div class="txt">Le avisamos a ${bajarPdf.ficha.estado === 'jefe' ? 'tu jefe' : 'RR. HH.'} y queda registrada como cancelada.</div>
     <div class="campo" style="margin-top:12px"><label for="cMotivo">Motivo (opcional)</label><input class="in" id="cMotivo" maxlength="300" placeholder="Cambié de planes, por ejemplo"></div>
     <div class="btns"><button class="btn sec" onclick="pantallaVer(bajarPdf.ficha, pantallaVer.propia)">No, volver</button><button class="btn rojo" id="btnCancelar" onclick="cancelar()">Sí, cancelarla</button></div>
     <div class="msg" id="mCancelar"></div>`;
@@ -401,7 +404,7 @@ async function cancelar() {
   api({ vacaciones: 'aviso', id: d.id });   // a RR. HH. (y al jefe, si ya la tenía)
   pasos('');
   vista(`<div class="card centro"><div class="ic">✕</div><b>La cancelaste</b>
-    <div class="txt">Le avisamos a RR. HH.${d.estado === 'jefe' ? ' y a tu jefe (su link quedó sin efecto)' : ''}. Si querés pedir otras fechas, hacé una nueva.</div>
+    <div class="txt">Le avisamos a ${d.estado === 'jefe' ? 'tu jefe' : 'RR. HH.'} y el link para firmarla quedó sin efecto. Si querés pedir otras fechas, hacé una nueva.</div>
     <button class="btn" onclick="misSolicitudes()">Mis solicitudes</button></div>`);
 }
 function pantallaVer(d, propia) {
@@ -410,7 +413,7 @@ function pantallaVer(d, propia) {
   const sinJefe = !d.con_jefe && (d.estado === 'rrhh' || d.estado === 'aprobada' || d.estado === 'rechazada');
   pantallaVer.propia = propia;
   pasos(d.estado, d.estado === 'nueva' ? true : d.con_jefe);
-  vista(`${cancelada ? canceladaHTML(d, yo) : ''}<div class="card"><div class="card-t">Solicitud<small><span class="estado ${d.estado}">${ESTADOS[d.estado]}</span></small></div>
+  vista(`${cancelada ? canceladaHTML(d, yo) : ''}<div class="card"><div class="card-t">Datos<small><span class="estado ${d.estado}">${ESTADOS[d.estado]}</span></small></div>
       <div class="datos"><div><small>Nombre y apellido</small><b>${esc(d.nombre)}</b></div><div><small>Área</small><b>${esc(d.area)}</b></div>
         <div><small>Mail</small><b>${esc(d.email)}</b></div><div><small>Pedida el</small><b>${fechaDMA(d.datos.fecha || d.creada)}</b></div></div>
       ${rem ? `<div class="meta">Modifica la solicitud del <b>${fechaDM(rem.fecha)}</b>, que quedó cancelada.</div>` : ''}</div>
@@ -437,7 +440,7 @@ async function firmar() {
   if (!decision) { msg('mFirmar', 'Marcá si la aprobás o no.'); return; }
   const acl = $('aAcl').value.trim(); if (acl.length < 3) { msg('mFirmar', 'Completá tu aclaración (nombre y apellido).'); return; }
   if (!firmaPad || firmaPad.isEmpty()) { msg('mFirmar', 'Falta tu firma.'); return; }
-  const btn = $('btnFirmar'); btn.disabled = true; btn.textContent = 'Firmando…';
+  const btn = $('btnFirmar'), d0rol = (bajarPdf.ficha || {}).rol; btn.disabled = true; btn.textContent = 'Firmando…';
   const { data, error } = await sb.rpc('vacaciones_firmar', { p_token: TOKEN, p_decision: decision, p_aclaracion: acl, p_firma: firmaPad.toDataURL('image/png'), p_nota: $('aNota').value.trim() });
   if (error || !data || !data.ok) { btn.disabled = false; btn.textContent = 'Firmar'; msg('mFirmar', (data && data.error) || 'No se pudo firmar. Probá de nuevo.'); return; }
   const v = (await sb.rpc('vacaciones_ver', { p_token: TOKEN })).data;
@@ -447,7 +450,7 @@ async function firmar() {
   await api({ vacaciones: 'aviso', id: data.id });
   pasos(data.estado, v ? v.con_jefe : true);
   vista(`<div class="card centro"><div class="ic">✓</div><b>Firmada</b>
-    <div class="txt">${data.estado === 'rrhh' ? 'Ahora le llega a RR. HH. para la firma final.' : fin ? 'Le llega el PDF con todas las firmas a ' + esc(v.nombre) + ', con copia a quienes firmaron.' : ''}</div>
+    <div class="txt">${data.estado === 'rrhh' ? 'Ahora le llega a RR. HH. para la firma final.' : fin ? 'Le llega el PDF con todas las firmas a ' + esc(v.nombre) + (v.con_jefe && d0rol === 'rrhh' ? ', con copia a su jefe directo.' : '.') : ''}</div>
     <button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button></div>`);
   bajarPdf.ficha = v;
 }

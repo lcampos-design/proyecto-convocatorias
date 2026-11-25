@@ -68,7 +68,7 @@ export function armarRecordatorio(c) {
   const subject = `Contrato · pendiente de firma${show ? ' · ' + show : ''}${fecha ? ' · ' + fechaCorta(fecha) : ''}`;
   const vence = c.vence_el ? fechaLinda(diaAR(new Date(c.vence_el))) : '';
   const text = `${hola}:\n\nTe recordamos que todavía no firmaste ${que}${de}.\n\nPara firmarlo, entrá a este link:\n${link}\n\n${vence ? 'El link vence el ' + vence + '. ' : ''}Cualquier duda, respondé este mail.\n\nSaludos,\nShow Business Solutions`;
-  const html = armarMailSBS({ kicker: 'Recursos Humanos · Contratos', titulo: doc ? 'Documento pendiente de firma' : 'Contrato pendiente de firma', hola,
+  const html = armarMailSBS({ kicker: 'Contratos', titulo: 'Recordatorio', hola,
     parrafos: [`Te recordamos que todavía no firmaste ${que}${de}.`, 'Para firmarlo, tocá el botón:'], boton: doc ? 'Firmar el documento' : 'Firmar mi contrato', link, copiar: true,
     pie: (vence ? 'El link vence el ' + vence + '. ' : '') + 'Cualquier duda, respondé este mail.', firma: `${SITIO}/${FIRMA_MAIL[area]}`, instagram: true }).html;
   return { from: casilla, subject, text, html };

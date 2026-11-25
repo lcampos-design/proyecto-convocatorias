@@ -148,7 +148,7 @@ export function armarMail({ nombre, fecha, show, link, lugar }) {
 // El HTML de los mails del contrato, con el diseño de todos los mails (api/_lib/mail-sbs.js): el botón, el link
 // para copiar, cuándo vence, la firma de la Gerencia de RR. HH. y el pie con Instagram.
 export function mailContrato({ titulo, hola, parrafos, link, boton, pie }) {
-  return armarMailSBS({ kicker: 'Recursos Humanos · Contratos', titulo: titulo || 'Tu contrato para firmar', hola, parrafos, boton: boton || 'Firmar mi contrato', link, copiar: true,
+  return armarMailSBS({ kicker: 'Contratos', titulo: titulo || 'Tu contrato', hola, parrafos, boton: boton || 'Firmar mi contrato', link, copiar: true,
     pie: pie || 'El link vence en 7 días. Cualquier duda, respondé este mail.', firma: FIRMA_RRHH, instagram: true }).html;
 }
 

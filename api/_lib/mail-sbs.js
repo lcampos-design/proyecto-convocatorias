@@ -3,9 +3,10 @@
 // "mis datos". admin.html tiene su copia (renderEmailHtml) para los que salen desde el panel: si cambia uno, cambiar el otro.
 //
 // Arriba, la barra negra finita, el logo horizontal y show-bs.com, la línea gris; después, de qué es (en gris) y el
-// título en mayúsculas; el texto, los datos en filas, el botón negro; la firma de RR. HH. y, abajo, la línea de la
-// marca y la leyenda de RR. HH. Con tablas, que es lo que respetan todos los clientes de correo; Poppins para quien
-// la tenga y, si no, una parecida.
+// título; el texto, los datos en filas, el botón negro; la firma de RR. HH. y, abajo, la leyenda de RR. HH. Con
+// tablas, que es lo que respetan todos los clientes de correo; Poppins para quien la tenga y, si no, una parecida.
+// Sin mayúsculas sostenidas ni repeticiones (25-nov, Thomas): el título no repite lo de arriba, el texto no repite el
+// título, y el pie no repite la marca (ya está en el encabezado).
 
 export const SITIO = 'https://convocatorias.show-bs.com';
 export const FIRMA_RRHH = `${SITIO}/firmas/firma-rrhh.jpg`;
@@ -42,15 +43,14 @@ export function marcoMail({ kicker, titulo, cuerpo, firma, instagram }) {
     </tr></table>
   </td></tr>
   <tr><td style="border-top:1px solid #9a9a9a;padding:28px 0 0">
-    ${kicker ? `<div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#6b6b6b;font-family:${F}">${esc(kicker)}</div>` : ''}
-    ${titulo ? `<div style="font-size:26px;line-height:1.15;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin:6px 0 22px;font-family:${F}">${esc(titulo)}</div>` : ''}
+    ${kicker ? `<div style="font-size:13px;font-weight:600;color:#6b6b6b;font-family:${F}">${esc(kicker)}</div>` : ''}
+    ${titulo ? `<div style="font-size:26px;line-height:1.2;font-weight:700;color:#1a1a1a;margin:4px 0 20px;font-family:${F}">${esc(titulo)}</div>` : ''}
     ${cuerpo}
     ${firma ? `<div style="margin-top:26px;padding-top:20px;border-top:1px solid #e6e6e6"><img src="${esc(firma)}" alt="Show Business Solutions · Gerencia de RR. HH." width="260" style="max-width:260px;width:100%;height:auto;display:block;border:0"></div>` : ''}
   </td></tr>
   <tr><td style="padding:30px 0 0">
-    <div style="border-top:1px solid #d9d9d9;padding-top:14px;text-align:center;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:#8a8a8a;font-family:${F}">SHOW BUSINESS SOLUTIONS · ${sitioSBS('#8a8a8a')} · HANDS ON EVERYTHING</div>
+    <div style="border-top:1px solid #d9d9d9;padding-top:14px;text-align:center;font-size:11px;color:#9a9a9a;font-family:${F}">Proyecto llevado a cabo por la Gerencia de RR. HH.</div>
     ${instagram ? `<div style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:4px;font-family:${F}">Instagram <a href="https://www.instagram.com/showbs/" style="color:#9a9a9a;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9a9a9a;text-decoration:underline">@showbspain</a></div>` : ''}
-    <div style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:4px;font-family:${F}">Proyecto llevado a cabo por la Gerencia de RR. HH.</div>
   </td></tr>
 </table>
 </div>`;
@@ -62,7 +62,7 @@ export function armarMail({ kicker, titulo, hola, parrafos, datos, codigo, boton
   const cuerpo = [hola ? parrafo(hola + ':') : '', (parrafos || []).map(parrafo).join('\n    '), codigo ? codigoHtml(codigo) : '', filasHtml(datos),
     link ? botonHtml(boton, link) : '', link && copiar ? copiarHtml(link) : '', pie ? pieHtml(pie) : ''].filter(Boolean).join('\n    ');
   const html = marcoMail({ kicker, titulo, cuerpo, firma, instagram });
-  const text = [kicker ? kicker.toUpperCase() : '', titulo ? titulo.toUpperCase() : '', ''].concat(hola ? [hola + ':', ''] : [], (parrafos || []).flatMap(p => [p, '']),
+  const text = [kicker || '', titulo || '', ''].concat(hola ? [hola + ':', ''] : [], (parrafos || []).flatMap(p => [p, '']),
     codigo ? [codigo, ''] : [], (datos || []).filter(Boolean).map(([k, v]) => k + ': ' + v), datos && datos.length ? [''] : [], link ? [boton + ': ' + link, ''] : [], pie ? [pie, ''] : [],
     ['Recursos Humanos · Show Business Solutions']).join('\n').replace(/^\n+/, '');
   return { text, html };

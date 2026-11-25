@@ -2624,7 +2624,7 @@ tr:hover td{background:#f9f9fb}
   <div class="modal" style="max-width:1080px">
     <div class="modal-title"><span>Vacaciones · personal corporativo</span><button class="mclose" onclick="closeM('mVac')">✕</button></div>
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-6px 0 12px">
-      <div style="font-size:12.5px;color:var(--r-muted);flex:1;min-width:260px;line-height:1.5">La persona la completa y la firma en /vacaciones; acá se deriva al jefe que corresponde (o la firma sólo RR. HH.). El jefe y RR. HH. firman con el link del mail; al final, el PDF les llega a todos.</div>
+      <div style="font-size:12.5px;color:var(--r-muted);flex:1;min-width:260px;line-height:1.5">La persona la completa y la firma en /vacaciones y le llega sola al jefe de su área; después, a RR. HH. Cada uno recibe un solo mail, con su link para firmar. Al final, el PDF va a la persona, al jefe y a las casillas de Áreas y jefes. Acá se puede cambiar el jefe o reenviar el link.</div>
       <div class="cc-seg cc-tabs" role="tablist"><button data-t="lista" class="on" onclick="vacTabs('lista')">Solicitudes</button><button data-t="cfg" onclick="vacTabs('cfg')">Áreas y jefes</button></div>
     </div>
     <div id="vacCuerpo"></div>
@@ -12499,12 +12499,13 @@ function renderEmailHtml(text, fromAddr, area, confirm) {
   const conf = r => `${base}/confirmar?c=${encodeURIComponent(confirm.cuit)}&amp;v=${encodeURIComponent(confirm.convId)}&amp;r=${r}${firmaQs}`;
   const btns = (CONFIRM_BTNS_ON && confirm && confirm.cuit && confirm.convId) ? `<div style="margin:24px 0 6px;padding:18px 16px;border-radius:12px;background:#f2f2f2;text-align:center">
       <div style="font-size:13px;color:#4a4a4a;margin-bottom:12px;font-family:${F}">Confirmá tu asistencia tocando un botón:</div>
-      <a href="${conf('si')}" style="display:inline-block;background:#1a1a1a;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 24px;border-radius:10px;margin:4px 5px;font-family:${F}">✓ CONFIRMO</a><a href="${conf('no')}" style="display:inline-block;background:#ffffff;color:#1a1a1a;border:1.5px solid #1a1a1a;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:10px;margin:4px 5px;font-family:${F}">✕ NO CONFIRMO</a></div>` : '';
+      <a href="${conf('si')}" style="display:inline-block;background:#1a1a1a;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 24px;border-radius:10px;margin:4px 5px;font-family:${F}">✓ Confirmo</a><a href="${conf('no')}" style="display:inline-block;background:#ffffff;color:#1a1a1a;border:1.5px solid #1a1a1a;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:10px;margin:4px 5px;font-family:${F}">✕ No confirmo</a></div>` : '';
   // El diseño de todos los mails (24-nov, Thomas: "estilo como el informe del Arena"), el mismo que arma el servidor
   // (api/_lib/mail-sbs.js): si cambia uno, cambiar el otro. Barra negra finita, logo horizontal y show-bs.com, línea
-  // gris, de qué es (en gris); el texto, los botones, la firma de RR. HH. y el pie de la marca. Con tablas, que es lo
-  // que respetan todos los clientes de correo; Poppins para quien la tenga y, si no, una parecida.
-  const kicker = area === 'movistar' ? 'Recursos Humanos · Movistar Arena' : 'Recursos Humanos · Externos';
+  // gris, de qué es (en gris); el texto, los botones, la firma de RR. HH. y la leyenda. Con tablas, que es lo que
+  // respetan todos los clientes de correo; Poppins para quien la tenga y, si no, una parecida. Sin mayúsculas
+  // sostenidas ni repeticiones (25-nov): arriba, sólo el área; el pie no repite la marca del encabezado.
+  const kicker = area === 'movistar' ? 'Movistar Arena' : 'Externos';
   // Poppins: la cargan Mail de iPhone y Mac, Samsung y Thunderbird (Gmail y Outlook usan la que sigue en la lista);
   // escondida para Outlook de Windows, que si la ve pasa todo a Times New Roman. "show-bs.com" con su color: si no,
   // Gmail lo pone azul y subrayado.
@@ -12519,15 +12520,14 @@ function renderEmailHtml(text, fromAddr, area, confirm) {
     </tr></table>
   </td></tr>
   <tr><td style="border-top:1px solid #9a9a9a;padding:26px 0 0">
-    <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#6b6b6b;margin-bottom:18px;font-family:${F}">${kicker}</div>
+    <div style="font-size:13px;font-weight:600;color:#6b6b6b;margin-bottom:16px;font-family:${F}">${kicker}</div>
     ${out}
     ${btns}
     ${sigBlock}
   </td></tr>
   <tr><td style="padding:30px 0 0">
-    <div style="border-top:1px solid #d9d9d9;padding-top:14px;text-align:center;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:#8a8a8a;font-family:${F}">SHOW BUSINESS SOLUTIONS · ${sitio('#8a8a8a')} · HANDS ON EVERYTHING</div>
+    <div style="border-top:1px solid #d9d9d9;padding-top:14px;text-align:center;font-size:11px;color:#9a9a9a;font-family:${F}">Proyecto llevado a cabo por la Gerencia de RR. HH.</div>
     <div style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:4px;font-family:${F}">Instagram <a href="https://www.instagram.com/showbs/" style="color:#9a9a9a;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9a9a9a;text-decoration:underline">@showbspain</a></div>
-    <div style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:4px;font-family:${F}">Proyecto llevado a cabo por la Gerencia de RR. HH.</div>
   </td></tr>
 </table>
 </div>`;
@@ -13936,7 +13936,8 @@ async function vacCargar() {
     sb.from('vacaciones').select('id,created_at,email,nombre,area,datos,estado,aprueba_jefe,aprueba_rrhh,firmas,derivada_por').order('created_at', { ascending: false }),
     sb.from('config').select('value').eq('key', 'vacaciones').maybeSingle()]);
   vacFalta = !!l.error; vacLista = l.error ? [] : (l.data || []);
-  vacCfg = Object.assign({ rrhh: '', areas: [] }, (c.data && c.data.value) || {});
+  vacCfg = Object.assign({ rrhh: '', copias: [], areas: [] }, (c.data && c.data.value) || {});
+  if (!Array.isArray(vacCfg.copias)) vacCfg.copias = [];
   vacCfg.areas = (vacCfg.areas || []).map(a => ({ nombre: a.nombre || '', jefe: a.jefe || '' }));
 }
 // Para el recuadro de Contratos: cuántas hay para derivar (sin esperar a abrir).
@@ -14051,7 +14052,8 @@ async function vacPdf(id) {
 function renderVacCfg(cont) {
   cont.innerHTML = `<div class="vac-link"><span>Link para el newsletter</span><b>${VAC_LINK}</b><button class="btn btn-sec btn-xs" onclick="navigator.clipboard.writeText('${VAC_LINK}').then(()=>toast('✓ Link copiado'))">Copiar</button></div>
     <div class="fg"><label>Mail de RR. HH. (aprueba y firma todas, al final)</label><input class="fi" id="vacRrhh" value="${e(vacCfg.rrhh)}" placeholder="nombre@show-bs.com"></div>
-    <div style="margin-top:14px;font-size:12.5px;font-weight:600;color:#374151">Áreas y su jefe directo <span style="font-weight:400;color:#6b7280">· el área aparece en el formulario; sin jefe, la firma sólo RR. HH.</span></div>
+    <div class="fg" style="margin-top:10px"><label>Copia del PDF final, siempre (mails separados por coma)</label><input class="fi" id="vacCopias" value="${e((vacCfg.copias || []).join(', '))}" placeholder="RR. HH., legales, socios…"></div>
+    <div style="margin-top:14px;font-size:12.5px;font-weight:600;color:#374151">Áreas y su jefe directo <span style="font-weight:400;color:#6b7280">· la solicitud le llega sola al jefe de su área; sin jefe (o si la pide el jefe), la firma sólo RR. HH.</span></div>
     <div id="vacAreas">${vacCfg.areas.map((a, i) => `<div class="vac-area"><input class="fi" value="${e(a.nombre)}" placeholder="Área" oninput="vacCfg.areas[${i}].nombre=this.value"><input class="fi" value="${e(a.jefe)}" placeholder="Mail del jefe (vacío: la firma RR. HH.)" oninput="vacCfg.areas[${i}].jefe=this.value"><button class="btn btn-sec btn-xs" onclick="vacCfg.areas.splice(${i},1);renderVac()">Quitar</button></div>`).join('')}</div>
     <button class="btn btn-sec btn-sm" style="margin-top:8px" onclick="vacCfg.areas.push({nombre:'',jefe:''});renderVac()">+ Agregar un área</button>
     <div style="text-align:right;margin-top:16px"><button class="btn btn-primary" onclick="vacGuardarCfg()">Guardar</button></div>`;
@@ -14061,9 +14063,11 @@ async function vacGuardarCfg() {
   if (!okMail(rrhh)) { toast('Revisá el mail de RR. HH.'); return; }
   const areas = vacCfg.areas.map(a => ({ nombre: a.nombre.trim(), jefe: a.jefe.trim().toLowerCase() })).filter(a => a.nombre);
   const mal = areas.find(a => a.jefe && !okMail(a.jefe)); if (mal) { toast('Revisá el mail del jefe de ' + mal.nombre); return; }
-  const { error } = await sb.from('config').upsert({ key: 'vacaciones', value: { rrhh, areas }, updated_at: new Date().toISOString() });
+  const copias = [...new Set(document.getElementById('vacCopias').value.split(/[\s,;]+/).map(m => m.trim().toLowerCase()).filter(Boolean))];
+  const malC = copias.find(m => !okMail(m)); if (malC) { toast('Revisá este mail de las copias: ' + malC); return; }
+  const { error } = await sb.from('config').upsert({ key: 'vacaciones', value: { rrhh, copias, areas }, updated_at: new Date().toISOString() });
   if (error) { toast('No se pudo guardar: ' + (error.message || error)); return; }
-  vacCfg = { rrhh, areas }; toast('✓ Guardado'); vacTab = 'lista'; renderVac();
+  vacCfg = { rrhh, copias, areas }; toast('✓ Guardado'); vacTab = 'lista'; renderVac();
 }
 
 async function renderContratosBorrados() {
