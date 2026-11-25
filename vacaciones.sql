@@ -56,6 +56,9 @@ alter table public.vacaciones drop constraint if exists vacaciones_estado_check;
 alter table public.vacaciones add constraint vacaciones_estado_check check (estado in ('nueva', 'jefe', 'rrhh', 'aprobada', 'rechazada', 'cancelada'));
 alter table public.vacaciones alter column estado set default 'nueva';
 alter table public.vacaciones add column if not exists derivada_por text;
+-- Las vacaciones de quien firma por RR. HH. (la jefa de RR. HH.): las aprueban los socios, que están por arriba de ella
+-- (25-nov, Thomas). En ese caso el paso "rrhh" lo firma uno de los socios.
+alter table public.vacaciones add column if not exists aprueban_socios boolean not null default false;
 create index if not exists vacaciones_token_idx on public.vacaciones (token_hash);
 create index if not exists vacaciones_mail_idx on public.vacaciones (email, created_at desc);
 alter table public.vacaciones enable row level security;
@@ -200,6 +203,14 @@ language sql stable set search_path = public as $$
 $$;
 revoke execute on function public.vac_es_jefe(text) from public, anon, authenticated;
 
+-- Los mails de los socios (config 'socios'), sin repetir. Aprueban las vacaciones de quien firma por RR. HH.
+create or replace function public.vac_socios() returns text[]
+language sql stable set search_path = public as $$
+  select coalesce(array(select distinct lower(btrim(x)) from public.config c, jsonb_array_elements_text(coalesce(c.value -> 'socios', '[]'::jsonb)) x
+                         where c.key = 'vacaciones' and btrim(x) ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' order by 1), '{}')
+$$;
+revoke execute on function public.vac_socios() from public, anon, authenticated;
+
 -- Se puede modificar o cancelar: todavía no firmó ni el jefe ni RR. HH.
 create or replace function public.vac_modificable(p_estado text, p_firmas jsonb) returns boolean
 language sql immutable set search_path = public as $$ select p_estado in ('nueva', 'jefe', 'rrhh') and not (p_firmas ? 'jefe') and not (p_firmas ? 'rrhh') $$;
@@ -208,7 +219,7 @@ revoke execute on function public.vac_modificable(text, jsonb) from public, anon
 -- Lo de una persona: sus solicitudes, de la más nueva a la más vieja (sin las firmas ni el PDF).
 create or replace function public.vac_mias(v_mail text) returns jsonb
 language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(jsonb_build_object('id', id, 'creada', created_at, 'estado', estado, 'area', area, 'datos', datos, 'modificable', public.vac_modificable(estado, firmas)) order by created_at desc), '[]'::jsonb)
+  select coalesce(jsonb_agg(jsonb_build_object('id', id, 'creada', created_at, 'estado', estado, 'area', area, 'datos', datos, 'modificable', public.vac_modificable(estado, firmas), 'socios', aprueban_socios) order by created_at desc), '[]'::jsonb)
     from public.vacaciones where email = v_mail
 $$;
 revoke execute on function public.vac_mias(text) from public, anon, authenticated;
@@ -253,7 +264,7 @@ declare
   v_area   text := btrim(coalesce(p_datos ->> 'area', ''));
   v_cfg    jsonb := (select value from public.config where key = 'vacaciones');
   t jsonb; v_desde date; v_hasta date; v_tramos jsonb := '[]'::jsonb; v_total int := 0; v_ant date; v_ver text; v_id uuid; v_datos jsonb; v_vieja record; v_extra text;
-  v_jefe text; v_estado text;
+  v_jefe text; v_estado text; v_socios boolean;
 begin
   if v_mail is null then return jsonb_build_object('ok', false, 'error', 'Tu sesión venció. Entrá de nuevo con tu mail (lo que completaste queda).'); end if;
   if v_cfg is null or coalesce(v_cfg ->> 'rrhh', '') = '' then return jsonb_build_object('ok', false, 'error', 'Todavía no está configurado RR. HH. Avisale a RR. HH.'); end if;
@@ -297,14 +308,18 @@ begin
   v_estado := case when not found then 'nueva' when v_jefe = '' or v_jefe = lower(btrim(v_cfg ->> 'rrhh')) or v_jefe = v_mail then 'rrhh' else 'jefe' end;
   -- Un jefe de área va siempre a RR. HH., aunque elija otra área.
   if public.vac_es_jefe(v_mail) then v_estado := 'rrhh'; end if;
+  -- La pide quien firma por RR. HH.: la aprueban los socios (si están cargados; si no, como hasta ahora).
+  v_socios := v_mail = lower(btrim(v_cfg ->> 'rrhh')) and cardinality(public.vac_socios()) > 0;
+  if v_socios then v_estado := 'rrhh'; end if;
   if v_estado <> 'jefe' then v_jefe := null; end if;
-  insert into public.vacaciones (id, email, nombre, area, datos, aprueba_jefe, aprueba_rrhh, estado, derivada_por, firmas, ver_hashes, transaccion_id, hash_contenido)
+  insert into public.vacaciones (id, email, nombre, area, datos, aprueba_jefe, aprueba_rrhh, estado, derivada_por, firmas, ver_hashes, transaccion_id, hash_contenido, aprueban_socios)
   values (v_id, v_mail, v_nombre, v_area, v_datos, v_jefe, lower(btrim(v_cfg ->> 'rrhh')), v_estado, case when v_estado <> 'nueva' then 'automático' end,
           jsonb_build_object('empleado', jsonb_build_object('png', p_firma, 'aclaracion', v_nombre, 'fecha', now(), 'email', v_mail)),
-          array[public.vac_huella(v_ver)], upper(replace(v_id::text, '-', '')), public.vac_hash_contenido(v_nombre, v_mail, v_area, v_datos));
+          array[public.vac_huella(v_ver)], upper(replace(v_id::text, '-', '')), public.vac_hash_contenido(v_nombre, v_mail, v_area, v_datos), v_socios);
   perform public.vac_evento(v_id, 'creada', v_mail, 'Completó y firmó la solicitud. Entró con el código enviado a su mail. Huella de la firma: ' || left(public.vac_huella(p_firma), 16) || coalesce(v_extra, ''));
   if v_estado <> 'nueva' then
     perform public.vac_evento(v_id, 'derivada', 'automático', case when v_estado = 'jefe' then 'Va sola al jefe directo del área (' || v_area || '): ' || v_jefe
+      when v_socios then 'Es de RR. HH. (quien firma por RR. HH.): va directo a los socios, que la aprueban (firma uno de ellos)'
       else 'Va directo a RR. HH., que es su jefe directo (firma una sola vez)' end, true);
   end if;
   -- La anterior queda cancelada (reemplazada): el link del jefe, si estaba derivada, deja de servir (queda para verla).
@@ -383,16 +398,20 @@ begin
       return jsonb_build_object('ok', true, 'paso', 'cancelada', 'reemplazada', true, 'para', v_para, 'copia', '[]'::jsonb, 'rrhh', r.aprueba_rrhh,
         'a_jefe', r.aprueba_jefe is not null, 'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos);
     end if;
-    perform public.vac_evento(r.id, 'aviso', v_para, 'Mail ' || case when r.aprueba_jefe is not null then 'al jefe' else 'a RR. HH.' end || ': la canceló', true);
-    return jsonb_build_object('ok', true, 'paso', 'cancelada', 'reemplazada', false, 'para', v_para, 'copia', '[]'::jsonb, 'rrhh', r.aprueba_rrhh,
+    -- Si la aprobaban los socios, el aviso les llega a ellos.
+    if r.aprueban_socios and r.aprueba_jefe is null then v_para := 'socios'; end if;
+    perform public.vac_evento(r.id, 'aviso', v_para, 'Mail ' || case when r.aprueba_jefe is not null then 'al jefe' when v_para = 'socios' then 'a los socios' else 'a RR. HH.' end || ': la canceló', true);
+    return jsonb_build_object('ok', true, 'paso', 'cancelada', 'reemplazada', false, 'para', v_para, 'para_lista', case when v_para = 'socios' then to_jsonb(public.vac_socios()) end, 'copia', '[]'::jsonb, 'rrhh', r.aprueba_rrhh,
       'a_jefe', r.aprueba_jefe is not null, 'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos,
       'motivo', (select substring(e.detalle from 'Motivo: (.*)$') from public.vacaciones_eventos e where e.vacacion_id = r.id and e.tipo = 'cancelada' order by e.fecha desc limit 1));
   end if;
   if r.estado in ('jefe', 'rrhh') then
     v_tok := public.vac_token();
     update public.vacaciones set token_hash = public.vac_huella(v_tok), token_rol = r.estado, token_vence = now() + interval '30 days', aviso_hecho = r.estado where id = r.id;
-    perform public.vac_evento(r.id, 'aviso', case when r.estado = 'jefe' then r.aprueba_jefe else r.aprueba_rrhh end,
-      'Mail con el link personal para aprobar y firmar (' || case when r.estado = 'jefe' then 'jefe directo' else 'RR. HH.' end || ')', true);
+    -- Quien firma ahora: el jefe, RR. HH. o, si es de quien firma por RR. HH., los socios (el mismo link a todos; firma uno).
+    v_para := case when r.estado = 'jefe' then r.aprueba_jefe when r.aprueban_socios then 'socios' else r.aprueba_rrhh end;
+    perform public.vac_evento(r.id, 'aviso', v_para,
+      'Mail con el link personal para aprobar y firmar (' || case when r.estado = 'jefe' then 'jefe directo' when v_para = 'socios' then 'socios: ' || array_to_string(public.vac_socios(), ', ') else 'RR. HH.' end || ')', true);
     -- La primera vez, también la confirmación a la persona, con su link para verla.
     if not exists (select 1 from public.vacaciones_eventos e where e.vacacion_id = r.id and e.tipo = 'aviso' and e.quien = r.email) then
       v_ver := public.vac_token();
@@ -409,7 +428,7 @@ begin
     -- equipo: quien firma es su jefe directo (el del área o RR. HH.): "Es de tu equipo y ya firmó".
     return jsonb_build_object('ok', true, 'paso', r.estado, 'token', v_tok, 'con_jefe', r.aprueba_jefe is not null, 'ver', v_ver, 'avance', v_avance,
       'equipo', r.estado = 'jefe' or r.aprueba_jefe is null, 'jefe_nombre', r.firmas -> 'jefe' ->> 'aclaracion', 'es_jefe', public.vac_es_jefe(r.email),
-      'para', case when r.estado = 'jefe' then r.aprueba_jefe else r.aprueba_rrhh end, 'rrhh', r.aprueba_rrhh,
+      'socios', v_para = 'socios', 'para', v_para, 'para_lista', case when v_para = 'socios' then to_jsonb(public.vac_socios()) end, 'rrhh', r.aprueba_rrhh,
       'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos);
   end if;
   v_ver := public.vac_token();
@@ -421,13 +440,13 @@ begin
   -- aprobadas (25-nov, Thomas: "a los socios, cuando está todo aprobado, no los rechazados").
   v_copia := array(select distinct m from unnest(v_copia || array(select lower(btrim(x))
                                                                     from jsonb_array_elements_text(coalesce(v_cfg -> 'copias', '[]'::jsonb)
-                                                                           || case when r.estado = 'aprobada' then coalesce(v_cfg -> 'socios', '[]'::jsonb) else '[]'::jsonb end) x
+                                                                           || case when r.estado = 'aprobada' or r.aprueban_socios then coalesce(v_cfg -> 'socios', '[]'::jsonb) else '[]'::jsonb end) x
                                                               where btrim(x) ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$')) m
                     where m <> r.email and m is distinct from (case when r.firmas ? 'rrhh' then r.aprueba_rrhh end) order by m);
   perform public.vac_evento(r.id, 'aviso', r.email, 'Mail final (' || case when r.estado = 'aprobada' then 'aprobada' else 'no aprobada' end || ')' || case when r.pdf is not null then ', con el PDF firmado' else '' end
     || coalesce(', con copia a ' || nullif(array_to_string(v_copia, ', '), ''), ''), true);
   return jsonb_build_object('ok', true, 'paso', 'fin', 'estado', r.estado, 'ver', v_ver, 'para', r.email,
-    'copia', to_jsonb(v_copia), 'rrhh', r.aprueba_rrhh, 'con_jefe', r.aprueba_jefe is not null,
+    'copia', to_jsonb(v_copia), 'rrhh', r.aprueba_rrhh, 'con_jefe', r.aprueba_jefe is not null, 'socios', r.aprueban_socios,
     'nombre', r.nombre, 'area', r.area, 'datos', r.datos, 'pdf', r.pdf,
     'decision', coalesce(r.firmas -> 'rrhh' ->> 'decision', r.firmas -> 'jefe' ->> 'decision'),
     'nota', coalesce(nullif(r.firmas -> 'rrhh' ->> 'nota', ''), r.firmas -> 'jefe' ->> 'nota'));
@@ -439,7 +458,7 @@ create or replace function public.vac_ficha(r public.vacaciones, v_rol text) ret
 language sql stable set search_path = public as $$
   select jsonb_build_object('ok', true, 'id', r.id, 'rol', v_rol, 'estado', r.estado, 'nombre', r.nombre, 'email', r.email, 'area', r.area,
     'datos', r.datos, 'firmas', r.firmas, 'con_jefe', r.aprueba_jefe is not null, 'creada', r.created_at, 'tiene_pdf', r.pdf is not null, 'modificable', public.vac_modificable(r.estado, r.firmas),
-    'transaccion_id', r.transaccion_id, 'hash', r.hash_contenido, 'es_jefe', public.vac_es_jefe(r.email),
+    'transaccion_id', r.transaccion_id, 'hash', r.hash_contenido, 'es_jefe', public.vac_es_jefe(r.email), 'socios', r.aprueban_socios,
     'eventos', coalesce((select jsonb_agg(jsonb_build_object('tipo', e.tipo, 'quien', e.quien, 'detalle', e.detalle, 'ip', e.ip, 'user_agent', e.user_agent, 'fecha', e.fecha) order by e.fecha, e.id)
                            from public.vacaciones_eventos e where e.vacacion_id = r.id), '[]'::jsonb))
 $$;
@@ -460,9 +479,9 @@ begin
   if not found then return jsonb_build_object('ok', false, 'error', 'El link no es válido o ya no se usa.'); end if;
   if r.token_hash = h and r.estado = r.token_rol and r.token_vence <= now() then return jsonb_build_object('ok', false, 'error', 'El link venció. Pedile a RR. HH. que lo vuelva a mandar.'); end if;
   if r.token_hash = h and r.estado = r.token_rol and not exists (select 1 from public.vacaciones_eventos e where e.vacacion_id = r.id and e.tipo = 'abierta'
-       and e.quien is not distinct from (case when r.token_rol = 'jefe' then r.aprueba_jefe else r.aprueba_rrhh end) and e.fecha > now() - interval '10 minutes') then
-    perform public.vac_evento(r.id, 'abierta', case when r.token_rol = 'jefe' then r.aprueba_jefe else r.aprueba_rrhh end,
-      'Abrió su link para aprobar y firmar (' || case when r.token_rol = 'jefe' then 'jefe directo' else 'RR. HH.' end || ')');
+       and e.quien is not distinct from (case when r.token_rol = 'jefe' then r.aprueba_jefe when r.aprueban_socios then 'socios' else r.aprueba_rrhh end) and e.fecha > now() - interval '10 minutes') then
+    perform public.vac_evento(r.id, 'abierta', case when r.token_rol = 'jefe' then r.aprueba_jefe when r.aprueban_socios then 'socios' else r.aprueba_rrhh end,
+      'Abrió su link para aprobar y firmar (' || case when r.token_rol = 'jefe' then 'jefe directo' when r.aprueban_socios then 'socios' else 'RR. HH.' end || ')');
     select * into r from public.vacaciones where id = r.id;
   end if;
   return public.vac_ficha(r, case when r.token_hash = h and r.estado = r.token_rol then r.token_rol else 'ver' end);
@@ -483,11 +502,12 @@ begin
   v_estado := case when p_decision = 'no_aprobado' then 'rechazada' when r.token_rol = 'jefe' then 'rrhh' else 'aprobada' end;
   update public.vacaciones
      set firmas = firmas || jsonb_build_object(r.token_rol, jsonb_build_object('png', p_firma, 'aclaracion', v_ac, 'decision', p_decision,
-                    'nota', left(btrim(coalesce(p_nota, '')), 500), 'fecha', now(), 'email', case when r.token_rol = 'jefe' then r.aprueba_jefe else r.aprueba_rrhh end)),
+                    'nota', left(btrim(coalesce(p_nota, '')), 500), 'fecha', now(), 'email', case when r.token_rol = 'jefe' then r.aprueba_jefe when r.aprueban_socios then 'socios' else r.aprueba_rrhh end)),
          estado = v_estado, ver_hashes = ver_hashes || h, token_hash = null, token_rol = null
    where id = r.id;
-  perform public.vac_evento(r.id, 'firmada', case when r.token_rol = 'jefe' then r.aprueba_jefe else r.aprueba_rrhh end,
-    case when r.token_rol = 'jefe' then 'Jefe directo' else 'RR. HH.' end || ': ' || case when p_decision = 'aprobado' then 'aprobó' else 'no aprobó' end
+  -- Los socios comparten el link: queda quién firmó por su aclaración.
+  perform public.vac_evento(r.id, 'firmada', case when r.token_rol = 'jefe' then r.aprueba_jefe when r.aprueban_socios then 'socios' else r.aprueba_rrhh end,
+    case when r.token_rol = 'jefe' then 'Jefe directo' when r.aprueban_socios then 'Socios' else 'RR. HH.' end || ': ' || case when p_decision = 'aprobado' then 'aprobó' else 'no aprobó' end
     || ' y firmó. Aclaración: ' || v_ac || '. Huella de la firma: ' || left(public.vac_huella(p_firma), 16));
   return jsonb_build_object('ok', true, 'id', r.id, 'estado', v_estado);
 end;

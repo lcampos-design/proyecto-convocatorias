@@ -69,7 +69,7 @@ export const MAILS = {
   // A la persona, la primera vez: a quién le llegó y que la puede cambiar hasta que la firmen.
   recibida: a => armarMail({ kicker: KICKER, titulo: reemplaza(a) ? 'Recibimos el cambio' : 'Recibimos tu solicitud', hola: 'Hola, ' + primerNombre(a.nombre),
     parrafos: [(reemplaza(a) ? 'La anterior quedó cancelada. ' : '') + (a.paso === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
-      : a.paso === 'rrhh' ? (a.es_jefe ? 'Como sos jefe de área, dependés de RR. HH.: le llegó directo para que la apruebe y la firme.' : 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.') : 'RR. HH. se la manda a tu jefe directo para que la apruebe.')],
+      : a.paso === 'rrhh' ? (a.socios ? 'Como estás a cargo de RR. HH., le llegó a los socios para que la aprueben y la firmen.' : a.es_jefe ? 'Como sos jefe de área, dependés de RR. HH.: le llegó directo para que la apruebe y la firme.' : 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.') : 'RR. HH. se la manda a tu jefe directo para que la apruebe.')],
     datos: filasTramos(a.datos), boton: 'Ver mi solicitud', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.ver)}`,
     pie: 'Las fechas quedan sujetas a la confirmación de RR. HH. según tu saldo. Hasta que la firmen, la podés modificar o cancelar desde la página; al final te llega el PDF con todas las firmas.' }),
   // A quien la tenía para firmar: la canceló, o la cambió y la nueva va a otro lado.
@@ -79,8 +79,15 @@ export const MAILS = {
       : ['Canceló su solicitud, y el link para firmarla quedó sin efecto. No hace falta hacer nada.'],
     datos: [['Área', a.area]].concat(a.reemplazada ? filasTramos(a.datos).map(([k, v]) => [k + ' (la anterior)', v]) : filasTramos(a.datos), a.motivo ? [['Motivo', a.motivo]] : []) }),
   // A quien firma: el jefe ("es de tu equipo") o RR. HH. ("su jefe ya la aprobó"; o "es de tu equipo", si su jefe directo es RR. HH.).
+  // A los socios (las vacaciones de quien firma por RR. HH.): el mismo link a todos; con que firme uno alcanza.
+  firmarSocios: a => armarMail({ kicker: KICKER, titulo: a.nombre, hola: 'Hola',
+    parrafos: ['Está a cargo de RR. HH., así que sus vacaciones las aprueban ustedes. Ya firmó su solicitud.'
+      + (reemplaza(a) ? ` Es un cambio de la que mandó el ${diaMes(reemplaza(a).fecha)}: el link anterior ya no sirve.` : ''),
+      'Con que firme uno alcanza: al firmar, le llega el PDF con todas las firmas.'],
+    datos: [['Área', a.area]].concat(filasTramos(a.datos), avisos(a)), boton: 'Ver y firmar', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.token)}`,
+    pie: 'Les llegó a todos los socios. El link vence en 30 días.' }),
   firmar: a => armarMail({ kicker: KICKER, titulo: a.nombre, hola: 'Hola',
-    parrafos: [(a.es_jefe && a.paso === 'rrhh' ? 'Es jefe de área, depende de vos, y ya firmó su solicitud.' : (a.equipo != null ? a.equipo : (a.paso === 'jefe' || !a.con_jefe)) ? 'Es de tu equipo y ya firmó su solicitud.' : `Ya firmó su solicitud y su jefe directo${a.jefe_nombre ? ', ' + a.jefe_nombre + ',' : ''} la aprobó.`)
+    parrafos: [(a.es_jefe && a.paso === 'rrhh' ?'Es jefe de área, depende de vos, y ya firmó su solicitud.' : (a.equipo != null ? a.equipo : (a.paso === 'jefe' || !a.con_jefe)) ? 'Es de tu equipo y ya firmó su solicitud.' : `Ya firmó su solicitud y su jefe directo${a.jefe_nombre ? ', ' + a.jefe_nombre + ',' : ''} la aprobó.`)
       + (reemplaza(a) ? ` Es un cambio de la que mandó el ${diaMes(reemplaza(a).fecha)}: el link anterior ya no sirve.` : ''),
       'Firmá vos para aprobarla (o no).' + (a.paso === 'jefe' ? ' Después le llega a RR. HH.' : ' Al firmar, le llega el PDF con todas las firmas.')],
     datos: [['Área', a.area]].concat(filasTramos(a.datos), avisos(a)), boton: 'Ver y firmar', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.token)}`,
@@ -93,7 +100,7 @@ export const MAILS = {
     pie: 'Cuando firme RR. HH., te llega el PDF con todas las firmas.' }),
   fin: a => { const si = a.estado === 'aprobada';
     return armarMail({ kicker: KICKER, titulo: si ? 'Todo aprobado' : 'No aprobadas', hola: 'Hola, ' + primerNombre(a.nombre),
-      parrafos: [si ? (a.con_jefe ? 'RR. HH. también la aprobó. ' : a.con_jefe === false ? 'RR. HH. la aprobó. ' : '') + 'Te mandamos adjunto el formulario con todas las firmas.' : 'Tu solicitud no fue aprobada.' + (a.nota ? '' : ' Si querés, mandá otra con otras fechas.')],
+      parrafos: [si ? (a.socios ? 'Los socios la aprobaron. ' : a.con_jefe ? 'RR. HH. también la aprobó. ' : a.con_jefe === false ? 'RR. HH. la aprobó. ' : '') + 'Te mandamos adjunto el formulario con todas las firmas.' : 'Tu solicitud no fue aprobada.' + (a.nota ? '' : ' Si querés, mandá otra con otras fechas.')],
       datos: filasTramos(a.datos).concat(a.nota ? [['Comentario', a.nota]] : []), boton: 'Ver la solicitud', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.ver)}`,
       pie: si ? 'RR. HH. te confirma la fecha de pago del plus vacacional y del adelanto.' : 'Si tenés dudas, respondé este mail.' }); }
 };
@@ -123,10 +130,11 @@ export async function manejarVacaciones(cuerpo, res, { servicio, resend }) {
         await confirmar();
       } else if (a.paso === 'cancelada') {
         const m = MAILS.cancelada(a);
-        enviados.push(await enviar(resend, { to: [a.para], reply_to: a.email, subject: asunto + (a.reemplazada ? ' (cambiada)' : ' (cancelada)'), text: m.text, html: m.html }));
+        enviados.push(await enviar(resend, { to: a.para_lista && a.para_lista.length ? a.para_lista : [a.para], reply_to: a.email, subject: asunto + (a.reemplazada ? ' (cambiada)' : ' (cancelada)'), text: m.text, html: m.html }));
       } else if (a.paso === 'jefe' || a.paso === 'rrhh') {
-        const m = MAILS.firmar(a);
-        enviados.push(await enviar(resend, { to: [a.para], reply_to: a.paso === 'jefe' ? RRHH_GENERAL : a.email, subject: asunto, text: m.text, html: m.html }));
+        // Las de quien firma por RR. HH. las aprueban los socios: un mail a todos, con el mismo link.
+        const m = a.socios ? MAILS.firmarSocios(a) : MAILS.firmar(a);
+        enviados.push(await enviar(resend, { to: a.socios && a.para_lista && a.para_lista.length ? a.para_lista : [a.para], reply_to: a.paso === 'jefe' ? RRHH_GENERAL : a.email, subject: asunto, text: m.text, html: m.html }));
         await confirmar();
         await avance();
       } else {
