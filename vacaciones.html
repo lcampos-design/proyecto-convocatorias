@@ -278,7 +278,7 @@ async function nuevaSolicitud() {
       <div style="margin-top:6px"><button class="lnk" onclick="dejarDeModificar()">No modificarla</button></div></div>` : ''}
     <div class="card"><div class="card-t"><span class="num">1</span>Tus datos</div>
       <div class="grid2"><div class="campo"><label for="vNombre">Nombre y apellido</label><input class="in" id="vNombre" autocomplete="name" value="${esc(g.nombre || '')}" oninput="$('vAcl').textContent=this.value||'—'"></div>
-        <div class="campo"><label for="vArea">Área</label><select class="in" id="vArea" onchange="$('vAreaOtra').classList.toggle('oculto',this.value!=='_otra')"><option value="">Elegí tu área</option>${areas.map(a => `<option${g.area === a ? ' selected' : ''}>${esc(a)}</option>`).join('')}${SERVICIOS && !otra ? '' : `<option value="_otra"${otra ? ' selected' : ''}>Otra</option>`}</select>
+        <div class="campo"><label for="vArea">Área</label><select class="in" id="vArea" onchange="$('vAreaOtra').classList.toggle('oculto',this.value!=='_otra')"><option value="">Elegí tu área</option>${areas.map(a => `<option${g.area === a ? ' selected' : ''}>${esc(a)}</option>`).join('')}${SERVICIOS && !otra && areas.length ? '' : `<option value="_otra"${otra ? ' selected' : ''}>Otra</option>`}</select>
           <input class="in${otra ? '' : ' oculto'}" id="vAreaOtra" style="margin-top:8px" placeholder="¿Cuál?" value="${esc(otra ? g.area : '')}"></div></div>
       <div class="meta">Entraste como ${esc(ses.email)} · Fecha de solicitud: ${fechaDMA(hoyISO())}</div></div>
     <div class="card"><div class="card-t"><span class="num">2</span>Las fechas</div>
