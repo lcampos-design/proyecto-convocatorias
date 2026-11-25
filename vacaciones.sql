@@ -459,10 +459,12 @@ begin
   v_copia := array_remove(array[case when r.aprueba_jefe is not null and r.firmas ? 'rrhh' then r.aprueba_jefe end,
                                 case when not (r.firmas ? 'rrhh') then r.aprueba_rrhh end], null);
   -- Y las casillas fijas, sin repetir: 'copias' (p. ej. legales) en todas las que se cierran; 'socios', sólo en las
-  -- aprobadas (25-nov, Thomas: "a los socios, cuando está todo aprobado, no los rechazados").
+  -- aprobadas (25-nov, Thomas: "a los socios, cuando está todo aprobado, no los rechazados"); 'copias_servicios', en todas
+  -- las de los servicios fijos, aprobadas o no (25-nov: "copia de todo lo que completan los de Colón y Campo, no los corporativos").
   v_copia := array(select distinct m from unnest(v_copia || array(select lower(btrim(x))
                                                                     from jsonb_array_elements_text(coalesce(v_cfg -> 'copias', '[]'::jsonb)
-                                                                           || case when (r.estado = 'aprobada' and not public.vac_servicio(r.area)) or r.aprueban_socios then coalesce(v_cfg -> 'socios', '[]'::jsonb) else '[]'::jsonb end) x
+                                                                           || case when (r.estado = 'aprobada' and not public.vac_servicio(r.area)) or r.aprueban_socios then coalesce(v_cfg -> 'socios', '[]'::jsonb) else '[]'::jsonb end
+                                                                           || case when public.vac_servicio(r.area) then coalesce(v_cfg -> 'copias_servicios', '[]'::jsonb) else '[]'::jsonb end) x
                                                               where btrim(x) ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$')) m
                     where m <> r.email and m is distinct from (case when r.firmas ? 'rrhh' then r.aprueba_rrhh end) order by m);
   perform public.vac_evento(r.id, 'aviso', r.email, 'Mail final (' || case when r.estado = 'aprobada' then 'aprobada' else 'no aprobada' end || ')' || case when r.pdf is not null then ', con el PDF firmado' else '' end
