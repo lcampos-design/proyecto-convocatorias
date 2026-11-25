@@ -24,14 +24,21 @@ export function filasHtml(datos) {
   return f ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:4px 0 22px;border-top:1px solid #e6e6e6">${f}</table>` : '';
 }
 
+// Poppins (25-nov, Thomas): la cargan Mail de iPhone y Mac, Samsung y Thunderbird; Gmail y Outlook no cargan
+// tipografías de afuera y usan la que sigue en la lista. Va escondida para Outlook de Windows, que si la ve
+// pasa todo a Times New Roman.
+export const POPPINS = `<!--[if !mso]><!--><style>@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');</style><!--<![endif]-->`;
+// "show-bs.com" como link, con su color: si no, Gmail lo pone azul y subrayado.
+const sitioSBS = color => `<a href="https://show-bs.com" style="color:${color};text-decoration:none">show-bs.com</a>`;
+
 // El marco: cuerpo (HTML) entre el encabezado y el pie. firma: la imagen de la firma (la de RR. HH.), o nada.
 export function marcoMail({ kicker, titulo, cuerpo, firma, instagram }) {
-  return `<div style="background:#ffffff;margin:0;padding:24px 12px;font-family:${F};color:#1a1a1a">
+  return `${POPPINS}<div style="background:#ffffff;margin:0;padding:24px 12px;font-family:${F};color:#1a1a1a">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;margin:0 auto;border-collapse:collapse">
   <tr><td style="border-top:4px solid #1a1a1a;padding:22px 0 16px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
       <td><img src="${SITIO}/logo-sbs-horizontal.png" width="170" height="33" alt="SBS Show Business Solutions" style="display:block;border:0;width:170px;height:33px"></td>
-      <td align="right" style="font-size:13px;font-weight:600;color:#2b2b2b;font-family:${F}">show-bs.com</td>
+      <td align="right" style="font-size:13px;font-weight:600;color:#2b2b2b;font-family:${F}">${sitioSBS('#2b2b2b')}</td>
     </tr></table>
   </td></tr>
   <tr><td style="border-top:1px solid #9a9a9a;padding:28px 0 0">
@@ -41,7 +48,7 @@ export function marcoMail({ kicker, titulo, cuerpo, firma, instagram }) {
     ${firma ? `<div style="margin-top:26px;padding-top:20px;border-top:1px solid #e6e6e6"><img src="${esc(firma)}" alt="Show Business Solutions · Gerencia de RR. HH." width="260" style="max-width:260px;width:100%;height:auto;display:block;border:0"></div>` : ''}
   </td></tr>
   <tr><td style="padding:30px 0 0">
-    <div style="border-top:1px solid #d9d9d9;padding-top:14px;text-align:center;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:#8a8a8a;font-family:${F}">SHOW BUSINESS SOLUTIONS · show-bs.com · HANDS ON EVERYTHING</div>
+    <div style="border-top:1px solid #d9d9d9;padding-top:14px;text-align:center;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:#8a8a8a;font-family:${F}">SHOW BUSINESS SOLUTIONS · ${sitioSBS('#8a8a8a')} · HANDS ON EVERYTHING</div>
     ${instagram ? `<div style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:4px;font-family:${F}">Instagram <a href="https://www.instagram.com/showbs/" style="color:#9a9a9a;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9a9a9a;text-decoration:underline">@showbspain</a></div>` : ''}
     <div style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:4px;font-family:${F}">Proyecto llevado a cabo por la Gerencia de RR. HH.</div>
   </td></tr>

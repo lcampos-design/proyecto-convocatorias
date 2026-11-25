@@ -12502,12 +12502,17 @@ function renderEmailHtml(text, fromAddr, area, confirm) {
   // gris, de qué es (en gris); el texto, los botones, la firma de RR. HH. y el pie de la marca. Con tablas, que es lo
   // que respetan todos los clientes de correo; Poppins para quien la tenga y, si no, una parecida.
   const kicker = area === 'movistar' ? 'Recursos Humanos · Movistar Arena' : 'Recursos Humanos · Externos';
-  return `<div style="background:#ffffff;margin:0;padding:24px 12px;font-family:${F};color:#1a1a1a">
+  // Poppins: la cargan Mail de iPhone y Mac, Samsung y Thunderbird (Gmail y Outlook usan la que sigue en la lista);
+  // escondida para Outlook de Windows, que si la ve pasa todo a Times New Roman. "show-bs.com" con su color: si no,
+  // Gmail lo pone azul y subrayado.
+  const poppins = `<!--[if !mso]><!--><style>@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');</style><!--<![endif]-->`;
+  const sitio = c => `<a href="https://show-bs.com" style="color:${c};text-decoration:none">show-bs.com</a>`;
+  return `${poppins}<div style="background:#ffffff;margin:0;padding:24px 12px;font-family:${F};color:#1a1a1a">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;margin:0 auto;border-collapse:collapse">
   <tr><td style="border-top:4px solid #1a1a1a;padding:22px 0 16px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
       <td><img src="${base}/logo-sbs-horizontal.png" width="170" height="33" alt="SBS Show Business Solutions" style="display:block;border:0;width:170px;height:33px"></td>
-      <td align="right" style="font-size:13px;font-weight:600;color:#2b2b2b;font-family:${F}">show-bs.com</td>
+      <td align="right" style="font-size:13px;font-weight:600;color:#2b2b2b;font-family:${F}">${sitio('#2b2b2b')}</td>
     </tr></table>
   </td></tr>
   <tr><td style="border-top:1px solid #9a9a9a;padding:26px 0 0">
@@ -12517,7 +12522,7 @@ function renderEmailHtml(text, fromAddr, area, confirm) {
     ${sigBlock}
   </td></tr>
   <tr><td style="padding:30px 0 0">
-    <div style="border-top:1px solid #d9d9d9;padding-top:14px;text-align:center;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:#8a8a8a;font-family:${F}">SHOW BUSINESS SOLUTIONS · show-bs.com · HANDS ON EVERYTHING</div>
+    <div style="border-top:1px solid #d9d9d9;padding-top:14px;text-align:center;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:#8a8a8a;font-family:${F}">SHOW BUSINESS SOLUTIONS · ${sitio('#8a8a8a')} · HANDS ON EVERYTHING</div>
     <div style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:4px;font-family:${F}">Instagram <a href="https://www.instagram.com/showbs/" style="color:#9a9a9a;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9a9a9a;text-decoration:underline">@showbspain</a></div>
     <div style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:4px;font-family:${F}">Proyecto llevado a cabo por la Gerencia de RR. HH.</div>
   </td></tr>
