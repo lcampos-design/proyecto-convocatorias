@@ -1137,6 +1137,9 @@ button.cn-nom:hover{text-decoration:underline;text-underline-offset:3px}
 .vac-est.nueva{background:#fff7ed;color:#9a3412;border:1px solid #fdba74}.vac-est.aprobada{background:#1a1a1a;color:#fff}.vac-est.rechazada{background:#fef2f2;color:#991b1b}.vac-est.cancelada{background:#fff;color:#9ca3af;border:1px solid #e5e7eb}
 .vac-der{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}.vac-der select{max-width:220px;font-size:12px;padding:5px 8px}
 .vac-aviso{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#9a3412;margin-bottom:12px}
+.vac-selbar{display:none;align-items:center;gap:10px;margin:-2px 0 10px;padding:8px 12px;border-radius:10px;background:#fafafa;border:1px solid var(--r-line);font-size:12.5px}.vac-selbar.on{display:flex}
+.btn.vac-borrar{background:#fff;color:#991b1b;border:1px solid #fecaca}.btn.vac-borrar:hover{background:#fef2f2}
+#mVac .cb{accent-color:#1a1a1a}
 .vac-link{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fafafa;border:1px solid var(--r-line);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12.5px}.vac-link span{color:var(--r-muted)}
 .vac-area{display:flex;gap:8px;align-items:center;margin-top:8px}.vac-area .fi:first-child{flex:0 0 200px}.vac-area .fi:nth-child(2){flex:1}
 .fbs-tab-n{display:inline-block;min-width:18px;padding:0 5px;margin-left:6px;border-radius:999px;background:#9a3412;color:#fff;font-size:10.5px;font-weight:700;line-height:16px;text-align:center}
@@ -13927,7 +13930,7 @@ function renderCtHome() {
 // final les llega el PDF a todos. Quién aprueba (los mails) se carga acá, en "Áreas y jefes" (config 'vacaciones').
 const VAC_ESTADOS = { nueva: 'Para derivar', jefe: 'Con el jefe', rrhh: 'Con RR. HH.', aprobada: 'Aprobada', rechazada: 'No aprobada', cancelada: 'Cancelada' };
 const VAC_LINK = 'https://convocatorias.show-bs.com/vacaciones';
-let vacLista = null, vacCfg = null, vacVer = 'nueva', vacTab = 'lista', vacFalta = false;
+let vacLista = null, vacCfg = null, vacVer = 'nueva', vacTab = 'lista', vacFalta = false, vacSel = new Set();
 async function vacCargar() {
   const [l, c] = await Promise.all([
     sb.from('vacaciones').select('id,created_at,email,nombre,area,datos,estado,aprueba_jefe,aprueba_rrhh,firmas,derivada_por').order('created_at', { ascending: false }),
@@ -13956,11 +13959,13 @@ function renderVac() {
   if (vacFalta) { cont.innerHTML = '<div class="empty">Falta correr <b>vacaciones.sql</b> en Supabase.</div>'; return; }
   if (vacTab === 'cfg') { renderVacCfg(cont); return; }
   const cuenta = k => k === 'todas' ? vacLista.length : vacLista.filter(v => v.estado === k).length;
-  const chip = (k, cl) => `<button class="nchip${cl && cuenta(k) ? ' ' + cl : ''}${vacVer === k ? ' on' : ''}" onclick="vacVer='${k}';renderVac()">${k === 'todas' ? 'Todas' : VAC_ESTADOS[k]} <b>${cuenta(k)}</b></button>`;
+  const chip = (k, cl) => `<button class="nchip${cl && cuenta(k) ? ' ' + cl : ''}${vacVer === k ? ' on' : ''}" onclick="vacVer='${k}';vacSel.clear();renderVac()">${k === 'todas' ? 'Todas' : VAC_ESTADOS[k]} <b>${cuenta(k)}</b></button>`;
   const l = vacLista.filter(v => vacVer === 'todas' || v.estado === vacVer);
+  renderVac.visibles = l.map(v => v.id);
+  [...vacSel].forEach(id => { if (!renderVac.visibles.includes(id)) vacSel.delete(id); });
   const aviso = !vacCfg.rrhh ? '<div class="vac-aviso">Antes de mandar el link, cargá el mail de RR. HH. y los jefes en <b>Áreas y jefes</b>.</div>' : '';
-  cont.innerHTML = aviso + `<div class="nchips nchips-suelto">${chip('nueva', 'alerta')}${chip('jefe')}${chip('rrhh')}${chip('aprobada')}${chip('rechazada')}${chip('cancelada')}<span class="sep"></span>${chip('todas')}</div>`
-    + (l.length ? `<div class="fbv-tabla hi-tabla" style="max-height:58vh"><table><thead><tr><th style="width:86px">Pedida</th><th>Persona</th><th>Fechas</th><th style="width:60px">Días</th><th style="width:330px">Estado</th></tr></thead><tbody>`
+  cont.innerHTML = aviso + `<div class="nchips nchips-suelto">${chip('nueva', 'alerta')}${chip('jefe')}${chip('rrhh')}${chip('aprobada')}${chip('rechazada')}${chip('cancelada')}<span class="sep"></span>${chip('todas')}</div><div class="vac-selbar" id="vacSelBar"></div>`
+    + (l.length ? `<div class="fbv-tabla hi-tabla" style="max-height:58vh"><table><thead><tr><th style="width:30px"><input type="checkbox" class="cb" id="vacSelTodas" title="Marcar todas las de la lista" onchange="vacMarcarTodas(this.checked)"></th><th style="width:86px">Pedida</th><th>Persona</th><th>Fechas</th><th style="width:60px">Días</th><th style="width:330px">Estado</th></tr></thead><tbody>`
       + l.map(v => {
         const acc = v.estado === 'nueva' || v.estado === 'jefe'
           ? `<div class="vac-der"><select class="filt" id="vacJ_${v.id}">${vacOpciones(v.estado === 'jefe' ? v.aprueba_jefe : vacSugerido(v))}</select><button class="btn btn-primary btn-xs" onclick="vacDerivar('${v.id}')">${v.estado === 'nueva' ? 'Derivar' : 'Cambiar'}</button>${v.estado === 'jefe' ? `<button class="btn btn-sec btn-xs" onclick="vacReenviar('${v.id}')" title="Volver a mandarle el mail con el link">Reenviar</button>` : ''}</div>`
@@ -13968,11 +13973,33 @@ function renderVac() {
           : v.estado === 'cancelada' ? `<span class="fbv-sub" style="display:inline;margin-left:6px">${vacLista.some(x => x.datos && x.datos.reemplaza && x.datos.reemplaza.id === v.id) ? 'la modificó' : 'la canceló'}</span>`
           : `<button class="btn btn-sec btn-xs" onclick="vacPdf('${v.id}')">↓ PDF</button>`;
         const rem = (v.datos || {}).reemplaza;
-        return `<tr><td>${fechaDMA(String(v.created_at).slice(0, 10))}</td><td><div class="fbv-nom">${eN(v.nombre)}</div><div class="fbv-sub">${e(v.area)} · ${e(v.email)}</div></td>
+        return `<tr><td><input type="checkbox" class="cb vac-cb" data-id="${v.id}"${vacSel.has(v.id) ? ' checked' : ''} onchange="vacMarcar('${v.id}', this.checked)"></td><td>${fechaDMA(String(v.created_at).slice(0, 10))}</td><td><div class="fbv-nom">${eN(v.nombre)}</div><div class="fbv-sub">${e(v.area)} · ${e(v.email)}</div></td>
           <td>${e(vacTramos(v))}${((v.datos || {}).avisos || []).length ? `<div class="fbv-sub" style="color:#9a3412">⚠ ${e(v.datos.avisos.join(' · '))}</div>` : ''}${rem ? `<div class="fbv-sub">Modifica la del ${fechaDMA(String(rem.fecha).slice(0, 10))} (cancelada)</div>` : ''}</td><td><b>${(v.datos || {}).total || ''}</b></td>
           <td><span class="vac-est ${v.estado}">${VAC_ESTADOS[v.estado]}</span><button class="btn btn-sec btn-xs" style="margin-left:6px" onclick="vacDetalle('${v.id}')" title="Las firmas y la trazabilidad de cada paso">Ver</button>${v.estado === 'jefe' ? `<span class="fbv-sub" style="display:inline;margin-left:6px">${e(v.aprueba_jefe)}</span>` : ''}${acc}</td></tr>`;
       }).join('') + '</tbody></table></div>'
       : '<div class="empty">' + (vacLista.length ? 'Nada en este estado.' : 'Todavía no llegó ninguna solicitud. El link para el newsletter está en Áreas y jefes.') + '</div>');
+  vacBarra();
+}
+// Borrar (25-nov, Thomas: "todas las que mandé son de prueba"): se marcan y se borran juntas, con sus firmas, su
+// trazabilidad y el PDF. Queda anotado qué se borró y quién (vacaciones-borrar.sql).
+function vacMarcar(id, si) { if (si) vacSel.add(id); else vacSel.delete(id); vacBarra(); }
+function vacMarcarTodas(si) { (renderVac.visibles || []).forEach(id => { if (si) vacSel.add(id); else vacSel.delete(id); }); document.querySelectorAll('#vacCuerpo .vac-cb').forEach(c => { c.checked = si; }); vacBarra(); }
+function vacBarra() {
+  const b = document.getElementById('vacSelBar'), n = vacSel.size, vis = renderVac.visibles || [];
+  const t = document.getElementById('vacSelTodas'); if (t) { t.checked = n > 0 && vis.every(id => vacSel.has(id)); t.indeterminate = n > 0 && !t.checked; }
+  if (!b) return;
+  b.innerHTML = n ? `<b>${n} ${n === 1 ? 'marcada' : 'marcadas'}</b><button class="btn btn-xs vac-borrar" onclick="vacBorrar([...vacSel])">Borrar ${n === 1 ? 'la marcada' : 'las ' + n + ' marcadas'}</button><button class="btn btn-sec btn-xs" onclick="vacMarcarTodas(false)">Desmarcar</button>` : '';
+  b.classList.toggle('on', n > 0);
+}
+async function vacBorrar(ids) {
+  ids = (ids || []).filter(Boolean); if (!ids.length) return;
+  const n = ids.length, firmadas = ids.filter(id => { const v = vacLista.find(x => x.id === id); return v && ['aprobada', 'rechazada'].includes(v.estado); }).length;
+  if (!confirm(`¿Borrar ${n === 1 ? 'esta solicitud' : 'estas ' + n + ' solicitudes'}?\n\n${n === 1 ? 'Se borra' : 'Se borran'} para siempre, con sus firmas, su trazabilidad y el PDF${firmadas ? ` (${firmadas === 1 ? 'una ya está firmada' : firmadas + ' ya están firmadas'})` : ''}. Usalo para las de prueba.\n\nQueda anotado qué se borró y quién lo borró.`)) return;
+  const { data, error } = await sb.rpc('vacaciones_borrar', { p_ids: ids });
+  if (error) { alert(/vacaciones_borrar/.test(error.message || '') ? 'Falta correr vacaciones-borrar.sql en Supabase.' : 'No se pudo borrar: ' + (error.message || '')); return; }
+  if (!data || !data.ok) { alert((data && data.error) || 'No se pudo borrar.'); return; }
+  vacSel.clear(); await vacCargar(); vacContar(); renderVac();
+  toast(data.borradas === 1 ? 'Solicitud borrada' : data.borradas + ' solicitudes borradas');
 }
 async function vacDerivar(id) {
   const sel = document.getElementById('vacJ_' + id), jefe = sel ? sel.value : '';
@@ -14011,7 +14038,8 @@ async function vacDetalle(id) {
       ${((ev.data) || []).map(x => `<tr><td>${fechaHoraAR(x.fecha)}</td><td><b>${VAC_PASOS[x.tipo] || e(x.tipo)}</b></td><td>${x.quien ? e(x.quien) + '<div class="fbv-sub">' : '<div>'}${e(x.detalle || '')}</div></td><td class="fbv-sub">${[x.ip ? 'IP ' + e(x.ip) : '', e(vacUa(x.user_agent))].filter(Boolean).join(' · ')}</td></tr>`).join('') || '<tr><td colspan="4" class="fbv-sub">Sin pasos registrados (falta correr la parte de trazabilidad de vacaciones.sql).</td></tr>'}
     </tbody></table></div>
     <div class="fbv-sub" style="margin-top:8px;overflow-wrap:anywhere">ID: <b>${e((fila.data && fila.data.transaccion_id) || '')}</b> · Huella del contenido (SHA-256): ${e((fila.data && fila.data.hash_contenido) || '')}</div>
-    ${['aprobada', 'rechazada'].includes(v.estado) ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="vacPdf('${v.id}')">↓ PDF con las firmas y el informe de auditoría</button>` : ''}`;
+    <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">${['aprobada', 'rechazada'].includes(v.estado) ? `<button class="btn btn-primary btn-sm" onclick="vacPdf('${v.id}')">↓ PDF con las firmas y el informe de auditoría</button>` : ''}
+      <button class="btn btn-sm vac-borrar" style="margin-left:auto" onclick="vacBorrar(['${v.id}'])" title="Para las de prueba: se borra para siempre, con sus firmas y su trazabilidad">Borrar esta solicitud</button></div>`;
 }
 function fechaHoraAR(iso) { const d = new Date(iso); if (isNaN(d)) return ''; const p = n => String(n).padStart(2, '0'); return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
 async function vacPdf(id) {
