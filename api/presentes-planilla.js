@@ -37,6 +37,7 @@
 
 import crypto from 'crypto';
 import { TIPO_GOOGLE, esMicrosoft } from './_lib/correo-google.js';
+import { armarMail as armarMailSBS, FIRMA_RRHH } from './_lib/mail-sbs.js';
 
 export const config = { maxDuration: 60 };
 
@@ -132,7 +133,6 @@ export function armarTexto(plantilla, d) {
 }
 
 // ── El mail ──
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // lugar: el de Externos ("Centro de Convenciones…"); sin pasarlo, el Arena. Vacío: no dice dónde.
 export function armarMail({ nombre, fecha, show, link, lugar }) {
   const pila = String(nombre || '').trim().split(/\s+/)[0] || '';
@@ -142,26 +142,14 @@ export function armarMail({ nombre, fecha, show, link, lugar }) {
   // Empieza con "Contrato ·", como dice la guía para firmar desde el celular (Mer, 13-nov).
   const subject = `Contrato · ${show ? show + ' · ' : ''}${fechaLarga(fecha).toLowerCase()}`;
   const text = `${hola}:\n\nGracias por trabajar con nosotros el ${cuando}${que}${enLugar}.\n\nPara firmar tu contrato de esa fecha, entrá a este link:\n${link}\n\nEl link vence en 7 días. Cualquier duda, respondé este mail.\n\nSaludos,\nShow Business Solutions`;
-  const P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
-  const html = `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
-    <img src="${SITIO}/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">
-    <p style="${P}">${esc(hola)}:</p>
-    <p style="${P}">Gracias por trabajar con nosotros el ${esc(cuando)}${esc(que)}${esc(enLugar)}.</p>
-    <p style="${P}">Para firmar tu contrato de esa fecha, tocá el botón:</p>
-    <p style="margin:22px 0"><a href="${esc(link)}" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Firmar mi contrato</a></p>
-    <p style="${P}">O copiá este link: <a href="${esc(link)}" style="color:#534AB7;text-decoration:underline">${esc(link)}</a></p>
-    <p style="${P}">El link vence en 7 días. Cualquier duda, respondé este mail.</p>
-    <div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">
-      <img src="${SITIO}/firmas/firma-rrhh.jpg" alt="Show Business Solutions" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0">
-    </div>
-  </div>
-  <div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">
-    Show Business Solutions · <a href="https://show-bs.com/" style="color:#9ca3af;text-decoration:underline">show-bs.com</a><br>
-    Instagram <a href="https://www.instagram.com/showbs/" style="color:#9ca3af;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9ca3af;text-decoration:underline">@showbspain</a>
-  </div>
-</div>`;
+  const html = mailContrato({ hola, parrafos: [`Gracias por trabajar con nosotros el ${cuando}${que}${enLugar}.`, 'Para firmar tu contrato de esa fecha, tocá el botón:'], link });
   return { subject, text, html };
+}
+// El HTML de los mails del contrato, con el diseño de todos los mails (api/_lib/mail-sbs.js): el botón, el link
+// para copiar, cuándo vence, la firma de la Gerencia de RR. HH. y el pie con Instagram.
+export function mailContrato({ titulo, hola, parrafos, link, boton, pie }) {
+  return armarMailSBS({ kicker: 'Recursos Humanos · Contratos', titulo: titulo || 'Tu contrato para firmar', hola, parrafos, boton: boton || 'Firmar mi contrato', link, copiar: true,
+    pie: pie || 'El link vence en 7 días. Cualquier duda, respondé este mail.', firma: FIRMA_RRHH, instagram: true }).html;
 }
 
 // El mail del contrato por todo un período (Externos, contrato al confirmar: api/contrato-al-confirmar.js), del
@@ -177,25 +165,7 @@ export function armarMailPeriodo({ nombre, desde, hasta, show, puesto, link, lug
   const sub = [show, rango].filter(Boolean).join(' · '), subject = sub ? 'Contrato · ' + sub : 'Contrato de trabajo';
   const frase = `Gracias por confirmar. Ya está tu contrato${como}${que}${donde}${cuando ? ', ' + cuando : ''}.`;
   const text = `${hola}:\n\n${frase}\n\nPara firmarlo, entrá a este link:\n${link}\n\nEl link vence en 7 días. Cualquier duda, respondé este mail.\n\nSaludos,\nShow Business Solutions`;
-  const P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
-  const html = `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
-    <img src="${SITIO}/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">
-    <p style="${P}">${esc(hola)}:</p>
-    <p style="${P}">${esc(frase)}</p>
-    <p style="${P}">Para firmarlo, tocá el botón:</p>
-    <p style="margin:22px 0"><a href="${esc(link)}" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Firmar mi contrato</a></p>
-    <p style="${P}">O copiá este link: <a href="${esc(link)}" style="color:#534AB7;text-decoration:underline">${esc(link)}</a></p>
-    <p style="${P}">El link vence en 7 días. Cualquier duda, respondé este mail.</p>
-    <div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">
-      <img src="${SITIO}/firmas/firma-rrhh.jpg" alt="Show Business Solutions" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0">
-    </div>
-  </div>
-  <div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">
-    Show Business Solutions · <a href="https://show-bs.com/" style="color:#9ca3af;text-decoration:underline">show-bs.com</a><br>
-    Instagram <a href="https://www.instagram.com/showbs/" style="color:#9ca3af;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9ca3af;text-decoration:underline">@showbspain</a>
-  </div>
-</div>`;
+  const html = mailContrato({ hola, parrafos: [frase, 'Para firmarlo, tocá el botón:'], link });
   return { subject, text, html };
 }
 

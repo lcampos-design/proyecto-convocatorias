@@ -12,7 +12,7 @@
 
 import crypto from 'crypto';
 import { TIPO_GOOGLE, esMicrosoft } from './_lib/correo-google.js';
-import { armarMail, armarMailPeriodo } from './presentes-planilla.js';
+import { armarMail, armarMailPeriodo, mailContrato } from './presentes-planilla.js';
 import { armarRecordatorio } from './recordatorios.js';
 
 export const config = { maxDuration: 60 };
@@ -62,9 +62,7 @@ export function mailDelPedido(motivo, meta, c) {
   // Sin fecha (un contrato del panel que no es por presente): sólo el link para firmar.
   const pila = String(c.nombre || '').trim().split(/\s+/)[0] || '', hola = pila ? 'Hola, ' + pila.charAt(0).toUpperCase() + pila.slice(1).toLowerCase() : 'Hola';
   const text = `${hola}:\n\nTe reenviamos tu contrato de trabajo${show ? ' (' + show + ')' : ''}. Para firmarlo, entrá a este link:\n${link}\n\nCualquier duda, respondé este mail.\n\nSaludos,\nShow Business Solutions`;
-  const m = armarMail({ nombre: c.nombre, fecha: '2026-01-01', show, link, lugar: '' });
-  const html = m.html.replace(/<p style="[^"]*">Gracias por trabajar con nosotros[^<]*<\/p>/, `<p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151">Te reenviamos tu contrato de trabajo${show ? ' (' + show.replace(/[&<>"]/g, '') + ')' : ''}.</p>`)
-    .replace('Para firmar tu contrato de esa fecha', 'Para firmarlo');
+  const html = mailContrato({ hola, parrafos: [`Te reenviamos tu contrato de trabajo${show ? ' (' + show + ')' : ''}.`, 'Para firmarlo, tocá el botón:'], link, pie: 'Cualquier duda, respondé este mail.' });
   return { subject: 'Reenvío — Contrato de trabajo' + (show ? ' · ' + show : ''), text, html, responder: CASILLA[area] };
 }
 

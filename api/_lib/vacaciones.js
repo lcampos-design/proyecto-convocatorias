@@ -8,11 +8,12 @@
 //    Cancelada (la persona, antes de que firmen): a RR. HH., con copia al jefe; modificada: sólo al jefe (su link no sirve más).
 // Quién aprueba (los mails) está en la base (config 'vacaciones'), no en el código.
 
+import { armarMail, SITIO } from './mail-sbs.js';
+export { armarMail };
+
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
-const SITIO = 'https://convocatorias.show-bs.com';
 const DE = 'Recursos Humanos · SBS <rrhh@show-bs.com>';
 
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 export function fechaCorta(f) { const d = new Date(String(f).slice(0, 10) + 'T12:00:00'); return isNaN(d) ? String(f || '') : DIAS[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear(); }
 // Los tramos como filas de datos: [['Tramo 1', 'del lun 4/1/2027 al dom 17/1/2027 · 14 días'], …, ['Total', '21 días corridos']].
@@ -23,44 +24,7 @@ export function filasTramos(datos) {
 }
 const primerNombre = n => String(n || '').trim().split(/\s+/)[0] || '';
 
-// El mail, con el estilo del informe del Arena y el template de SBS (24-nov, Thomas): la barra negra finita, el logo
-// horizontal y show-bs.com, la línea gris; arriba, de qué es (en gris) y el título en mayúsculas; los datos en filas;
-// el botón negro; abajo, la línea de la marca y la leyenda de RR. HH. Con tablas, que es lo que respetan todos los
-// clientes de correo; Poppins para quien la tenga y, si no, una parecida.
-export function armarMail({ kicker, titulo, hola, parrafos, datos, codigo, boton, link, pie }) {
-  const F = "Poppins,'Segoe UI',Helvetica,Arial,sans-serif";
-  const P = `margin:0 0 14px;font-size:15px;line-height:1.6;color:#2b2b2b;font-family:${F}`;
-  const filas = (datos || []).filter(Boolean).map(([k, v]) => `<tr><td style="padding:10px 12px 10px 0;border-bottom:1px solid #e6e6e6;font-size:13px;color:#6b6b6b;vertical-align:top;width:120px;font-family:${F}">${esc(k)}</td>`
-    + `<td style="padding:10px 0;border-bottom:1px solid #e6e6e6;font-size:15px;color:#1a1a1a;font-family:${F}">${esc(v)}</td></tr>`).join('');
-  const html = `<div style="background:#ffffff;margin:0;padding:24px 12px;font-family:${F};color:#1a1a1a">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;margin:0 auto;border-collapse:collapse">
-  <tr><td style="border-top:4px solid #1a1a1a;padding:22px 0 16px">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-      <td><img src="${SITIO}/logo-sbs-horizontal.png" width="170" height="33" alt="SBS Show Business Solutions" style="display:block;border:0;width:170px;height:33px"></td>
-      <td align="right" style="font-size:13px;font-weight:600;color:#2b2b2b;font-family:${F}">show-bs.com</td>
-    </tr></table>
-  </td></tr>
-  <tr><td style="border-top:1px solid #9a9a9a;padding:28px 0 0">
-    ${kicker ? `<div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#6b6b6b;font-family:${F}">${esc(kicker)}</div>` : ''}
-    ${titulo ? `<div style="font-size:26px;line-height:1.15;font-weight:700;text-transform:uppercase;color:#1a1a1a;margin:6px 0 22px;font-family:${F}">${esc(titulo)}</div>` : ''}
-    ${hola ? `<p style="${P}">${esc(hola)}:</p>` : ''}
-    ${(parrafos || []).map(p => `<p style="${P}">${esc(p)}</p>`).join('\n    ')}
-    ${codigo ? `<div style="margin:6px 0 22px;padding:18px 10px;border-radius:12px;background:#f2f2f2;text-align:center;font-size:34px;font-weight:700;letter-spacing:12px;color:#1a1a1a;font-family:${F}">${esc(codigo)}</div>` : ''}
-    ${filas ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:4px 0 22px;border-top:1px solid #e6e6e6">${filas}</table>` : ''}
-    ${link ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 20px"><tr><td style="background:#1a1a1a;border-radius:10px"><a href="${esc(link)}" style="display:inline-block;padding:14px 26px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;font-family:${F}">${esc(boton)}</a></td></tr></table>` : ''}
-    ${pie ? `<p style="margin:0 0 6px;font-size:12.5px;line-height:1.55;color:#6b6b6b;font-family:${F}">${esc(pie)}</p>` : ''}
-  </td></tr>
-  <tr><td style="padding:30px 0 0">
-    <div style="border-top:1px solid #d9d9d9;padding-top:14px;text-align:center;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:#8a8a8a;font-family:${F}">SHOW BUSINESS SOLUTIONS · show-bs.com · HANDS ON EVERYTHING</div>
-    <div style="text-align:center;font-size:11px;color:#9a9a9a;margin-top:4px;font-family:${F}">Proyecto llevado a cabo por la Gerencia de RR. HH.</div>
-  </td></tr>
-</table>
-</div>`;
-  const text = [kicker ? kicker.toUpperCase() : '', titulo ? titulo.toUpperCase() : '', ''].concat(hola ? [hola + ':', ''] : [], (parrafos || []).flatMap(p => [p, '']),
-    codigo ? [codigo, ''] : [], (datos || []).filter(Boolean).map(([k, v]) => k + ': ' + v), datos && datos.length ? [''] : [], link ? [boton + ': ' + link, ''] : [], pie ? [pie, ''] : [],
-    ['Recursos Humanos · Show Business Solutions']).join('\n').replace(/^\n+/, '');
-  return { text, html };
-}
+// El diseño de los mails (armarMail) está en mail-sbs.js, el mismo para todos los mails.
 
 async function rpc(servicio, nombre, cuerpo) {
   const r = await fetch(`${SB_URL}/rest/v1/rpc/${nombre}`, { method: 'POST', headers: { apikey: servicio, Authorization: `Bearer ${servicio}`, 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });

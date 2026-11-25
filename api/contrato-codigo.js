@@ -17,6 +17,8 @@
 // la puede llamar nadie más) y la de Resend, para mandar el mail. Las dos van
 // como variables de entorno en Vercel, nunca en el código.
 
+import { marcoMail, parrafo, botonHtml, codigoHtml, pieHtml } from './_lib/mail-sbs.js';
+
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SITIO = 'https://convocatorias.show-bs.com';
@@ -40,7 +42,6 @@ export function enmascarar(email) {
   return u.slice(0, Math.min(2, u.length)) + '***@' + dom;
 }
 
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // El mail: el botón que vuelve al contrato con el código puesto; el código bien grande
 // (y en el asunto, para verlo en el aviso del celular) por si lo escribe a mano; cuánto
@@ -53,18 +54,14 @@ export function armarMailCodigo({ nombre, codigo, link, minutos, documento }) {
   const dura = cuantoDura(minutos);
   const text = `${hola}:\n\n` + (link ? `Para terminar de firmar tu contrato, entrá a este link (ya lleva el código):\n${link}\n\nO escribí el código en la página del contrato: ${separado}` : `Tu código para firmar el contrato es: ${separado}\n\nEscribilo en la página del contrato.`)
     + `\n\nVence en ${dura}.\n\nSi no estás firmando tu contrato, ignorá este mail: sin el código no se puede firmar.\n\nShow Business Solutions`;
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111827">
-  <p style="font-size:15px">${esc(hola)}:</p>` + (link ? `
-  <p style="font-size:15px;line-height:1.5">Para terminar de firmar tu contrato, tocá el botón: vuelve al contrato con el código ya puesto.</p>
-  <p style="margin:22px 0"><a href="${esc(link)}" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">Volver al contrato y firmar</a></p>
-  <p style="font-size:14px;line-height:1.5;color:#374151">O escribí este código en la página del contrato:</p>` : `
-  <p style="font-size:15px;line-height:1.5">Tu código para firmar el contrato es:</p>`) + `
-  <p style="margin:10px 0 18px;font-size:34px;font-weight:bold;letter-spacing:6px;color:#1a1a1a">${esc(separado)}</p>
-  <p style="font-size:15px;line-height:1.5">Vence en ${esc(dura)}.</p>
-  <p style="font-size:13px;color:#6b7280;line-height:1.5">Si no estás firmando tu contrato, ignorá este mail: sin el código no se puede firmar.</p>
-  <p style="font-size:13px;color:#6b7280">Show Business Solutions</p>
-</div>`;
-  return { subject: D(`Tu código para firmar el contrato: ${separado}`), text: D(text), html: D(html) };
+  // "documento" sólo en lo que se lee: el link (…/contrato?t=…) queda igual.
+  const cuerpo = [parrafo(hola + ':')].concat(link
+    ? [parrafo(D('Para terminar de firmar tu contrato, tocá el botón: vuelve al contrato con el código ya puesto.')), botonHtml(D('Volver al contrato y firmar'), link), parrafo(D('O escribí este código en la página del contrato:'))]
+    : [parrafo(D('Tu código para firmar el contrato es:'))],
+    [codigoHtml(separado), parrafo(`Vence en ${dura}.`), pieHtml(D('Si no estás firmando tu contrato, ignorá este mail: sin el código no se puede firmar.'))]).join('\n    ');
+  const html = marcoMail({ kicker: D('Recursos Humanos · Contratos'), titulo: 'Tu código para firmar', cuerpo, instagram: false });
+  const textoD = link ? D(text.replace(link, '\u0000')).replace('\u0000', link) : D(text);
+  return { subject: D(`Tu código para firmar el contrato: ${separado}`), text: textoD, html };
 }
 
 // Si Resend contestó 429 por velocidad ("rate_limit_exceeded"): no por el tope diario o mensual.

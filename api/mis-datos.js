@@ -14,6 +14,7 @@
 // dos van como variables de entorno en Vercel, nunca en el código.
 
 import { manejarVacaciones } from './_lib/vacaciones.js';
+import { armarMail as armarMailSBS } from './_lib/mail-sbs.js';
 
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
@@ -47,7 +48,6 @@ export function enmascarar(email) {
   return u.slice(0, Math.min(2, u.length)) + '***@' + dom;
 }
 
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // El mail: corto, con el botón y la aclaración de que vence.
 // motivo (sólo desde el panel, "Revisar los CBU"): 'cbu' si el que tenemos no es válido; 'cbu_falta' si no hay.
@@ -64,13 +64,10 @@ export function armarMail({ nombre, link, invitado, inscripciones, motivo }) {
       ? 'Pediste ver tus inscripciones. Desde este link ves dónde estás anotado/a, podés darte de baja y actualizar tus datos.'
       : 'Pediste ver tus datos. Desde este link los actualizás o, si todavía no te inscribiste, completás tu inscripción.';
   const text = `${hola}:\n\n${intro}\n\n${link}\n\nEl link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.\n\nShow Business Solutions`;
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#111827">
-  <p style="font-size:15px">${esc(hola)}:</p>
-  <p style="font-size:15px;line-height:1.5">${esc(intro)}</p>
-  <p style="margin:24px 0"><a href="${esc(link)}" style="background:#1a1a1a;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">${inscripciones ? 'Ver mis inscripciones' : 'Actualizar mis datos'}</a></p>
-  <p style="font-size:13px;color:#6b7280;line-height:1.5">El link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.</p>
-  <p style="font-size:13px;color:#6b7280">Show Business Solutions</p>
-</div>`;
+  const html = armarMailSBS({ kicker: 'Recursos Humanos · Tus datos',
+    titulo: cbu === 'cbu' ? 'Revisá tu CBU' : cbu === 'cbu_falta' ? 'Cargá tu CBU' : invitado ? 'Actualizá tus datos' : inscripciones ? 'Tus inscripciones' : 'Tus datos',
+    hola, parrafos: [intro], boton: inscripciones ? 'Ver mis inscripciones' : 'Actualizar mis datos', link,
+    pie: 'El link es personal y vence en 24 horas. Si no lo pediste vos, ignorá este mail: tus datos no cambian.', instagram: true }).html;
   return { subject: cbu === 'cbu' ? 'Revisá tu CBU — Show Business Solutions' : cbu === 'cbu_falta' ? 'Cargá tu CBU — Show Business Solutions' : invitado ? 'Actualizá tus datos — Show Business Solutions' : inscripciones ? 'Tu link para ver tus inscripciones' : 'Tu link para actualizar tus datos', text, html };
 }
 

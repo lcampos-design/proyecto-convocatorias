@@ -17,6 +17,7 @@
 
 import crypto from 'crypto';
 import { TIPO_GOOGLE, esMicrosoft } from './_lib/correo-google.js';
+import { armarMail as armarMailSBS } from './_lib/mail-sbs.js';
 
 export const config = { maxDuration: 60 };
 
@@ -48,7 +49,6 @@ export function aQuienes(contratos, eventosHoy, ahora) {
 }
 
 // ── El mail ──
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 export function areaDe(conv) { return conv && String(conv.area || '').toLowerCase() === 'externos' ? 'externos' : 'arena'; }
 // El show sin "— Movistar Arena" y la fecha: la del contrato o, si el show tiene una sola, esa.
 function showYFecha(c) {
@@ -68,25 +68,9 @@ export function armarRecordatorio(c) {
   const subject = `Contrato · pendiente de firma${show ? ' · ' + show : ''}${fecha ? ' · ' + fechaCorta(fecha) : ''}`;
   const vence = c.vence_el ? fechaLinda(diaAR(new Date(c.vence_el))) : '';
   const text = `${hola}:\n\nTe recordamos que todavía no firmaste ${que}${de}.\n\nPara firmarlo, entrá a este link:\n${link}\n\n${vence ? 'El link vence el ' + vence + '. ' : ''}Cualquier duda, respondé este mail.\n\nSaludos,\nShow Business Solutions`;
-  const P = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#374151';
-  const html = `<div style="background:#f5f5f7;margin:0;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:8px;padding:40px 44px">
-    <img src="${SITIO}/logo-sbs.png" alt="Show Business Solutions" width="56" height="56" style="display:block;width:56px;height:56px;border:0;margin-bottom:22px">
-    <p style="${P}">${esc(hola)}:</p>
-    <p style="${P}">Te recordamos que todavía no firmaste ${esc(que)}${esc(de)}.</p>
-    <p style="${P}">Para firmarlo, tocá el botón:</p>
-    <p style="margin:22px 0"><a href="${esc(link)}" style="display:inline-block;background:#0f1117;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:14px 26px;border-radius:10px">${doc ? 'Firmar el documento' : 'Firmar mi contrato'}</a></p>
-    <p style="${P}">O copiá este link: <a href="${esc(link)}" style="color:#534AB7;text-decoration:underline">${esc(link)}</a></p>
-    <p style="${P}">${vence ? 'El link vence el ' + esc(vence) + '. ' : ''}Cualquier duda, respondé este mail.</p>
-    <div style="margin-top:28px;padding-top:22px;border-top:1px solid #ececf1">
-      <img src="${SITIO}/${FIRMA_MAIL[area]}" alt="Show Business Solutions" width="300" style="max-width:300px;width:100%;height:auto;display:block;border:0">
-    </div>
-  </div>
-  <div style="max-width:560px;margin:16px auto 0;text-align:center;font-size:11px;color:#9ca3af;line-height:1.7">
-    Show Business Solutions · <a href="https://show-bs.com/" style="color:#9ca3af;text-decoration:underline">show-bs.com</a><br>
-    Instagram <a href="https://www.instagram.com/showbs/" style="color:#9ca3af;text-decoration:underline">@showbs</a> · <a href="https://www.instagram.com/showbspain/" style="color:#9ca3af;text-decoration:underline">@showbspain</a>
-  </div>
-</div>`;
+  const html = armarMailSBS({ kicker: 'Recursos Humanos · Contratos', titulo: doc ? 'Documento pendiente de firma' : 'Contrato pendiente de firma', hola,
+    parrafos: [`Te recordamos que todavía no firmaste ${que}${de}.`, 'Para firmarlo, tocá el botón:'], boton: doc ? 'Firmar el documento' : 'Firmar mi contrato', link, copiar: true,
+    pie: (vence ? 'El link vence el ' + vence + '. ' : '') + 'Cualquier duda, respondé este mail.', firma: `${SITIO}/${FIRMA_MAIL[area]}`, instagram: true }).html;
   return { from: casilla, subject, text, html };
 }
 
