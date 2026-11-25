@@ -13936,8 +13936,9 @@ async function vacCargar() {
     sb.from('vacaciones').select('id,created_at,email,nombre,area,datos,estado,aprueba_jefe,aprueba_rrhh,firmas,derivada_por').order('created_at', { ascending: false }),
     sb.from('config').select('value').eq('key', 'vacaciones').maybeSingle()]);
   vacFalta = !!l.error; vacLista = l.error ? [] : (l.data || []);
-  vacCfg = Object.assign({ rrhh: '', copias: [], areas: [] }, (c.data && c.data.value) || {});
+  vacCfg = Object.assign({ rrhh: '', copias: [], socios: [], areas: [] }, (c.data && c.data.value) || {});
   if (!Array.isArray(vacCfg.copias)) vacCfg.copias = [];
+  if (!Array.isArray(vacCfg.socios)) vacCfg.socios = [];
   vacCfg.areas = (vacCfg.areas || []).map(a => ({ nombre: a.nombre || '', jefe: a.jefe || '' }));
 }
 // Para el recuadro de Contratos: cuántas hay para derivar (sin esperar a abrir).
@@ -14052,8 +14053,9 @@ async function vacPdf(id) {
 function renderVacCfg(cont) {
   cont.innerHTML = `<div class="vac-link"><span>Link para el newsletter</span><b>${VAC_LINK}</b><button class="btn btn-sec btn-xs" onclick="navigator.clipboard.writeText('${VAC_LINK}').then(()=>toast('✓ Link copiado'))">Copiar</button></div>
     <div class="fg"><label>Mail de RR. HH. (aprueba y firma todas, al final)</label><input class="fi" id="vacRrhh" value="${e(vacCfg.rrhh)}" placeholder="nombre@show-bs.com"></div>
-    <div class="fg" style="margin-top:10px"><label>Copia del PDF final, siempre (mails separados por coma)</label><input class="fi" id="vacCopias" value="${e((vacCfg.copias || []).join(', '))}" placeholder="RR. HH., legales, socios…"></div>
-    <div class="fbv-sub" style="margin-top:4px">Acá van los socios y todos los que tienen que recibir el PDF de cada solicitud cuando se cierra.</div>
+    <div class="fg" style="margin-top:10px"><label>Copia del PDF final, aprobadas y no aprobadas (mails separados por coma)</label><input class="fi" id="vacCopias" value="${e((vacCfg.copias || []).join(', '))}" placeholder="Legales…"></div>
+    <div class="fg" style="margin-top:10px"><label>Socios: el PDF final, sólo de las aprobadas (mails separados por coma)</label><input class="fi" id="vacSocios" value="${e((vacCfg.socios || []).join(', '))}" placeholder="El mail de cada socio"></div>
+    <div class="fbv-sub" style="margin-top:4px">A estas casillas les llega sólo el PDF final de cada persona, cuando se cierra: nada antes.</div>
     <div style="margin-top:14px;font-size:12.5px;font-weight:600;color:#374151">Áreas y su jefe directo <span style="font-weight:400;color:#6b7280">· son las que elige cada empleado en el formulario. La solicitud le llega sola al jefe de su área; vacío (o si la pide el jefe): su jefe directo es RR. HH., que firma una sola vez</span></div>
     <div id="vacAreas">${vacCfg.areas.map((a, i) => `<div class="vac-area"><input class="fi" value="${e(a.nombre)}" placeholder="Área" oninput="vacCfg.areas[${i}].nombre=this.value"><input class="fi" value="${e(a.jefe)}" placeholder="Mail del jefe (vacío: su jefe directo es RR. HH.)" oninput="vacCfg.areas[${i}].jefe=this.value"><button class="btn btn-sec btn-xs" onclick="vacCfg.areas.splice(${i},1);renderVac()">Quitar</button></div>`).join('')}</div>
     <button class="btn btn-sec btn-sm" style="margin-top:8px" onclick="vacCfg.areas.push({nombre:'',jefe:''});renderVac()">+ Agregar un área</button>
@@ -14064,13 +14066,14 @@ async function vacGuardarCfg() {
   if (!okMail(rrhh)) { toast('Revisá el mail de RR. HH.'); return; }
   const areas = vacCfg.areas.map(a => ({ nombre: a.nombre.trim(), jefe: a.jefe.trim().toLowerCase() })).filter(a => a.nombre);
   const mal = areas.find(a => a.jefe && !okMail(a.jefe)); if (mal) { toast('Revisá el mail del jefe de ' + mal.nombre); return; }
-  const copias = [...new Set(document.getElementById('vacCopias').value.split(/[\s,;]+/).map(m => m.trim().toLowerCase()).filter(Boolean))];
-  const malC = copias.find(m => !okMail(m)); if (malC) { toast('Revisá este mail de las copias: ' + malC); return; }
+  const lista = id => [...new Set(document.getElementById(id).value.split(/[\s,;]+/).map(m => m.trim().toLowerCase()).filter(Boolean))];
+  const copias = lista('vacCopias'), socios = lista('vacSocios');
+  const malC = copias.concat(socios).find(m => !okMail(m)); if (malC) { toast('Revisá este mail: ' + malC); return; }
   // "Socios" no es un área (25-nov): las áreas son las que elige cada empleado en el formulario.
-  if (areas.some(a => /^socio/i.test(a.nombre)) && !confirm('"Socios" no es un área: le aparecería a cada empleado en el formulario. Los mails de los socios van en "Copia del PDF final". ¿Guardar igual?')) return;
-  const { error } = await sb.from('config').upsert({ key: 'vacaciones', value: { rrhh, copias, areas }, updated_at: new Date().toISOString() });
+  if (areas.some(a => /^socio/i.test(a.nombre)) && !confirm('"Socios" no es un área: le aparecería a cada empleado en el formulario. Los mails de los socios van en "Socios". ¿Guardar igual?')) return;
+  const { error } = await sb.from('config').upsert({ key: 'vacaciones', value: { rrhh, copias, socios, areas }, updated_at: new Date().toISOString() });
   if (error) { toast('No se pudo guardar: ' + (error.message || error)); return; }
-  vacCfg = { rrhh, copias, areas }; toast('✓ Guardado'); vacTab = 'lista'; renderVac();
+  vacCfg = { rrhh, copias, socios, areas }; toast('✓ Guardado'); vacTab = 'lista'; renderVac();
 }
 
 async function renderContratosBorrados() {

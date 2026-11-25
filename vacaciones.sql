@@ -396,8 +396,11 @@ begin
   -- La copia: a quien firmó antes que la decisión final (el jefe, si después firmó RR. HH.); a RR. HH., sólo si no firmó.
   v_copia := array_remove(array[case when r.aprueba_jefe is not null and r.firmas ? 'rrhh' then r.aprueba_jefe end,
                                 case when not (r.firmas ? 'rrhh') then r.aprueba_rrhh end], null);
-  -- Y las casillas que reciben siempre el PDF final (config 'copias': RR. HH., legales, socios), sin repetir.
-  v_copia := array(select distinct m from unnest(v_copia || array(select lower(btrim(x)) from jsonb_array_elements_text(coalesce(v_cfg -> 'copias', '[]'::jsonb)) x
+  -- Y las casillas fijas, sin repetir: 'copias' (p. ej. legales) en todas las que se cierran; 'socios', sólo en las
+  -- aprobadas (25-nov, Thomas: "a los socios, cuando está todo aprobado, no los rechazados").
+  v_copia := array(select distinct m from unnest(v_copia || array(select lower(btrim(x))
+                                                                    from jsonb_array_elements_text(coalesce(v_cfg -> 'copias', '[]'::jsonb)
+                                                                           || case when r.estado = 'aprobada' then coalesce(v_cfg -> 'socios', '[]'::jsonb) else '[]'::jsonb end) x
                                                               where btrim(x) ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$')) m
                     where m <> r.email and m is distinct from (case when r.firmas ? 'rrhh' then r.aprueba_rrhh end) order by m);
   perform public.vac_evento(r.id, 'aviso', r.email, 'Mail final (' || case when r.estado = 'aprobada' then 'aprobada' else 'no aprobada' end || ')' || case when r.pdf is not null then ', con el PDF firmado' else '' end
