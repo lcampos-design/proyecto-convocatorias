@@ -1140,6 +1140,9 @@ button.cn-nom:hover{text-decoration:underline;text-underline-offset:3px}
 .vac-selbar{display:none;align-items:center;gap:10px;margin:-2px 0 10px;padding:8px 12px;border-radius:10px;background:#fafafa;border:1px solid var(--r-line);font-size:12.5px}.vac-selbar.on{display:flex}
 .btn.vac-borrar{background:#fff;color:#991b1b;border:1px solid #fecaca}.btn.vac-borrar:hover{background:#fef2f2}
 #mVac .cb{accent-color:#1a1a1a}
+.vac-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.vac-tag{display:inline-block;padding:1px 7px;border-radius:999px;background:#f3f4f6;color:#4b5563;font-size:11px;line-height:1.5}
+.vac-pasos{white-space:pre-wrap;font-size:11.5px;line-height:1.45;color:#4b5563;max-height:140px;overflow:auto}
+.vac-estado{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.lnk-xs{background:none;border:0;padding:0;font-size:11.5px;color:#6b7280;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .vac-link{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fafafa;border:1px solid var(--r-line);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12.5px}.vac-link span{color:var(--r-muted)}
 .vac-area{display:flex;gap:8px;align-items:center;margin-top:8px}.vac-area .fi:first-child{flex:0 0 200px}.vac-area .fi:nth-child(2){flex:1}
 .fbs-tab-n{display:inline-block;min-width:18px;padding:0 5px;margin-left:6px;border-radius:999px;background:#9a3412;color:#fff;font-size:10.5px;font-weight:700;line-height:16px;text-align:center}
@@ -2624,8 +2627,8 @@ tr:hover td{background:#f9f9fb}
   <div class="modal" style="max-width:1080px">
     <div class="modal-title"><span>Vacaciones · personal corporativo</span><button class="mclose" onclick="closeM('mVac')">✕</button></div>
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:-6px 0 12px">
-      <div style="font-size:12.5px;color:var(--r-muted);flex:1;min-width:260px;line-height:1.5">La persona la completa y la firma en /vacaciones y le llega sola al jefe de su área; después, a RR. HH. Cada uno recibe un solo mail, con su link para firmar. Al final, el PDF va a la persona, al jefe y a las casillas de Áreas y jefes. Acá se puede cambiar el jefe o reenviar el link.</div>
-      <div class="cc-seg cc-tabs" role="tablist"><button data-t="lista" class="on" onclick="vacTabs('lista')">Solicitudes</button><button data-t="cfg" onclick="vacTabs('cfg')">Áreas y jefes</button></div>
+      <div style="flex:1;min-width:0"></div>
+      <div class="cc-seg cc-tabs" role="tablist"><button data-t="lista" class="on" onclick="vacTabs('lista')">Solicitudes</button><button data-t="borradas" onclick="vacTabs('borradas')">Borradas</button><button data-t="cfg" onclick="vacTabs('cfg')">Áreas y jefes</button></div>
     </div>
     <div id="vacCuerpo"></div>
   </div>
@@ -13930,7 +13933,7 @@ function renderCtHome() {
 // final les llega el PDF a todos. Quién aprueba (los mails) se carga acá, en "Áreas y jefes" (config 'vacaciones').
 const VAC_ESTADOS = { nueva: 'Para derivar', jefe: 'Con el jefe', rrhh: 'Con RR. HH.', aprobada: 'Aprobada', rechazada: 'No aprobada', cancelada: 'Cancelada' };
 const VAC_LINK = 'https://convocatorias.show-bs.com/vacaciones';
-let vacLista = null, vacCfg = null, vacVer = 'nueva', vacTab = 'lista', vacFalta = false, vacSel = new Set();
+let vacLista = null, vacCfg = null, vacVer = 'nueva', vacTab = 'lista', vacFalta = false, vacSel = new Set(), vacCambiando = null;
 async function vacCargar() {
   const [l, c] = await Promise.all([
     sb.from('vacaciones').select('id,created_at,email,nombre,area,datos,estado,aprueba_jefe,aprueba_rrhh,firmas,derivada_por').order('created_at', { ascending: false }),
@@ -13960,28 +13963,64 @@ function renderVac() {
   document.querySelectorAll('#mVac .cc-tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === vacTab));
   if (vacFalta) { cont.innerHTML = '<div class="empty">Falta correr <b>vacaciones.sql</b> en Supabase.</div>'; return; }
   if (vacTab === 'cfg') { renderVacCfg(cont); return; }
+  if (vacTab === 'borradas') { renderVacBorradas(cont); return; }
+  // Más simple (25-nov, Thomas: "reducir info, dejar lo importante"): los filtros que tienen algo, la persona con su área,
+  // las fechas cortas con etiquetas en vez de los avisos largos, los días, el estado y una sola acción.
   const cuenta = k => k === 'todas' ? vacLista.length : vacLista.filter(v => v.estado === k).length;
   const chip = (k, cl) => `<button class="nchip${cl && cuenta(k) ? ' ' + cl : ''}${vacVer === k ? ' on' : ''}" onclick="vacVer='${k}';vacSel.clear();renderVac()">${k === 'todas' ? 'Todas' : VAC_ESTADOS[k]} <b>${cuenta(k)}</b></button>`;
+  if (vacVer !== 'todas' && !cuenta(vacVer)) vacVer = 'todas';
   const l = vacLista.filter(v => vacVer === 'todas' || v.estado === vacVer);
   renderVac.visibles = l.map(v => v.id);
   [...vacSel].forEach(id => { if (!renderVac.visibles.includes(id)) vacSel.delete(id); });
   const aviso = !vacCfg.rrhh ? '<div class="vac-aviso">Antes de mandar el link, cargá el mail de RR. HH. y los jefes en <b>Áreas y jefes</b>.</div>' : '';
-  cont.innerHTML = aviso + `<div class="nchips nchips-suelto">${chip('nueva', 'alerta')}${chip('jefe')}${chip('rrhh')}${chip('aprobada')}${chip('rechazada')}${chip('cancelada')}<span class="sep"></span>${chip('todas')}</div><div class="vac-selbar" id="vacSelBar"></div>`
-    + (l.length ? `<div class="fbv-tabla hi-tabla" style="max-height:58vh"><table><thead><tr><th style="width:30px"><input type="checkbox" class="cb" id="vacSelTodas" title="Marcar todas las de la lista" onchange="vacMarcarTodas(this.checked)"></th><th style="width:86px">Pedida</th><th>Persona</th><th>Fechas</th><th style="width:60px">Días</th><th style="width:330px">Estado</th></tr></thead><tbody>`
+  const chips = ['nueva', 'jefe', 'rrhh', 'aprobada', 'rechazada', 'cancelada'].filter(k => cuenta(k)).map(k => chip(k, k === 'nueva' ? 'alerta' : '')).join('');
+  cont.innerHTML = aviso + `<div class="nchips nchips-suelto">${chips}${chips ? '<span class="sep"></span>' : ''}${chip('todas')}</div><div class="vac-selbar" id="vacSelBar"></div>`
+    + (l.length ? `<div class="fbv-tabla hi-tabla" style="max-height:62vh"><table class="vac-tabla"><thead><tr><th style="width:30px"><input type="checkbox" class="cb" id="vacSelTodas" title="Marcar todas las de la lista" onchange="vacMarcarTodas(this.checked)"></th><th>Persona</th><th>Fechas</th><th style="width:70px">Días</th><th style="width:250px">Estado</th></tr></thead><tbody>`
       + l.map(v => {
-        const acc = v.estado === 'nueva' || v.estado === 'jefe'
-          ? `<div class="vac-der"><select class="filt" id="vacJ_${v.id}">${vacOpciones(v.estado === 'jefe' ? v.aprueba_jefe : vacSugerido(v))}</select><button class="btn btn-primary btn-xs" onclick="vacDerivar('${v.id}')">${v.estado === 'nueva' ? 'Derivar' : 'Cambiar'}</button>${v.estado === 'jefe' ? `<button class="btn btn-sec btn-xs" onclick="vacReenviar('${v.id}')" title="Volver a mandarle el mail con el link">Reenviar</button>` : ''}</div>`
-          : v.estado === 'rrhh' ? `<button class="btn btn-sec btn-xs" onclick="vacReenviar('${v.id}')" title="Volver a mandar el mail con el link para firmar">Reenviar el link a RR. HH.</button>`
-          : v.estado === 'cancelada' ? `<span class="fbv-sub" style="display:inline;margin-left:6px">${vacLista.some(x => x.datos && x.datos.reemplaza && x.datos.reemplaza.id === v.id) ? 'la modificó' : 'la canceló'}</span>`
-          : `<button class="btn btn-sec btn-xs" onclick="vacPdf('${v.id}')">↓ PDF</button>`;
-        const rem = (v.datos || {}).reemplaza;
-        return `<tr><td><input type="checkbox" class="cb vac-cb" data-id="${v.id}"${vacSel.has(v.id) ? ' checked' : ''} onchange="vacMarcar('${v.id}', this.checked)"></td><td>${fechaDMA(String(v.created_at).slice(0, 10))}</td><td><div class="fbv-nom">${eN(v.nombre)}</div><div class="fbv-sub">${e(v.area)} · ${e(v.email)}</div></td>
-          <td>${e(vacTramos(v))}${((v.datos || {}).avisos || []).length ? `<div class="fbv-sub" style="color:#9a3412">⚠ ${e(v.datos.avisos.join(' · '))}</div>` : ''}${(v.datos || {}).nota ? `<div class="fbv-sub" title="${e(v.datos.nota)}">Nota: ${e(String(v.datos.nota).slice(0, 90))}${String(v.datos.nota).length > 90 ? '…' : ''}</div>` : ''}${rem ? `<div class="fbv-sub">Modifica la del ${fechaDMA(String(rem.fecha).slice(0, 10))} (cancelada)</div>` : ''}</td><td><b>${(v.datos || {}).total || ''}</b>${((v.datos || {}).total || 0) > 14 ? `<div class="fbv-sub">${v.datos.total - 14} sin goce</div>` : ''}</td>
-          <td><span class="vac-est ${v.estado}">${VAC_ESTADOS[v.estado]}</span><button class="btn btn-sec btn-xs" style="margin-left:6px" onclick="vacDetalle('${v.id}')" title="Las firmas y la trazabilidad de cada paso">Ver</button>${v.estado === 'jefe' ? `<span class="fbv-sub" style="display:inline;margin-left:6px">${e(v.aprueba_jefe)}</span>` : ''}${acc}</td></tr>`;
+        const d = v.datos || {}, sg = (d.total || 0) > 14 ? d.total - 14 : 0, jefeArea = vacEsJefe(v.email);
+        const tags = [].concat((d.avisos || []).some(x => /30 días/.test(x)) ? ['poca anticipación'] : [], (d.avisos || []).some(x => /menos de 7/.test(x)) ? ['tramo corto'] : [],
+          d.reemplaza ? ['modifica otra'] : []).map(t => `<span class="vac-tag">${t}</span>`).join('') + (d.nota ? `<span class="vac-tag" title="${e(d.nota)}">nota</span>` : '');
+        const accion = v.estado === 'nueva'
+            ? `<div class="vac-der"><select class="filt" id="vacJ_${v.id}">${vacOpciones(vacSugerido(v))}</select><button class="btn btn-primary btn-xs" onclick="vacDerivar('${v.id}')">Derivar</button></div>`
+          : v.estado === 'jefe' && vacCambiando === v.id
+            ? `<div class="vac-der"><select class="filt" id="vacJ_${v.id}">${vacOpciones(v.aprueba_jefe)}</select><button class="btn btn-primary btn-xs" onclick="vacDerivar('${v.id}')">Cambiar</button><button class="btn btn-sec btn-xs" onclick="vacCambiando=null;renderVac()">No</button></div>`
+          : v.estado === 'jefe' || v.estado === 'rrhh'
+            ? `<button class="btn btn-sec btn-xs" onclick="vacReenviar('${v.id}')" title="Volver a mandar el mail con el link para firmar">Reenviar</button>${v.estado === 'jefe' ? `<button class="lnk-xs" onclick="vacCambiando='${v.id}';renderVac()" title="Mandársela a otro jefe">cambiar jefe</button>` : ''}`
+          : v.estado === 'cancelada' ? '' : `<button class="btn btn-sec btn-xs" onclick="vacPdf('${v.id}')">↓ PDF</button>`;
+        const quien = v.estado === 'jefe' ? `<div class="fbv-sub" title="${e(v.aprueba_jefe)}">${e(String(v.aprueba_jefe || '').split('@')[0])}</div>` : '';
+        return `<tr><td><input type="checkbox" class="cb vac-cb" data-id="${v.id}"${vacSel.has(v.id) ? ' checked' : ''} onchange="vacMarcar('${v.id}', this.checked)"></td>
+          <td><div class="fbv-nom" title="${e(v.email)}">${eN(v.nombre)}</div><div class="fbv-sub">${e(v.area)}${jefeArea ? ' · <span class="vac-tag">jefe de área</span>' : ''} · ${fechaDMA(String(v.created_at).slice(0, 10)).slice(0, 5)}</div></td>
+          <td>${e(vacTramosCorto(v))}${tags ? `<div class="vac-tags">${tags}</div>` : ''}</td>
+          <td><b>${d.total || ''}</b>${sg ? `<div class="fbv-sub">${sg} sin goce</div>` : ''}</td>
+          <td><div class="vac-estado"><span class="vac-est ${v.estado}">${VAC_ESTADOS[v.estado]}</span><button class="btn btn-sec btn-xs" onclick="vacDetalle('${v.id}')" title="Las firmas y la trazabilidad de cada paso">Ver</button>${accion}</div>${quien}</td></tr>`;
       }).join('') + '</tbody></table></div>'
       : '<div class="empty">' + (vacLista.length ? 'Nada en este estado.' : 'Todavía no llegó ninguna solicitud. El link para el newsletter está en Áreas y jefes.') + '</div>');
   vacBarra();
 }
+// Las borradas (25-nov): quién era, en qué estado estaba, quién la borró y cuándo, y los mails que habían salido.
+let vacBorradas = null;
+async function renderVacBorradas(cont) {
+  if (!vacBorradas) {
+    cont.innerHTML = '<div class="empty">Cargando...</div>';
+    let r = await sb.from('vacaciones_borradas').select('id,vacacion_id,transaccion_id,nombre,area,estado,creada,borrada_por,fecha,pasos').order('fecha', { ascending: false }).limit(200);
+    if (r.error && /pasos/.test(r.error.message || '')) r = await sb.from('vacaciones_borradas').select('id,vacacion_id,transaccion_id,nombre,area,estado,creada,borrada_por,fecha').order('fecha', { ascending: false }).limit(200);
+    if (r.error) { cont.innerHTML = '<div class="empty">Falta correr <b>vacaciones-borrar.sql</b> en Supabase.</div>'; return; }
+    vacBorradas = r.data || [];
+  }
+  if (vacTab !== 'borradas') return;
+  if (!vacBorradas.length) { cont.innerHTML = '<div class="empty">No se borró ninguna.</div>'; return; }
+  cont.innerHTML = `<div class="fbv-sub" style="margin:0 0 10px">Se borran con sus firmas, su trazabilidad y el PDF; acá queda qué se borró. Desde el 25-nov, también a quién le habían llegado los mails.</div>
+    <div class="fbv-tabla hi-tabla" style="max-height:62vh"><table class="vac-tabla"><thead><tr><th style="width:200px">Persona</th><th style="width:150px">Estado al borrarla</th><th style="width:150px">Borrada</th><th>Los mails que habían salido</th></tr></thead><tbody>`
+    + vacBorradas.map(b => `<tr><td><div class="fbv-nom">${eN(b.nombre || '')}</div><div class="fbv-sub">${e(b.area || '')} · pedida el ${fechaDMA(String(b.creada || '').slice(0, 10)).slice(0, 5)}</div></td>
+      <td><span class="vac-est ${e(b.estado || '')}">${VAC_ESTADOS[b.estado] || e(b.estado || '')}</span></td>
+      <td>${fechaHoraAR(b.fecha)}<div class="fbv-sub">${e(String(b.borrada_por || '').split('@')[0])}</div></td>
+      <td>${b.pasos ? '<div class="vac-pasos">' + e(b.pasos) + '</div>' : '<span class="fbv-sub">Sin registro (se borró antes del 25-nov)</span>'}</td></tr>`).join('') + '</tbody></table></div>';
+}
+// ¿Es jefe de área? Los jefes de área no tienen jefe de área: dependen de RR. HH., que firma sus vacaciones.
+function vacEsJefe(mail) { const m = String(mail || '').trim().toLowerCase(); return !!m && (vacCfg.areas || []).some(a => String(a.jefe || '').trim().toLowerCase() === m); }
+// Las fechas, cortas: "4/1 al 15/1/2027 · 1/2 al 7/2/2027".
+function vacTramosCorto(v) { const dm = f => { const [a, m, d] = String(f).slice(0, 10).split('-'); return Number(d) + '/' + Number(m); };
+  return ((v.datos || {}).tramos || []).map(t => dm(t.desde) + ' al ' + dm(t.hasta) + '/' + String(t.hasta).slice(0, 4)).join(' · '); }
 // Borrar (25-nov, Thomas: "todas las que mandé son de prueba"): se marcan y se borran juntas, con sus firmas, su
 // trazabilidad y el PDF. Queda anotado qué se borró y quién (vacaciones-borrar.sql).
 function vacMarcar(id, si) { if (si) vacSel.add(id); else vacSel.delete(id); vacBarra(); }
@@ -14000,7 +14039,7 @@ async function vacBorrar(ids) {
   const { data, error } = await sb.rpc('vacaciones_borrar', { p_ids: ids });
   if (error) { alert(/vacaciones_borrar/.test(error.message || '') ? 'Falta correr vacaciones-borrar.sql en Supabase.' : 'No se pudo borrar: ' + (error.message || '')); return; }
   if (!data || !data.ok) { alert((data && data.error) || 'No se pudo borrar.'); return; }
-  vacSel.clear(); await vacCargar(); vacContar(); renderVac();
+  vacSel.clear(); vacBorradas = null; await vacCargar(); vacContar(); renderVac();
   toast(data.borradas === 1 ? 'Solicitud borrada' : data.borradas + ' solicitudes borradas');
 }
 async function vacDerivar(id) {

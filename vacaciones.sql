@@ -191,6 +191,15 @@ begin
 end;
 $$;
 
+-- ¿Es jefe de área? (su mail es el jefe de alguna área de la config). Los jefes de área no tienen jefe de área: dependen
+-- de RR. HH., que firma sus vacaciones (25-nov, Thomas).
+create or replace function public.vac_es_jefe(p_mail text) returns boolean
+language sql stable set search_path = public as $$
+  select exists (select 1 from public.config c, jsonb_array_elements(coalesce(c.value -> 'areas', '[]'::jsonb)) a
+                  where c.key = 'vacaciones' and nullif(lower(btrim(coalesce(a ->> 'jefe', ''))), '') = lower(btrim(coalesce(p_mail, ''))))
+$$;
+revoke execute on function public.vac_es_jefe(text) from public, anon, authenticated;
+
 -- Se puede modificar o cancelar: todavía no firmó ni el jefe ni RR. HH.
 create or replace function public.vac_modificable(p_estado text, p_firmas jsonb) returns boolean
 language sql immutable set search_path = public as $$ select p_estado in ('nueva', 'jefe', 'rrhh') and not (p_firmas ? 'jefe') and not (p_firmas ? 'rrhh') $$;
@@ -286,6 +295,8 @@ begin
   select lower(btrim(coalesce(a ->> 'jefe', ''))) into v_jefe
     from jsonb_array_elements(coalesce(v_cfg -> 'areas', '[]'::jsonb)) a where lower(btrim(coalesce(a ->> 'nombre', ''))) = lower(v_area) limit 1;
   v_estado := case when not found then 'nueva' when v_jefe = '' or v_jefe = lower(btrim(v_cfg ->> 'rrhh')) or v_jefe = v_mail then 'rrhh' else 'jefe' end;
+  -- Un jefe de área va siempre a RR. HH., aunque elija otra área.
+  if public.vac_es_jefe(v_mail) then v_estado := 'rrhh'; end if;
   if v_estado <> 'jefe' then v_jefe := null; end if;
   insert into public.vacaciones (id, email, nombre, area, datos, aprueba_jefe, aprueba_rrhh, estado, derivada_por, firmas, ver_hashes, transaccion_id, hash_contenido)
   values (v_id, v_mail, v_nombre, v_area, v_datos, v_jefe, lower(btrim(v_cfg ->> 'rrhh')), v_estado, case when v_estado <> 'nueva' then 'automático' end,
@@ -357,7 +368,7 @@ begin
     update public.vacaciones set aviso_hecho = 'nueva', ver_hashes = ver_hashes || public.vac_huella(v_ver) where id = r.id;
     perform public.vac_evento(r.id, 'aviso', r.aprueba_rrhh, 'Mail a RR. HH. para derivarla', true);
     perform public.vac_evento(r.id, 'aviso', r.email, 'Mail a la persona: la recibimos, con su link para verla', true);
-    return jsonb_build_object('ok', true, 'paso', 'nueva', 'ver', v_ver, 'para', r.aprueba_rrhh, 'rrhh', r.aprueba_rrhh, 'fuera_de_lista', true,
+    return jsonb_build_object('ok', true, 'paso', 'nueva', 'ver', v_ver, 'para', r.aprueba_rrhh, 'rrhh', r.aprueba_rrhh, 'fuera_de_lista', true, 'es_jefe', public.vac_es_jefe(r.email),
       'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos);
   end if;
   if r.estado = 'cancelada' then
@@ -397,7 +408,7 @@ begin
     end if;
     -- equipo: quien firma es su jefe directo (el del área o RR. HH.): "Es de tu equipo y ya firmó".
     return jsonb_build_object('ok', true, 'paso', r.estado, 'token', v_tok, 'con_jefe', r.aprueba_jefe is not null, 'ver', v_ver, 'avance', v_avance,
-      'equipo', r.estado = 'jefe' or r.aprueba_jefe is null, 'jefe_nombre', r.firmas -> 'jefe' ->> 'aclaracion',
+      'equipo', r.estado = 'jefe' or r.aprueba_jefe is null, 'jefe_nombre', r.firmas -> 'jefe' ->> 'aclaracion', 'es_jefe', public.vac_es_jefe(r.email),
       'para', case when r.estado = 'jefe' then r.aprueba_jefe else r.aprueba_rrhh end, 'rrhh', r.aprueba_rrhh,
       'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos);
   end if;
@@ -428,7 +439,7 @@ create or replace function public.vac_ficha(r public.vacaciones, v_rol text) ret
 language sql stable set search_path = public as $$
   select jsonb_build_object('ok', true, 'id', r.id, 'rol', v_rol, 'estado', r.estado, 'nombre', r.nombre, 'email', r.email, 'area', r.area,
     'datos', r.datos, 'firmas', r.firmas, 'con_jefe', r.aprueba_jefe is not null, 'creada', r.created_at, 'tiene_pdf', r.pdf is not null, 'modificable', public.vac_modificable(r.estado, r.firmas),
-    'transaccion_id', r.transaccion_id, 'hash', r.hash_contenido,
+    'transaccion_id', r.transaccion_id, 'hash', r.hash_contenido, 'es_jefe', public.vac_es_jefe(r.email),
     'eventos', coalesce((select jsonb_agg(jsonb_build_object('tipo', e.tipo, 'quien', e.quien, 'detalle', e.detalle, 'ip', e.ip, 'user_agent', e.user_agent, 'fecha', e.fecha) order by e.fecha, e.id)
                            from public.vacaciones_eventos e where e.vacacion_id = r.id), '[]'::jsonb))
 $$;

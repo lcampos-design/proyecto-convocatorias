@@ -291,8 +291,8 @@ async function nuevaSolicitud() {
 // Lo que firma la persona (con los días sin goce, si pide más de 14).
 const fraseSolicito = total => 'Solicito las fechas indicadas, sujetas a la confirmación de RR. HH. según mi saldo' + (sinGoce(total) ? `; los ${sinGoce(total)} días que pasan de 14, sin goce de sueldo.` : '.');
 // A quién le llegó (va sola al jefe del área; si su jefe directo es RR. HH., a RR. HH.; con un área que no está en la lista, RR. HH. la deriva).
-const aQuien = estado => estado === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
-  : estado === 'rrhh' ? 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.' : 'RR. HH. se la manda a tu jefe directo para que la apruebe.';
+const aQuien = (estado, esJefe) => estado === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
+  : estado === 'rrhh' ? (esJefe ? 'Como sos jefe de área, dependés de RR. HH.: le llegó directo para que la apruebe y la firme.' : 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.') : 'RR. HH. se la manda a tu jefe directo para que la apruebe.';
 // Modificar: el formulario con lo que tenía; al enviarla, la nueva (firmada de nuevo) reemplaza a la anterior.
 function modificar(d) {
   nuevaSolicitud.reemplaza = { id: d.id, creada: d.creada, estado: d.estado };
@@ -367,7 +367,7 @@ async function enviar() {
   const v = await sb.rpc('vacaciones_ver', { p_token: data.ver });
   pasos((v.data && v.data.estado) || 'nueva', !(v.data && v.data.estado === 'rrhh' && !v.data.con_jefe));
   vista(`<div class="card centro"><div class="ic">✓</div><b>${rem ? 'Listo, la cambiaste' : 'Listo, la mandaste'}</b>
-    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}${aQuien(v.data && v.data.estado)} Te mandamos una copia a ${esc(ses.email)} y, al final, te llega el PDF con todas las firmas. Las fechas quedan sujetas a la confirmación de RR. HH. según tu saldo.</div>
+    <div class="txt">${rem ? 'La anterior quedó cancelada. ' : ''}${aQuien(v.data && v.data.estado, v.data && v.data.es_jefe)} Te mandamos una copia a ${esc(ses.email)} y, al final, te llega el PDF con todas las firmas. Las fechas quedan sujetas a la confirmación de RR. HH. según tu saldo.</div>
     <div class="btns" style="margin-top:4px"><button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button><button class="btn" onclick="misSolicitudes()">Mis solicitudes</button></div></div>`);
   bajarPdf.ficha = v.data;
 }
