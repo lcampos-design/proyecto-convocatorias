@@ -5,6 +5,7 @@
 //  · codigo: el código de 6 números para entrar, al mail de la persona.
 //  · aviso: una vez por paso. Nueva: a RR. HH. (para derivarla desde el panel) y a la persona (que la recibimos).
 //    Jefe o RR. HH.: a quien firma, con su link. Al final, a todos: aprobada o no, con el PDF firmado.
+//    Cancelada (la persona, antes de que firmen): a RR. HH., con copia al jefe; modificada: sólo al jefe (su link no sirve más).
 // Quién aprueba (los mails) está en la base (config 'vacaciones'), no en el código.
 
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
@@ -79,16 +80,32 @@ async function enviar(resend, mail) {
 }
 
 const KICKER = 'Recursos Humanos · Vacaciones 2026/2027';
+// La fecha en que mandó la que modifica ("24/11"), en hora de Argentina.
+const diaMes = f => { const d = new Date(f); return isNaN(d) ? '' : d.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', day: 'numeric', month: 'numeric' }); };
+const reemplaza = a => a.datos && a.datos.reemplaza;
 // Los mails de cada paso (separados para poder verlos sin mandarlos).
 export const MAILS = {
   codigo: codigo => armarMail({ kicker: KICKER, titulo: 'Tu código', hola: 'Hola', parrafos: ['Para entrar a la solicitud de vacaciones, usá este código:'], codigo,
     pie: 'Vence en 30 minutos. Si no lo pediste vos, ignorá este mail.' }),
-  nuevaRrhh: a => armarMail({ kicker: KICKER, titulo: 'Nueva solicitud', hola: 'Hola', parrafos: [`${a.nombre} mandó su solicitud de vacaciones, firmada.`],
+  nuevaRrhh: a => armarMail({ kicker: KICKER, titulo: reemplaza(a) ? 'Solicitud modificada' : 'Nueva solicitud', hola: 'Hola',
+    parrafos: [reemplaza(a) ? `${a.nombre} modificó su solicitud de vacaciones (la que mandó el ${diaMes(reemplaza(a).fecha)}) y la volvió a firmar. La anterior quedó cancelada; ésta es la que vale.`
+      : `${a.nombre} mandó su solicitud de vacaciones, firmada.`],
     datos: [['Persona', a.nombre], ['Área', a.area]].concat(filasTramos(a.datos), ((a.datos && a.datos.avisos) || []).map(x => ['Aviso', x])),
     boton: 'Derivarla en el panel', link: `${SITIO}/admin#vacaciones`, pie: 'Derivala al jefe que corresponde (o elegí "La firma sólo RR. HH.", si depende de RR. HH.).' }),
-  recibida: a => armarMail({ kicker: KICKER, titulo: 'Recibimos tu solicitud', hola: 'Hola, ' + primerNombre(a.nombre), parrafos: ['Recibimos tu solicitud de vacaciones, firmada:'],
+  recibida: a => armarMail({ kicker: KICKER, titulo: reemplaza(a) ? 'Recibimos el cambio' : 'Recibimos tu solicitud', hola: 'Hola, ' + primerNombre(a.nombre),
+    parrafos: [reemplaza(a) ? 'Recibimos tu solicitud modificada, firmada. La anterior quedó cancelada:' : 'Recibimos tu solicitud de vacaciones, firmada:'],
     datos: filasTramos(a.datos), boton: 'Ver mi solicitud', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.ver)}`,
-    pie: 'RR. HH. se la manda a tu jefe directo para que la apruebe y la firme. Cuando esté, te llega el PDF con todas las firmas.' }),
+    pie: 'RR. HH. se la manda a tu jefe directo para que la apruebe y la firme. Hasta que firme, la podés modificar o cancelar desde la página. Cuando esté, te llega el PDF con todas las firmas.' }),
+  // La canceló la persona: a RR. HH. (con copia al jefe, si ya la tenía). Si la modificó: sólo al jefe, que su link ya no sirve.
+  cancelada: a => a.reemplazada
+    ? armarMail({ kicker: KICKER, titulo: 'Solicitud modificada', hola: 'Hola',
+        parrafos: [`${a.nombre} modificó su solicitud de vacaciones antes de que la firmaras. El link que te mandamos quedó sin efecto.`,
+          'Cuando RR. HH. te derive la nueva, te llega otro mail para aprobarla y firmarla.'],
+        datos: [['Persona', a.nombre], ['Área', a.area]].concat(filasTramos(a.datos).map(([k, v]) => [k + ' (anterior)', v])) })
+    : armarMail({ kicker: KICKER, titulo: 'Solicitud cancelada', hola: 'Hola',
+        parrafos: [`${a.nombre} canceló su solicitud de vacaciones.` + (a.copia && a.copia.length ? ' El link para firmarla quedó sin efecto.' : '')],
+        datos: [['Persona', a.nombre], ['Área', a.area]].concat(filasTramos(a.datos), a.motivo ? [['Motivo', a.motivo]] : []),
+        pie: 'No hace falta hacer nada más: queda registrada como cancelada, con su trazabilidad.' }),
   firmar: a => armarMail({ kicker: KICKER, titulo: 'Vacaciones para aprobar', hola: 'Hola',
     parrafos: [a.paso === 'jefe' ? `${a.nombre} pidió vacaciones. Como su jefe directo, entrá para aprobarlas (o no) y firmar. Después le llega a RR. HH.`
       : `${a.nombre} pidió vacaciones${a.con_jefe ? ' y su jefe directo ya las aprobó' : ''}. Entrá para aprobarlas (o no) y firmar. Al terminar, le llega el PDF firmado.`],
@@ -119,6 +136,10 @@ export async function manejarVacaciones(cuerpo, res, { servicio, resend }) {
         const m = MAILS.nuevaRrhh(a), c = MAILS.recibida(a);
         enviados.push(await enviar(resend, { to: [a.para], reply_to: a.email, subject: asunto, text: m.text, html: m.html }));
         enviados.push(await enviar(resend, { to: [a.email], reply_to: a.rrhh, subject: 'Recibimos tu solicitud de vacaciones', text: c.text, html: c.html }));
+      } else if (a.paso === 'cancelada') {
+        const m = MAILS.cancelada(a);
+        enviados.push(await enviar(resend, { to: [a.para], cc: (a.copia || []).filter(x => x && x !== a.para), reply_to: a.reemplazada ? a.rrhh : a.email,
+          subject: asunto + (a.reemplazada ? ' (modificada)' : ' (cancelada)'), text: m.text, html: m.html }));
       } else if (a.paso === 'jefe' || a.paso === 'rrhh') {
         const m = MAILS.firmar(a);
         enviados.push(await enviar(resend, { to: [a.para], reply_to: a.paso === 'jefe' ? a.rrhh : a.email, subject: asunto, text: m.text, html: m.html }));

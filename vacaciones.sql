@@ -18,6 +18,10 @@
 --  La solicitud tiene un ID de transacción y la huella (SHA-256) de su contenido; una vez firmada, el contenido y las
 --  firmas no se pueden cambiar. Todo va en el informe de auditoría del PDF.
 --
+--  Modificar o cancelar (24-nov): mientras no firmó el jefe ni RR. HH., la persona (entrando con su mail) la puede
+--  cancelar o modificar. Lo firmado no se cambia: modificarla es mandar una nueva, firmada, que reemplaza a la anterior
+--  (la anterior queda cancelada, con su trazabilidad). Si estaba derivada, el link del jefe deja de servir.
+--
 --  Se puede correr más de una vez. Al final: si quedó todo (sólo cantidades y sí/no).
 -- ============================================================
 
@@ -41,7 +45,7 @@ create table if not exists public.vacaciones (
   pdf          text                                  -- el PDF con todas las firmas (base64), al terminar
 );
 alter table public.vacaciones drop constraint if exists vacaciones_estado_check;
-alter table public.vacaciones add constraint vacaciones_estado_check check (estado in ('nueva', 'jefe', 'rrhh', 'aprobada', 'rechazada'));
+alter table public.vacaciones add constraint vacaciones_estado_check check (estado in ('nueva', 'jefe', 'rrhh', 'aprobada', 'rechazada', 'cancelada'));
 alter table public.vacaciones alter column estado set default 'nueva';
 alter table public.vacaciones add column if not exists derivada_por text;
 create index if not exists vacaciones_token_idx on public.vacaciones (token_hash);
@@ -179,10 +183,15 @@ begin
 end;
 $$;
 
+-- Se puede modificar o cancelar: todavía no firmó ni el jefe ni RR. HH.
+create or replace function public.vac_modificable(p_estado text, p_firmas jsonb) returns boolean
+language sql immutable set search_path = public as $$ select p_estado in ('nueva', 'jefe', 'rrhh') and not (p_firmas ? 'jefe') and not (p_firmas ? 'rrhh') $$;
+revoke execute on function public.vac_modificable(text, jsonb) from public, anon, authenticated;
+
 -- Lo de una persona: sus solicitudes, de la más nueva a la más vieja (sin las firmas ni el PDF).
 create or replace function public.vac_mias(v_mail text) returns jsonb
 language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(jsonb_build_object('id', id, 'creada', created_at, 'estado', estado, 'area', area, 'datos', datos) order by created_at desc), '[]'::jsonb)
+  select coalesce(jsonb_agg(jsonb_build_object('id', id, 'creada', created_at, 'estado', estado, 'area', area, 'datos', datos, 'modificable', public.vac_modificable(estado, firmas)) order by created_at desc), '[]'::jsonb)
     from public.vacaciones where email = v_mail
 $$;
 revoke execute on function public.vac_mias(text) from public, anon, authenticated;
@@ -218,21 +227,27 @@ $$;
 
 -- ── Mandar la solicitud firmada ──
 --  p_datos: { nombre, area, tramos: [{ desde, hasta, feriado }], avisos: [] }
-create or replace function public.vacaciones_crear(p_sesion text, p_datos jsonb, p_firma text)
+drop function if exists public.vacaciones_crear(text, jsonb, text);
+create or replace function public.vacaciones_crear(p_sesion text, p_datos jsonb, p_firma text, p_reemplaza uuid default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   v_mail   text := public.vac_quien(p_sesion);
   v_nombre text := btrim(regexp_replace(coalesce(p_datos ->> 'nombre', ''), '\s+', ' ', 'g'));
   v_area   text := btrim(coalesce(p_datos ->> 'area', ''));
   v_cfg    jsonb := (select value from public.config where key = 'vacaciones');
-  t jsonb; v_desde date; v_hasta date; v_tramos jsonb := '[]'::jsonb; v_total int := 0; v_ant date; v_ver text; v_id uuid; v_datos jsonb;
+  t jsonb; v_desde date; v_hasta date; v_tramos jsonb := '[]'::jsonb; v_total int := 0; v_ant date; v_ver text; v_id uuid; v_datos jsonb; v_vieja record; v_extra text;
 begin
   if v_mail is null then return jsonb_build_object('ok', false, 'error', 'Tu sesión venció. Entrá de nuevo con tu mail (lo que completaste queda).'); end if;
   if v_cfg is null or coalesce(v_cfg ->> 'rrhh', '') = '' then return jsonb_build_object('ok', false, 'error', 'Todavía no está configurado RR. HH. Avisale a RR. HH.'); end if;
   if length(v_nombre) < 3 then return jsonb_build_object('ok', false, 'error', 'Completá tu nombre y apellido.'); end if;
   if v_area = '' then return jsonb_build_object('ok', false, 'error', 'Elegí tu área.'); end if;
   if coalesce(p_firma, '') !~ '^data:image/png;base64,' or length(p_firma) > 400000 then return jsonb_build_object('ok', false, 'error', 'Falta tu firma.'); end if;
-  if (select count(*) from public.vacaciones where email = v_mail and created_at > now() - interval '1 day') >= 5 then
+  if p_reemplaza is not null then
+    select * into v_vieja from public.vacaciones where id = p_reemplaza and email = v_mail for update;
+    if not found then return jsonb_build_object('ok', false, 'error', 'No está la solicitud que querés modificar.'); end if;
+    if not public.vac_modificable(v_vieja.estado, v_vieja.firmas) then return jsonb_build_object('ok', false, 'error', 'Esa solicitud ya no se puede modificar: ya la firmó tu jefe o RR. HH.'); end if;
+  end if;
+  if (select count(*) from public.vacaciones where email = v_mail and created_at > now() - interval '1 day') >= 8 then
     return jsonb_build_object('ok', false, 'error', 'Ya mandaste varias solicitudes hoy. Si hace falta corregir algo, escribile a RR. HH.');
   end if;
   -- Los tramos: 1 o 2; cada uno de 7 días corridos o más y que empiece un lunes (o el martes, si el lunes es feriado).
@@ -249,12 +264,38 @@ begin
   end loop;
   v_ver := public.vac_token(); v_id := gen_random_uuid();
   v_datos := jsonb_build_object('tramos', v_tramos, 'total', v_total, 'avisos', coalesce(p_datos -> 'avisos', '[]'::jsonb), 'fecha', current_date);
+  if p_reemplaza is not null then
+    v_datos := v_datos || jsonb_build_object('reemplaza', jsonb_build_object('id', v_vieja.id, 'transaccion_id', v_vieja.transaccion_id, 'fecha', v_vieja.created_at));
+    v_extra := '. Modifica la solicitud ' || coalesce(v_vieja.transaccion_id, v_vieja.id::text);
+  end if;
   insert into public.vacaciones (id, email, nombre, area, datos, aprueba_rrhh, estado, firmas, ver_hashes, transaccion_id, hash_contenido)
   values (v_id, v_mail, v_nombre, v_area, v_datos, lower(btrim(v_cfg ->> 'rrhh')), 'nueva',
           jsonb_build_object('empleado', jsonb_build_object('png', p_firma, 'aclaracion', v_nombre, 'fecha', now(), 'email', v_mail)),
           array[public.vac_huella(v_ver)], upper(replace(v_id::text, '-', '')), public.vac_hash_contenido(v_nombre, v_mail, v_area, v_datos));
-  perform public.vac_evento(v_id, 'creada', v_mail, 'Completó y firmó la solicitud. Entró con el código enviado a su mail. Huella de la firma: ' || left(public.vac_huella(p_firma), 16));
-  return jsonb_build_object('ok', true, 'id', v_id, 'ver', v_ver, 'mias', public.vac_mias(v_mail));
+  perform public.vac_evento(v_id, 'creada', v_mail, 'Completó y firmó la solicitud. Entró con el código enviado a su mail. Huella de la firma: ' || left(public.vac_huella(p_firma), 16) || coalesce(v_extra, ''));
+  -- La anterior queda cancelada (reemplazada): el link del jefe, si estaba derivada, deja de servir (queda para verla).
+  if p_reemplaza is not null then
+    update public.vacaciones set estado = 'cancelada', aviso_hecho = null, ver_hashes = case when token_hash is not null then ver_hashes || token_hash else ver_hashes end,
+           token_hash = null, token_rol = null where id = v_vieja.id;
+    perform public.vac_evento(v_vieja.id, 'reemplazada', v_mail, 'La modificó: la reemplaza la solicitud ' || upper(replace(v_id::text, '-', '')));
+  end if;
+  return jsonb_build_object('ok', true, 'id', v_id, 'ver', v_ver, 'mias', public.vac_mias(v_mail), 'reemplazada', p_reemplaza);
+end;
+$$;
+
+-- ── Cancelarla (la persona, con su sesión), mientras no firmó el jefe ni RR. HH. ──
+create or replace function public.vacaciones_cancelar(p_sesion text, p_id uuid, p_motivo text default null)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_mail text := public.vac_quien(p_sesion); r record;
+begin
+  if v_mail is null then return jsonb_build_object('ok', false, 'error', 'Tu sesión venció. Entrá de nuevo con tu mail.'); end if;
+  select * into r from public.vacaciones where id = p_id and email = v_mail for update;
+  if not found then return jsonb_build_object('ok', false, 'error', 'No está esa solicitud.'); end if;
+  if not public.vac_modificable(r.estado, r.firmas) then return jsonb_build_object('ok', false, 'error', 'Ya no se puede cancelar: ya la firmó tu jefe o RR. HH. Escribile a RR. HH.'); end if;
+  update public.vacaciones set estado = 'cancelada', aviso_hecho = null, ver_hashes = case when token_hash is not null then ver_hashes || token_hash else ver_hashes end,
+         token_hash = null, token_rol = null where id = r.id;
+  perform public.vac_evento(r.id, 'cancelada', v_mail, 'La canceló la persona' || coalesce('. Motivo: ' || nullif(left(btrim(coalesce(p_motivo, '')), 300), ''), ''));
+  return jsonb_build_object('ok', true, 'id', r.id, 'mias', public.vac_mias(v_mail));
 end;
 $$;
 
@@ -294,6 +335,19 @@ begin
     return jsonb_build_object('ok', true, 'paso', 'nueva', 'ver', v_ver, 'para', r.aprueba_rrhh, 'rrhh', r.aprueba_rrhh,
       'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos);
   end if;
+  if r.estado = 'cancelada' then
+    update public.vacaciones set aviso_hecho = 'cancelada' where id = r.id;
+    if exists (select 1 from public.vacaciones_eventos e where e.vacacion_id = r.id and e.tipo = 'reemplazada') then
+      if r.aprueba_jefe is null then return jsonb_build_object('ok', false, 'motivo', 'sin_mail'); end if;
+      perform public.vac_evento(r.id, 'aviso', r.aprueba_jefe, 'Mail al jefe: la modificó y su link quedó sin efecto', true);
+      return jsonb_build_object('ok', true, 'paso', 'cancelada', 'reemplazada', true, 'para', r.aprueba_jefe, 'copia', '[]'::jsonb, 'rrhh', r.aprueba_rrhh,
+        'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos);
+    end if;
+    perform public.vac_evento(r.id, 'aviso', r.aprueba_rrhh, 'Mail a RR. HH.: la canceló' || case when r.aprueba_jefe is not null then ', con copia al jefe' else '' end, true);
+    return jsonb_build_object('ok', true, 'paso', 'cancelada', 'reemplazada', false, 'para', r.aprueba_rrhh, 'copia', to_jsonb(array_remove(array[r.aprueba_jefe], null)), 'rrhh', r.aprueba_rrhh,
+      'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos,
+      'motivo', (select substring(e.detalle from 'Motivo: (.*)$') from public.vacaciones_eventos e where e.vacacion_id = r.id and e.tipo = 'cancelada' order by e.fecha desc limit 1));
+  end if;
   if r.estado in ('jefe', 'rrhh') then
     v_tok := public.vac_token();
     update public.vacaciones set token_hash = public.vac_huella(v_tok), token_rol = r.estado, token_vence = now() + interval '30 days', aviso_hecho = r.estado where id = r.id;
@@ -319,7 +373,7 @@ $$;
 create or replace function public.vac_ficha(r public.vacaciones, v_rol text) returns jsonb
 language sql stable set search_path = public as $$
   select jsonb_build_object('ok', true, 'id', r.id, 'rol', v_rol, 'estado', r.estado, 'nombre', r.nombre, 'email', r.email, 'area', r.area,
-    'datos', r.datos, 'firmas', r.firmas, 'con_jefe', r.aprueba_jefe is not null, 'creada', r.created_at, 'tiene_pdf', r.pdf is not null,
+    'datos', r.datos, 'firmas', r.firmas, 'con_jefe', r.aprueba_jefe is not null, 'creada', r.created_at, 'tiene_pdf', r.pdf is not null, 'modificable', public.vac_modificable(r.estado, r.firmas),
     'transaccion_id', r.transaccion_id, 'hash', r.hash_contenido,
     'eventos', coalesce((select jsonb_agg(jsonb_build_object('tipo', e.tipo, 'quien', e.quien, 'detalle', e.detalle, 'ip', e.ip, 'user_agent', e.user_agent, 'fecha', e.fecha) order by e.fecha, e.id)
                            from public.vacaciones_eventos e where e.vacacion_id = r.id), '[]'::jsonb))
@@ -402,7 +456,8 @@ revoke execute on function public.vacaciones_areas() from public;
 revoke execute on function public.vacaciones_codigo(text) from public, anon, authenticated;
 revoke execute on function public.vacaciones_entrar(text, text) from public;
 revoke execute on function public.vacaciones_mias(text) from public;
-revoke execute on function public.vacaciones_crear(text, jsonb, text) from public;
+revoke execute on function public.vacaciones_crear(text, jsonb, text, uuid) from public;
+revoke execute on function public.vacaciones_cancelar(text, uuid, text) from public;
 revoke execute on function public.vacaciones_derivar(uuid, text) from public, anon;
 revoke execute on function public.vacaciones_aviso(uuid) from public, anon, authenticated;
 revoke execute on function public.vacaciones_ver(text, uuid) from public;
@@ -412,7 +467,8 @@ revoke execute on function public.vacaciones_reenviar(uuid) from public, anon;
 grant execute on function public.vacaciones_areas() to anon, authenticated;
 grant execute on function public.vacaciones_entrar(text, text) to anon, authenticated;
 grant execute on function public.vacaciones_mias(text) to anon, authenticated;
-grant execute on function public.vacaciones_crear(text, jsonb, text) to anon, authenticated;
+grant execute on function public.vacaciones_crear(text, jsonb, text, uuid) to anon, authenticated;
+grant execute on function public.vacaciones_cancelar(text, uuid, text) to anon, authenticated;
 grant execute on function public.vacaciones_ver(text, uuid) to anon, authenticated;
 grant execute on function public.vacaciones_firmar(text, text, text, text, text) to anon, authenticated;
 grant execute on function public.vacaciones_guardar_pdf(text, text) to anon, authenticated;
@@ -425,7 +481,7 @@ grant execute on function public.vacaciones_aviso(uuid) to service_role;
 select
   (select count(*) from information_schema.tables where table_schema = 'public' and table_name in ('vacaciones', 'vacaciones_codigos', 'vacaciones_sesiones')) = 3 as tablas,
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname like 'vacaciones%') as funciones,
-  has_function_privilege('anon', 'public.vacaciones_crear(text, jsonb, text)', 'execute') as formulario_abierto,
+  has_function_privilege('anon', 'public.vacaciones_crear(text, jsonb, text, uuid)', 'execute') and has_function_privilege('anon', 'public.vacaciones_cancelar(text, uuid, text)', 'execute') as formulario_abierto,
   not has_function_privilege('anon', 'public.vacaciones_aviso(uuid)', 'execute') and not has_function_privilege('anon', 'public.vacaciones_derivar(uuid, text)', 'execute') as lo_demas_cerrado,
   exists (select 1 from public.config where key = 'vacaciones') as configurado,
   exists (select 1 from pg_trigger where tgname = 'vacaciones_inmutable' and not tgisinternal) and (select count(*) from public.vacaciones where hash_contenido is null) = 0 as trazabilidad;
