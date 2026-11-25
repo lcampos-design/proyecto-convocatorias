@@ -25,6 +25,10 @@
       "destination": "/api/informe?vista=todos"
     },
     {
+      "source": "/vacaciones/servicios",
+      "destination": "/vacaciones.html"
+    },
+    {
       "source": "/:pagina",
       "destination": "/:pagina.html"
     }

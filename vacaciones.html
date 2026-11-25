@@ -130,7 +130,7 @@ textarea.in{resize:vertical;min-height:72px;font-family:inherit;line-height:1.45
 </head>
 <body>
 <div class="top"><div class="ancho">
-  <header class="cab"><img src="logo-sbs-horizontal.png" alt="SBS Show Business Solutions"><span>show-bs.com</span></header>
+  <header class="cab"><img src="/logo-sbs-horizontal.png" alt="SBS Show Business Solutions"><span>show-bs.com</span></header>
   <h1>Solicitud de vacaciones</h1>
   <div class="sub" id="sub">Temporada 2026/2027</div>
   <ol class="pasos" id="pasos"></ol>
@@ -154,7 +154,8 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const TOKEN = new URLSearchParams(location.search).get('t') || '';
 // El link de los servicios fijos (25-nov: Fábrica Colón y Campo de Polo): muestra sólo esas áreas y lo aprueba RR. HH. directo.
-const SERVICIOS = new URLSearchParams(location.search).has('servicios');
+// Link: /vacaciones/servicios (el ?servicios=1 de antes sigue andando).
+const SERVICIOS = /\/vacaciones\/servicios\/?$/.test(location.pathname) || new URLSearchParams(location.search).has('servicios');
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];

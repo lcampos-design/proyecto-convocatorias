@@ -212,7 +212,7 @@ $$;
 revoke execute on function public.vac_socios() from public, anon, authenticated;
 
 -- Los servicios fijos, por fuera de Corporativo (25-nov, Thomas: Fábrica Colón y Campo de Polo; config 'servicios').
--- Misma página y mismas reglas, con su propio link (/vacaciones?servicios=1, que muestra sólo estas áreas). Los aprueba
+-- Misma página y mismas reglas, con su propio link (/vacaciones/servicios, que muestra sólo estas áreas). Los aprueba
 -- RR. HH. directo, sin intermediarios, y el PDF final no va a los socios ("no, sólo Corporativo").
 create or replace function public.vac_servicio(p_area text) returns boolean
 language sql stable set search_path = public as $$
