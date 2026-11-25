@@ -1128,6 +1128,11 @@ button.cn-nom:hover{text-decoration:underline;text-underline-offset:3px}
 .fbs-falta-p small{font-size:10.5px;color:var(--r-muted)}
 .fbs-falta-p .btn{padding:2px 10px;font-size:11px;border-radius:999px}
 .vac-tile{border-style:dashed}
+.vac-det-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}
+.vac-firmas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.vac-firma{border:1px solid var(--r-line);border-radius:10px;padding:10px 12px;font-size:12px;color:#374151}
+.vac-firma b{display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#111827;margin-bottom:3px}
+.vac-firma img{display:block;max-width:100%;height:46px;object-fit:contain;margin:4px 0}
 .vac-est{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151;white-space:nowrap}
 .vac-est.nueva{background:#fff7ed;color:#9a3412;border:1px solid #fdba74}.vac-est.aprobada{background:#1a1a1a;color:#fff}.vac-est.rechazada{background:#fef2f2;color:#991b1b}
 .vac-der{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}.vac-der select{max-width:220px;font-size:12px;padding:5px 8px}
@@ -13952,7 +13957,7 @@ function renderVac() {
           : `<button class="btn btn-sec btn-xs" onclick="vacPdf('${v.id}')">↓ PDF</button>`;
         return `<tr><td>${fechaDMA(String(v.created_at).slice(0, 10))}</td><td><div class="fbv-nom">${eN(v.nombre)}</div><div class="fbv-sub">${e(v.area)} · ${e(v.email)}</div></td>
           <td>${e(vacTramos(v))}${((v.datos || {}).avisos || []).length ? `<div class="fbv-sub" style="color:#9a3412">⚠ ${e(v.datos.avisos.join(' · '))}</div>` : ''}</td><td><b>${(v.datos || {}).total || ''}</b></td>
-          <td><span class="vac-est ${v.estado}">${VAC_ESTADOS[v.estado]}</span>${v.estado === 'jefe' ? `<span class="fbv-sub" style="display:inline;margin-left:6px">${e(v.aprueba_jefe)}</span>` : ''}${acc}</td></tr>`;
+          <td><span class="vac-est ${v.estado}">${VAC_ESTADOS[v.estado]}</span><button class="btn btn-sec btn-xs" style="margin-left:6px" onclick="vacDetalle('${v.id}')" title="Las firmas y la trazabilidad de cada paso">Ver</button>${v.estado === 'jefe' ? `<span class="fbv-sub" style="display:inline;margin-left:6px">${e(v.aprueba_jefe)}</span>` : ''}${acc}</td></tr>`;
       }).join('') + '</tbody></table></div>'
       : '<div class="empty">' + (vacLista.length ? 'Nada en este estado.' : 'Todavía no llegó ninguna solicitud. El link para el newsletter está en Áreas y jefes.') + '</div>');
 }
@@ -13972,6 +13977,30 @@ async function vacReenviar(id) {
   const r = await fetch('/api/mis-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vacaciones: 'aviso', id }) }).then(x => x.json()).catch(() => ({}));
   toast(r.ok ? '✓ Le volvió a llegar el mail con un link nuevo' : 'El mail no salió. Probá de nuevo en un rato.');
 }
+// Una solicitud por dentro: las firmas y la trazabilidad de cada paso (como la de los contratos).
+const VAC_PASOS = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió el link', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado' };
+function vacUa(ua) { const s = String(ua || ''); if (!s || /^Sistema/.test(s)) return s;
+  const nav = /Edg\//.test(s) ? 'Edge' : /Chrome\//.test(s) ? 'Chrome' : /Firefox\//.test(s) ? 'Firefox' : /Safari\//.test(s) ? 'Safari' : 'Navegador';
+  const so = /iPhone|iPad/.test(s) ? 'iPhone/iPad' : /Android/.test(s) ? 'Android' : /Windows/.test(s) ? 'Windows' : /Mac OS X/.test(s) ? 'Mac' : '';
+  return nav + (so ? ' · ' + so : ''); }
+async function vacDetalle(id) {
+  const v = vacLista.find(x => x.id === id); if (!v) return;
+  const cont = document.getElementById('vacCuerpo'); cont.innerHTML = '<div class="empty">Cargando...</div>';
+  const [ev, fila] = await Promise.all([sb.from('vacaciones_eventos').select('tipo,quien,detalle,ip,user_agent,fecha').eq('vacacion_id', id).order('fecha'),
+    sb.from('vacaciones').select('transaccion_id,hash_contenido').eq('id', id).maybeSingle()]);
+  const f = v.firmas || {}, sinJefe = !v.aprueba_jefe && ['rrhh', 'aprobada', 'rechazada'].includes(v.estado);
+  const firma = (t, x, vacia) => `<div class="vac-firma"><b>${t}</b>${x ? `${x.decision ? (x.decision === 'aprobado' ? '☑ Aprobado' : '☒ No aprobado') : 'Solicito las fechas indicadas.'}<img src="${x.png}" alt="Firma"><div>${e(x.aclaracion)}</div><div class="fbv-sub">${fechaHoraAR(x.fecha)}</div>${x.nota ? `<div class="fbv-sub">${e(x.nota)}</div>` : ''}` : `<div class="fbv-sub" style="padding:18px 0">${vacia || 'Falta su firma'}</div>`}</div>`;
+  cont.innerHTML = `<button class="btn btn-sec btn-xs" onclick="renderVac()">← Volver a la lista</button>
+    <div class="vac-det-cab"><div><div class="fbv-nom" style="font-size:15px">${eN(v.nombre)}</div><div class="fbv-sub">${e(v.area)} · ${e(v.email)} · ${e(vacTramos(v))} · ${(v.datos || {}).total} días</div></div><span class="vac-est ${v.estado}">${VAC_ESTADOS[v.estado]}</span></div>
+    <div class="vac-firmas">${firma('Empleado/a', f.empleado)}${firma('Jefe directo', f.jefe || (sinJefe && f.rrhh ? Object.assign({}, f.rrhh, { nota: '' }) : null), sinJefe ? 'Depende de RR. HH.: firma RR. HH.' : v.aprueba_jefe ? 'Falta su firma · ' + e(v.aprueba_jefe) : 'Sin derivar')}${firma('RR. HH.', f.rrhh)}</div>
+    <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#6b7280;margin:16px 0 6px">Trazabilidad</div>
+    <div class="fbv-tabla hi-tabla" style="max-height:40vh"><table><thead><tr><th style="width:120px">Fecha y hora</th><th style="width:130px">Paso</th><th>Detalle</th><th style="width:190px">IP · dispositivo</th></tr></thead><tbody>
+      ${((ev.data) || []).map(x => `<tr><td>${fechaHoraAR(x.fecha)}</td><td><b>${VAC_PASOS[x.tipo] || e(x.tipo)}</b></td><td>${x.quien ? e(x.quien) + '<div class="fbv-sub">' : '<div>'}${e(x.detalle || '')}</div></td><td class="fbv-sub">${[x.ip ? 'IP ' + e(x.ip) : '', e(vacUa(x.user_agent))].filter(Boolean).join(' · ')}</td></tr>`).join('') || '<tr><td colspan="4" class="fbv-sub">Sin pasos registrados (falta correr la parte de trazabilidad de vacaciones.sql).</td></tr>'}
+    </tbody></table></div>
+    <div class="fbv-sub" style="margin-top:8px;overflow-wrap:anywhere">ID: <b>${e((fila.data && fila.data.transaccion_id) || '')}</b> · Huella del contenido (SHA-256): ${e((fila.data && fila.data.hash_contenido) || '')}</div>
+    ${['aprobada', 'rechazada'].includes(v.estado) ? `<button class="btn btn-primary btn-sm" style="margin-top:12px" onclick="vacPdf('${v.id}')">↓ PDF con las firmas y el informe de auditoría</button>` : ''}`;
+}
+function fechaHoraAR(iso) { const d = new Date(iso); if (isNaN(d)) return ''; const p = n => String(n).padStart(2, '0'); return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
 async function vacPdf(id) {
   const { data } = await sb.from('vacaciones').select('nombre,pdf').eq('id', id).maybeSingle();
   if (!data || !data.pdf) { toast('Todavía no está el PDF'); return; }
