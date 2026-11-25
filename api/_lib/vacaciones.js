@@ -83,9 +83,14 @@ export const MAILS = {
     datos: [['Área', a.area]].concat(filasTramos(a.datos), avisos(a)), boton: 'Ver y firmar', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.token)}`,
     pie: 'El link es personal y vence en 30 días.' }),
   // Al final, a la persona (con copia a quien firmó antes y a las casillas de RR. HH., legales y socios).
+  // A la persona, cuando su jefe la aprueba (25-nov, Thomas: que le vaya llegando cómo va): ahora le toca a RR. HH.
+  avance: a => armarMail({ kicker: KICKER, titulo: 'Tu jefe la aprobó', hola: 'Hola, ' + primerNombre(a.nombre),
+    parrafos: [(a.jefe_nombre ? a.jefe_nombre + ' la firmó como tu jefe directo.' : 'Tu jefe directo ya la firmó.') + ' Ahora le llega a RR. HH. para la firma final.'],
+    datos: filasTramos(a.datos), boton: 'Ver mi solicitud', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.avance)}`,
+    pie: 'Cuando firme RR. HH., te llega el PDF con todas las firmas.' }),
   fin: a => { const si = a.estado === 'aprobada';
-    return armarMail({ kicker: KICKER, titulo: si ? 'Aprobadas' : 'No aprobadas', hola: 'Hola, ' + primerNombre(a.nombre),
-      parrafos: [si ? 'Te mandamos adjunto el formulario con todas las firmas.' : 'Tu solicitud no fue aprobada.' + (a.nota ? '' : ' Si querés, mandá otra con otras fechas.')],
+    return armarMail({ kicker: KICKER, titulo: si ? 'Todo aprobado' : 'No aprobadas', hola: 'Hola, ' + primerNombre(a.nombre),
+      parrafos: [si ? (a.con_jefe ? 'RR. HH. también la aprobó. ' : a.con_jefe === false ? 'RR. HH. la aprobó. ' : '') + 'Te mandamos adjunto el formulario con todas las firmas.' : 'Tu solicitud no fue aprobada.' + (a.nota ? '' : ' Si querés, mandá otra con otras fechas.')],
       datos: filasTramos(a.datos).concat(a.nota ? [['Comentario', a.nota]] : []), boton: 'Ver la solicitud', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.ver)}`,
       pie: si ? 'RR. HH. te confirma la fecha de pago del plus vacacional y del adelanto.' : 'Si tenés dudas, respondé este mail.' }); }
 };
@@ -104,6 +109,9 @@ export async function manejarVacaciones(cuerpo, res, { servicio, resend }) {
       if (!a || !a.ok) return res.status(200).json({ ok: true, ya: true });   // ya salió ese aviso (o no hace falta)
       const asunto = 'Vacaciones - ' + a.nombre, enviados = [];
       // La confirmación a la persona (la primera vez que sale un aviso de su solicitud).
+      // Cómo va, a la persona: su jefe la aprobó (sale con el aviso a RR. HH.).
+      const avance = async () => { if (!a.avance) return; const c = MAILS.avance(a);
+        enviados.push(await enviar(resend, { to: [a.email], reply_to: RRHH_GENERAL, subject: 'Tu jefe aprobó tus vacaciones', text: c.text, html: c.html })); };
       const confirmar = async () => { if (!a.ver || a.paso === 'fin') return; const c = MAILS.recibida(a);
         enviados.push(await enviar(resend, { to: [a.email], reply_to: RRHH_GENERAL, subject: 'Recibimos tu solicitud de vacaciones', text: c.text, html: c.html })); };
       if (a.paso === 'nueva') {
@@ -117,6 +125,7 @@ export async function manejarVacaciones(cuerpo, res, { servicio, resend }) {
         const m = MAILS.firmar(a);
         enviados.push(await enviar(resend, { to: [a.para], reply_to: a.paso === 'jefe' ? RRHH_GENERAL : a.email, subject: asunto, text: m.text, html: m.html }));
         await confirmar();
+        await avance();
       } else {
         const si = a.estado === 'aprobada', m = MAILS.fin(a);
         const adj = a.pdf ? [{ filename: 'Solicitud de vacaciones - ' + a.nombre + '.pdf', content: a.pdf }] : undefined;

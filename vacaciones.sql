@@ -343,7 +343,7 @@ $$;
 --  si no firmó). Cancelada o modificada: a quien la tenía para firmar, si hace falta. Una vez por paso.
 create or replace function public.vacaciones_aviso(p_id uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare r record; v_tok text; v_ver text; v_para text; v_nueva text; v_copia text[];
+declare r record; v_tok text; v_ver text; v_para text; v_nueva text; v_copia text[]; v_avance text;
   v_cfg jsonb := (select value from public.config where key = 'vacaciones');
 begin
   select * into r from public.vacaciones where id = p_id for update;
@@ -385,8 +385,15 @@ begin
       update public.vacaciones set ver_hashes = ver_hashes || public.vac_huella(v_ver) where id = r.id;
       perform public.vac_evento(r.id, 'aviso', r.email, 'Mail a la persona: la recibimos, con su link para verla', true);
     end if;
+    -- Cómo va (25-nov, Thomas): si ya la aprobó el jefe, a la persona "tu jefe la aprobó; ahora le toca a RR. HH.". Una vez.
+    if r.estado = 'rrhh' and r.firmas ? 'jefe' and not exists (select 1 from public.vacaciones_eventos e where e.vacacion_id = r.id and e.tipo = 'aviso'
+         and e.quien = r.email and e.detalle like 'Mail a la persona: su jefe la aprobó%') then
+      v_avance := public.vac_token();
+      update public.vacaciones set ver_hashes = ver_hashes || public.vac_huella(v_avance) where id = r.id;
+      perform public.vac_evento(r.id, 'aviso', r.email, 'Mail a la persona: su jefe la aprobó y ahora le toca a RR. HH.', true);
+    end if;
     -- equipo: quien firma es su jefe directo (el del área o RR. HH.): "Es de tu equipo y ya firmó".
-    return jsonb_build_object('ok', true, 'paso', r.estado, 'token', v_tok, 'con_jefe', r.aprueba_jefe is not null, 'ver', v_ver,
+    return jsonb_build_object('ok', true, 'paso', r.estado, 'token', v_tok, 'con_jefe', r.aprueba_jefe is not null, 'ver', v_ver, 'avance', v_avance,
       'equipo', r.estado = 'jefe' or r.aprueba_jefe is null, 'jefe_nombre', r.firmas -> 'jefe' ->> 'aclaracion',
       'para', case when r.estado = 'jefe' then r.aprueba_jefe else r.aprueba_rrhh end, 'rrhh', r.aprueba_rrhh,
       'email', r.email, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos);
@@ -406,7 +413,7 @@ begin
   perform public.vac_evento(r.id, 'aviso', r.email, 'Mail final (' || case when r.estado = 'aprobada' then 'aprobada' else 'no aprobada' end || ')' || case when r.pdf is not null then ', con el PDF firmado' else '' end
     || coalesce(', con copia a ' || nullif(array_to_string(v_copia, ', '), ''), ''), true);
   return jsonb_build_object('ok', true, 'paso', 'fin', 'estado', r.estado, 'ver', v_ver, 'para', r.email,
-    'copia', to_jsonb(v_copia), 'rrhh', r.aprueba_rrhh,
+    'copia', to_jsonb(v_copia), 'rrhh', r.aprueba_rrhh, 'con_jefe', r.aprueba_jefe is not null,
     'nombre', r.nombre, 'area', r.area, 'datos', r.datos, 'pdf', r.pdf,
     'decision', coalesce(r.firmas -> 'rrhh' ->> 'decision', r.firmas -> 'jefe' ->> 'decision'),
     'nota', coalesce(nullif(r.firmas -> 'rrhh' ->> 'nota', ''), r.firmas -> 'jefe' ->> 'nota'));
