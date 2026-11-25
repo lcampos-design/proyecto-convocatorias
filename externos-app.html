@@ -2,187 +2,640 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#262626">
 <script>
-// El tema (Claro u Oscuro), antes de pintar; sin elegir, el del aparato. Es el mismo ajuste que la app del Arena.
+// El tema de las incidencias (Claro u Oscuro), antes de pintar; sin elegir, el del aparato.
 try { const t = localStorage.getItem('tema'); if (t === 'claro' || t === 'oscuro') document.documentElement.setAttribute('data-tema', t); } catch (_) {}
 </script>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Externos">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Externos — Show Business Solutions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Yellowtail&display=swap">
 <style>
-/* La app de Externos (24-nov, Thomas): un "supervisor-mobile" para los eventos de Externos. Cada evento con su predio
-   (River, Vélez…), los sectores de interés que van sumando ellos, las incidencias por sector, el organigrama de las
-   latas (los puestos de acreditaciones), el equipo, el presentismo y los contratos. Entran por un link personal (sin
-   usuario ni clave). El diseño es el de la app del Arena: los colores de SBS, claro u oscuro, cajas de vidrio gris
-   redondeadas; el único color fuerte es la gravedad, siempre con su nombre. Todo lo que se toca, de 44 px. */
+/* Los estilos de la app del Arena (supervisor-mobile.html), copiados tal cual: la app de Externos se ve igual. */
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* El diseño de la gerencia (centro-control.html), en toda la app: los colores de SBS en dos modos
+   a elección (Automático, Claro u Oscuro, el mismo ajuste que la gerencia: 'tema' en el aparato),
+   el fondo negro o blanco con un granulado quieto, la barra y las cajas de vidrio esmerilado gris,
+   redondeadas; adentro, las tarjetas del tono de la tarjeta. Poppins, con una palabra manuscrita
+   (Yellowtail) de acento en los títulos. El único color fuerte es la gravedad (grave en rojo,
+   media en dorado, leve en gris), siempre con su nombre escrito. Lo elegido, invertido (del color
+   de la letra). Todo lo que se toca, de 44 px. */
 :root{
-  --fuente:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  --fondo:#141414;--bloque:#262626;--tarjeta:#303030;--tarjeta-2:#3A3A3A;
-  --vidrio:rgba(46,46,46,.72);--vidrio-borde:rgba(255,255,255,.08);--vidrio-brillo:rgba(255,255,255,.07);--sombra:0 14px 34px rgba(0,0,0,.38);
-  --tinta:#F2F2F2;--gris:#A8A8A8;--linea:rgba(242,242,242,.16);--campo:#0E0E0E;--logo-filtro:none;
-  --grave:#D62839;--grave-f:rgba(214,40,57,.18);--media:#E0B400;--media-f:rgba(255,215,0,.14);--leve:#9AA3AF;--leve-f:rgba(154,163,175,.16);
-  --ok:#4ADE80;--ok-f:rgba(74,222,128,.14);
+  --inc-fuente:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --mano:'Yellowtail',cursive;
+  /* El modo oscuro: negro, grafito y la letra blanca. */
+  --fondo:#141414;--bloque:#262626;--bloque-2:#303030;--tarjeta:#303030;--tarjeta-2:#3A3A3A;
+  --vidrio:rgba(46,46,46,.7);--vidrio-2:rgba(58,58,58,.74);--vidrio-borde:rgba(255,255,255,.08);--vidrio-brillo:rgba(255,255,255,.07);--vidrio-sombra:0 14px 34px rgba(0,0,0,.38);
+  --desenfoque:saturate(150%) blur(18px);
+  --tinta:#F2F2F2;--tinta-2:#E6E6E6;--gris:#A8A8A8;--linea:rgba(242,242,242,.2);--resalte:rgba(242,242,242,.45);
+  --borde:transparent;--prim-hover:#FFFFFF;--logo-filtro:none;--tj-mal:#FFD700;--celeste:#019DF4;
+  --velo:rgba(20,20,20,.86);
+  --campo:#0E0E0E;--placeholder:#8A8A8A;--pt-1:#C3CAD3;--pt-2:#FFD700;--pt-3:#F26D7D;
+  --grave:#A11D21;--grave-letra:#FFD2CF;--media:#B8900A;--media-letra:#FFF4C4;--leve:#4E5560;--leve-letra:#E4E7EC;
   color-scheme:dark;
 }
-@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#FFFFFF;--bloque:#EDEDED;--tarjeta:#FFFFFF;--tarjeta-2:#F4F4F4;--vidrio:rgba(232,232,232,.78);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--gris:#5C5C5C;--linea:rgba(26,26,26,.12);--campo:#FFFFFF;--logo-filtro:brightness(0);--grave:#C4262E;--grave-f:#FDE7EA;--media:#8A6900;--media-f:#FFF6CC;--leve:#5C6370;--leve-f:#ECEEF1;--ok:#166534;--ok-f:#DCFCE7;color-scheme:light}}
-:root[data-tema="claro"]{--fondo:#FFFFFF;--bloque:#EDEDED;--tarjeta:#FFFFFF;--tarjeta-2:#F4F4F4;--vidrio:rgba(232,232,232,.78);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--gris:#5C5C5C;--linea:rgba(26,26,26,.12);--campo:#FFFFFF;--logo-filtro:brightness(0);--grave:#C4262E;--grave-f:#FDE7EA;--media:#8A6900;--media-f:#FFF6CC;--leve:#5C6370;--leve-f:#ECEEF1;--ok:#166534;--ok-f:#DCFCE7;color-scheme:light}
+/* El modo claro: la página blanca, la barra y las cajas en gris claro, las tarjetas blancas y la letra negra. */
+@media(prefers-color-scheme:light){:root:not([data-tema="oscuro"]){--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--grano-op:.8;--vidrio:rgba(229,229,229,.7);--vidrio-2:rgba(220,220,220,.74);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--vidrio-sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--campo:#FFFFFF;--placeholder:#7A7A7A;--pt-1:#5C6370;--pt-2:#B8900A;--pt-3:#C4262E;color-scheme:light}}
+:root[data-tema="claro"]{--fondo:#FFFFFF;--bloque:#EDEDED;--bloque-2:#E3E3E3;--tarjeta:#FFFFFF;--tarjeta-2:#F6F6F6;--grano-op:.8;--vidrio:rgba(229,229,229,.7);--vidrio-2:rgba(220,220,220,.74);--vidrio-borde:rgba(255,255,255,.9);--vidrio-brillo:rgba(255,255,255,.95);--vidrio-sombra:0 14px 34px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);--tinta:#1A1A1A;--tinta-2:#2B2B2B;--gris:#5C5C5C;--linea:rgba(26,26,26,.14);--resalte:rgba(26,26,26,.4);--borde:transparent;--prim-hover:#000000;--logo-filtro:brightness(0);--tj-mal:#8A6900;--celeste:#0079BF;--velo:rgba(255,255,255,.84);--campo:#FFFFFF;--placeholder:#7A7A7A;--pt-1:#5C6370;--pt-2:#B8900A;--pt-3:#C4262E;color-scheme:light}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
-body{font-family:var(--fuente);background:var(--fondo);color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
-body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url(grano-sbs.png) 0 0/160px 160px repeat;opacity:.9}
-.app{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:0 14px calc(28px + env(safe-area-inset-bottom,0px))}
-/* La barra de arriba */
-.barra{position:sticky;top:0;z-index:30;margin:0 -14px;padding:env(safe-area-inset-top,0px) 14px 0;background:var(--vidrio);-webkit-backdrop-filter:saturate(150%) blur(18px);backdrop-filter:saturate(150%) blur(18px);border-bottom:1px solid var(--vidrio-borde)}
-.barra-in{display:flex;align-items:center;gap:10px;min-height:60px}
-.barra img{width:34px;height:34px;filter:var(--logo-filtro);flex-shrink:0}
-.barra-t{flex:1;min-width:0}
-.barra-t b{display:block;font:800 14.5px/1.15 var(--fuente);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.barra-t span{display:block;font-size:12px;color:var(--gris);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ico{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;border:0;border-radius:12px;background:var(--fondo);color:var(--tinta);cursor:pointer;font-size:18px}
-.ico svg{width:19px;height:19px}
-/* La franja de la demostración */
-.demo{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin:12px 0 0;padding:10px 12px;border-radius:14px;border:1px dashed var(--linea);font-size:12px;color:var(--gris)}
-.demo b{color:var(--tinta)}
-.demo .seg{margin-left:auto}
-.demo .lnk{background:none;border:0;color:var(--gris);text-decoration:underline;text-underline-offset:2px;cursor:pointer;font-size:12px;min-height:32px}
-/* Cajas, títulos, segmentos */
-.caja{background:var(--vidrio);-webkit-backdrop-filter:saturate(150%) blur(18px);backdrop-filter:saturate(150%) blur(18px);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--sombra);border-radius:18px;padding:14px;margin-top:12px}
-.hola{margin:18px 2px 4px;font:700 22px/1.2 var(--fuente)}
-.hola-sub{margin:0 2px;color:var(--gris);font-size:13px}
-.titulo{display:flex;align-items:center;gap:8px;margin:2px 2px 10px;font:700 12px var(--fuente);text-transform:uppercase;letter-spacing:.06em;color:var(--gris)}
-.titulo .n{margin-left:auto;font-weight:600;text-transform:none;letter-spacing:0}
-.seg{display:inline-flex;padding:3px;border-radius:999px;background:var(--fondo);gap:2px}
-.seg button{border:0;background:none;border-radius:999px;padding:0 14px;min-height:36px;font-weight:600;font-size:13px;color:var(--gris);cursor:pointer;white-space:nowrap}
-.seg button.on{background:var(--tinta);color:var(--fondo)}
-.seg.chico button{min-height:30px;padding:0 11px;font-size:12px}
-.pestanas{position:sticky;top:calc(60px + env(safe-area-inset-top,0px));z-index:20;display:flex;gap:4px;margin:12px -14px 0;padding:8px 14px;background:var(--vidrio);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-bottom:1px solid var(--vidrio-borde);overflow-x:auto;scrollbar-width:none}
-.pestanas button{flex:1 1 auto;border:0;background:none;border-radius:12px;min-height:42px;padding:0 9px;font-weight:600;font-size:12.5px;color:var(--gris);cursor:pointer;white-space:nowrap}
-.pestanas button.on{background:var(--tinta);color:var(--fondo)}
-.pestanas button small{font-weight:700;margin-left:5px;opacity:.75}
-/* Tarjetas de eventos */
-.ev{display:flex;gap:12px;align-items:center;width:100%;text-align:left;border:0;border-radius:16px;background:var(--tarjeta);padding:12px;margin-top:8px;cursor:pointer;color:var(--tinta)}
-.ev-f{flex:0 0 54px;height:58px;border-radius:12px;background:var(--fondo);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
-.ev-f b{font-size:21px;font-weight:800}.ev-f small{font-size:11px;color:var(--gris);text-transform:uppercase;margin-top:4px;font-weight:600}
-.ev-t{flex:1;min-width:0}
-.ev-t b{display:block;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ev-t span{display:block;font-size:12.5px;color:var(--gris);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ev-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
-.ev-flecha{color:var(--gris);font-size:20px}
-.mes{margin-top:10px}.mes summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:40px;font-weight:700;padding:0 2px}
-.mes summary::-webkit-details-marker{display:none}.mes summary small{color:var(--gris);font-weight:500}.mes summary::after{content:"›";margin-left:auto;color:var(--gris);transition:none}.mes[open] summary::after{content:"⌄"}
-/* Pastillas */
-.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--fondo);color:var(--tinta);white-space:nowrap}
-.pill.g{background:var(--grave-f);color:var(--grave)}.pill.m{background:var(--media-f);color:var(--media)}.pill.l{background:var(--leve-f);color:var(--leve)}
-.pill.ok{background:var(--ok-f);color:var(--ok)}.pill.sutil{background:transparent;color:var(--gris);padding-left:0}
-.punto{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
-/* Chips que filtran */
-.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-bottom:10px}
-.chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--linea);background:var(--tarjeta);font-size:12.5px;color:var(--gris);cursor:pointer;white-space:nowrap}
-.chip b{color:var(--tinta);font-weight:700}
-.chip.on{background:var(--tinta);border-color:var(--tinta);color:var(--fondo)}.chip.on b{color:var(--fondo)}
-/* Botones */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--linea);background:var(--tarjeta);color:var(--tinta);font-weight:600;font-size:13.5px;cursor:pointer}
-.btn.prim{background:var(--tinta);border-color:var(--tinta);color:var(--fondo)}
-.btn.ancho{width:100%}.btn.grande{min-height:54px;font-size:15px;border-radius:14px}
-.btn.chico{min-height:36px;padding:0 12px;font-size:12.5px;border-radius:10px}
-.btn:disabled{opacity:.45;cursor:default}
-/* Incidencias */
-.inc{display:flex;gap:10px;width:100%;text-align:left;border:0;border-radius:14px;background:var(--tarjeta);padding:12px 12px 12px 0;margin-top:8px;cursor:pointer;color:var(--tinta);overflow:hidden}
-.inc::before{content:"";flex:0 0 5px;border-radius:0 4px 4px 0;background:var(--leve)}
-.inc.n3::before{background:var(--grave)}.inc.n2::before{background:var(--media)}
-.inc-t{flex:1;min-width:0}.inc-t b{display:block;font-size:14px;font-weight:600}
-.inc-t span{display:block;font-size:12px;color:var(--gris);margin-top:3px}
-.inc-d{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
-.inc.resuelta{opacity:.62}
-.vacio{text-align:center;color:var(--gris);font-size:13px;padding:22px 10px}
-/* Organigrama */
-.org-cab{display:grid;grid-template-columns:1fr;gap:8px}
-@media(min-width:520px){.org-cab{grid-template-columns:1fr 1fr}}
-.persona{display:flex;align-items:center;gap:10px;border-radius:14px;background:var(--tarjeta);padding:10px;min-height:56px}
-.ini{flex:0 0 36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--fondo);font-weight:700;font-size:12.5px}
-.persona b{display:block;font-size:13.5px;font-weight:600;line-height:1.25}.persona small{display:block;font-size:11.5px;color:var(--gris)}
-.lata{border-radius:16px;background:var(--tarjeta);padding:12px;margin-top:8px}
-.lata-c{display:flex;align-items:center;gap:8px}
-.lata-c>div{flex:1;min-width:0}.lata-c b{display:block;font-size:15px;font-weight:700}.lata-c .pill{margin-top:4px}.lata-c .btn{flex-shrink:0}
-.lata-r{margin-top:10px;font-size:12px;color:var(--gris)}
-.lata-r .persona{background:var(--fondo);margin-top:6px}
-.ops{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.op{display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 4px;border-radius:999px;background:var(--fondo);font-size:12.5px}
-.op .ini{flex-basis:26px;height:26px;font-size:10.5px;background:var(--tarjeta-2)}
-.falta{border:1px dashed var(--media);color:var(--media);background:var(--media-f)}
-/* Equipo */
-.fila{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--linea)}
-.fila:last-child{border-bottom:0}
-.fila .t{flex:1;min-width:0}.fila .t b{display:block;font-size:13.5px;font-weight:600}.fila .t small{display:block;font-size:11.5px;color:var(--gris)}
-.pres{display:inline-flex;gap:4px}
-.pres button{width:40px;height:36px;border-radius:10px;border:1px solid var(--linea);background:var(--tarjeta);font-weight:700;cursor:pointer;color:var(--gris)}
-.pres button.on-p{background:var(--ok-f);border-color:var(--ok);color:var(--ok)}
-.pres button.on-a{background:var(--grave-f);border-color:var(--grave);color:var(--grave)}
-.buscar{width:100%;min-height:44px;border-radius:12px;border:1px solid var(--linea);background:var(--campo);padding:0 14px;margin-bottom:10px;color:var(--tinta)}
-/* Sectores */
-.sec{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--linea)}
-.sec:last-child{border-bottom:0}
-.sec .t{flex:1;min-width:0}.sec .t b{display:block;font-size:13.5px;font-weight:600}.sec .t small{display:block;font-size:11.5px;color:var(--gris);margin-top:1px}
-.nota{font-size:12px;color:var(--gris);line-height:1.5;margin:4px 2px 10px}
-/* Hoja de abajo (cargar, ver, editar) */
-.hoja{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,.45)}
-.hoja[hidden]{display:none}
-.hoja-in{max-height:92vh;overflow:auto;width:100%;max-width:620px;margin:0 auto;background:var(--bloque);border-radius:22px 22px 0 0;padding:6px 16px calc(18px + env(safe-area-inset-bottom,0px))}
-.hoja-tir{width:44px;height:5px;border-radius:3px;background:var(--linea);margin:6px auto 10px}
-.hoja-cab{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.hoja-cab b{flex:1;font:700 17px/1.25 var(--fuente)}
-.paso{font:700 11.5px var(--fuente);text-transform:uppercase;letter-spacing:.06em;color:var(--gris);margin:16px 2px 8px}
-.opciones{display:flex;flex-wrap:wrap;gap:6px}
-.opc{min-height:40px;padding:0 13px;border-radius:12px;border:1px solid var(--linea);background:var(--tarjeta);font-size:13px;font-weight:500;cursor:pointer;color:var(--tinta);text-align:left}
-.opc.on{background:var(--tinta);border-color:var(--tinta);color:var(--fondo)}
-.opc small{opacity:.7;margin-left:4px}
-.lista-tipos .opc{display:flex;align-items:center;width:100%;margin-top:6px}
-.lista-tipos .opc .pill{margin-left:auto}
-.check{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 4px;border-bottom:1px solid var(--linea);cursor:pointer;font-size:13.5px}
-.check input{width:20px;height:20px;accent-color:var(--tinta)}
-.check small{margin-left:auto;color:var(--gris);font-size:11.5px}
-.campo{width:100%;min-height:44px;border-radius:12px;border:1px solid var(--linea);background:var(--campo);padding:10px 14px;color:var(--tinta)}
-textarea.campo{min-height:84px;resize:vertical}
-.nivel{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;margin-top:4px}
-.nivel.n1{background:var(--leve-f);color:var(--leve)}.nivel.n2{background:var(--media-f);color:var(--media)}.nivel.n3{background:var(--grave-f);color:var(--grave)}
-.nivel b{font-size:15px}.nivel span{font-size:12px;opacity:.9}
-.dato{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--linea);font-size:13.5px}
-.dato small{flex:0 0 96px;color:var(--gris);font-size:12px;padding-top:1px}
-.aviso-dup{font-size:12px;color:var(--media);margin-top:6px}
-.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:90;background:var(--tinta);color:var(--fondo);padding:11px 18px;border-radius:12px;font-weight:600;font-size:13px;display:none;max-width:90vw}
-.toast.on{display:block}
-.pie{position:relative;z-index:1;text-align:center;font-size:11px;color:var(--gris);padding:4px 16px 22px}
-.oculto{display:none!important}
+button,input,select,textarea,optgroup,option{font-family:inherit}
+body{font-family:var(--inc-fuente);background:var(--fondo);color:var(--tinta);font-size:14px;min-height:100vh;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+/* El fondo: el granulado quieto (como en la gerencia); en el ingreso, la pieza de marca de SBS tapada con el tono del modo. */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:url(grano-sbs.png) 0 0/160px 160px repeat;opacity:var(--grano-op,1)}
+body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo),var(--velo)),url(fondo-sbs.jpg) center/cover no-repeat;opacity:1}
+@media(max-aspect-ratio:3/4){body[data-pantalla="screenLogin"]::before{background:linear-gradient(var(--velo),var(--velo)),linear-gradient(rgba(0,0,0,0),var(--fondo)) 0 calc(60px + 34vw)/100% 23vw no-repeat,url(fondo-sbs.jpg) center 60px/100% auto no-repeat}}
+.screen,.install-banner,.fb-sheet{position:relative;z-index:1}
+.mano{display:inline-block;font:400 1em/1 var(--mano);text-transform:none;letter-spacing:0}
+/* La barra de arriba: de vidrio, pegada; el título en mayúsculas pesadas y, debajo, el dato en gris. */
+.app-bar{position:sticky;top:0;z-index:50;padding:env(safe-area-inset-top,0px) max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px));background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border-bottom:1px solid var(--vidrio-borde);box-shadow:inset 0 -1px 0 var(--linea);color:var(--tinta)}
+.app-bar-inner{display:flex;align-items:center;gap:10px;min-height:60px;padding:9px 0}
+.app-bar-title{font:800 14.5px/1.1 var(--inc-fuente);text-transform:uppercase;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.app-bar-sub{font:400 12px/1.3 var(--inc-fuente);color:var(--gris);margin-top:3px}
+.app-bar-inner>div{min-width:0}
+.sv-quien{font-weight:700;color:var(--tinta)}
+.sv-noyo{background:none;border:0;padding:0 0 0 6px;font:inherit;font-weight:600;color:var(--tinta);text-decoration:underline;text-underline-offset:2px;cursor:pointer;white-space:nowrap}
+.sv-turno-volver{display:block;width:100%;margin-top:10px;padding:10px;background:none;border:0;font:600 13px var(--inc-fuente);color:var(--gris);cursor:pointer}
+.back-btn{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;border:0;border-radius:10px;background:var(--fondo);color:var(--tinta);font-size:18px;cursor:pointer}
+.logout-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:44px;padding:0 14px;border:0;border-radius:10px;background:var(--fondo);color:var(--tinta);font:600 13px var(--inc-fuente);cursor:pointer;flex-shrink:0}
+.logout-btn svg{width:17px;height:17px;flex-shrink:0;display:block}
+.logout-btn.ico{padding:0;width:44px}
+@media(max-width:420px){.sv-informe{padding:0;width:44px}.sv-informe span{display:none}}
+.pie-rrhh{position:relative;z-index:1;text-align:center;font-size:11px;color:var(--gris);padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));letter-spacing:.01em}
+.screen{display:none;padding-bottom:env(safe-area-inset-bottom,16px)}.screen.active{display:block}
+/* El ingreso: una caja de vidrio con el logo y "Supervisores". */
+.login-wrap{min-height:calc(100vh - 60px - 64px);display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);padding:28px 24px 24px;width:100%;max-width:400px;border-radius:22px}
+.login-marcas{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 20px}
+.login-logo{width:68px;height:68px;display:block;filter:var(--logo-filtro)}
+.login-m{height:50px;width:auto;display:block;filter:var(--logo-filtro)}
+.login-y{width:18px;height:18px;flex-shrink:0;display:block}.login-y path{stroke:var(--tinta);stroke-width:3.6;stroke-linecap:round;fill:none}
+/* La barra de la gerencia en todas las pantallas: la marca a la izquierda y, a la derecha, lo que se puede hacer.
+   En el celular, "Tema" y "Salir" son sólo el ícono, "Hands on everything" no entra, y en la sala la marca se
+   esconde (queda el logo), como en la gerencia. */
+.sv-marca{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sv-acc{display:flex;gap:4px;align-items:center;flex-shrink:0;margin-left:auto}
+@media(max-width:760px){.sv-marca .app-bar-sub{display:none}}
+@media(max-width:560px){.sv-tema span,.sv-salir span{display:none}.sv-tema,.sv-salir{width:44px;padding:0}.sv-marca .app-bar-title{white-space:normal;font-size:12.5px;line-height:1.05}
+  body[data-pantalla="screenIncid"] .sv-marca{display:none}}
+@media(max-width:400px){body[data-pantalla="screenIncid"] .sv-logo{display:none}}
+/* El cuerpo de cada pantalla, los títulos en la manuscrita y las cajas, como en la gerencia. */
+.wrap{max-width:980px;margin:0 auto;padding:16px max(12px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.sv-tablero{max-width:980px;margin:0 auto;padding:12px max(12px,env(safe-area-inset-right,0px)) 12px max(12px,env(safe-area-inset-left,0px))}
+.sec-t{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 .28em;font:400 40px/1.05 var(--mano);color:var(--tinta);letter-spacing:0;padding-top:.05em}
+.sec-t .mano{font-size:1em}
+.caja .sec-t{font-size:32px}
+.titulo{margin:0 0 14px}
+.titulo-s{font:400 12px var(--inc-fuente);color:var(--gris);margin-top:2px}
+.grupo{font:600 13.5px var(--inc-fuente);color:var(--gris);margin:22px 0 8px}
+.grupo:first-child{margin-top:0}
+/* Los shows por mes (24-nov): el mes se toca para abrirlo o cerrarlo (sin animación). */
+.mes{margin:0 0 4px}
+.mes>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;font:600 14px var(--inc-fuente);color:var(--tinta);padding:11px 4px;border-bottom:1px solid var(--vidrio-borde);-webkit-tap-highlight-color:transparent}
+.mes>summary::-webkit-details-marker{display:none}
+.mes>summary::after{content:'';width:8px;height:8px;border-right:2px solid var(--gris);border-bottom:2px solid var(--gris);transform:rotate(-45deg);margin:0 4px 0 2px}
+.mes[open]>summary::after{transform:rotate(45deg)}
+.mes[open]>summary{margin-bottom:10px}
+.mes-n{margin-left:auto;font-weight:500;font-size:12.5px;color:var(--gris)}
+.caja{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);border-radius:18px;padding:16px 14px;margin-bottom:12px}
+.sv-caja-cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;margin-bottom:10px}
+.sv-tot{font:500 12.5px var(--inc-fuente);color:var(--gris);white-space:nowrap}
+/* El show, grande, con la fecha, la zona y quién la supervisa; abajo, sus números. */
+.sv-pase-n{font:900 clamp(34px,9vw,64px)/.95 var(--inc-fuente);letter-spacing:-.03em;text-transform:uppercase;overflow-wrap:normal;padding-top:.08em}
+.sv-pase-f{font:400 13px/1.4 var(--inc-fuente);color:var(--gris);padding-top:10px;border-top:4px solid var(--tinta);margin-top:10px}
+.sv-pase .sv-cuentas{margin-top:12px}
+.sv-pase .sv-cuentas:empty{display:none}
+.hub{padding:0}
+.hub .hub-card{margin:0}
+.wrap .persona-lista{margin:12px 0 0}
+.wrap .lista-top{padding:0}
+.sv-plano-ayuda{margin-bottom:8px}
+.login-t{font:900 34px/.92 var(--inc-fuente);letter-spacing:-.015em;text-transform:uppercase;text-align:center;margin:0 0 26px}
+.login-t .mano{display:block;font-size:.78em;margin-top:8px}
+.lbl{display:block;font:600 13px var(--inc-fuente);letter-spacing:0;text-transform:none;color:var(--gris);margin-bottom:6px}
+/* 16 px: en el iPhone, con menos, la página se agranda sola al tocar el campo. */
+.l-in{width:100%;min-height:46px;padding:10px 12px;background:var(--fondo);border:2px solid var(--linea);border-radius:12px;color:var(--tinta);font:16px var(--inc-fuente);outline:none;margin-bottom:16px}
+.l-in:focus{border-color:var(--tinta)}
+/* El ojito de la contraseña: dentro del campo, a la derecha. */
+.clave-caja{position:relative;margin-bottom:16px}.clave-caja input{margin-bottom:0;padding-right:50px}
+.clave-ver{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:10px;background:none;color:var(--tinta);opacity:.55;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.clave-ver:hover,.clave-ver:focus-visible{opacity:1}
+.l-in::placeholder{color:var(--placeholder)}
+.l-in:-webkit-autofill,.l-in:-webkit-autofill:hover,.l-in:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 100px var(--fondo) inset;-webkit-text-fill-color:var(--tinta);caret-color:var(--tinta)}
+.l-err{display:none;background:var(--grave);color:var(--grave-letra);border-radius:10px;padding:10px 12px;font:400 12px var(--inc-fuente);margin-bottom:14px}
+.l-btn{width:100%;min-height:50px;padding:0 14px;background:var(--tinta);color:var(--fondo);border:0;border-radius:12px;font:600 15px var(--inc-fuente);cursor:pointer}
+.l-btn:disabled{background:var(--bloque-2);color:var(--gris);cursor:default}
+.section-pad{padding:16px}
+/* Los títulos de pantalla: en la manuscrita, grandes; el dato, en gris. */
+.page-title{font:400 44px/1.05 var(--mano);color:var(--tinta);margin-bottom:2px}
+.page-sub{font:400 12px var(--inc-fuente);color:var(--gris);margin-bottom:16px}
+/* Los shows: cajas de vidrio, como en la gerencia. */
+.conv-card{display:flex;align-items:center;gap:12px;min-height:78px;background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);color:var(--tinta);border-radius:16px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:background .15s}
+.conv-card.hoy{outline:2px solid var(--tinta);outline-offset:-2px}
+.conv-main{flex:1;min-width:0}
+.conv-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+.conv-chip{font:400 11px var(--inc-fuente);padding:4px 9px;border-radius:999px;background:var(--fondo);color:var(--gris)}
+.conv-chip strong{font-weight:700;margin-right:5px;color:var(--tinta)}
+.vivo-pill{font:600 11.5px var(--inc-fuente);color:var(--fondo);background:var(--tinta);padding:3px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
+.vivo-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--fondo);animation:svTitila 1.4s infinite}
+.flecha{color:var(--gris);font-size:22px;flex-shrink:0}
+.conv-card:active{background:var(--vidrio-2)}
+.conv-title{font:700 16px/1.2 var(--inc-fuente);margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.conv-meta{font:400 11px var(--inc-fuente);color:var(--gris);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.conv-prog{display:flex;align-items:center;gap:8px;margin-top:10px;font:400 11px var(--inc-fuente);color:var(--gris)}
+.prog-track{flex:1;height:5px;background:var(--fondo);border-radius:999px;overflow:hidden}
+.prog-fill{height:100%;border-radius:999px}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;font:600 11px var(--inc-fuente);background:var(--fondo);color:var(--gris)}
+.b-mv,.b-ex,.b-es{background:var(--fondo);color:var(--gris)}
+/* La gente: una caja de vidrio con una fila por persona. */
+.persona-lista{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);border-radius:16px;overflow:hidden;margin:16px}
+.person-row{border-bottom:1px solid var(--linea);padding:12px 14px;min-height:60px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.person-row:last-child{border-bottom:none}
+.person-row:active{background:var(--vidrio-2)}
+.person-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 13px var(--inc-fuente);flex-shrink:0;background:var(--tarjeta);color:var(--tinta)}
+.person-name{font:600 14px var(--inc-fuente);color:var(--tinta)}
+.person-meta{font:400 11px var(--inc-fuente);color:var(--gris);margin-top:2px}
+/* El semáforo de cada persona: verde, dorado o rojo (los mismos tonos de la gravedad para medio y grave). */
+.sem{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font:700 11px var(--inc-fuente);flex-shrink:0}
+.sem-1{background:#1F6E43;color:#CFF5DC}.sem-2{background:var(--media);color:var(--media-letra)}.sem-3{background:var(--grave);color:var(--grave-letra)}
+.chevron{color:var(--gris);font-size:18px;margin-left:auto;flex-shrink:0}
+/* Equipo (22-nov): los nuevos arriba (feedback obligatorio), los que ya vinieron abajo (opcional). */
+.eq-grupo{font:600 13px var(--inc-fuente);color:var(--gris);margin:18px 16px -6px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.eq-grupo b{color:var(--tinta);font-weight:600}
+.sv-nuevo{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font:600 10.5px var(--inc-fuente);background:var(--tinta);color:var(--fondo);vertical-align:1px}
+.sv-nuevo.suave{background:var(--fondo);color:var(--tinta);border:1px solid var(--linea)}
+.person-meta .falta{color:var(--tinta);font-weight:600}
+/* Las hojas que suben de abajo (feedback, quién supervisa, cargar o resolver): del tono del bloque, redondeadas arriba. */
+.fb-sheet{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;justify-content:flex-end}
+.fb-sheet.hidden{display:none}
+.fb-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.fb-card{position:relative;background:var(--bloque);color:var(--tinta);border-radius:22px 22px 0 0;padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 24px);max-height:85vh;overflow-y:auto}
+.fb-handle{width:36px;height:4px;background:var(--linea);border-radius:999px;margin:0 auto 18px}
+.fb-title{font:800 19px/1.2 var(--inc-fuente);color:var(--tinta);margin-bottom:4px}
+.fb-sub{font:400 13px var(--inc-fuente);color:var(--gris);margin-bottom:18px}
+.fb-crit{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--linea)}
+.fb-crit-txt{flex:1;min-width:0}
+.fb-crit-nom{font:600 13.5px var(--inc-fuente);color:var(--tinta)}
+.fb-crit-ayuda{font:400 11px/1.35 var(--inc-fuente);color:var(--gris);margin-top:1px}
+.fb-crit-nums{display:flex;gap:4px;flex:0 0 auto}
+.fb-n{width:40px;height:40px;border-radius:10px;border:0;background:var(--fondo);color:var(--tinta);font:600 14px var(--inc-fuente);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fb-n:active{transform:scale(.94)}
+.fb-n.on{background:var(--tinta);color:var(--fondo)}
+.fb-res{margin:14px 0 4px;padding:10px 13px;border-radius:12px;font:600 12.5px var(--inc-fuente);background:var(--tarjeta);color:var(--gris);text-align:center}
+.fb-res-1{background:#1F6E43;color:#CFF5DC}
+.fb-res-2{background:var(--media);color:var(--media-letra)}
+.fb-res-3{background:var(--grave);color:var(--grave-letra)}
+.fb-ta{width:100%;padding:12px;background:var(--fondo);border:2px solid var(--linea);border-radius:12px;color:var(--tinta);font:16px var(--inc-fuente);outline:none;resize:none;height:90px}
+.fb-ta:focus{border-color:var(--tinta)}
+.fb-ta::placeholder{color:var(--placeholder)}
+/* Pasar lista: los turnos como chips, el sector como campo, el resumen en una caja. */
+.lista-top{padding:12px 16px 0}
+.lista-turnos{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.turno-chip{display:inline-flex;align-items:center;min-height:40px;font:600 12.5px var(--inc-fuente);background:var(--tarjeta);border:0;color:var(--tinta);border-radius:999px;padding:0 14px;cursor:pointer;white-space:nowrap}
+.turno-chip.on{background:var(--tinta);color:var(--fondo)}
+.lista-sector{width:100%;min-height:46px;padding:10px 12px;background:var(--fondo);border:2px solid var(--linea);border-radius:12px;font:16px var(--inc-fuente);color:var(--tinta);margin-bottom:10px}
+.lista-resumen{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.lista-resumen span{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:0 11px;border-radius:999px;background:var(--tarjeta);color:var(--gris);font:600 12px var(--inc-fuente)}
+.lista-resumen strong{color:var(--tinta);font-size:14px;font-weight:800}
+.lista-resumen .lr-p{background:#1F6E43;color:#CFF5DC}.lista-resumen .lr-a{background:var(--grave);color:var(--grave-letra)}.lista-resumen .lr-s{background:var(--media);color:var(--media-letra)}
+.lista-resumen .lr-p strong,.lista-resumen .lr-a strong,.lista-resumen .lr-s strong{color:inherit}
+.pl-btn{min-height:40px;font:600 13px var(--inc-fuente);background:var(--tarjeta);border:0;color:var(--tinta);border-radius:999px;padding:0 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pl-btn:active{transform:scale(.96)}
+.pl-p.on{background:#1F6E43;color:#CFF5DC}
+.pl-a.on{background:var(--grave);color:var(--grave-letra)}
+.pl-acts{display:flex;gap:4px;flex-shrink:0;margin-left:auto}
+.fb-send{width:100%;min-height:50px;padding:0 14px;background:var(--tinta);color:var(--fondo);border:0;border-radius:12px;font:600 15px var(--inc-fuente);cursor:pointer;margin-top:14px}
+.fb-send:disabled{background:var(--bloque-2);color:var(--gris)}
+.fb-prev{margin-top:14px;border-top:1px solid var(--linea);padding-top:14px}
+.fb-prev-title{font:600 12.5px var(--inc-fuente);color:var(--gris);margin-bottom:10px}
+.fb-prev-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;font:400 13px var(--inc-fuente);color:var(--tinta)}
+.empty-state{text-align:center;padding:32px 18px;color:var(--gris);font:400 12px/1.5 var(--inc-fuente);border:2px dashed var(--linea);border-radius:14px}
+.empty-icon{display:none}
+.empty-title{font:600 14px var(--inc-fuente);color:var(--gris);margin-bottom:6px}
+.load-bar{position:fixed;top:0;left:0;right:0;height:3px;background:var(--tinta);z-index:200;transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.toast-mob{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);left:50%;transform:translateX(-50%) translateY(10px);background:var(--tinta);color:var(--fondo);padding:10px 20px;border-radius:999px;font:600 13px var(--inc-fuente);z-index:300;opacity:0;transition:all .2s;white-space:nowrap;pointer-events:none}
+.toast-mob.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.install-banner{background:var(--bloque);color:var(--tinta);padding:10px 16px;font:400 12px var(--inc-fuente);display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--linea)}
+.install-banner button{background:var(--tinta);color:var(--fondo);border:0;min-height:36px;padding:0 12px;border-radius:10px;font:600 12px var(--inc-fuente);cursor:pointer;flex-shrink:0}
+/* Un show: los dos caminos (equipo e incidencias), en cajas de vidrio. */
+.hub{padding:16px;display:grid;gap:10px}
+@media(min-width:700px){.hub{grid-template-columns:1fr 1fr}}
+.hub-card{background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);border-radius:18px;padding:18px 16px;cursor:pointer;display:flex;gap:14px;align-items:center;text-align:left;width:100%;font:inherit;color:var(--tinta)}
+.hub-card:active{background:var(--vidrio-2)}
+.hub-ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--tarjeta);color:var(--tinta)}
+.hub-ic svg{width:26px;height:26px;display:block}
+.hub-ic.inc{background:var(--tinta);color:var(--fondo)}
+.hub-t{font:700 16px var(--inc-fuente);color:var(--tinta)}
+.hub-s{font:400 12.5px/1.4 var(--inc-fuente);color:var(--gris);margin-top:3px}
+.hub-chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+/* Las notas de los supervisores (notas.sql): igual en centro-control.html y supervisor-mobile.html. */
+.nt-card{background:var(--fondo);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.nt-card:last-child{margin-bottom:0}
+.nt-cab{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font:400 12px var(--inc-fuente);color:var(--gris)}
+.nt-cab b{font-weight:600;color:var(--tinta);font-size:13px;overflow-wrap:anywhere}
+.nt-txt{white-space:pre-wrap;overflow-wrap:anywhere;font:400 14px/1.5 var(--inc-fuente);color:var(--tinta);margin-top:6px}
+.nt-fotos{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.nt-fotos a,.nt-foto-sin{display:block;width:84px;height:84px;border-radius:10px;overflow:hidden;background:var(--linea)}
+.nt-fotos img{width:100%;height:100%;object-fit:cover;display:block}
+.nt-foto-sin{display:flex;align-items:center;justify-content:center;font:500 11px var(--inc-fuente);color:var(--gris)}
+.nt-arch{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.nt-arch a,.nt-arch span{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:7px 10px;border-radius:10px;border:1px solid var(--linea);font:500 12px var(--inc-fuente);color:var(--tinta);text-decoration:none;overflow-wrap:anywhere}
+.nt-arch svg{width:15px;height:15px;flex:none}
+.nt-borrar{margin-top:10px;background:none;border:0;padding:4px 0;font:600 12px var(--inc-fuente);color:var(--gris);text-decoration:underline;cursor:pointer}
+.nt-adj{display:flex;flex-wrap:wrap;gap:8px}
+.nt-sel{position:relative;display:flex;align-items:center;gap:8px;max-width:100%;padding:6px 36px 6px 6px;border-radius:12px;background:var(--fondo);font:500 12px var(--inc-fuente);color:var(--tinta)}
+.nt-sel img,.nt-sel .ic{width:44px;height:44px;border-radius:8px;flex:none}
+.nt-sel img{object-fit:cover}
+.nt-sel .ic{display:flex;align-items:center;justify-content:center;background:var(--linea)}
+.nt-sel .ic svg{width:20px;height:20px}
+.nt-sel span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.nt-sel button{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:0;border-radius:50%;background:none;color:var(--gris);font:600 20px/1 var(--inc-fuente);cursor:pointer}
+.nt-agregar-fila{display:flex;gap:8px}
+.nt-agregar{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:76px;padding:10px 6px;border:2px dashed var(--linea);border-radius:12px;font:600 14px var(--inc-fuente);color:var(--tinta);text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.nt-agregar:active{background:var(--fondo)}
+.nt-agregar svg{width:24px;height:24px;margin-bottom:2px}
+.nt-agregar small{font:400 11px/1.3 var(--inc-fuente);color:var(--gris)}
+.nt-pc{display:none}
+/* En la compu no hay cámara para sacar la foto: quedan Fotos y Archivo. */
+@media (hover:hover) and (pointer:fine){.nt-cam,.nt-cel{display:none}.nt-pc{display:inline}}
+.nt-adj{margin-top:10px}
+.sv-tj-fotos{padding:0 14px 12px}
+.sv-tj-fotos-t{font:600 12px var(--inc-fuente);opacity:.7;margin:0 0 6px}
+.inc-tj .nt-agregar{color:inherit;border-color:rgba(127,127,127,.5);min-height:64px;font-size:13px}
+.inc-tj .nt-agregar small{color:inherit;opacity:.7}
+.inc-tj .nt-agregar:active{background:rgba(127,127,127,.15)}
+.inc-tj-subiendo{font:600 13px var(--inc-fuente)}
+.ct-pend-aviso{font:400 13px/1.5 var(--inc-fuente);color:var(--gris);background:var(--fondo);border-radius:12px;padding:10px 12px;margin:0 0 12px}
+.ct-pend-aviso b{color:var(--tinta);font-weight:600}
+.ct-pend-fecha{margin:18px 0 6px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;font:600 15px var(--inc-fuente);color:var(--tinta)}
+.ct-pend-fecha small{font:400 12.5px var(--inc-fuente);color:var(--gris)}
+.ct-pend-sector{font:600 11px var(--inc-fuente);letter-spacing:.06em;text-transform:uppercase;color:var(--gris);padding:10px 14px 4px}
+.ct-pend-est{font:600 11px var(--inc-fuente);padding:3px 8px;border-radius:999px;white-space:nowrap;background:var(--fondo);color:var(--gris)}
+.ct-pend-est.visto{background:var(--tinta);color:var(--fondo)}
+.ct-pend-est.firmado{background:transparent;color:var(--tinta);border:1.5px solid var(--tinta)}
+.ct-pend-filtros{display:grid;gap:8px;margin:0 0 4px}
+.hub-chip{font:600 11.5px var(--inc-fuente);padding:4px 9px;border-radius:999px;background:var(--fondo);color:var(--gris)}
+.hub-chip.n3{background:var(--grave);color:var(--grave-letra)}.hub-chip.n2{background:var(--media);color:var(--media-letra)}.hub-chip.n1{background:var(--leve);color:var(--leve-letra)}
+/* El tema (como en WhatsApp): un menú chico debajo de la barra, con Automático, Claro y Oscuro; el elegido, tildado. */
+.app-bar .tema-menu,.login-tema .tema-menu{position:absolute;top:calc(100% + 4px);right:max(16px,env(safe-area-inset-right,0px));z-index:60;width:min(280px,calc(100vw - 32px));padding:6px;display:flex;flex-direction:column;gap:2px;border-radius:16px;background:var(--bloque);color:var(--tinta);box-shadow:0 0 0 1px var(--linea),var(--vidrio-sombra)}
+.app-bar .tema-menu[hidden],.login-tema .tema-menu[hidden]{display:none}
+.login-tema .tema-menu{right:0}
+.tema-menu-t{font:600 12.5px var(--inc-fuente);color:var(--gris);padding:8px 10px 6px}
+.tema-op{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:12px;min-height:48px;padding:6px 10px;border:0;border-radius:10px;background:transparent;color:var(--tinta);font:600 14px var(--inc-fuente);text-align:left;cursor:pointer}
+.tema-op small{display:block;font:400 12px var(--inc-fuente);color:var(--gris);margin-top:2px}
+.tema-op i{width:18px;height:18px;border-radius:50%;border:2px solid var(--gris);display:grid;place-items:center;font:700 11px/1 var(--inc-fuente);font-style:normal;color:var(--fondo)}
+.tema-op[aria-checked="true"] i{background:var(--tinta);border-color:var(--tinta)}.tema-op[aria-checked="true"] i::before{content:"✓"}
+
+/* ── Incidencias: la sala en vivo, como el tablero de la gerencia ── */
+#screenIncid.active{display:flex;flex-direction:column;min-height:100vh}
+.sv-logo{width:30px;height:30px;display:block;flex-shrink:0;filter:var(--logo-filtro)}
+.sv-rot{font:400 11px var(--inc-fuente);color:var(--gris)}.sv-rot b{font-weight:800}
+.sv-mano{font:400 15px/1 var(--mano);color:var(--gris)}
+.sv-show{font:800 13px/1.2 var(--inc-fuente);text-transform:uppercase;color:var(--tinta);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* El cuerpo: una caja de vidrio con el título, los números, el filtro y los tickets. */
+.sv-cuerpo{flex:1;width:calc(100% - 24px);max-width:760px;margin:12px auto 0;padding:16px 12px 18px;display:flex;flex-direction:column;gap:10px;background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border:1px solid var(--vidrio-borde);box-shadow:inset 0 1px 0 var(--vidrio-brillo),var(--vidrio-sombra);border-radius:18px;--tj-muesca:var(--bloque)}
+.sv-cab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 4px}
+.sv-titulo{font:400 34px/1.05 var(--mano);color:var(--tinta)}
+.sv-vivo{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;border-radius:999px;background:var(--tinta);color:var(--fondo);font:600 12px var(--inc-fuente);white-space:nowrap}
+.sv-vivo::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--fondo);animation:svTitila 1.6s infinite}
+.sv-vivo.mal{background:var(--media);color:var(--media-letra)}.sv-vivo.mal::before{background:var(--media-letra);animation:none}
+.sv-vivo.fin{background:var(--tarjeta);color:var(--gris)}.sv-vivo.fin::before{display:none}
+.sv-cuentas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.sv-cuenta{padding:10px 11px;border-radius:14px;font:600 12px var(--inc-fuente);display:flex;flex-direction:column;gap:3px;background:var(--tarjeta);color:var(--tinta)}
+.sv-cuenta b{font:900 26px/1 var(--inc-fuente);display:flex;align-items:center;gap:7px}
+.sv-cuenta.n3{background:var(--grave);color:var(--grave-letra)}.sv-cuenta.n2{background:var(--media);color:var(--media-letra)}.sv-cuenta.n1{background:var(--leve);color:var(--leve-letra)}
+.sv-cuenta.pulso b::after{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;animation:svTitila 1.2s infinite}
+@keyframes svTitila{0%,100%{opacity:1}50%{opacity:.25}}
+.sv-seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:3px;border-radius:12px;background:var(--fondo)}
+.sv-seg.chico{display:inline-grid}.sv-seg.chico button{min-height:40px;padding:0 14px;font-size:12.5px}
+/* El plano (el mismo de la gerencia) adentro de la sala: arriba, 3D o Plano y la ayuda. */
+.sv-plano-cab{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
+.sv-plano-ayuda{font:400 12px/1.35 var(--inc-fuente);color:var(--gris);flex:1 1 180px}
+#svPlano{min-height:280px;border-radius:14px}
+/* Si el 3D no se puede, el plano 2D: el dibujo y, abajo, los pisos y la leyenda (como en la gerencia). */
+/* En la sala, la barra y el pie sin vidrio esmerilado: en Safari de iOS, lo que tapa un canvas WebGL con
+   backdrop-filter puede dejarlo en blanco; el pie tapa el borde de abajo del plano. */
+body[data-pantalla="screenIncid"] .app-bar,body[data-pantalla="screenIncid"] .sv-pie{background:var(--bloque);-webkit-backdrop-filter:none;backdrop-filter:none}
+.sv-plano-nota{display:none;margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--fondo);color:var(--tinta);font:400 12.5px/1.4 var(--inc-fuente)}
+.sv-plano-nota.on{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sv-plano-nota button{border:0;border-radius:999px;background:var(--tinta);color:var(--fondo);font:600 12.5px var(--inc-fuente);min-height:40px;padding:0 14px;cursor:pointer}
+#svPlano:not(.inc-3d){display:flex;flex-direction:column;gap:8px}
+#svPlano:not(.inc-3d)>svg{width:100%;height:auto;display:block}
+@media(min-width:960px){#svPlano{height:calc(100vh - 280px);min-height:480px}}
+/* En el celular, la leyenda del plano debajo de los botones (si no, se pisan). */
+@media(max-width:560px){#svPlano.inc-3d .inc-3d-ley{top:calc(62px + var(--inc-sup,0px));max-width:calc(100% - 20px)}}
+.sv-seg button{border:0;border-radius:9px;background:transparent;color:var(--tinta);font:600 13px var(--inc-fuente);min-height:44px;cursor:pointer}
+.sv-seg button.on{background:var(--tinta);color:var(--fondo)}
+.sv-vacio{text-align:center;padding:28px 16px;color:var(--gris);font:400 13px/1.5 var(--inc-fuente);border:2px dashed var(--linea);border-radius:14px}
+/* En el celular, sin el plano (ahí no se lee): las incidencias se eligen por zona con el desplegable y, en
+   "Todas las zonas", van agrupadas por zona. En la compu, el plano 3D para todos y sin el desplegable. */
+@media(max-width:959px){.sv-compu{display:none}}
+@media(min-width:960px){.sv-zona{display:none}}
+.sv-zona{margin:0 0 10px;padding-right:44px;font-weight:600;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 14px center}
+.sv-zona-cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:16px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--linea);font:800 13px var(--inc-fuente);letter-spacing:.02em;text-transform:uppercase;color:var(--tinta)}
+.sv-zona-cab:first-child{margin-top:2px}
+.sv-zona-cab small{font:500 12px var(--inc-fuente);color:var(--gris);text-transform:none;letter-spacing:0;white-space:nowrap}
+.sv-pie{position:sticky;bottom:0;z-index:5;margin-top:12px;padding:10px 12px calc(env(safe-area-inset-bottom,0px) + 12px);background:var(--vidrio);-webkit-backdrop-filter:var(--desenfoque);backdrop-filter:var(--desenfoque);border-top:1px solid var(--vidrio-borde)}
+.sv-cargar{display:block;width:100%;max-width:736px;margin:0 auto;border:0;border-radius:12px;background:var(--tinta);color:var(--fondo);font:700 16px var(--inc-fuente);min-height:54px;cursor:pointer}
+/* Los tickets (los arma el bloque compartido): tarjetas redondeadas con el talón del color de su gravedad. */
+#screenIncid{--tj-tinta:var(--tinta);--tj-tinta2:var(--gris);--tj-perf:var(--linea);--tj-ok:var(--tinta);--tj-fondo:var(--tarjeta)}
+#screenIncid .inc-tj{background:var(--tarjeta);border:0;border-radius:16px;margin-bottom:6px;outline-offset:-2px;box-shadow:none;overflow:hidden}
+#screenIncid .inc-tj.abierta{outline:2px solid var(--tinta)}
+#screenIncid .inc-tj-cab{grid-template-columns:78px minmax(0,1fr)}
+#screenIncid .inc-tj-cab::before,#screenIncid .inc-tj-cab::after{display:none}
+#screenIncid .inc-card.inc-tj .inc-tj-talon{border-radius:0;padding:12px 6px;gap:6px}
+#screenIncid .inc-tj[data-nivel="3"] .inc-tj-talon{background:var(--grave);color:var(--grave-letra)}
+#screenIncid .inc-tj[data-nivel="2"] .inc-tj-talon{background:var(--media);color:var(--media-letra)}
+#screenIncid .inc-tj[data-nivel="1"] .inc-tj-talon{background:var(--leve);color:var(--leve-letra)}
+#screenIncid .inc-tj .inc-tj-cod{border-radius:6px}
+#screenIncid .inc-tj[data-nivel="3"] .inc-tj-cod{background:var(--grave);color:var(--grave-letra)}#screenIncid .inc-tj[data-nivel="2"] .inc-tj-cod{background:var(--media);color:var(--media-letra)}#screenIncid .inc-tj[data-nivel="1"] .inc-tj-cod{background:var(--leve);color:var(--leve-letra)}
+#screenIncid .inc-tj .inc-tj-talon b{font:900 22px/.9 var(--inc-fuente)}
+#screenIncid .inc-tj .inc-tj-talon small{font:600 11.5px var(--inc-fuente);letter-spacing:0}
+#screenIncid .inc-tj .inc-tj-txt{border-left:0;padding:11px 14px;gap:4px}
+#screenIncid .inc-tj .inc-tj-tipo{font:700 15px/1.2 var(--inc-fuente)}
+#screenIncid .inc-tj .inc-tj-linea{font:400 11.5px var(--inc-fuente)}
+#screenIncid .inc-tj .inc-tj-estado{font:600 11.5px var(--inc-fuente)}
+#screenIncid .inc-tj .inc-tj-chips span{border-radius:999px}
+.sv-tj-pie{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 12px 92px}
+/* Con la ficha abierta (abajo de Sumar fotos), los botones van a lo ancho. */
+.sv-tj-fotos + .sv-tj-pie{padding-left:14px}
+.sv-detalle{border:1.5px solid currentColor;border-radius:10px;background:none;color:inherit;font:700 13px var(--inc-fuente);padding:0 14px;min-height:40px;cursor:pointer}
+.sv-hora{max-width:180px}
+.sv-resolver{border:0;border-radius:10px;background:var(--tinta);color:var(--fondo);font:700 13px var(--inc-fuente);padding:0 16px;min-height:40px;cursor:pointer}
+/* La hoja para cargar y resolver, en los mismos colores. */
+#incSheet .fb-card{max-width:760px;width:100%;margin:0 auto;max-height:92vh}
+#incSheet .fb-title.mano{font:400 32px/1.05 var(--mano)}
+#incSheet .inc-paso{font:600 12px var(--inc-fuente);letter-spacing:0;text-transform:none;color:var(--gris);margin:16px 0 7px}
+#incSheet .inc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+#incSheet .inc-opc,#incSheet .inc-check{width:100%;background:var(--fondo);border:0;border-radius:12px;color:var(--tinta);font:600 13.5px/1.3 var(--inc-fuente);padding:12px;min-height:48px;text-align:left;cursor:pointer}
+#incSheet .inc-opc.on,#incSheet .inc-check.on{background:var(--tinta);color:var(--fondo)}
+#incSheet .inc-checks{display:flex;flex-direction:column;gap:4px}
+#incSheet .inc-niveles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+#incSheet .inc-nivel{border:0;border-radius:12px;padding:12px 10px;text-align:left;display:flex;flex-direction:column;gap:3px;cursor:pointer;font-family:inherit}
+#incSheet .inc-nivel.n1{background:var(--leve);color:var(--leve-letra)}#incSheet .inc-nivel.n2{background:var(--media);color:var(--media-letra)}#incSheet .inc-nivel.n3{background:var(--grave);color:var(--grave-letra)}
+#incSheet .inc-nivel.on{outline:3px solid var(--tinta);outline-offset:-3px}
+/* La criticidad ya no se elige: la pone el tipo (y sube a Grave con ambulancia o policía). */
+#incSheet .inc-nivel.fijo{cursor:default;width:100%;margin-bottom:4px}
+#incSheet .inc-nivel strong{font:700 14px var(--inc-fuente)}#incSheet .inc-nivel span{font:400 11px/1.3 var(--inc-fuente);opacity:.92}
+#incSheet .inc-mini{display:flex;align-items:center;gap:8px;background:var(--fondo);border-radius:10px;padding:8px 10px;margin-bottom:4px;font:400 13px var(--inc-fuente)}
+#incSheet .inc-mini span.t{flex:1;min-width:0}
+#incSheet .inc-resolver{border:0;border-radius:10px;background:var(--tinta);color:var(--fondo);font:700 13px var(--inc-fuente);padding:0 14px;min-height:40px;cursor:pointer}
+#incSheet .inc-ref-rapida{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 10px}
+#incSheet .inc-ref-rapida button{font:600 12.5px var(--inc-fuente);background:var(--fondo);border:0;border-radius:999px;color:var(--tinta);padding:0 12px;min-height:40px;cursor:pointer}
+.sv-volver{background:none;border:0;color:var(--tinta);font:600 13px var(--inc-fuente);text-decoration:underline;padding:8px 0;min-height:40px;cursor:pointer}
+/* ¿Dónde pasó? */
+.sv-buscar{width:100%;background:var(--fondo);border:2px solid var(--linea);border-radius:12px;color:var(--tinta);font:16px var(--inc-fuente);padding:12px 14px;outline:none}
+.sv-buscar:focus{border-color:var(--tinta)}.sv-buscar::placeholder{color:var(--placeholder)}
+.sv-pisos{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:4px;margin-top:10px}
+.sv-pisos button{border:0;border-radius:10px;background:var(--fondo);color:var(--tinta);font:600 13px var(--inc-fuente);padding:0 12px;min-height:44px;cursor:pointer}
+.sv-pisos button.on{background:var(--tinta);color:var(--fondo)}
+.sv-rotulo{font:600 12px var(--inc-fuente);color:var(--gris);margin:14px 0 6px}
+.sv-sectores{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.sv-sectores.anchos{grid-template-columns:repeat(2,minmax(0,1fr))}
+.sv-sec{position:relative;border:0;border-radius:14px;background:var(--fondo);color:var(--tinta);font:800 19px var(--inc-fuente);padding:15px 6px;min-height:56px;cursor:pointer}
+.sv-sec.chico{font:600 13px/1.25 var(--inc-fuente);text-align:left;padding:12px 20px 12px 12px;min-height:48px}
+.sv-pt{position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%}
+.sv-pt.n1{background:var(--pt-1)}.sv-pt.n2{background:var(--pt-2)}.sv-pt.n3{background:var(--pt-3)}
+.sv-ayuda{background:var(--fondo);border-radius:12px;padding:12px 14px;font:500 13px/1.4 var(--inc-fuente);margin-top:12px}
+@media(min-width:700px){.sv-sectores{grid-template-columns:repeat(5,minmax(0,1fr))}.sv-sectores.anchos{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:380px){#incSheet .inc-nivel span{display:none}}
+.sv-cuenta b,.app-bar-sub,.conv-meta,.lista-resumen strong{font-variant-numeric:tabular-nums}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* El ticket de las incidencias (en el Arena lo pone incEstiloTarjetas). */
+.inc-tj-quien{font-size:11px;opacity:.7;margin-top:2px}.inc-tj-d1+.inc-tj-d1{margin-top:8px}.inc-tj-fotos{display:flex;flex-wrap:wrap;gap:8px}.inc-tj-fc{position:relative;display:inline-block;max-width:100%}.inc-tj-ft{display:block;width:76px;height:76px;border-radius:8px;overflow:hidden;background:rgba(127,127,127,.18)}.inc-tj-ft img{width:100%;height:100%;object-fit:cover;display:block}.inc-tj-fa:not(:last-child){padding-right:28px !important}.inc-tj-fa{display:inline-flex;align-items:center;min-height:34px;padding:6px 10px;border-radius:8px;border:1px solid rgba(127,127,127,.45);color:inherit;text-decoration:none;font-size:12px;font-weight:500;overflow-wrap:anywhere}.inc-tj-fq{position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;border:2px solid var(--tj-fondo,#F2EFE6);background:var(--tj-tinta,#141A26);color:var(--tj-fondo,#F2EFE6);font:600 16px/1 Poppins,sans-serif;cursor:pointer;padding:0}.inc-tj-fn{font-size:12px}.inc-tj-cam{display:inline-flex;align-items:center;gap:3px;margin-left:7px;font-size:.82em;font-weight:600;opacity:.7;vertical-align:1px;white-space:nowrap}.inc-tj-cam svg{width:13px;height:13px}.inc-tj-cod{display:inline-block;margin-right:7px;padding:1px 6px;border-radius:4px;background:var(--tj-c);color:var(--tj-t);font-weight:800;font-size:.82em;line-height:1.35;vertical-align:1px;font-variant-numeric:tabular-nums}.inc-tj{position:relative;display:block;margin:0 0 10px;padding:0;border:0;border-radius:12px;background:var(--tj-fondo,#F2EFE6);color:var(--tj-tinta,#141A26);box-shadow:none;overflow:visible;cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .15s}.inc-tj:hover{outline-color:rgba(91,150,255,.55)}.inc-tj:focus-visible{outline-color:#5B96FF}.inc-tj.abierta{outline-color:#0062FF}.inc-tj.resuelta{opacity:.8}.inc-tj-cab{position:relative;display:grid;grid-template-columns:70px minmax(0,1fr)}.inc-tj-cab::before,.inc-tj-cab::after{content:"";position:absolute;left:62px;width:16px;height:16px;border-radius:50%;background:var(--tj-muesca,#13243E)}.inc-tj-cab::before{top:-8px}.inc-tj-cab::after{bottom:-8px}.inc-tj.abierta .inc-tj-cab::after,.inc-tj:has(.inc-card-acts) .inc-tj-cab::after{display:none}.inc-tj-talon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 4px;border-radius:12px 0 0 12px;background:var(--tj-c);color:var(--tj-t);text-align:center}.inc-tj.abierta .inc-tj-talon,.inc-tj:has(.inc-card-acts) .inc-tj-talon{border-radius:12px 0 0 0}.inc-tj-talon svg{width:20px;height:20px;fill:currentColor}.inc-tj-talon b{font:600 14px/1 Poppins,sans-serif;font-variant-numeric:tabular-nums}.inc-tj-talon small{font:500 10.5px/1.2 Poppins,sans-serif}.inc-tj-txt{display:flex;flex-direction:column;gap:3px;min-width:0;padding:11px 14px;border-left:2px dashed var(--tj-perf,#CFC8B6)}.inc-tj-tipo{font-size:15px;font-weight:500;line-height:1.25;color:var(--tj-tinta,#141A26)}.inc-tj-linea{font-size:12.5px;color:var(--tj-tinta2,#4B5565)}.inc-tj-estado{font-size:12px;color:var(--tj-tinta2,#4B5565)}.inc-tj-estado.ok{color:var(--tj-ok,#0F6E63)}.inc-tj-estado.mal,.inc-tj-mal{color:var(--tj-mal,#9A2232);font-weight:600}.inc-tj-det{margin:0 14px;padding:12px 0 14px;border-top:1px dashed var(--tj-perf,#CFC8B6);display:grid;gap:8px;cursor:auto}.inc-tj-f{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;font-size:13px;line-height:1.4;color:var(--tj-tinta,#141A26)}.inc-tj-f>span{color:var(--tj-tinta2,#4B5565);font-size:12px;padding-top:1px}.inc-tj-f b{font-weight:500}.inc-tj-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.inc-tj-chips span{font-size:11.5px;border:1px solid var(--tj-perf,#CFC8B6);border-radius:6px;padding:2px 8px;color:var(--tj-tinta2,#4B5565)}.inc-tj-acc{color:var(--tj-ok,#0F6E63)}.inc-tj-nota{white-space:pre-wrap}.inc-tj .inc-card-acts{display:flex;gap:6px;justify-content:flex-start;margin:0;padding:10px 12px 12px;border-top:1px dashed var(--tj-perf,#CFC8B6)}.inc-tj.nueva{animation:incTjLlega 1.8s ease-out}@keyframes incTjLlega{0%{transform:translateY(-8px);opacity:0}25%{transform:none;opacity:1;outline-color:#0062FF}100%{outline-color:transparent}}@media(prefers-reduced-motion:reduce){.inc-tj{transition:none}.inc-tj.nueva{animation:none}}
+/* Lo propio de Externos, con las mismas medidas y colores. */
+.ex-demo{padding:12px 14px;margin:0 0 6px}
+.ex-demo-t{font:400 12.5px var(--inc-fuente);color:var(--gris)}.ex-demo-t b{color:var(--tinta);font-weight:700}
+.ex-demo-f{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:8px;font:600 12.5px var(--inc-fuente);color:var(--gris)}
+.ex-demo-f .sv-volver{margin-left:auto;font-size:12.5px;min-height:36px;padding:0}
+.ex-lata-cab{display:flex;align-items:center;gap:10px;margin:16px 0 8px;padding-bottom:6px;border-bottom:2px solid var(--linea)}
+.ex-lata-cab>div{flex:1;min-width:0}
+.ex-lata-cab b{display:block;font:800 13px var(--inc-fuente);letter-spacing:.02em;text-transform:uppercase;color:var(--tinta)}
+.ex-lata-cab small{font:500 12px var(--inc-fuente);color:var(--gris)}
+.ex-lata-cab .sv-resolver{min-height:36px;padding:0 14px;font-size:12.5px;flex-shrink:0}
+.ex-gris{color:var(--gris);font-weight:500}
+.ex-aviso{font:600 12.5px var(--inc-fuente);color:var(--tj-mal,#8A6900);margin-top:6px}
+.ex-aviso:empty{display:none}
+#incSheet .inc-check.on{background:var(--tinta);color:var(--fondo)}
 </style>
 </head>
 <body>
-<div class="app">
-  <header class="barra"><div class="barra-in">
-    <button class="ico oculto" id="btnVolver" onclick="irInicio()" aria-label="Volver">‹</button>
-    <img src="logo-sbs-calado.png" alt="SBS" id="logo">
-    <div class="barra-t"><b id="barTit">Externos</b><span id="barSub"></span></div>
-    <button class="ico" onclick="cambiarTema()" aria-label="Claro u oscuro" title="Claro u oscuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg></button>
-  </div></header>
-  <div id="demo"></div>
-  <main id="vista"></main>
+<!-- Mis eventos -->
+<div id="screenHome" class="screen active">
+  <div class="app-bar"><div class="app-bar-inner"><img class="sv-logo" src="logo-sbs-calado.png" alt="SBS"><div class="sv-marca"><div class="sv-rot"><b>SBS</b> · <span class="sv-mano">Externos</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div><div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div></div><div class="tema-menu" role="menu" aria-label="Tema" hidden></div></div>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Tus</span>eventos</h1><div class="titulo-s" id="homeSub"></div></div>
+    <div id="demoBox"></div>
+    <div id="homeContent" style="min-height:40vh"></div>
+  </div>
 </div>
-<footer class="pie">Proyecto llevado a cabo por la Gerencia de RR. HH.</footer>
-<div class="hoja" id="hoja" hidden onclick="if(event.target===this)cerrarHoja()"><div class="hoja-in" id="hojaIn"></div></div>
-<div class="toast" id="toast"></div>
+
+<!-- Un evento: cada cosa por separado, como en el Arena -->
+<div id="screenEvento" class="screen">
+  <div class="app-bar"><div class="app-bar-inner"><button class="back-btn" onclick="irInicio()" aria-label="Volver">←</button><img class="sv-logo" src="logo-sbs-calado.png" alt="SBS"><div class="sv-marca"><div class="sv-rot"><b>SBS</b> · <span class="sv-mano">Externos</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div><div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div></div><div class="tema-menu" role="menu" aria-label="Tema" hidden></div></div>
+  <div class="wrap">
+    <div class="caja sv-pase"><div class="sv-pase-n" id="evNombre"></div><div class="sv-pase-f" id="evSub"></div></div>
+    <div class="hub">
+      <button class="hub-card" onclick="abrirEquipo()">
+        <div class="hub-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg></div>
+        <div style="flex:1;min-width:0"><div class="hub-t">Equipo y feedback</div><div class="hub-s">Pasar lista y evaluar a cada persona del equipo</div><div class="hub-chips" id="hubEquipo"></div></div>
+      </button>
+      <button class="hub-card" onclick="abrirIncid()">
+        <div class="hub-ic inc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.2" r=".6" fill="currentColor"/></svg></div>
+        <div style="flex:1;min-width:0"><div class="hub-t">Incidencias</div><div class="hub-s" id="hubIncidS">Ver lo que pasa en todo el predio y cargar lo que pase en tu sector</div><div class="hub-chips" id="hubIncid"></div></div>
+      </button>
+      <button class="hub-card" onclick="abrirOrg()">
+        <div class="hub-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="5" rx="1.2"/><rect x="3" y="16" width="6" height="5" rx="1.2"/><rect x="15" y="16" width="6" height="5" rx="1.2"/><path d="M12 8v4M6 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg></div>
+        <div style="flex:1;min-width:0"><div class="hub-t">Organigrama</div><div class="hub-s">Las latas de acreditación: el responsable y los operadores de cada una</div><div class="hub-chips" id="hubOrg"></div></div>
+      </button>
+      <button class="hub-card" onclick="abrirContratos()">
+        <div class="hub-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 15.5c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3.5-.5"/></svg></div>
+        <div style="flex:1;min-width:0"><div class="hub-t">Contratos</div><div class="hub-s">Quién firmó y quién no, para pedirles la firma</div><div class="hub-chips" id="hubContratos"></div></div>
+      </button>
+      <button class="hub-card" onclick="abrirSectores()">
+        <div class="hub-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></div>
+        <div style="flex:1;min-width:0"><div class="hub-t">Sectores</div><div class="hub-s">Los lugares del predio donde se cargan las incidencias. Los suman ustedes</div><div class="hub-chips" id="hubSectores"></div></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Equipo y feedback -->
+<div id="screenEquipo" class="screen">
+  <div class="app-bar"><div class="app-bar-inner"><button class="back-btn" onclick="abrirEvento(evId)" aria-label="Volver">←</button><img class="sv-logo" src="logo-sbs-calado.png" alt="SBS"><div class="sv-marca"><div class="sv-rot"><b>SBS</b> · <span class="sv-mano">Externos</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div><div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div></div><div class="tema-menu" role="menu" aria-label="Tema" hidden></div></div>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Equipo</span>y feedback</h1><div class="titulo-s" id="eqSub"></div></div>
+    <button class="fb-send" style="margin-top:0" id="btnLista" onclick="abrirLista()">Pasar lista</button>
+    <div id="eqLista"></div>
+  </div>
+</div>
+
+<!-- Pasar lista: una fecha, una persona por fila, Vino / Faltó -->
+<div id="screenLista" class="screen">
+  <div class="app-bar"><div class="app-bar-inner"><button class="back-btn" onclick="abrirEquipo()" aria-label="Volver">←</button><img class="sv-logo" src="logo-sbs-calado.png" alt="SBS"><div class="sv-marca"><div class="sv-rot"><b>SBS</b> · <span class="sv-mano">Externos</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div><div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div></div><div class="tema-menu" role="menu" aria-label="Tema" hidden></div></div>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Pasar</span>lista</h1><div class="titulo-s" id="listaSub"></div></div>
+    <div class="lista-top">
+      <div class="lista-turnos" id="listaTurnos"></div>
+      <select class="lista-sector" id="listaPuesto" onchange="pintarLista()" aria-label="Puesto"></select>
+      <div class="lista-resumen" id="listaResumen"></div>
+    </div>
+    <div id="listaBody" class="persona-lista"></div>
+  </div>
+</div>
+
+<!-- Incidencias: las cajas de la sala -->
+<div id="screenIncid" class="screen">
+  <div class="app-bar"><div class="app-bar-inner"><button class="back-btn" onclick="abrirEvento(evId)" aria-label="Volver">←</button><img class="sv-logo" src="logo-sbs-calado.png" alt="SBS"><div class="sv-marca"><div class="sv-rot"><b>SBS</b> · <span class="sv-mano">Externos</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div><div class="sv-acc"><span class="sv-vivo" id="incVivo">En vivo</span><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div></div><div class="tema-menu" role="menu" aria-label="Tema" hidden></div></div>
+  <div class="sv-tablero">
+    <div class="caja sv-pase">
+      <div class="sv-pase-n" id="incNombre"></div>
+      <div class="sv-pase-f" id="incSub"></div>
+      <div class="sv-cuentas" id="incResumen"></div>
+    </div>
+    <div class="caja">
+      <div class="sv-caja-cab"><h2 class="sec-t"><span class="mano">Los</span>sectores</h2></div>
+      <div class="sv-plano-ayuda" id="incSecAyuda">Tocá un sector: ves lo abierto ahí y podés cargar.</div>
+      <div id="incSectores"></div>
+    </div>
+    <div class="caja">
+      <div class="sv-caja-cab"><h2 class="sec-t"><span class="mano">Incidencias</span></h2><small class="sv-tot" id="incTot"></small></div>
+      <select class="l-in sv-zona" id="incSecSel" onchange="incSector=this.value;pintarIncid()" aria-label="Sector"></select>
+      <div class="sv-seg" id="incFiltro"></div>
+      <div id="incLista"></div>
+    </div>
+  </div>
+  <div class="sv-pie" id="incPie"><button class="sv-cargar" id="incCargar" onclick="abrirDonde()">+ Cargar incidencia</button></div>
+</div>
+
+<!-- Organigrama de las latas -->
+<div id="screenOrg" class="screen">
+  <div class="app-bar"><div class="app-bar-inner"><button class="back-btn" onclick="abrirEvento(evId)" aria-label="Volver">←</button><img class="sv-logo" src="logo-sbs-calado.png" alt="SBS"><div class="sv-marca"><div class="sv-rot"><b>SBS</b> · <span class="sv-mano">Externos</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div><div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div></div><div class="tema-menu" role="menu" aria-label="Tema" hidden></div></div>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Organigrama</span></h1><div class="titulo-s" id="orgSub"></div></div>
+    <div id="orgCuerpo"></div>
+  </div>
+</div>
+
+<!-- Contratos: quién firmó y quién no -->
+<div id="screenContratos" class="screen">
+  <div class="app-bar"><div class="app-bar-inner"><button class="back-btn" onclick="abrirEvento(evId)" aria-label="Volver">←</button><img class="sv-logo" src="logo-sbs-calado.png" alt="SBS"><div class="sv-marca"><div class="sv-rot"><b>SBS</b> · <span class="sv-mano">Externos</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div><div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div></div><div class="tema-menu" role="menu" aria-label="Tema" hidden></div></div>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Contratos</span></h1><div class="titulo-s" id="ctSub"></div></div>
+    <div class="ct-pend-aviso">Para firmarlo, que busquen en su mail uno de <b>convocatorias.externos@show-bs.com</b> con el asunto <b>«Contrato · …»</b> (si no lo ven, en Spam o Promociones).</div>
+    <div class="ct-pend-filtros"><div class="sv-seg" id="ctFiltro"></div></div>
+    <div id="ctLista"></div>
+  </div>
+</div>
+
+<!-- Sectores del predio -->
+<div id="screenSectores" class="screen">
+  <div class="app-bar"><div class="app-bar-inner"><button class="back-btn" onclick="abrirEvento(evId)" aria-label="Volver">←</button><img class="sv-logo" src="logo-sbs-calado.png" alt="SBS"><div class="sv-marca"><div class="sv-rot"><b>SBS</b> · <span class="sv-mano">Externos</span></div><div class="app-bar-title">Show Business Solutions</div><div class="app-bar-sub">Hands on everything</div></div><div class="sv-acc"><button class="logout-btn sv-tema" onclick="svAbrirTemas(event)" title="Tema: claro u oscuro" aria-label="Tema: automático, claro u oscuro" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg><span>Tema</span></button></div></div><div class="tema-menu" role="menu" aria-label="Tema" hidden></div></div>
+  <div class="wrap">
+    <div class="titulo"><h1 class="sec-t"><span class="mano">Sectores</span></h1><div class="titulo-s" id="secSub"></div></div>
+    <div class="ct-pend-aviso" id="secAviso"></div>
+    <button class="fb-send" style="margin-top:0" id="btnNuevoSec" onclick="abrirNuevoSector()">+ Agregar un sector</button>
+    <div id="secLista"></div>
+  </div>
+</div>
+
+<!-- La hoja de abajo: cargar, resolver, el feedback, una lata, un sector -->
+<div class="fb-sheet hidden" id="incSheet">
+  <div class="fb-overlay" onclick="cerrarHoja()"></div>
+  <div class="fb-card">
+    <div class="fb-handle"></div>
+    <div class="fb-title" id="hojaTit"></div>
+    <div class="fb-sub" id="hojaSub"></div>
+    <div id="hojaCuerpo"></div>
+  </div>
+</div>
+
+<footer class="pie-rrhh">Proyecto llevado a cabo por la Gerencia de RR. HH.</footer>
+<div class="toast-mob" id="toastMob"></div>
 
 <script>
-// ── LO QUE SE PUEDE CARGAR ──────────────────────────────────────
-// Las gravedades y el catálogo son los del Arena, con Acreditaciones en lugar de Recepción (las latas) y el aviso grave a
-// coordinación y a producción (no al Arena).
-const NIVELES = {
-  1: { nombre: 'Leve', ayuda: 'Se resuelve en el lugar y queda registrado', cl: 'l' },
-  2: { nombre: 'Medio', ayuda: 'Se deriva a quien corresponde y se avisa a su equipo', cl: 'm' },
-  3: { nombre: 'Grave', ayuda: 'Aviso inmediato a coordinación y a producción', cl: 'g' }
+// ── DE LA APP DEL ARENA (supervisor-mobile.html), IGUAL ──
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtFecha(f) { try { return new Date(f+'T00:00:00').toLocaleDateString('es-AR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e) { return f; } }
+const INC_ICONOS_CAT = {
+  'Médica': 'M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z',
+  'Seguridad': 'M12 2 4 5v6c0 5.2 3.4 10 8 11 4.6-1 8-5.8 8-11V5z',
+  'Ingreso': 'M11 7 9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z',
+  'Ubicación': 'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z',
+  'Infraestructura': 'M22.7 19 13.6 9.9c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1 0-1.4z',
+  'Personal': 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z',
+  'Asistencia': 'M12 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm7 9v-2c-1.54.02-3.09-.75-4.07-1.83l-1.29-1.43a1.98 1.98 0 0 0-1.6-.72c-1.06.08-1.83 1-1.83 2.06V15c0 1.1.9 2 2 2h5v5h2v-5.5c0-1.1-.9-2-2-2h-3v-3.45c1.29 1.07 3.25 1.94 5 1.95zm-6.17 5A3 3 0 0 1 10 20a3 3 0 0 1-3-3c0-1.31.84-2.41 2-2.83V12.1A5 5 0 0 0 5 17a5 5 0 0 0 5 5 5 5 0 0 0 4.9-4h-2.07z',
+  'Recepción': 'M6 2h12v5H6zM4 8h16a2 2 0 0 1 2 2v6h-4v6H6v-6H2v-6a2 2 0 0 1 2-2zm4 8v4h8v-4z',
+  'Otro': 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-2h2zm0-4h-2V7h2z'
 };
+const FB_CRITERIOS = [
+  { id: 'actitud',    titulo: 'Actitud de servicio', ayuda: 'Trato con el público y predisposición' },
+  { id: 'consignas',  titulo: 'Cumple consignas',    ayuda: 'Hace lo que se le pide, respeta horarios y puesto' },
+  { id: 'presencia',  titulo: 'Buena presencia',     ayuda: 'Uniforme, prolijidad, imagen' },
+  { id: 'iniciativa', titulo: 'Iniciativa',          ayuda: 'Resuelve sin que se lo pidan, ayuda a los demás' }
+];
+// La misma regla del semáforo: 3,5 o más verde; 2 o menos rojo; en el medio
+// amarillo. La base hace esta misma cuenta al guardar; acá es para mostrarla
+// mientras puntúa.
+const NOMBRE_COLOR = { 1: 'Verde', 2: 'Amarillo', 3: 'Rojo' };
+function colorDePromedio(prom) {
+  if (!(prom > 0)) return 1;
+  if (prom >= 3.5) return 1;
+  if (prom > 2) return 2;
+  return 3;
+}
+const SV_TEMAS = [['auto', 'Automático', 'Como tu celular'], ['claro', 'Claro', ''], ['oscuro', 'Oscuro', '']];
+function svTemaElegido() { try { const t = localStorage.getItem('tema'); return t === 'claro' || t === 'oscuro' ? t : 'auto'; } catch (_) { return 'auto'; } }
+// La barra del navegador del celular, del color de la barra de arriba.
+function svColorBarra() { if (typeof getComputedStyle !== 'function' || !document.querySelector) return; const m = document.querySelector('meta[name="theme-color"]'), c = getComputedStyle(document.documentElement).getPropertyValue('--bloque').trim(); if (m && c) m.content = c; }
+let svTemaBoton = null;
+function svPonerTema(t) {
+  try { if (t === 'auto') localStorage.removeItem('tema'); else localStorage.setItem('tema', t); } catch (_) {}
+  if (t === 'auto') document.documentElement.removeAttribute('data-tema'); else document.documentElement.setAttribute('data-tema', t);
+  svColorBarra(); const b = svTemaBoton; svCerrarTemas(); if (b) b.focus();
+}
+// El botón del tema está en varias barras (los shows, un show, la sala): el menú es el de su barra.
+function svAbrirTemas(ev) {
+  if (ev) ev.stopPropagation();
+  const btn = (ev && ev.currentTarget) || document.querySelector('.screen.active .sv-tema');
+  const caja = btn && btn.closest('.app-bar, .login-tema');
+  const m = caja ? caja.querySelector('.tema-menu') : null;
+  if (!m) return;
+  if (!m.hidden) { svCerrarTemas(); return; }
+  svCerrarTemas(); svTemaBoton = btn;
+  const t = svTemaElegido();
+  m.innerHTML = '<div class="tema-menu-t">Tema</div>' + SV_TEMAS.map(([k, n, s]) => '<button type="button" class="tema-op" role="menuitemradio" aria-checked="' + (k === t) + '" onclick="svPonerTema(\'' + k + '\')"><i aria-hidden="true"></i><span>' + n + (s ? '<small>' + s + '</small>' : '') + '</span></button>').join('');
+  m.hidden = false; btn.setAttribute('aria-expanded', 'true');
+  m.querySelector('[aria-checked="true"]').focus();
+}
+function svCerrarTemas() { if (!document.querySelectorAll) return; document.querySelectorAll('.app-bar .tema-menu, .login-tema .tema-menu').forEach(m => { m.hidden = true; }); document.querySelectorAll('.sv-tema').forEach(b => b.setAttribute('aria-expanded', 'false')); svTemaBoton = null; }
+document.addEventListener('click', ev => { if (!ev.target.closest('.tema-menu')) svCerrarTemas(); });
+try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', svColorBarra); } catch (_) {}
+svColorBarra();
+if (document.body && document.querySelector) document.body.dataset.pantalla = (document.querySelector('.screen.active') || {}).id || 'screenLogin';
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') svCerrarTemas(); });
+
+// ── LA APP DE EXTERNOS ──────────────────────────────────────────
+// 24-nov (Thomas): un "supervisor-mobile" para Externos, "como en el Arena, que tenemos lo de feedback, incidencias,
+// presentismo… todo por separado". Cada evento con su predio (River, Vélez…): los sectores de interés los suman ellos y
+// quedan en el predio; el organigrama de las latas (los puestos de acreditaciones) y los de eventos anteriores ahí.
+// Entran por un link personal (sin usuario ni clave): coordinación (coordinador y asistente) y supervisores.
+// Por ahora es la demostración: un evento de mentira, guardado en el aparato. El diseño, los estilos y las piezas
+// son los de la app del Arena (supervisor-mobile.html), copiados tal cual.
+const INC_FUENTE = 'Poppins,sans-serif';
+const NIVELES = {
+  1: { nombre: 'Leve', ayuda: 'Se resuelve en el lugar y queda registrado', color: '#667080', fondo: '#ECEEF1', talon: '#B9C1CC', talonTinta: '#141A26' },
+  2: { nombre: 'Medio', ayuda: 'Se deriva a quien corresponde y se avisa a su equipo', color: '#8A6900', fondo: '#FFF6CC', talon: '#FFD700', talonTinta: '#3D3200' },
+  3: { nombre: 'Grave', ayuda: 'Aviso inmediato a coordinación y a producción', color: '#D62839', fondo: '#FDE7EA', talon: '#D62839', talonTinta: '#FFFFFF' }
+};
+// El catálogo del Arena, con Acreditaciones (las latas) en lugar de Recepción.
 const CATALOGO = [
   { cat: 'Médica', tipos: [['Desmayo / descompensación', 2], ['Lesión o caída', 2], ['Persona alcoholizada o intoxicada', 2], ['Emergencia médica grave', 3]],
     acciones: ['Se llamó a sanidad', 'Se asistió en el lugar', 'Se trasladó a sanidad', 'Se derivó en ambulancia'] },
@@ -201,295 +654,433 @@ const CATALOGO = [
   { cat: 'Otro', tipos: [['Otra incidencia', 1]], acciones: ['Se avisó a coordinación', 'Se resolvió en el lugar'] }
 ];
 const SUBEN_A_GRAVE = ['Se derivó en ambulancia', 'Se dio aviso a la policía'];
-// Los sectores de cada predio, por tipo. Los suman ellos; quedan para los próximos eventos en ese predio.
-const TIPOS_SECTOR = { acceso: 'Accesos', lata: 'Latas (acreditaciones)', sector: 'Sectores', servicio: 'Servicios (sanidad, baños…)' };
-const TIPO_UNO = { acceso: 'Acceso', lata: 'Lata (acreditación)', sector: 'Sector', servicio: 'Servicio' };
+const ICONO = cat => INC_ICONOS_CAT[cat] || (cat === 'Acreditaciones' ? INC_ICONOS_CAT['Recepción'] : INC_ICONOS_CAT.Otro);
+const TIPOS_SECTOR = { acceso: 'Accesos', lata: 'Latas', sector: 'Sectores', servicio: 'Servicios' };
+const TIPO_UNO = { acceso: 'Acceso', lata: 'Lata (acreditación)', sector: 'Sector', servicio: 'Servicio (sanidad, baños…)' };
 const ROLES = { coordinacion: 'Coordinación', supervisor: 'Supervisor/a' };
 
-// ── LOS DATOS ───────────────────────────────────────────────────
-// Por ahora, la demostración: un evento de mentira (hoy, en River), otro que viene (en Vélez) y uno anterior en River
-// con su organigrama. Se guarda en el aparato y se puede volver a empezar. Con el link de cada persona, esto mismo
-// sale de la base (las mismas funciones, contra el servidor).
-const DEMO = true;   // hasta que esté la base: siempre la demostración
+// ── LA DEMOSTRACIÓN ─────────────────────────────────────────────
 const hoyISO = () => { const d = new Date(Date.now() - 6 * 3600e3); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const masDias = (f, n) => { const d = new Date(f + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 const uid = () => Math.random().toString(36).slice(2, 10);
-const horaHace = min => new Date(Date.now() - min * 60000).toISOString();
+const haceMin = m => new Date(Date.now() - m * 60000).toISOString();
 function demoInicial() {
   const hoy = hoyISO();
-  const nombres = ['Lucía Fernández', 'Julián Paz', 'Martín Ríos', 'Carla Vega', 'Nicolás Sosa', 'Abril Medina', 'Bruno Castro', 'Camila Ortiz', 'Diego Luna', 'Elena Rey', 'Franco Gil', 'Gala Navarro', 'Hernán Rojas', 'Inés Molina', 'Joaquín Vera', 'Kiara Ponce', 'Lautaro Díaz', 'Malena Cruz', 'Nahuel Funes', 'Olivia Sáenz', 'Pedro Aguirre', 'Rocío Benítez', 'Santiago Ledesma', 'Valentina Quiroga'];
-  const puestos = ['Coordinador/a', 'Asistente de coordinación', 'Supervisor/a', 'Supervisor/a', 'Supervisor/a', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Operador/a de acreditaciones', 'Orientador/a', 'Orientador/a', 'Orientador/a', 'Orientador/a', 'Orientador/a', 'Orientador/a', 'Acomodador/a', 'Acomodador/a', 'Acomodador/a', 'Orientador/a', 'Orientador/a'];
-  const gente = nombres.map((n, i) => ({ id: 'p' + i, nombre: n, puesto: puestos[i] }));
-  const sec = (id, nombre, tipo, quien, ev) => ({ id, nombre, tipo, quien: quien || 'RR. HH.', evento: ev || '' });
+  const N = ['Lucía Fernández', 'Julián Paz', 'Martín Ríos', 'Carla Vega', 'Nicolás Sosa', 'Abril Medina', 'Bruno Castro', 'Camila Ortiz', 'Diego Luna', 'Elena Rey', 'Franco Gil', 'Gala Navarro', 'Hernán Rojas', 'Inés Molina', 'Joaquín Vera', 'Kiara Ponce', 'Lautaro Díaz', 'Malena Cruz', 'Nahuel Funes', 'Olivia Sáenz', 'Pedro Aguirre', 'Rocío Benítez'];
+  const P = ['Coordinador/a', 'Asistente de coordinación', 'Supervisor/a', 'Supervisor/a', 'Supervisor/a'].concat(Array(8).fill('Operador/a de acreditaciones'), Array(6).fill('Orientador/a'), Array(3).fill('Acomodador/a'));
+  const gente = {};
+  N.forEach((n, i) => { gente['p' + i] = { id: 'p' + i, nombre: n, puesto: P[i], nuevo: [7, 11, 12, 15, 18].includes(i), primera_vez: [11, 18].includes(i), semaforo: i === 16 ? 2 : 1 }; });
+  const s = (id, nombre, tipo, quien, ev) => ({ id, nombre, tipo, quien: quien || 'RR. HH.', evento: ev || '' });
+  const ANT = 'Evento de prueba (anterior)';
   const predios = {
     river: { id: 'river', nombre: 'Estadio Monumental (River)', sectores: [
-      sec('s1', 'Acceso Figueroa Alcorta', 'acceso'), sec('s2', 'Acceso Udaondo', 'acceso'), sec('s3', 'Acceso Libertador', 'acceso', 'Julián Paz', 'Evento de prueba (anterior)'),
-      sec('s4', 'Lata 1 · Figueroa Alcorta', 'lata'), sec('s5', 'Lata 2 · Udaondo', 'lata'), sec('s6', 'Lata 3 · Libertador', 'lata', 'Julián Paz', 'Evento de prueba (anterior)'), sec('s7', 'Lata 4 · Prensa', 'lata', 'Lucía Fernández', 'Evento de prueba (anterior)'),
-      sec('s8', 'Campo', 'sector'), sec('s9', 'Platea San Martín', 'sector'), sec('s10', 'Platea Belgrano', 'sector'), sec('s11', 'Popular Sívori', 'sector', 'Carla Vega', 'Evento de prueba (anterior)'),
-      sec('s12', 'Sanidad', 'servicio'), sec('s13', 'Baños Sívori', 'servicio', 'Martín Ríos', 'Evento de prueba (anterior)')] },
-    velez: { id: 'velez', nombre: 'Estadio José Amalfitani (Vélez)', sectores: [sec('v1', 'Acceso Juan B. Justo', 'acceso'), sec('v2', 'Lata 1 · Juan B. Justo', 'lata'), sec('v3', 'Campo', 'sector')] }
+      s('s1', 'Acceso Figueroa Alcorta', 'acceso'), s('s2', 'Acceso Udaondo', 'acceso'), s('s3', 'Acceso Libertador', 'acceso', 'Julián Paz', ANT),
+      s('s4', 'Lata 1 · Figueroa Alcorta', 'lata'), s('s5', 'Lata 2 · Udaondo', 'lata'), s('s6', 'Lata 3 · Libertador', 'lata', 'Julián Paz', ANT), s('s7', 'Lata 4 · Prensa', 'lata', 'Lucía Fernández', ANT),
+      s('s8', 'Campo', 'sector'), s('s9', 'Platea San Martín', 'sector'), s('s10', 'Platea Belgrano', 'sector'), s('s11', 'Popular Sívori', 'sector', 'Carla Vega', ANT),
+      s('s12', 'Sanidad', 'servicio'), s('s13', 'Baños Sívori', 'servicio', 'Martín Ríos', ANT)] },
+    velez: { id: 'velez', nombre: 'Estadio José Amalfitani (Vélez)', sectores: [s('v1', 'Acceso Juan B. Justo', 'acceso'), s('v2', 'Lata 1 · Juan B. Justo', 'lata'), s('v3', 'Campo', 'sector')] }
   };
-  const latasHoy = { s4: { responsable: 'p5', operadores: ['p6', 'p7'] }, s5: { responsable: 'p8', operadores: ['p9'] }, s6: { responsable: 'p10', operadores: [] }, s7: { responsable: '', operadores: [] } };
-  const latasAnt = { s4: { responsable: 'p6', operadores: ['p5', 'p11'] }, s5: { responsable: 'p8', operadores: ['p9', 'p12'] }, s6: { responsable: 'p10', operadores: ['p7'] } };
-  const inc = (sector, cat, tipo, nivel, min, quien, resuelta, acciones, nota) => ({ id: uid(), sector, cat, tipo, nivel, acciones: acciones || [], nota: nota || '', quien, creada: horaHace(min), estado: resuelta ? 'resuelta' : 'abierta', resolucion: resuelta || '' });
+  const ids = Object.keys(gente);
+  const inc = (sector, categoria, tipo, nivel, min, quien, resolucion, acciones, nota) => ({ id: uid(), sector, categoria, tipo, nivel, acciones: acciones || [], nota: nota || '', creada_por_nombre: quien, created_at: haceMin(min),
+    estado: resolucion != null ? 'resuelta' : 'abierta', resolucion: resolucion || '', resuelta_at: resolucion != null ? haceMin(Math.max(0, min - 15)) : null, resuelta_por_nombre: resolucion != null ? 'Lucía Fernández' : '' });
+  const pres = (fecha, hasta) => ({ [fecha]: Object.fromEntries(ids.slice(0, hasta).map(id => [id, 'presente'])) });
+  const fb = (quien, n) => ({ actitud: n, consignas: n, presencia: n - (n > 4 ? 1 : 0), iniciativa: n, comentario: '', quien });
   return {
-    yo: { coordinacion: 'p0', supervisor: 'p2' }, rol: 'coordinacion',
-    predios,
+    yo: { coordinacion: 'p0', supervisor: 'p2' }, rol: 'coordinacion', predios, gente,
     eventos: [
-      { id: 'e1', nombre: 'Evento de prueba', predio: 'river', fechas: [hoy], gente: gente.map(g => g.id), latas: latasHoy,
-        presentes: Object.fromEntries(gente.slice(0, 18).map(g => [g.id, 'P'])), contratos: Object.fromEntries(gente.map((g, i) => [g.id, i % 7 === 4 ? 'pendiente' : 'firmado'])),
+      { id: 'e1', nombre: 'Evento de prueba', predio: 'river', fechas: [hoy], gente: ids,
+        latas: { s4: { responsable: 'p5', operadores: ['p6', 'p7'] }, s5: { responsable: 'p8', operadores: ['p9'] }, s6: { responsable: 'p10', operadores: [] }, s7: { responsable: '', operadores: [] } },
+        presentes: pres(hoy, 17), contratos: Object.fromEntries(ids.map((id, i) => [id, i % 6 === 4 ? 'visto' : i % 9 === 7 ? 'enviado' : 'firmado'])),
+        feedbacks: { p7: fb('Martín Ríos', 5), p15: fb('Carla Vega', 4) },
         incidencias: [
-          inc('s2', 'Ingreso', 'Fila de ingreso desbordada', 2, 24, 'Martín Ríos', '', ['Se sumó personal en el ingreso'], 'La fila llega a la esquina.'),
-          inc('s5', 'Acreditaciones', 'Falla del lector o del sistema', 2, 41, 'Abril Medina', '', ['Se avisó a sistemas', 'Se siguió en forma manual']),
+          inc('s2', 'Ingreso', 'Fila de ingreso desbordada', 2, 24, 'Martín Ríos', null, ['Se sumó personal en el ingreso'], 'La fila llega a la esquina.'),
+          inc('s5', 'Acreditaciones', 'Falla del lector o del sistema', 2, 41, 'Abril Medina', null, ['Se avisó a sistemas', 'Se siguió en forma manual']),
           inc('s9', 'Médica', 'Desmayo / descompensación', 2, 70, 'Carla Vega', 'Lo atendió sanidad y siguió viendo el show.', ['Se llamó a sanidad', 'Se asistió en el lugar']),
           inc('s4', 'Acreditaciones', 'Persona que no figura en la lista', 1, 95, 'Bruno Castro', 'Producción la agregó a la lista.', ['Se consultó a producción'])] },
-      { id: 'e2', nombre: 'Festival de prueba', predio: 'velez', fechas: [masDias(hoy, 9), masDias(hoy, 10)], gente: gente.map(g => g.id), latas: {}, presentes: {}, contratos: {}, incidencias: [] },
-      { id: 'e0', nombre: 'Evento de prueba (anterior)', predio: 'river', fechas: [masDias(hoy, -20)], gente: gente.map(g => g.id), latas: latasAnt,
-        presentes: Object.fromEntries(gente.map(g => [g.id, 'P'])), contratos: Object.fromEntries(gente.map(g => [g.id, 'firmado'])),
+      { id: 'e2', nombre: 'Festival de prueba', predio: 'velez', fechas: [masDias(hoy, 9), masDias(hoy, 10)], gente: ids, latas: {}, presentes: {}, contratos: Object.fromEntries(ids.map(id => [id, 'enviado'])), feedbacks: {}, incidencias: [] },
+      { id: 'e0', nombre: ANT, predio: 'river', fechas: [masDias(hoy, -20)], gente: ids,
+        latas: { s4: { responsable: 'p6', operadores: ['p5', 'p11'] }, s5: { responsable: 'p8', operadores: ['p9', 'p12'] }, s6: { responsable: 'p10', operadores: ['p7'] } },
+        presentes: pres(masDias(hoy, -20), 22), contratos: Object.fromEntries(ids.map(id => [id, 'firmado'])),
+        feedbacks: Object.fromEntries(ids.slice(5, 14).map(id => [id, fb('Martín Ríos', 4)])),
         incidencias: [inc('s3', 'Ingreso', 'Fila larga en el ingreso', 1, 20 * 1440, 'Martín Ríos', 'Se abrió otra fila.', ['Se abrió otra fila o puerta']),
-          inc('s11', 'Seguridad', 'Objeto prohibido', 1, 20 * 1440 + 30, 'Carla Vega', 'Se retuvo en el acceso.', ['Se retuvo el objeto']),
-          inc('s6', 'Acreditaciones', 'Falla de la impresora de credenciales', 2, 20 * 1440 + 60, 'Hernán Rojas', 'Se cambió la impresora.', ['Se avisó a sistemas'])] }
-    ],
-    gente: Object.fromEntries(gente.map(g => [g.id, g]))
+          inc('s11', 'Seguridad', 'Objeto prohibido', 1, 20 * 1440 - 30, 'Carla Vega', 'Se retuvo en el acceso.', ['Se retuvo el objeto']),
+          inc('s6', 'Acreditaciones', 'Falla de la impresora de credenciales', 2, 20 * 1440 - 60, 'Hernán Rojas', 'Se cambió la impresora.', ['Se avisó a sistemas'])] }
+    ]
   };
 }
 let D;
-function cargarDemo() { try { D = JSON.parse(localStorage.getItem('extDemo:v1') || 'null'); } catch (_) { D = null; } if (!D || !D.eventos) D = demoInicial(); }
-function guardarDemo() { try { localStorage.setItem('extDemo:v1', JSON.stringify(D)); } catch (_) {} }
-function reiniciarDemo() { if (!confirm('¿Volver a empezar la demostración? Se borra lo que cargaste.')) return; try { localStorage.removeItem('extDemo:v1'); } catch (_) {} D = demoInicial(); guardarDemo(); irInicio(); toast('Demostración reiniciada'); }
+const CLAVE_DEMO = 'extDemo:v2';
+function cargarDemo() { try { D = JSON.parse(localStorage.getItem(CLAVE_DEMO) || 'null'); } catch (_) { D = null; } if (!D || !D.eventos) D = demoInicial(); }
+function guardarDemo() { try { localStorage.setItem(CLAVE_DEMO, JSON.stringify(D)); } catch (_) {} }
+function reiniciarDemo() { if (!confirm('¿Volver a empezar la demostración? Se borra lo que cargaste.')) return; try { localStorage.removeItem(CLAVE_DEMO); } catch (_) {} D = demoInicial(); guardarDemo(); irInicio(); toast('Demostración reiniciada'); }
+function verComo(r) { D.rol = r; guardarDemo(); renderHome(); }
 
 // ── AYUDAS ──────────────────────────────────────────────────────
-const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const $ = id => document.getElementById(id);
-const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'], MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-const MES3 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-function diaCorto(f) { const d = new Date(f + 'T12:00:00'); return DIAS[d.getDay()] + ' ' + d.getDate() + '/' + (d.getMonth() + 1); }
-function hora(iso) { const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
-function iniciales(n) { return String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase(); }
-function nombreDe(pid) { return (D.gente[pid] || {}).nombre || 'Sin asignar'; }
-function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
-function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
-function cambiarTema() {
-  const r = document.documentElement, oscuroAhora = r.getAttribute('data-tema') === 'oscuro' || (!r.getAttribute('data-tema') && matchMedia('(prefers-color-scheme: dark)').matches);
-  const nuevo = oscuroAhora ? 'claro' : 'oscuro'; r.setAttribute('data-tema', nuevo); try { localStorage.setItem('tema', nuevo); } catch (_) {}
-}
+const escA = s => esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const yo = () => D.gente[D.yo[D.rol]];
 const esCoord = () => D.rol === 'coordinacion';
-const predioDe = ev => D.predios[ev.predio];
-const sectorDe = (ev, sid) => predioDe(ev).sectores.find(s => s.id === sid) || { nombre: 'Sector borrado', tipo: 'sector' };
-function cuando(ev) { const h = hoyISO(), fs = ev.fechas; return fs.includes(h) ? 'hoy' : fs[fs.length - 1] < h ? 'anterior' : 'proximo'; }
-const soloVer = ev => cuando(ev) === 'anterior';
-function nivelPill(n) { const v = NIVELES[n]; return `<span class="pill ${v.cl}"><i class="punto"></i>${v.nombre}</span>`; }
-
-// ── INICIO: MIS EVENTOS ────────────────────────────────────────
-let lista = 'hoy', evId = null, pestana = 'inc', filtroInc = 'abiertas', filtroSector = '', buscaEq = '';
-function pintarDemo() {
-  $('demo').innerHTML = DEMO ? `<div class="demo"><span><b>Demostración</b> · datos de ejemplo</span>
-    <div class="seg chico" role="tablist" aria-label="Ver como">${Object.entries(ROLES).map(([k, v]) => `<button class="${D.rol === k ? 'on' : ''}" onclick="verComo('${k}')">${v}</button>`).join('')}</div>
-    <button class="lnk" onclick="reiniciarDemo()">Volver a empezar</button></div>` : '';
+const nombreDe = pid => (D.gente[pid] || {}).nombre || '';
+const iniciales = n => String(n || '').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+function toast(m) { const t = $('toastMob'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  document.body.dataset.pantalla = id; cerrarHoja(); svCerrarTemas(); scrollTo(0, 0);
 }
-function verComo(r) { D.rol = r; guardarDemo(); pintarDemo(); if (evId) pintarEvento(); else pintarInicio(); }
-function irInicio() { evId = null; $('btnVolver').classList.add('oculto'); $('logo').classList.remove('oculto'); pintarInicio(); scrollTo(0, 0); }
-function pintarInicio() {
-  $('barTit').textContent = 'Externos'; $('barSub').textContent = yo().nombre + ' · ' + ROLES[D.rol];
-  pintarDemo();
-  const grupos = { hoy: [], proximo: [], anterior: [] };
-  D.eventos.forEach(ev => grupos[cuando(ev)].push(ev));
-  grupos.proximo.sort((a, b) => a.fechas[0].localeCompare(b.fechas[0])); grupos.anterior.sort((a, b) => b.fechas[0].localeCompare(a.fechas[0]));
-  if (!grupos[lista].length && lista === 'hoy') lista = grupos.proximo.length ? 'proximo' : 'anterior';
-  const tarjeta = ev => {
-    const f = cuando(ev) === 'hoy' ? hoyISO() : ev.fechas[0], d = new Date(f + 'T12:00:00'), ab = ev.incidencias.filter(i => i.estado === 'abierta'), latas = Object.keys(ev.latas || {}).length;
-    return `<button class="ev" onclick="abrirEvento('${ev.id}')"><div class="ev-f"><b>${d.getDate()}</b><small>${MES3[d.getMonth()]}</small></div>
-      <div class="ev-t"><b>${esc(ev.nombre)}</b><span>${esc(predioDe(ev).nombre)} · ${ev.fechas.map(diaCorto).join(', ')}</span>
-      <div class="ev-chips"><span class="pill">${ROLES[D.rol]}</span>${ab.length ? `<span class="pill ${ab.some(i => i.nivel === 3) ? 'g' : 'm'}">${ab.length} abierta${ab.length === 1 ? '' : 's'}</span>` : ''}${latas ? `<span class="pill sutil">${latas} latas</span>` : ''}${cuando(ev) === 'anterior' ? `<span class="pill sutil">${ev.incidencias.length} incidencias</span>` : ''}</div></div><span class="ev-flecha">›</span></button>`;
+let evId = null;
+const ev = () => D.eventos.find(e => e.id === evId);
+const predio = e => D.predios[(e || ev()).predio];
+const sectorDe = (sid, e) => predio(e).sectores.find(s => s.id === sid) || { id: sid, nombre: 'Sector borrado', tipo: 'sector' };
+function cuando(e) { const h = hoyISO(), fs = e.fechas; return fs.includes(h) ? 'hoy' : fs[fs.length - 1] < h ? 'anterior' : 'proximo'; }
+const terminado = e => cuando(e || ev()) === 'anterior';
+const fechaDelEvento = e => { e = e || ev(); const h = hoyISO(); return e.fechas.includes(h) ? h : cuando(e) === 'anterior' ? e.fechas[e.fechas.length - 1] : e.fechas[0]; };
+const fechasTxt = e => e.fechas.map(fmtFecha).join(', ');
+function hora(iso) { const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+// Lo que lleva abierta, corto, para el talón (como en el Arena): "04′", "1:35"; de otro día (en la hora de acá), la fecha.
+const diaLocal = x => { const d = new Date(x); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+function corto(iso) {
+  const t = new Date(iso).getTime(), d = diaLocal(iso);
+  if (d !== diaLocal(Date.now())) return d.slice(8, 10) + '/' + d.slice(5, 7);
+  const m = Math.max(0, Math.floor((Date.now() - t) / 60000));
+  return m < 60 ? String(m).padStart(2, '0') + '′' : Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+}
+function pastilla(nv) { const v = NIVELES[nv]; return '<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;background:' + v.fondo + ';color:' + v.color + '"><span style="width:7px;height:7px;border-radius:50%;background:' + v.color + '"></span>' + v.nombre + '</span>'; }
+function vacio(t, s) { return '<div class="empty-state"><div class="empty-title">' + t + '</div>' + (s ? '<div>' + s + '</div>' : '') + '</div>'; }
+function persona(pid, meta, extra, onclick) {
+  const g = D.gente[pid] || { nombre: '?' };
+  return `<div class="person-row"${onclick ? ` onclick="${onclick}"` : ' style="cursor:default"'}><div class="person-avatar">${esc(iniciales(g.nombre))}</div><div style="flex:1;min-width:0"><div class="person-name">${esc(g.nombre)}</div><div class="person-meta">${meta}</div></div>${extra || ''}</div>`;
+}
+
+// ── TUS EVENTOS ─────────────────────────────────────────────────
+const mesAbierto = new Map();
+function irInicio() { evId = null; showScreen('screenHome'); renderHome(); }
+function renderHome() {
+  $('homeSub').textContent = yo().nombre + ' · ' + ROLES[D.rol];
+  $('demoBox').innerHTML = `<div class="caja ex-demo"><div class="ex-demo-t"><b>Demostración</b> · datos de ejemplo, sin nada real</div>
+    <div class="ex-demo-f"><span>Ver como</span><div class="sv-seg chico">${Object.entries(ROLES).map(([k, v]) => `<button type="button" class="${D.rol === k ? 'on' : ''}" onclick="verComo('${k}')">${v}</button>`).join('')}</div>
+    <button type="button" class="sv-volver" onclick="reiniciarDemo()">Volver a empezar</button></div></div>`;
+  const hoy = hoyISO(), it = { hoy: [], proximos: [], anteriores: [] };
+  D.eventos.forEach(e => { const c = cuando(e); it[c === 'hoy' ? 'hoy' : c === 'anterior' ? 'anteriores' : 'proximos'].push(e); });
+  it.proximos.sort((a, b) => a.fechas[0].localeCompare(b.fechas[0])); it.anteriores.sort((a, b) => b.fechas[0].localeCompare(a.fechas[0]));
+  const tarjeta = e => {
+    const esHoy = cuando(e) === 'hoy', ab = e.incidencias.filter(i => i.estado !== 'resuelta'), n = e.gente.length;
+    return `<div class="conv-card${esHoy ? ' hoy' : ''}" onclick="abrirEvento('${e.id}')">
+      <div class="conv-main"><div class="conv-title">${esc(e.nombre)}${esHoy ? '<span class="vivo-pill">Hoy</span>' : ''}</div>
+        <div class="conv-meta"><span>${esc(fechasTxt(e))} · ${esc(predio(e).nombre)}</span></div>
+        <div class="conv-chips"><span class="conv-chip"><strong>${n}</strong>persona${n === 1 ? '' : 's'}</span>${ab.length ? `<span class="conv-chip"><strong>${ab.length}</strong>abierta${ab.length === 1 ? '' : 's'}</span>` : ''}${cuando(e) === 'anterior' ? `<span class="conv-chip"><strong>${e.incidencias.length}</strong>incidencias</span>` : ''}</div></div>
+      <span class="flecha">›</span></div>`;
   };
-  const porMes = l => { const m = new Map(); l.forEach(ev => { const k = ev.fechas[0].slice(0, 7); if (!m.has(k)) m.set(k, []); m.get(k).push(ev); });
-    return [...m.entries()].map(([k, evs], i) => `<details class="mes"${i === 0 ? ' open' : ''}><summary>${MESES[+k.slice(5) - 1]} ${k.slice(0, 4)} <small>${evs.length} evento${evs.length === 1 ? '' : 's'}</small></summary>${evs.map(tarjeta).join('')}</details>`).join(''); };
-  const cuerpo = !grupos[lista].length ? `<div class="vacio">${lista === 'hoy' ? 'Hoy no tenés eventos.' : lista === 'proximo' ? 'No tenés eventos próximos.' : 'Todavía no hay eventos anteriores.'}</div>`
-    : lista === 'hoy' ? grupos.hoy.map(tarjeta).join('') : porMes(grupos[lista]);
-  $('vista').innerHTML = `<div class="hola">Hola, ${esc(yo().nombre.split(' ')[0])}</div>
-    <div class="hola-sub">Tus eventos de Externos como ${ROLES[D.rol].toLowerCase()}. Tocá uno para cargar incidencias${esCoord() ? ', armar el organigrama de las latas' : ''} y ver el equipo.</div>
-    <div class="caja"><div class="seg" role="tablist">${[['hoy', 'Hoy'], ['proximo', 'Próximos'], ['anterior', 'Anteriores']].map(([k, v]) => `<button class="${lista === k ? 'on' : ''}" onclick="lista='${k}';pintarInicio()">${v}${grupos[k].length ? ' · ' + grupos[k].length : ''}</button>`).join('')}</div>
-    ${cuerpo}</div>`;
+  const porMes = (g, l) => { const meses = []; l.forEach(e => { const m = SV_MESES_EX[+e.fechas[0].slice(5, 7) - 1] + ' ' + e.fechas[0].slice(0, 4); let x = meses.find(y => y.m === m); if (!x) meses.push(x = { m, l: [] }); x.l.push(e); });
+    return meses.map((x, i) => { const k = g + '|' + x.m, ab = mesAbierto.has(k) ? mesAbierto.get(k) : i === 0;
+      return `<details class="mes"${ab ? ' open' : ''} data-k="${escA(k)}" ontoggle="mesAbierto.set(this.dataset.k, this.open)"><summary><span>${esc(x.m)}</span><span class="mes-n">${x.l.length} evento${x.l.length === 1 ? '' : 's'}</span></summary>${x.l.map(tarjeta).join('')}</details>`; }).join(''); };
+  const html = (it.hoy.length ? '<div class="grupo">Hoy</div>' + it.hoy.map(tarjeta).join('') : '')
+    + (it.proximos.length ? '<div class="grupo">Próximos</div>' + porMes('p', it.proximos) : '')
+    + (it.anteriores.length ? '<div class="grupo">Anteriores</div>' + porMes('a', it.anteriores) : '');
+  $('homeContent').innerHTML = html || vacio('Sin eventos asignados', 'Cuando te sumen a uno, aparece acá');
+}
+const SV_MESES_EX = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+// ── UN EVENTO: CADA COSA POR SEPARADO ───────────────────────────
+function abrirEvento(id) {
+  evId = id; const e = ev(); if (!e) return irInicio();
+  $('evNombre').textContent = e.nombre;
+  $('evSub').innerHTML = esc(fechasTxt(e)) + ' · ' + esc(predio(e).nombre) + ' · <span class="sv-quien">' + esc(yo().nombre) + '</span> (' + ROLES[D.rol].toLowerCase() + ')';
+  const n = e.gente.length, conFb = e.gente.filter(p => e.feedbacks[p]).length;
+  $('hubEquipo').innerHTML = `<span class="hub-chip">${n} personas</span><span class="hub-chip">${conFb}/${n} con feedback</span>`;
+  const ab = e.incidencias.filter(i => i.estado !== 'resuelta'), cn = nv => ab.filter(i => i.nivel === nv).length;
+  $('hubIncidS').textContent = terminado(e) ? 'Lo que pasó ese día, sector por sector' : 'Ver lo que pasa en todo el predio y cargar lo que pase en tu sector';
+  $('hubIncid').innerHTML = ab.length ? [3, 2, 1].filter(cn).map(nv => `<span class="hub-chip n${nv}">${cn(nv)} ${NIVELES[nv].nombre.toLowerCase()}</span>`).join('')
+    : terminado(e) ? `<span class="hub-chip">${e.incidencias.length ? e.incidencias.length + ' incidencias, todas resueltas' : 'Sin incidencias'}</span>` : '<span class="hub-chip" style="background:var(--tinta);color:var(--fondo)">Sin incidencias abiertas</span>';
+  const latas = predio(e).sectores.filter(s => s.tipo === 'lata'), sin = sinLata(e).length;
+  $('hubOrg').innerHTML = `<span class="hub-chip">${latas.length} latas</span>${sin ? `<span class="hub-chip">${sin} sin lata</span>` : ''}`;
+  const firm = e.gente.filter(p => e.contratos[p] === 'firmado').length;
+  $('hubContratos').innerHTML = `<span class="hub-chip">${firm} de ${n} firmaron</span>`;
+  $('hubSectores').innerHTML = `<span class="hub-chip">${predio(e).sectores.length} sectores</span><span class="hub-chip">${esc(predio(e).nombre.replace(/^Estadio /, ''))}</span>`;
+  showScreen('screenEvento');
 }
 
-// ── UN EVENTO ───────────────────────────────────────────────────
-function abrirEvento(id) { evId = id; pestana = 'inc'; filtroInc = 'abiertas'; filtroSector = ''; buscaEq = ''; $('btnVolver').classList.remove('oculto'); $('logo').classList.add('oculto'); pintarEvento(); scrollTo(0, 0); }
-const evActual = () => D.eventos.find(e => e.id === evId);
-function pintarEvento() {
-  const ev = evActual(); if (!ev) return irInicio();
-  pintarDemo();
-  $('barTit').textContent = ev.nombre; $('barSub').textContent = predioDe(ev).nombre + ' · ' + ev.fechas.map(diaCorto).join(', ');
-  const ab = ev.incidencias.filter(i => i.estado === 'abierta').length;
-  const P = [['inc', 'Incidencias', ab || ''], ['org', 'Organigrama', ''], ['eq', 'Equipo', ''], ['sec', 'Sectores', '']];
-  $('vista').innerHTML = `<nav class="pestanas" role="tablist">${P.map(([k, v, n]) => `<button class="${pestana === k ? 'on' : ''}" onclick="pestana='${k}';pintarEvento()">${v}${n !== '' ? `<small>${n}</small>` : ''}</button>`).join('')}</nav>`
-    + (soloVer(ev) ? '<div class="demo" style="border-style:solid"><span>Evento terminado: se ve como quedó, sin cambios.</span></div>' : '')
-    + ({ inc: pintarIncidencias, org: pintarOrganigrama, eq: pintarEquipo, sec: pintarSectores }[pestana])(ev);
+// ── EQUIPO Y FEEDBACK ───────────────────────────────────────────
+function latasDe(e) { const m = {}; Object.entries(e.latas || {}).forEach(([k, a]) => [a.responsable, ...a.operadores].filter(Boolean).forEach(p => { m[p] = sectorDe(k, e).nombre; })); return m; }
+function abrirEquipo() {
+  const e = ev(); $('eqSub').textContent = e.nombre + ' · ' + fechasTxt(e);
+  $('btnLista').textContent = terminado(e) ? 'Ver la lista' : 'Pasar lista';
+  const enLata = latasDe(e);
+  const fila = pid => {
+    const g = D.gente[pid], f = e.feedbacks[pid], que = g.primera_vez ? 'Primera vez' : g.nuevo ? 'Nuevo' : '';
+    const estado = f ? '<span style="color:var(--tinta);font-weight:600">Feedback dado</span>' : que ? '<span class="falta">Falta el feedback</span>' : 'Opcional';
+    return `<div class="person-row" onclick="abrirFeedback('${pid}')"><div class="person-avatar">${esc(iniciales(g.nombre))}</div>
+      <div style="flex:1;min-width:0"><div class="person-name">${esc(g.nombre)}${que ? `<span class="sv-nuevo${que === 'Nuevo' ? ' suave' : ''}">${que}</span>` : ''}</div>
+      <div class="person-meta">${[esc(g.puesto), enLata[pid] ? esc(enLata[pid]) : '', estado].filter(Boolean).join(' · ')}</div></div>
+      <span class="sem sem-${f ? colorDePromedio(promFb(f)) : g.semaforo}">${f ? colorDePromedio(promFb(f)) : g.semaforo}</span><span class="chevron">›</span></div>`;
+  };
+  const nuevos = e.gente.filter(p => D.gente[p].nuevo).sort((a, b) => (D.gente[b].primera_vez ? 1 : 0) - (D.gente[a].primera_vez ? 1 : 0));
+  const resto = e.gente.filter(p => !D.gente[p].nuevo), hechos = nuevos.filter(p => e.feedbacks[p]).length;
+  $('eqLista').innerHTML = (nuevos.length ? `<div class="eq-grupo"><span>Nuevos · <b>feedback obligatorio</b></span><span><b>${hechos} de ${nuevos.length}</b> con feedback</span></div><div class="persona-lista">${nuevos.map(fila).join('')}</div>` : '')
+    + `<div class="eq-grupo"><span>Ya vinieron · <b>opcional</b></span><span>si pasó algo, un comentario</span></div><div class="persona-lista">${resto.map(fila).join('')}</div>`;
+  showScreen('screenEquipo');
+}
+const promFb = f => FB_CRITERIOS.reduce((t, c) => t + (f[c.id] || 0), 0) / FB_CRITERIOS.length;
+let fbPid = null, fbValores = {};
+function abrirFeedback(pid) {
+  const e = ev(), g = D.gente[pid], f = e.feedbacks[pid]; fbPid = pid; fbValores = f ? Object.fromEntries(FB_CRITERIOS.map(c => [c.id, f[c.id]])) : {};
+  const soloVer = terminado(e);
+  abrirHoja(g.nombre, soloVer ? (f ? 'El feedback de ese evento' + (f.quien ? ', de ' + f.quien : '') + '.' : 'No tuvo feedback en ese evento.') : f ? 'Ya tiene feedback de ' + esc(f.quien) + ': si lo cambiás, queda el tuyo.' : 'Puntuá del 1 al 5 en cada cosa. El color sale solo.',
+    `<div id="fbCriterios"></div><div class="fb-res" id="fbResultado"></div>
+     <textarea class="fb-ta" id="fbComentario" placeholder="Comentario (opcional)..." oninput="pintarFbElegidos()"${soloVer ? ' disabled' : ''}>${esc((f && f.comentario) || '')}</textarea>
+     ${soloVer ? '' : '<button class="fb-send" id="fbSendBtn" onclick="guardarFeedback()">Enviar feedback</button>'}`);
+  $('fbCriterios').innerHTML = FB_CRITERIOS.map(c => `<div class="fb-crit"><div class="fb-crit-txt"><div class="fb-crit-nom">${c.titulo}</div><div class="fb-crit-ayuda">${c.ayuda}</div></div>
+    <div class="fb-crit-nums">${[1, 2, 3, 4, 5].map(n => `<button type="button" class="fb-n" data-c="${c.id}" data-n="${n}"${soloVer ? ' disabled' : ` onclick="fbValores['${c.id}']=${n};pintarFbElegidos()"`}>${n}</button>`).join('')}</div></div>`).join('');
+  pintarFbElegidos();
+}
+function pintarFbElegidos() {
+  document.querySelectorAll('#fbCriterios .fb-n').forEach(b => b.classList.toggle('on', fbValores[b.dataset.c] === +b.dataset.n));
+  const puestos = FB_CRITERIOS.filter(c => fbValores[c.id]).length, res = $('fbResultado'), btn = $('fbSendBtn');
+  if (puestos < FB_CRITERIOS.length) { res.className = 'fb-res'; res.textContent = 'Faltan ' + (FB_CRITERIOS.length - puestos) + ' de ' + FB_CRITERIOS.length; if (btn) btn.disabled = true; return; }
+  const prom = promFb(fbValores), col = colorDePromedio(prom);
+  res.className = 'fb-res fb-res-' + col; res.innerHTML = `Promedio <strong>${prom.toFixed(2)}</strong> de 5 → <strong>${NOMBRE_COLOR[col]}</strong>`;
+  if (btn) btn.disabled = false;
+}
+function guardarFeedback() {
+  const e = ev(); e.feedbacks[fbPid] = Object.assign({}, fbValores, { comentario: $('fbComentario').value.trim(), quien: yo().nombre });
+  guardarDemo(); cerrarHoja(); abrirEquipo(); toast('✓ Feedback guardado');
 }
 
-// Incidencias: los números de arriba filtran (abiertas, resueltas, por gravedad) y se puede elegir un sector.
-function pintarIncidencias(ev) {
-  const todas = ev.incidencias.slice().sort((a, b) => (a.estado === 'abierta' ? 0 : 1) - (b.estado === 'abierta' ? 0 : 1) || b.nivel - a.nivel || b.creada.localeCompare(a.creada));
-  const cuenta = f => todas.filter(f).length;
-  const filtros = [['abiertas', 'Abiertas', i => i.estado === 'abierta'], ['resueltas', 'Resueltas', i => i.estado === 'resuelta'], ['todas', 'Todas', () => true], ['g', 'Graves', i => i.nivel === 3], ['m', 'Medias', i => i.nivel === 2], ['l', 'Leves', i => i.nivel === 1]];
-  const f = (filtros.find(x => x[0] === filtroInc) || filtros[2])[2];
-  const sectores = [...new Set(todas.map(i => i.sector))];
-  const l = todas.filter(f).filter(i => !filtroSector || i.sector === filtroSector);
-  return (soloVer(ev) ? '' : `<button class="btn prim ancho grande" style="margin-top:14px" onclick="cargarIncidencia()">+ Cargar incidencia</button>`)
-    + `<div class="caja"><div class="chips">${filtros.map(([k, v, fn]) => `<button class="chip${filtroInc === k ? ' on' : ''}" onclick="filtroInc='${k}';pintarEvento()">${v} <b>${cuenta(fn)}</b></button>`).join('')}</div>`
-    + (sectores.length > 1 ? `<div class="chips"><button class="chip${!filtroSector ? ' on' : ''}" onclick="filtroSector='';pintarEvento()">Todos los sectores</button>${sectores.map(s => `<button class="chip${filtroSector === s ? ' on' : ''}" onclick="filtroSector='${s}';pintarEvento()">${esc(sectorDe(ev, s).nombre)} <b>${todas.filter(i => i.sector === s).length}</b></button>`).join('')}</div>` : '')
-    + (l.length ? l.map(i => `<button class="inc n${i.nivel}${i.estado === 'resuelta' ? ' resuelta' : ''}" onclick="verIncidencia('${i.id}')"><div class="inc-t"><b>${esc(i.tipo)}</b><span>${esc(sectorDe(ev, i.sector).nombre)} · ${hora(i.creada)} · ${esc(i.quien)}</span></div>
-        <div class="inc-d">${nivelPill(i.nivel)}${i.estado === 'resuelta' ? '<span class="pill ok">Resuelta</span>' : ''}</div></button>`).join('')
-      : `<div class="vacio">${ev.incidencias.length ? 'Nada con ese filtro.' : 'Todavía no hay incidencias en este evento.'}</div>`) + '</div>';
+// ── PASAR LISTA ─────────────────────────────────────────────────
+let listaFecha = '';
+function abrirLista() { const e = ev(); listaFecha = fechaDelEvento(e); $('listaSub').textContent = e.nombre;
+  const puestos = [...new Set(e.gente.map(p => D.gente[p].puesto))];
+  $('listaPuesto').innerHTML = '<option value="">Todos los puestos</option>' + puestos.map(p => `<option value="${escA(p)}">${esc(p)}</option>`).join('');
+  showScreen('screenLista'); pintarLista(); }
+function pintarLista() {
+  const e = ev(), soloVer = terminado(e) || cuando(e) === 'proximo' && listaFecha > hoyISO();
+  $('listaTurnos').innerHTML = e.fechas.map(f => `<button class="turno-chip${f === listaFecha ? ' on' : ''}" onclick="listaFecha='${f}';pintarLista()">${fmtFecha(f)}</button>`).join('');
+  const marca = pid => ((e.presentes || {})[listaFecha] || {})[pid] || '';
+  const pres = e.gente.filter(p => marca(p) === 'presente').length, aus = e.gente.filter(p => marca(p) === 'ausente').length;
+  $('listaResumen').innerHTML = `<span>Convocados <strong>${e.gente.length}</strong></span><span class="lr-p">Vinieron <strong>${pres}</strong></span><span class="lr-a">Faltaron <strong>${aus}</strong></span><span class="lr-s">Sin marcar <strong>${e.gente.length - pres - aus}</strong></span>`;
+  const puesto = $('listaPuesto').value, filas = e.gente.filter(p => !puesto || D.gente[p].puesto === puesto);
+  $('listaBody').innerHTML = filas.map(pid => { const m = marca(pid);
+    return persona(pid, esc(D.gente[pid].puesto), `<div class="pl-acts"><button class="pl-btn pl-p${m === 'presente' ? ' on' : ''}" onclick="marcar('${pid}','presente')"${soloVer ? ' disabled' : ''}>Vino</button><button class="pl-btn pl-a${m === 'ausente' ? ' on' : ''}" onclick="marcar('${pid}','ausente')"${soloVer ? ' disabled' : ''}>Faltó</button></div>`); }).join('')
+    || vacio('Nadie en este puesto');
+}
+function marcar(pid, v) { const e = ev(); e.presentes = e.presentes || {}; const d = e.presentes[listaFecha] = e.presentes[listaFecha] || {}; if (d[pid] === v) delete d[pid]; else d[pid] = v; guardarDemo(); pintarLista(); }
+
+// ── INCIDENCIAS ─────────────────────────────────────────────────
+let incSector = 'todos', incFiltro = 'abiertas', incAbierta = '';
+function abrirIncid() {
+  const e = ev(); incSector = 'todos'; incFiltro = terminado(e) ? 'todas' : 'abiertas'; incAbierta = '';
+  $('incNombre').textContent = e.nombre; $('incSub').textContent = fechasTxt(e) + ' · ' + predio(e).nombre;
+  const v = $('incVivo'); v.textContent = terminado(e) ? 'Terminado' : cuando(e) === 'hoy' ? 'En vivo' : 'Próximo'; v.className = 'sv-vivo' + (cuando(e) === 'hoy' ? '' : ' fin');
+  $('incPie').style.display = terminado(e) ? 'none' : '';
+  $('incSecAyuda').textContent = terminado(e) ? 'Tocá un sector para ver lo que pasó ahí.' : 'Tocá un sector: ves lo abierto ahí y podés cargar.';
+  showScreen('screenIncid'); pintarIncid();
+}
+function pintarIncid() {
+  const e = ev(), todas = e.incidencias, ab = todas.filter(i => i.estado !== 'resuelta'), n = nv => ab.filter(i => i.nivel === nv).length;
+  const NOM = { 3: ['grave', 'graves'], 2: ['media', 'medias'], 1: ['leve', 'leves'] };
+  $('incResumen').innerHTML = [3, 2, 1].map(nv => `<div class="sv-cuenta n${nv}"><b>${n(nv)}</b>${NOM[nv][n(nv) === 1 ? 0 : 1]}</div>`).join('');
+  // Los sectores del predio, como el plano del Arena: con un punto si hay algo abierto.
+  const abiertoEn = sid => { const l = ab.filter(i => i.sector === sid); return l.length ? Math.max(...l.map(i => i.nivel)) : 0; };
+  $('incSectores').innerHTML = Object.entries(TIPOS_SECTOR).map(([t, nom]) => { const l = predio(e).sectores.filter(s => s.tipo === t);
+    return l.length ? `<div class="sv-rotulo">${nom}</div><div class="sv-sectores anchos">${l.map(s => `<button type="button" class="sv-sec chico" onclick="tocarSector('${s.id}')">${esc(s.nombre)}${abiertoEn(s.id) ? `<i class="sv-pt n${abiertoEn(s.id)}" title="Hay algo abierto"></i>` : ''}</button>`).join('')}</div>` : ''; }).join('');
+  const conAb = sid => ab.filter(i => i.sector === sid).length, cuenta = k => k ? ' · ' + k + (k === 1 ? ' abierta' : ' abiertas') : '';
+  const usados = [...new Set(todas.map(i => i.sector))];
+  $('incSecSel').innerHTML = `<option value="todos">Todos los sectores${cuenta(ab.length)}</option>` + usados.map(sid => `<option value="${sid}"${incSector === sid ? ' selected' : ''}>${esc(sectorDe(sid, e).nombre)}${cuenta(conAb(sid))}</option>`).join('');
+  const delSector = todas.filter(i => incSector === 'todos' || i.sector === incSector), abS = delSector.filter(i => i.estado !== 'resuelta');
+  $('incFiltro').innerHTML = `<button type="button" class="${incFiltro === 'abiertas' ? 'on' : ''}" onclick="incFiltro='abiertas';pintarIncid()">Abiertas · ${abS.length}</button><button type="button" class="${incFiltro === 'todas' ? 'on' : ''}" onclick="incFiltro='todas';pintarIncid()">Todas · ${delSector.length}</button>`;
+  $('incTot').textContent = ab.length + ' abierta' + (ab.length === 1 ? '' : 's') + ' · ' + todas.length + ' en total';
+  const l = (incFiltro === 'abiertas' ? abS : delSector).slice().sort((a, b) => (a.estado === 'resuelta') - (b.estado === 'resuelta') || b.nivel - a.nivel || b.created_at.localeCompare(a.created_at));
+  if (!l.length) { $('incLista').innerHTML = vacio(incFiltro === 'abiertas' ? 'Nada abierto' : 'Sin incidencias', incFiltro === 'abiertas' && delSector.length ? 'Lo resuelto está en Todas' : ''); return; }
+  // Con "Todos los sectores", agrupadas por sector (como las zonas del Arena).
+  const grupos = new Map(); l.forEach(i => { const k = incSector === 'todos' ? i.sector : '_'; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(i); });
+  const codigos = codigosDe(todas);
+  $('incLista').innerHTML = [...grupos.entries()].map(([k, li]) => (k === '_' ? '' : `<div class="sv-zona-cab">${esc(sectorDe(k, e).nombre)}<small>${conAb(k) ? conAb(k) + (conAb(k) === 1 ? ' abierta' : ' abiertas') : 'todo resuelto'}</small></div>`)
+    + li.map(i => tarjeta(i, codigos[i.id], k !== '_')).join('')).join('');
+}
+// El código de cada una, como en el Arena: la letra de la gravedad y el orden en que se cargó.
+function codigosDe(l) { const c = {}, k = { 3: 0, 2: 0, 1: 0 }; l.slice().sort((a, b) => a.created_at.localeCompare(b.created_at)).forEach(i => { k[i.nivel]++; c[i.id] = { 3: 'G', 2: 'M', 1: 'L' }[i.nivel] + k[i.nivel]; }); return c; }
+// El ticket del Arena: el talón del color de la gravedad, con el ícono, cuánto lleva abierta y la gravedad.
+function tarjeta(i, codigo, sinLugar) {
+  const v = NIVELES[i.nivel], resuelta = i.estado === 'resuelta', abierta = incAbierta === i.id, e = ev();
+  const puede = !terminado(e) && !resuelta && (esCoord() || i.creada_por_nombre === yo().nombre);
+  const estado = resuelta ? '<div class="inc-tj-estado ok">✓ Resuelta a las ' + hora(i.resuelta_at) + '</div>' : i.acciones.length ? '<div class="inc-tj-estado">✓ ' + esc(i.acciones[0]) + '</div>' : i.nivel >= 2 ? '<div class="inc-tj-estado mal">Sin derivar todavía</div>' : '';
+  const fila = (t, h) => h ? `<div class="inc-tj-f"><span>${t}</span><div>${h}</div></div>` : '';
+  const det = !abierta ? '' : '<div class="inc-tj-det" onclick="event.stopPropagation()">' + fila('Dónde', '<b>' + esc(sectorDe(i.sector, e).nombre) + '</b>') + fila('Qué es', esc(i.categoria) + ' · ' + v.nombre)
+    + fila('Qué se hizo', i.acciones.map(a => '<div class="inc-tj-acc">✓ ' + esc(a) + '</div>').join('') || (i.nivel >= 2 && !resuelta ? '<span class="inc-tj-mal">Nadie la tomó todavía</span>' : ''))
+    + fila('Nota', i.nota ? '<div class="inc-tj-nota">' + esc(i.nota) + '</div>' : '') + fila('Cargada', hora(i.created_at) + ' · ' + esc(i.creada_por_nombre))
+    + (resuelta ? fila('Resuelta', hora(i.resuelta_at) + (i.resuelta_por_nombre ? ' · ' + esc(i.resuelta_por_nombre) : '') + (i.resolucion ? '<div class="inc-tj-nota">' + esc(i.resolucion) + '</div>' : '')) : '') + '</div>';
+  return `<div class="inc-card inc-tj${resuelta ? ' resuelta' : ''}${abierta ? ' abierta' : ''}" data-inc="${i.id}" style="--tj-c:${v.talon};--tj-t:${v.talonTinta}" onclick="incAbierta=incAbierta==='${i.id}'?'':'${i.id}';pintarIncid()" role="button" tabindex="0">
+    <div class="inc-tj-cab"><span class="inc-tj-talon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONO(i.categoria)}"/></svg><b>${resuelta ? '✓' : corto(i.created_at)}</b><small>${v.nombre}</small></span>
+    <div class="inc-tj-txt"><div class="inc-tj-tipo"><span class="inc-tj-cod">${codigo}</span>${esc(i.tipo)}</div>${sinLugar ? '' : `<div class="inc-tj-linea">${esc(sectorDe(i.sector, e).nombre)}</div>`}${estado}</div></div>${det}
+    ${puede ? `<div class="sv-tj-pie"><button type="button" class="sv-resolver" onclick="event.stopPropagation();abrirResolver('${i.id}')">Resolver</button></div>` : ''}</div>`;
+}
+function tocarSector(sid) { if (terminado()) { incSector = sid; incFiltro = 'todas'; pintarIncid(); document.getElementById('incLista').scrollIntoView({ block: 'start' }); return; } abrirNueva(sid); }
+
+// La hoja de cargar: primero dónde (los sectores del predio, por tipo), después qué pasó.
+let hoja = {};
+function abrirDonde() { hoja = { modo: 'donde', q: '', tipo: hoja.tipo || 'todos' }; pintarDonde(); }
+function pintarDonde() {
+  const e = ev(), q = norm(hoja.q), secs = predio(e).sectores.filter(s => (hoja.tipo === 'todos' || s.tipo === hoja.tipo) && (!q || norm(s.nombre).includes(q)));
+  abrirHoja('¿Dónde pasó?', 'Elegí el sector o buscalo. Si no está, sumalo: queda en el predio.',
+    `<input type="search" class="sv-buscar" placeholder="Buscá: Udaondo, Lata 2, Campo…" aria-label="Buscar el lugar" value="${escA(hoja.q)}" oninput="hoja.q=this.value;pintarDondeLista()">
+     <div id="dondeLista"></div>
+     <button class="fb-send" onclick="abrirNuevoSector('volver')">+ Otro sector (lo sumás al predio)</button>`, true);
+  pintarDondeLista();
+}
+function pintarDondeLista() {
+  const e = ev(), q = norm(hoja.q), ab = e.incidencias.filter(i => i.estado !== 'resuelta');
+  const nv = sid => { const l = ab.filter(i => i.sector === sid); return l.length ? Math.max(...l.map(i => i.nivel)) : 0; };
+  const pisos = `<div class="sv-pisos">${[['todos', 'Todos']].concat(Object.entries(TIPOS_SECTOR)).map(([k, v]) => `<button type="button" class="${hoja.tipo === k ? 'on' : ''}" onclick="hoja.tipo='${k}';pintarDondeLista()">${v}</button>`).join('')}</div>`;
+  const grupo = (t, nom) => { const l = predio(e).sectores.filter(s => s.tipo === t && (hoja.tipo === 'todos' || hoja.tipo === t) && (!q || norm(s.nombre).includes(q)));
+    return l.length ? `<div class="sv-rotulo">${nom}</div><div class="sv-sectores anchos">${l.map(s => `<button type="button" class="sv-sec chico" onclick="abrirNueva('${s.id}')">${esc(s.nombre)}${nv(s.id) ? `<i class="sv-pt n${nv(s.id)}" title="Hay algo abierto"></i>` : ''}</button>`).join('')}</div>` : ''; };
+  const html = Object.entries(TIPOS_SECTOR).map(([t, nom]) => grupo(t, nom)).join('');
+  $('dondeLista').innerHTML = (q ? '' : pisos) + (html || '<div class="sv-ayuda">No hay ningún sector que se llame así. Sumalo con el botón de abajo.</div>');
+}
+function abrirNueva(sid) { hoja = { modo: 'nueva', sector: sid, cat: -1, tipo: -1, acc: [], tipoSec: hoja.tipo }; pintarNueva(); }
+function pintarNueva() {
+  const e = ev(), s = sectorDe(hoja.sector, e), c = CATALOGO[hoja.cat], ab = e.incidencias.filter(i => i.estado !== 'resuelta' && i.sector === hoja.sector);
+  const nota = $('incCampoNota') ? $('incCampoNota').value : (hoja.nota || '');
+  const base = c && hoja.tipo >= 0 ? c.tipos[hoja.tipo][1] : 0, nivel = base && hoja.acc.some(a => SUBEN_A_GRAVE.includes(c.acciones[a])) ? 3 : base;
+  abrirHoja('Nueva incidencia · ' + s.nombre, 'Qué pasó y qué se hizo. Sin nombres ni datos del público.',
+    `<button type="button" class="sv-volver" onclick="hoja.tipo=hoja.tipoSec||'todos';abrirDonde()">← Cambiar el lugar</button>`
+    + (ab.length ? '<div class="inc-paso">Abiertas en este lugar</div>' + ab.map(i => `<div class="inc-mini">${pastilla(i.nivel)}<span class="t">${esc(i.tipo)} · ${hora(i.created_at)}</span>${esCoord() || i.creada_por_nombre === yo().nombre ? `<button class="inc-resolver" onclick="abrirResolver('${i.id}')">Resolver</button>` : ''}</div>`).join('') : '')
+    + '<div class="inc-paso">Categoría</div><div class="inc-grid">' + CATALOGO.map((x, k) => `<button type="button" class="inc-opc${hoja.cat === k ? ' on' : ''}" onclick="hoja.cat=${k};hoja.tipo=-1;hoja.acc=[];pintarNueva()">${x.cat}</button>`).join('') + '</div>'
+    + (c ? '<div class="inc-paso">Qué pasó</div><div class="inc-grid">' + c.tipos.map((t, k) => `<button type="button" class="inc-opc${hoja.tipo === k ? ' on' : ''}" onclick="hoja.tipo=${k};pintarNueva()">${esc(t[0])}</button>`).join('') + '</div>' : '')
+    + (c && hoja.tipo >= 0 ? `<div class="inc-paso">Criticidad</div><div class="inc-nivel fijo n${nivel}"><strong>${NIVELES[nivel].nombre}</strong><span>${nivel > base ? 'Subió a grave por lo que se hizo' : 'La define el tipo de incidencia'} · ${NIVELES[nivel].ayuda}</span></div>
+       <div class="inc-paso">Qué se hizo</div><div class="inc-checks">${c.acciones.map((a, k) => `<button type="button" class="inc-check${hoja.acc.includes(k) ? ' on' : ''}" onclick="const l=hoja.acc,x=l.indexOf(${k});x<0?l.push(${k}):l.splice(x,1);pintarNueva()">${hoja.acc.includes(k) ? '☑' : '☐'} ${esc(a)}</button>`).join('')}</div>
+       <textarea class="fb-ta" id="incCampoNota" maxlength="1000" placeholder="Nota (opcional): qué pasó, qué se hizo">${esc(nota)}</textarea>
+       <button class="fb-send" onclick="guardarNueva()">Guardar incidencia</button>` : ''));
+}
+function guardarNueva() {
+  const e = ev(), c = CATALOGO[hoja.cat], t = c.tipos[hoja.tipo], acciones = hoja.acc.map(k => c.acciones[k]);
+  e.incidencias.push({ id: uid(), sector: hoja.sector, categoria: c.cat, tipo: t[0], nivel: acciones.some(a => SUBEN_A_GRAVE.includes(a)) ? 3 : t[1], acciones, nota: ($('incCampoNota').value || '').trim(),
+    creada_por_nombre: yo().nombre, created_at: new Date().toISOString(), estado: 'abierta', resolucion: '', resuelta_at: null, resuelta_por_nombre: '' });
+  guardarDemo(); cerrarHoja(); incFiltro = 'abiertas'; incSector = 'todos'; pintarIncid(); toast('✓ Incidencia cargada');
+}
+function abrirResolver(id) {
+  const e = ev(), i = e.incidencias.find(x => x.id === id); if (!i) return;
+  abrirHoja('Resolver', esc(i.tipo) + ' · ' + esc(sectorDe(i.sector, e).nombre), `<div class="inc-paso">Cómo se resolvió (opcional)</div><textarea class="fb-ta" id="incResNota" maxlength="1000" placeholder="Qué se hizo para cerrarla"></textarea><button class="fb-send" onclick="resolver('${id}')">Marcar resuelta</button>`);
+}
+function resolver(id) {
+  const i = ev().incidencias.find(x => x.id === id); if (!i) return;
+  Object.assign(i, { estado: 'resuelta', resolucion: ($('incResNota').value || '').trim(), resuelta_at: new Date().toISOString(), resuelta_por_nombre: yo().nombre });
+  guardarDemo(); cerrarHoja(); pintarIncid(); toast('✓ Resuelta');
 }
 
-// Organigrama: coordinación, supervisores y cada lata con su responsable y sus operadores.
-function pintarOrganigrama(ev) {
-  const gente = ev.gente.map(id => D.gente[id]);
-  const de = re => gente.filter(g => re.test(g.puesto));
-  const persona = (g, rol) => `<div class="persona"><div class="ini">${iniciales(g.nombre)}</div><div><b>${esc(g.nombre)}</b><small>${esc(rol || g.puesto)}</small></div></div>`;
-  const latas = predioDe(ev).sectores.filter(s => s.tipo === 'lata'), asignados = new Set();
-  latas.forEach(s => { const a = (ev.latas || {})[s.id]; if (a) { if (a.responsable) asignados.add(a.responsable); a.operadores.forEach(o => asignados.add(o)); } });
-  const sinLata = de(/acreditaci/i).filter(g => !asignados.has(g.id));
-  const anteriores = D.eventos.filter(e => e.id !== ev.id && e.predio === ev.predio && cuando(e) === 'anterior');
-  const editable = esCoord() && !soloVer(ev);
-  return `<div class="caja"><div class="titulo">Coordinación</div><div class="org-cab">${de(/coordin/i).map(g => persona(g)).join('')}</div>
-      <div class="titulo" style="margin-top:14px">Supervisores <span class="n">${de(/supervis/i).length}</span></div><div class="org-cab">${de(/supervis/i).map(g => persona(g, 'Supervisor/a')).join('')}</div></div>
-    <div class="caja"><div class="titulo">Latas de acreditación <span class="n">${latas.length}</span></div>
-      ${latas.map(s => { const a = (ev.latas || {})[s.id] || { responsable: '', operadores: [] }, n = a.operadores.length + (a.responsable ? 1 : 0);
-        return `<div class="lata"><div class="lata-c"><div><b>${esc(s.nombre)}</b><span class="pill ${n ? 'sutil' : 'm'}">${n ? n + ' persona' + (n === 1 ? '' : 's') : 'Sin gente'}</span></div>${editable ? `<button class="btn chico" onclick="editarLata('${s.id}')">Editar</button>` : ''}</div>
-          <div class="lata-r">Responsable${a.responsable ? persona(D.gente[a.responsable], 'Responsable de la lata') : '<div class="persona falta" style="margin-top:6px">Falta asignar</div>'}</div>
-          <div class="lata-r">Operadores <div class="ops">${a.operadores.length ? a.operadores.map(o => `<span class="op"><span class="ini">${iniciales(nombreDe(o))}</span>${esc(nombreDe(o))}</span>`).join('') : '<span class="pill sutil">Ninguno</span>'}</div></div></div>`; }).join('') || '<div class="vacio">Este predio todavía no tiene latas. Se suman en Sectores (tipo "Lata").</div>'}
-      ${editable ? '<button class="btn ancho" style="margin-top:10px" onclick="nuevoSector(\'lata\')">+ Nueva lata</button>' : ''}
-      ${sinLata.length && !soloVer(ev) ? `<div class="titulo" style="margin-top:16px">Operadores sin lata <span class="n">${sinLata.length}</span></div><div class="ops">${sinLata.map(g => `<span class="op"><span class="ini">${iniciales(g.nombre)}</span>${esc(g.nombre)}</span>`).join('')}</div>` : ''}</div>`
-    + (anteriores.length ? `<div class="caja"><div class="titulo">Organigramas anteriores en este predio</div><div class="nota">Cómo se armaron las latas en otros eventos en ${esc(predioDe(ev).nombre)}.</div>
-      ${anteriores.map(e => `<button class="ev" onclick="verOrganigramaDe('${e.id}')"><div class="ev-f"><b>${new Date(e.fechas[0] + 'T12:00:00').getDate()}</b><small>${MES3[new Date(e.fechas[0] + 'T12:00:00').getMonth()]}</small></div><div class="ev-t"><b>${esc(e.nombre)}</b><span>${Object.keys(e.latas || {}).length} latas · ${Object.values(e.latas || {}).reduce((t, a) => t + a.operadores.length + (a.responsable ? 1 : 0), 0)} personas</span></div><span class="ev-flecha">›</span></button>`).join('')}</div>` : '');
+// ── ORGANIGRAMA DE LAS LATAS ────────────────────────────────────
+function sinLata(e) { const en = latasDe(e); return e.gente.filter(p => /acreditaci/i.test(D.gente[p].puesto) && !en[p]); }
+function abrirOrg() {
+  const e = ev(), editable = esCoord() && !terminado(e), latas = predio(e).sectores.filter(s => s.tipo === 'lata');
+  $('orgSub').textContent = e.nombre + ' · ' + predio(e).nombre;
+  const de = re => e.gente.filter(p => re.test(D.gente[p].puesto));
+  const sin = sinLata(e), anteriores = D.eventos.filter(x => x.id !== e.id && x.predio === e.predio && cuando(x) === 'anterior');
+  const lata = s => { const a = (e.latas || {})[s.id] || { responsable: '', operadores: [] }, n = a.operadores.length + (a.responsable ? 1 : 0);
+    return `<div class="ex-lata-cab"><div><b>${esc(s.nombre)}</b><small>${n ? n + ' persona' + (n === 1 ? '' : 's') : 'Sin gente todavía'}</small></div>${editable ? `<button type="button" class="sv-resolver" onclick="editarLata('${s.id}')">Editar</button>` : ''}</div>
+      <div class="persona-lista" style="margin:0">${a.responsable ? persona(a.responsable, 'Responsable de la lata') : '<div class="person-row" style="cursor:default"><div style="flex:1"><div class="person-name"><span class="falta">Falta el responsable</span></div></div></div>'}
+      ${a.operadores.map(o => persona(o, 'Operador/a')).join('')}</div>`; };
+  $('orgCuerpo').innerHTML = `<div class="eq-grupo" style="margin:4px 4px 2px"><span>Coordinación</span></div><div class="persona-lista">${de(/coordin/i).map(p => persona(p, esc(D.gente[p].puesto))).join('')}</div>
+    <div class="eq-grupo" style="margin:14px 4px 2px"><span>Supervisores</span><span><b>${de(/supervis/i).length}</b></span></div><div class="persona-lista">${de(/supervis/i).map(p => persona(p, 'Supervisor/a')).join('')}</div>
+    <div class="caja" style="margin-top:16px"><div class="sv-caja-cab"><h2 class="sec-t"><span class="mano">Las</span>latas</h2><small class="sv-tot">${latas.length} latas · ${sin.length ? sin.length + ' sin lata' : 'todos con lata'}</small></div>
+      ${latas.map(lata).join('') || vacio('Este predio todavía no tiene latas', 'Se suman en Sectores (tipo "Lata")')}
+      ${editable ? '<button class="fb-send" onclick="abrirNuevoSector(\'org\', \'lata\')">+ Nueva lata</button>' : ''}
+      ${sin.length && !terminado(e) ? `<div class="ex-lata-cab"><div><b>Operadores sin lata</b><small>${sin.length}</small></div></div><div class="persona-lista" style="margin:0">${sin.map(p => persona(p, 'Operador/a de acreditaciones')).join('')}</div>` : ''}</div>`
+    + (anteriores.length ? `<div class="grupo">Organigramas anteriores en este predio</div>` + anteriores.map(x => `<div class="conv-card" onclick="verOrgDe('${x.id}')"><div class="conv-main"><div class="conv-title">${esc(x.nombre)}</div><div class="conv-meta"><span>${esc(fechasTxt(x))}</span></div>
+      <div class="conv-chips"><span class="conv-chip"><strong>${Object.keys(x.latas || {}).length}</strong>latas</span><span class="conv-chip"><strong>${Object.values(x.latas || {}).reduce((t, a) => t + a.operadores.length + (a.responsable ? 1 : 0), 0)}</strong>personas</span></div></div><span class="flecha">›</span></div>`).join('') : '');
+  showScreen('screenOrg');
 }
-function verOrganigramaDe(id) {
-  const ev = D.eventos.find(e => e.id === id); if (!ev) return;
-  const latas = predioDe(ev).sectores.filter(s => ev.latas && ev.latas[s.id]);
-  abrirHoja(`<div class="hoja-cab"><b>${esc(ev.nombre)}<br><small style="font-weight:500;font-size:12.5px;color:var(--gris)">${ev.fechas.map(diaCorto).join(', ')} · organigrama de las latas</small></b><button class="ico" onclick="cerrarHoja()" aria-label="Cerrar">✕</button></div>`
-    + latas.map(s => { const a = ev.latas[s.id]; return `<div class="lata"><div class="lata-c"><b>${esc(s.nombre)}</b></div><div class="lata-r">Responsable: <b style="color:var(--tinta)">${esc(nombreDe(a.responsable))}</b></div><div class="ops">${a.operadores.map(o => `<span class="op"><span class="ini">${iniciales(nombreDe(o))}</span>${esc(nombreDe(o))}</span>`).join('')}</div></div>`; }).join('')
-    + `<button class="btn ancho" style="margin-top:14px" onclick="cerrarHoja();abrirEvento('${ev.id}');pestana='org';pintarEvento()">Abrir ese evento</button>`);
+function verOrgDe(id) {
+  const x = D.eventos.find(e => e.id === id); if (!x) return;
+  abrirHoja(x.nombre, fechasTxt(x) + ' · cómo se armaron las latas', predio(x).sectores.filter(s => x.latas && x.latas[s.id]).map(s => { const a = x.latas[s.id];
+    return `<div class="ex-lata-cab"><div><b>${esc(s.nombre)}</b></div></div><div class="persona-lista" style="margin:0">${a.responsable ? persona(a.responsable, 'Responsable de la lata') : ''}${a.operadores.map(o => persona(o, 'Operador/a')).join('')}</div>`; }).join(''));
 }
 function editarLata(sid) {
-  const ev = evActual(), s = sectorDe(ev, sid), a = JSON.parse(JSON.stringify((ev.latas || {})[sid] || { responsable: '', operadores: [] }));
-  const ops = ev.gente.map(id => D.gente[id]).filter(g => /acreditaci/i.test(g.puesto));
-  const enOtra = pid => { const k = Object.keys(ev.latas || {}).find(k => k !== sid && (ev.latas[k].responsable === pid || ev.latas[k].operadores.includes(pid))); return k ? sectorDe(ev, k).nombre : ''; };
-  editarLata.a = a; editarLata.sid = sid;
-  const pintar = () => abrirHoja(`<div class="hoja-cab"><b>${esc(s.nombre)}</b><button class="ico" onclick="cerrarHoja()" aria-label="Cerrar">✕</button></div>
-    <div class="paso">Responsable</div><div class="opciones">${ops.map(g => `<button class="opc${a.responsable === g.id ? ' on' : ''}" onclick="editarLata.a.responsable=editarLata.a.responsable==='${g.id}'?'':'${g.id}';editarLata.a.operadores=editarLata.a.operadores.filter(x=>x!=='${g.id}');editarLata.pintar()">${esc(g.nombre)}</button>`).join('')}</div>
-    <div class="paso">Operadores</div>${ops.filter(g => g.id !== a.responsable).map(g => `<label class="check"><input type="checkbox" ${a.operadores.includes(g.id) ? 'checked' : ''} onchange="const o=editarLata.a.operadores;this.checked?o.push('${g.id}'):o.splice(o.indexOf('${g.id}'),1)">${esc(g.nombre)}${enOtra(g.id) ? `<small>Está en ${esc(enOtra(g.id))}</small>` : ''}</label>`).join('')}
-    <button class="btn prim ancho grande" style="margin-top:16px" onclick="guardarLata()">Guardar</button>`);
-  editarLata.pintar = pintar; pintar();
+  const e = ev(); hoja = { modo: 'lata', sid, a: JSON.parse(JSON.stringify((e.latas || {})[sid] || { responsable: '', operadores: [] })) }; pintarLata();
+}
+function pintarLata() {
+  const e = ev(), a = hoja.a, ops = e.gente.filter(p => /acreditaci/i.test(D.gente[p].puesto));
+  const enOtra = pid => { const k = Object.keys(e.latas || {}).find(k => k !== hoja.sid && (e.latas[k].responsable === pid || e.latas[k].operadores.includes(pid))); return k ? sectorDe(k, e).nombre : ''; };
+  abrirHoja(sectorDe(hoja.sid, e).nombre, 'Elegí el responsable y los operadores. Cada persona va en una sola lata: si estaba en otra, sale de ahí.',
+    '<div class="inc-paso">Responsable</div><div class="inc-grid">' + ops.map(p => `<button type="button" class="inc-opc${a.responsable === p ? ' on' : ''}" onclick="hoja.a.responsable=hoja.a.responsable==='${p}'?'':'${p}';hoja.a.operadores=hoja.a.operadores.filter(x=>x!=='${p}');pintarLata()">${esc(nombreDe(p))}</button>`).join('') + '</div>'
+    + '<div class="inc-paso">Operadores</div><div class="inc-checks">' + ops.filter(p => p !== a.responsable).map(p => `<button type="button" class="inc-check${a.operadores.includes(p) ? ' on' : ''}" onclick="const l=hoja.a.operadores,x=l.indexOf('${p}');x<0?l.push('${p}'):l.splice(x,1);pintarLata()">${a.operadores.includes(p) ? '☑' : '☐'} ${esc(nombreDe(p))}${enOtra(p) ? ` <small class="ex-gris">· está en ${esc(enOtra(p))}</small>` : ''}</button>`).join('') + '</div>'
+    + '<button class="fb-send" onclick="guardarLata()">Guardar</button>');
 }
 function guardarLata() {
-  const ev = evActual(), sid = editarLata.sid, a = editarLata.a;
-  // Una persona, en una sola lata: si estaba en otra, sale de ahí.
-  const aca = new Set([a.responsable, ...a.operadores].filter(Boolean));
-  Object.keys(ev.latas || {}).forEach(k => { if (k === sid) return; const o = ev.latas[k]; if (aca.has(o.responsable)) o.responsable = ''; o.operadores = o.operadores.filter(x => !aca.has(x)); });
-  ev.latas = ev.latas || {}; ev.latas[sid] = a; guardarDemo(); cerrarHoja(); pintarEvento(); toast('✓ Organigrama guardado');
+  const e = ev(), a = hoja.a, aca = new Set([a.responsable, ...a.operadores].filter(Boolean));
+  Object.keys(e.latas || {}).forEach(k => { if (k === hoja.sid) return; const o = e.latas[k]; if (aca.has(o.responsable)) o.responsable = ''; o.operadores = o.operadores.filter(x => !aca.has(x)); });
+  e.latas = e.latas || {}; e.latas[hoja.sid] = a; guardarDemo(); cerrarHoja(); abrirOrg(); toast('✓ Organigrama guardado');
 }
 
-// Equipo: por puesto, con su lata, el presente (lo marca coordinación) y el contrato.
-function pintarEquipo(ev) {
-  const q = norm(buscaEq), latasDe = {};
-  Object.entries(ev.latas || {}).forEach(([k, a]) => { [a.responsable, ...a.operadores].filter(Boolean).forEach(p => { latasDe[p] = sectorDe(ev, k).nombre; }); });
-  const gente = ev.gente.map(id => D.gente[id]).filter(g => !q || norm(g.nombre).includes(q));
-  const grupos = new Map(); gente.forEach(g => { if (!grupos.has(g.puesto)) grupos.set(g.puesto, []); grupos.get(g.puesto).push(g); });
-  const p = ev.presentes || {}, presentes = ev.gente.filter(id => p[id] === 'P').length;
-  const marcar = esCoord() && cuando(ev) === 'hoy';
-  return `<div class="caja"><div class="chips"><span class="chip"><b>${ev.gente.length}</b> convocados</span>${cuando(ev) !== 'proximo' ? `<span class="chip">Presentes <b>${presentes}</b></span><span class="chip">Faltan marcar <b>${ev.gente.length - presentes - ev.gente.filter(id => p[id] === 'A').length}</b></span>` : ''}<span class="chip">Contratos firmados <b>${ev.gente.filter(id => (ev.contratos || {})[id] === 'firmado').length}</b></span></div>
-    <input class="buscar" placeholder="Buscar a alguien del equipo" value="${esc(buscaEq)}" oninput="buscaEq=this.value;clearTimeout(window._bq);window._bq=setTimeout(()=>{pintarEvento();const b=document.querySelector('.buscar');b.focus();b.setSelectionRange(b.value.length,b.value.length)},250)">
-    ${[...grupos.entries()].map(([puesto, l]) => `<div class="titulo" style="margin-top:12px">${esc(puesto.replace('/a', 'es').replace('Coordinadores', 'Coordinación'))} <span class="n">${l.length}</span></div>
-      ${l.map(g => `<div class="fila"><div class="ini">${iniciales(g.nombre)}</div><div class="t"><b>${esc(g.nombre)}</b><small>${latasDe[g.id] ? esc(latasDe[g.id]) + ' · ' : ''}${(ev.contratos || {})[g.id] === 'firmado' ? 'Contrato firmado' : (ev.contratos || {})[g.id] ? 'Contrato sin firmar' : 'Sin contrato todavía'}</small></div>
-        ${marcar ? `<div class="pres"><button class="${p[g.id] === 'P' ? 'on-p' : ''}" onclick="presente('${g.id}','P')" aria-label="Presente">P</button><button class="${p[g.id] === 'A' ? 'on-a' : ''}" onclick="presente('${g.id}','A')" aria-label="Ausente">A</button></div>`
-          : cuando(ev) !== 'proximo' ? (p[g.id] === 'P' ? '<span class="pill ok">Presente</span>' : p[g.id] === 'A' ? '<span class="pill g">Ausente</span>' : '<span class="pill sutil">—</span>') : ''}</div>`).join('')}`).join('') || '<div class="vacio">Nadie con ese nombre.</div>'}</div>`;
+// ── CONTRATOS ───────────────────────────────────────────────────
+let ctFiltro = 'pend';
+const EST_CT = { firmado: ['firmado', 'Firmado'], visto: ['visto', 'Pendiente · lo abrió'], enviado: ['', 'Pendiente · no lo abrió'] };
+function abrirContratos() { ctFiltro = 'pend'; showScreen('screenContratos'); pintarContratos(); }
+function pintarContratos() {
+  const e = ev(), est = p => e.contratos[p] || 'enviado', pend = p => est(p) !== 'firmado';
+  const nSin = e.gente.filter(pend).length, nCon = e.gente.length - nSin;
+  $('ctSub').textContent = e.nombre + ' · ' + fechasTxt(e);
+  $('ctFiltro').innerHTML = [['pend', 'Sin firmar (' + nSin + ')'], ['firmados', 'Firmados (' + nCon + ')'], ['todos', 'Todos']].map(([k, t]) => `<button type="button" class="${ctFiltro === k ? 'on' : ''}" onclick="ctFiltro='${k}';pintarContratos()">${t}</button>`).join('');
+  const gente = e.gente.filter(p => ctFiltro === 'todos' || (ctFiltro === 'pend' ? pend(p) : !pend(p)));
+  let puesto = null, filas = '';
+  gente.slice().sort((a, b) => D.gente[a].puesto.localeCompare(D.gente[b].puesto)).forEach(p => { const g = D.gente[p];
+    if (g.puesto !== puesto) { puesto = g.puesto; filas += `<div class="ct-pend-sector">${esc(puesto)}</div>`; }
+    const [cl, txt] = EST_CT[est(p)] || EST_CT.enviado;
+    filas += `<div class="person-row" style="cursor:default"><div style="flex:1;min-width:0"><div class="person-name">${esc(g.nombre)}</div><div class="person-meta">${esc(g.puesto)}</div></div><span class="ct-pend-est ${cl}">${txt}</span></div>`; });
+  $('ctLista').innerHTML = `<div class="ct-pend-fecha"><span>${esc(fechasTxt(e))}</span><small>${nCon} de ${e.gente.length} firmaron</small></div>`
+    + (gente.length ? `<div class="persona-lista" style="margin:0">${filas}</div>` : `<div class="caja" style="padding:12px 14px;font:400 13px var(--inc-fuente);color:var(--gris)">${ctFiltro === 'pend' ? 'Todos firmaron.' : 'Todavía no firmó nadie.'}</div>`);
 }
-function presente(pid, v) { const ev = evActual(); ev.presentes = ev.presentes || {}; ev.presentes[pid] = ev.presentes[pid] === v ? '' : v; guardarDemo(); pintarEvento(); }
 
-// Sectores: son del predio (quedan para los próximos eventos ahí); los suma cualquiera del evento.
-function pintarSectores(ev) {
-  const pr = predioDe(ev);
-  return `<div class="caja"><div class="nota">Los sectores son de <b style="color:var(--tinta)">${esc(pr.nombre)}</b>: los que sumen quedan para los próximos eventos en este predio.</div>
-    ${soloVer(ev) ? '' : '<button class="btn prim ancho" onclick="nuevoSector()">+ Agregar un sector</button>'}
-    ${Object.entries(TIPOS_SECTOR).map(([t, nom]) => { const l = pr.sectores.filter(s => s.tipo === t); return l.length ? `<div class="titulo" style="margin-top:16px">${nom} <span class="n">${l.length}</span></div>` + l.map(s => { const n = ev.incidencias.filter(i => i.sector === s.id).length;
-      return `<div class="sec"><div class="t"><b>${esc(s.nombre)}</b><small>${s.quien === 'RR. HH.' ? 'Cargado por RR. HH.' : 'Lo sumó ' + esc(s.quien) + (s.evento ? ' · ' + esc(s.evento) : '')}</small></div>${n ? `<span class="pill">${n} incidencia${n === 1 ? '' : 's'}</span>` : ''}</div>`; }).join('') : ''; }).join('')}</div>`;
+// ── SECTORES DEL PREDIO ─────────────────────────────────────────
+function abrirSectores() { showScreen('screenSectores'); pintarSectores(); }
+function pintarSectores() {
+  const e = ev(), pr = predio(e);
+  $('secSub').textContent = pr.nombre;
+  $('secAviso').innerHTML = 'Son de <b>' + esc(pr.nombre) + '</b>: los que sumen quedan para los próximos eventos ahí. Cuando cargan una incidencia, eligen entre estos.';
+  $('btnNuevoSec').style.display = terminado(e) ? 'none' : '';
+  $('secLista').innerHTML = Object.entries(TIPOS_SECTOR).map(([t, nom]) => { const l = pr.sectores.filter(s => s.tipo === t); if (!l.length) return '';
+    return `<div class="ct-pend-fecha"><span>${nom}</span><small>${l.length}</small></div><div class="persona-lista" style="margin:0">${l.map(s => { const n = e.incidencias.filter(i => i.sector === s.id).length;
+      return `<div class="person-row" style="cursor:default"><div style="flex:1;min-width:0"><div class="person-name">${esc(s.nombre)}</div><div class="person-meta">${s.quien === 'RR. HH.' ? 'Cargado por RR. HH.' : 'Lo sumó ' + esc(s.quien) + (s.evento ? ' · ' + esc(s.evento) : '')}</div></div>${n ? `<span class="hub-chip">${n} incidencia${n === 1 ? '' : 's'}</span>` : ''}</div>`; }).join('')}</div>`; }).join('');
 }
-function nuevoSector(tipo, alVolver) {
-  nuevoSector.tipo = tipo || 'sector'; nuevoSector.volver = alVolver || null;
-  abrirHoja(`<div class="hoja-cab"><b>Nuevo sector</b><button class="ico" onclick="${alVolver ? alVolver : 'cerrarHoja()'}" aria-label="Volver">✕</button></div>
-    <div class="nota">Queda en ${esc(predioDe(evActual()).nombre)} para este y los próximos eventos.</div>
-    <div class="paso">Qué es</div><div class="opciones" id="nsTipos">${Object.entries(TIPOS_SECTOR).map(([k, v]) => `<button class="opc${nuevoSector.tipo === k ? ' on' : ''}" onclick="nuevoSector.tipo='${k}';document.querySelectorAll('#nsTipos .opc').forEach(b=>b.classList.toggle('on',b.dataset.k==='${k}'))" data-k="${k}">${TIPO_UNO[k]}</button>`).join('')}</div>
-    <div class="paso">Nombre</div><input class="campo" id="nsNombre" placeholder="Ej.: Acceso Puerta 7, Lata 5 · Prensa, Platea Alta" oninput="avisoDuplicado()" maxlength="60">
-    <div class="aviso-dup" id="nsDup"></div>
-    <button class="btn prim ancho grande" style="margin-top:16px" onclick="guardarSector()">Agregar</button>`);
-  setTimeout(() => { const i = $('nsNombre'); if (i) i.focus(); }, 50);
+// Sumar un sector: desde Sectores, desde la carga de una incidencia ('volver') o una lata desde el organigrama ('org').
+function abrirNuevoSector(desde, tipo) { hoja = { modo: 'sector', desde: desde || '', tipo: tipo || 'sector', nombre: '' }; pintarNuevoSector(); }
+function pintarNuevoSector() {
+  const pr = predio();
+  abrirHoja(hoja.tipo === 'lata' && hoja.desde === 'org' ? 'Nueva lata' : 'Nuevo sector', 'Queda en ' + esc(pr.nombre) + ' para este y los próximos eventos.',
+    (hoja.desde === 'volver' ? '<button type="button" class="sv-volver" onclick="abrirDonde()">← Volver a los sectores</button>' : '')
+    + '<div class="inc-paso">Qué es</div><div class="sv-pisos" style="margin-top:0">' + Object.entries(TIPO_UNO).map(([k, v]) => `<button type="button" class="${hoja.tipo === k ? 'on' : ''}" onclick="hoja.nombre=document.getElementById('nsNombre').value;hoja.tipo='${k}';pintarNuevoSector()">${v.replace(/ \(.*/, '')}</button>`).join('') + '</div>'
+    + `<div class="inc-paso">Nombre</div><input class="l-in" id="nsNombre" maxlength="60" placeholder="Ej.: Acceso Puerta 7, Lata 5 · Prensa, Platea Alta" value="${escA(hoja.nombre)}" oninput="avisoDuplicado()">
+       <div class="ex-aviso" id="nsDup"></div><button class="fb-send" onclick="guardarSector()">Agregar</button>`);
+  avisoDuplicado();
 }
 // Para que no queden "Puerta 3" y "puerta tres": avisa si ya hay uno parecido.
 function parecidos(nombre) {
   const n = norm(nombre); if (n.length < 3) return [];
   const pal = n.split(' ').filter(w => w.length > 2);
-  return predioDe(evActual()).sectores.filter(s => { const m = norm(s.nombre); return m === n || m.includes(n) || n.includes(m) || (pal.length && pal.every(w => m.includes(w))); });
+  return predio().sectores.filter(s => { const m = norm(s.nombre); return m === n || m.includes(n) || n.includes(m) || (pal.length && pal.every(w => m.includes(w))); });
 }
-function avisoDuplicado() { const p = parecidos($('nsNombre').value); $('nsDup').textContent = p.length ? 'Ya hay: ' + p.map(s => s.nombre).join(', ') + '. ¿Es el mismo?' : ''; }
+function avisoDuplicado() { const i = $('nsNombre'); if (!i) return; const p = parecidos(i.value); $('nsDup').textContent = p.length ? 'Ya hay: ' + p.map(s => s.nombre).join(', ') + '. ¿Es el mismo?' : ''; }
 function guardarSector() {
   const nombre = $('nsNombre').value.trim().replace(/\s+/g, ' '); if (nombre.length < 2) { toast('Poné el nombre del sector'); return; }
-  const ev = evActual(), pr = predioDe(ev);
+  const e = ev(), pr = predio(e);
   if (pr.sectores.some(s => norm(s.nombre) === norm(nombre))) { toast('Ese sector ya está'); return; }
-  const s = { id: 's' + uid(), nombre, tipo: nuevoSector.tipo, quien: yo().nombre, evento: ev.nombre };
-  pr.sectores.push(s); guardarDemo();
-  toast('✓ Sector agregado');
-  if (nuevoSector.volver) { cargarIncidencia.sector = s.id; cargarIncidencia.pintar(); return; }
-  cerrarHoja(); pintarEvento();
-}
-
-// ── CARGAR Y VER UNA INCIDENCIA ─────────────────────────────────
-function cargarIncidencia() {
-  const st = cargarIncidencia; st.sector = ''; st.cat = ''; st.tipo = ''; st.acc = []; st.nota = ''; st.busca = '';
-  st.pintar = () => {
-    const ev = evActual(), pr = predioDe(ev), c = st.cat ? CATALOGO.find(x => x.cat === st.cat) : null;
-    const q = norm(st.busca), secs = pr.sectores.filter(s => !q || norm(s.nombre).includes(q));
-    const base = c && st.tipo ? (c.tipos.find(t => t[0] === st.tipo) || [0, 1])[1] : 0, nivel = base && st.acc.some(a => SUBEN_A_GRAVE.includes(a)) ? 3 : base;
-    abrirHoja(`<div class="hoja-cab"><b>Cargar incidencia</b><button class="ico" onclick="cerrarHoja()" aria-label="Cerrar">✕</button></div>
-      <div class="paso">1 · Dónde</div>
-      ${st.sector ? `<div class="opciones"><button class="opc on" onclick="cargarIncidencia.sector='';cargarIncidencia.pintar()">${esc(sectorDe(ev, st.sector).nombre)} <small>cambiar</small></button></div>`
-        : `<input class="campo" placeholder="Buscar el sector" value="${esc(st.busca)}" oninput="cargarIncidencia.busca=this.value;clearTimeout(window._bs);window._bs=setTimeout(()=>{cargarIncidencia.pintar();const b=document.querySelector('.hoja .campo');b.focus();b.setSelectionRange(b.value.length,b.value.length)},250)" style="margin-bottom:8px">
-          ${Object.entries(TIPOS_SECTOR).map(([t, nom]) => { const l = secs.filter(s => s.tipo === t); return l.length ? `<div class="paso" style="margin:10px 2px 6px;font-size:10.5px">${nom}</div><div class="opciones">${l.map(s => `<button class="opc" onclick="cargarIncidencia.sector='${s.id}';cargarIncidencia.pintar()">${esc(s.nombre)}</button>`).join('')}</div>` : ''; }).join('')}
-          <button class="btn ancho" style="margin-top:10px" onclick="nuevoSector('sector','cargarIncidencia.pintar()')">+ Otro sector (lo agregás al predio)</button>`}
-      ${st.sector ? `<div class="paso">2 · Qué pasó</div><div class="opciones">${CATALOGO.map(x => `<button class="opc${st.cat === x.cat ? ' on' : ''}" onclick="cargarIncidencia.cat='${x.cat}';cargarIncidencia.tipo='';cargarIncidencia.acc=[];cargarIncidencia.pintar()">${x.cat}</button>`).join('')}</div>
-        ${c ? `<div class="lista-tipos">${c.tipos.map(([t, n]) => `<button class="opc${st.tipo === t ? ' on' : ''}" onclick="cargarIncidencia.tipo=this.dataset.t;cargarIncidencia.pintar()" data-t="${esc(t)}">${esc(t)}${nivelPill(n)}</button>`).join('')}</div>` : ''}` : ''}
-      ${st.tipo ? `<div class="paso">3 · Lo que se hizo</div>${c.acciones.map(a => `<label class="check"><input type="checkbox" ${st.acc.includes(a) ? 'checked' : ''} onchange="const l=cargarIncidencia.acc;this.checked?l.push(this.dataset.a):l.splice(l.indexOf(this.dataset.a),1);cargarIncidencia.pintar()" data-a="${esc(a)}">${esc(a)}</label>`).join('')}
-        <div class="nivel n${nivel}"><div><b>${NIVELES[nivel].nombre}</b><br><span>${NIVELES[nivel].ayuda}${nivel === 3 && base < 3 ? ' (subió a grave por lo que se hizo)' : ''}</span></div></div>
-        <div class="paso">4 · Nota (opcional)</div><textarea class="campo" placeholder="Algo más para el informe" oninput="cargarIncidencia.nota=this.value">${esc(st.nota)}</textarea>
-        <button class="btn prim ancho grande" style="margin-top:16px" onclick="guardarIncidencia()">Guardar</button>` : ''}`);
-  };
-  st.pintar();
-}
-function guardarIncidencia() {
-  const st = cargarIncidencia, ev = evActual(), c = CATALOGO.find(x => x.cat === st.cat), base = (c.tipos.find(t => t[0] === st.tipo) || [0, 1])[1];
-  ev.incidencias.push({ id: uid(), sector: st.sector, cat: st.cat, tipo: st.tipo, nivel: st.acc.some(a => SUBEN_A_GRAVE.includes(a)) ? 3 : base, acciones: st.acc.slice(), nota: st.nota.trim(), quien: yo().nombre, creada: new Date().toISOString(), estado: 'abierta', resolucion: '' });
-  guardarDemo(); cerrarHoja(); filtroInc = 'abiertas'; filtroSector = ''; pintarEvento(); toast('✓ Incidencia cargada');
-}
-function verIncidencia(id) {
-  const ev = evActual(), i = ev.incidencias.find(x => x.id === id); if (!i) return;
-  const puede = !soloVer(ev) && i.estado === 'abierta' && (esCoord() || i.quien === yo().nombre);
-  abrirHoja(`<div class="hoja-cab"><b>${esc(i.tipo)}</b><button class="ico" onclick="cerrarHoja()" aria-label="Cerrar">✕</button></div>
-    <div class="nivel n${i.nivel}"><div><b>${NIVELES[i.nivel].nombre}</b><br><span>${NIVELES[i.nivel].ayuda}</span></div></div>
-    <div style="margin-top:8px">${[['Sector', sectorDe(ev, i.sector).nombre], ['Qué', i.cat + ' · ' + i.tipo], ['Cuándo', diaCorto(i.creada.slice(0, 10)) + ' · ' + hora(i.creada)], ['Cargó', i.quien], ['Lo que se hizo', i.acciones.join(' · ') || '—'], ['Nota', i.nota || '—'], ['Estado', i.estado === 'resuelta' ? 'Resuelta' + (i.resolucion ? ': ' + i.resolucion : '') : 'Abierta']].map(([k, v]) => `<div class="dato"><small>${k}</small><span>${esc(v)}</span></div>`).join('')}</div>
-    ${puede ? `<div class="paso">Cerrarla</div><textarea class="campo" id="resNota" placeholder="Cómo se resolvió (opcional)"></textarea><button class="btn prim ancho grande" style="margin-top:12px" onclick="resolver('${i.id}')">Marcar resuelta</button>` : ''}`);
-}
-function resolver(id) {
-  const ev = evActual(), i = ev.incidencias.find(x => x.id === id); if (!i) return;
-  i.estado = 'resuelta'; i.resolucion = ($('resNota').value || '').trim(); guardarDemo(); cerrarHoja(); pintarEvento(); toast('✓ Resuelta');
+  const s = { id: 's' + uid(), nombre, tipo: hoja.tipo, quien: yo().nombre, evento: e.nombre };
+  pr.sectores.push(s); guardarDemo(); toast('✓ ' + (s.tipo === 'lata' ? 'Lata' : 'Sector') + ' agregado');
+  if (hoja.desde === 'volver') { abrirNueva(s.id); return; }
+  cerrarHoja();
+  if (hoja.desde === 'org') abrirOrg(); else pintarSectores();
 }
 
 // ── LA HOJA DE ABAJO ────────────────────────────────────────────
-function abrirHoja(html) { const h = $('hoja'), s = h.hidden ? 0 : $('hojaIn').scrollTop; $('hojaIn').innerHTML = '<div class="hoja-tir"></div>' + html; h.hidden = false; $('hojaIn').scrollTop = s; document.body.style.overflow = 'hidden'; }
-function cerrarHoja() { $('hoja').hidden = true; document.body.style.overflow = ''; }
+function abrirHoja(titulo, sub, cuerpo, mano) {
+  const h = $('incSheet'), abierta = !h.classList.contains('hidden'), card = h.querySelector('.fb-card'), sc = abierta ? card.scrollTop : 0;
+  $('hojaTit').textContent = titulo; $('hojaTit').className = 'fb-title' + (mano ? ' mano' : '');
+  $('hojaSub').innerHTML = sub || ''; $('hojaCuerpo').innerHTML = cuerpo;
+  h.classList.remove('hidden'); card.scrollTop = sc;
+}
+function cerrarHoja() { const h = $('incSheet'); if (h) h.classList.add('hidden'); }
 
 // ── ARRANCAR ────────────────────────────────────────────────────
 cargarDemo(); irInicio();
+
 </script>
 </body>
 </html>
