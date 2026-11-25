@@ -40,7 +40,7 @@ create table if not exists public.vacaciones (
   nombre       text not null,
   area         text not null,
   datos        jsonb not null,                       -- los tramos, los días y lo que avisó el formulario
-  aprueba_jefe text,                                 -- el jefe al que la derivó RR. HH. (null: firma sólo RR. HH.)
+  aprueba_jefe text,                                 -- el jefe directo (null: su jefe directo es RR. HH., que firma una vez)
   aprueba_rrhh text not null,
   estado       text not null default 'nueva',
   firmas       jsonb not null default '{}'::jsonb,   -- { empleado, jefe, rrhh }: { png, aclaracion, decision, nota, fecha, email }
@@ -277,7 +277,8 @@ begin
     v_datos := v_datos || jsonb_build_object('reemplaza', jsonb_build_object('id', v_vieja.id, 'transaccion_id', v_vieja.transaccion_id, 'fecha', v_vieja.created_at));
     v_extra := '. Modifica la solicitud ' || coalesce(v_vieja.transaccion_id, v_vieja.id::text);
   end if;
-  -- A quién le llega: al jefe de su área, sola. Sin jefe, con RR. HH. de jefe o si la pide el jefe: directo a RR. HH.
+  -- A quién le llega: al jefe de su área, sola. Si el área no tiene otro jefe que RR. HH. o si la pide el jefe, su jefe
+  -- directo es RR. HH.: le llega directo y firma una sola vez.
   -- Un área que no está en la lista: queda "nueva", para que RR. HH. la derive desde el panel.
   select lower(btrim(coalesce(a ->> 'jefe', ''))) into v_jefe
     from jsonb_array_elements(coalesce(v_cfg -> 'areas', '[]'::jsonb)) a where lower(btrim(coalesce(a ->> 'nombre', ''))) = lower(v_area) limit 1;
@@ -290,7 +291,7 @@ begin
   perform public.vac_evento(v_id, 'creada', v_mail, 'Completó y firmó la solicitud. Entró con el código enviado a su mail. Huella de la firma: ' || left(public.vac_huella(p_firma), 16) || coalesce(v_extra, ''));
   if v_estado <> 'nueva' then
     perform public.vac_evento(v_id, 'derivada', 'automático', case when v_estado = 'jefe' then 'Va sola al jefe directo del área (' || v_area || '): ' || v_jefe
-      else 'Va directo a RR. HH. (el área no tiene otro jefe, o quien la pide es el jefe)' end, true);
+      else 'Va directo a RR. HH., que es su jefe directo (firma una sola vez)' end, true);
   end if;
   -- La anterior queda cancelada (reemplazada): el link del jefe, si estaba derivada, deja de servir (queda para verla).
   if p_reemplaza is not null then
@@ -318,7 +319,7 @@ begin
 end;
 $$;
 
--- ── RR. HH. la deriva (desde el panel): a un jefe (su mail) o, sin jefe, la firma RR. HH. directamente ──
+-- ── RR. HH. la deriva (desde el panel): a un jefe (su mail) o, si su jefe directo es RR. HH., la firma RR. HH. una vez ──
 create or replace function public.vacaciones_derivar(p_id uuid, p_jefe text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare v_jefe text := nullif(lower(btrim(coalesce(p_jefe, ''))), ''); r record;
@@ -331,7 +332,7 @@ begin
   update public.vacaciones set aprueba_jefe = v_jefe, estado = case when v_jefe is null then 'rrhh' else 'jefe' end,
          aviso_hecho = null, token_hash = null, token_rol = null, derivada_por = coalesce(auth.jwt() ->> 'email', 'panel')
    where id = p_id;
-  perform public.vac_evento(p_id, 'derivada', coalesce(auth.jwt() ->> 'email', 'panel'), case when v_jefe is null then 'RR. HH. la firma directamente (sin jefe)' else 'Derivada al jefe directo: ' || v_jefe end);
+  perform public.vac_evento(p_id, 'derivada', coalesce(auth.jwt() ->> 'email', 'panel'), case when v_jefe is null then 'Su jefe directo es RR. HH.: la firma una sola vez' else 'Derivada al jefe directo: ' || v_jefe end);
   return jsonb_build_object('ok', true, 'estado', case when v_jefe is null then 'rrhh' else 'jefe' end);
 end;
 $$;
@@ -384,7 +385,7 @@ begin
       update public.vacaciones set ver_hashes = ver_hashes || public.vac_huella(v_ver) where id = r.id;
       perform public.vac_evento(r.id, 'aviso', r.email, 'Mail a la persona: la recibimos, con su link para verla', true);
     end if;
-    -- equipo: quien firma es su jefe directo (el del área o, sin jefe, RR. HH.): "X, de tu equipo, firmó".
+    -- equipo: quien firma es su jefe directo (el del área o RR. HH.): "Es de tu equipo y ya firmó".
     return jsonb_build_object('ok', true, 'paso', r.estado, 'token', v_tok, 'con_jefe', r.aprueba_jefe is not null, 'ver', v_ver,
       'equipo', r.estado = 'jefe' or r.aprueba_jefe is null, 'jefe_nombre', r.firmas -> 'jefe' ->> 'aclaracion',
       'para', case when r.estado = 'jefe' then r.aprueba_jefe else r.aprueba_rrhh end, 'rrhh', r.aprueba_rrhh,

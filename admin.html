@@ -13952,7 +13952,7 @@ function vacTramos(v) { return ((v.datos || {}).tramos || []).map(t => fechaDMA(
 function vacSugerido(v) { const a = vacCfg.areas.find(x => x.nombre.toLowerCase() === String(v.area || '').toLowerCase()); const j = a ? a.jefe.trim().toLowerCase() : ''; return j && j !== v.email && j !== String(vacCfg.rrhh).toLowerCase() ? j : ''; }
 function vacOpciones(sel) {
   const jefes = [...new Map(vacCfg.areas.filter(a => a.jefe.trim()).map(a => [a.jefe.trim().toLowerCase(), a.nombre])).entries()];
-  return '<option value="">La firma sólo RR. HH. (depende de RR. HH.)</option>' + jefes.map(([m, area]) => `<option value="${e(m)}"${m === sel ? ' selected' : ''}>Jefe de ${e(area)} · ${e(m)}</option>`).join('');
+  return '<option value="">Su jefe directo es RR. HH. (firma una vez)</option>' + jefes.map(([m, area]) => `<option value="${e(m)}"${m === sel ? ' selected' : ''}>Jefe de ${e(area)} · ${e(m)}</option>`).join('');
 }
 function renderVac() {
   const cont = document.getElementById('vacCuerpo'); if (!cont) return;
@@ -14005,7 +14005,7 @@ async function vacBorrar(ids) {
 async function vacDerivar(id) {
   const sel = document.getElementById('vacJ_' + id), jefe = sel ? sel.value : '';
   const v = vacLista.find(x => x.id === id); if (!v) return;
-  if (!confirm(jefe ? '¿Mandarle la solicitud de ' + v.nombre + ' a ' + jefe + ' para que la apruebe y la firme?' : '¿La firma sólo RR. HH.? Le llega el link a ' + vacCfg.rrhh + '.')) return;
+  if (!confirm(jefe ? '¿Mandarle la solicitud de ' + v.nombre + ' a ' + jefe + ' para que la apruebe y la firme?' : '¿Su jefe directo es RR. HH.? Le llega el link a ' + vacCfg.rrhh + ' para firmarla una sola vez.')) return;
   const { data, error } = await sb.rpc('vacaciones_derivar', { p_id: id, p_jefe: jefe || null });
   if (error || !data || !data.ok) { toast((data && data.error) || 'No se pudo derivar'); return; }
   const r = await fetch('/api/mis-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vacaciones: 'aviso', id }) }).then(x => x.json()).catch(() => ({}));
@@ -14033,7 +14033,7 @@ async function vacDetalle(id) {
   const firma = (t, x, vacia) => `<div class="vac-firma"><b>${t}</b>${x ? `${x.decision ? (x.decision === 'aprobado' ? '☑ Aprobado' : '☒ No aprobado') : 'Solicito las fechas indicadas.'}<img src="${x.png}" alt="Firma"><div>${e(x.aclaracion)}</div><div class="fbv-sub">${fechaHoraAR(x.fecha)}</div>${x.nota ? `<div class="fbv-sub">${e(x.nota)}</div>` : ''}` : `<div class="fbv-sub" style="padding:18px 0">${vacia || 'Falta su firma'}</div>`}</div>`;
   cont.innerHTML = `<button class="btn btn-sec btn-xs" onclick="renderVac()">← Volver a la lista</button>
     <div class="vac-det-cab"><div><div class="fbv-nom" style="font-size:15px">${eN(v.nombre)}</div><div class="fbv-sub">${e(v.area)} · ${e(v.email)} · ${e(vacTramos(v))} · ${(v.datos || {}).total} días</div></div><span class="vac-est ${v.estado}">${VAC_ESTADOS[v.estado]}</span></div>
-    <div class="vac-firmas">${firma('Empleado/a', f.empleado)}${firma('Jefe directo', f.jefe || (sinJefe && f.rrhh ? Object.assign({}, f.rrhh, { nota: '' }) : null), v.estado === 'cancelada' ? 'Cancelada' : sinJefe ? 'Depende de RR. HH.: firma RR. HH.' : v.aprueba_jefe ? 'Falta su firma · ' + e(v.aprueba_jefe) : 'Sin derivar')}${firma('RR. HH.', f.rrhh, v.estado === 'cancelada' ? 'Cancelada' : '')}</div>
+    <div class="vac-firmas"${sinJefe ? ' style="grid-template-columns:repeat(2,minmax(0,1fr))"' : ''}>${firma('Empleado/a', f.empleado)}${sinJefe ? firma('Jefe directo y RR. HH.', f.rrhh) : firma('Jefe directo', f.jefe, v.estado === 'cancelada' ? 'Cancelada' : v.aprueba_jefe ? 'Falta su firma · ' + e(v.aprueba_jefe) : 'Sin derivar') + firma('RR. HH.', f.rrhh, v.estado === 'cancelada' ? 'Cancelada' : '')}</div>
     <div style="font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#6b7280;margin:16px 0 6px">Trazabilidad</div>
     <div class="fbv-tabla hi-tabla" style="max-height:40vh"><table><thead><tr><th style="width:120px">Fecha y hora</th><th style="width:130px">Paso</th><th>Detalle</th><th style="width:190px">IP · dispositivo</th></tr></thead><tbody>
       ${((ev.data) || []).map(x => `<tr><td>${fechaHoraAR(x.fecha)}</td><td><b>${VAC_PASOS[x.tipo] || e(x.tipo)}</b></td><td>${x.quien ? e(x.quien) + '<div class="fbv-sub">' : '<div>'}${e(x.detalle || '')}</div></td><td class="fbv-sub">${[x.ip ? 'IP ' + e(x.ip) : '', e(vacUa(x.user_agent))].filter(Boolean).join(' · ')}</td></tr>`).join('') || '<tr><td colspan="4" class="fbv-sub">Sin pasos registrados (falta correr la parte de trazabilidad de vacaciones.sql).</td></tr>'}
@@ -14048,13 +14048,13 @@ async function vacPdf(id) {
   if (!data || !data.pdf) { toast('Todavía no está el PDF'); return; }
   const a = document.createElement('a'); a.href = 'data:application/pdf;base64,' + data.pdf; a.download = 'Solicitud de vacaciones - ' + data.nombre + '.pdf'; document.body.appendChild(a); a.click(); a.remove();
 }
-// Áreas y jefes: el mail de RR. HH. (firma siempre, al final) y el jefe de cada área (vacío: la firma sólo RR. HH.).
+// Áreas y jefes: el mail de RR. HH. (firma siempre, al final) y el jefe de cada área (vacío: su jefe directo es RR. HH.).
 function renderVacCfg(cont) {
   cont.innerHTML = `<div class="vac-link"><span>Link para el newsletter</span><b>${VAC_LINK}</b><button class="btn btn-sec btn-xs" onclick="navigator.clipboard.writeText('${VAC_LINK}').then(()=>toast('✓ Link copiado'))">Copiar</button></div>
     <div class="fg"><label>Mail de RR. HH. (aprueba y firma todas, al final)</label><input class="fi" id="vacRrhh" value="${e(vacCfg.rrhh)}" placeholder="nombre@show-bs.com"></div>
     <div class="fg" style="margin-top:10px"><label>Copia del PDF final, siempre (mails separados por coma)</label><input class="fi" id="vacCopias" value="${e((vacCfg.copias || []).join(', '))}" placeholder="RR. HH., legales, socios…"></div>
-    <div style="margin-top:14px;font-size:12.5px;font-weight:600;color:#374151">Áreas y su jefe directo <span style="font-weight:400;color:#6b7280">· la solicitud le llega sola al jefe de su área; sin jefe (o si la pide el jefe), la firma sólo RR. HH.</span></div>
-    <div id="vacAreas">${vacCfg.areas.map((a, i) => `<div class="vac-area"><input class="fi" value="${e(a.nombre)}" placeholder="Área" oninput="vacCfg.areas[${i}].nombre=this.value"><input class="fi" value="${e(a.jefe)}" placeholder="Mail del jefe (vacío: la firma RR. HH.)" oninput="vacCfg.areas[${i}].jefe=this.value"><button class="btn btn-sec btn-xs" onclick="vacCfg.areas.splice(${i},1);renderVac()">Quitar</button></div>`).join('')}</div>
+    <div style="margin-top:14px;font-size:12.5px;font-weight:600;color:#374151">Áreas y su jefe directo <span style="font-weight:400;color:#6b7280">· la solicitud le llega sola al jefe de su área; vacío (o si la pide el jefe): su jefe directo es RR. HH., que firma una sola vez</span></div>
+    <div id="vacAreas">${vacCfg.areas.map((a, i) => `<div class="vac-area"><input class="fi" value="${e(a.nombre)}" placeholder="Área" oninput="vacCfg.areas[${i}].nombre=this.value"><input class="fi" value="${e(a.jefe)}" placeholder="Mail del jefe (vacío: su jefe directo es RR. HH.)" oninput="vacCfg.areas[${i}].jefe=this.value"><button class="btn btn-sec btn-xs" onclick="vacCfg.areas.splice(${i},1);renderVac()">Quitar</button></div>`).join('')}</div>
     <button class="btn btn-sec btn-sm" style="margin-top:8px" onclick="vacCfg.areas.push({nombre:'',jefe:''});renderVac()">+ Agregar un área</button>
     <div style="text-align:right;margin-top:16px"><button class="btn btn-primary" onclick="vacGuardarCfg()">Guardar</button></div>`;
 }

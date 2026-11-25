@@ -58,12 +58,12 @@ export const MAILS = {
   nuevaRrhh: a => armarMail({ kicker: KICKER, titulo: a.nombre, hola: 'Hola',
     parrafos: [reemplaza(a) ? `Cambió la solicitud que mandó el ${diaMes(reemplaza(a).fecha)} y la volvió a firmar (la anterior quedó cancelada).`
       : a.fuera_de_lista ? `Mandó su solicitud, firmada, con un área que no está en la lista: ${a.area}.` : `Mandó su solicitud, firmada (${a.area}).`,
-      'Derivala desde el panel al jefe que corresponde, o elegí "La firma sólo RR. HH.".'],
+      'Derivala desde el panel al jefe que corresponde, o elegí "Su jefe directo es RR. HH.".'],
     datos: filasTramos(a.datos).concat(avisos(a)), boton: 'Derivarla en el panel', link: `${SITIO}/admin#vacaciones` }),
   // A la persona, la primera vez: a quién le llegó y que la puede cambiar hasta que la firmen.
   recibida: a => armarMail({ kicker: KICKER, titulo: reemplaza(a) ? 'Recibimos el cambio' : 'Recibimos tu solicitud', hola: 'Hola, ' + primerNombre(a.nombre),
     parrafos: [(reemplaza(a) ? 'La anterior quedó cancelada. ' : '') + (a.paso === 'jefe' ? 'Le llegó a tu jefe directo para que la apruebe; después la firma RR. HH.'
-      : a.paso === 'rrhh' ? 'Le llegó a RR. HH. para que la apruebe y la firme.' : 'RR. HH. se la manda a tu jefe directo para que la apruebe.')],
+      : a.paso === 'rrhh' ? 'Le llegó a RR. HH. (tu jefe directo) para que la apruebe y la firme.' : 'RR. HH. se la manda a tu jefe directo para que la apruebe.')],
     datos: filasTramos(a.datos), boton: 'Ver mi solicitud', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.ver)}`,
     pie: 'Hasta que la firmen, la podés modificar o cancelar desde la página. Al final te llega el PDF con todas las firmas.' }),
   // A quien la tenía para firmar: la canceló, o la cambió y la nueva va a otro lado.
@@ -72,7 +72,7 @@ export const MAILS = {
       ? ['Cambió su solicitud antes de que la firmaras, y el link que te mandamos quedó sin efecto. Si la nueva te toca a vos, te llega otro mail.']
       : ['Canceló su solicitud, y el link para firmarla quedó sin efecto. No hace falta hacer nada.'],
     datos: [['Área', a.area]].concat(a.reemplazada ? filasTramos(a.datos).map(([k, v]) => [k + ' (la anterior)', v]) : filasTramos(a.datos), a.motivo ? [['Motivo', a.motivo]] : []) }),
-  // A quien firma: el jefe ("es de tu equipo") o RR. HH. ("su jefe ya la aprobó"; o "es de tu equipo", si no tiene otro jefe).
+  // A quien firma: el jefe ("es de tu equipo") o RR. HH. ("su jefe ya la aprobó"; o "es de tu equipo", si su jefe directo es RR. HH.).
   firmar: a => armarMail({ kicker: KICKER, titulo: a.nombre, hola: 'Hola',
     parrafos: [((a.equipo != null ? a.equipo : (a.paso === 'jefe' || !a.con_jefe)) ? 'Es de tu equipo y ya firmó su solicitud.' : `Ya firmó su solicitud y su jefe directo${a.jefe_nombre ? ', ' + a.jefe_nombre + ',' : ''} la aprobó.`)
       + (reemplaza(a) ? ` Es un cambio de la que mandó el ${diaMes(reemplaza(a).fecha)}: el link anterior ya no sirve.` : ''),
