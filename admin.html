@@ -3342,6 +3342,8 @@ async function pedirTanda(pedir, a, b) {
 }
 // Las listas que no terminaron de cargar en esta vuelta (para avisarlo, en vez de mostrarlas cortadas).
 let cargaIncompleta = [];
+// Postulantes no llegó (ni una tanda): la lista lo dice en vez de "Sin solicitudes todavía".
+let solCargaFallo = false;
 // Trae todas las filas de una consulta de a tandas de 1.000 (Supabase corta cada respuesta en 1.000), varias a la vez:
 // tantas como hacían falta la última vez, y después de a dos hasta que una venga incompleta (21-nov: de a una por
 // vez, con la nómina grande, el panel tardaba). pedir(desde, hasta) → promesa de { data, error }.
@@ -3369,7 +3371,7 @@ async function traerEnTandas(pedir, clave) {
 
 async function loadAll() {
   setLoad(true, 'Cargando nómina...', 15);
-  people = []; cargaIncompleta = [];
+  people = []; cargaIncompleta = []; solCargaFallo = false;
   cargaPartes = { pedidas: 0, listas: 0 }; cargaEtapa = { msg: 'Cargando nómina...', pct: 15, hasta: 92 };
   // 21-nov: todo lo demás se pide ya, a la vez que la nómina (antes, primero la nómina entera y recién después lo demás).
   const pResto = Promise.all([
@@ -3379,12 +3381,16 @@ async function loadAll() {
       // Paginado: Supabase devuelve máx. 1000 filas por consulta. Al pasar las 1000
       // postulaciones, las más nuevas no se cargaban nunca: se agregaba gente al puesto,
       // se guardaba bien en la base, y al recargar no aparecía (y los cupos daban mal).
-      return traerEnTandas((a, b) => sb.from('postulaciones').select('*').order('created_at').order('id').range(a, b), 'postulaciones');
+      const r = await traerEnTandas((a, b) => sb.from('postulaciones').select('*').order('created_at').order('id').range(a, b), 'postulaciones');
+      if (r.error && !r.data.length) cargaIncompleta.push('postulaciones');
+      return r;
     })(),
     (async () => {
       // Paginado, como las postulaciones: con las planillas de feedback se pasan
       // las 1000 enseguida, y sin todos el semáforo de algunos saldría mal.
-      return traerEnTandas((a, b) => sb.from('feedbacks').select('*').order('created_at').order('id').range(a, b), 'feedbacks');
+      const r = await traerEnTandas((a, b) => sb.from('feedbacks').select('*').order('created_at').order('id').range(a, b), 'feedbacks');
+      if (r.error && !r.data.length) cargaIncompleta.push('feedbacks');
+      return r;
     })(),
     sb.from('user_profiles').select('*'),
     sb.from('supervisor_convocatorias').select('*'),
@@ -3409,6 +3415,9 @@ async function loadAll() {
       let r = await pedir(',cv_nombre');
       if (r.error && !r.data.length) r = await pedir(',cv_nombre:archivo_cv->>nombre');
       if (r.error && !r.data.length) r = await pedir('');
+      // 26-nov: si no llegó ninguna (la base no contestó a tiempo), se avisa; antes Postulantes decía "Sin solicitudes
+      // todavía" con 11.000 en la base.
+      if (r.error && !r.data.length) { cargaIncompleta.push('solicitudes'); solCargaFallo = true; }
       return { data: r.data };
     })(),
     sb.from('config').select('*'),
@@ -3423,7 +3432,9 @@ async function loadAll() {
       const r0 = await pedir(cols + ',fecha_show,sector,origen,turno_id');
       if (!(r0.error && !r0.data.length)) return r0;
       const r = await pedir(cols + ',fecha_show,sector,origen');
-      return r.error && !r.data.length ? await pedir(cols) : r;
+      const r2 = r.error && !r.data.length ? await pedir(cols) : r;
+      if (r2.error && !r2.data.length) cargaIncompleta.push('contratos');
+      return r2;
     })()
   ]);
   // 22-nov: el historial cargado a mano o con las planillas del año (historial-feedback.sql), también a la vez. Sin esa
@@ -14811,7 +14822,7 @@ function renderSolicitudes() {
   const dupCuits = new Set(Object.entries(cuitCount).filter(([,areas]) => areas.length > 1).map(([cuit]) => cuit));
   solChips(af);
   const cont = document.getElementById('solContent');
-  if (!filtered.length) { cont.innerHTML = `<div class="empty">${solicitudes.length === 0 ? 'Sin solicitudes todavía. Compartí el formulario candidato.html para que lleguen postulaciones.' : 'Sin resultados.'}</div>`; return; }
+  if (!filtered.length) { cont.innerHTML = `<div class="empty">${solicitudes.length === 0 ? (solCargaFallo ? 'No se pudieron cargar los postulantes: la base no contestó a tiempo. Tocá ↺ arriba para volver a intentar.' : 'Sin solicitudes todavía. Compartí el formulario candidato.html para que lleguen postulaciones.') : 'Sin resultados.'}</div>`; return; }
   const PS_SOL = 80;
   const totalPagSol = Math.max(1, Math.ceil(filtered.length / PS_SOL));
   if (solPage > totalPagSol) solPage = totalPagSol; if (solPage < 1) solPage = 1;
