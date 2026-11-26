@@ -211,12 +211,14 @@ language sql stable set search_path = public as $$
 $$;
 revoke execute on function public.vac_socios() from public, anon, authenticated;
 
--- Los servicios fijos, por fuera de Corporativo (25-nov, Thomas: Fábrica Colón y Campo de Polo; config 'servicios').
+-- Los servicios fijos, por fuera de Corporativo (25-nov, Thomas: Colón Fábrica y Campo de Polo; config 'servicios').
 -- Misma página y mismas reglas, con su propio link (/vacaciones/servicios, que muestra sólo estas áreas). Los aprueba
 -- RR. HH. directo, sin intermediarios, y el PDF final no va a los socios ("no, sólo Corporativo").
+-- 'servicios_antes': nombres viejos de un servicio (26-nov: "se llama Colón Fábrica, no Fábrica Colón"). Las solicitudes
+-- que se mandaron con el nombre viejo lo conservan (es lo que firmó la persona) y siguen contando como servicio.
 create or replace function public.vac_servicio(p_area text) returns boolean
 language sql stable set search_path = public as $$
-  select exists (select 1 from public.config c, jsonb_array_elements_text(coalesce(c.value -> 'servicios', '[]'::jsonb)) x
+  select exists (select 1 from public.config c, jsonb_array_elements_text(coalesce(c.value -> 'servicios', '[]'::jsonb) || coalesce(c.value -> 'servicios_antes', '[]'::jsonb)) x
                   where c.key = 'vacaciones' and btrim(x) <> '' and lower(btrim(x)) = lower(btrim(coalesce(p_area, ''))))
 $$;
 revoke execute on function public.vac_servicio(text) from public, anon, authenticated;
@@ -327,7 +329,7 @@ begin
   v_estado := case when not found then 'nueva' when v_jefe = '' or v_jefe = lower(btrim(v_cfg ->> 'rrhh')) or v_jefe = v_mail then 'rrhh' else 'jefe' end;
   -- Un jefe de área va siempre a RR. HH., aunque elija otra área.
   if public.vac_es_jefe(v_mail) then v_estado := 'rrhh'; end if;
-  -- Un servicio fijo (Fábrica Colón, Campo de Polo): lo aprueba RR. HH. directo, sin intermediarios.
+  -- Un servicio fijo (Colón Fábrica, Campo de Polo): lo aprueba RR. HH. directo, sin intermediarios.
   if public.vac_servicio(v_area) then v_estado := 'rrhh'; end if;
   -- La pide quien firma por RR. HH.: la aprueban los socios (si están cargados; si no, como hasta ahora).
   v_socios := v_mail = lower(btrim(v_cfg ->> 'rrhh')) and cardinality(public.vac_socios()) > 0;
