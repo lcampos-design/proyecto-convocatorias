@@ -13608,6 +13608,8 @@ function openPlantilla() {
   plBorradores = { ar: String(guardadas.ar || CONTRATO_TEMPLATE), espana: String(guardadas.espana || '') };
   document.getElementById('plCampos').innerHTML = CONTRATO_CAMPOS.map(([k, ayuda]) =>
     `<button type="button" class="pos-elegir" title="${e(ayuda)}" onclick="insertarCampo('${k}')">{{${k}}}</button>`).join('');
+  // Al abrir no hay solapa anterior que guardar: si no, el cuadro todavía vacío pisaba el modelo y se veía en blanco (26-nov).
+  plPais = '';
   setPlantillaPais('ar');
   showM('mPlantilla');
 }
