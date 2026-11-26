@@ -245,6 +245,31 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke execute on function public.vac_mias(text) from public, anon, authenticated;
 
+-- ── Firmar entrando con el mail (26-nov, Thomas: "cómo hace Mercedes para firmar desde su usuario") ──
+-- Quien entra con su mail y el código ve también las que le toca firmar ahora (como jefe directo, como RR. HH. o, si
+-- es uno de los socios, las de quien firma por RR. HH.) y las firma ahí, sin buscar el mail. El link del mail sigue
+-- andando igual. Nadie firma las suyas.
+-- El papel de ese mail en esa solicitud, ahora: 'jefe', 'rrhh' o null (no le toca).
+create or replace function public.vac_rol_de(r public.vacaciones, v_mail text) returns text
+language sql stable set search_path = public as $$
+  select case
+    when v_mail is null or lower(r.email) = v_mail then null
+    when r.estado = 'jefe' and lower(btrim(coalesce(r.aprueba_jefe, ''))) = v_mail then 'jefe'
+    when r.estado = 'rrhh' and r.aprueban_socios and v_mail = any(public.vac_socios()) then 'rrhh'
+    when r.estado = 'rrhh' and not r.aprueban_socios and lower(btrim(r.aprueba_rrhh)) = v_mail then 'rrhh'
+  end
+$$;
+revoke execute on function public.vac_rol_de(public.vacaciones, text) from public, anon, authenticated;
+-- Las que tiene para firmar, de la más vieja a la más nueva (sin las firmas ni el PDF).
+create or replace function public.vac_para_firmar(v_mail text) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'creada', r.created_at, 'estado', r.estado, 'nombre', r.nombre, 'area', r.area, 'datos', r.datos,
+           'rol', public.vac_rol_de(r, v_mail), 'socios', r.aprueban_socios, 'jefe_firmo', r.firmas ? 'jefe') order by r.created_at), '[]'::jsonb)
+    from public.vacaciones r
+   where r.estado in ('jefe', 'rrhh') and public.vac_rol_de(r, v_mail) is not null
+$$;
+revoke execute on function public.vac_para_firmar(text) from public, anon, authenticated;
+
 -- ── Entrar con el código: abre una sesión de 3 horas y devuelve sus solicitudes ──
 create or replace function public.vacaciones_entrar(p_email text, p_codigo text)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -261,7 +286,7 @@ begin
   v_ses := public.vac_token();
   insert into public.vacaciones_sesiones (token_hash, email, vence) values (public.vac_huella(v_ses), v_mail, now() + interval '3 hours');
   delete from public.vacaciones_sesiones where vence < now() - interval '1 day';
-  return jsonb_build_object('ok', true, 'sesion', v_ses, 'email', v_mail, 'mias', public.vac_mias(v_mail));
+  return jsonb_build_object('ok', true, 'sesion', v_ses, 'email', v_mail, 'mias', public.vac_mias(v_mail), 'para_firmar', public.vac_para_firmar(v_mail));
 end;
 $$;
 
@@ -270,7 +295,7 @@ returns jsonb language plpgsql stable security definer set search_path = public 
 declare v_mail text := public.vac_quien(p_sesion);
 begin
   if v_mail is null then return jsonb_build_object('ok', false, 'error', 'Tu sesión venció. Entrá de nuevo con tu mail.'); end if;
-  return jsonb_build_object('ok', true, 'email', v_mail, 'mias', public.vac_mias(v_mail));
+  return jsonb_build_object('ok', true, 'email', v_mail, 'mias', public.vac_mias(v_mail), 'para_firmar', public.vac_para_firmar(v_mail));
 end;
 $$;
 
@@ -491,14 +516,23 @@ $$;
 revoke execute on function public.vac_ficha(public.vacaciones, text) from public, anon, authenticated;
 create or replace function public.vacaciones_ver(p_token text, p_id uuid default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare h text := public.vac_huella(p_token); r public.vacaciones; v_mail text;
+declare h text := public.vac_huella(p_token); r public.vacaciones; v_mail text; v_rol text;
 begin
   if p_id is not null then
     v_mail := public.vac_quien(p_token);
     if v_mail is null then return jsonb_build_object('ok', false, 'error', 'Tu sesión venció. Entrá de nuevo con tu mail.'); end if;
-    select * into r from public.vacaciones where id = p_id and email = v_mail;
+    select * into r from public.vacaciones where id = p_id;
     if not found then return jsonb_build_object('ok', false, 'error', 'No está esa solicitud.'); end if;
-    return public.vac_ficha(r, 'ver');
+    if lower(r.email) = v_mail then return public.vac_ficha(r, 'ver'); end if;
+    -- Una que le toca firmar (26-nov): como con el link, queda que la abrió (una vez cada 10 minutos), con su mail.
+    v_rol := public.vac_rol_de(r, v_mail);
+    if v_rol is null then return jsonb_build_object('ok', false, 'error', 'Esa solicitud ya no está para que la firmes.'); end if;
+    if not exists (select 1 from public.vacaciones_eventos e where e.vacacion_id = r.id and e.tipo = 'abierta' and e.quien = v_mail and e.fecha > now() - interval '10 minutes') then
+      perform public.vac_evento(r.id, 'abierta', v_mail, 'Abrió la solicitud para aprobar y firmar (' || case when v_rol = 'jefe' then 'jefe directo' when r.aprueban_socios then 'socios' else 'RR. HH.' end
+        || '), entrando con el código enviado a su mail');
+      select * into r from public.vacaciones where id = r.id;
+    end if;
+    return public.vac_ficha(r, v_rol);
   end if;
   if length(coalesce(p_token, '')) < 32 then return jsonb_build_object('ok', false, 'error', 'El link no es válido.'); end if;
   select * into r from public.vacaciones where token_hash = h or h = any(ver_hashes) limit 1;
@@ -539,6 +573,36 @@ begin
 end;
 $$;
 
+-- ── Lo mismo, entrando con el mail y el código (26-nov) ──
+--  Las mismas reglas que con el link. Queda el mail de quien firmó (también si es uno de los socios). El link del mail,
+--  si ya había salido, pasa a ser para verla, como cuando se firma con él. Devuelve un link para verla y guardar el PDF.
+create or replace function public.vacaciones_firmar_sesion(p_sesion text, p_id uuid, p_decision text, p_aclaracion text, p_firma text, p_nota text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_mail text := public.vac_quien(p_sesion); r public.vacaciones; v_rol text; v_estado text; v_ver text;
+  v_ac text := btrim(regexp_replace(coalesce(p_aclaracion, ''), '\s+', ' ', 'g'));
+begin
+  if v_mail is null then return jsonb_build_object('ok', false, 'error', 'Tu sesión venció. Entrá de nuevo con tu mail.'); end if;
+  select * into r from public.vacaciones where id = p_id for update;
+  if not found then return jsonb_build_object('ok', false, 'error', 'No está esa solicitud.'); end if;
+  v_rol := public.vac_rol_de(r, v_mail);
+  if v_rol is null then return jsonb_build_object('ok', false, 'error', 'Esta solicitud ya está firmada o ya no te toca firmarla.'); end if;
+  if p_decision is null or p_decision not in ('aprobado', 'no_aprobado') then return jsonb_build_object('ok', false, 'error', 'Marcá si la aprobás o no.'); end if;
+  if length(v_ac) < 3 then return jsonb_build_object('ok', false, 'error', 'Completá tu aclaración (nombre y apellido).'); end if;
+  if coalesce(p_firma, '') !~ '^data:image/png;base64,' or length(p_firma) > 400000 then return jsonb_build_object('ok', false, 'error', 'Falta tu firma.'); end if;
+  v_estado := case when p_decision = 'no_aprobado' then 'rechazada' when v_rol = 'jefe' then 'rrhh' else 'aprobada' end;
+  v_ver := public.vac_token();
+  update public.vacaciones
+     set firmas = firmas || jsonb_build_object(v_rol, jsonb_build_object('png', p_firma, 'aclaracion', v_ac, 'decision', p_decision,
+                    'nota', left(btrim(coalesce(p_nota, '')), 500), 'fecha', now(), 'email', v_mail)),
+         estado = v_estado, ver_hashes = ver_hashes || array_remove(array[r.token_hash, public.vac_huella(v_ver)], null), token_hash = null, token_rol = null
+   where id = r.id;
+  perform public.vac_evento(r.id, 'firmada', v_mail,
+    case when v_rol = 'jefe' then 'Jefe directo' when r.aprueban_socios then 'Socios' else 'RR. HH.' end || ': ' || case when p_decision = 'aprobado' then 'aprobó' else 'no aprobó' end
+    || ' y firmó, entrando con el código enviado a su mail. Aclaración: ' || v_ac || '. Huella de la firma: ' || left(public.vac_huella(p_firma), 16));
+  return jsonb_build_object('ok', true, 'id', r.id, 'estado', v_estado, 'ver', v_ver);
+end;
+$$;
+
 -- ── El PDF final (lo arma la página de quien firmó último, como en los contratos) ──
 create or replace function public.vacaciones_guardar_pdf(p_token text, p_pdf text)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -573,6 +637,7 @@ revoke execute on function public.vacaciones_derivar(uuid, text) from public, an
 revoke execute on function public.vacaciones_aviso(uuid) from public, anon, authenticated;
 revoke execute on function public.vacaciones_ver(text, uuid) from public;
 revoke execute on function public.vacaciones_firmar(text, text, text, text, text) from public;
+revoke execute on function public.vacaciones_firmar_sesion(text, uuid, text, text, text, text) from public;
 revoke execute on function public.vacaciones_guardar_pdf(text, text) from public;
 revoke execute on function public.vacaciones_reenviar(uuid) from public, anon;
 grant execute on function public.vacaciones_areas() to anon, authenticated;
@@ -582,6 +647,7 @@ grant execute on function public.vacaciones_crear(text, jsonb, text, uuid) to an
 grant execute on function public.vacaciones_cancelar(text, uuid, text) to anon, authenticated;
 grant execute on function public.vacaciones_ver(text, uuid) to anon, authenticated;
 grant execute on function public.vacaciones_firmar(text, text, text, text, text) to anon, authenticated;
+grant execute on function public.vacaciones_firmar_sesion(text, uuid, text, text, text, text) to anon, authenticated;
 grant execute on function public.vacaciones_guardar_pdf(text, text) to anon, authenticated;
 grant execute on function public.vacaciones_derivar(uuid, text) to authenticated;
 grant execute on function public.vacaciones_reenviar(uuid) to authenticated;

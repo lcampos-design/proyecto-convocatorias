@@ -19,7 +19,7 @@ const CONDICIONES = ['Te corresponden 14 días corridos. Todo queda sujeto a la 
   // 24-nov, Mercedes: "con respecto a la cobertura en la ofi, hay prioridad por antigüedad y se tiene que cubrir el cupo mínimo por área".
   'Cada área tiene que mantener su cobertura mínima: si varios piden las mismas fechas, tiene prioridad el de mayor antigüedad.',
   'Plus vacacional + adelanto de vacaciones: las vacaciones se cobran antes de salir.'];
-const PASOS_TIPO = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió el link', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado', cancelada: 'Cancelada', reemplazada: 'Modificada' };
+const PASOS_TIPO = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió para firmar', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado', cancelada: 'Cancelada', reemplazada: 'Modificada' };
 const uaCorto = ua => { const s = String(ua || ''); if (!s) return ''; if (/^Sistema/.test(s)) return s;
   const nav = /Edg\//.test(s) ? 'Edge' : /OPR\//.test(s) ? 'Opera' : /Chrome\//.test(s) ? 'Chrome' : /Firefox\//.test(s) ? 'Firefox' : /Safari\//.test(s) ? 'Safari' : 'Navegador';
   const so = /iPhone|iPad/.test(s) ? 'iPhone/iPad' : /Android/.test(s) ? 'Android' : /Windows/.test(s) ? 'Windows' : /Mac OS X/.test(s) ? 'Mac' : /Linux/.test(s) ? 'Linux' : '';
@@ -97,7 +97,7 @@ async function armarPdf(d) {
   let y2 = h2.y; const t2 = h2.txt, p2 = h2.pag;
   const fila2 = (k, v) => { const ls = partir(v, R, 9.5, W - 150); y2 -= 15; t2(k, M, y2, R, 9, gris); ls.forEach((l, i) => { if (i) y2 -= 12; t2(l, M + 150, y2, R, 9.5); }); };
   y2 -= 16; fila2('ID de la solicitud', d.transaccion_id || d.id); fila2('Huella del contenido', d.hash || '');
-  fila2('Estado', estadoTxt(d.estado, d.socios)); fila2('Método', d.socios ? 'La persona entra con un código enviado a su mail; uno de los socios firma con el link enviado a los mails de los socios.' : d.servicio ? 'La persona entra con un código enviado a su mail; RR. HH. firma con un link personal enviado a su mail.' : 'La persona entra con un código enviado a su mail; el jefe directo y RR. HH. firman con links personales enviados a su mail.');
+  fila2('Estado', estadoTxt(d.estado, d.socios)); fila2('Método', d.socios ? 'La persona entra con un código enviado a su mail; uno de los socios firma con el link enviado a los mails de los socios o entrando con un código enviado a su mail.' : d.servicio ? 'La persona entra con un código enviado a su mail; RR. HH. firma con un link personal enviado a su mail o entrando con un código enviado a su mail.' : 'La persona entra con un código enviado a su mail; el jefe directo y RR. HH. firman con links personales enviados a su mail o entrando con un código enviado a su mail.');
   y2 -= 26; t2('PASOS', M, y2, N, 10.5); y2 -= 7; p2.drawLine({ start: { x: M, y: y2 }, end: { x: M + W, y: y2 }, thickness: .5, color: suave });
   y2 -= 16; [['Fecha y hora', 0], ['Paso', 92], ['Detalle', 190]].forEach(([s, x]) => t2(s, M + x, y2, N, 8.5, gris));
   for (const e of d.eventos || []) {

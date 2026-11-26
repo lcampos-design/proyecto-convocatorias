@@ -85,6 +85,7 @@ textarea.in{resize:vertical;min-height:72px;font-family:inherit;line-height:1.45
 .solic{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #efefef}
 .solic:first-child{border-top:0;padding-top:0}
 .solic .t{flex:1;min-width:0}.solic .t b{display:block;font-size:14px}.solic .t small{display:block;font-size:12px;color:#6b6b6b}
+.btn.mini{display:inline-block;width:auto;min-height:40px;margin:0;padding:0 14px;font-size:13px;white-space:nowrap;flex-shrink:0}
 .estado{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:600;background:#f0f0f0;color:#2b2b2b;white-space:nowrap}
 .estado.aprobada{background:#1a1a1a;color:#fff}.estado.rechazada{background:#fdecea;color:#8e1b12}.estado.cancelada{background:#fff;color:#8a8a8a;border:1px solid #d9d9d9}
 /* Modificar o cancelar */
@@ -149,6 +150,7 @@ textarea.in{resize:vertical;min-height:72px;font-family:inherit;line-height:1.45
 //  · Sin link: entrar con el mail (llega un código) → mis solicitudes → una nueva: datos, fechas, firma → enviar.
 //    RR. HH. la deriva desde el panel al jefe que corresponde.
 //  · Con link (?t=): el jefe o RR. HH. la aprueban (o no) y firman; la persona y quien ya firmó, la ven.
+//  · Entrando con el mail, arriba de las suyas, "Para firmar": las que le toca firmar, que se firman ahí (26-nov).
 // Cada paso queda registrado (la trazabilidad, como en los contratos) y va en el informe de auditoría del PDF.
 const SB_URL = 'https://nkmmifyzliiimmtlzeqo.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5rbW1pZnl6bGlpaW1tdGx6ZXFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjM0MTAsImV4cCI6MjA5NjY5OTQxMH0.QU5JBRH_rbTzUu12oeWmCDmJv6B3UUVKPA5HyeuuzSg';
@@ -176,7 +178,7 @@ const nDias = n => n + (Number(n) === 1 ? ' día' : ' días');
 const losQuePasan = sg => sg === 1 ? 'el día que pasa de 14' : `los ${sg} días que pasan de 14`;
 // Las condiciones están en /vacaciones-pdf.js (las mismas en la página y en el PDF).
 const CONDICIONES = VacPdf.CONDICIONES;
-const PASOS_TIPO = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió el link', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado', cancelada: 'Cancelada', reemplazada: 'Modificada' };
+const PASOS_TIPO = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió para firmar', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado', cancelada: 'Cancelada', reemplazada: 'Modificada' };
 const fechaDM = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.getDate() + '/' + (d.getMonth() + 1); };
 function vista(html) { $('vista').innerHTML = html; scrollTo(0, 0); }
 function msg(id, texto) { const m = $(id); if (!m) return; m.textContent = texto || ''; m.className = 'msg' + (texto ? ' on err' : ''); }
@@ -208,7 +210,7 @@ const guardarSes = s => { ses = s; try { sessionStorage.setItem('vacSesion', JSO
 function pantallaEntrar(mail) {
   pasos('');
   vista(`<div class="card"><div class="card-t">Entrá con tu mail</div>
-    <div class="txt">Te mandamos un código para entrar. Con eso ves tus solicitudes y podés hacer una nueva.</div>
+    <div class="txt">Te mandamos un código para entrar. Con eso ves tus solicitudes, podés hacer una nueva y firmar las que te toquen.</div>
     <div class="campo" style="margin-top:14px"><label for="mail">Tu mail</label><input class="in" id="mail" type="email" autocomplete="email" placeholder="${SERVICIOS ? 'tu@mail.com' : 'nombre@show-bs.com'}" value="${esc(mail || '')}" onkeydown="if(event.key==='Enter')pedirCodigo()"></div>
     <button class="btn" id="btnCod" onclick="pedirCodigo()">Mandame el código</button>
     <div class="msg" id="mEntrar"></div></div>`);
@@ -232,21 +234,29 @@ async function entrar() {
   const { data, error } = await sb.rpc('vacaciones_entrar', { p_email: pantallaEntrar.mail, p_codigo: cod });
   $('btnEntrar').disabled = false;
   if (error || !data || !data.ok) { msg('mEntrar', (data && data.error) || 'No pudimos verificar el código. Probá de nuevo.'); return; }
-  guardarSes({ sesion: data.sesion, email: data.email }); misSolicitudes(data.mias);
+  guardarSes({ sesion: data.sesion, email: data.email }); misSolicitudes(data.mias, data.para_firmar);
 }
 
 // ── MIS SOLICITUDES ─────────────────────────────────────────────
-async function misSolicitudes(mias) {
+// Arriba, las que le toca firmar (26-nov, Thomas: "cómo hace Mercedes para firmar desde su usuario"): como jefe directo,
+// como RR. HH. o, si es socio, las de quien firma por RR. HH. Se firman acá, sin buscar el mail; el link del mail sigue andando.
+const fechasCortas = s => (s.datos.tramos || []).map(t => fechaDMA(t.desde) + ' al ' + fechaDMA(t.hasta)).join(' · ');
+const papelTxt = s => s.rol === 'jefe' ? 'Como jefe directo' : s.socios ? 'Como socio' : s.jefe_firmo ? 'Como RR. HH. · su jefe ya la aprobó' : 'Como RR. HH.';
+async function misSolicitudes(mias, para) {
   if (!mias) {
     const { data } = await sb.rpc('vacaciones_mias', { p_sesion: ses.sesion });
     if (!data || !data.ok) { guardarSes(null); pantallaEntrar(); return; }
-    mias = data.mias;
+    mias = data.mias; para = data.para_firmar;
   }
-  if (!mias.length) { nuevaSolicitud(); return; }
-  pasos('');
-  vista(`<div class="card"><div class="card-t">Tus solicitudes<small>${esc(ses.email)}</small></div>
-    ${mias.map(s => `<div class="solic"><div class="t"><b>${(s.datos.tramos || []).map(t => fechaDMA(t.desde) + ' al ' + fechaDMA(t.hasta)).join(' · ')}</b><small>${s.datos.total} días corridos${sinGoce(s.datos.total) ? ' (' + sinGoce(s.datos.total) + ' sin goce)' : ''} · pedida el ${fechaDMA(s.creada)}</small></div>
-      <span class="estado ${s.estado}">${estadoTxt(s.estado, s.socios)}</span><button class="lnk" onclick="verMia('${s.id}')">Ver</button></div>`).join('')}
+  para = para || [];
+  if (!mias.length && !para.length) { nuevaSolicitud(); return; }
+  pasos(''); $('sub').textContent = 'Temporada 2026/2027';
+  vista(`${para.length ? `<div class="card"><div class="card-t">Para firmar<small>${para.length === 1 ? '1 solicitud' : para.length + ' solicitudes'}</small></div>
+      ${para.map(s => `<div class="solic"><div class="t"><b>${esc(s.nombre)}</b><small>${esc(s.area)} · ${fechasCortas(s)} · ${nDias(s.datos.total)}${sinGoce(s.datos.total) ? ' (' + sinGoce(s.datos.total) + ' sin goce)' : ''}</small><small>${papelTxt(s)}</small></div>
+        <button class="btn mini" onclick="verParaFirmar('${s.id}')">Ver y firmar</button></div>`).join('')}</div>` : ''}
+    <div class="card"><div class="card-t">Tus solicitudes<small>${esc(ses.email)}</small></div>
+    ${mias.length ? mias.map(s => `<div class="solic"><div class="t"><b>${fechasCortas(s)}</b><small>${s.datos.total} días corridos${sinGoce(s.datos.total) ? ' (' + sinGoce(s.datos.total) + ' sin goce)' : ''} · pedida el ${fechaDMA(s.creada)}</small></div>
+      <span class="estado ${s.estado}">${estadoTxt(s.estado, s.socios)}</span><button class="lnk" onclick="verMia('${s.id}')">Ver</button></div>`).join('') : '<div class="txt">Todavía no pediste vacaciones.</div>'}
     <button class="btn" onclick="nuevaSolicitud.reemplaza=null;nuevaSolicitud()">Nueva solicitud</button>
     <div style="text-align:center;margin-top:8px"><button class="lnk" onclick="salir()">Salir</button></div></div>`);
 }
@@ -255,6 +265,17 @@ async function verMia(id) {
   const { data } = await sb.rpc('vacaciones_ver', { p_token: ses.sesion, p_id: id });
   if (!data || !data.ok) { guardarSes(null); pantallaEntrar(); return; }
   pantallaVer(data, true);
+}
+async function verParaFirmar(id) {
+  const { data } = await sb.rpc('vacaciones_ver', { p_token: ses.sesion, p_id: id });
+  if (!data || !data.ok) {
+    if (data && /sesión/.test(data.error || '')) { guardarSes(null); pantallaEntrar(); return; }
+    vista(`<div class="card"><div class="txt">${esc((data && data.error) || 'No pudimos abrir la solicitud. Probá de nuevo en un rato.')}</div>
+      <button class="btn sec" onclick="misSolicitudes()">Volver a la lista</button></div>`);
+    return;
+  }
+  $('sub').textContent = 'Temporada 2026/2027 · ' + data.nombre;
+  pantallaVer(data, false, true);
 }
 
 // ── UNA NUEVA ───────────────────────────────────────────────────
@@ -432,7 +453,9 @@ async function cancelar() {
     <div class="txt">Le avisamos a ${d.estado === 'jefe' ? 'tu jefe' : d.socios ? 'los socios' : 'RR. HH.'} y el link para firmarla quedó sin efecto. Si querés pedir otras fechas, hacé una nueva.</div>
     <button class="btn" onclick="misSolicitudes()">Mis solicitudes</button></div>`);
 }
-function pantallaVer(d, propia) {
+// sesion: la abrió desde "Para firmar" (entró con su mail), no con el link del mail.
+function pantallaVer(d, propia, sesion) {
+  pantallaVer.sesion = !!sesion;
   firmaCaja.total = d.datos && d.datos.total;
   const f = d.firmas || {}, firma = d.rol === 'jefe' || d.rol === 'rrhh', cancelada = d.estado === 'cancelada';
   const yo = !!(propia || (ses && ses.email && ses.email === d.email)), rem = d.datos.reemplaza;
@@ -459,7 +482,8 @@ function pantallaVer(d, propia) {
       <div class="firma-pie"><span>${fechaDMA(hoyISO())}</span><button class="lnk" onclick="firmaPad.clear();$('firmaPh').classList.remove('oculto')">Borrar</button></div>
       <button class="btn" id="btnFirmar" onclick="firmar()">Firmar</button><div class="msg" id="mFirmar"></div></div>` : ''}
     ${trazaHTML(d)}
-    ${cancelada ? '' : '<button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button>'}${propia ? '<div style="text-align:center;margin-top:10px"><button class="lnk" onclick="misSolicitudes()">← Mis solicitudes</button></div>' : ''}`);
+    ${cancelada ? '' : '<button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button>'}${propia ? '<div style="text-align:center;margin-top:10px"><button class="lnk" onclick="misSolicitudes()">← Mis solicitudes</button></div>'
+      : sesion ? '<div style="text-align:center;margin-top:10px"><button class="lnk" onclick="misSolicitudes()">← Volver a la lista</button></div>' : ''}`);
   bajarPdf.ficha = d;
   if (firma) prepararFirma();
 }
@@ -470,17 +494,27 @@ async function firmar() {
   const acl = $('aAcl').value.trim(); if (acl.length < 3) { msg('mFirmar', 'Completá tu aclaración (nombre y apellido).'); return; }
   if (!firmaPad || firmaPad.isEmpty()) { msg('mFirmar', 'Falta tu firma.'); return; }
   const btn = $('btnFirmar'), d0rol = (bajarPdf.ficha || {}).rol; btn.disabled = true; btn.textContent = 'Firmando…';
-  const { data, error } = await sb.rpc('vacaciones_firmar', { p_token: TOKEN, p_decision: decision, p_aclaracion: acl, p_firma: firmaPad.toDataURL('image/png'), p_nota: $('aNota').value.trim() });
-  if (error || !data || !data.ok) { btn.disabled = false; btn.textContent = 'Firmar'; msg('mFirmar', (data && data.error) || 'No se pudo firmar. Probá de nuevo.'); return; }
-  const v = (await sb.rpc('vacaciones_ver', { p_token: TOKEN })).data;
+  // Con el link del mail (TOKEN) o desde "Para firmar", con la sesión: la base devuelve un link para verla y guardar el PDF.
+  const porSesion = !!(pantallaVer.sesion && ses && ses.sesion);
+  const campos = { p_decision: decision, p_aclaracion: acl, p_firma: firmaPad.toDataURL('image/png'), p_nota: $('aNota').value.trim() };
+  const { data, error } = porSesion
+    ? await sb.rpc('vacaciones_firmar_sesion', Object.assign({ p_sesion: ses.sesion, p_id: bajarPdf.ficha.id }, campos))
+    : await sb.rpc('vacaciones_firmar', Object.assign({ p_token: TOKEN }, campos));
+  if (error || !data || !data.ok) {
+    btn.disabled = false; btn.textContent = 'Firmar'; msg('mFirmar', (data && data.error) || 'No se pudo firmar. Probá de nuevo.');
+    if (porSesion && data && /sesión/.test(data.error || '')) { guardarSes(null); setTimeout(() => pantallaEntrar(), 1800); }
+    return;
+  }
+  const tok = porSesion ? data.ver : TOKEN;
+  const v = (await sb.rpc('vacaciones_ver', { p_token: tok })).data;
   // Si terminó, el PDF con todas las firmas (y el informe de auditoría) se guarda: va adjunto en el mail a todos.
   const fin = data.estado === 'aprobada' || data.estado === 'rechazada';
-  if (fin) { try { const pdf = await armarPdf(v); await sb.rpc('vacaciones_guardar_pdf', { p_token: TOKEN, p_pdf: pdf.base64 }); } catch (_) {} }
+  if (fin) { try { const pdf = await armarPdf(v); await sb.rpc('vacaciones_guardar_pdf', { p_token: tok, p_pdf: pdf.base64 }); } catch (_) {} }
   await api({ vacaciones: 'aviso', id: data.id });
   pasos(data.estado, v ? v.con_jefe : true, quienUnico(v));
   vista(`<div class="card centro"><div class="ic">✓</div><b>Firmada</b>
     <div class="txt">${data.estado === 'rrhh' ? 'Ahora le llega a RR. HH. para la firma final.' : fin ? 'Le llega el PDF con todas las firmas a ' + esc(v.nombre) + (v.con_jefe && d0rol === 'rrhh' ? ', con copia a su jefe directo.' : '.') : ''}</div>
-    <button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button></div>`);
+    <button class="btn sec" onclick="bajarPdf()">Bajar el PDF</button>${porSesion ? '<button class="btn" onclick="misSolicitudes()">Volver a la lista</button>' : ''}</div>`);
   bajarPdf.ficha = v;
 }
 

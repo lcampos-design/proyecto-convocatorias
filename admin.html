@@ -14076,7 +14076,7 @@ async function vacReenviar(id) {
   toast(r.ok ? '✓ Le volvió a llegar el mail con un link nuevo' : 'El mail no salió. Probá de nuevo en un rato.');
 }
 // Una solicitud por dentro: las firmas y la trazabilidad de cada paso (como la de los contratos).
-const VAC_PASOS = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió el link', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado', cancelada: 'Cancelada', reemplazada: 'Modificada' };
+const VAC_PASOS = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió para firmar', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado', cancelada: 'Cancelada', reemplazada: 'Modificada' };
 function vacUa(ua) { const s = String(ua || ''); if (!s || /^Sistema/.test(s)) return s;
   const nav = /Edg\//.test(s) ? 'Edge' : /Chrome\//.test(s) ? 'Chrome' : /Firefox\//.test(s) ? 'Firefox' : /Safari\//.test(s) ? 'Safari' : 'Navegador';
   const so = /iPhone|iPad/.test(s) ? 'iPhone/iPad' : /Android/.test(s) ? 'Android' : /Windows/.test(s) ? 'Windows' : /Mac OS X/.test(s) ? 'Mac' : '';
