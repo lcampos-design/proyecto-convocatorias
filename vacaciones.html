@@ -178,6 +178,8 @@ const CONDICIONES = ['Te corresponden 14 días corridos. Todo queda sujeto a la 
   'Cada tramo dura 7 días corridos o más y empieza un lunes o el primer día hábil de la semana. Si necesitás uno más corto (por un acuerdo con tu jefe, por ejemplo), lo podés pedir igual y queda sujeto a aprobación.',
   'Pedilas con al menos 30 días de anticipación. Si falta menos, la podés mandar igual y queda sujeta a aprobación.',
   'Las aprueba tu jefe directo y/o RR. HH. No se aprueban fechas con eventos de tu área.',
+  // 24-nov, Mercedes: "con respecto a la cobertura en la ofi, hay prioridad por antigüedad y se tiene que cubrir el cupo mínimo por área".
+  'Cada área tiene que mantener su cobertura mínima: si varios piden las mismas fechas, tiene prioridad el de mayor antigüedad.',
   'Plus vacacional + adelanto de vacaciones: las vacaciones se cobran antes de salir.'];
 const PASOS_TIPO = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió el link', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado', cancelada: 'Cancelada', reemplazada: 'Modificada' };
 const fechaDM = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.getDate() + '/' + (d.getMonth() + 1); };
@@ -511,9 +513,9 @@ async function armarPdf(d) {
     txt(marca, M + (W - ancho(marca, N, 7.5)) / 2, 32, N, 7.5, gris);
     return { pag, txt, get y() { return y; }, set y(v) { y = v; } };
   };
-  const h1 = hoja('SOLICITUD', 'DE VACACIONES', 'Temporada 2026/2027 · Recursos Humanos'), pag = h1.pag, txt = h1.txt;
+  const h1 = hoja('SOLICITUD', 'DE VACACIONES', 'Temporada 2026/2027 · Recursos Humanos'); let pag = h1.pag, txt = h1.txt;
   let y = h1.y;
-  const titulo = s => { y -= 30; txt(s, M, y, N, 10.5); y -= 7; pag.drawLine({ start: { x: M, y }, end: { x: M + W, y }, thickness: .5, color: suave }); y -= 4; };
+  const titulo = s => { y -= 26; txt(s, M, y, N, 10.5); y -= 7; pag.drawLine({ start: { x: M, y }, end: { x: M + W, y }, thickness: .5, color: suave }); y -= 4; };
   const fila = (k, v) => { y -= 16; txt(k, M, y, R, 9.5, gris); txt(v, M + 150, y, R, 10); };
   titulo('1. DATOS');
   fila('Nombre y apellido', d.nombre); fila('Área', d.area); fila('Mail', d.email); fila('Fecha de solicitud', fechaDMA(d.datos.fecha || d.creada));
@@ -526,7 +528,10 @@ async function armarPdf(d) {
   (d.datos.avisos || []).forEach(a => { y -= 14; txt('Aviso: ' + a, M, y, R, 8.5, rgb(.54, .38, 0)); });
   if (d.datos.nota) partir('Nota de la persona: ' + String(d.datos.nota).replace(/\s+/g, ' '), R, 8.8, W).forEach(l => { y -= 13; txt(l, M, y, R, 8.8); });
   titulo('3. CONDICIONES');
-  CONDICIONES.forEach(c => partir('· ' + c, R, 8.8, W).forEach(l => { y -= 12; txt(l, M, y, R, 8.8, gris); }));
+  CONDICIONES.forEach(c => partir('· ' + c, R, 8.5, W).forEach(l => { y -= 11; txt(l, M, y, R, 8.5, gris); }));   // 8.5/11: entra un comentario largo sin pisar el pie
+  // Si las firmas (con los comentarios) no entran sin pisar el pie, van en una hoja propia: pasa con una nota larga y avisos.
+  const alto = 150 + ([(d.firmas || {}).jefe, (d.firmas || {}).rrhh].some(x => x && x.nota) ? 42 : 0);   // el bloque de las firmas, con o sin comentarios
+  if (y - alto < 84) { const h = hoja('SOLICITUD', 'DE VACACIONES', 'Las firmas · ' + d.nombre); pag = h.pag; txt = h.txt; y = h.y; }
   titulo('4. FIRMAS');
   const f = d.firmas || {}, sinJefe = !d.con_jefe, col = (W - 24) / 3, top = y - 8;
   const caja = async (i, tit, fi, dec, vacia) => {
@@ -537,7 +542,7 @@ async function armarPdf(d) {
     else { yy -= 14; txt('Solicito las fechas indicadas.', x, yy, R, 8.5); }
     if (fi && fi.png) { const img = await pdf.embedPng(fi.png); const h = 46, w = Math.min(col, h * img.width / img.height); pag.drawImage(img, { x, y: yy - 8 - h, width: w, height: h }); }
     else txt(vacia || 'Pendiente', x, yy - 34, R, 8.5, gris);
-    yy -= 62; pag.drawLine({ start: { x, y: yy + 4 }, end: { x: x + col, y: yy + 4 }, thickness: .5, color: linea });
+    yy -= 57; pag.drawLine({ start: { x, y: yy + 4 }, end: { x: x + col, y: yy + 4 }, thickness: .5, color: linea });
     yy -= 8; partir('Aclaración: ' + (fi ? fi.aclaracion : ''), R, 8.5, col).forEach(l => { txt(l, x, yy, R, 8.5); yy -= 11; });
     txt('Fecha: ' + (fi ? fechaHora(fi.fecha) : ''), x, yy, R, 8.5);
     if (fi && fi.nota) { yy -= 11; partir('Comentario: ' + fi.nota, R, 8, col).slice(0, 3).forEach(l => { txt(l, x, yy, R, 8, gris); yy -= 10; }); }
