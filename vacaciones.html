@@ -470,7 +470,8 @@ function pantallaVer(d, propia, sesion) {
       ${(d.datos.tramos || []).map((t, i) => `<div class="fila-t"><span>Tramo ${i + 1}</span><div>Del ${fechaLarga(t.desde)} al ${fechaLarga(t.hasta)}</div><em>${nDias(t.dias)}</em></div>`).join('')}
       ${(d.datos.avisos || []).length ? `<div class="meta ojo">${d.datos.avisos.map(x => '⚠ ' + esc(x)).join('<br>')}</div>` : ''}
       ${d.datos.nota ? `<div class="nota-p"><small>Nota de ${esc(String(d.nombre || '').split(' ')[0] || 'la persona')}</small>${esc(d.datos.nota)}</div>` : ''}</div>
-    <div class="card"><div class="card-t">Firmas</div><div class="firmas${sinJefe ? ' dos' : ''}">${firmaCaja('Empleado/a', f.empleado)}${sinJefe ? firmaCaja(quienUnico(d) || 'Jefe directo y RR. HH.', f.rrhh) : firmaCaja('Jefe directo', f.jefe, cancelada ? 'Cancelada' : '') + firmaCaja('RR. HH.', f.rrhh, cancelada ? 'Cancelada' : '')}</div></div>
+    <div class="card"><div class="card-t">Firmas</div><div class="firmas${sinJefe ? ' dos' : ''}">${firmaCaja('Empleado/a', f.empleado)}${sinJefe ? firmaCaja(quienUnico(d) || 'Jefe directo y RR. HH.', f.rrhh) : firmaCaja('Jefe directo', f.jefe, cancelada ? 'Cancelada' : '') + firmaCaja('RR. HH.', f.rrhh, cancelada ? 'Cancelada' : '')}</div>
+      ${d.estado === 'aprobada' ? `<div class="meta" style="color:#1a1a1a">${esc(VacPdf.APERCIBIMIENTO)}</div>` : ''}</div>
     ${cambiarHTML(d, yo)}
     ${firma ? `<div class="card"><div class="card-t"><span class="num">✓</span>Tu aprobación · ${d.rol === 'jefe' ? 'jefe directo' : d.socios ? 'socios' : 'RR. HH.'}</div>
       ${d.rol === 'rrhh' && d.socios ? '<div class="meta" style="margin:-4px 0 12px">Le llegó a todos los socios: con que firme uno alcanza.' + (sinGoce(d.datos.total) ? ' Pide sin goce de sueldo ' + losQuePasan(sinGoce(d.datos.total)) + '.' : '') + '</div>'

@@ -19,6 +19,9 @@ const CONDICIONES = ['Te corresponden 14 días corridos. Todo queda sujeto a la 
   // 24-nov, Mercedes: "con respecto a la cobertura en la ofi, hay prioridad por antigüedad y se tiene que cubrir el cupo mínimo por área".
   'Cada área tiene que mantener su cobertura mínima: si varios piden las mismas fechas, tiene prioridad el de mayor antigüedad.',
   'Plus vacacional + adelanto de vacaciones: las vacaciones se cobran antes de salir.'];
+// 26-nov, Mercedes: "un apartado que se envía cuando RR. HH. firma la licencia y les envía la licencia aprobada". Va en el
+// PDF aprobado (arriba del pie), en el mail final y en la página. El mismo texto está en api/_lib/vacaciones.js (cambiar juntos).
+const APERCIBIMIENTO = 'Confirmada la licencia solicitada, el incumplimiento de lo acordado dará lugar a apercibimientos.';
 const PASOS_TIPO = { creada: 'Firmó la solicitud', aviso: 'Mail enviado', derivada: 'Derivada', abierta: 'Abrió para firmar', firmada: 'Firmó', pdf: 'PDF guardado', reenviada: 'Link reenviado', cancelada: 'Cancelada', reemplazada: 'Modificada' };
 const uaCorto = ua => { const s = String(ua || ''); if (!s) return ''; if (/^Sistema/.test(s)) return s;
   const nav = /Edg\//.test(s) ? 'Edge' : /OPR\//.test(s) ? 'Opera' : /Chrome\//.test(s) ? 'Chrome' : /Firefox\//.test(s) ? 'Firefox' : /Safari\//.test(s) ? 'Safari' : 'Navegador';
@@ -66,7 +69,9 @@ async function armarPdf(d) {
   CONDICIONES.forEach(c => partir('· ' + c, R, 8.5, W).forEach(l => { y -= 11; txt(l, M, y, R, 8.5, gris); }));   // 8.5/11: entra un comentario largo sin pisar el pie
   // Si las firmas (con los comentarios) no entran sin pisar el pie, van en una hoja propia: pasa con una nota larga y avisos.
   const alto = 150 + ([(d.firmas || {}).jefe, (d.firmas || {}).rrhh].some(x => x && x.nota) ? 42 : 0);   // el bloque de las firmas, con o sin comentarios
-  if (y - alto < 84) { const h = hoja('SOLICITUD', 'DE VACACIONES', 'Las firmas · ' + d.nombre); pag = h.pag; txt = h.txt; y = h.y; }
+  // Aprobada: el apartado de RR. HH. (APERCIBIMIENTO) va arriba del pie, así que las firmas necesitan un renglón más.
+  const aprobada = d.estado === 'aprobada', extra = aprobada ? 18 : 0;
+  if (y - alto < 84 + extra) { const h = hoja('SOLICITUD', 'DE VACACIONES', 'Las firmas · ' + d.nombre); pag = h.pag; txt = h.txt; y = h.y; }
   titulo('4. FIRMAS');
   const f = d.firmas || {}, sinJefe = !d.con_jefe, col = (W - 24) / 3, top = y - 8;
   const caja = async (i, tit, fi, dec, vacia) => {
@@ -91,6 +96,7 @@ async function armarPdf(d) {
     await caja(2, 'RR. HH.', f.rrhh, true);
   }
   const pie = ['Firmada electrónicamente en convocatorias.show-bs.com. El informe de auditoría con la trazabilidad de cada firma está en la página siguiente.', 'ID de la solicitud: ' + (d.transaccion_id || d.id) + ' · ' + estadoTxt(d.estado, d.socios) + '.'];
+  if (aprobada) partir(APERCIBIMIENTO, R, 9, W).forEach((l, i) => txt(l, M, 70 + extra - i * 11, R, 9));
   let yp = 70; pie.forEach(p => partir(p, R, 7.5, W).forEach(l => { txt(l, M, yp, R, 7.5, gris); yp -= 9.5; }));
   // Página 2: el informe de auditoría (como el de los contratos).
   const h2 = hoja('INFORME DE AUDITORÍA', '', 'Solicitud de vacaciones · ' + d.nombre);
@@ -112,5 +118,5 @@ async function armarPdf(d) {
   return { base64: b64, nombre: 'Solicitud de vacaciones - ' + d.nombre + '.pdf' };
 }
 
-window.VacPdf = { CONDICIONES, armar: armarPdf };
+window.VacPdf = { CONDICIONES, APERCIBIMIENTO, armar: armarPdf };
 })();

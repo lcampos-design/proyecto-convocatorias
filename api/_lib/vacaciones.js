@@ -51,6 +51,9 @@ async function enviar(resend, mail) {
 }
 
 const KICKER = 'Vacaciones 2026/2027';
+// 26-nov, Mercedes: el apartado que va cuando RR. HH. firma y les manda la licencia aprobada. El mismo texto está en
+// /vacaciones-pdf.js (APERCIBIMIENTO), que lo pone en el PDF y en la página: cambiar juntos.
+const APERCIBIMIENTO = 'Confirmada la licencia solicitada, el incumplimiento de lo acordado dará lugar a apercibimientos.';
 // La fecha en que mandó la que modifica ("24/11"), en hora de Argentina.
 const diaMes = f => { const d = new Date(f); return isNaN(d) ? '' : d.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', day: 'numeric', month: 'numeric' }); };
 const reemplaza = a => a.datos && a.datos.reemplaza;
@@ -100,7 +103,8 @@ export const MAILS = {
     pie: 'Cuando firme RR. HH., te llega el PDF con todas las firmas.' }),
   fin: a => { const si = a.estado === 'aprobada';
     return armarMail({ kicker: KICKER, titulo: si ? 'Todo aprobado' : 'No aprobadas', hola: 'Hola, ' + primerNombre(a.nombre),
-      parrafos: [si ? (a.socios ? 'Los socios la aprobaron. ' : a.con_jefe ? 'RR. HH. también la aprobó. ' : a.con_jefe === false ? 'RR. HH. la aprobó. ' : '') + 'Te mandamos adjunto el formulario con todas las firmas.' : 'Tu solicitud no fue aprobada.' + (a.nota ? '' : ' Si querés, mandá otra con otras fechas.')],
+      parrafos: [si ? (a.socios ? 'Los socios la aprobaron. ' : a.con_jefe ? 'RR. HH. también la aprobó. ' : a.con_jefe === false ? 'RR. HH. la aprobó. ' : '') + 'Te mandamos adjunto el formulario con todas las firmas.' : 'Tu solicitud no fue aprobada.' + (a.nota ? '' : ' Si querés, mandá otra con otras fechas.')]
+        .concat(si ? [APERCIBIMIENTO] : []),
       datos: filasTramos(a.datos).concat(a.nota ? [['Comentario', a.nota]] : []), boton: 'Ver la solicitud', link: `${SITIO}/vacaciones?t=${encodeURIComponent(a.ver)}`,
       pie: si ? 'RR. HH. te confirma la fecha de pago del plus vacacional y del adelanto.' : 'Si tenés dudas, respondé este mail.' }); }
 };
