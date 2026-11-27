@@ -1076,6 +1076,13 @@ th{text-transform:none!important;letter-spacing:0!important;font-size:12px!impor
    entera) y las acciones van juntas a la derecha; si no entran, bajan las cuatro juntas. */
 #sec-nomina > .ctrlbar:not(.nom-filtros) .srch{flex:1 1 220px;max-width:360px}
 #sec-nomina > .ctrlbar:not(.nom-filtros) select.filt{max-width:200px;text-overflow:ellipsis}
+/* Buscar en el CV (27-nov): el resumen arriba de la lista y, en cada fila, dónde coincidió con la palabra resaltada. */
+#nomSrchEn{flex:0 0 auto}
+.nom-cv-res{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 22px;background:#fafafa;border-bottom:1px solid var(--r-line);font-size:12.5px;color:var(--r-muted)}
+.nom-cv-res .btn{margin-left:auto}
+.cv-hit{font-size:11.5px;color:var(--r-muted);margin-top:5px;line-height:1.5;max-width:620px;white-space:normal}
+.cv-hit-en{font-weight:600;color:var(--r-ink2);margin-right:4px}
+.cv-hit mark{background:#fde68a;color:inherit;border-radius:3px;padding:0 1px}
 .ctrl-acc{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
 /* Menú de arriba: cada sección en un renglón; si la pantalla es angosta se achica el espacio, después se
    esconde el mail (queda al pasar por "Salir") y, en el último caso, el menú se corre de costado. */
@@ -1149,7 +1156,7 @@ button.cn-nom:hover{text-decoration:underline;text-underline-offset:3px}
 .vac-area{display:flex;gap:8px;align-items:center;margin-top:8px}.vac-area .fi:first-child{flex:0 0 200px}.vac-area .fi:nth-child(2){flex:1}
 .fbs-tab-n{display:inline-block;min-width:18px;padding:0 5px;margin-left:6px;border-radius:999px;background:#9a3412;color:#fff;font-size:10.5px;font-weight:700;line-height:16px;text-align:center}
 /* A 1280 los cinco filtros de la Nómina y "Más filtros" entran en una sola fila. */
-@media (max-width:1400px){#sec-nomina > .ctrlbar:not(.nom-filtros) select.filt{max-width:158px}#sec-nomina > .ctrlbar:not(.nom-filtros) .srch{min-width:200px}}
+@media (max-width:1400px){#sec-nomina > .ctrlbar:not(.nom-filtros) select.filt{max-width:142px}#sec-nomina > .ctrlbar:not(.nom-filtros) .srch{min-width:170px}#nomSrchEn{max-width:122px!important}}
 .pos-prom{font-size:10.5px;font-weight:700;color:var(--r-ink2);font-variant-numeric:tabular-nums}
 .pos-elegir{font-size:12px;font-weight:500;background:#fff;border:1.5px solid var(--r-line);color:var(--r-muted);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:inherit;transition:all .12s}
 .pos-elegir:hover{border-color:#a1a1aa}
@@ -1385,6 +1392,10 @@ tr:hover td{background:#f9f9fb}
     <div class="atab atab-out" data-area="out" onclick="setNomTab('out')"><i class="ic ic-prohibido"></i> OUT <span class="tc" id="tcOut">0</span></div>
   </div>
   <div class="ctrlbar">
+    <select class="filt" id="nomSrchEn" onchange="nomSrchModo()" title="Dónde busca el buscador: en los datos de la persona o en lo que escribió en su CV (experiencia, habilidades, formación, lo que le interesa) y en las notas">
+      <option value="">En los datos</option>
+      <option value="cv">En el CV</option>
+    </select>
     <input type="text" class="srch" id="nomSrch" placeholder="Buscar por nombre, CUIL, email o teléfono..." oninput="nomSearch()">
     <select class="filt" id="nomSemFilter" onchange="nomFilter()" title="Filtrar por el feedback: el semáforo, si tiene o no, y el promedio">
       <option value="">Feedback: todos</option>
@@ -1508,6 +1519,8 @@ tr:hover td{background:#f9f9fb}
     <button class="btn btn-sec" id="cvFilterBtn" onclick="toggleCvFilter();contarFiltrosNom()"><i class="ic ic-doc"></i> Con CV <span id="cvFilterCount" style="font-size:10px;background:#bae6fd;color:#0369a1;border-radius:999px;padding:1px 5px;margin-left:2px">0</span></button>
     <button class="btn btn-sec btn-sm" onclick="limpiarFiltrosNom()" title="Vuelve todos los filtros a cero">Limpiar filtros</button>
   </div>
+  <!-- Buscar en el CV (27-nov): cuántos coinciden, dónde, y el .zip con el Excel y los CV. -->
+  <div class="nom-cv-res" id="nomCvRes" style="display:none"></div>
   <div class="bulk-bar" id="nomBulk">
     <span id="nomBulkCnt">0 seleccionados</span><span style="color:#c4b5fd">|</span>
     Cambiar estado:
@@ -1525,6 +1538,8 @@ tr:hover td{background:#f9f9fb}
     <button class="btn btn-sm btn-sec" onclick="recomendarBulk(false)">Sacar de Recomendados</button>
     <span style="color:#c4b5fd">|</span>
     <button class="btn btn-sm btn-danger" onclick="openOutBulk()"><i class="ic ic-prohibido"></i> Marcar OUT</button>
+    <span style="color:#c4b5fd">|</span>
+    <button class="btn btn-sm btn-sec" id="btnCvZipSel" onclick="exportCvZip('sel')" title="Un .zip con el Excel de los seleccionados y una carpeta CVs con el archivo de cada uno">↓ Excel con los CV (.zip)</button>
   </div>
   <div class="tbl-wrap"><table id="nomTabla">
     <thead><tr>
@@ -3878,12 +3893,164 @@ function nomCoincide(p, q) {
   const palabras = nomPelar(q).split(/\s+/).filter(Boolean);
   return palabras.length > 0 && palabras.every(w => nombre.includes(w));
 }
+// ── BUSCAR EN EL CV (27-nov) ──
+// Thomas: "necesito boleteros y nadie tiene cargada la posición, pero 122 mencionan boletería en el CV". Con "En el CV"
+// el buscador mira lo que escribió en el formulario del CV (experiencia, habilidades, formación, lo que le interesa) y
+// las notas, sin tildes ni mayúsculas. Varias palabras separadas por coma valen como "o" ("boleter, taquill, ticketing");
+// conviene la raíz: "boleter" encuentra boletero, boletera y boletería. El texto ya viene con la nómina (el CV liviano,
+// sin el archivo), así que se busca acá, sin pedirle nada a la base.
+const CV_CAMPOS = [['experiencia', 'Experiencia'], ['habilidades', 'Habilidades'], ['formacion', 'Formación'], ['notas', 'Notas'], ['puestoInteres', 'Le interesa']];
+const cvTexto = v => v == null ? '' : typeof v === 'string' ? v : Array.isArray(v) ? v.map(cvTexto).filter(Boolean).join(', ') : typeof v === 'object' ? Object.values(v).map(cvTexto).filter(Boolean).join(', ') : String(v);
+const cvPelar = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ');
+const cvCampo = (p, k) => k === 'notas' ? cvTexto(p.notas) : cvTexto(p.cv && p.cv[k]);
+// El texto pelado de cada persona, una vez (se vuelve a pelar sólo si cambió lo escrito).
+const cvMemo = new Map();
+function cvPelado(p) {
+  const crudo = CV_CAMPOS.map(([k]) => cvCampo(p, k)), clave = crudo.join('\u0001'), m = cvMemo.get(p.id);
+  if (m && m.clave === clave) return m.f;
+  const f = {}; CV_CAMPOS.forEach(([k], i) => { f[k] = cvPelar(crudo[i]); });
+  cvMemo.set(p.id, { clave, f }); return f;
+}
+const cvTerminos = q => [...new Set(String(q || '').split(',').map(t => cvPelar(t).trim()).filter(t => t.length >= 2))];
+const nomBuscaEnCv = () => (document.getElementById('nomSrchEn') || {}).value === 'cv';
+// En qué campos coincidió (la experiencia primero), o null.
+function cvCoincide(p, terminos) {
+  if (!terminos.length) return null;
+  const f = cvPelado(p), en = CV_CAMPOS.filter(([k]) => terminos.some(t => f[k].includes(t))).map(([k]) => k);
+  return en.length ? en : null;
+}
+const cvDondeTxt = en => en.length === 1 && en[0] === 'puestoInteres' ? 'Sólo interés' : en.filter(k => k !== 'puestoInteres').map(k => CV_CAMPOS.find(c => c[0] === k)[1]).join(' · ');
+// Unos 240 caracteres alrededor de la primera coincidencia del campo, con cada término resaltado: { html, texto }.
+function cvFragmento(p, k, terminos, largo = 240) {
+  const orig = cvCampo(p, k).replace(/\s+/g, ' ').trim();
+  // El texto sin tildes letra por letra, sabiendo de qué letra del original sale cada una (para resaltar el original).
+  let pel = ''; const mapa = [];
+  for (let i = 0; i < orig.length; i++) { const n = orig[i].normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); for (let j = 0; j < n.length; j++) { pel += n[j]; mapa.push(i); } }
+  const marcas = [];
+  terminos.forEach(t => { for (let j = pel.indexOf(t); j >= 0 && t; j = pel.indexOf(t, j + t.length)) marcas.push([mapa[j], mapa[j + t.length - 1] + 1]); });
+  marcas.sort((a, b) => a[0] - b[0]);
+  const c = marcas.length ? marcas[0][0] : 0;
+  let a = Math.max(0, c - 100), b = Math.min(orig.length, a + largo);
+  if (b - a < largo) a = Math.max(0, b - largo);
+  if (a > 0) { const s = orig.indexOf(' ', a); if (s > 0 && s < c) a = s + 1; }
+  if (b < orig.length) { const s = orig.lastIndexOf(' ', b); if (s > c + 20) b = s; }
+  // Las marcas dentro del pedazo, juntando las que se pisan.
+  const juntas = [];
+  marcas.filter(m => m[0] >= a && m[1] <= b).forEach(m => { const u = juntas[juntas.length - 1]; if (u && m[0] <= u[1]) u[1] = Math.max(u[1], m[1]); else juntas.push(m.slice()); });
+  let html = a > 0 ? '…' : '', pos = a;
+  juntas.forEach(([x, y]) => { html += e(orig.slice(pos, x)) + '<mark>' + e(orig.slice(x, y)) + '</mark>'; pos = y; });
+  html += e(orig.slice(pos, b)) + (b < orig.length ? '…' : '');
+  return { html, texto: (a > 0 ? '…' : '') + orig.slice(a, b) + (b < orig.length ? '…' : '') };
+}
+let nomCvHits = new Map();
+function nomSrchModo() {
+  const s = document.getElementById('nomSrch');
+  if (s) { s.placeholder = nomBuscaEnCv() ? 'Buscar en el CV: boleter, taquill, ticketing…' : 'Buscar por nombre, CUIL, email o teléfono...'; s.focus(); }
+  nomSearch();
+}
+// Arriba de la lista: cuántos y dónde, y el .zip.
+function pintarCvRes(terminos) {
+  const caja = document.getElementById('nomCvRes'); if (!caja) return;
+  if (!terminos.length) { caja.style.display = 'none'; caja.innerHTML = ''; return; }
+  const n = nomFiltered.length, cuenta = {};
+  nomFiltered.forEach(p => { const en = nomCvHits.get(p.id) || []; const k = en.length === 1 && en[0] === 'puestoInteres' ? 'interes' : en[0]; cuenta[k] = (cuenta[k] || 0) + 1; });
+  const partes = [['experiencia', 'en la experiencia'], ['habilidades', 'en habilidades'], ['formacion', 'en la formación'], ['notas', 'en las notas'], ['interes', 'sólo en lo que le interesa']]
+    .filter(([k]) => cuenta[k]).map(([k, t]) => cuenta[k].toLocaleString('es-AR') + ' ' + t);
+  caja.style.display = '';
+  caja.innerHTML = '<span>' + n.toLocaleString('es-AR') + (n === 1 ? ' persona menciona ' : ' personas mencionan ') + terminos.map(t => '"' + e(t) + '"').join(' o ') + ' en el CV'
+    + (partes.length ? ' · ' + partes.join(' · ') : '') + '</span>'
+    + (n ? '<button class="btn btn-sm btn-sec" id="btnCvZip" onclick="exportCvZip(\'lista\')" title="Un .zip con el Excel de estas personas (con lo que coincidió) y una carpeta CVs con el archivo de cada una">↓ Excel con los CV (.zip)</button>' : '');
+}
+
+// ── EXPORTAR CON LOS CV (27-nov) ──
+// Un .zip con el Excel (los datos de cada persona y, si se buscó en el CV, dónde coincidió y el pedazo) y una carpeta
+// CVs/ con el archivo de cada uno (el de su ficha o, si no tiene, el de su inscripción). En el Excel, "CV adjunto" es
+// un link a CVs/001 - Nombre.pdf: anda con la carpeta descomprimida. El .zip va sin comprimir (los PDF ya lo están).
+// El .zip lo arma armarZip (la de los contratos firmados, más abajo): sin comprimir, con los nombres en UTF-8.
+// "data:application/pdf;base64,…" → { tipo, bytes }, o null si no se puede leer.
+function dataUrlABytes(datos) {
+  const t = String(datos || ''), coma = t.indexOf(','); if (!/^data:/.test(t) || coma < 0) return null;
+  const cab = t.slice(5, coma), cuerpo = t.slice(coma + 1);
+  try {
+    if (/;base64$/i.test(cab)) { const bin = atob(cuerpo.replace(/\s+/g, '')), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return { tipo: cab.replace(/;base64$/i, ''), bytes: u }; }
+    return { tipo: cab, bytes: new TextEncoder().encode(decodeURIComponent(cuerpo)) };
+  } catch (_) { return null; }
+}
+function extensionCv(a, tipoUrl) {
+  const t = String((a && a.tipo) || tipoUrl || '').toLowerCase(), n = String((a && a.nombre) || '').toLowerCase();
+  const porTipo = { 'application/pdf': 'pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx', 'application/msword': 'doc', 'application/vnd.oasis.opendocument.text': 'odt',
+    'application/rtf': 'rtf', 'text/plain': 'txt', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' };
+  return porTipo[t] || (/\.([a-z0-9]{2,5})$/.exec(n) || [])[1] || 'bin';
+}
+// Para el nombre del archivo: sin tildes ni signos que Windows no acepta (así el link del Excel lo encuentra siempre).
+const nombreArchivoCv = (nro, nombre, ext) => 'CVs/' + String(nro).padStart(3, '0') + ' - ' + (nombrePropio(nombre).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60) || 'Sin nombre') + '.' + ext;
+async function exportCvZip(cual) {
+  const lista = cual === 'sel' ? [...document.querySelectorAll('.rcb:checked')].map(c => people.find(p => p.id === c.dataset.id)).filter(Boolean) : nomFiltered.slice();
+  if (!lista.length) { toast('No hay nadie para exportar'); return; }
+  const conCv = lista.filter(tieneCv).length;
+  if (conCv > 300 && !confirm(`Son ${conCv} CV: el .zip puede tardar unos minutos y pesar bastante. ¿Seguir?`)) return;
+  const btn = document.getElementById(cual === 'sel' ? 'btnCvZipSel' : 'btnCvZip'), txtBtn = btn ? btn.textContent : '';
+  const avance = t => { if (btn) { btn.disabled = true; btn.textContent = t; } };
+  const terminos = nomBuscaEnCv() ? cvTerminos(document.getElementById('nomSrch').value) : [];
+  try {
+    // Los archivos, de a 15 (el CV entero pesa): el de la ficha o, si no tiene, el de su inscripción.
+    const archivos = new Map(), deFicha = lista.filter(p => p.cv && p.cv.archivo).map(p => p.id);
+    const deSol = lista.filter(p => !(p.cv && p.cv.archivo)).map(p => [p.id, solConCv(p)]).filter(x => x[1]);
+    const total = deFicha.length + deSol.length; let hechos = 0, fallas = 0;
+    const pedir = async fn => { for (let i = 0; i < 2; i++) { const r = await fn(); if (!r.error) return r.data || []; } return null; };
+    for (let i = 0; i < deFicha.length; i += 15) {
+      avance('Bajando los CV… ' + hechos + ' de ' + total);
+      const ids = deFicha.slice(i, i + 15), data = await pedir(() => sb.from('personas').select('id,cv').in('id', ids));
+      if (!data) fallas += ids.length; else data.forEach(r => { const a = r.cv && r.cv.archivo; if (a && a.datos) archivos.set(r.id, a); });
+      hechos += ids.length;
+    }
+    for (let i = 0; i < deSol.length; i += 15) {
+      avance('Bajando los CV… ' + hechos + ' de ' + total);
+      const tanda = deSol.slice(i, i + 15), data = await pedir(() => sb.from('solicitudes').select('id,archivo_cv').in('id', tanda.map(x => x[1].id)));
+      if (!data) fallas += tanda.length;
+      else { const porSol = new Map(data.map(r => [r.id, cvPrincipal(r.archivo_cv)])); tanda.forEach(([pid, s]) => { const a = porSol.get(s.id); if (a && a.datos) archivos.set(pid, a); }); }
+      hechos += tanda.length;
+    }
+    avance('Armando el .zip…');
+    // El Excel: una fila por persona, en el orden de la lista; el link al CV, si se pudo bajar.
+    const AREAS = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España' };
+    const cab = ['#', 'Nombre', 'Área', 'CUIL', 'Mail', 'Teléfono', 'Localidad', 'Posiciones', 'Le interesa'].concat(terminos.length ? ['Coincide en', 'Fragmento'] : [], ['Experiencia', 'Habilidades', 'Formación', 'Disponibilidad', 'Notas', 'CV adjunto']);
+    const filas = [cab], links = [], zip = [];
+    lista.forEach((p, i) => {
+      const nro = i + 1, a = archivos.get(p.id), bytes = a && dataUrlABytes(a.datos);
+      let ruta = '';
+      if (bytes && bytes.bytes.length) { ruta = nombreArchivoCv(nro, p.nombre, extensionCv(a, bytes.tipo)); zip.push({ nombre: ruta, datos: bytes.bytes }); links.push([nro, ruta]); }
+      const en = terminos.length ? (cvCoincide(p, terminos) || []) : [];
+      const frag = en.length ? cvFragmento(p, en[0], terminos).texto : '';
+      filas.push([nro, nombrePropio(p.nombre), AREAS[p.area] || p.area || '', p.cuit || '', p.email || '', p.tel || '', p.localidad || (solicitudDe(p) || {}).localidad || '',
+        posicionesDe(p).join(', '), cvCampo(p, 'puestoInteres') || puestoDePersona(p) || '']
+        .concat(terminos.length ? [en.length ? cvDondeTxt(en) : '', frag] : [],
+          [cvCampo(p, 'experiencia'), cvCampo(p, 'habilidades'), cvCampo(p, 'formacion'), cvTexto(p.cv && p.cv.disponibilidad), cvTexto(p.notas), ruta ? ruta.slice(4) : (tieneCv(p) ? 'No se pudo bajar' : 'Sin CV')]));
+    });
+    const libro = new ExcelJS.Workbook(); libro.creator = 'Show Business Solutions';
+    const logo = await logoParaExcel(), idLogo = logo ? libro.addImage({ base64: logo, extension: 'png' }) : null;
+    const anchos = [5, 28, 14, 15, 28, 15, 18, 22, 22].concat(terminos.length ? [16, 60] : [], [60, 40, 30, 20, 30, 34]);
+    const hoja = armarHoja(libro, { filas, titulo: 'Nómina con CV', subtitulo: (terminos.length ? 'En el CV: ' + terminos.join(', ') + ' · ' : '') + lista.length + (lista.length === 1 ? ' persona' : ' personas') + ' · ' + zip.length + ' CV', anchos }, 'Nómina con CV', idLogo);
+    const colCv = cab.length;
+    links.forEach(([nro, ruta]) => { const c = hoja.getCell(EXCEL_ARRIBA + 1 + nro, colCv); c.value = { text: ruta.slice(4), hyperlink: encodeURI(ruta) }; c.font = Object.assign({}, c.font, { underline: true }); });
+    const xlsx = new Uint8Array(await libro.xlsx.writeBuffer());
+    const hoy = new Date(), dd = String(hoy.getDate()).padStart(2, '0') + '-' + String(hoy.getMonth() + 1).padStart(2, '0');
+    const nombreZip = 'Nomina con CV - ' + (terminos.length ? terminos.join(', ').replace(/[\\/:*?"<>|]+/g, ' ').slice(0, 50) : 'seleccion') + ' (' + dd + ').zip';
+    bajarArchivo(nombreZip, new Blob([armarZip([{ nombre: 'Nomina con CV.xlsx', datos: xlsx }].concat(zip))], { type: 'application/zip' }));
+    const sinBajar = lista.filter(tieneCv).length - zip.length;
+    toast(`Listo: ${lista.length} ${lista.length === 1 ? 'persona' : 'personas'} y ${zip.length} CV${sinBajar > 0 ? ` (${sinBajar} no se ${sinBajar === 1 ? 'pudo' : 'pudieron'} bajar${fallas ? ': la base no contestó, probá de nuevo' : ''})` : ''}. Descomprimí la carpeta para que los links del Excel abran cada CV.`);
+  } catch (err) {
+    console.error('zip', err); toast('No se pudo armar el .zip: ' + (err && err.message || err));
+  } finally { if (btn) { btn.disabled = false; btn.textContent = txtBtn; } }
+}
+
 // Si no aparece acá pero sí en otra pestaña (otra área, OUT) o con otro
 // estado, se avisa dónde está, en vez de un "sin resultados" a secas.
 function nomEnOtroLado(q) {
   if (!q) return '';
   const st = document.getElementById('nomStFilter').value;
-  const hay = people.filter(p => nomCoincide(p, q));
+  const enCv = nomBuscaEnCv(), terminos = enCv ? cvTerminos(q) : [];
+  const hay = people.filter(p => enCv ? cvCoincide(p, terminos) : nomCoincide(p, q));
   if (!hay.length) return '';
   const nombres = { movistar_arena: 'Movistar Arena', externos: 'Externos', espana: 'España' };
   const donde = new Map();
@@ -3916,6 +4083,9 @@ function nomApply() {
   const expF = valorDe('nomExpFilter'), dispF = valorDe('nomDispFilter'), dispFecha = valorDe('nomDispFecha');
   if (typeof nomLlenarFiltrosPerfil === 'function') nomLlenarFiltrosPerfil(people.filter(p => nomEnPestana(p) && (!st || p.estado === st)));
   const eventos = expF === 'sbs' || expF === 'sbs5' || expF === 'nunca' ? eventosConNosotros() : null;
+  // "En el CV": el buscador mira el CV y las notas (palabras separadas por coma = "o"); dónde coincidió va en cada fila.
+  const enCv = nomBuscaEnCv(), terminosCv = enCv ? cvTerminos(q) : [];
+  nomCvHits = new Map();
   nomFiltered = people.filter(p => {
     if (!nomEnPestana(p)) return false;
     if (st && p.estado !== st) return false;
@@ -3933,7 +4103,8 @@ function nomApply() {
     if ((expF === 'dice' || expF === 'sin') && experienciaDeclarada(p) !== expF) return false;
     if (dispF && !disponibilidadDeclarada(p).includes(dispF)) return false;
     if (dispFecha && !((dispPorPersona && dispPorPersona.get(docNucleo(p.cuit))) || new Set()).has(dispFecha)) return false;
-    if (q && !nomCoincide(p, q)) return false;
+    if (q && !enCv && !nomCoincide(p, q)) return false;
+    if (enCv && terminosCv.length) { const en = cvCoincide(p, terminosCv); if (!en) return false; nomCvHits.set(p.id, en); }
     if (cvFilterOn && !p.cv && !solConCv(p)) return false;
     if (docFilterOn && !docDudoso(p)) return false;
     if (zonaF === '_sin' && zonaDe(p)) return false;
@@ -3957,6 +4128,13 @@ function nomApply() {
     return true;
   });
   nomFiltered = ordenarNomina(nomFiltered, orden);
+  // Buscando en el CV, con el orden de siempre: primero quien lo tiene en la experiencia; al final, quien sólo lo marcó
+  // como interés (para ver rápido si es experiencia de verdad).
+  if (terminosCv.length && !orden) {
+    const rango = p => { const en = nomCvHits.get(p.id) || []; return en.length === 1 && en[0] === 'puestoInteres' ? 9 : CV_CAMPOS.findIndex(c => c[0] === en[0]); };
+    nomFiltered = nomFiltered.map((p, i) => [p, rango(p), i]).sort((a, b) => a[1] - b[1] || a[2] - b[2]).map(x => x[0]);
+  }
+  pintarCvRes(terminosCv);
   const cvCount = people.filter(p => !!p.cv || !!solConCv(p)).length;
   document.getElementById('cvFilterCount').textContent = cvCount;
   const docCount = people.filter(docDudoso).length;
@@ -4165,6 +4343,8 @@ function renderNomTable() {
   // Las etiquetas sólo las tiene una parte de la gente y dejaban la lista despareja.
   // Aparecen al filtrar por una (ahí todos la tienen) y en la ficha de cada persona.
   const verEtiquetas = !!(document.getElementById('nomTagFilter') || {}).value;
+  // Buscando en el CV: debajo del nombre, dónde coincidió y el pedazo con la palabra resaltada.
+  const terminosCv = nomBuscaEnCv() ? cvTerminos(document.getElementById('nomSrch').value) : [];
   const sl = nomFiltered.slice((nomPage - 1) * PS, nomPage * PS);
   if (!sl.length) {
     const otro = people.length ? nomEnOtroLado((document.getElementById('nomSrch').value || '').toLowerCase().trim()) : '';
@@ -4187,6 +4367,7 @@ function renderNomTable() {
   ${(p.cv || solicitudDe(p) || cuantosFb(p.id)) ? `<button class="cv-tag" onclick="viewCv('${p.id}')" title="CV, lo que cargó al inscribirse y los datos bancarios"><i class="ic ic-doc"></i> ${p.cv || solConCv(p) ? 'Ver CV' : 'Ver datos'}</button>` : ''}${tieneCv(p) ? `<button class="cv-ojo" onclick="cvRapidaOrigen='nom';cvRapida('${p.id}')" title="Vista rápida del CV, al costado (con las flechas pasás al siguiente)" aria-label="Vista rápida del CV"><i class="ic ic-ojo"></i></button>` : ''}${nomDondeChips(p)}</div>
   ${''/* 24-nov: las etiquetas (promedio, posición, ocupó, le interesa, a probar, zona) ya no van en la lista: se filtran arriba y se ven en la ficha. */}
   ${verEtiquetas && p.etiquetas && p.etiquetas.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${p.etiquetas.map(nm => etqChip(nm)).join('')}</div>` : ''}
+  ${terminosCv.length && nomCvHits.has(p.id) ? (() => { const en = nomCvHits.get(p.id); return `<div class="cv-hit"><span class="cv-hit-en">${e(cvDondeTxt(en))}</span>${cvFragmento(p, en[0], terminosCv).html}</div>`; })() : ''}
 </td>
 <td><span class="a-badge ${areaClase(p.area)}">${areaCorto(p.area)}</span></td>
 <td><select class="st-sel ${rotulo(p.estado)}" data-id="${p.id}" onchange="changeNomSt('${p.id}',this)">
