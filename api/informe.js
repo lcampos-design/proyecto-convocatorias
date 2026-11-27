@@ -97,23 +97,25 @@ export function paginaTodos(tipo, filas) {
   return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     + '<title>' + (socios ? 'Informes para socios' : 'Informes de incidencias') + ' · Movistar Arena</title>'
     + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"><style>'
-    + '*{box-sizing:border-box}html{background:#fff}body{margin:0;font-family:Poppins,sans-serif;color:#1a1a1a}'
+    // 27-nov (Thomas: "me gusta más gris oscuro"): el fondo gris cálido, como el informe en pantalla, con las filas en blanco encima.
+    + '*{box-sizing:border-box}html{background:#E8E7E3}body{margin:0;font-family:Poppins,sans-serif;color:#1a1a1a}'
     // La marca de SBS de fondo, como en el informe (Thomas, 16-nov: "el wallpaper de SBS de fondo, como el del informe"), entera de
     // borde a borde, como en las apps; con el celular parado, entera de ancho arriba y fundiéndose hacia abajo.
-    + 'body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.07;background:url(' + SITIO + '/fondo-sbs.jpg) center/cover no-repeat}'
-    + '@media (max-aspect-ratio:3/4){body::before{background:linear-gradient(rgba(255,255,255,0),#fff) 0 34vw/100% 23vw no-repeat,url(' + SITIO + '/fondo-sbs.jpg) center 0/100% auto no-repeat}}'
+    // La pieza en negativo (las letras, un gris más oscuro que el fondo); con el celular parado se funde en el gris (rgb(23,24,28) invertido).
+    + 'body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.085;filter:invert(1);background:url(' + SITIO + '/fondo-sbs.jpg) center/cover no-repeat}'
+    + '@media (max-aspect-ratio:3/4){body::before{background:linear-gradient(rgba(23,24,28,0),rgb(23,24,28)) 0 34vw/100% 23vw no-repeat,url(' + SITIO + '/fondo-sbs.jpg) center 0/100% auto no-repeat}}'
     + '.hoja{max-width:760px;margin:0 auto;padding:40px 16px 56px}'
     + '.cab{display:flex;align-items:center;gap:14px;padding-bottom:22px;border-bottom:2px solid #1a1a1a;margin-bottom:22px}.cab img{width:52px;height:52px}'
     + '.k{font-size:12px;font-weight:600;color:#5c5c5c}h1{font-size:24px;line-height:1.2;margin:2px 0 0;font-weight:700}'
     + '.intro{font-size:14px;color:#5c5c5c;line-height:1.6;margin:0 0 20px}'
-    + '.fila{display:flex;align-items:center;gap:16px;padding:16px;border:1px solid #dadada;border-radius:14px;margin-bottom:10px;text-decoration:none;color:inherit}'
+    + '.fila{display:flex;align-items:center;gap:16px;padding:16px;background:#fff;border:1px solid #D6D5D1;border-radius:14px;margin-bottom:10px;text-decoration:none;color:inherit}'
     + '.fila:hover{border-color:#1a1a1a}.fila:focus-visible{outline:3px solid #1a1a1a;outline-offset:2px}'
     + '.dia{flex:0 0 56px;height:56px;border-radius:12px;background:rgba(26,26,26,.06);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}'
     + '.dia b{font-size:22px;font-weight:700}.dia span{font-size:11px;font-weight:600;color:#5c5c5c;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}'
     + '.que{flex:1;min-width:0}.n{font-size:16px;font-weight:600}.s{font-size:13px;color:#5c5c5c;margin-top:2px}.m{font-size:13px;margin-top:6px}'
     + '.ir{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;background:#1a1a1a;color:#fff;padding:10px 14px;border-radius:10px}.ir svg{width:16px;height:16px}'
-    + '.vacio{padding:28px;border:1px dashed #dadada;border-radius:14px;text-align:center;color:#5c5c5c;font-size:14px}'
-    + '.mes{margin:0 0 6px}.mes>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px;font-weight:600;padding:12px 4px;border-bottom:1px solid #dadada}'
+    + '.vacio{padding:28px;background:#fff;border:1px dashed #C9C8C4;border-radius:14px;text-align:center;color:#5c5c5c;font-size:14px}'
+    + '.mes{margin:0 0 6px}.mes>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px;font-weight:600;padding:12px 4px;border-bottom:1px solid #C9C8C4}'
     + '.mes>summary::-webkit-details-marker{display:none}.mes>summary::after{content:"";width:8px;height:8px;border-right:2px solid #5c5c5c;border-bottom:2px solid #5c5c5c;transform:rotate(-45deg);margin:0 4px 0 2px}'
     + '.mes[open]>summary::after{transform:rotate(45deg)}.mes[open]>summary{margin-bottom:12px}.mes-n{margin-left:auto;font-size:13px;font-weight:500;color:#5c5c5c}'
     + '@media (max-width:560px){.fila{flex-wrap:wrap}.ir{width:100%;justify-content:center}}'
@@ -147,7 +149,7 @@ async function sb(servicio, ruta) {
 }
 const pagina = (titulo, texto) => `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulo}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"></head>
-<body style="margin:0;font-family:Poppins,sans-serif;background:#fff;color:#1a1a1a;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box">
+<body style="margin:0;font-family:Poppins,sans-serif;background:#E8E7E3;color:#1a1a1a;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box">
 <div style="max-width:420px;text-align:center"><img src="${SITIO}/logo-sbs.png" alt="SBS" width="56" height="56"><h1 style="font-size:20px;margin:16px 0 8px">${titulo}</h1><p style="color:#5c5c5c;line-height:1.6;margin:0">${texto}</p><p style="margin:28px 0 0;font-size:11px;color:#8a8a8a">Proyecto llevado a cabo por la Gerencia de RR. HH.</p></div></body></html>`;
 
 // Para los socios: arriba, los contratos y el personal del show; abajo, el informe de incidencias de siempre. Sin nombres:
@@ -244,6 +246,7 @@ export default async function handler(req, res) {
   // En la compu, el informe centrado (como una hoja); la pieza de SBS de fondo, de borde a borde como en las apps (la pone el
   // informe; 16-nov: acá ya no se le achica el ancho, que la dejaba pegada a la izquierda y cortada). En el celular, como un
   // documento que se agranda con los dedos.
-  html = html.replace('</head>', '<style>@media screen{body{max-width:1040px;margin:28px auto!important;padding:0 16px}}</style></head>').replace('<body>', '<body>' + barra);
+  // 27-nov: en pantalla, el informe es una hoja blanca sobre el fondo gris (lo pone el informe); acá, su ancho y su margen.
+  html = html.replace('</head>', '<style>@media screen{body{max-width:1040px;margin:28px auto!important;padding:28px 32px}}@media screen and (max-width:700px){body{margin:12px!important;padding:18px 16px}}</style></head>').replace('<body>', '<body>' + barra);
   return res.status(200).send(html);
 }

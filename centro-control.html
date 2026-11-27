@@ -4024,8 +4024,12 @@ function informe() {
     + 'html{background:' + P.fondo + '}html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     + 'body::before{content:"";position:fixed;left:50%;top:50%;width:min(100vw,177.78vh);aspect-ratio:16/9;transform:translate(-50%,-50%);z-index:-1;background:url(' + location.origin + '/fondo-sbs-marca.png) center/100% 100% no-repeat}'
     // En pantalla, la pieza entera de borde a borde, como en las apps (16-nov); con el celular parado, entera de ancho arriba y fundiéndose hacia abajo, como en las apps. Al imprimir (A4 parado) queda la de arriba.
-    + '@media screen{body::before{inset:0;left:0;top:0;width:auto;height:auto;aspect-ratio:auto;transform:none;opacity:.07;background:url(' + location.origin + '/fondo-sbs.jpg) center/cover no-repeat}}'
-    + '@media screen and (max-aspect-ratio:3/4){body::before{background:linear-gradient(rgba(255,255,255,0),#fff) 0 34vw/100% 23vw no-repeat,url(' + location.origin + '/fondo-sbs.jpg) center 0/100% auto no-repeat}}'
+    // 27-nov (Thomas: "el nuestro es muy blanco, me gusta más gris oscuro", como la otra plataforma): en pantalla, el fondo gris cálido
+    // con la pieza de SBS en negativo (las letras, un gris más oscuro que el fondo) y el informe encima como una hoja blanca. Al imprimir y
+    // en el PDF, blanco como siempre. Con el celular parado, la pieza se funde en el gris (rgb(23,24,28) invertido es el gris del fondo).
+    + '@media screen{html{background:#E8E7E3}body::before{inset:0;left:0;top:0;width:auto;height:auto;aspect-ratio:auto;transform:none;opacity:.085;filter:invert(1);background:url(' + location.origin + '/fondo-sbs.jpg) center/cover no-repeat}'
+    + 'body{background:#fff;border:1px solid #D6D5D1;border-radius:16px;padding:28px 32px}}'
+    + '@media screen and (max-aspect-ratio:3/4){body::before{background:linear-gradient(rgba(23,24,28,0),rgb(23,24,28)) 0 34vw/100% 23vw no-repeat,url(' + location.origin + '/fondo-sbs.jpg) center 0/100% auto no-repeat}body{margin:12px;padding:18px 16px}}'
     + '.k{font-size:10.5px;font-weight:700;color:' + P.gris + '}'
     + 'h1{font-size:20px;font-weight:600;letter-spacing:-.3px;margin:3px 0 0}h2{font-size:11.5px;font-weight:400;color:' + P.gris + ';margin:2px 0 0}'
     + 'h3{font-size:11.5px;font-weight:700;color:' + P.tinta + ';margin:0 0 6px}'
